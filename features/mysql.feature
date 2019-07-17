@@ -8,4 +8,4 @@ Examples:
 | mysql_version |
 | 5.6  |
 | 5.7  |
-| 7.0  |
+| 8.0  |
