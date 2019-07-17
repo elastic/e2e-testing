@@ -34,7 +34,7 @@ The way we are going to specify our software is using [`Gherkin`](https://cucumb
 
 The key part here is **executable specifications**: we will be able to automate the verification of the spefications anf potentially get a coverage of these specs.
 
-### Godog: Cucumber for Golanf
+### Godog: Cucumber for Golang
 
 From their website:
 
@@ -52,14 +52,14 @@ A good example could be [this one](./features/mysql.feature):
 Feature: As a Metricbeat developer I want to check that the MySQL module works as expected
 
 Scenario Outline: Check module is sending metrics to elasticsearch
-  Given an Elastic stack in version "7.2.0" is running
-  And metricbeat "7.2.0" is installed and configured for MySQL module
-  Then I want to check that it's working for MySQL "<mysql_version>"
+  Given metricbeat "7.2.0" is installed and configured for MySQL module
+    And MySQL "<mysql_version>" is running
+  Then metricbeat outputs metrics to the file "metricbeat-mysql-<mysql_version>.metrics"
 Examples:
 | mysql_version |
 | 5.6  |
 | 5.7  |
-| 7.0  |
+| 8.0  |
 ```
 
 ## Test Implementation
