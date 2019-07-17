@@ -51,17 +51,17 @@ func TestMain(m *testing.M) {
 	os.Exit(status)
 }
 
-func anElasticStackInVersionIsRunning(esVersion string) error {
-	fmt.Println("Elastic stack " + esVersion + " is running")
-	return nil
-}
-
 func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) error {
 	fmt.Println("Metricbeat " + metricbeatVersion + " is installed")
 	return nil
 }
 
-func iWantToCheckThatItsWorkingForMySQL(mysqlVersion string) error {
+func metricbeatOutputsMetricsToTheFile(fileName string) error {
+	fmt.Println("Metricbeat outputs to " + fileName)
+	return nil
+}
+
+func mySQLIsRunning(mysqlVersion string) error {
 	container, err := initMySQL(mysqlVersion)
 
 	if err != nil {
@@ -87,9 +87,9 @@ func iWantToCheckThatItsWorkingForMySQL(mysqlVersion string) error {
 }
 
 func FeatureContext(s *godog.Suite) {
-	s.Step(`^an Elastic stack in version "([^"]*)" is running$`, anElasticStackInVersionIsRunning)
 	s.Step(`^metricbeat "([^"]*)" is installed and configured for MySQL module$`, metricbeatIsInstalledAndConfiguredForMySQLModule)
-	s.Step(`^I want to check that it\'s working for MySQL "([^"]*)"$`, iWantToCheckThatItsWorkingForMySQL)
+	s.Step(`^MySQL "([^"]*)" is running$`, mySQLIsRunning)
+	s.Step(`^metricbeat outputs metrics to the file "([^"]*)"$`, metricbeatOutputsMetricsToTheFile)
 
 	s.BeforeScenario(func(interface{}) {
 		fmt.Println("Before scenario...")
