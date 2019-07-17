@@ -1,9 +1,9 @@
 package main
 
 // NewMySQLService returns a default MySQL service entity
-func NewMySQLService(daemon bool, version string) Service {
+func NewMySQLService(version string) Service {
 	return Service{
-		Daemon: daemon,
+		Daemon: false,
 		ExposedPorts: []ExposedPort{
 			{
 				Address:       "0.0.0.0",

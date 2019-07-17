@@ -20,7 +20,7 @@ func init() {
 }
 
 func initMySQL(mysqlVersion string) (testcontainers.Container, error) {
-	mysqlService := NewMySQLService(true, mysqlVersion)
+	mysqlService := NewMySQLService(mysqlVersion)
 
 	service, err := mysqlService.run()
 	if err != nil {

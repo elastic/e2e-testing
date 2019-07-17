@@ -66,3 +66,10 @@ func (s *Service) run() (testcontainers.Container, error) {
 
 	return service, nil
 }
+
+// AsDaemon marks this service to be run as daemon
+func (s *Service) AsDaemon() *Service {
+	s.Daemon = true
+
+	return s
+}
