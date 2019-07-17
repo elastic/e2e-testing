@@ -10,7 +10,7 @@ import (
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/colors"
 
-	"github.com/testcontainers/testcontainers-go"
+	testcontainers "github.com/testcontainers/testcontainers-go"
 )
 
 var opt = godog.Options{Output: colors.Colored(os.Stdout)}
@@ -20,21 +20,15 @@ func init() {
 }
 
 func initMySQL(mysqlVersion string) (testcontainers.Container, error) {
-	ctx := context.Background()
-	req := testcontainers.ContainerRequest{
-		Image:        "mysql:" + mysqlVersion,
-		ExposedPorts: []string{"0.0.0.0:3306:3306/tcp"},
-	}
-	mysqlC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
+	mysqlService := NewMySQLService(true, mysqlVersion)
+
+	service, err := mysqlService.run()
 	if err != nil {
 		return nil, err
 	}
-	defer mysqlC.Terminate(ctx)
+	defer mysqlService.destroy()
 
-	return mysqlC, nil
+	return service, nil
 }
 
 func TestMain(m *testing.M) {
