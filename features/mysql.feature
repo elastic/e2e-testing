@@ -1,8 +1,8 @@
 Feature: As a Metricbeat developer I want to check that the MySQL module works as expected
 
 Scenario Outline: Check module is sending metrics to a file
-  Given metricbeat "7.2.0" is installed and configured for MySQL module
-    And MySQL "<mysql_version>" is running
+  Given MySQL "<mysql_version>" is running
+    And metricbeat "7.2.0" is installed and configured for MySQL module
   Then metricbeat outputs metrics to the file "metricbeat-mysql-<mysql_version>.metrics"
 Examples:
 | mysql_version |

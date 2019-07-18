@@ -6,29 +6,19 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/colors"
-
-	testcontainers "github.com/testcontainers/testcontainers-go"
 )
+
+var metricbeatService Service
+var mysqlService Service
 
 var opt = godog.Options{Output: colors.Colored(os.Stdout)}
 
 func init() {
 	godog.BindFlags("godog.", flag.CommandLine, &opt)
-}
-
-func initMySQL(mysqlVersion string) (testcontainers.Container, error) {
-	mysqlService := NewMySQLService(mysqlVersion)
-
-	service, err := mysqlService.Run()
-	if err != nil {
-		return nil, err
-	}
-	defer mysqlService.Destroy()
-
-	return service, nil
 }
 
 func TestMain(m *testing.M) {
@@ -46,7 +36,21 @@ func TestMain(m *testing.M) {
 }
 
 func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) error {
-	fmt.Println("Metricbeat " + metricbeatVersion + " is installed")
+	metricbeatService = NewMetricbeatService(metricbeatVersion, mysqlService)
+
+	container, err := metricbeatService.Run()
+	if err != nil || container == nil {
+		return fmt.Errorf("Could not run Metricbeat %s: %v", metricbeatVersion, err)
+	}
+
+	ctx := context.Background()
+
+	ip, err := container.Host(ctx)
+	if err != nil {
+		return fmt.Errorf("Could not run Metricbeat %s: %v", metricbeatVersion, err)
+	}
+	fmt.Printf("Metricbeat %s is running configured for MySQL on IP %s\n", metricbeatVersion, ip)
+
 	return nil
 }
 
@@ -56,8 +60,9 @@ func metricbeatOutputsMetricsToTheFile(fileName string) error {
 }
 
 func mySQLIsRunning(mysqlVersion string) error {
-	container, err := initMySQL(mysqlVersion)
+	mysqlService = NewMySQLService(mysqlVersion)
 
+	container, err := mysqlService.Run()
 	if err != nil {
 		return fmt.Errorf("Could not run MySQL %s: %o", mysqlVersion, err)
 	}
@@ -66,26 +71,33 @@ func mySQLIsRunning(mysqlVersion string) error {
 
 	ip, err := container.Host(ctx)
 	if err != nil {
-		return fmt.Errorf("Could not run MySQL %s: %o", mysqlVersion, err)
+		return fmt.Errorf("Could not run MySQL %s: %s", mysqlVersion, err)
 	}
-	fmt.Printf("MySQL running on IP %s\n", ip)
-
 	port, err := container.MappedPort(ctx, "3306")
 	if err != nil {
-		return fmt.Errorf("Could not run MySQL %s: %o", mysqlVersion, err)
+		return fmt.Errorf("Could not run MySQL %s: %s", mysqlVersion, err)
 	}
-	fmt.Printf("MySQL running on Port %s\n", port)
 
-	fmt.Println("MySQL " + mysqlVersion + " module works")
+	fmt.Printf("MySQL %s is running on %s:%s\n", mysqlVersion, ip, port)
+
 	return nil
 }
 
 func FeatureContext(s *godog.Suite) {
-	s.Step(`^metricbeat "([^"]*)" is installed and configured for MySQL module$`, metricbeatIsInstalledAndConfiguredForMySQLModule)
 	s.Step(`^MySQL "([^"]*)" is running$`, mySQLIsRunning)
+	s.Step(`^metricbeat "([^"]*)" is installed and configured for MySQL module$`, metricbeatIsInstalledAndConfiguredForMySQLModule)
 	s.Step(`^metricbeat outputs metrics to the file "([^"]*)"$`, metricbeatOutputsMetricsToTheFile)
 
 	s.BeforeScenario(func(interface{}) {
 		fmt.Println("Before scenario...")
+	})
+
+	s.AfterScenario(func(scenario interface{}, err error) {
+		seconds := 100
+		pause := time.Duration(seconds) * time.Second
+
+		fmt.Printf("Sleeping %d seconds after scenario...\n", seconds)
+
+		time.Sleep(pause)
 	})
 }

@@ -2,8 +2,13 @@ package main
 
 // NewMySQLService returns a default MySQL service entity
 func NewMySQLService(version string) Service {
+	env := map[string]string{
+		"MYSQL_ROOT_PASSWORD": "secret",
+	}
+
 	return &DockerService{
 		Daemon: false,
+		Env:    env,
 		ExposedPorts: []ExposedPort{
 			{
 				Address:       "0.0.0.0",
@@ -13,5 +18,6 @@ func NewMySQLService(version string) Service {
 			},
 		},
 		ImageTag: "mysql:" + version,
+		Name:     "mysql",
 	}
 }
