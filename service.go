@@ -9,7 +9,7 @@ import (
 // Service represents the contract for services
 type Service interface {
 	Destroy() error
-	ExposePorts() []string
+	GetExposedPorts() []string
 	Run() (testcontainers.Container, error)
 }
 
@@ -22,8 +22,8 @@ type DockerService struct {
 	RunningService testcontainers.Container
 }
 
-// ExposePorts returns an array of exposed ports
-func (s *DockerService) ExposePorts() []string {
+// GetExposedPorts returns an array of exposed ports
+func (s *DockerService) GetExposedPorts() []string {
 	ports := []string{}
 
 	for _, p := range s.ExposedPorts {
@@ -59,7 +59,7 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
 		Image:        s.ImageTag,
-		ExposedPorts: s.ExposePorts(),
+		ExposedPorts: s.GetExposedPorts(),
 	}
 
 	service, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
