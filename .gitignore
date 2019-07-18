@@ -1,0 +1,4 @@
+godog.test
+
+outputs/*
+!outputs/.touch
