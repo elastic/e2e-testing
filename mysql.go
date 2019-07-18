@@ -2,7 +2,7 @@ package main
 
 // NewMySQLService returns a default MySQL service entity
 func NewMySQLService(version string) Service {
-	return Service{
+	return &DockerService{
 		Daemon: false,
 		ExposedPorts: []ExposedPort{
 			{

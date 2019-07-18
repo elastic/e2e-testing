@@ -6,8 +6,15 @@ import (
 	testcontainers "github.com/testcontainers/testcontainers-go"
 )
 
-// Service represents a service to be run
-type Service struct {
+// Service represents the contract for services
+type Service interface {
+	Destroy() error
+	ExposePorts() []string
+	Run() (testcontainers.Container, error)
+}
+
+// DockerService represents a Docker service to be run
+type DockerService struct {
 	// Daemon indicates if the service must be run as a daemon
 	Daemon         bool
 	ExposedPorts   []ExposedPort
@@ -15,7 +22,8 @@ type Service struct {
 	RunningService testcontainers.Container
 }
 
-func (s *Service) exposePorts() []string {
+// ExposePorts returns an array of exposed ports
+func (s *DockerService) ExposePorts() []string {
 	ports := []string{}
 
 	for _, p := range s.ExposedPorts {
@@ -37,8 +45,8 @@ func (e *ExposedPort) toString() string {
 	return e.Address + ":" + e.HostPort + ":" + e.ContainerPort + "/" + e.Protocol
 }
 
-// destroys the underlying container
-func (s *Service) destroy() error {
+// Destroy destroys the underlying container
+func (s *DockerService) Destroy() error {
 	ctx := context.Background()
 
 	s.RunningService.Terminate(ctx)
@@ -46,12 +54,12 @@ func (s *Service) destroy() error {
 	return nil
 }
 
-// runs a container for the service
-func (s *Service) run() (testcontainers.Container, error) {
+// Run runs a container for the service
+func (s *DockerService) Run() (testcontainers.Container, error) {
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
 		Image:        s.ImageTag,
-		ExposedPorts: s.exposePorts(),
+		ExposedPorts: s.ExposePorts(),
 	}
 
 	service, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -68,7 +76,7 @@ func (s *Service) run() (testcontainers.Container, error) {
 }
 
 // AsDaemon marks this service to be run as daemon
-func (s *Service) AsDaemon() *Service {
+func (s *DockerService) AsDaemon() *DockerService {
 	s.Daemon = true
 
 	return s

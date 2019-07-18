@@ -22,11 +22,11 @@ func init() {
 func initMySQL(mysqlVersion string) (testcontainers.Container, error) {
 	mysqlService := NewMySQLService(mysqlVersion)
 
-	service, err := mysqlService.run()
+	service, err := mysqlService.Run()
 	if err != nil {
 		return nil, err
 	}
-	defer mysqlService.destroy()
+	defer mysqlService.Destroy()
 
 	return service, nil
 }
