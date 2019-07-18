@@ -10,15 +10,20 @@ import (
 type Service interface {
 	Destroy() error
 	GetExposedPorts() []string
+	GetName() string
 	Run() (testcontainers.Container, error)
 }
 
 // DockerService represents a Docker service to be run
 type DockerService struct {
+	BindMounts map[string]string
 	// Daemon indicates if the service must be run as a daemon
 	Daemon         bool
+	Env            map[string]string
 	ExposedPorts   []ExposedPort
 	ImageTag       string
+	Labels         map[string]string
+	Name           string
 	RunningService testcontainers.Container
 }
 
@@ -31,6 +36,11 @@ func (s *DockerService) GetExposedPorts() []string {
 	}
 
 	return ports
+}
+
+// GetName returns service name
+func (s *DockerService) GetName() string {
+	return s.Name
 }
 
 // ExposedPort represents the structure for how services expose ports
@@ -59,7 +69,10 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
 		Image:        s.ImageTag,
+		BindMounts:   s.BindMounts,
+		Env:          s.Env,
 		ExposedPorts: s.GetExposedPorts(),
+		Labels:       s.Labels,
 	}
 
 	service, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
