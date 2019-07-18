@@ -73,6 +73,7 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 		Env:          s.Env,
 		ExposedPorts: s.GetExposedPorts(),
 		Labels:       s.Labels,
+		Name:         s.GetName(),
 	}
 
 	service, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
