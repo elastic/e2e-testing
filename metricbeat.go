@@ -1,22 +1,21 @@
 package main
 
 import (
-	"os"
 	"fmt"
-	
+	"os"
+
 	docker "github.com/elastic/metricbeat-tests-poc/docker"
 )
 
 // NewMetricbeatService returns a metricbeat service entity
-func NewMetricbeatService(version string, monitoredService Service) Service {
+func NewMetricbeatService(version string, monitoredService Service) (Service, error) {
 	dir, _ := os.Getwd()
 
 	serviceName := monitoredService.GetName()
 
 	inspect, err := docker.InspectContainer(monitoredService.GetContainerName())
 	if err != nil {
-		fmt.Errorf("Could not inspect service %s", serviceName)
-		return nil
+		return nil, err
 	}
 
 	ip := inspect.NetworkSettings.IPAddress
@@ -27,7 +26,7 @@ func NewMetricbeatService(version string, monitoredService Service) Service {
 
 	bindMounts := map[string]string{
 		dir + "/configs/" + serviceName + ".yml": "/usr/share/metricbeat/metricbeat.yml",
-		dir + "/outputs": "/tmp",
+		dir + "/outputs":                         "/tmp",
 	}
 
 	labels := map[string]string{
