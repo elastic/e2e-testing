@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/colors"
@@ -61,6 +62,8 @@ func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) 
 }
 
 func metricbeatOutputsMetricsToTheFile(fileName string) error {
+	time.Sleep(20 * time.Second)
+
 	dir, _ := os.Getwd()
 
 	if _, err := os.Stat(dir + "/outputs/" + fileName); os.IsNotExist(err) {
