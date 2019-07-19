@@ -9,6 +9,7 @@ import (
 
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/colors"
+	"github.com/docker/go-connections/nat"
 )
 
 var metricbeatService Service
@@ -64,8 +65,8 @@ func metricbeatOutputsMetricsToTheFile(fileName string) error {
 	return nil
 }
 
-func mySQLIsRunning(mysqlVersion string) error {
-	mysqlService = NewMySQLService(mysqlVersion)
+func mySQLIsRunningOnPort(mysqlVersion string, port string) error {
+	mysqlService = NewMySQLService(mysqlVersion, port)
 
 	container, err := mysqlService.Run()
 	if err != nil {
@@ -78,18 +79,18 @@ func mySQLIsRunning(mysqlVersion string) error {
 	if err != nil {
 		return fmt.Errorf("Could not run MySQL %s: %v", mysqlVersion, err)
 	}
-	port, err := container.MappedPort(ctx, "3306")
+	mappedPort, err := container.MappedPort(ctx, nat.Port(port))
 	if err != nil {
 		return fmt.Errorf("Could not run MySQL %s: %v", mysqlVersion, err)
 	}
 
-	fmt.Printf("MySQL %s is running on %s:%s\n", mysqlVersion, ip, port)
+	fmt.Printf("MySQL %s is running on %s:%s\n", mysqlVersion, ip, mappedPort)
 
 	return nil
 }
 
 func FeatureContext(s *godog.Suite) {
-	s.Step(`^MySQL "([^"]*)" is running$`, mySQLIsRunning)
+	s.Step(`^MySQL "([^"]*)" is running on port "([^"]*)"$`, mySQLIsRunningOnPort)
 	s.Step(`^metricbeat "([^"]*)" is installed and configured for MySQL module$`, metricbeatIsInstalledAndConfiguredForMySQLModule)
 	s.Step(`^metricbeat outputs metrics to the file "([^"]*)"$`, metricbeatOutputsMetricsToTheFile)
 
