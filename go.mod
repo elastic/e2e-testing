@@ -17,7 +17,7 @@ require (
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
-	github.com/testcontainers/testcontainers-go v0.0.4
+	github.com/testcontainers/testcontainers-go v0.0.5-0.20190614112146-b130c69aad64
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	golang.org/x/exp v0.0.0-20190718202018-cfdd5522f6f6 // indirect
 	golang.org/x/image v0.0.0-20190703141733-d6a02ce849c9 // indirect
