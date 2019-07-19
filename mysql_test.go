@@ -9,7 +9,6 @@ import (
 
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/colors"
-	"github.com/docker/go-connections/nat"
 )
 
 var metricbeatService Service
@@ -85,12 +84,8 @@ func mySQLIsRunningOnPort(mysqlVersion string, port string) error {
 	if err != nil {
 		return fmt.Errorf("Could not run MySQL %s: %v", mysqlVersion, err)
 	}
-	mappedPort, err := container.MappedPort(ctx, nat.Port(port))
-	if err != nil {
-		return fmt.Errorf("Could not run MySQL %s: %v", mysqlVersion, err)
-	}
 
-	fmt.Printf("MySQL %s is running on %s:%s\n", mysqlVersion, ip, mappedPort)
+	fmt.Printf("MySQL %s is running on %s:%s\n", mysqlVersion, ip, port)
 
 	return nil
 }
