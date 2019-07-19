@@ -8,10 +8,10 @@ So for that reason we are adding [smoke tests](http://softwaretestingfundamental
 
 ## Running the tests
 
-The tests are located under the [./](root) directory. Place your terminal there and execute `godog`, which is a tool developed by DATADOG folks supporting Cucumber:
+The tests are located under the [./](root) directory. Place your terminal there and execute `godog`, which is a Golang tool developed by DATA-DOG folks supporting Cucumber:
 
 ```shell
-$ godog
+$ GO111MODULE=on godog
 ```
 
 ## Tooling
@@ -51,10 +51,10 @@ A good example could be [this one](./features/mysql.feature):
 ```cucumber
 Feature: As a Metricbeat developer I want to check that the MySQL module works as expected
 
-Scenario Outline: Check module is sending metrics to elasticsearch
-  Given metricbeat "7.2.0" is installed and configured for MySQL module
-    And MySQL "<mysql_version>" is running
-  Then metricbeat outputs metrics to the file "metricbeat-mysql-<mysql_version>.metrics"
+Scenario Outline: Check module is sending metrics to a file
+  Given MySQL "<mysql_version>" is running on port "3306"
+    And metricbeat "7.2.0" is installed and configured for MySQL module
+  Then metricbeat outputs metrics to the file "mysql-<mysql_version>.metrics"
 Examples:
 | mysql_version |
 | 5.6  |
