@@ -23,7 +23,8 @@ func NewMetricbeatService(version string, monitoredService Service) (Service, er
 	ip := inspect.NetworkSettings.IPAddress
 	fmt.Printf("The monitored service (%s) runs on %s\n", serviceName, ip)
 	env := map[string]string{
-		"HOST": ip,
+		"HOST":      ip,
+		"FILE_NAME": monitoredService.GetContainerName(),
 	}
 
 	bindMounts := map[string]string{

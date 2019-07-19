@@ -61,6 +61,12 @@ func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) 
 }
 
 func metricbeatOutputsMetricsToTheFile(fileName string) error {
+	dir, _ := os.Getwd()
+
+	if _, err := os.Stat(dir + "/outputs/" + fileName); os.IsNotExist(err) {
+		return fmt.Errorf("The output file %s does not exist", fileName)
+	}
+
 	fmt.Println("Metricbeat outputs to " + fileName)
 	return nil
 }

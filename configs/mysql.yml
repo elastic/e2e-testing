@@ -6,4 +6,4 @@ metricbeat.modules:
 
 output.file:
   path: "/tmp"
-  filename: "mysql"
+  filename: "${FILE_NAME}.metrics"
