@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 
 	docker "github.com/elastic/metricbeat-tests-poc/docker"
 )
@@ -34,7 +36,7 @@ func NewMetricbeatService(version string, monitoredService Service) (Service, er
 	}
 
 	return &DockerService{
-		ContainerName: "metricbeat-" + version,
+		ContainerName: "metricbeat-" + strconv.Itoa(int(time.Now().UnixNano())),
 		Daemon:        false,
 		BindMounts:    bindMounts,
 		Env:           env,
