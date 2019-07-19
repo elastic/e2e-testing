@@ -81,6 +81,7 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 		ExposedPorts: s.GetExposedPorts(),
 		Labels:       s.Labels,
 		Name:         s.ContainerName,
+		SkipReaper:   !s.Daemon,
 	}
 
 	service, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{

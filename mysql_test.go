@@ -99,11 +99,6 @@ func FeatureContext(s *godog.Suite) {
 	})
 
 	s.AfterScenario(func(interface{}, error) {
-		if mysqlService != nil {
-			mysqlService.Destroy()
-		}
-		if metricbeatService != nil {
-			metricbeatService.Destroy()
-		}
+		fmt.Println("After scenario...")
 	})
 }
