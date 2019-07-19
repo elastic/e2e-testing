@@ -67,3 +67,7 @@ Examples:
 We are using Godog + Cucumber to implement the tests, where we create connections to the `Given`, `When`, `Then`, `And`, etc. in a well-known file structure.
 
 As an example, the Golang implementation of the `features/mysql.feature` is located under the [./mysql_test.go](./mysql_test.go) file.
+
+## The result
+
+![image](metricbeat-poc.gif)
