@@ -34,6 +34,7 @@ func TestMain(m *testing.M) {
 			fmt.Println("After scenario...")
 		})
 
+		ApacheFeatureContext(s)
 		MySQLFeatureContext(s)
 	}, opt)
 
