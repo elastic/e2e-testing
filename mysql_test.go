@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/DATA-DOG/godog"
@@ -97,9 +98,24 @@ func FeatureContext(s *godog.Suite) {
 
 	s.BeforeScenario(func(interface{}) {
 		fmt.Println("Before scenario...")
+		cleanUpOutputs()
 	})
 
 	s.AfterScenario(func(interface{}, error) {
 		fmt.Println("After scenario...")
 	})
+}
+
+func cleanUpOutputs() {
+	dir, _ := os.Getwd()
+
+	files, err := filepath.Glob(dir + "/outputs/*.metrics")
+	if err != nil {
+		fmt.Println("Cannot remove outputs :(")
+	}
+	for _, f := range files {
+		if err := os.Remove(f); err != nil {
+			fmt.Printf("Cannot remove output file %s :(\n", f)
+		}
+	}
 }
