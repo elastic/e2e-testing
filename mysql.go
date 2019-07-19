@@ -7,8 +7,9 @@ func NewMySQLService(version string) Service {
 	}
 
 	return &DockerService{
-		Daemon: false,
-		Env:    env,
+		ContainerName: "mysql-" + version,
+		Daemon:        false,
+		Env:           env,
 		ExposedPorts: []ExposedPort{
 			{
 				Address:       "0.0.0.0",

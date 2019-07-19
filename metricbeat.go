@@ -13,7 +13,7 @@ func NewMetricbeatService(version string, monitoredService Service) Service {
 
 	serviceName := monitoredService.GetName()
 
-	inspect, err := docker.InspectContainer(serviceName)
+	inspect, err := docker.InspectContainer(monitoredService.GetContainerName())
 	if err != nil {
 		fmt.Errorf("Could not inspect service %s", serviceName)
 		return nil
@@ -35,11 +35,12 @@ func NewMetricbeatService(version string, monitoredService Service) Service {
 	}
 
 	return &DockerService{
-		Daemon:     false,
-		BindMounts: bindMounts,
-		Env:        env,
-		ImageTag:   "docker.elastic.co/beats/metricbeat:" + version,
-		Labels:     labels,
-		Name:       "metricbeat",
-	}
+		ContainerName: "metricbeat-" + version,
+		Daemon:        false,
+		BindMounts:    bindMounts,
+		Env:           env,
+		ImageTag:      "docker.elastic.co/beats/metricbeat:" + version,
+		Labels:        labels,
+		Name:          "metricbeat",
+	}, nil
 }
