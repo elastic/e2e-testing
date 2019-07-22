@@ -2,7 +2,7 @@
 
 We want to make sure that a metricbeat module works as expected, taking into
 consideration different versions of the integration software that metricbeats uses.
-So for that reason we are adding [smoke tests](http://softwaretestingfundamentals.com/smoke-testing/) to verify that the redeployment has been done with certain grade of satisfaction.
+So for that reason we are adding [smoke tests](http://softwaretestingfundamentals.com/smoke-testing/) to verify that each module, and different versions for that module, meets to the specifications described here with certain grade of satisfaction.
 
 >Smoke Testing, also known as “Build Verification Testing”, is a type of software testing that comprises of a non-exhaustive set of tests that aim at ensuring that the most important functions work. The result of this testing is used to decide if a build is stable enough to proceed with further testing.
 
