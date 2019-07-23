@@ -1,7 +1,7 @@
 package main
 
 // NewMySQLService returns a default MySQL service entity
-func NewMySQLService(version string, port string) Service {
+func NewMySQLService(version string) Service {
 	env := map[string]string{
 		"MYSQL_ROOT_PASSWORD": "secret",
 	}

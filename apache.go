@@ -1,7 +1,7 @@
 package main
 
 // NewApacheService returns a default Apache service entity
-func NewApacheService(version string, port string) Service {
+func NewApacheService(version string) Service {
 	return &DockerService{
 		ContainerName: "apache-" + version,
 		Daemon:        false,

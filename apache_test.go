@@ -10,7 +10,7 @@ import (
 var apacheService Service
 
 func ApacheFeatureContext(s *godog.Suite) {
-	s.Step(`^Apache "([^"]*)" is running on port "([^"]*)"$`, apacheIsRunningOnPort)
+	s.Step(`^Apache "([^"]*)" is running$`, apacheIsRunning)
 	s.Step(`^metricbeat "([^"]*)" is installed and configured for Apache module$`, metricbeatIsInstalledAndConfiguredForApacheModule)
 	s.Step(`^metricbeat outputs metrics to the file "([^"]*)"$`, metricbeatOutputsMetricsToTheFile)
 }
@@ -40,8 +40,8 @@ func metricbeatIsInstalledAndConfiguredForApacheModule(metricbeatVersion string)
 	return nil
 }
 
-func apacheIsRunningOnPort(apacheVersion string, port string) error {
-	apacheService = NewApacheService(apacheVersion, port)
+func apacheIsRunning(apacheVersion string) error {
+	apacheService = NewApacheService(apacheVersion)
 
 	container, err := apacheService.Run()
 	if err != nil {
@@ -55,7 +55,7 @@ func apacheIsRunningOnPort(apacheVersion string, port string) error {
 		return fmt.Errorf("Could not run Apache %s: %v", apacheVersion, err)
 	}
 
-	fmt.Printf("Apache %s is running on %s:%s\n", apacheVersion, ip, port)
+	fmt.Printf("Apache %s is running on %s:%d\n", apacheVersion, ip, 80)
 
 	return nil
 }

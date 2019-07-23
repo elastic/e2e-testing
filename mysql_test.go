@@ -10,7 +10,7 @@ import (
 var mysqlService Service
 
 func MySQLFeatureContext(s *godog.Suite) {
-	s.Step(`^MySQL "([^"]*)" is running on port "([^"]*)"$`, mySQLIsRunningOnPort)
+	s.Step(`^MySQL "([^"]*)" is running$`, mySQLIsRunning)
 	s.Step(`^metricbeat "([^"]*)" is installed and configured for MySQL module$`, metricbeatIsInstalledAndConfiguredForMySQLModule)
 	s.Step(`^metricbeat outputs metrics to the file "([^"]*)"$`, metricbeatOutputsMetricsToTheFile)
 }
@@ -40,8 +40,8 @@ func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) 
 	return nil
 }
 
-func mySQLIsRunningOnPort(mysqlVersion string, port string) error {
-	mysqlService = NewMySQLService(mysqlVersion, port)
+func mySQLIsRunning(mysqlVersion string) error {
+	mysqlService = NewMySQLService(mysqlVersion)
 
 	container, err := mysqlService.Run()
 	if err != nil {
@@ -55,7 +55,7 @@ func mySQLIsRunningOnPort(mysqlVersion string, port string) error {
 		return fmt.Errorf("Could not run MySQL %s: %v", mysqlVersion, err)
 	}
 
-	fmt.Printf("MySQL %s is running on %s:%s\n", mysqlVersion, ip, port)
+	fmt.Printf("MySQL %s is running on %s:%d\n", mysqlVersion, ip, 3306)
 
 	return nil
 }
