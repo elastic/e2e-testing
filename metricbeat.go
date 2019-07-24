@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -36,7 +37,7 @@ func NewMetricbeatService(version string, monitoredService Service) (Service, er
 		"co.elastic.logs/module": serviceName,
 	}
 
-	return &DockerService{
+	service := &DockerService{
 		ContainerName: "metricbeat-" + strconv.Itoa(int(time.Now().UnixNano())),
 		Daemon:        false,
 		BindMounts:    bindMounts,
@@ -44,5 +45,26 @@ func NewMetricbeatService(version string, monitoredService Service) (Service, er
 		ImageTag:      "docker.elastic.co/beats/metricbeat:" + version,
 		Labels:        labels,
 		Name:          "metricbeat",
-	}, nil
+	}
+
+	if service == nil {
+		return nil, fmt.Errorf("Could not create Metricbeat %s service for %s", version, serviceName)
+	}
+
+	container, err := service.Run()
+	if err != nil || container == nil {
+		return nil, fmt.Errorf("Could not run Metricbeat %s: %v", version, err)
+	}
+
+	ctx := context.Background()
+
+	ip, err1 := container.Host(ctx)
+	if err1 != nil {
+		return nil, fmt.Errorf("Could not get Metricbeat %s host: %v", version, err1)
+	}
+
+	fmt.Printf(
+		"Metricbeat %s is running configured for %s on IP %s\n", version, serviceName, ip)
+
+	return service, nil
 }
