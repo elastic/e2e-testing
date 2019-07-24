@@ -43,19 +43,5 @@ func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) 
 func mySQLIsRunning(mysqlVersion string) error {
 	mysqlService = NewMySQLService(mysqlVersion)
 
-	container, err := mysqlService.Run()
-	if err != nil {
-		return fmt.Errorf("Could not run MySQL %s: %v", mysqlVersion, err)
-	}
-
-	ctx := context.Background()
-
-	ip, err := container.Host(ctx)
-	if err != nil {
-		return fmt.Errorf("Could not run MySQL %s: %v", mysqlVersion, err)
-	}
-
-	fmt.Printf("MySQL %s is running on %s:%d\n", mysqlVersion, ip, 3306)
-
-	return nil
+	return serviceManager.Run(mysqlService)
 }

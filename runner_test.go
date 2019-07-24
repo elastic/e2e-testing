@@ -15,9 +15,12 @@ import (
 var opt = godog.Options{Output: colors.Colored(os.Stdout)}
 
 var metricbeatService Service
+var serviceManager ServiceManager
 
 func init() {
 	godog.BindFlags("godog.", flag.CommandLine, &opt)
+
+	serviceManager = NewServiceManager()
 }
 
 func TestMain(m *testing.M) {

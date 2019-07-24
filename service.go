@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	testcontainers "github.com/testcontainers/testcontainers-go"
 )
@@ -102,4 +103,37 @@ func (s *DockerService) AsDaemon() *DockerService {
 	s.Daemon = true
 
 	return s
+}
+
+// ServiceManager manages lifecycle of a service
+type ServiceManager interface {
+	Run(Service) error
+}
+
+// DockerServiceManager implementation of the service manager interface
+type DockerServiceManager struct {
+}
+
+// NewServiceManager returns a new service manager
+func NewServiceManager() ServiceManager {
+	return &DockerServiceManager{}
+}
+
+// Run runs a service
+func (sm *DockerServiceManager) Run(s Service) error {
+	container, err := s.Run()
+	if err != nil {
+		return fmt.Errorf("Could not run service: %v", err)
+	}
+
+	ctx := context.Background()
+
+	ip, err := container.Host(ctx)
+	if err != nil {
+		return fmt.Errorf("Could not run service: %v", err)
+	}
+
+	fmt.Printf("Service is running on %s\n", ip)
+
+	return nil
 }

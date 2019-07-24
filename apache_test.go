@@ -43,19 +43,5 @@ func metricbeatIsInstalledAndConfiguredForApacheModule(metricbeatVersion string)
 func apacheIsRunning(apacheVersion string) error {
 	apacheService = NewApacheService(apacheVersion)
 
-	container, err := apacheService.Run()
-	if err != nil {
-		return fmt.Errorf("Could not run Apache %s: %v", apacheVersion, err)
-	}
-
-	ctx := context.Background()
-
-	ip, err := container.Host(ctx)
-	if err != nil {
-		return fmt.Errorf("Could not run Apache %s: %v", apacheVersion, err)
-	}
-
-	fmt.Printf("Apache %s is running on %s:%d\n", apacheVersion, ip, 80)
-
-	return nil
+	return serviceManager.Run(apacheService)
 }
