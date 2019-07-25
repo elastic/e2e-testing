@@ -13,7 +13,7 @@ func ApacheFeatureContext(s *godog.Suite) {
 }
 
 func metricbeatIsInstalledAndConfiguredForApacheModule(metricbeatVersion string) error {
-	s, err := NewMetricbeatService(metricbeatVersion, apacheService)
+	s, err := RunMetricbeatService(metricbeatVersion, apacheService)
 
 	metricbeatService = s
 

@@ -13,7 +13,7 @@ func MySQLFeatureContext(s *godog.Suite) {
 }
 
 func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) error {
-	s, err := NewMetricbeatService(metricbeatVersion, mysqlService)
+	s, err := RunMetricbeatService(metricbeatVersion, mysqlService)
 
 	metricbeatService = s
 

@@ -10,8 +10,8 @@ import (
 	docker "github.com/elastic/metricbeat-tests-poc/docker"
 )
 
-// NewMetricbeatService returns a metricbeat service entity
-func NewMetricbeatService(version string, monitoredService Service) (Service, error) {
+// RunMetricbeatService returns a metricbeat service entity
+func RunMetricbeatService(version string, monitoredService Service) (Service, error) {
 	dir, _ := os.Getwd()
 
 	serviceName := monitoredService.GetName()
