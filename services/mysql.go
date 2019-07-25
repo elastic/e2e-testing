@@ -10,15 +10,9 @@ func NewMySQLService(version string, asDaemon bool) Service {
 		ContainerName: "mysql-" + version,
 		Daemon:        asDaemon,
 		Env:           env,
-		ExposedPorts: []ExposedPort{
-			{
-				Address:       "0.0.0.0",
-				ContainerPort: "3306",
-				Protocol:      "tcp",
-			},
-		},
-		Image:   "mysql",
-		Name:    "mysql",
-		Version: version,
+		ExposedPort:   3306,
+		Image:         "mysql",
+		Name:          "mysql",
+		Version:       version,
 	}
 }

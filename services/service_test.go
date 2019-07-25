@@ -15,7 +15,7 @@ func TestNewService_ContainerNameIncludesVersionAsSuffix(t *testing.T) {
 func TestNewService_ExposedPortsIsEmpty(t *testing.T) {
 	apache := NewApacheService("2.2", false)
 
-	assert.Equal(t, 0, len(apache.GetExposedPorts()))
+	assert.Equal(t, 80, apache.GetExposedPort())
 }
 
 func TestNewService_Name(t *testing.T) {
