@@ -1,0 +1,32 @@
+repos:
+-   repo: git://github.com/pre-commit/pre-commit-hooks
+    rev: v2.2.3
+    hooks:
+    -   id: check-case-conflict
+        exclude: ^target/
+    -   id: check-executables-have-shebangs
+        exclude: ^target/
+    -   id: check-json
+        exclude: ^target/
+    -   id: check-merge-conflict
+        exclude: ^target/
+    -   id: check-yaml
+        exclude: ^target/
+    -   id: check-xml
+        exclude: ^target/
+    -   id: end-of-file-fixer
+        exclude: ^target/
+
+-   repo: git://github.com/dnephin/pre-commit-golang
+    rev: v0.3.4
+    hooks:
+    -   id: go-fmt
+    -   id: go-vet
+    -   id: go-lint
+    -   id: validate-toml
+    -   id: no-go-testing
+    -   id: gometalinter
+    -   id: golangci-lint
+    -   id: go-critic
+    -   id: go-unit-tests
+    -   id: go-build
