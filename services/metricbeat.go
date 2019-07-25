@@ -1,13 +1,10 @@
 package services
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strconv"
 	"time"
-
-	docker "github.com/elastic/metricbeat-tests-poc/docker"
 )
 
 // RunMetricbeatService returns a metricbeat service entity
@@ -16,13 +13,13 @@ func RunMetricbeatService(version string, monitoredService Service) (Service, er
 
 	serviceName := monitoredService.GetName()
 
-	inspect, err := docker.InspectContainer(monitoredService.GetContainerName())
+	inspect, err := monitoredService.Inspect()
 	if err != nil {
 		return nil, err
 	}
 
 	ip := inspect.NetworkSettings.IPAddress
-	fmt.Printf("The monitored service (%s) runs on %s\n", serviceName, ip)
+
 	env := map[string]string{
 		"HOST":      ip,
 		"FILE_NAME": monitoredService.GetContainerName(),
@@ -57,15 +54,7 @@ func RunMetricbeatService(version string, monitoredService Service) (Service, er
 		return nil, fmt.Errorf("Could not run Metricbeat %s: %v", version, err)
 	}
 
-	ctx := context.Background()
-
-	ip, err1 := container.Host(ctx)
-	if err1 != nil {
-		return nil, fmt.Errorf("Could not get Metricbeat %s host: %v", version, err1)
-	}
-
-	fmt.Printf(
-		"Metricbeat %s is running configured for %s on IP %s\n", version, serviceName, ip)
+	fmt.Printf("Metricbeat %s is running configured for %s\n", version, serviceName)
 
 	return service, nil
 }
