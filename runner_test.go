@@ -10,6 +10,7 @@ import (
 
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/colors"
+	"github.com/elastic/metricbeat-tests-poc/docker"
 	"github.com/elastic/metricbeat-tests-poc/services"
 )
 
@@ -27,6 +28,8 @@ func init() {
 func TestMain(m *testing.M) {
 	flag.Parse()
 	opt.Paths = flag.Args()
+
+	docker.GetDevNetwork()
 
 	status := godog.RunWithOptions("godog", func(s *godog.Suite) {
 		s.BeforeScenario(func(interface{}) {
