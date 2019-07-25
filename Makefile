@@ -6,4 +6,4 @@ install:
 
 .PHONY: test
 test:
-	godog
+	go test -v -timeout=$(TEST_TIMEOUT) ./...
