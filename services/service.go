@@ -124,6 +124,8 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 		return nil, err
 	}
 
+	docker.ConnectContainerToDevNetwork(json.ContainerJSONBase.ID)
+
 	ip := json.NetworkSettings.IPAddress
 	ports := json.NetworkSettings.Ports
 	fmt.Printf("The service (%s) runs on %s %v\n", s.GetName(), ip, ports)
