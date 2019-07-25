@@ -42,9 +42,10 @@ func NewMetricbeatService(version string, monitoredService Service) (Service, er
 		Daemon:        false,
 		BindMounts:    bindMounts,
 		Env:           env,
-		ImageTag:      "docker.elastic.co/beats/metricbeat:" + version,
+		Image:         "docker.elastic.co/beats/metricbeat",
 		Labels:        labels,
 		Name:          "metricbeat",
+		Version:       version,
 	}
 
 	if service == nil {

@@ -10,7 +10,8 @@ func NewMySQLService(version string) Service {
 		ContainerName: "mysql-" + version,
 		Daemon:        false,
 		Env:           env,
-		ImageTag:      "mysql:" + version,
+		Image:         "mysql",
 		Name:          "mysql",
+		Version:       version,
 	}
 }

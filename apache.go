@@ -5,7 +5,8 @@ func NewApacheService(version string) Service {
 	return &DockerService{
 		ContainerName: "apache-" + version,
 		Daemon:        false,
-		ImageTag:      "httpd:" + version,
+		Image:         "httpd",
 		Name:          "apache",
+		Version:       version,
 	}
 }
