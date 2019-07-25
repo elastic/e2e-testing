@@ -1,4 +1,4 @@
-package main
+package services
 
 // NewMySQLService returns a default MySQL service entity
 func NewMySQLService(version string) Service {

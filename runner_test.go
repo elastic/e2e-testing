@@ -10,17 +10,18 @@ import (
 
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/colors"
+	"github.com/elastic/metricbeat-tests-poc/services"
 )
 
 var opt = godog.Options{Output: colors.Colored(os.Stdout)}
 
-var metricbeatService Service
-var serviceManager ServiceManager
+var metricbeatService services.Service
+var serviceManager services.ServiceManager
 
 func init() {
 	godog.BindFlags("godog.", flag.CommandLine, &opt)
 
-	serviceManager = NewServiceManager()
+	serviceManager = services.NewServiceManager()
 }
 
 func TestMain(m *testing.M) {

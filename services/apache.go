@@ -1,4 +1,4 @@
-package main
+package services
 
 // NewApacheService returns a default Apache service entity
 func NewApacheService(version string) Service {
