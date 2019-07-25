@@ -22,7 +22,7 @@ func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) 
 }
 
 func mySQLIsRunning(mysqlVersion string) error {
-	mysqlService = services.NewMySQLService(mysqlVersion)
+	mysqlService = services.NewMySQLService(mysqlVersion, false)
 
 	return serviceManager.Run(mysqlService)
 }
