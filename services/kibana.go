@@ -1,7 +1,5 @@
 package services
 
-import "github.com/docker/go-connections/nat"
-
 // NewKibanaService returns a default Kibana service entity
 func NewKibanaService(version string, asDaemon bool, elasticsearchService Service) Service {
 	inspect, err := elasticsearchService.Inspect()
@@ -9,13 +7,10 @@ func NewKibanaService(version string, asDaemon bool, elasticsearchService Servic
 		return nil
 	}
 
-	p := elasticsearchService.GetExposedPort() + "/tcp"
 	ip := inspect.NetworkSettings.IPAddress
-	portsMap := inspect.NetworkSettings.Ports
-	pm := portsMap[nat.Port(p)][0]
 
 	env := map[string]string{
-		"ELASTICSEARCH_HOSTS": "http://" + ip + ":" + pm.HostPort,
+		"ELASTICSEARCH_HOSTS": "http://" + ip + ":" + elasticsearchService.GetExposedPort(),
 	}
 
 	return &DockerService{
