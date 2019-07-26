@@ -15,7 +15,7 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 
 	subcommands := []*cobra.Command{
-		runApacheCmd, runMysqlCmd,
+		runApacheCmd, runMysqlCmd, runStackCmd,
 	}
 
 	for i := 0; i < len(subcommands); i++ {
@@ -48,7 +48,7 @@ var runCmd = &cobra.Command{
 var runApacheCmd = &cobra.Command{
 	Use:   "apache",
 	Short: "Runs an Apache service",
-	Long: `Runs an Apache service to be monitored by Metricbeat, spinning up a Docker container for it and exposing its internal.
+	Long: `Runs an Apache service to be monitored by Metricbeat, spinning up a Docker container for it and exposing its internal
 	configuration so that you are able to connect to it in an easy manner`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 1 {
@@ -60,8 +60,31 @@ var runApacheCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		s := services.NewApacheService(versionToRun, true)
 
-		serviceManager := services.NewServiceManager();
+		serviceManager := services.NewServiceManager()
 
+		serviceManager.Run(s)
+	},
+}
+
+var runStackCmd = &cobra.Command{
+	Use:   "stack",
+	Short: "Runs an Elastic Stack (Elasticsearch + Kibana)",
+	Long: `Runs an Elastic Stack (Elasticsearch + Kibana), spinning up Docker containers for them and exposing their internal
+	configuration so that you are able to connect to them in an easy manner`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) > 1 {
+			return errors.New("run requires zero or one argument representing the image tag to be run")
+		}
+
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		serviceManager := services.NewServiceManager()
+
+		es := services.NewElasticsearchService(versionToRun, true)
+		serviceManager.Run(es)
+
+		s := services.NewKibanaService(versionToRun, true, es)
 		serviceManager.Run(s)
 	},
 }
@@ -69,7 +92,7 @@ var runApacheCmd = &cobra.Command{
 var runMysqlCmd = &cobra.Command{
 	Use:   "mysql",
 	Short: "Runs a MySQL service",
-	Long: `Runs a MySQL service to be monitored by Metricbeat, spinning up a Docker container for it and exposing its internal.
+	Long: `Runs a MySQL service to be monitored by Metricbeat, spinning up a Docker container for it and exposing its internal
 	configuration so that you are able to connect to it in an easy manner`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 1 {
@@ -81,7 +104,7 @@ var runMysqlCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		s := services.NewMySQLService(versionToRun, true)
 
-		serviceManager := services.NewServiceManager();
+		serviceManager := services.NewServiceManager()
 
 		serviceManager.Run(s)
 	},
