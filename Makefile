@@ -6,4 +6,8 @@ install:
 
 .PHONY: test
 test:
-	go test -v -timeout=$(TEST_TIMEOUT) ./...
+	go test -v -timeout=$(TEST_TIMEOUT) ./services
+
+.PHONY: functional-test
+functional-test:
+	godog

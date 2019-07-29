@@ -27,6 +27,7 @@ pipeline {
   }
   parameters {
     string(name: 'GO_VERSION', defaultValue: "1.12.7", description: "Go version to use.")
+    string(name: 'MODULE', defaultValue: 'all', description: 'The metricbeats module to be tested.')
     string(name: 'PR', defaultValue: "", description: "Addicional build options to passing compose.py")
     string(name: 'GITHUB_CHECK_NAME', defaultValue: '', description: 'Name of the GitHub check to be updated. Only if this build is triggered from another parent stream.')
     string(name: 'GITHUB_CHECK_REPO', defaultValue: '', description: 'Name of the GitHub repo to be updated. Only if this build is triggered from another parent stream.')
@@ -49,19 +50,6 @@ pipeline {
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
           }
         }
-        stage('Tests PR') {
-          agent { label 'linux && immutable' }
-          options { skipDefaultCheckout() }
-          when {
-            beforeAgent true
-            triggeredBy 'UpstreamCause'
-          }
-          steps {
-            githubCheckNotify('PENDING')
-            deleteDir()
-            // TODO: checkout the BEATS@PR and compile the docker image to be used.
-          }
-        }
         stage('Tests') {
           agent { label 'linux && immutable' }
           options { skipDefaultCheckout() }
@@ -79,6 +67,31 @@ pipeline {
               junit(allowEmptyResults: true,
                 keepLongStdio: true,
                 testResults: "${BASE_DIR}/build/junit-*.xml")
+            }
+          }
+        }
+        stage('Tests PR') {
+          agent { label 'linux && immutable' }
+          options { skipDefaultCheckout() }
+          when {
+            beforeAgent true
+            triggeredBy 'UpstreamCause'
+            // TODO: PR params is set with a value
+          }
+          stages {
+            stage('Beats') {
+              steps {
+                githubCheckNotify('PENDING')
+                deleteDir()
+                // TODO: checkout the BEATS@PR and compile the docker image to be used.
+              }
+            }
+            stage('Functional testing') {
+              steps {
+                dir("${BASE_DIR}"){
+                  sh script: 'make functional-test', label: 'Run functional tests'
+                }
+              }
             }
           }
         }
