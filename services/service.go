@@ -1,9 +1,13 @@
-package main
+package services
 
 import (
 	"context"
 	"fmt"
+	"strconv"
 
+	"github.com/docker/docker/api/types"
+
+	docker "github.com/elastic/metricbeat-tests-poc/docker"
 	testcontainers "github.com/testcontainers/testcontainers-go"
 )
 
@@ -11,8 +15,10 @@ import (
 type Service interface {
 	Destroy() error
 	GetContainerName() string
-	GetExposedPorts() []string
+	GetExposedPort() string
 	GetName() string
+	GetVersion() string
+	Inspect() (*types.ContainerJSON, error)
 	Run() (testcontainers.Container, error)
 }
 
@@ -23,11 +29,12 @@ type DockerService struct {
 	// Daemon indicates if the service must be run as a daemon
 	Daemon         bool
 	Env            map[string]string
-	ExposedPorts   []ExposedPort
-	ImageTag       string
+	ExposedPort    int
+	Image          string
 	Labels         map[string]string
 	Name           string
 	RunningService testcontainers.Container
+	Version        string
 }
 
 // GetContainerName returns service name
@@ -35,20 +42,30 @@ func (s *DockerService) GetContainerName() string {
 	return s.ContainerName
 }
 
-// GetExposedPorts returns an array of exposed ports
-func (s *DockerService) GetExposedPorts() []string {
-	ports := []string{}
-
-	for _, p := range s.ExposedPorts {
-		ports = append(ports, p.toString())
-	}
-
-	return ports
+// GetExposedPort returns the string representation of a service's well-known exposed port
+func (s *DockerService) GetExposedPort() string {
+	return strconv.Itoa(s.ExposedPort)
 }
 
 // GetName returns service name
 func (s *DockerService) GetName() string {
 	return s.Name
+}
+
+// GetVersion returns service name
+func (s *DockerService) GetVersion() string {
+	return s.Version
+}
+
+// Inspect returns the JSON representation of the container obtained from
+// the Docker engine
+func (s *DockerService) Inspect() (*types.ContainerJSON, error) {
+	json, err := docker.InspectContainer(s.GetContainerName())
+	if err != nil {
+		return nil, fmt.Errorf("Could not inspect the container: %v", err)
+	}
+
+	return json, nil
 }
 
 // ExposedPort represents the structure for how services expose ports
@@ -74,12 +91,26 @@ func (s *DockerService) Destroy() error {
 
 // Run runs a container for the service
 func (s *DockerService) Run() (testcontainers.Container, error) {
+	imageTag := s.Image + ":" + s.Version
+
+	exposedPorts := []string{}
+
+	if s.ExposedPort != 0 {
+		exposedPort := ExposedPort{
+			Address:       "0.0.0.0",
+			ContainerPort: s.GetExposedPort(),
+			Protocol:      "tcp",
+		}
+
+		exposedPorts = append(exposedPorts, exposedPort.toString())
+	}
+
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
-		Image:        s.ImageTag,
+		Image:        imageTag,
 		BindMounts:   s.BindMounts,
 		Env:          s.Env,
-		ExposedPorts: s.GetExposedPorts(),
+		ExposedPorts: exposedPorts,
 		Labels:       s.Labels,
 		Name:         s.ContainerName,
 		SkipReaper:   !s.Daemon,
@@ -94,6 +125,17 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 	}
 
 	s.RunningService = service
+
+	json, err := s.Inspect()
+	if err != nil {
+		return nil, err
+	}
+
+	docker.ConnectContainerToDevNetwork(json.ContainerJSONBase.ID)
+
+	ip := json.NetworkSettings.IPAddress
+	ports := json.NetworkSettings.Ports
+	fmt.Printf("The service (%s) runs on %s %v\n", s.GetName(), ip, ports)
 
 	return service, nil
 }
@@ -121,19 +163,10 @@ func NewServiceManager() ServiceManager {
 
 // Run runs a service
 func (sm *DockerServiceManager) Run(s Service) error {
-	container, err := s.Run()
+	_, err := s.Run()
 	if err != nil {
 		return fmt.Errorf("Could not run service: %v", err)
 	}
-
-	ctx := context.Background()
-
-	ip, err := container.Host(ctx)
-	if err != nil {
-		return fmt.Errorf("Could not run service: %v", err)
-	}
-
-	fmt.Printf("Service is running on %s\n", ip)
 
 	return nil
 }

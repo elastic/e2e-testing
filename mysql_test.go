@@ -2,9 +2,10 @@ package main
 
 import (
 	"github.com/DATA-DOG/godog"
+	"github.com/elastic/metricbeat-tests-poc/services"
 )
 
-var mysqlService Service
+var mysqlService services.Service
 
 func MySQLFeatureContext(s *godog.Suite) {
 	s.Step(`^MySQL "([^"]*)" is running$`, mySQLIsRunning)
@@ -13,7 +14,7 @@ func MySQLFeatureContext(s *godog.Suite) {
 }
 
 func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) error {
-	s, err := NewMetricbeatService(metricbeatVersion, mysqlService)
+	s, err := services.RunMetricbeatService(metricbeatVersion, mysqlService)
 
 	metricbeatService = s
 
@@ -21,7 +22,7 @@ func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) 
 }
 
 func mySQLIsRunning(mysqlVersion string) error {
-	mysqlService = NewMySQLService(mysqlVersion)
+	mysqlService = services.NewMySQLService(mysqlVersion, false)
 
 	return serviceManager.Run(mysqlService)
 }

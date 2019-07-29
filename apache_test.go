@@ -2,9 +2,10 @@ package main
 
 import (
 	"github.com/DATA-DOG/godog"
+	"github.com/elastic/metricbeat-tests-poc/services"
 )
 
-var apacheService Service
+var apacheService services.Service
 
 func ApacheFeatureContext(s *godog.Suite) {
 	s.Step(`^Apache "([^"]*)" is running$`, apacheIsRunning)
@@ -13,7 +14,7 @@ func ApacheFeatureContext(s *godog.Suite) {
 }
 
 func metricbeatIsInstalledAndConfiguredForApacheModule(metricbeatVersion string) error {
-	s, err := NewMetricbeatService(metricbeatVersion, apacheService)
+	s, err := services.RunMetricbeatService(metricbeatVersion, apacheService)
 
 	metricbeatService = s
 
@@ -21,7 +22,7 @@ func metricbeatIsInstalledAndConfiguredForApacheModule(metricbeatVersion string)
 }
 
 func apacheIsRunning(apacheVersion string) error {
-	apacheService = NewApacheService(apacheVersion)
+	apacheService = services.NewApacheService(apacheVersion, false)
 
 	return serviceManager.Run(apacheService)
 }
