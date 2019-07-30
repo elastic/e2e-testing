@@ -9,6 +9,9 @@ eval "$(curl -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme 
 mkdir -p outputs
 export OUT_FILE="outputs/functional-test-report.out"
 
+# TODO: How to resolve this within the go dependencies
+go get github.com/DATA-DOG/godog/cmd/godog
+
 make functional-test | tee ${OUT_FILE}
 
 go get -v -u github.com/jstemmer/go-junit-report
