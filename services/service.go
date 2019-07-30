@@ -21,6 +21,9 @@ type Service interface {
 	GetVersion() string
 	Inspect() (*types.ContainerJSON, error)
 	Run() (testcontainers.Container, error)
+	SetBindMounts(map[string]string)
+	SetEnv(map[string]string)
+	SetLabels(map[string]string)
 }
 
 // DockerService represents a Docker service to be run
@@ -77,6 +80,21 @@ func (s *DockerService) Inspect() (*types.ContainerJSON, error) {
 	}
 
 	return json, nil
+}
+
+// SetBindMounts set bind mounts for a service
+func (s *DockerService) SetBindMounts(bindMounts map[string]string) {
+	s.BindMounts = bindMounts
+}
+
+// SetEnv set environment variables for a service
+func (s *DockerService) SetEnv(env map[string]string) {
+	s.Env = env
+}
+
+// SetLabels set labels for a service
+func (s *DockerService) SetLabels(labels map[string]string) {
+	s.Labels = labels
 }
 
 // ExposedPort represents the structure for how services expose ports
