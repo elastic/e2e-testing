@@ -66,7 +66,7 @@ pipeline {
             always {
               junit(allowEmptyResults: true,
                 keepLongStdio: true,
-                testResults: "${BASE_DIR}/build/junit-*.xml")
+                testResults: "${BASE_DIR}/outputs/junit-*.xml")
             }
           }
         }
