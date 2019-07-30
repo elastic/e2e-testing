@@ -14,18 +14,19 @@ var versionToRun string
 func init() {
 	rootCmd.AddCommand(runCmd)
 
-	subcommands := []*cobra.Command{
-		runApacheCmd, runkafkaCmd, runMysqlCmd, runStackCmd,
+	initialServices := []string{
+		"apache", "kafka", "mysql",
 	}
 
-	for i := 0; i < len(subcommands); i++ {
-		subcommand := subcommands[i]
+	for _, s := range initialServices {
+		runSubcommand := buildRunServiceCommand(s)
 
-		runCmd.AddCommand(subcommand)
+		runSubcommand.Flags().StringVarP(&versionToRun, "version", "v", "", "Sets the image version to run")
 
-		subcommand.Flags().StringVarP(&versionToRun, "version", "v", "", "Sets the image version to run")
+		runCmd.AddCommand(runSubcommand)
 	}
 
+	runCmd.AddCommand(runStackCmd)
 }
 
 var runCmd = &cobra.Command{
@@ -45,46 +46,39 @@ var runCmd = &cobra.Command{
 	},
 }
 
-var runApacheCmd = &cobra.Command{
-	Use:   "apache",
-	Short: "Runs an Apache service",
-	Long: `Runs an Apache service to be monitored by Metricbeat, spinning up a Docker container for it and exposing its internal
-	configuration so that you are able to connect to it in an easy manner`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) > 1 {
-			return errors.New("run requires zero or one argument representing the image tag to be run")
-		}
+func buildRunServiceCommand(service string) *cobra.Command {
+	return &cobra.Command{
+		Use:   service,
+		Short: `Runs a ` + service + ` service`,
+		Long: `Runs a ` + service + ` service to be monitored by Metricbeat, spinning up a Docker container for it and exposing its internal
+		configuration so that you are able to connect to it in an easy manner`,
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 1 {
+				return errors.New("run requires zero or one argument representing the image tag to be run")
+			}
 
-		return nil
-	},
-	Run: func(cmd *cobra.Command, args []string) {
-		s := services.NewApacheService(versionToRun, true)
+			return nil
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			s := buildService(service, versionToRun)
 
-		serviceManager := services.NewServiceManager()
+			serviceManager := services.NewServiceManager()
 
-		serviceManager.Run(s)
-	},
+			serviceManager.Run(s)
+		},
+	}
 }
 
-var runkafkaCmd = &cobra.Command{
-	Use:   "kafka",
-	Short: "Runs a Kafka service",
-	Long: `Runs a Kafka service to be monitored by Metricbeat, spinning up a Docker container for it and exposing its internal
-	configuration so that you are able to connect to it in an easy manner`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) > 1 {
-			return errors.New("run requires zero or one argument representing the image tag to be run")
-		}
+func buildService(service string, version string) services.Service {
+	if service == "apache" {
+		return services.NewApacheService(version, true)
+	} else if service == "kafka" {
+		return services.NewKafkaService(version, true)
+	} else if service == "mysql" {
+		return services.NewMySQLService(version, true)
+	}
 
-		return nil
-	},
-	Run: func(cmd *cobra.Command, args []string) {
-		s := services.NewKafkaService(versionToRun, true)
-
-		serviceManager := services.NewServiceManager()
-
-		serviceManager.Run(s)
-	},
+	return nil
 }
 
 var runStackCmd = &cobra.Command{
@@ -106,27 +100,6 @@ var runStackCmd = &cobra.Command{
 		serviceManager.Run(es)
 
 		s := services.NewKibanaService(versionToRun, true, es)
-		serviceManager.Run(s)
-	},
-}
-
-var runMysqlCmd = &cobra.Command{
-	Use:   "mysql",
-	Short: "Runs a MySQL service",
-	Long: `Runs a MySQL service to be monitored by Metricbeat, spinning up a Docker container for it and exposing its internal
-	configuration so that you are able to connect to it in an easy manner`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) > 1 {
-			return errors.New("run requires zero or one argument representing the image tag to be run")
-		}
-
-		return nil
-	},
-	Run: func(cmd *cobra.Command, args []string) {
-		s := services.NewMySQLService(versionToRun, true)
-
-		serviceManager := services.NewServiceManager()
-
 		serviceManager.Run(s)
 	},
 }
