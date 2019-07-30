@@ -15,7 +15,7 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 
 	initialServices := []string{
-		"apache", "kafka", "mysql",
+		"apache", "kafka", "metricbeat", "mysql",
 	}
 
 	for _, s := range initialServices {
