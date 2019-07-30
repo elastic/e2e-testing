@@ -16,6 +16,7 @@ func NewElasticsearchService(version string, asDaemon bool) Service {
 		Env:           env,
 		Image:         "docker.elastic.co/elasticsearch/elasticsearch",
 		Name:          "elasticsearch",
+		NetworkAlias:  "elasticsearch",
 		Version:       version,
 	}
 }

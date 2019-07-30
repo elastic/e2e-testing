@@ -14,12 +14,15 @@ var instance *client.Client
 const networkName = "elastic-dev-network"
 
 // ConnectContainerToDevNetwork connects a container to the Dev Network
-func ConnectContainerToDevNetwork(containerID string) error {
+func ConnectContainerToDevNetwork(containerID string, aliases ...string) error {
 	dockerClient := getDockerClient()
 
 	ctx := context.Background()
 
-	return dockerClient.NetworkConnect(ctx, networkName, containerID, &network.EndpointSettings{})
+	return dockerClient.NetworkConnect(
+		ctx, networkName, containerID, &network.EndpointSettings{
+			Aliases: aliases,
+		})
 }
 
 // GetDevNetwork returns the developer network, creating it if it does not exist

@@ -1,4 +1,4 @@
-package services
+package services_test
 
 import (
 	"testing"
@@ -23,4 +23,26 @@ func TestNewService_Name(t *testing.T) {
 	apache := services.NewApacheService("2.2", false)
 
 	assert.Equal(t, "apache", apache.GetName())
+}
+
+func TestNewService_NetworkAlias(t *testing.T) {
+	service := services.DockerService{
+		NetworkAlias: "foo",
+	}
+
+	assert.Equal(t, "foo", service.GetNetworkAlias())
+}
+
+func TestNewService_NetworkAliasEmptyUsesName(t *testing.T) {
+	service := services.DockerService{
+		Name: "name",
+	}
+
+	assert.Equal(t, "name", service.GetNetworkAlias())
+}
+
+func TestNewService_NetworkAliasAndNameEmpty(t *testing.T) {
+	service := services.DockerService{}
+
+	assert.Equal(t, "", service.GetNetworkAlias())
 }

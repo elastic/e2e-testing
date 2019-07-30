@@ -20,6 +20,7 @@ func NewKibanaService(version string, asDaemon bool, elasticsearchService Servic
 		ExposedPort:   5601,
 		Image:         "docker.elastic.co/kibana/kibana",
 		Name:          "kibana",
+		NetworkAlias:  "kibana",
 		Version:       version,
 	}
 }
