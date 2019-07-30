@@ -56,6 +56,10 @@ func (s *DockerService) GetName() string {
 
 // GetNetworkAlias returns service alias for the dev network
 func (s *DockerService) GetNetworkAlias() string {
+	if s.NetworkAlias == "" {
+		return s.Name
+	}
+
 	return s.NetworkAlias
 }
 
