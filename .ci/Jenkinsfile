@@ -75,8 +75,10 @@ pipeline {
           options { skipDefaultCheckout() }
           when {
             beforeAgent true
-            triggeredBy 'UpstreamCause'
-            // TODO: PR params is set with a value
+            anyOf {
+              triggeredBy 'UpstreamCause'
+              expression { return params.PR.trim() }
+            }
           }
           stages {
             stage('Beats') {
@@ -91,6 +93,7 @@ pipeline {
                 dir("${BASE_DIR}"){
                   sh script: 'make functional-test', label: 'Run functional tests'
                 }
+                githubCheckNotify('SUCCESS')
               }
             }
           }
