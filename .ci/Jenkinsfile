@@ -59,7 +59,7 @@ pipeline {
             withGithubNotify(context: 'Tests', tab: 'tests') {
               deleteDir()
               unstash 'source'
-              dir("${BASE_DIR}"){
+              dir(env.BASE_DIR){
                 sh script: '.ci/scripts/build-test.sh', label: 'Build and test'
               }
             }
@@ -96,7 +96,9 @@ pipeline {
             }
             stage('Functional testing') {
               steps {
-                dir("${BASE_DIR}"){
+                deleteDir()
+                unstash 'source'
+                dir(env.BASE_DIR){
                   sh script: '.ci/scripts/build-test.sh', label: 'Run functional tests'
                 }
                 githubCheckNotify('SUCCESS')
