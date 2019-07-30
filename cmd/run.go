@@ -15,7 +15,7 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 
 	subcommands := []*cobra.Command{
-		runApacheCmd, runMysqlCmd, runStackCmd,
+		runApacheCmd, runkafkaCmd, runMysqlCmd, runStackCmd,
 	}
 
 	for i := 0; i < len(subcommands); i++ {
@@ -59,6 +59,27 @@ var runApacheCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		s := services.NewApacheService(versionToRun, true)
+
+		serviceManager := services.NewServiceManager()
+
+		serviceManager.Run(s)
+	},
+}
+
+var runkafkaCmd = &cobra.Command{
+	Use:   "kafka",
+	Short: "Runs a Kafka service",
+	Long: `Runs a Kafka service to be monitored by Metricbeat, spinning up a Docker container for it and exposing its internal
+	configuration so that you are able to connect to it in an easy manner`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) > 1 {
+			return errors.New("run requires zero or one argument representing the image tag to be run")
+		}
+
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		s := services.NewKafkaService(versionToRun, true)
 
 		serviceManager := services.NewServiceManager()
 
