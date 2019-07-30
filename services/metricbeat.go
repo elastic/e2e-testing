@@ -10,7 +10,7 @@ import (
 // NewMetricbeatService returns a metricbeat service entity
 func NewMetricbeatService(version string, asDaemon bool) Service {
 	service := &DockerService{
-		ContainerName: "metricbeat-" + strconv.Itoa(int(time.Now().UnixNano())),
+		ContainerName: "metricbeat-" + version + "-" + strconv.Itoa(int(time.Now().UnixNano())),
 		Daemon:        asDaemon,
 		Image:         "docker.elastic.co/beats/metricbeat",
 		Name:          "metricbeat",
