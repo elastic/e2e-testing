@@ -7,8 +7,10 @@ pipeline {
   environment {
     REPO = 'metricbeat-tests-poc'
     BASE_DIR = "src/go.elastic.co/${env.REPO}"
+    BEATS_BASE_DIR = 'src/go.elastic.co/beats'
     NOTIFY_TO = credentials('notify-to')
     JOB_GCS_BUCKET = credentials('gcs-bucket')
+    JOB_GIT_CREDENTIALS = 'f6c7695a-671e-4f4f-a331-acdce44ff9ba'
     GO111MODULE = 'on'
     GOPROXY = 'https://proxy.golang.org'
   }
@@ -64,9 +66,7 @@ pipeline {
           }
           post {
             always {
-              junit(allowEmptyResults: true,
-                keepLongStdio: true,
-                testResults: "${BASE_DIR}/outputs/junit-*.xml")
+              junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/junit-*.xml")
             }
           }
         }
@@ -85,15 +85,26 @@ pipeline {
               steps {
                 githubCheckNotify('PENDING')
                 deleteDir()
-                // TODO: checkout the BEATS@PR and compile the docker image to be used.
+                gitCheckout(basedir: env.BEATS_BASE_DIR,
+                  branch: params.PR,
+                  repo: 'beats',
+                  credentialsId: env.JOB_GIT_CREDENTIALS,
+                  reference: '/var/lib/jenkins/beats.git'
+                )
+                echo 'TODO: build docker images.'
               }
             }
             stage('Functional testing') {
               steps {
                 dir("${BASE_DIR}"){
-                  sh script: 'make functional-test', label: 'Run functional tests'
+                  sh script: '.ci/scripts/build-test.sh', label: 'Run functional tests'
                 }
                 githubCheckNotify('SUCCESS')
+              }
+              post {
+                always {
+                  junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/junit-*.xml")
+                }
               }
             }
           }
