@@ -5,9 +5,9 @@ install:
 	go get -v -t ./...
 
 .PHONY: test
-test:
+test: install
 	go test -v -timeout=$(TEST_TIMEOUT) ./services
 
 .PHONY: functional-test
-functional-test:
+functional-test: install
 	godog
