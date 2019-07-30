@@ -17,6 +17,7 @@ type Service interface {
 	GetContainerName() string
 	GetExposedPort() string
 	GetName() string
+	GetNetworkAlias() string
 	GetVersion() string
 	Inspect() (*types.ContainerJSON, error)
 	Run() (testcontainers.Container, error)
@@ -33,6 +34,7 @@ type DockerService struct {
 	Image          string
 	Labels         map[string]string
 	Name           string
+	NetworkAlias   string
 	RunningService testcontainers.Container
 	Version        string
 }
@@ -50,6 +52,11 @@ func (s *DockerService) GetExposedPort() string {
 // GetName returns service name
 func (s *DockerService) GetName() string {
 	return s.Name
+}
+
+// GetNetworkAlias returns service alias for the dev network
+func (s *DockerService) GetNetworkAlias() string {
+	return s.NetworkAlias
 }
 
 // GetVersion returns service name
@@ -131,7 +138,7 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 		return nil, err
 	}
 
-	docker.ConnectContainerToDevNetwork(json.ContainerJSONBase.ID)
+	docker.ConnectContainerToDevNetwork(json.ContainerJSONBase.ID, s.GetNetworkAlias())
 
 	ip := json.NetworkSettings.IPAddress
 	ports := json.NetworkSettings.Ports
