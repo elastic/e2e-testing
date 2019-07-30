@@ -85,12 +85,12 @@ pipeline {
               steps {
                 githubCheckNotify('PENDING')
                 deleteDir()
-                gitCheckout(basedir: env.BEATS_BASE_DIR,
+                /*gitCheckout(basedir: env.BEATS_BASE_DIR,
                   branch: params.PR,
                   repo: 'beats',
                   credentialsId: env.JOB_GIT_CREDENTIALS,
                   reference: '/var/lib/jenkins/beats.git'
-                )
+                )*/
                 echo 'TODO: build docker images.'
               }
             }
