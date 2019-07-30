@@ -178,6 +178,7 @@ func (s *DockerService) AsDaemon() *DockerService {
 
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
+	Build(string, string) Service
 	Run(Service) error
 }
 
@@ -188,6 +189,19 @@ type DockerServiceManager struct {
 // NewServiceManager returns a new service manager
 func NewServiceManager() ServiceManager {
 	return &DockerServiceManager{}
+}
+
+// Build builds a service domain entity from just its name and version
+func (sm *DockerServiceManager) Build(service string, version string) Service {
+	if service == "apache" {
+		return NewApacheService(version, true)
+	} else if service == "kafka" {
+		return NewKafkaService(version, true)
+	} else if service == "mysql" {
+		return NewMySQLService(version, true)
+	}
+
+	return nil
 }
 
 // Run runs a service

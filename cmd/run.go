@@ -60,25 +60,13 @@ func buildRunServiceCommand(service string) *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			s := buildService(service, versionToRun)
-
 			serviceManager := services.NewServiceManager()
+
+			s := serviceManager.Build(service, versionToRun)
 
 			serviceManager.Run(s)
 		},
 	}
-}
-
-func buildService(service string, version string) services.Service {
-	if service == "apache" {
-		return services.NewApacheService(version, true)
-	} else if service == "kafka" {
-		return services.NewKafkaService(version, true)
-	} else if service == "mysql" {
-		return services.NewMySQLService(version, true)
-	}
-
-	return nil
 }
 
 var runStackCmd = &cobra.Command{
