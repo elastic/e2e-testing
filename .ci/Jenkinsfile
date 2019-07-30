@@ -99,7 +99,7 @@ pipeline {
                 deleteDir()
                 unstash 'source'
                 dir(env.BASE_DIR){
-                  sh script: '.ci/scripts/build-test.sh', label: 'Run functional tests'
+                  sh script: '.ci/scripts/functional-test.sh', label: 'Run functional tests'
                 }
                 githubCheckNotify('SUCCESS')
               }
