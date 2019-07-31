@@ -9,7 +9,7 @@ eval "$(curl -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme 
 mkdir -p outputs
 export OUT_FILE="outputs/test-report.out"
 
-make test | tee ${OUT_FILE}
+make install test | tee ${OUT_FILE}
 
 go get -v -u github.com/jstemmer/go-junit-report
 go-junit-report > outputs/junit-tests.xml < ${OUT_FILE}
