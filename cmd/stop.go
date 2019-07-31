@@ -26,6 +26,8 @@ func init() {
 		stopCmd.AddCommand(stopSubcommand)
 	}
 
+	stopStackCmd.Flags().StringVarP(&versionToStop, "version", "v", "", "Sets the image version to run")
+
 	stopCmd.AddCommand(stopStackCmd)
 }
 

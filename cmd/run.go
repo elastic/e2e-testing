@@ -26,6 +26,8 @@ func init() {
 		runCmd.AddCommand(runSubcommand)
 	}
 
+	runStackCmd.Flags().StringVarP(&versionToRun, "version", "v", "", "Sets the image version to run")
+
 	runCmd.AddCommand(runStackCmd)
 }
 
