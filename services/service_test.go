@@ -18,19 +18,19 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestNewService_ContainerNameIncludesVersionAsSuffix(t *testing.T) {
+func TestBuildService_ContainerNameIncludesVersionAsSuffix(t *testing.T) {
 	srv := serviceManager.Build("apache", "2.2", false)
 
 	assert.Equal(t, "apache-2.2", srv.GetContainerName())
 }
 
-func TestNewService_ExposedPortsIsEmpty(t *testing.T) {
+func TestBuildService_ExposedPortsReturnsDefault(t *testing.T) {
 	srv := serviceManager.Build("apache", "2.2", false)
 
 	assert.Equal(t, "80", srv.GetExposedPort())
 }
 
-func TestNewService_Name(t *testing.T) {
+func TestBuildService_Name(t *testing.T) {
 	srv := serviceManager.Build("apache", "2.2", false)
 
 	assert.Equal(t, "apache", srv.GetName())
