@@ -14,11 +14,7 @@ var versionToRun string
 func init() {
 	rootCmd.AddCommand(runCmd)
 
-	initialServices := []string{
-		"apache", "kafka", "metricbeat", "mysql",
-	}
-
-	for _, s := range initialServices {
+	for _, s := range serviceManager.AvailableServices() {
 		runSubcommand := buildRunServiceCommand(s)
 
 		runSubcommand.Flags().StringVarP(&versionToRun, "version", "v", "", "Sets the image version to run")

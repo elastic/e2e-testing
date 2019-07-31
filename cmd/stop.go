@@ -14,11 +14,7 @@ var versionToStop string
 func init() {
 	rootCmd.AddCommand(stopCmd)
 
-	initialServices := []string{
-		"apache", "kafka", "metricbeat", "mysql",
-	}
-
-	for _, s := range initialServices {
+	for _, s := range serviceManager.AvailableServices() {
 		stopSubcommand := buildStopServiceCommand(s)
 
 		stopSubcommand.Flags().StringVarP(&versionToStop, "version", "v", "", "Sets the image version to stop")

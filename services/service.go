@@ -11,6 +11,10 @@ import (
 	testcontainers "github.com/testcontainers/testcontainers-go"
 )
 
+var availableServices = []string{
+	"apache", "kafka", "metricbeat", "mysql",
+}
+
 // Service represents the contract for services
 type Service interface {
 	Destroy() error
@@ -176,6 +180,7 @@ func (s *DockerService) AsDaemon() *DockerService {
 
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
+	AvailableServices() []string
 	Build(string, string) Service
 	Run(Service) error
 	Stop(Service) error
@@ -188,6 +193,11 @@ type DockerServiceManager struct {
 // NewServiceManager returns a new service manager
 func NewServiceManager() ServiceManager {
 	return &DockerServiceManager{}
+}
+
+// AvailableServices returns the available services in the system
+func (sm *DockerServiceManager) AvailableServices() []string {
+	return availableServices
 }
 
 // Build builds a service domain entity from just its name and version
