@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/elastic/metricbeat-tests-poc/services"
 	"github.com/spf13/cobra"
 )
+
+var serviceManager = services.NewServiceManager()
 
 var rootCmd = &cobra.Command{
 	Use:   "eod",

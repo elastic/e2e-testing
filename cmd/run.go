@@ -84,8 +84,6 @@ var runStackCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		serviceManager := services.NewServiceManager()
-
 		es := services.NewElasticsearchService(versionToRun, true)
 		serviceManager.Run(es)
 

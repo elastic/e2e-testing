@@ -84,8 +84,6 @@ var stopStackCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		serviceManager := services.NewServiceManager()
-
 		es := serviceManager.Build("elasticsearch", versionToStop)
 		kibana := serviceManager.Build("kibana", versionToStop)
 
