@@ -31,15 +31,14 @@ type DockerService struct {
 	BindMounts    map[string]string
 	ContainerName string
 	// Daemon indicates if the service must be run as a daemon
-	Daemon         bool
-	Env            map[string]string
-	ExposedPort    int
-	Image          string
-	Labels         map[string]string
-	Name           string
-	NetworkAlias   string
-	RunningService testcontainers.Container
-	Version        string
+	Daemon       bool
+	Env          map[string]string
+	ExposedPort  int
+	Image        string
+	Labels       map[string]string
+	Name         string
+	NetworkAlias string
+	Version      string
 }
 
 // GetContainerName returns service name
@@ -111,11 +110,12 @@ func (e *ExposedPort) toString() string {
 
 // Destroy destroys the underlying container
 func (s *DockerService) Destroy() error {
-	ctx := context.Background()
+	json, err := s.Inspect()
+	if err != nil {
+		return err
+	}
 
-	s.RunningService.Terminate(ctx)
-
-	return nil
+	return docker.RemoveContainer(json.Name)
 }
 
 // Run runs a container for the service
@@ -153,8 +153,6 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 		return nil, err
 	}
 
-	s.RunningService = service
-
 	json, err := s.Inspect()
 	if err != nil {
 		return nil, err
@@ -180,6 +178,7 @@ func (s *DockerService) AsDaemon() *DockerService {
 type ServiceManager interface {
 	Build(string, string) Service
 	Run(Service) error
+	Stop(Service) error
 }
 
 // DockerServiceManager implementation of the service manager interface
@@ -211,6 +210,16 @@ func (sm *DockerServiceManager) Run(s Service) error {
 	_, err := s.Run()
 	if err != nil {
 		return fmt.Errorf("Could not run service: %v", err)
+	}
+
+	return nil
+}
+
+// Stop stops a service
+func (sm *DockerServiceManager) Stop(s Service) error {
+	err := s.Destroy()
+	if err != nil {
+		return err
 	}
 
 	return nil
