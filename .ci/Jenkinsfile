@@ -86,13 +86,14 @@ pipeline {
               steps {
                 githubCheckNotify('PENDING')
                 deleteDir()
-                /*gitCheckout(basedir: env.BEATS_BASE_DIR,
-                  branch: params.PR,
-                  repo: 'beats',
-                  credentialsId: env.JOB_GIT_CREDENTIALS,
+                gitCheckout(basedir: env.BEATS_BASE_DIR, repo: 'beats',
+                  branch: params.PR, credentialsId: env.JOB_GIT_CREDENTIALS,
                   reference: '/var/lib/jenkins/beats.git'
-                )*/
-                echo 'TODO: build docker images.'
+                )
+                dir(env.BEATS_BASE_DIR){
+                  sh 'ls -ltrah'
+                  sh 'make release'
+                }
               }
             }
             stage('Functional testing') {
