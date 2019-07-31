@@ -62,7 +62,7 @@ pipeline {
               dir(env.BASE_DIR){
                 sh script: '.ci/scripts/build-test.sh', label: 'Build and test'
               }
-              stash allowEmpty: true, name: 'build', useDefaultExcludes: false, excludes: "${BASE_DIR}/.gimme"
+              stash allowEmpty: true, name: 'build', useDefaultExcludes: false, excludes: '/.gimme'
             }
           }
           post {
