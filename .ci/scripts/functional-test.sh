@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-./.ci/scripts/install-go.sh
+eval ./.ci/scripts/install-go.sh
 
 rm -rf outputs || true
 mkdir -p outputs
