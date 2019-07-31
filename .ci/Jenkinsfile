@@ -102,7 +102,6 @@ pipeline {
                 dir(env.BASE_DIR){
                   sh script: '.ci/scripts/functional-test.sh', label: 'Run functional tests'
                 }
-                githubCheckNotify('SUCCESS')
               }
               post {
                 always {
@@ -110,6 +109,11 @@ pipeline {
                   archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/junit-*"
                 }
               }
+            }
+          }
+          post {
+            always {
+              githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
             }
           }
         }
