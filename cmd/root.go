@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/elastic/metricbeat-tests-poc/services"
 	"github.com/spf13/cobra"
 )
 
+var serviceManager = services.NewServiceManager()
+
 var rootCmd = &cobra.Command{
-	Use:   "eod",
-	Short: "eod (Elastic Observability Dev) makes it easier to develop Observability projects.",
+	Use:   "op",
+	Short: "op (Observability Provisioner) makes it easier to develop Observability projects.",
 	Long: `A Fast and Flexible CLI for developing and testing Elastic's Observability projects
 				built with love by mdelapenya and friends in Go.`,
 	Run: func(cmd *cobra.Command, args []string) {

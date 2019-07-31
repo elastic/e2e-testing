@@ -6,10 +6,88 @@ import (
 	"strconv"
 
 	"github.com/docker/docker/api/types"
+	"github.com/mitchellh/mapstructure"
+	"github.com/testcontainers/testcontainers-go"
 
+	config "github.com/elastic/metricbeat-tests-poc/config"
 	docker "github.com/elastic/metricbeat-tests-poc/docker"
-	testcontainers "github.com/testcontainers/testcontainers-go"
 )
+
+// servicesDefaults initial service configuration that could be overwritten by
+// users on their local configuration. This configuration will be persisted in
+// the application directory as initial configuration, in the form of a YAML file
+var servicesDefaults = map[string]DockerService{
+	"apache": {
+		ContainerName: "apache-2.4",
+		ExposedPort:   80,
+		Image:         "httpd",
+		Name:          "apache",
+		NetworkAlias:  "apache",
+		Version:       "2.4",
+	},
+	"elasticsearch": {
+		BuildBranch:     "master",
+		BuildRepository: "elastic/elasticsearch",
+		ContainerName:   "elasticsearch-7.2.0",
+		ExposedPort:     9200,
+		Env: map[string]string{
+			"bootstrap.memory_lock":  "true",
+			"discovery.type":         "single-node",
+			"ES_JAVA_OPTS":           "-Xms512m -Xmx512m",
+			"xpack.security.enabled": "true",
+		},
+		Image:        "docker.elastic.co/elasticsearch/elasticsearch",
+		Name:         "elasticsearch",
+		NetworkAlias: "elasticsearch",
+		Version:      "7.2.0",
+	},
+	"kafka": {
+		ContainerName: "kafka",
+		ExposedPort:   9092,
+		Image:         "wurstmeister/kafka",
+		Name:          "kafka",
+		NetworkAlias:  "kafka",
+		Version:       "latest",
+	},
+	"kibana": {
+		BuildBranch:     "master",
+		BuildRepository: "elastic/kibana",
+		ContainerName:   "kibana-7.2.0",
+		ExposedPort:     5601,
+		Image:           "docker.elastic.co/kibana/kibana",
+		Name:            "kibana",
+		NetworkAlias:    "kibana",
+		Version:         "7.2.0",
+	},
+	"metricbeat": {
+		BuildBranch:     "master",
+		BuildRepository: "elastic/beats",
+		ContainerName:   "metricbeat-7.2.0",
+		Image:           "docker.elastic.co/beats/metricbeat",
+		Name:            "metricbeat",
+		NetworkAlias:    "metricbeat",
+		Version:         "7.2.0",
+	},
+	"mongodb": {
+		ContainerName:   "mongodb",
+		ExposedPort:     27017,
+		Image:           "mongo",
+		Name:            "mongodb",
+		NetworkAlias:    "mongodb",
+		Version:         "latest",
+	},
+	"mysql": {
+		ContainerName:   "mysql",
+		Env: map[string]string{
+			"MYSQL_ROOT_PASSWORD": "secret",
+		},
+		ExposedPort:     3306,
+		Image:           "mysql",
+		Name:            "mysql",
+		NetworkAlias:    "mysql",
+		Version:         "latest",
+	},
+}
 
 // Service represents the contract for services
 type Service interface {
@@ -21,22 +99,28 @@ type Service interface {
 	GetVersion() string
 	Inspect() (*types.ContainerJSON, error)
 	Run() (testcontainers.Container, error)
+	SetAsDaemon(bool)
+	SetBindMounts(map[string]string)
+	SetEnv(map[string]string)
+	SetLabels(map[string]string)
+	SetVersion(string)
 }
 
 // DockerService represents a Docker service to be run
 type DockerService struct {
-	BindMounts    map[string]string
-	ContainerName string
+	BindMounts      map[string]string `yaml:"BindMounts"`
+	BuildBranch     string            `yaml:"BuildBranch"`
+	BuildRepository string            `yaml:"BuildRepository"`
+	ContainerName   string            `yaml:"ContainerName"`
 	// Daemon indicates if the service must be run as a daemon
-	Daemon         bool
-	Env            map[string]string
-	ExposedPort    int
-	Image          string
-	Labels         map[string]string
-	Name           string
-	NetworkAlias   string
-	RunningService testcontainers.Container
-	Version        string
+	Daemon       bool              `yaml:"AsDaemon"`
+	Env          map[string]string `yaml:"Env"`
+	ExposedPort  int               `yaml:"ExposedPort"`
+	Image        string            `yaml:"Image"`
+	Labels       map[string]string `yaml:"Labels"`
+	Name         string            `yaml:"Name"`
+	NetworkAlias string            `yaml:"NetworkAlias"`
+	Version      string            `yaml:"Version"`
 }
 
 // GetContainerName returns service name
@@ -79,6 +163,31 @@ func (s *DockerService) Inspect() (*types.ContainerJSON, error) {
 	return json, nil
 }
 
+// SetAsDaemon set if the service must be run as daemon
+func (s *DockerService) SetAsDaemon(asDaemon bool) {
+	s.Daemon = asDaemon
+}
+
+// SetBindMounts set bind mounts for a service
+func (s *DockerService) SetBindMounts(bindMounts map[string]string) {
+	s.BindMounts = bindMounts
+}
+
+// SetEnv set environment variables for a service
+func (s *DockerService) SetEnv(env map[string]string) {
+	s.Env = env
+}
+
+// SetLabels set labels for a service
+func (s *DockerService) SetLabels(labels map[string]string) {
+	s.Labels = labels
+}
+
+// SetVersion set version for a service
+func (s *DockerService) SetVersion(version string) {
+	s.Version = version
+}
+
 // ExposedPort represents the structure for how services expose ports
 type ExposedPort struct {
 	Address       string
@@ -93,11 +202,12 @@ func (e *ExposedPort) toString() string {
 
 // Destroy destroys the underlying container
 func (s *DockerService) Destroy() error {
-	ctx := context.Background()
+	json, err := s.Inspect()
+	if err != nil {
+		return err
+	}
 
-	s.RunningService.Terminate(ctx)
-
-	return nil
+	return docker.RemoveContainer(json.Name)
 }
 
 // Run runs a container for the service
@@ -135,8 +245,6 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 		return nil, err
 	}
 
-	s.RunningService = service
-
 	json, err := s.Inspect()
 	if err != nil {
 		return nil, err
@@ -160,7 +268,10 @@ func (s *DockerService) AsDaemon() *DockerService {
 
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
+	AvailableServices() map[string]DockerService
+	Build(string, string, bool) Service
 	Run(Service) error
+	Stop(Service) error
 }
 
 // DockerServiceManager implementation of the service manager interface
@@ -172,11 +283,54 @@ func NewServiceManager() ServiceManager {
 	return &DockerServiceManager{}
 }
 
+// AvailableServices returns the available services in the system
+func (sm *DockerServiceManager) AvailableServices() map[string]DockerService {
+	return servicesDefaults
+}
+
+// Build builds a service domain entity from just its name and version
+func (sm *DockerServiceManager) Build(service string, version string, asDaemon bool) Service {
+	if service == "apache" || service == "elasticsearch" || service == "kafka" ||
+		service == "mongodb" || service == "mysql" {
+
+		cfg := config.Op.GetServiceConfig(service)
+		if cfg == nil {
+			fmt.Printf("Cannot find service %s in configuration file.\n", service)
+			return nil
+		}
+
+		srv := &DockerService{}
+
+		mapstructure.Decode(cfg, &srv)
+
+		srv.SetAsDaemon(asDaemon)
+		srv.SetVersion(version)
+
+		return srv
+	} else if service == "kibana" {
+		return NewKibanaService(version, asDaemon)
+	} else if service == "metricbeat" {
+		return NewMetricbeatService(version, asDaemon)
+	}
+
+	return nil
+}
+
 // Run runs a service
 func (sm *DockerServiceManager) Run(s Service) error {
 	_, err := s.Run()
 	if err != nil {
 		return fmt.Errorf("Could not run service: %v", err)
+	}
+
+	return nil
+}
+
+// Stop stops a service
+func (sm *DockerServiceManager) Stop(s Service) error {
+	err := s.Destroy()
+	if err != nil {
+		return err
 	}
 
 	return nil

@@ -7,7 +7,20 @@ import (
 	"time"
 )
 
-// RunMetricbeatService returns a metricbeat service entity
+// NewMetricbeatService returns a metricbeat service entity
+func NewMetricbeatService(version string, asDaemon bool) Service {
+	service := &DockerService{
+		ContainerName: "metricbeat-" + version + "-" + strconv.Itoa(int(time.Now().UnixNano())),
+		Daemon:        asDaemon,
+		Image:         "docker.elastic.co/beats/metricbeat",
+		Name:          "metricbeat",
+		Version:       version,
+	}
+
+	return service
+}
+
+// RunMetricbeatService runs a metricbeat service entity for a service to monitor
 func RunMetricbeatService(version string, monitoredService Service) (Service, error) {
 	dir, _ := os.Getwd()
 
@@ -34,24 +47,15 @@ func RunMetricbeatService(version string, monitoredService Service) (Service, er
 		"co.elastic.logs/module": serviceName,
 	}
 
-	service := &DockerService{
-		ContainerName: "metricbeat-" + strconv.Itoa(int(time.Now().UnixNano())),
-		Daemon:        false,
-		BindMounts:    bindMounts,
-		Env:           env,
-		Image:         "docker.elastic.co/beats/metricbeat",
-		Labels:        labels,
-		Name:          "metricbeat",
-		Version:       version,
-	}
+	service := NewMetricbeatService(version, false)
 
-	if service == nil {
-		return nil, fmt.Errorf("Could not create Metricbeat %s service for %s", version, serviceName)
-	}
+	service.SetBindMounts(bindMounts)
+	service.SetEnv(env)
+	service.SetLabels(labels)
 
 	container, err := service.Run()
 	if err != nil || container == nil {
-		return nil, fmt.Errorf("Could not run Metricbeat %s: %v", version, err)
+		return nil, fmt.Errorf("Could not run Metricbeat %s for %s: %v", version, serviceName, err)
 	}
 
 	fmt.Printf("Metricbeat %s is running configured for %s\n", version, serviceName)

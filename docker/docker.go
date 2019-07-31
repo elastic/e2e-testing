@@ -36,9 +36,8 @@ func GetDevNetwork() (types.NetworkResource, error) {
 	})
 	if err != nil {
 		fmt.Printf("Dev Network (%s) not found! Creating it now.\n", networkName)
+
 		initDevNetwork()
-	} else {
-		fmt.Printf("Dev Network (%s) already exists.\n", networkName)
 	}
 
 	return networkResource, err
@@ -57,6 +56,27 @@ func InspectContainer(name string) (*types.ContainerJSON, error) {
 	}
 
 	return &inspect, nil
+}
+
+// RemoveContainer removes a container identified by its container name
+func RemoveContainer(containerName string) error {
+	dockerClient := getDockerClient()
+
+	ctx := context.Background()
+
+	options := types.ContainerRemoveOptions{
+		Force:         true,
+		RemoveVolumes: true,
+	}
+
+	if err := dockerClient.ContainerRemove(ctx, containerName, options); err != nil {
+		fmt.Printf("Service %s could not be removed: %v\n", containerName, err)
+		return err
+	}
+
+	fmt.Printf("Service has been %s removed!\n", containerName)
+
+	return nil
 }
 
 // RemoveDevNetwork removes the developer network

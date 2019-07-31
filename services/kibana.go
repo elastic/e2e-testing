@@ -1,7 +1,20 @@
 package services
 
 // NewKibanaService returns a default Kibana service entity
-func NewKibanaService(version string, asDaemon bool, elasticsearchService Service) Service {
+func NewKibanaService(version string, asDaemon bool) Service {
+	return &DockerService{
+		ContainerName: "kibana-" + version,
+		Daemon:        asDaemon,
+		ExposedPort:   5601,
+		Image:         "docker.elastic.co/kibana/kibana",
+		Name:          "kibana",
+		NetworkAlias:  "kibana",
+		Version:       version,
+	}
+}
+
+// RunKibanaService runs a Kibana service, connected to an elasticsearch service
+func RunKibanaService(version string, asDaemon bool, elasticsearchService Service) Service {
 	inspect, err := elasticsearchService.Inspect()
 	if err != nil {
 		return nil
@@ -13,14 +26,9 @@ func NewKibanaService(version string, asDaemon bool, elasticsearchService Servic
 		"ELASTICSEARCH_HOSTS": "http://" + ip + ":" + elasticsearchService.GetExposedPort(),
 	}
 
-	return &DockerService{
-		ContainerName: "kibana-" + version,
-		Daemon:        asDaemon,
-		Env:           env,
-		ExposedPort:   5601,
-		Image:         "docker.elastic.co/kibana/kibana",
-		Name:          "kibana",
-		NetworkAlias:  "kibana",
-		Version:       version,
-	}
+	kibana := NewKibanaService(version, asDaemon)
+
+	kibana.SetEnv(env)
+
+	return kibana
 }
