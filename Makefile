@@ -18,4 +18,4 @@ functional-test: install-godog
 
 .PHONY: functional-test-ci
 functional-test-ci: install-godog
-	godog --format=junit | tee ${REPORT}
+	godog --format=junit | tee ${REPORT} ; test $${PIPESTATUS[0]} -eq 0
