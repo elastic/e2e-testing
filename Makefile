@@ -1,5 +1,5 @@
 TEST_TIMEOUT?=5m
-
+REPORT?=report.xml
 .PHONY: install-godog
 install-godog:
 	go get github.com/DATA-DOG/godog/cmd/godog
@@ -18,4 +18,4 @@ functional-test: install-godog
 
 .PHONY: functional-test-ci
 functional-test-ci: install-godog
-	godog --format=junit
+	godog --format=junit | tee ${REPORT}

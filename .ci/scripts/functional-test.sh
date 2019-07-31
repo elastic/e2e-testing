@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euxo pipefail
+set -exo pipefail
 
 source ./.ci/scripts/install-go.sh
 
@@ -9,7 +9,7 @@ REPORT=outputs/junit-functional-tests
 
 ## Generate test report even if make failed.
 set +e
-if ! make functional-test-ci | tee ${REPORT} ; then
+if ! REPORT=${REPORT} make functional-test-ci ; then
   echo 'ERROR: functional-test-ci failed'
   exit_status=1
 fi
