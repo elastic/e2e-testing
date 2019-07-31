@@ -10,4 +10,5 @@ test:
 
 .PHONY: functional-test
 functional-test:
+	go get github.com/DATA-DOG/godog/cmd/godog
 	godog
