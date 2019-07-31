@@ -7,5 +7,12 @@ rm -rf outputs || true
 mkdir -p outputs
 REPORT=outputs/junit-functional-tests
 
-make functional-test-ci | tee ${REPORT}
+## Generate test report even if make failed.
+set +e
+if ! make functional-test-ci | tee ${REPORT} ; then
+  echo 'ERROR: functional-test-ci failed'
+  exit_status=1
+fi
+
 sed -e 's/^[ \t]*//' ${REPORT} | grep -E '^<.*>$' > ${REPORT}.xml
+exit $exit_status
