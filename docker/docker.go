@@ -36,9 +36,8 @@ func GetDevNetwork() (types.NetworkResource, error) {
 	})
 	if err != nil {
 		fmt.Printf("Dev Network (%s) not found! Creating it now.\n", networkName)
+
 		initDevNetwork()
-	} else {
-		fmt.Printf("Dev Network (%s) already exists.\n", networkName)
 	}
 
 	return networkResource, err
