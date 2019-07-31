@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/viper"
+
+	"github.com/elastic/metricbeat-tests-poc/docker"
 )
 
 // OpWorkspace where the application works
@@ -17,8 +19,8 @@ var Op *OpConfig
 
 const fileName = "config.yml"
 
-// CheckWorkspace creates this tool workspace under user's home, in a hidden directory named ".op"
-func CheckWorkspace(services interface{}) {
+// Init creates this tool workspace under user's home, in a hidden directory named ".op"
+func Init(services interface{}) {
 	usr, _ := user.Current()
 
 	w := filepath.Join(usr.HomeDir, ".op")
@@ -35,6 +37,8 @@ func CheckWorkspace(services interface{}) {
 	OpWorkspace = w
 
 	newConfig(w, services)
+
+	docker.GetDevNetwork()
 }
 
 // OpConfig tool configuration

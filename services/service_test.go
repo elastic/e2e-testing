@@ -13,7 +13,7 @@ import (
 var serviceManager services.ServiceManager = services.NewServiceManager()
 
 func TestMain(m *testing.M) {
-	config.CheckWorkspace(serviceManager.AvailableServices())
+	config.Init(serviceManager.AvailableServices())
 
 	os.Exit(m.Run())
 }
