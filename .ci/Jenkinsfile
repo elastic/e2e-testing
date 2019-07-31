@@ -42,7 +42,7 @@ pipeline {
       environment {
         HOME = "${env.WORKSPACE}"
         GOPATH = "${env.WORKSPACE}"
-        GO_VERSION = "${params.GO_VERSION}"
+        GO_VERSION = "${params.GO_VERSION.trim()}"
         PATH = "${env.PATH}:${env.WORKSPACE}/bin"
       }
       stages {
