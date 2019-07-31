@@ -101,6 +101,7 @@ type Service interface {
 	Run() (testcontainers.Container, error)
 	SetAsDaemon(bool)
 	SetBindMounts(map[string]string)
+	SetContainerName(string)
 	SetEnv(map[string]string)
 	SetLabels(map[string]string)
 	SetVersion(string)
@@ -166,6 +167,11 @@ func (s *DockerService) Inspect() (*types.ContainerJSON, error) {
 // SetAsDaemon set if the service must be run as daemon
 func (s *DockerService) SetAsDaemon(asDaemon bool) {
 	s.Daemon = asDaemon
+}
+
+// SetContainerName set container name for a service
+func (s *DockerService) SetContainerName(name string) {
+	s.ContainerName = name
 }
 
 // SetBindMounts set bind mounts for a service
@@ -290,30 +296,28 @@ func (sm *DockerServiceManager) AvailableServices() map[string]DockerService {
 
 // Build builds a service domain entity from just its name and version
 func (sm *DockerServiceManager) Build(service string, version string, asDaemon bool) Service {
-	if service == "apache" || service == "elasticsearch" || service == "kafka" ||
-		service == "mongodb" || service == "mysql" {
-
-		cfg := config.Op.GetServiceConfig(service)
-		if cfg == nil {
-			fmt.Printf("Cannot find service %s in configuration file.\n", service)
-			return nil
-		}
-
-		srv := &DockerService{}
-
-		mapstructure.Decode(cfg, &srv)
-
-		srv.SetAsDaemon(asDaemon)
-		srv.SetVersion(version)
-
-		return srv
-	} else if service == "kibana" {
+	if service == "kibana" {
 		return NewKibanaService(version, asDaemon)
 	} else if service == "metricbeat" {
 		return NewMetricbeatService(version, asDaemon)
 	}
 
-	return nil
+	cfg := config.Op.GetServiceConfig(service)
+	if cfg == nil {
+		fmt.Printf("Cannot find service %s in configuration file.\n", service)
+		return nil
+	}
+
+	srv := &DockerService{}
+
+	mapstructure.Decode(cfg, &srv)
+
+	srv.SetAsDaemon(asDaemon)
+	srv.SetVersion(version)
+
+	srv.SetContainerName(srv.GetName()+"-"+srv.GetVersion())
+
+	return srv
 }
 
 // Run runs a service
