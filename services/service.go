@@ -196,10 +196,14 @@ func (sm *DockerServiceManager) Build(service string, version string) Service {
 		return NewApacheService(version, true)
 	} else if service == "kafka" {
 		return NewKafkaService(version, true)
+	} else if service == "kibana" {
+		return NewKibanaService(version, true)
 	} else if service == "metricbeat" {
 		return NewMetricbeatService(version, true)
 	} else if service == "mysql" {
 		return NewMySQLService(version, true)
+	} else if service == "elasticsearch" {
+		return NewElasticsearchService(version, true)
 	}
 
 	return nil

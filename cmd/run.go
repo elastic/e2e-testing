@@ -89,7 +89,7 @@ var runStackCmd = &cobra.Command{
 		es := services.NewElasticsearchService(versionToRun, true)
 		serviceManager.Run(es)
 
-		s := services.NewKibanaService(versionToRun, true, es)
+		s := services.RunKibanaService(versionToRun, true, es)
 		serviceManager.Run(s)
 	},
 }
