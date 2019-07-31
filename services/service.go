@@ -101,6 +101,7 @@ type Service interface {
 	Run() (testcontainers.Container, error)
 	SetAsDaemon(bool)
 	SetBindMounts(map[string]string)
+	SetContainerName(string)
 	SetEnv(map[string]string)
 	SetLabels(map[string]string)
 	SetVersion(string)
@@ -166,6 +167,11 @@ func (s *DockerService) Inspect() (*types.ContainerJSON, error) {
 // SetAsDaemon set if the service must be run as daemon
 func (s *DockerService) SetAsDaemon(asDaemon bool) {
 	s.Daemon = asDaemon
+}
+
+// SetContainerName set container name for a service
+func (s *DockerService) SetContainerName(name string) {
+	s.ContainerName = name
 }
 
 // SetBindMounts set bind mounts for a service
@@ -308,6 +314,8 @@ func (sm *DockerServiceManager) Build(service string, version string, asDaemon b
 
 	srv.SetAsDaemon(asDaemon)
 	srv.SetVersion(version)
+
+	srv.SetContainerName(srv.GetName()+"-"+srv.GetVersion())
 
 	return srv
 }
