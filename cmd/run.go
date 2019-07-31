@@ -14,8 +14,8 @@ var versionToRun string
 func init() {
 	rootCmd.AddCommand(runCmd)
 
-	for _, s := range serviceManager.AvailableServices() {
-		runSubcommand := buildRunServiceCommand(s)
+	for k := range serviceManager.AvailableServices() {
+		runSubcommand := buildRunServiceCommand(k)
 
 		runSubcommand.Flags().StringVarP(&versionToRun, "version", "v", "", "Sets the image version to run")
 

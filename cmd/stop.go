@@ -14,8 +14,8 @@ var versionToStop string
 func init() {
 	rootCmd.AddCommand(stopCmd)
 
-	for _, s := range serviceManager.AvailableServices() {
-		stopSubcommand := buildStopServiceCommand(s)
+	for k := range serviceManager.AvailableServices() {
+		stopSubcommand := buildStopServiceCommand(k)
 
 		stopSubcommand.Flags().StringVarP(&versionToStop, "version", "v", "", "Sets the image version to stop")
 
@@ -48,7 +48,7 @@ func buildStopServiceCommand(service string) *cobra.Command {
 	return &cobra.Command{
 		Use:   service,
 		Short: `Stops a ` + service + ` service`,
-		Long: `Stops a ` + service + ` service to be monitored by Metricbeat, stoppping the Docker container for it that exposes its internal
+		Long: `Stops a ` + service + ` service, stoppping the Docker container for it that exposes its internal
 		configuration so that you are able to connect to it in an easy manner`,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 1 {
