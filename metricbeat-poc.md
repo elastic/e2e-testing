@@ -71,21 +71,3 @@ As an example, the Golang implementation of the `features/mysql.feature` is loca
 ## The result
 
 ![image](metricbeat-poc.gif)
-
-## Developer mode
-
-A strong requirement by the team is to enable this tool to provision in an easy manner the environment to run the services Metricbeat is going to monitor. As an example, spin up a Docker container representing a MySQL 5.6 instance, or an Apache 2.4 instance.
-
-The tool will use Golang's de-facto standard for writing CLIs [`Cobra`](https://github.com/spf13/cobra), which will allow to create a nice experience running commands and subcommands. In that sense, running a service would mean executing:
-
-```sh
-# if you are in the Go development world
-$ GO111MODULE=on go run main.go run apache -v 2.4
-$ GO111MODULE=on go run main.go run mysql -v 5.6
-
-# if you prefer to install the CLI
-$ mt run apache -v 2.4
-$ mt run mysql -v 5.6
-```
-
->By the way, `mt` comes from `Metricbeat Tests`.
