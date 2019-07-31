@@ -60,7 +60,7 @@ func buildStopServiceCommand(service string) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
-			s := serviceManager.Build(service, versionToStop)
+			s := serviceManager.Build(service, versionToStop, true)
 
 			serviceManager.Stop(s)
 		},
@@ -80,8 +80,8 @@ var stopStackCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		es := serviceManager.Build("elasticsearch", versionToStop)
-		kibana := serviceManager.Build("kibana", versionToStop)
+		es := serviceManager.Build("elasticsearch", versionToStop, true)
+		kibana := serviceManager.Build("kibana", versionToStop, true)
 
 		serviceManager.Stop(kibana)
 		serviceManager.Stop(es)

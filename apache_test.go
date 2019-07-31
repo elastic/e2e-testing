@@ -22,7 +22,7 @@ func metricbeatIsInstalledAndConfiguredForApacheModule(metricbeatVersion string)
 }
 
 func apacheIsRunning(apacheVersion string) error {
-	apacheService = services.NewApacheService(apacheVersion, false)
+	apacheService = serviceManager.Build("apache", apacheVersion, false)
 
 	return serviceManager.Run(apacheService)
 }

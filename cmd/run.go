@@ -60,7 +60,7 @@ func buildRunServiceCommand(service string) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
-			s := serviceManager.Build(service, versionToRun)
+			s := serviceManager.Build(service, versionToRun, true)
 
 			serviceManager.Run(s)
 		},

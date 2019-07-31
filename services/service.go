@@ -6,9 +6,11 @@ import (
 	"strconv"
 
 	"github.com/docker/docker/api/types"
+	"github.com/mitchellh/mapstructure"
+	"github.com/testcontainers/testcontainers-go"
 
+	config "github.com/elastic/metricbeat-tests-poc/config"
 	docker "github.com/elastic/metricbeat-tests-poc/docker"
-	testcontainers "github.com/testcontainers/testcontainers-go"
 )
 
 // servicesDefaults initial service configuration that could be overwritten by
@@ -97,9 +99,11 @@ type Service interface {
 	GetVersion() string
 	Inspect() (*types.ContainerJSON, error)
 	Run() (testcontainers.Container, error)
+	SetAsDaemon(bool)
 	SetBindMounts(map[string]string)
 	SetEnv(map[string]string)
 	SetLabels(map[string]string)
+	SetVersion(string)
 }
 
 // DockerService represents a Docker service to be run
@@ -159,6 +163,11 @@ func (s *DockerService) Inspect() (*types.ContainerJSON, error) {
 	return json, nil
 }
 
+// SetAsDaemon set if the service must be run as daemon
+func (s *DockerService) SetAsDaemon(asDaemon bool) {
+	s.Daemon = asDaemon
+}
+
 // SetBindMounts set bind mounts for a service
 func (s *DockerService) SetBindMounts(bindMounts map[string]string) {
 	s.BindMounts = bindMounts
@@ -172,6 +181,11 @@ func (s *DockerService) SetEnv(env map[string]string) {
 // SetLabels set labels for a service
 func (s *DockerService) SetLabels(labels map[string]string) {
 	s.Labels = labels
+}
+
+// SetVersion set version for a service
+func (s *DockerService) SetVersion(version string) {
+	s.Version = version
 }
 
 // ExposedPort represents the structure for how services expose ports
@@ -255,7 +269,7 @@ func (s *DockerService) AsDaemon() *DockerService {
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
 	AvailableServices() map[string]DockerService
-	Build(string, string) Service
+	Build(string, string, bool) Service
 	Run(Service) error
 	Stop(Service) error
 }
@@ -275,21 +289,34 @@ func (sm *DockerServiceManager) AvailableServices() map[string]DockerService {
 }
 
 // Build builds a service domain entity from just its name and version
-func (sm *DockerServiceManager) Build(service string, version string) Service {
+func (sm *DockerServiceManager) Build(service string, version string, asDaemon bool) Service {
 	if service == "apache" {
-		return NewApacheService(version, true)
+		cfg := config.Op.GetServiceConfig(service)
+		if cfg == nil {
+			fmt.Printf("Cannot find service %s in configuration file.\n", service)
+			return nil
+		}
+
+		srv := &DockerService{}
+
+		mapstructure.Decode(cfg, &srv)
+
+		srv.SetAsDaemon(asDaemon)
+		srv.SetVersion(version)
+
+		return srv
 	} else if service == "kafka" {
-		return NewKafkaService(version, true)
+		return NewKafkaService(version, asDaemon)
 	} else if service == "kibana" {
-		return NewKibanaService(version, true)
+		return NewKibanaService(version, asDaemon)
 	} else if service == "metricbeat" {
-		return NewMetricbeatService(version, true)
+		return NewMetricbeatService(version, asDaemon)
 	} else if service == "mongodb" {
-		return NewMongoDBService(version, true)
+		return NewMongoDBService(version, asDaemon)
 	} else if service == "mysql" {
-		return NewMySQLService(version, true)
+		return NewMySQLService(version, asDaemon)
 	} else if service == "elasticsearch" {
-		return NewElasticsearchService(version, true)
+		return NewElasticsearchService(version, asDaemon)
 	}
 
 	return nil

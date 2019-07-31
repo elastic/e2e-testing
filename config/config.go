@@ -21,6 +21,11 @@ type OpConfig struct {
 	Services map[string]interface{} `mapstructure:"services"`
 }
 
+// GetServiceConfig configuration of a service
+func (c *OpConfig) GetServiceConfig(service string) interface{} {
+	return c.Services[service]
+}
+
 // NewConfig returns a new configuration
 func NewConfig(workspace string, services interface{}) {
 	opConfig, err := readConfig(workspace, fileName, map[string]interface{}{
