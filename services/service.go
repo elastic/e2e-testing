@@ -12,7 +12,7 @@ import (
 )
 
 var availableServices = []string{
-	"apache", "kafka", "metricbeat", "mysql",
+	"apache", "kafka", "metricbeat", "mongodb", "mysql",
 }
 
 // Service represents the contract for services
@@ -210,6 +210,8 @@ func (sm *DockerServiceManager) Build(service string, version string) Service {
 		return NewKibanaService(version, true)
 	} else if service == "metricbeat" {
 		return NewMetricbeatService(version, true)
+	} else if service == "mongodb" {
+		return NewMongoDBService(version, true)
 	} else if service == "mysql" {
 		return NewMySQLService(version, true)
 	} else if service == "elasticsearch" {
