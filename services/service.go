@@ -290,7 +290,9 @@ func (sm *DockerServiceManager) AvailableServices() map[string]DockerService {
 
 // Build builds a service domain entity from just its name and version
 func (sm *DockerServiceManager) Build(service string, version string, asDaemon bool) Service {
-	if service == "apache" {
+	if service == "apache" || service == "elasticsearch" || service == "kafka" ||
+		service == "mongodb" || service == "mysql" {
+
 		cfg := config.Op.GetServiceConfig(service)
 		if cfg == nil {
 			fmt.Printf("Cannot find service %s in configuration file.\n", service)
@@ -305,18 +307,10 @@ func (sm *DockerServiceManager) Build(service string, version string, asDaemon b
 		srv.SetVersion(version)
 
 		return srv
-	} else if service == "kafka" {
-		return NewKafkaService(version, asDaemon)
 	} else if service == "kibana" {
 		return NewKibanaService(version, asDaemon)
 	} else if service == "metricbeat" {
 		return NewMetricbeatService(version, asDaemon)
-	} else if service == "mongodb" {
-		return NewMongoDBService(version, asDaemon)
-	} else if service == "mysql" {
-		return NewMySQLService(version, asDaemon)
-	} else if service == "elasticsearch" {
-		return NewElasticsearchService(version, asDaemon)
 	}
 
 	return nil

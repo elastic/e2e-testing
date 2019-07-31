@@ -80,7 +80,7 @@ var runStackCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		es := services.NewElasticsearchService(versionToRun, true)
+		es := serviceManager.Build("elasticsearch", versionToRun, true)
 		serviceManager.Run(es)
 
 		s := services.RunKibanaService(versionToRun, true, es)
