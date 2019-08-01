@@ -86,11 +86,14 @@ pipeline {
               steps {
                 githubCheckNotify('PENDING')
                 deleteDir()
+                unstash 'build'
                 gitCheckout(basedir: env.BEATS_BASE_DIR, repo: 'git@github.com:elastic/beats.git',
                             branch: params.PR, credentialsId: env.JOB_GIT_CREDENTIALS)
                 dir(env.BEATS_BASE_DIR){
-                  sh 'ls -ltrah'
-                  sh 'make release'
+                  sh '''
+                    source ./${BASE_DIR}.ci/scripts/install-go.sh
+                    make release
+                  '''
                 }
               }
             }
