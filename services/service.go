@@ -297,9 +297,7 @@ func (sm *DockerServiceManager) AvailableServices() map[string]DockerService {
 
 // Build builds a service domain entity from just its name and version
 func (sm *DockerServiceManager) Build(service string, version string, asDaemon bool) Service {
-	if service == "kibana" {
-		return NewKibanaService(version, asDaemon)
-	} else if service == "metricbeat" {
+	if service == "metricbeat" {
 		return NewMetricbeatService(version, asDaemon)
 	}
 
