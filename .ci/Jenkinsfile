@@ -52,6 +52,23 @@ pipeline {
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
           }
         }
+        stage('Sanity checks') {
+          agent { label 'linux && immutable && docker' }
+          options { skipDefaultCheckout() }
+          environment {
+            PATH = "${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts:${env.WORKSPACE}/bin:${env.PATH}"
+            HOME = "${env.WORKSPACE}"
+          }
+          steps {
+            withGithubNotify(context: 'Sanity checks', tab: 'tests') {
+              deleteDir()
+              unstash 'source'
+              dir("${BASE_DIR}"){
+                preCommit(commit: "${GIT_BASE_COMMIT}", junit: true)
+              }
+            }
+          }
+        }
         stage('Tests') {
           agent { label 'linux && immutable' }
           options { skipDefaultCheckout() }
