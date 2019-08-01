@@ -31,8 +31,8 @@ func init() {
 
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "Runs a Service to be monitored",
-	Long: `Runs a Service to be monitored by Metricbeat, spinning up a Docker container for it and exposing its internal.
+	Short: "Runs a Service",
+	Long: `Runs a Service, spinning up a Docker container for it and exposing its internal.
 	configuration so that you are able to connect to it in an easy manner`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 1 {
@@ -50,7 +50,7 @@ func buildRunServiceCommand(service string) *cobra.Command {
 	return &cobra.Command{
 		Use:   service,
 		Short: `Runs a ` + service + ` service`,
-		Long: `Runs a ` + service + ` service to be monitored by Metricbeat, spinning up a Docker container for it and exposing its internal
+		Long: `Runs a ` + service + ` service, spinning up a Docker container for it and exposing its internal
 		configuration so that you are able to connect to it in an easy manner`,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 1 {

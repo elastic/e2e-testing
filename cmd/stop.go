@@ -31,8 +31,8 @@ func init() {
 
 var stopCmd = &cobra.Command{
 	Use:   "stop",
-	Short: "Stops a Service to be monitored",
-	Long: `Stops a Service monitored by Metricbeat, stoppping the Docker container for it that exposes its internal
+	Short: "Stops a Service",
+	Long: `Stops a Service, stoppping the Docker container for it that exposes its internal
 	configuration so that you are able to connect to it in an easy manner`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 1 {
