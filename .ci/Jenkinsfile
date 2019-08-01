@@ -100,8 +100,12 @@ pipeline {
             deleteDir()
             gitCheckout(basedir: env.BEATS_BASE_DIR, repo: 'git@github.com:elastic/beats.git',
                         branch: params.PR, credentialsId: env.JOB_GIT_CREDENTIALS)
+            sh 'pwd; ls -ltrah'
             dir("${BEATS_BASE_DIR}/metricbeats"){
+              sh 'pwd; ls -ltrah'
               sh script: '''#!/bin/bash
+
+                ls -ltrah .
                 eval "$(curl -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | GIMME_GO_VERSION=${GO_VERSION} bash)"
 
                 go get -u -d github.com/magefile/mage
