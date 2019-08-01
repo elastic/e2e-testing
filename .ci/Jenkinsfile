@@ -103,6 +103,7 @@ pipeline {
             unstash 'scripts'
             dir(BASE_DIR){
               sh script: ".ci/scripts/build-metricbeats.sh ${WORKSPACE}/${BEATS_BASE_DIR}/metricbeat", label: 'Build metricbeats'
+              sh script: ".ci/scripts/tag-metricbeats.sh ${WORKSPACE}/${BEATS_BASE_DIR}/metricbeat", label: 'Create docker tag'
             }
           }
         }
