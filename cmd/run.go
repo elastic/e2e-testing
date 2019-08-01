@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/elastic/metricbeat-tests-poc/services"
 
@@ -40,7 +39,7 @@ var runCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Hello run!")
+		// NOOP
 	},
 }
 

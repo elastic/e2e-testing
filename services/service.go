@@ -11,6 +11,7 @@ import (
 
 	config "github.com/elastic/metricbeat-tests-poc/config"
 	docker "github.com/elastic/metricbeat-tests-poc/docker"
+	"github.com/elastic/metricbeat-tests-poc/log"
 )
 
 // servicesDefaults initial service configuration that could be overwritten by
@@ -260,7 +261,7 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 
 	ip := json.NetworkSettings.IPAddress
 	ports := json.NetworkSettings.Ports
-	fmt.Printf("The service (%s) runs on %s %v\n", s.GetName(), ip, ports)
+	log.Info("The service (%s) runs on %s %v", s.GetName(), ip, ports)
 
 	return service, nil
 }
@@ -304,7 +305,7 @@ func (sm *DockerServiceManager) Build(service string, version string, asDaemon b
 
 	cfg := config.Op.GetServiceConfig(service)
 	if cfg == nil {
-		fmt.Printf("Cannot find service %s in configuration file.\n", service)
+		log.Error("Cannot find service %s in configuration file.", service)
 		return nil
 	}
 

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log"
 	"os"
 	"os/exec"
 	"os/user"
@@ -10,7 +9,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/elastic/metricbeat-tests-poc/docker"
-	logger "github.com/elastic/metricbeat-tests-poc/log"
+	"github.com/elastic/metricbeat-tests-poc/log"
 )
 
 // OpWorkspace where the application works
@@ -23,7 +22,7 @@ const fileName = "config.yml"
 
 // checkInstalledSoftware checks that the required software is present
 func checkInstalledSoftware() {
-	logger.Info("Validating required tools...")
+	log.Info("Validating required tools...")
 	binaries := []string{
 		"docker",
 	}
@@ -43,11 +42,9 @@ func Init(services interface{}) {
 
 	if _, err := os.Stat(w); os.IsNotExist(err) {
 		err = os.MkdirAll(w, 0755)
-		if err != nil {
-			log.Fatalf("Cannot create workdir for 'op' at "+w, err)
-		}
+		log.CheckIfErrorMessage(err, "Cannot create workdir for 'op' at "+w)
 
-		log.Println("'op' workdir created at " + w)
+		log.Success("'op' workdir created at " + w)
 	}
 
 	OpWorkspace = w
@@ -72,15 +69,13 @@ func newConfig(workspace string, services interface{}) {
 	opConfig, err := readConfig(workspace, fileName, map[string]interface{}{
 		"services": services,
 	})
-	if err != nil {
-		log.Fatalf("Error when reading config: %v\n", err)
-	}
+	log.CheckIfErrorMessage(err, "Error when reading config.")
 
 	Op = &opConfig
 }
 
 func initConfigFile(workspace string, configFile string, defaults map[string]interface{}) *os.File {
-	log.Printf("Creating %s with default values in %s.", configFile, workspace)
+	log.Info("Creating %s with default values in %s.", configFile, workspace)
 
 	configFilePath := filepath.Join(workspace, configFile)
 
@@ -96,9 +91,7 @@ func initConfigFile(workspace string, configFile string, defaults map[string]int
 	v.AddConfigPath(workspace)
 
 	err := v.WriteConfig()
-	if err != nil {
-		log.Fatalf(`Cannot save default configuration file at %s: %v`, configFilePath, err)
-	}
+	log.CheckIfErrorMessage(err, `Cannot save default configuration file at `+configFilePath)
 
 	return f
 }
@@ -118,9 +111,7 @@ func readConfig(
 
 	var cfg OpConfig
 	err = viper.Unmarshal(&cfg)
-	if err != nil {
-		log.Fatalf("Unable to decode configuration into struct, %v", err)
-	}
+	log.CheckIfErrorMessage(err, "Unable to decode configuration into struct")
 
 	return cfg, err
 }
@@ -128,6 +119,6 @@ func readConfig(
 // which checks if software is installed
 func which(software string) {
 	path, err := exec.LookPath(software)
-	logger.CheckIfError(err)
-	logger.Success("%s is present at %s", software, path)
+	log.CheckIfError(err)
+	log.Success("%s is present at %s", software, path)
 }

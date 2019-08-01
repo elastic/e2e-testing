@@ -11,6 +11,7 @@ import (
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/colors"
 	"github.com/elastic/metricbeat-tests-poc/docker"
+	"github.com/elastic/metricbeat-tests-poc/log"
 	"github.com/elastic/metricbeat-tests-poc/services"
 )
 
@@ -33,12 +34,12 @@ func TestMain(m *testing.M) {
 
 	status := godog.RunWithOptions("godog", func(s *godog.Suite) {
 		s.BeforeScenario(func(interface{}) {
-			fmt.Println("Before scenario...")
+			log.Info("Before scenario...")
 			cleanUpOutputs()
 		})
 
 		s.AfterScenario(func(interface{}, error) {
-			fmt.Println("After scenario...")
+			log.Info("After scenario...")
 		})
 
 		ApacheFeatureContext(s)
@@ -55,13 +56,11 @@ func cleanUpOutputs() {
 	dir, _ := os.Getwd()
 
 	files, err := filepath.Glob(dir + "/outputs/*.metrics")
-	if err != nil {
-		fmt.Println("Cannot remove outputs :(")
-	}
+	log.CheckIfErrorMessage(err, "Cannot remove outputs :(")
+
 	for _, f := range files {
-		if err := os.Remove(f); err != nil {
-			fmt.Printf("Cannot remove output file %s :(\n", f)
-		}
+		err := os.Remove(f)
+		log.CheckIfErrorMessage(err, "Cannot remove output file "+f+" :(")
 	}
 }
 
@@ -74,6 +73,6 @@ func metricbeatOutputsMetricsToTheFile(fileName string) error {
 		return fmt.Errorf("The output file %s does not exist", fileName)
 	}
 
-	fmt.Println("Metricbeat outputs to " + fileName)
+	log.Info("Metricbeat outputs to " + fileName)
 	return nil
 }
