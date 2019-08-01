@@ -92,7 +92,6 @@ pipeline {
       }
     }
     stage('Tests PR') {
-      agent { label 'linux && immutable && docker' }
       options { skipDefaultCheckout() }
       environment {
         HOME = "${env.WORKSPACE}"
@@ -109,6 +108,7 @@ pipeline {
       }
       stages {
         stage('Beats') {
+          agent { label 'linux && immutable && docker' }
           environment {
             PLATFORMS = 'linux/amd64'
           }
@@ -125,6 +125,7 @@ pipeline {
           }
         }
         stage('Functional testing') {
+          agent { label 'linux && immutable && docker' }
           environment {
             GO111MODULE = 'on'
             GOPROXY = 'https://proxy.golang.org'
