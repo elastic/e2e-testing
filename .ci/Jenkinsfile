@@ -104,6 +104,9 @@ pipeline {
                 cd $GOPATH/src/github.com/magefile/mage
                 go run bootstrap.go
                 mage -version
+                mage -l
+                pwd
+                ls -ltra
                 PLATFORMS=linux/amd64 mage package
                 docker images
               '''
