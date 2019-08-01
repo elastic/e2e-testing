@@ -5,6 +5,8 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/elastic/metricbeat-tests-poc/log"
 )
 
 // NewMetricbeatService returns a metricbeat service entity
@@ -58,7 +60,7 @@ func RunMetricbeatService(version string, monitoredService Service) (Service, er
 		return nil, fmt.Errorf("Could not run Metricbeat %s for %s: %v", version, serviceName, err)
 	}
 
-	fmt.Printf("Metricbeat %s is running configured for %s\n", version, serviceName)
+	log.Info("Metricbeat %s is running configured for %s", version, serviceName)
 
 	return service, nil
 }

@@ -2,11 +2,12 @@ package docker
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
+
+	"github.com/elastic/metricbeat-tests-poc/log"
 )
 
 var instance *client.Client
@@ -35,7 +36,7 @@ func GetDevNetwork() (types.NetworkResource, error) {
 		Verbose: true,
 	})
 	if err != nil {
-		fmt.Printf("Dev Network (%s) not found! Creating it now.\n", networkName)
+		log.Info("Dev Network (%s) not found! Creating it now.", networkName)
 
 		initDevNetwork()
 	}
@@ -70,11 +71,11 @@ func RemoveContainer(containerName string) error {
 	}
 
 	if err := dockerClient.ContainerRemove(ctx, containerName, options); err != nil {
-		fmt.Printf("Service %s could not be removed: %v\n", containerName, err)
+		log.Warn("Service %s could not be removed: %v", containerName, err)
 		return err
 	}
 
-	fmt.Printf("Service has been %s removed!\n", containerName)
+	log.Info("Service has been %s removed!", containerName)
 
 	return nil
 }
@@ -85,12 +86,12 @@ func RemoveDevNetwork() error {
 
 	ctx := context.Background()
 
-	fmt.Printf("Removing Dev Network (%s).\n", networkName)
+	log.Info("Removing Dev Network (%s).", networkName)
 	if err := dockerClient.NetworkRemove(ctx, networkName); err != nil {
 		return err
 	}
 
-	fmt.Printf("Dev Network has been %s removed!", networkName)
+	log.Success("Dev Network has been %s removed!", networkName)
 
 	return nil
 }
@@ -112,11 +113,9 @@ func initDevNetwork() types.NetworkCreateResponse {
 	}
 
 	response, err := dockerClient.NetworkCreate(ctx, networkName, nc)
-	if err != nil {
-		panic("Cannot create Docker Dev Network which is necessary. Aborting: " + err.Error())
-	}
+	log.CheckIfErrorMessage(err, "Cannot create Docker Dev Network which is necessary. Aborting")
 
-	fmt.Printf("Dev Network (%s) has been created with ID %s.\n", networkName, response.ID)
+	log.Success("Dev Network (%s) has been created with ID %s.", networkName, response.ID)
 
 	return response
 }
@@ -127,9 +126,7 @@ func getDockerClient() *client.Client {
 	}
 
 	instance, err := client.NewClientWithOpts(client.WithVersion("1.39"))
-	if err != nil {
-		panic(err)
-	}
+	log.CheckIfError(err)
 
 	return instance
 }

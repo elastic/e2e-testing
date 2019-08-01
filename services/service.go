@@ -11,6 +11,7 @@ import (
 
 	config "github.com/elastic/metricbeat-tests-poc/config"
 	docker "github.com/elastic/metricbeat-tests-poc/docker"
+	"github.com/elastic/metricbeat-tests-poc/log"
 )
 
 // servicesDefaults initial service configuration that could be overwritten by
@@ -69,23 +70,23 @@ var servicesDefaults = map[string]DockerService{
 		Version:         "7.2.0",
 	},
 	"mongodb": {
-		ContainerName:   "mongodb",
-		ExposedPort:     27017,
-		Image:           "mongo",
-		Name:            "mongodb",
-		NetworkAlias:    "mongodb",
-		Version:         "latest",
+		ContainerName: "mongodb",
+		ExposedPort:   27017,
+		Image:         "mongo",
+		Name:          "mongodb",
+		NetworkAlias:  "mongodb",
+		Version:       "latest",
 	},
 	"mysql": {
-		ContainerName:   "mysql",
+		ContainerName: "mysql",
 		Env: map[string]string{
 			"MYSQL_ROOT_PASSWORD": "secret",
 		},
-		ExposedPort:     3306,
-		Image:           "mysql",
-		Name:            "mysql",
-		NetworkAlias:    "mysql",
-		Version:         "latest",
+		ExposedPort:  3306,
+		Image:        "mysql",
+		Name:         "mysql",
+		NetworkAlias: "mysql",
+		Version:      "latest",
 	},
 }
 
@@ -260,7 +261,7 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 
 	ip := json.NetworkSettings.IPAddress
 	ports := json.NetworkSettings.Ports
-	fmt.Printf("The service (%s) runs on %s %v\n", s.GetName(), ip, ports)
+	log.Info("The service (%s) runs on %s %v", s.GetName(), ip, ports)
 
 	return service, nil
 }
@@ -304,7 +305,7 @@ func (sm *DockerServiceManager) Build(service string, version string, asDaemon b
 
 	cfg := config.Op.GetServiceConfig(service)
 	if cfg == nil {
-		fmt.Printf("Cannot find service %s in configuration file.\n", service)
+		log.Error("Cannot find service %s in configuration file.", service)
 		return nil
 	}
 
@@ -315,7 +316,7 @@ func (sm *DockerServiceManager) Build(service string, version string, asDaemon b
 	srv.SetAsDaemon(asDaemon)
 	srv.SetVersion(version)
 
-	srv.SetContainerName(srv.GetName()+"-"+srv.GetVersion())
+	srv.SetContainerName(srv.GetName() + "-" + srv.GetVersion())
 
 	return srv
 }
