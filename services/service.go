@@ -70,23 +70,23 @@ var servicesDefaults = map[string]DockerService{
 		Version:         "7.2.0",
 	},
 	"mongodb": {
-		ContainerName:   "mongodb",
-		ExposedPort:     27017,
-		Image:           "mongo",
-		Name:            "mongodb",
-		NetworkAlias:    "mongodb",
-		Version:         "latest",
+		ContainerName: "mongodb",
+		ExposedPort:   27017,
+		Image:         "mongo",
+		Name:          "mongodb",
+		NetworkAlias:  "mongodb",
+		Version:       "latest",
 	},
 	"mysql": {
-		ContainerName:   "mysql",
+		ContainerName: "mysql",
 		Env: map[string]string{
 			"MYSQL_ROOT_PASSWORD": "secret",
 		},
-		ExposedPort:     3306,
-		Image:           "mysql",
-		Name:            "mysql",
-		NetworkAlias:    "mysql",
-		Version:         "latest",
+		ExposedPort:  3306,
+		Image:        "mysql",
+		Name:         "mysql",
+		NetworkAlias: "mysql",
+		Version:      "latest",
 	},
 }
 
@@ -316,7 +316,7 @@ func (sm *DockerServiceManager) Build(service string, version string, asDaemon b
 	srv.SetAsDaemon(asDaemon)
 	srv.SetVersion(version)
 
-	srv.SetContainerName(srv.GetName()+"-"+srv.GetVersion())
+	srv.SetContainerName(srv.GetName() + "-" + srv.GetVersion())
 
 	return srv
 }
