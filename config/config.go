@@ -16,7 +16,7 @@ import (
 var OpWorkspace string
 
 // Op the tool's configuration, read from tool's workspace
-var Op *OpConfig
+var Op *opConfig
 
 const fileName = "config.yml"
 
@@ -54,13 +54,13 @@ func Init(services interface{}) {
 	docker.GetDevNetwork()
 }
 
-// OpConfig tool configuration
-type OpConfig struct {
+// opConfig tool configuration
+type opConfig struct {
 	Services map[string]interface{} `mapstructure:"services"`
 }
 
 // GetServiceConfig configuration of a service
-func (c *OpConfig) GetServiceConfig(service string) interface{} {
+func (c *opConfig) GetServiceConfig(service string) interface{} {
 	return c.Services[service]
 }
 
@@ -97,7 +97,7 @@ func initConfigFile(workspace string, configFile string, defaults map[string]int
 }
 
 func readConfig(
-	workspace string, configFile string, defaults map[string]interface{}) (OpConfig, error) {
+	workspace string, configFile string, defaults map[string]interface{}) (opConfig, error) {
 
 	viper.SetConfigType("yaml")
 	viper.SetConfigName("config")
@@ -109,7 +109,7 @@ func readConfig(
 		viper.ReadInConfig()
 	}
 
-	var cfg OpConfig
+	var cfg opConfig
 	err = viper.Unmarshal(&cfg)
 	log.CheckIfErrorMessage(err, "Unable to decode configuration into struct")
 
