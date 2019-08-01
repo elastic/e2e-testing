@@ -37,6 +37,10 @@ pipeline {
     stage('Initializing'){
       agent { label 'linux && immutable' }
       options { skipDefaultCheckout() }
+      when {
+        beforeAgent true
+        expression { return false }
+      }
       environment {
         HOME = "${env.WORKSPACE}"
         GOPATH = "${env.WORKSPACE}"
@@ -105,7 +109,8 @@ pipeline {
                 go run bootstrap.go
                 mage -version
                 popd
-                PLATFORMS=linux/amd64 mage package
+                mage -debug -l
+                PLATFORMS=linux/amd64 mage -debug package
                 docker images
               '''
             }
