@@ -120,7 +120,9 @@ pipeline {
             unstash 'scripts'
             dir(BASE_DIR){
               sh script: ".ci/scripts/build-metricbeats.sh ${WORKSPACE}/${BEATS_BASE_DIR}/metricbeat", label: 'Build metricbeats'
-              sh script: ".ci/scripts/tag-metricbeats.sh ${WORKSPACE}/${BEATS_BASE_DIR}/metricbeat", label: 'Create docker tag'
+            }
+            dir("${BEATS_BASE_DIR}/metricbeat/build/distributions"){
+              stash allowEmpty: false, name: 'docker', useDefaultExcludes: true, includes: '*docker.tar.gz'
             }
           }
         }
@@ -134,6 +136,8 @@ pipeline {
             deleteDir()
             unstash 'build'
             dir(env.BASE_DIR){
+              unstash 'docker'
+              sh script: '.ci/scripts/tag-metricbeats.sh', label: 'Create docker tag'
               sh script: '.ci/scripts/functional-test.sh', label: 'Run functional tests'
             }
           }
