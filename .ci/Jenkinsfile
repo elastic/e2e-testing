@@ -86,12 +86,11 @@ pipeline {
               steps {
                 githubCheckNotify('PENDING')
                 deleteDir()
-                unstash 'build'
                 gitCheckout(basedir: env.BEATS_BASE_DIR, repo: 'git@github.com:elastic/beats.git',
                             branch: params.PR, credentialsId: env.JOB_GIT_CREDENTIALS)
                 dir(env.BEATS_BASE_DIR){
                   sh '''
-                    source ./${BASE_DIR}.ci/scripts/install-go.sh
+                    eval "$(curl -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | GIMME_GO_VERSION=${GO_VERSION} bash)"
                     make release
                   '''
                 }
