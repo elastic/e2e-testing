@@ -4,7 +4,7 @@ set -euxo pipefail
 source ./.ci/scripts/install-go.sh
 
 go get -u -d github.com/magefile/mage
-pushd $GOPATH/src/github.com/magefile/mage
+pushd "$GOPATH/src/github.com/magefile/mage"
 go run bootstrap.go
 
 ## For debugging purposes

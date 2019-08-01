@@ -100,9 +100,30 @@ pipeline {
             deleteDir()
             gitCheckout(basedir: env.BEATS_BASE_DIR, repo: 'git@github.com:elastic/beats.git',
                         branch: params.PR, credentialsId: env.JOB_GIT_CREDENTIALS)
-            unstash 'build'
             dir("${BEATS_BASE_DIR}/metricbeats"){
-              sh script: "${WORKSPACE}/${BEATS_BASE}/.ci/scripts/build-metricbeats.sh", label: 'Build metricbeats'
+              sh script: '''#!/bin/bash
+                eval "$(curl -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | GIMME_GO_VERSION=${GO_VERSION} bash)"
+
+                go get -u -d github.com/magefile/mage
+                pushd "$GOPATH/src/github.com/magefile/mage"
+                go run bootstrap.go
+
+                popd
+
+                ## For debugging purposes
+                go env
+                mage -version
+                ls -ltrah
+                find . -name magefile.go
+                head -n 20 magefile.go || true
+                mage -debug -l
+
+                ## Package the metricbeats
+                PLATFORMS=linux/amd64 mage -debug package
+
+                ## List the cached docker images
+                docker images
+              ''', label: 'Build metricbeats'
             }
           }
         }
