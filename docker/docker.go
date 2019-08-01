@@ -126,9 +126,7 @@ func getDockerClient() *client.Client {
 	}
 
 	instance, err := client.NewClientWithOpts(client.WithVersion("1.39"))
-	if err != nil {
-		panic(err)
-	}
+	log.CheckIfError(err)
 
 	return instance
 }
