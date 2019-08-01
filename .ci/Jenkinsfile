@@ -37,10 +37,6 @@ pipeline {
     stage('Initializing'){
       agent { label 'linux && immutable' }
       options { skipDefaultCheckout() }
-      when {
-        beforeAgent true
-        expression { return false }
-      }
       environment {
         HOME = "${env.WORKSPACE}"
         GOPATH = "${env.WORKSPACE}"
@@ -66,7 +62,8 @@ pipeline {
               dir(env.BASE_DIR){
                 sh script: '.ci/scripts/build-test.sh', label: 'Build and test'
               }
-              stash allowEmpty: true, name: 'build', useDefaultExcludes: false, excludes: '.gimme/**'
+              stash allowEmpty: false, name: 'build', useDefaultExcludes: false, excludes: '.gimme/**'
+              stash allowEmpty: false, name: 'scripts', useDefaultExcludes: true, includes: "${BASE_DIR}/.ci/**"
             }
           }
           post {
@@ -95,35 +92,20 @@ pipeline {
       }
       stages {
         stage('Beats') {
+          environment {
+            PLATFORMS = 'linux/amd64'
+          }
           steps {
             githubCheckNotify('PENDING')
             deleteDir()
             gitCheckout(basedir: env.BEATS_BASE_DIR, repo: 'git@github.com:elastic/beats.git',
                         branch: params.PR, credentialsId: env.JOB_GIT_CREDENTIALS)
+            unstash 'scripts'
             dir("${BEATS_BASE_DIR}/metricbeat"){
-              sh script: '''#!/bin/bash
-                eval "$(curl -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | GIMME_GO_VERSION=${GO_VERSION} bash)"
-
-                go get -u -d github.com/magefile/mage
-                pushd "$GOPATH/src/github.com/magefile/mage"
-                go run bootstrap.go
-
-                popd
-
-                ## For debugging purposes
-                go env
-                mage -version
-                ls -ltrah
-                find . -name magefile.go
-                head -n 20 magefile.go || true
-                mage -debug -l
-
-                ## Package the metricbeats
-                PLATFORMS=linux/amd64 mage -debug package
-
-                ## List the cached docker images
-                docker images
-              ''', label: 'Build metricbeats'
+              sh "ls -ltra ${env.WORKSPACE} || true"
+              sh "ls -ltra ${env.WORKSPACE}/${BASE_DIR} || true"
+              sh "ls -ltra ${env.WORKSPACE}/${BASE_DIR}/.ci/scripts/build-metricbeats.sh || true"
+              sh script: "${env.WORKSPACE}/${BASE_DIR}/.ci/scripts/build-metricbeats.sh", label: 'Build metricbeats'
             }
           }
         }
