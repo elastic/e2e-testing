@@ -1,8 +1,8 @@
 package services_test
 
 import (
-	"testing"
 	"os"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 
@@ -13,7 +13,7 @@ import (
 var serviceManager services.ServiceManager = services.NewServiceManager()
 
 func TestMain(m *testing.M) {
-	config.Init(serviceManager.AvailableServices())
+	config.Init()
 
 	os.Exit(m.Run())
 }

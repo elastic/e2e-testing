@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 
+	"github.com/elastic/metricbeat-tests-poc/config"
 	"github.com/elastic/metricbeat-tests-poc/services"
 
 	"github.com/spf13/cobra"
@@ -11,12 +12,14 @@ import (
 var versionToRun string
 
 func init() {
+	config.InitConfig()
+
 	rootCmd.AddCommand(runCmd)
 
-	for k := range serviceManager.AvailableServices() {
+	for k, srv := range config.AvailableServices() {
 		runSubcommand := buildRunServiceCommand(k)
 
-		runSubcommand.Flags().StringVarP(&versionToRun, "version", "v", "", "Sets the image version to run")
+		runSubcommand.Flags().StringVarP(&versionToRun, "version", "v", srv.Version, "Sets the image version to run")
 
 		runCmd.AddCommand(runSubcommand)
 	}

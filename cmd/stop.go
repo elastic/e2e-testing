@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 
+	"github.com/elastic/metricbeat-tests-poc/config"
 	"github.com/elastic/metricbeat-tests-poc/services"
 
 	"github.com/spf13/cobra"
@@ -11,12 +12,14 @@ import (
 var versionToStop string
 
 func init() {
+	config.InitConfig()
+
 	rootCmd.AddCommand(stopCmd)
 
-	for k := range serviceManager.AvailableServices() {
+	for k, srv := range config.AvailableServices() {
 		stopSubcommand := buildStopServiceCommand(k)
 
-		stopSubcommand.Flags().StringVarP(&versionToStop, "version", "v", "", "Sets the image version to stop")
+		stopSubcommand.Flags().StringVarP(&versionToStop, "version", "v", srv.Version, "Sets the image version to stop")
 
 		stopCmd.AddCommand(stopSubcommand)
 	}

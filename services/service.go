@@ -14,82 +14,6 @@ import (
 	"github.com/elastic/metricbeat-tests-poc/log"
 )
 
-// servicesDefaults initial service configuration that could be overwritten by
-// users on their local configuration. This configuration will be persisted in
-// the application directory as initial configuration, in the form of a YAML file
-var servicesDefaults = map[string]DockerService{
-	"apache": {
-		ContainerName: "apache-2.4",
-		ExposedPort:   80,
-		Image:         "httpd",
-		Name:          "apache",
-		NetworkAlias:  "apache",
-		Version:       "2.4",
-	},
-	"elasticsearch": {
-		BuildBranch:     "master",
-		BuildRepository: "elastic/elasticsearch",
-		ContainerName:   "elasticsearch-7.2.0",
-		ExposedPort:     9200,
-		Env: map[string]string{
-			"bootstrap.memory_lock":  "true",
-			"discovery.type":         "single-node",
-			"ES_JAVA_OPTS":           "-Xms512m -Xmx512m",
-			"xpack.security.enabled": "true",
-		},
-		Image:        "docker.elastic.co/elasticsearch/elasticsearch",
-		Name:         "elasticsearch",
-		NetworkAlias: "elasticsearch",
-		Version:      "7.2.0",
-	},
-	"kafka": {
-		ContainerName: "kafka",
-		ExposedPort:   9092,
-		Image:         "wurstmeister/kafka",
-		Name:          "kafka",
-		NetworkAlias:  "kafka",
-		Version:       "latest",
-	},
-	"kibana": {
-		BuildBranch:     "master",
-		BuildRepository: "elastic/kibana",
-		ContainerName:   "kibana-7.2.0",
-		ExposedPort:     5601,
-		Image:           "docker.elastic.co/kibana/kibana",
-		Name:            "kibana",
-		NetworkAlias:    "kibana",
-		Version:         "7.2.0",
-	},
-	"metricbeat": {
-		BuildBranch:     "master",
-		BuildRepository: "elastic/beats",
-		ContainerName:   "metricbeat-7.2.0",
-		Image:           "docker.elastic.co/beats/metricbeat",
-		Name:            "metricbeat",
-		NetworkAlias:    "metricbeat",
-		Version:         "7.2.0",
-	},
-	"mongodb": {
-		ContainerName: "mongodb",
-		ExposedPort:   27017,
-		Image:         "mongo",
-		Name:          "mongodb",
-		NetworkAlias:  "mongodb",
-		Version:       "latest",
-	},
-	"mysql": {
-		ContainerName: "mysql",
-		Env: map[string]string{
-			"MYSQL_ROOT_PASSWORD": "secret",
-		},
-		ExposedPort:  3306,
-		Image:        "mysql",
-		Name:         "mysql",
-		NetworkAlias: "mysql",
-		Version:      "latest",
-	},
-}
-
 // Service represents the contract for services
 type Service interface {
 	Destroy() error
@@ -110,19 +34,7 @@ type Service interface {
 
 // DockerService represents a Docker service to be run
 type DockerService struct {
-	BindMounts      map[string]string `yaml:"BindMounts"`
-	BuildBranch     string            `yaml:"BuildBranch"`
-	BuildRepository string            `yaml:"BuildRepository"`
-	ContainerName   string            `yaml:"ContainerName"`
-	// Daemon indicates if the service must be run as a daemon
-	Daemon       bool              `yaml:"AsDaemon"`
-	Env          map[string]string `yaml:"Env"`
-	ExposedPort  int               `yaml:"ExposedPort"`
-	Image        string            `yaml:"Image"`
-	Labels       map[string]string `yaml:"Labels"`
-	Name         string            `yaml:"Name"`
-	NetworkAlias string            `yaml:"NetworkAlias"`
-	Version      string            `yaml:"Version"`
+	config.Service
 }
 
 // GetContainerName returns service name
@@ -275,7 +187,6 @@ func (s *DockerService) AsDaemon() *DockerService {
 
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
-	AvailableServices() map[string]DockerService
 	Build(string, string, bool) Service
 	Run(Service) error
 	Stop(Service) error
@@ -288,11 +199,6 @@ type DockerServiceManager struct {
 // NewServiceManager returns a new service manager
 func NewServiceManager() ServiceManager {
 	return &DockerServiceManager{}
-}
-
-// AvailableServices returns the available services in the system
-func (sm *DockerServiceManager) AvailableServices() map[string]DockerService {
-	return servicesDefaults
 }
 
 // Build builds a service domain entity from just its name and version

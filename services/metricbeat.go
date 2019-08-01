@@ -6,17 +6,20 @@ import (
 	"strconv"
 	"time"
 
+	config "github.com/elastic/metricbeat-tests-poc/config"
 	"github.com/elastic/metricbeat-tests-poc/log"
 )
 
 // NewMetricbeatService returns a metricbeat service entity
 func NewMetricbeatService(version string, asDaemon bool) Service {
 	service := &DockerService{
-		ContainerName: "metricbeat-" + version + "-" + strconv.Itoa(int(time.Now().UnixNano())),
-		Daemon:        asDaemon,
-		Image:         "docker.elastic.co/beats/metricbeat",
-		Name:          "metricbeat",
-		Version:       version,
+		Service: config.Service{
+			ContainerName: "metricbeat-" + version + "-" + strconv.Itoa(int(time.Now().UnixNano())),
+			Daemon:        asDaemon,
+			Image:         "docker.elastic.co/beats/metricbeat",
+			Name:          "metricbeat",
+			Version:       version,
+		},
 	}
 
 	return service
