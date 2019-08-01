@@ -101,11 +101,8 @@ pipeline {
             gitCheckout(basedir: env.BEATS_BASE_DIR, repo: 'git@github.com:elastic/beats.git',
                         branch: params.PR, credentialsId: env.JOB_GIT_CREDENTIALS)
             unstash 'scripts'
-            dir("${BEATS_BASE_DIR}/metricbeat"){
-              sh "ls -ltra ${env.WORKSPACE} || true"
-              sh "ls -ltra ${env.WORKSPACE}/${BASE_DIR} || true"
-              sh "ls -ltra ${env.WORKSPACE}/${BASE_DIR}/.ci/scripts/build-metricbeats.sh || true"
-              sh script: "${env.WORKSPACE}/${BASE_DIR}/.ci/scripts/build-metricbeats.sh", label: 'Build metricbeats'
+            dir(BASE_DIR){
+              sh script: ".ci/scripts/build-metricbeats.sh ${WORKSPACE}/${BEATS_BASE_DIR}/metricbeat", label: 'Build metricbeats'
             }
           }
         }
