@@ -72,7 +72,7 @@ pipeline {
           }
         }
         stage('Tests PR') {
-          agent { label 'linux && immutable' }
+          agent { label 'linux && immutable && docker' }
           options { skipDefaultCheckout() }
           when {
             beforeAgent true
@@ -88,10 +88,14 @@ pipeline {
                 deleteDir()
                 gitCheckout(basedir: env.BEATS_BASE_DIR, repo: 'git@github.com:elastic/beats.git',
                             branch: params.PR, credentialsId: env.JOB_GIT_CREDENTIALS)
-                dir(env.BEATS_BASE_DIR){
+                dir("${BEATS_BASE_DIR}/metricbeats"){
                   sh '''
                     eval "$(curl -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | GIMME_GO_VERSION=${GO_VERSION} bash)"
-                    make release
+                    go get -u -d github.com/magefile/mage
+                    cd $GOPATH/src/github.com/magefile/mage
+                    go run bootstrap.go
+                    PLATFORMS=linux/amd64 mage package
+                    docker images
                   '''
                 }
               }
