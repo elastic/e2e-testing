@@ -100,23 +100,17 @@ pipeline {
             deleteDir()
             gitCheckout(basedir: env.BEATS_BASE_DIR, repo: 'git@github.com:elastic/beats.git',
                         branch: params.PR, credentialsId: env.JOB_GIT_CREDENTIALS)
+            unstash 'build'
             dir("${BEATS_BASE_DIR}/metricbeats"){
-              sh '''#!/bin/bash
-                eval "$(curl -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | GIMME_GO_VERSION=${GO_VERSION} bash)"
-                go env
-                go get -u -d github.com/magefile/mage
-                pushd $GOPATH/src/github.com/magefile/mage
-                go run bootstrap.go
-                mage -version
-                popd
-                mage -debug -l
-                PLATFORMS=linux/amd64 mage -debug package
-                docker images
-              '''
+              sh script: "${WORKSPACE}/${BEATS_BASE}/.ci/scripts/build-metricbeats.sh", label: 'Build metricbeats'
             }
           }
         }
         stage('Functional testing') {
+          when {
+            beforeAgent true
+            expression { return false }
+          }
           environment {
             GO111MODULE = 'on'
             GOPROXY = 'https://proxy.golang.org'
