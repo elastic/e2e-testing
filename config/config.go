@@ -3,12 +3,14 @@ package config
 import (
 	"log"
 	"os"
+	"os/exec"
 	"os/user"
 	"path/filepath"
 
 	"github.com/spf13/viper"
 
 	"github.com/elastic/metricbeat-tests-poc/docker"
+	logger "github.com/elastic/metricbeat-tests-poc/log"
 )
 
 // OpWorkspace where the application works
@@ -19,8 +21,22 @@ var Op *OpConfig
 
 const fileName = "config.yml"
 
+// checkInstalledSoftware checks that the required software is present
+func checkInstalledSoftware() {
+	logger.Info("Validating required tools...")
+	binaries := []string{
+		"docker",
+	}
+
+	for _, binary := range binaries {
+		which(binary)
+	}
+}
+
 // Init creates this tool workspace under user's home, in a hidden directory named ".op"
 func Init(services interface{}) {
+	checkInstalledSoftware()
+
 	usr, _ := user.Current()
 
 	w := filepath.Join(usr.HomeDir, ".op")
@@ -107,4 +123,11 @@ func readConfig(
 	}
 
 	return cfg, err
+}
+
+// which checks if software is installed
+func which(software string) {
+	path, err := exec.LookPath(software)
+	logger.CheckIfError(err)
+	logger.Success("%s is present at %s", software, path)
 }
