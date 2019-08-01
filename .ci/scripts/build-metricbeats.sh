@@ -15,7 +15,6 @@ pushd "${LOCATION}"
 ## For debugging purposes
 go env
 mage -version
-mage -l
 
 ## Package the metricbeats
 mage package

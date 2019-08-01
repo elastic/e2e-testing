@@ -107,10 +107,6 @@ pipeline {
           }
         }
         stage('Functional testing') {
-          when {
-            beforeAgent true
-            expression { return false }
-          }
           environment {
             GO111MODULE = 'on'
             GOPROXY = 'https://proxy.golang.org'
