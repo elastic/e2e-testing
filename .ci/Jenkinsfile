@@ -11,8 +11,6 @@ pipeline {
     NOTIFY_TO = credentials('notify-to')
     JOB_GCS_BUCKET = credentials('gcs-bucket')
     JOB_GIT_CREDENTIALS = '2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken'
-    GO111MODULE = 'on'
-    GOPROXY = 'https://proxy.golang.org'
   }
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -44,6 +42,8 @@ pipeline {
         GOPATH = "${env.WORKSPACE}"
         GO_VERSION = "${params.GO_VERSION.trim()}"
         PATH = "${env.PATH}:${env.WORKSPACE}/bin"
+        GO111MODULE = 'on'
+        GOPROXY = 'https://proxy.golang.org'
       }
       stages {
         stage('Checkout') {
@@ -71,56 +71,68 @@ pipeline {
             }
           }
         }
-        stage('Tests PR') {
-          agent { label 'linux && immutable && docker' }
-          options { skipDefaultCheckout() }
-          when {
-            beforeAgent true
-            anyOf {
-              triggeredBy 'UpstreamCause'
-              expression { return params.PR.trim() }
+      }
+    }
+    stage('Tests PR') {
+      agent { label 'linux && immutable && docker' }
+      options { skipDefaultCheckout() }
+      environment {
+        HOME = "${env.WORKSPACE}"
+        GOPATH = "${env.WORKSPACE}"
+        GO_VERSION = "${params.GO_VERSION.trim()}"
+        PATH = "${env.PATH}:${env.WORKSPACE}/bin"
+      }
+      when {
+        beforeAgent true
+        anyOf {
+          triggeredBy 'UpstreamCause'
+          expression { return params.PR.trim() }
+        }
+      }
+      stages {
+        stage('Beats') {
+          steps {
+            githubCheckNotify('PENDING')
+            deleteDir()
+            gitCheckout(basedir: env.BEATS_BASE_DIR, repo: 'git@github.com:elastic/beats.git',
+                        branch: params.PR, credentialsId: env.JOB_GIT_CREDENTIALS)
+            dir("${BEATS_BASE_DIR}/metricbeats"){
+              sh '''
+                eval "$(curl -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | GIMME_GO_VERSION=${GO_VERSION} bash)"
+                go env
+                go get -u -d github.com/magefile/mage
+                cd $GOPATH/src/github.com/magefile/mage
+                go run bootstrap.go
+                mage -version
+                PLATFORMS=linux/amd64 mage package
+                docker images
+              '''
             }
           }
-          stages {
-            stage('Beats') {
-              steps {
-                githubCheckNotify('PENDING')
-                deleteDir()
-                gitCheckout(basedir: env.BEATS_BASE_DIR, repo: 'git@github.com:elastic/beats.git',
-                            branch: params.PR, credentialsId: env.JOB_GIT_CREDENTIALS)
-                dir("${BEATS_BASE_DIR}/metricbeats"){
-                  sh '''
-                    eval "$(curl -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | GIMME_GO_VERSION=${GO_VERSION} bash)"
-                    go get -u -d github.com/magefile/mage
-                    cd $GOPATH/src/github.com/magefile/mage
-                    go run bootstrap.go
-                    PLATFORMS=linux/amd64 mage package
-                    docker images
-                  '''
-                }
-              }
-            }
-            stage('Functional testing') {
-              steps {
-                deleteDir()
-                unstash 'build'
-                dir(env.BASE_DIR){
-                  sh script: '.ci/scripts/functional-test.sh', label: 'Run functional tests'
-                }
-              }
-              post {
-                always {
-                  junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/junit-*.xml")
-                  archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/junit-*"
-                }
-              }
+        }
+        stage('Functional testing') {
+          environment {
+            GO111MODULE = 'on'
+            GOPROXY = 'https://proxy.golang.org'
+          }
+          steps {
+            deleteDir()
+            unstash 'build'
+            dir(env.BASE_DIR){
+              sh script: '.ci/scripts/functional-test.sh', label: 'Run functional tests'
             }
           }
           post {
             always {
-              githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
+              junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/junit-*.xml")
+              archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/junit-*"
             }
           }
+        }
+      }
+      post {
+        always {
+          githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
         }
       }
     }
