@@ -97,16 +97,14 @@ pipeline {
             gitCheckout(basedir: env.BEATS_BASE_DIR, repo: 'git@github.com:elastic/beats.git',
                         branch: params.PR, credentialsId: env.JOB_GIT_CREDENTIALS)
             dir("${BEATS_BASE_DIR}/metricbeats"){
-              sh '''
+              sh '''#!/bin/bash
                 eval "$(curl -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | GIMME_GO_VERSION=${GO_VERSION} bash)"
                 go env
                 go get -u -d github.com/magefile/mage
-                cd $GOPATH/src/github.com/magefile/mage
+                pushd $GOPATH/src/github.com/magefile/mage
                 go run bootstrap.go
                 mage -version
-                mage -l
-                pwd
-                ls -ltra
+                popd
                 PLATFORMS=linux/amd64 mage package
                 docker images
               '''
