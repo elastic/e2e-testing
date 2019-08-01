@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-source ./.ci/scripts/install-go.sh
+# shellcheck disable=SC1091
+source .ci/scripts/install-go.sh
 
 # Prepare junit build context
 mkdir -p outputs
