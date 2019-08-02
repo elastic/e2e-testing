@@ -2,9 +2,9 @@ Feature: As a Metricbeat developer I want to check that the Apache module works 
 
 Scenario Outline: Check module is sending metrics to a file
   Given Apache "<apache_version>" is running
-    And metricbeat "7.2.0" is installed and configured for Apache module
+    And metricbeat "<metricbeat_version>" is installed and configured for Apache module
   Then metricbeat outputs metrics to the file "apache-<apache_version>.metrics"
 Examples:
-| apache_version |
-| 2.2  |
-| 2.4  |
+| apache_version | metricbeat_version |
+| 2.2  | 8.0.0 |
+| 2.4  | 8.0.0 |
