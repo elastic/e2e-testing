@@ -144,6 +144,8 @@ func InitConfig() {
 		log.CheckIfErrorMessage(err, "Cannot create workdir for 'op' at "+w)
 
 		log.Success("'op' workdir created at " + w)
+
+		initConfigFile(w)
 	}
 
 	OpWorkspace = w
@@ -212,11 +214,12 @@ func readConfig(workspace string) (OpConfig, error) {
 	if err != nil {
 		log.Warn("%v", err)
 		initConfigFile(workspace)
+		viper.ReadInConfig()
 	}
 
 	services := map[string]Service{}
 	viper.Unmarshal(&services)
-	//log.CheckIfErrorMessage(err, "Unable to decode configuration into struct")
+	log.CheckIfErrorMessage(err, "Unable to decode configuration into struct")
 
 	cfg := OpConfig{
 		Services: services,
