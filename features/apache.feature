@@ -7,4 +7,4 @@ Scenario Outline: Check module is sending metrics to a file
 Examples:
 | apache_version | metricbeat_version |
 | 2.2  | 8.0.0 |
-| 2.4  | PR |
+| 2.4  | 8.0.0 |

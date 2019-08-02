@@ -18,6 +18,3 @@ mage -version
 
 ## Package the metricbeats
 mage package
-
-## List the cached docker images
-docker images

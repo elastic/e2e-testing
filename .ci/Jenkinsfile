@@ -27,7 +27,6 @@ pipeline {
   }
   parameters {
     string(name: 'GO_VERSION', defaultValue: '1.12.7', description: "Go version to use.")
-    string(name: 'MODULE', defaultValue: 'all', description: 'The metricbeats module to be tested.')
     string(name: 'PR', defaultValue: '78b9a7274bd01cf1413027bdb3ce522b21514630', description: "PR to be tested out")
     string(name: 'GITHUB_CHECK_NAME', defaultValue: 'Integration Testing', description: 'Name of the GitHub check to be updated. Only if this build is triggered from another parent stream.')
     string(name: 'GITHUB_CHECK_REPO', defaultValue: 'beats', description: 'Name of the GitHub repo to be updated. Only if this build is triggered from another parent stream.')
@@ -94,9 +93,7 @@ pipeline {
               options { skipDefaultCheckout() }
               when {
                 beforeAgent true
-                anyOf {
-                  expression { return params.PR.trim() }
-                }
+                expression { return params.PR.trim() }
               }
               environment {
                 PLATFORMS = 'linux/amd64'
@@ -124,6 +121,10 @@ pipeline {
         }
         stage('Functional testing') {
           agent { label 'linux && immutable && docker' }
+          when {
+            beforeAgent true
+            expression { return params.PR.trim() }
+          }
           environment {
             GO111MODULE = 'on'
             GOPROXY = 'https://proxy.golang.org'
@@ -141,21 +142,6 @@ pipeline {
             always {
               junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/junit-*.xml")
               archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/junit-*"
-            }
-          }
-        }
-        stage('Notify PR') {
-          when {
-            beforeAgent true
-            anyOf {
-              expression { return params.PR.trim() }
-            }
-          }
-          steps {
-            echo 'Notify the PR'
-          }
-          post {
-            always {
               githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
             }
           }
