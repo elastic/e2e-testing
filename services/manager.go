@@ -31,22 +31,26 @@ func (sm *DockerServiceManager) Build(service string, version string, asDaemon b
 		return NewMetricbeatService(version, asDaemon)
 	}
 
-	cfg := config.Op.GetServiceConfig(service)
-	if cfg == nil {
+	cfg, exists := config.Op.GetServiceConfig(service)
+	if !exists {
 		log.Error("Cannot find service %s in configuration file.", service)
 		return nil
 	}
 
-	srv := &DockerService{}
+	srv := config.Service{}
 
 	mapstructure.Decode(cfg, &srv)
 
-	srv.SetAsDaemon(asDaemon)
-	srv.SetVersion(version)
+	dockerService := DockerService{
+		Service: srv,
+	}
+	dockerService.SetAsDaemon(asDaemon)
+	dockerService.SetVersion(version)
 
-	srv.SetContainerName(srv.GetName() + "-" + srv.GetVersion())
+	dockerService.SetContainerName(
+		dockerService.GetName() + "-" + dockerService.GetVersion())
 
-	return srv
+	return &dockerService
 }
 
 // Run runs a service

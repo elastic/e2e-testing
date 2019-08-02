@@ -162,8 +162,10 @@ func AvailableServices() map[string]Service {
 }
 
 // GetServiceConfig configuration of a service
-func (c *OpConfig) GetServiceConfig(service string) interface{} {
-	return c.Services[service]
+func (c *OpConfig) GetServiceConfig(service string) (Service, bool) {
+	srv, exists := c.Services[service]
+
+	return srv, exists
 }
 
 // newConfig returns a new configuration
