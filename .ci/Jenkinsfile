@@ -29,7 +29,7 @@ pipeline {
     string(name: 'GO_VERSION', defaultValue: '1.12.7', description: "Go version to use.")
     string(name: 'PR', defaultValue: '78b9a7274bd01cf1413027bdb3ce522b21514630', description: "PR to be tested out")
     string(name: 'GITHUB_CHECK_NAME', defaultValue: 'Integration Testing', description: 'Name of the GitHub check to be updated. Only if this build is triggered from another parent stream.')
-    string(name: 'GITHUB_CHECK_REPO', defaultValue: 'beats', description: 'Name of the GitHub repo to be updated. Only if this build is triggered from another parent stream.')
+    string(name: 'GITHUB_CHECK_REPO', defaultValue: '', description: 'Name of the GitHub repo to be updated. Only if this build is triggered by another parent stream.')
     string(name: 'GITHUB_CHECK_SHA1', defaultValue: '', description: 'Name of the GitHub repo to be updated. Only if this build is triggered by another parent stream.')
   }
   stages {
