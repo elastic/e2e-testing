@@ -47,6 +47,7 @@ pipeline {
           steps {
             gitCheckout(basedir: BASE_DIR, githubNotifyFirstTimeContributor: true)
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
+            stash allowEmpty: false, name: 'scripts', useDefaultExcludes: true, includes: "${BASE_DIR}/.ci/**"
           }
         }
         stage('Tests') {
@@ -79,7 +80,6 @@ pipeline {
                     sh script: '.ci/scripts/build-test.sh', label: 'Build and test'
                   }
                   stash allowEmpty: false, name: 'build', useDefaultExcludes: false, excludes: '.gimme/**'
-                  stash allowEmpty: false, name: 'scripts', useDefaultExcludes: true, includes: "${BASE_DIR}/.ci/**"
                 }
               }
               post {
