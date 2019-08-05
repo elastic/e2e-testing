@@ -6,5 +6,7 @@ Scenario Outline: Check module is sending metrics to a file
   Then metricbeat outputs metrics to the file "apache-<apache_version>.metrics"
 Examples:
 | apache_version | metricbeat_version |
-| 2.2  | 8.0.0 |
-| 2.4  | 8.0.0 |
+| 2.2  | 7.3.0 |
+| 2.2  | 8.0.0-SNAPSHOT |
+| 2.4  | 7.3.0 |
+| 2.4  | 8.0.0-SNAPSHOT |
