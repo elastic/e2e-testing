@@ -11,10 +11,10 @@ REPORT=outputs/junit-functional-tests
 ## Parse FEATURE if ALL
 if [ -n "${FEATURE}" ] ; then
   if [ "${FEATURE}" == "all" ] ; then
-    FEATURE=''
+    FEATURE='*'
   fi
 else
-  FEATURE=''
+  FEATURE='*'
 fi
 
 ## Generate test report even if make failed.
