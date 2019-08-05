@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 func TestBuildService_ContainerNameIncludesVersionAsSuffix(t *testing.T) {
 	srv := serviceManager.Build("apache", "2.2", false)
 
-	assert.Equal(t, "apache-2.2", srv.GetContainerName())
+	assert.Contains(t, srv.GetContainerName(), "apache-2.2")
 }
 
 func TestBuildService_ExposedPortsReturnsDefault(t *testing.T) {
