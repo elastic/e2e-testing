@@ -10,6 +10,7 @@ import (
 
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/colors"
+
 	"github.com/elastic/metricbeat-tests-poc/docker"
 	"github.com/elastic/metricbeat-tests-poc/log"
 	"github.com/elastic/metricbeat-tests-poc/services"
@@ -40,6 +41,7 @@ func TestMain(m *testing.M) {
 
 		s.AfterScenario(func(interface{}, error) {
 			log.Info("After scenario...")
+			cleanUpOutputs()
 		})
 
 		ApacheFeatureContext(s)
@@ -55,7 +57,7 @@ func TestMain(m *testing.M) {
 func cleanUpOutputs() {
 	dir, _ := os.Getwd()
 
-	files, err := filepath.Glob(dir + "/outputs/*.metrics")
+	files, err := filepath.Glob(dir + "/outputs/*.metrics*")
 	log.CheckIfErrorMessage(err, "Cannot remove outputs :(")
 
 	for _, f := range files {
@@ -65,14 +67,48 @@ func cleanUpOutputs() {
 }
 
 func metricbeatOutputsMetricsToTheFile(fileName string) error {
-	time.Sleep(20 * time.Second)
-
 	dir, _ := os.Getwd()
 
-	if _, err := os.Stat(dir + "/outputs/" + fileName); os.IsNotExist(err) {
-		return fmt.Errorf("The output file %s does not exist", fileName)
+	filePath := dir + "/outputs/" + fileName
+
+	foundChannel := make(chan bool, 1)
+
+	go fileChecker(foundChannel)
+	initialLoops := 15
+	loops := initialLoops
+	seconds := 2
+
+	for {
+		exists := fileExists(filePath)
+		if exists {
+			foundChannel <- true
+			close(foundChannel)
+			break
+		}
+
+		if loops == 0 {
+			return fmt.Errorf("Could not find the file after %d seconds", (initialLoops * seconds))
+		}
+
+		log.Log("Waiting for the file to be present (%d seconds left)", (loops * seconds))
+		time.Sleep(time.Duration(seconds) * time.Second)
+		loops--
 	}
 
-	log.Info("Metricbeat outputs to " + fileName)
 	return nil
+}
+
+func fileChecker(c chan bool) {
+	if <-c {
+		log.Success("File found!")
+	}
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) || info.IsDir() {
+		return false
+	}
+
+	return true
 }
