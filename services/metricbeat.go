@@ -38,11 +38,6 @@ func RunMetricbeatService(version string, monitoredService Service) (Service, er
 
 	ip := inspect.NetworkSettings.IPAddress
 
-	env := map[string]string{
-		"HOST":      ip,
-		"FILE_NAME": monitoredService.GetContainerName(),
-	}
-
 	bindMounts := map[string]string{
 		dir + "/configs/" + serviceName + ".yml": "/usr/share/metricbeat/metricbeat.yml",
 		dir + "/outputs":                         "/tmp",
@@ -53,6 +48,11 @@ func RunMetricbeatService(version string, monitoredService Service) (Service, er
 	}
 
 	service := NewMetricbeatService(version, false)
+
+	env := map[string]string{
+		"HOST":      ip,
+		"FILE_NAME": service.GetName() + "-" + service.GetVersion() + "-" + monitoredService.GetContainerName(),
+	}
 
 	service.SetBindMounts(bindMounts)
 	service.SetEnv(env)
