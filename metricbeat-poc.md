@@ -49,6 +49,7 @@ All the Gherkin (Cucumber) specifications are written in `.feature` files.
 A good example could be [this one](./features/mysql.feature):
 
 ```cucumber
+@mysql
 Feature: As a Metricbeat developer I want to check that the MySQL module works as expected
 
 Scenario Outline: Check module is sending metrics to a file
@@ -67,6 +68,13 @@ Examples:
 We are using Godog + Cucumber to implement the tests, where we create connections to the `Given`, `When`, `Then`, `And`, etc. in a well-known file structure.
 
 As an example, the Golang implementation of the `features/mysql.feature` is located under the [./mysql_test.go](./mysql_test.go) file.
+
+Each module will define its own file for specificacions, adding specific tags that will allow filtering the execution, if needed. These tags would be named after the module, so it will simplify the execution of just a module.
+
+```shell
+# Will run all scenarios tagged with @mysql
+$ GO111MODULE=on godog -t mysql
+```
 
 ## The result
 
