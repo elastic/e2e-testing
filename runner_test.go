@@ -43,9 +43,6 @@ func TestMain(m *testing.M) {
 			log.Info("After scenario...")
 			cleanUpOutputs()
 		})
-
-		ApacheFeatureContext(s)
-		MySQLFeatureContext(s)
 	}, opt)
 
 	if st := m.Run(); st > status {
