@@ -87,10 +87,10 @@ func metricbeatOutputsMetricsToTheFile(fileName string) error {
 		}
 
 		if loops == 0 {
-			return fmt.Errorf("Could not find the file after %d seconds", (initialLoops * seconds))
+			return fmt.Errorf("Could not find the file %s after %d seconds", fileName, (initialLoops * seconds))
 		}
 
-		log.Log("Waiting for the file to be present (%d seconds left)", (loops * seconds))
+		log.Log("Waiting for the file %s to be present (%d seconds left)", fileName, (loops * seconds))
 		time.Sleep(time.Duration(seconds) * time.Second)
 		loops--
 	}
