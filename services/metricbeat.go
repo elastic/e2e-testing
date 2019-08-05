@@ -51,7 +51,7 @@ func RunMetricbeatService(version string, monitoredService Service) (Service, er
 
 	env := map[string]string{
 		"HOST":      ip,
-		"FILE_NAME": service.GetName() + "-" + service.GetVersion() + "-" + monitoredService.GetContainerName(),
+		"FILE_NAME": service.GetName() + "-" + service.GetVersion() + "-" + monitoredService.GetName() + "-" + monitoredService.GetVersion(),
 	}
 
 	service.SetBindMounts(bindMounts)
