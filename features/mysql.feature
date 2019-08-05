@@ -6,6 +6,9 @@ Scenario Outline: Check module is sending metrics to a file
   Then metricbeat outputs metrics to the file "mysql-<mysql_version>.metrics"
 Examples:
 | mysql_version | metricbeat_version |
-| 5.6  | 8.0.0 |
-| 5.7  | 8.0.0 |
-| 8.0  | 8.0.0 |
+| 5.6  | 7.3.0 |
+| 5.7  | 7.3.0 |
+| 8.0  | 7.3.0 |
+| 5.6  | 8.0.0-SNAPSHOT |
+| 5.7  | 8.0.0-SNAPSHOT |
+| 8.0  | 8.0.0-SNAPSHOT |
