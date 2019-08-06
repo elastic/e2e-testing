@@ -152,7 +152,7 @@ pipeline {
   }
   post {
     cleanup {
-      notifyBuildResult()
+      notifyBuildResult(to: ['victor.martinez@elastic.co', 'manuel.delapena@elastic.co'])
     }
   }
 }
