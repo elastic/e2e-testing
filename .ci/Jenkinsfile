@@ -136,9 +136,7 @@ pipeline {
             dir(BASE_DIR){
               unstash 'docker'
               sh script: '.ci/scripts/tag-metricbeats.sh', label: 'Create docker tag'
-              sh script: """#!/bin/bash
-              .ci/scripts/functional-test.sh "${GO_VERSION}" "${FEATURE}"
-              """, label: 'Run functional tests'
+              sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${FEATURE}" """, label: 'Run functional tests'
             }
           }
           post {
