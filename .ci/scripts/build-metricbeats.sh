@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 set -euxo pipefail
+#
+# Package the metricbeats project.
+#
+# Parameters:
+#   - GO_VERSION - that's the version which will be installed and enabled.
+#   - LOCATION  - that's the location where the metricbeat source code is stored.
+#
 
-GO_VERSION=${1}
+GO_VERSION=${1:?GO_VERSION is not set}
 LOCATION=${2}
 
 # shellcheck disable=SC1091

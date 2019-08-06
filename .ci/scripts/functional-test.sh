@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 set -euxo pipefail
+#
+# Run the functional tests using the functional-test make goal and parse the
+# output to JUnit format.
+#
+# Parameters:
+#   - GO_VERSION - that's the version which will be installed and enabled.
+#   - FEATURE  - that's the feature to be tested. Default '' which means all of them.
+#
 
-GO_VERSION=${1}
+GO_VERSION=${1:?GO_VERSION is not set}
 FEATURE=${2:-''}
 
 # shellcheck disable=SC1091
