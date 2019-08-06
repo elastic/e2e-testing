@@ -1,0 +1,12 @@
+metricbeat.modules:
+- module: redis
+  metricsets: ["info"]
+  period: 10s
+  enabled: true
+
+  # Redis hosts
+  hosts: ["http://${HOST}:6379"]
+
+output.file:
+  path: "/tmp"
+  filename: "${FILE_NAME}.metrics"

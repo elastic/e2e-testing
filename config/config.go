@@ -94,6 +94,14 @@ var servicesDefaults = map[string]Service{
 		NetworkAlias: "mysql",
 		Version:      "latest",
 	},
+	"redis": {
+		ContainerName: "redis",
+		ExposedPort:   6379,
+		Image:         "redis",
+		Name:          "redis",
+		NetworkAlias:  "redis",
+		Version:       "latest",
+	},
 }
 
 // Service represents the configuration for a service
