@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
+GO_VERSION=${1}
+FEATURE=${2:-''}
+
 # shellcheck disable=SC1091
 source .ci/scripts/install-go.sh
 
@@ -20,8 +23,8 @@ fi
 ## Generate test report even if make failed.
 set +e
 exit_status=0
-if ! REPORT=${REPORT} FEATURE=${FEATURE} make functional-test-ci ; then
-  echo 'ERROR: functional-test-ci failed'
+if ! REPORT=${REPORT} FEATURE=${FEATURE} FORMAT=junit make functional-test ; then
+  echo 'ERROR: functional-test failed'
   exit_status=1
 fi
 

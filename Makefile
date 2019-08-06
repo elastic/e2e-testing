@@ -1,6 +1,7 @@
 TEST_TIMEOUT?=5m
-REPORT?=report.xml
+REPORT?=outputs/godog-report.out
 FEATURE?=*
+FORMAT?=pretty
 .PHONY: install-godog
 install-godog:
 	go get github.com/DATA-DOG/godog/cmd/godog
@@ -15,8 +16,4 @@ test:
 
 .PHONY: functional-test
 functional-test: install-godog
-	godog -t ${FEATURE}
-
-.PHONY: functional-test-ci
-functional-test-ci: install-godog
-	godog --format=junit -t ${FEATURE} | tee ${REPORT} ; test $${PIPESTATUS[0]} -eq 0
+	godog --format=${FORMAT} -t ${FEATURE} | tee ${REPORT} ; test $${PIPESTATUS[0]} -eq 0
