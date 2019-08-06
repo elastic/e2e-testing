@@ -1,5 +1,4 @@
 TEST_TIMEOUT?=5m
-REPORT?=outputs/godog-report.out
 FEATURE?=*
 FORMAT?=pretty
 .PHONY: install-godog
@@ -16,4 +15,4 @@ test:
 
 .PHONY: functional-test
 functional-test: install-godog
-	godog --format=${FORMAT} -t ${FEATURE} | tee ${REPORT} ; test $${PIPESTATUS[0]} -eq 0
+	godog --format=${FORMAT} -t ${FEATURE}

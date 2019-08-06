@@ -23,10 +23,11 @@ fi
 ## Generate test report even if make failed.
 set +e
 exit_status=0
-if ! REPORT=${REPORT} FEATURE=${FEATURE} FORMAT=junit make functional-test ; then
+if ! FEATURE=${FEATURE} FORMAT=junit make functional-test | tee ${REPORT}  ; then
   echo 'ERROR: functional-test failed'
   exit_status=1
 fi
 
-sed -e 's/^[ \t]*//' ${REPORT} | grep -E '^<.*>$' > ${REPORT}.xml
+## Transform report to Junit by parsing the stdout generated previously
+sed -e 's/^[ \t]*//; s#>.*failed$#>#g' ${REPORT} | grep -E '^<.*>$' > ${REPORT}.xml
 exit $exit_status
