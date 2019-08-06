@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/testcontainers/testcontainers-go"
@@ -68,7 +69,7 @@ func (s *DockerService) GetVersion() string {
 // Inspect returns the JSON representation of the container obtained from
 // the Docker engine
 func (s *DockerService) Inspect() (*types.ContainerJSON, error) {
-	json, err := docker.InspectContainer(s.GetContainerName())
+	json, err := docker.InspectContainer(s.GetName() + "-" + s.GetVersion())
 	if err != nil {
 		return nil, fmt.Errorf("Could not inspect the container: %v", err)
 	}
@@ -125,6 +126,11 @@ func (s *DockerService) Destroy() error {
 		return err
 	}
 
+	if json == nil {
+		log.Info("The service for %s is not present in the system", s.GetName())
+		return nil
+	}
+
 	return docker.RemoveContainer(json.Name)
 }
 
@@ -143,6 +149,16 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 
 		exposedPorts = append(exposedPorts, exposedPort.toString())
 	}
+
+	if s.Labels == nil {
+		s.Labels = map[string]string{}
+	}
+
+	s.Labels["service.owner"] = "co.elastic.observability"
+	s.Labels["service.container.name"] = s.GetName() + "-" + s.GetVersion()
+
+	s.SetContainerName(
+		s.GetName() + "-" + s.GetVersion() + "-" + strconv.Itoa(int(time.Now().UnixNano())))
 
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{

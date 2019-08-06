@@ -2,8 +2,6 @@ package services
 
 import (
 	"fmt"
-	"strconv"
-	"time"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -48,9 +46,6 @@ func (sm *DockerServiceManager) Build(service string, version string, asDaemon b
 	}
 	dockerService.SetAsDaemon(asDaemon)
 	dockerService.SetVersion(version)
-
-	dockerService.SetContainerName(
-		dockerService.GetName() + "-" + dockerService.GetVersion() + "-" + strconv.Itoa(int(time.Now().UnixNano())))
 
 	return &dockerService
 }
