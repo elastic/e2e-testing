@@ -5,7 +5,7 @@ GO_VERSION=${1}
 FEATURE=${2:-''}
 
 # shellcheck disable=SC1091
-source .ci/scripts/install-go.sh
+source .ci/scripts/install-go.sh "${GO_VERSION}"
 
 rm -rf outputs || true
 mkdir -p outputs

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-LOCATION=${1}
+GO_VERSION=${1}
+LOCATION=${2}
 
 # shellcheck disable=SC1091
-source .ci/scripts/install-go.sh
+source .ci/scripts/install-go.sh "${GO_VERSION}"
 
 go get -u -d github.com/magefile/mage
 pushd "$GOPATH/src/github.com/magefile/mage"
