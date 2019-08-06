@@ -37,6 +37,11 @@ func Info(format string, args ...interface{}) {
 	fmt.Printf("%s\n", Bold(Blue(fmt.Sprintf(format, args...))))
 }
 
+// Log should be used to regular messages
+func Log(format string, args ...interface{}) {
+	fmt.Printf("%s\n", White(fmt.Sprintf(format, args...)))
+}
+
 // Success should be used to describe success messages.
 func Success(format string, args ...interface{}) {
 	fmt.Printf("%s\n", Bold(Green(fmt.Sprintf(format, args...))))
