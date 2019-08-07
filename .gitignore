@@ -1,6 +1,9 @@
 op
 
 godog.test
+report.xml
 
 outputs/*
 !outputs/.touch
+
+*.swp
