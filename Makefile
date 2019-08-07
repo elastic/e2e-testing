@@ -1,6 +1,8 @@
 TEST_TIMEOUT?=5m
-FEATURE?=*
+FEATURE?=
+FLAG?=
 FORMAT?=pretty
+
 .PHONY: install-godog
 install-godog:
 	go get github.com/DATA-DOG/godog/cmd/godog
@@ -15,4 +17,4 @@ test:
 
 .PHONY: functional-test
 functional-test: install-godog
-	godog --format=${FORMAT} -t ${FEATURE}
+	godog --format=${FORMAT} ${FLAG} ${FEATURE}

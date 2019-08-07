@@ -19,19 +19,18 @@ rm -rf outputs || true
 mkdir -p outputs
 REPORT=outputs/junit-functional-tests
 
-## Parse FEATURE if ALL
-if [ -n "${FEATURE}" ] ; then
-  if [ "${FEATURE}" == "all" ] ; then
-    FEATURE='*'
-  fi
+## Parse FEATURE if not ALL then enable the flags to be passed to the functional-test wrapper
+FLAG=''
+if [ "${FEATURE}" != "" ] && [ "${FEATURE}" != "all" ] ; then
+  FLAG='-t'
 else
-  FEATURE='*'
+  FEATURE=''
 fi
 
 ## Generate test report even if make failed.
 set +e
 exit_status=0
-if ! FEATURE=${FEATURE} FORMAT=junit make functional-test | tee ${REPORT}  ; then
+if ! FLAG=${FLAG} FEATURE=${FEATURE} FORMAT=junit make functional-test | tee ${REPORT}  ; then
   echo 'ERROR: functional-test failed'
   exit_status=1
 fi
