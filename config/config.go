@@ -18,11 +18,11 @@ var OpWorkspace string
 // Op the tool's configuration, read from tool's workspace
 var Op *OpConfig
 
-const fileName = "config.yml"
+const fileName = "config.json"
 
 // servicesDefaults initial service configuration that could be overwritten by
 // users on their local configuration. This configuration will be persisted in
-// the application directory as initial configuration, in the form of a YAML file
+// the application directory as initial configuration, in the form of a JSON file
 var servicesDefaults = map[string]Service{
 	"apache": {
 		ContainerName: "apache-2.4",
@@ -106,18 +106,18 @@ var servicesDefaults = map[string]Service{
 
 // Service represents the configuration for a service
 type Service struct {
-	BindMounts      map[string]string `yaml:"BindMounts"`
-	BuildBranch     string            `yaml:"BuildBranch"`
-	BuildRepository string            `yaml:"BuildRepository"`
-	ContainerName   string            `yaml:"ContainerName"`
-	Daemon          bool              `yaml:"AsDaemon"`
-	Env             map[string]string `yaml:"Env"`
-	ExposedPort     int               `yaml:"ExposedPort"`
-	Image           string            `yaml:"Image"`
-	Labels          map[string]string `yaml:"Labels"`
-	Name            string            `yaml:"Name"`
-	NetworkAlias    string            `yaml:"NetworkAlias"`
-	Version         string            `yaml:"Version"`
+	BindMounts      map[string]string `mapstructure:"BindMounts"`
+	BuildBranch     string            `mapstructure:"BuildBranch"`
+	BuildRepository string            `mapstructure:"BuildRepository"`
+	ContainerName   string            `mapstructure:"ContainerName"`
+	Daemon          bool              `mapstructure:"AsDaemon"`
+	Env             map[string]string `mapstructure:"Env"`
+	ExposedPort     int               `mapstructure:"ExposedPort"`
+	Image           string            `mapstructure:"Image"`
+	Labels          map[string]string `mapstructure:"Labels"`
+	Name            string            `mapstructure:"Name"`
+	NetworkAlias    string            `mapstructure:"NetworkAlias"`
+	Version         string            `mapstructure:"Version"`
 }
 
 // checkInstalledSoftware checks that the required software is present
@@ -203,7 +203,7 @@ func checkConfigFile(workspace string) {
 		v.SetDefault(key, value)
 	}
 
-	v.SetConfigType("yaml")
+	v.SetConfigType("json")
 	v.SetConfigName("config")
 	v.AddConfigPath(workspace)
 
@@ -213,7 +213,7 @@ func checkConfigFile(workspace string) {
 }
 
 func readConfig(workspace string) (OpConfig, error) {
-	viper.SetConfigType("yaml")
+	viper.SetConfigType("json")
 	viper.SetConfigName("config")
 	viper.AddConfigPath(workspace)
 
