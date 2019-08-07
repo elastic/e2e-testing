@@ -147,14 +147,7 @@ func InitConfig() {
 
 	w := filepath.Join(usr.HomeDir, ".op")
 
-	if _, err := os.Stat(w); os.IsNotExist(err) {
-		err = os.MkdirAll(w, 0755)
-		log.CheckIfErrorMessage(err, "Cannot create workdir for 'op' at "+w)
-
-		log.Success("'op' workdir created at " + w)
-
-		initConfigFile(w)
-	}
+	checkConfigFile(w)
 
 	OpWorkspace = w
 
@@ -190,12 +183,20 @@ func newConfig(workspace string) {
 	Op = &opConfig
 }
 
-func initConfigFile(workspace string) *os.File {
+func checkConfigFile(workspace string) {
+	_, err := os.Stat(workspace)
+	if os.IsExist(err) {
+		return
+	}
+	err = os.MkdirAll(workspace, 0755)
+	log.CheckIfErrorMessage(err, "Cannot create workdir for 'op' at "+workspace)
+	log.Success("'op' workdir created at " + workspace)
+
 	log.Info("Creating %s with default values in %s.", fileName, workspace)
 
 	configFilePath := filepath.Join(workspace, fileName)
 
-	f, _ := os.Create(configFilePath)
+	os.Create(configFilePath)
 
 	v := viper.New()
 	for key, value := range servicesDefaults {
@@ -206,11 +207,9 @@ func initConfigFile(workspace string) *os.File {
 	v.SetConfigName("config")
 	v.AddConfigPath(workspace)
 
-	err := v.WriteConfig()
+	err = v.WriteConfig()
 	log.CheckIfErrorMessage(err, `Cannot save default configuration file at `+configFilePath)
 	log.Success("Config file initialised with default values")
-
-	return f
 }
 
 func readConfig(workspace string) (OpConfig, error) {
@@ -221,7 +220,7 @@ func readConfig(workspace string) (OpConfig, error) {
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Warn("%v", err)
-		initConfigFile(workspace)
+		checkConfigFile(workspace)
 		viper.ReadInConfig()
 	}
 
