@@ -6,4 +6,6 @@ report.xml
 outputs/*
 !outputs/.touch
 
+.github/releases
+
 *.swp
