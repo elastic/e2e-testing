@@ -4,6 +4,25 @@ function git_branch_name() {
   echo $(git symbolic-ref --short HEAD)
 }
 
+readonly supportedOSS=("darwin" "linux" "windows")
+readonly supportedArchs=("386" "amd64")
+
+# GOOS represents the Golang's supported Operative Systems.
+# Possible values: darwin, linux, windows
+readonly GOOS="${GOOS:-linux}"
+if [[ ! " ${supportedOSS[@]} " =~ " ${GOOS} " ]]; then
+    echo "It's not possible to build a binary for ${GOOS}. Supported values: darwin, linux, windows"
+    exit 1
+fi
+
+# GOARCH represents the Golang's supported Architectures.
+# Possible values: 386, amd64
+readonly GOARCH="${GOARCH:-amd64}"
+if [[ ! " ${supportedArchs[@]} " =~ " ${GOARCH} " ]]; then
+    echo "It's not possible to build a binary for ${GOARCH}. Supported values: 386, amd64"
+    exit 1
+fi
+
 readonly BRANCH="$(git_branch_name)"
 readonly GO_VERSION="1.12.7"
 readonly GO_WORKSPACE="/usr/local/go/src/github.com/elastic/op"
@@ -14,26 +33,20 @@ if [[ "$BRANCH" != "master" ]]; then
     exit 1
 fi
 
+arch="${GOARCH}"
+goos="${GOOS}"
+extension=""
 
-for GOOS in darwin linux windows; do
-    goos="${GOOS}"
-    extension=""
+if [[ "$GOARCH" == "amd64" ]]; then
+    arch="64"
+fi
 
-    if [[ "$GOOS" == "windows" ]]; then
-        goos="win"
-        extension=".exe"
-    fi
+if [[ "$GOOS" == "windows" ]]; then
+    goos="win"
+    extension=".exe"
+fi
 
-    for GOARCH in 386 amd64; do
-        arch="${GOARCH}"
-
-        if [[ "$GOARCH" == "amd64" ]]; then
-            arch="64"
-        fi
-
-        echo ">>> Building for ${GOOS}/${GOARCH}"
-        docker run --rm -v "$(pwd)":${GO_WORKSPACE} -w ${GO_WORKSPACE} \
-            -e GOOS=${GOOS} -e GOARCH=${GOARCH} golang:${GO_VERSION} \
-            go build -v -o ${GO_WORKSPACE}/.github/releases/download/${VERSION}/${goos}${arch}-op${extension}
-    done
-done
+echo ">>> Building for ${GOOS}/${GOARCH}"
+docker run --rm -v "$(pwd)":${GO_WORKSPACE} -w ${GO_WORKSPACE} \
+    -e GOOS=${GOOS} -e GOARCH=${GOARCH} golang:${GO_VERSION} \
+    go build -v -o ${GO_WORKSPACE}/.github/releases/download/${VERSION}/${goos}${arch}-op${extension}
