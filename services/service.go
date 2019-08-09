@@ -107,6 +107,30 @@ func (s *DockerService) SetVersion(version string) {
 	s.Version = version
 }
 
+func (s *DockerService) toString(json *types.ContainerJSON) string {
+	ip := json.NetworkSettings.IPAddress
+	ports := json.NetworkSettings.Ports
+
+	toString := ""
+	toString += fmt.Sprintf("\tService: %s\n", s.GetName())
+	toString += fmt.Sprintf("\tImage : %s:%s\n", s.Image, s.GetVersion())
+	toString += fmt.Sprintf("\tNetwork: %v\n", "elastic-dev-network")
+	toString += fmt.Sprintf("\tContainer Name: %s\n", s.GetContainerName())
+	toString += fmt.Sprintf("\tNetwork Alias: %s\n", s.GetNetworkAlias())
+	toString += fmt.Sprintf("\tIP: %s\n", ip)
+	toString += fmt.Sprintf("\tApplication Port: %d -> %v\n", s.ExposedPort, ports["3306/tcp"])
+	toString += fmt.Sprintf("\tBind Mounts:\n")
+	for bm, path := range s.BindMounts {
+		toString += fmt.Sprintf("\t\t%s -> %s\n", bm, path)
+	}
+	toString += fmt.Sprintf("\tEnvironment Variables:\n")
+	for k, v := range s.Env {
+		toString += fmt.Sprintf("\t\t%s : %s\n", k, v)
+	}
+
+	return toString
+}
+
 // ExposedPort represents the structure for how services expose ports
 type ExposedPort struct {
 	Address       string
@@ -186,9 +210,8 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 
 	docker.ConnectContainerToDevNetwork(json.ContainerJSONBase.ID, s.GetNetworkAlias())
 
-	ip := json.NetworkSettings.IPAddress
-	ports := json.NetworkSettings.Ports
-	log.Info("The service (%s) runs on %s %v", s.GetName(), ip, ports)
+	log.Success("The service (%s) has been created successfully:", s.GetName())
+	log.Log("%s", s.toString(json))
 
 	return service, nil
 }
