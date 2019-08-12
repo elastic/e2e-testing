@@ -3,7 +3,7 @@ REPORT?=report.xml
 FEATURE?=*
 .PHONY: install-godog
 install-godog:
-	go get github.com/DATA-DOG/godog/cmd/godog
+	cd metricbeat-tests && go get github.com/DATA-DOG/godog/cmd/godog
 
 .PHONY: install
 install:
@@ -15,8 +15,8 @@ test:
 
 .PHONY: functional-test
 functional-test: install-godog
-	godog -t ${FEATURE}
+	cd metricbeat-tests && godog -t ${FEATURE}
 
 .PHONY: functional-test-ci
 functional-test-ci: install-godog
-	godog --format=junit -t ${FEATURE} | tee ${REPORT} ; test $${PIPESTATUS[0]} -eq 0
+	cd metricbeat-tests && godog --format=junit -t ${FEATURE} | tee ${REPORT} ; test $${PIPESTATUS[0]} -eq 0
