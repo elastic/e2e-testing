@@ -27,7 +27,7 @@ func TestBuildService_ContainerNameIncludesVersionAsSuffix(t *testing.T) {
 func TestBuildService_ExposedPortsReturnsDefault(t *testing.T) {
 	srv := serviceManager.Build("apache", "2.2", false)
 
-	assert.Equal(t, "80", srv.GetExposedPort())
+	assert.Equal(t, "80", srv.GetExposedPort(0))
 }
 
 func TestBuildService_Name(t *testing.T) {
@@ -48,7 +48,7 @@ func TestNewService_NetworkAlias(t *testing.T) {
 
 func TestNewService_NetworkAliasEmptyUsesName(t *testing.T) {
 	srv := services.DockerService{
-		Service: config.Service {
+		Service: config.Service{
 			Name: "name",
 		},
 	}

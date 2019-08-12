@@ -1,6 +1,7 @@
 TEST_TIMEOUT?=5m
-REPORT?=report.xml
-FEATURE?=*
+FEATURE?=
+FLAG?=
+FORMAT?=pretty
 .PHONY: install-godog
 install-godog:
 	cd metricbeat-tests && go get github.com/DATA-DOG/godog/cmd/godog
@@ -15,8 +16,4 @@ test:
 
 .PHONY: functional-test
 functional-test: install-godog
-	cd metricbeat-tests && godog -t ${FEATURE}
-
-.PHONY: functional-test-ci
-functional-test-ci: install-godog
-	cd metricbeat-tests && godog --format=junit -t ${FEATURE} | tee ${REPORT} ; test $${PIPESTATUS[0]} -eq 0
+	cd metricbeat-tests && godog --format=${FORMAT} ${FLAG} ${FEATURE}

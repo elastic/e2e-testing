@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 set -euxo pipefail
+#
+# Import and tag the docker image generated previously one.
+#
+# Requirements:
+# - docker image format to be imported is docker.tar.gz and should be within where this script
+#   is triggered.
+# - docker image format should match metricbeat-oss-X.Y.Z.docker.tar.gz where X.Y.Z is the version.
+#
 
 # shellcheck disable=SC2012
 DOCKER_IMAGE=$(ls -1 ./*docker.tar.gz)

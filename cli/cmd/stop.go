@@ -71,8 +71,8 @@ func buildStopServiceCommand(service string) *cobra.Command {
 
 var stopStackCmd = &cobra.Command{
 	Use:   "stack",
-	Short: "Stops an Elastic Stack (Elasticsearch + Kibana)",
-	Long: `Stops an Elastic Stack (Elasticsearch + Kibana), stoppping the Docker containers for it that exposes its internal
+	Short: "Stops an Elastic Stack (Elasticsearch + Kibana + APM Server)",
+	Long: `Stops an Elastic Stack (Elasticsearch + Kibana + APM Server), stoppping the Docker containers for it that exposes its internal
 	configuration so that you are able to connect to it in an easy manner`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 1 {
@@ -84,8 +84,10 @@ var stopStackCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		es := serviceManager.Build("elasticsearch", versionToStop, true)
 		kibana := serviceManager.Build("kibana", versionToStop, true)
+		apmServer := serviceManager.Build("apm-server", versionToStop, true)
 
 		serviceManager.Stop(kibana)
 		serviceManager.Stop(es)
+		serviceManager.Stop(apmServer)
 	},
 }
