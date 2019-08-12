@@ -31,6 +31,15 @@ var servicesDefaults = map[string]Service{
 		NetworkAlias: "apache",
 		Version:      "2.4",
 	},
+	"apm-server": {
+		BuildBranch:     "master",
+		BuildRepository: "elastic/apm-server",
+		ExposedPorts:    []int{6060, 8200},
+		Image:           "docker.elastic.co/apm/apm-server",
+		Name:            "apm-server",
+		NetworkAlias:    "apm-server",
+		Version:         "7.2.0",
+	},
 	"elasticsearch": {
 		BuildBranch:     "master",
 		BuildRepository: "elastic/elasticsearch",
