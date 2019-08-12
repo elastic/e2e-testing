@@ -9,9 +9,9 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/testcontainers/testcontainers-go"
 
-	config "github.com/elastic/metricbeat-tests-poc/config"
-	docker "github.com/elastic/metricbeat-tests-poc/docker"
-	"github.com/elastic/metricbeat-tests-poc/log"
+	config "github.com/elastic/metricbeat-tests-poc/cli/config"
+	docker "github.com/elastic/metricbeat-tests-poc/cli/docker"
+	"github.com/elastic/metricbeat-tests-poc/cli/log"
 )
 
 // Service represents the contract for services

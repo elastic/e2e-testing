@@ -3,8 +3,8 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/elastic/metricbeat-tests-poc/log"
-	"github.com/elastic/metricbeat-tests-poc/services"
+	"github.com/elastic/metricbeat-tests-poc/cli/log"
+	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
 var serviceManager = services.NewServiceManager()

@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	config "github.com/elastic/metricbeat-tests-poc/config"
-	"github.com/elastic/metricbeat-tests-poc/log"
+	config "github.com/elastic/metricbeat-tests-poc/cli/config"
+	"github.com/elastic/metricbeat-tests-poc/cli/log"
 )
 
 // NewMetricbeatService returns a metricbeat service entity

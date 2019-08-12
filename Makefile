@@ -11,7 +11,7 @@ install:
 
 .PHONY: test
 test:
-	go test -v -timeout=$(TEST_TIMEOUT) ./services
+	go test -v -timeout=$(TEST_TIMEOUT) ./cli/services
 
 .PHONY: functional-test
 functional-test: install-godog

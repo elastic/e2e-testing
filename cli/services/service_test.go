@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	config "github.com/elastic/metricbeat-tests-poc/config"
-	services "github.com/elastic/metricbeat-tests-poc/services"
+	config "github.com/elastic/metricbeat-tests-poc/cli/config"
+	services "github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
 var serviceManager services.ServiceManager = services.NewServiceManager()

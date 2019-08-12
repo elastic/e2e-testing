@@ -8,7 +8,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 
-	"github.com/elastic/metricbeat-tests-poc/log"
+	"github.com/elastic/metricbeat-tests-poc/cli/log"
 )
 
 var instance *client.Client
