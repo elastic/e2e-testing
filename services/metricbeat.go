@@ -39,8 +39,8 @@ func RunMetricbeatService(version string, monitoredService Service) (Service, er
 	ip := inspect.NetworkSettings.IPAddress
 
 	bindMounts := map[string]string{
-		dir + "/configs/" + serviceName + ".yml": "/usr/share/metricbeat/metricbeat.yml",
-		dir + "/outputs":                         "/tmp",
+		dir + "/configurations/" + serviceName + ".yml": "/usr/share/metricbeat/metricbeat.yml",
+		dir + "/outputs": "/tmp",
 	}
 
 	labels := map[string]string{
