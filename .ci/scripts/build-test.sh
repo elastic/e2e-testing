@@ -16,7 +16,7 @@ source .ci/scripts/install-go.sh "${GO_VERSION}"
 mkdir -p outputs
 export OUT_FILE="outputs/test-report.out"
 
-make install test | tee ${OUT_FILE}
+make -C cli install test | tee ${OUT_FILE}
 
 go get -v -u github.com/jstemmer/go-junit-report
 go-junit-report > outputs/junit-tests.xml < ${OUT_FILE}
