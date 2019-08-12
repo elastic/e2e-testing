@@ -3,8 +3,6 @@ package services
 import (
 	"fmt"
 	"os"
-	"strconv"
-	"time"
 
 	config "github.com/elastic/metricbeat-tests-poc/config"
 	"github.com/elastic/metricbeat-tests-poc/log"
@@ -14,11 +12,10 @@ import (
 func NewMetricbeatService(version string, asDaemon bool) Service {
 	service := &DockerService{
 		Service: config.Service{
-			ContainerName: "metricbeat-" + version + "-" + strconv.Itoa(int(time.Now().UnixNano())),
-			Daemon:        asDaemon,
-			Image:         "docker.elastic.co/beats/metricbeat",
-			Name:          "metricbeat",
-			Version:       version,
+			Daemon:  asDaemon,
+			Image:   "docker.elastic.co/beats/metricbeat",
+			Name:    "metricbeat",
+			Version: version,
 		},
 	}
 
@@ -39,8 +36,8 @@ func RunMetricbeatService(version string, monitoredService Service) (Service, er
 	ip := inspect.NetworkSettings.IPAddress
 
 	bindMounts := map[string]string{
-		dir + "/configs/" + serviceName + ".yml": "/usr/share/metricbeat/metricbeat.yml",
-		dir + "/outputs":                         "/tmp",
+		dir + "/configurations/" + serviceName + ".yml": "/usr/share/metricbeat/metricbeat.yml",
+		dir + "/outputs": "/tmp",
 	}
 
 	labels := map[string]string{
@@ -50,8 +47,9 @@ func RunMetricbeatService(version string, monitoredService Service) (Service, er
 	service := NewMetricbeatService(version, false)
 
 	env := map[string]string{
-		"HOST":      ip,
-		"FILE_NAME": service.GetName() + "-" + service.GetVersion() + "-" + monitoredService.GetName() + "-" + monitoredService.GetVersion(),
+		"BEAT_STRICT_PERMS": "false",
+		"HOST":              ip,
+		"FILE_NAME":         service.GetName() + "-" + service.GetVersion() + "-" + monitoredService.GetName() + "-" + monitoredService.GetVersion(),
 	}
 
 	service.SetBindMounts(bindMounts)

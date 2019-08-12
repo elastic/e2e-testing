@@ -18,25 +18,32 @@ var OpWorkspace string
 // Op the tool's configuration, read from tool's workspace
 var Op *OpConfig
 
-const fileName = "config.yml"
+const fileName = "config.json"
 
 // servicesDefaults initial service configuration that could be overwritten by
 // users on their local configuration. This configuration will be persisted in
-// the application directory as initial configuration, in the form of a YAML file
+// the application directory as initial configuration, in the form of a JSON file
 var servicesDefaults = map[string]Service{
 	"apache": {
-		ContainerName: "apache-2.4",
-		ExposedPort:   80,
-		Image:         "httpd",
-		Name:          "apache",
-		NetworkAlias:  "apache",
-		Version:       "2.4",
+		ExposedPorts: []int{80},
+		Image:        "httpd",
+		Name:         "apache",
+		NetworkAlias: "apache",
+		Version:      "2.4",
+	},
+	"apm-server": {
+		BuildBranch:     "master",
+		BuildRepository: "elastic/apm-server",
+		ExposedPorts:    []int{6060, 8200},
+		Image:           "docker.elastic.co/apm/apm-server",
+		Name:            "apm-server",
+		NetworkAlias:    "apm-server",
+		Version:         "7.2.0",
 	},
 	"elasticsearch": {
 		BuildBranch:     "master",
 		BuildRepository: "elastic/elasticsearch",
-		ContainerName:   "elasticsearch-7.2.0",
-		ExposedPort:     9200,
+		ExposedPorts:    []int{9200},
 		Env: map[string]string{
 			"bootstrap.memory_lock":  "true",
 			"discovery.type":         "single-node",
@@ -49,18 +56,16 @@ var servicesDefaults = map[string]Service{
 		Version:      "7.2.0",
 	},
 	"kafka": {
-		ContainerName: "kafka",
-		ExposedPort:   9092,
-		Image:         "wurstmeister/kafka",
-		Name:          "kafka",
-		NetworkAlias:  "kafka",
-		Version:       "latest",
+		ExposedPorts: []int{9092},
+		Image:        "wurstmeister/kafka",
+		Name:         "kafka",
+		NetworkAlias: "kafka",
+		Version:      "latest",
 	},
 	"kibana": {
 		BuildBranch:     "master",
 		BuildRepository: "elastic/kibana",
-		ContainerName:   "kibana-7.2.0",
-		ExposedPort:     5601,
+		ExposedPorts:    []int{5601},
 		Image:           "docker.elastic.co/kibana/kibana",
 		Name:            "kibana",
 		NetworkAlias:    "kibana",
@@ -69,47 +74,51 @@ var servicesDefaults = map[string]Service{
 	"metricbeat": {
 		BuildBranch:     "master",
 		BuildRepository: "elastic/beats",
-		ContainerName:   "metricbeat-7.2.0",
 		Image:           "docker.elastic.co/beats/metricbeat",
 		Name:            "metricbeat",
 		NetworkAlias:    "metricbeat",
 		Version:         "7.2.0",
 	},
 	"mongodb": {
-		ContainerName: "mongodb",
-		ExposedPort:   27017,
-		Image:         "mongo",
-		Name:          "mongodb",
-		NetworkAlias:  "mongodb",
-		Version:       "latest",
+		ExposedPorts: []int{27017},
+		Image:        "mongo",
+		Name:         "mongodb",
+		NetworkAlias: "mongodb",
+		Version:      "latest",
 	},
 	"mysql": {
-		ContainerName: "mysql",
 		Env: map[string]string{
 			"MYSQL_ROOT_PASSWORD": "secret",
 		},
-		ExposedPort:  3306,
+		ExposedPorts: []int{3306},
 		Image:        "mysql",
 		Name:         "mysql",
 		NetworkAlias: "mysql",
+		Version:      "latest",
+	},
+	"redis": {
+		ExposedPorts: []int{6379},
+		Image:        "redis",
+		Name:         "redis",
+		NetworkAlias: "redis",
 		Version:      "latest",
 	},
 }
 
 // Service represents the configuration for a service
 type Service struct {
-	BindMounts      map[string]string `yaml:"BindMounts"`
-	BuildBranch     string            `yaml:"BuildBranch"`
-	BuildRepository string            `yaml:"BuildRepository"`
-	ContainerName   string            `yaml:"ContainerName"`
-	Daemon          bool              `yaml:"AsDaemon"`
-	Env             map[string]string `yaml:"Env"`
-	ExposedPort     int               `yaml:"ExposedPort"`
-	Image           string            `yaml:"Image"`
-	Labels          map[string]string `yaml:"Labels"`
-	Name            string            `yaml:"Name"`
-	NetworkAlias    string            `yaml:"NetworkAlias"`
-	Version         string            `yaml:"Version"`
+	BindMounts      map[string]string `mapstructure:"BindMounts"`
+	BuildBranch     string            `mapstructure:"BuildBranch"`
+	BuildRepository string            `mapstructure:"BuildRepository"`
+	ContainerName   string            `mapstructure:"ContainerName"`
+	Daemon          bool              `mapstructure:"AsDaemon"`
+	Env             map[string]string `mapstructure:"Env"`
+	ExposedPorts    []int             `mapstructure:"ExposedPorts"`
+	Image           string            `mapstructure:"Image"`
+	Labels          map[string]string `mapstructure:"Labels"`
+	Name            string            `mapstructure:"Name"`
+	NetworkAlias    string            `mapstructure:"NetworkAlias"`
+	Version         string            `mapstructure:"Version"`
 }
 
 // checkInstalledSoftware checks that the required software is present
@@ -135,22 +144,17 @@ func Init() {
 
 // InitConfig initialises configuration
 func InitConfig() {
+	if Op != nil {
+		return
+	}
+
 	usr, _ := user.Current()
 
 	w := filepath.Join(usr.HomeDir, ".op")
 
-	if _, err := os.Stat(w); os.IsNotExist(err) {
-		err = os.MkdirAll(w, 0755)
-		log.CheckIfErrorMessage(err, "Cannot create workdir for 'op' at "+w)
-
-		log.Success("'op' workdir created at " + w)
-
-		initConfigFile(w)
-	}
+	newConfig(w)
 
 	OpWorkspace = w
-
-	newConfig(w)
 }
 
 // OpConfig tool configuration
@@ -182,44 +186,68 @@ func newConfig(workspace string) {
 	Op = &opConfig
 }
 
-func initConfigFile(workspace string) *os.File {
+func checkConfigFile(workspace string) {
+	found, err := exists(workspace)
+	if found && err != nil {
+		return
+	}
+	err = os.MkdirAll(workspace, 0755)
+	log.CheckIfErrorMessage(err, "Cannot create workdir for 'op' at "+workspace)
+	log.Success("'op' workdir created at " + workspace)
+
 	log.Info("Creating %s with default values in %s.", fileName, workspace)
 
 	configFilePath := filepath.Join(workspace, fileName)
 
-	f, _ := os.Create(configFilePath)
+	os.Create(configFilePath)
 
 	v := viper.New()
 	for key, value := range servicesDefaults {
 		v.SetDefault(key, value)
 	}
 
-	v.SetConfigType("yaml")
+	v.SetConfigType("json")
 	v.SetConfigName("config")
 	v.AddConfigPath(workspace)
 
-	err := v.WriteConfig()
+	err = v.WriteConfig()
 	log.CheckIfErrorMessage(err, `Cannot save default configuration file at `+configFilePath)
 	log.Success("Config file initialised with default values")
+}
 
-	return f
+func exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
 }
 
 func readConfig(workspace string) (OpConfig, error) {
-	viper.SetConfigType("yaml")
+	viper.SetConfigType("json")
 	viper.SetConfigName("config")
 	viper.AddConfigPath(workspace)
 
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Warn("%v", err)
-		initConfigFile(workspace)
+		checkConfigFile(workspace)
 		viper.ReadInConfig()
 	}
 
 	services := map[string]Service{}
 	viper.Unmarshal(&services)
-	log.CheckIfErrorMessage(err, "Unable to decode configuration into struct")
+
+	for sd := range servicesDefaults {
+		s := Service{}
+		err := viper.UnmarshalKey(sd, &s)
+		log.CheckIfErrorMessage(err, "Unable to decode configuration into struct")
+
+		services[sd] = s
+	}
 
 	cfg := OpConfig{
 		Services: services,

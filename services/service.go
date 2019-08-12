@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
 
 	config "github.com/elastic/metricbeat-tests-poc/config"
@@ -17,7 +19,8 @@ import (
 type Service interface {
 	Destroy() error
 	GetContainerName() string
-	GetExposedPort() string
+	GetExposedPort(int) string
+	GetExposedPorts() []int
 	GetName() string
 	GetNetworkAlias() string
 	GetVersion() string
@@ -36,14 +39,19 @@ type DockerService struct {
 	config.Service
 }
 
-// GetContainerName returns service name
+// GetContainerName returns service name, which is calculated from service name and version
 func (s *DockerService) GetContainerName() string {
-	return s.ContainerName
+	return s.Name + "-" + s.Version
 }
 
-// GetExposedPort returns the string representation of a service's well-known exposed port
-func (s *DockerService) GetExposedPort() string {
-	return strconv.Itoa(s.ExposedPort)
+// GetExposedPort returns the string representation of a service's well-known exposed ports
+func (s *DockerService) GetExposedPort(i int) string {
+	return strconv.Itoa(s.ExposedPorts[i])
+}
+
+// GetExposedPorts returns a service's well-known exposed ports
+func (s *DockerService) GetExposedPorts() []int {
+	return s.ExposedPorts
 }
 
 // GetName returns service name
@@ -68,7 +76,7 @@ func (s *DockerService) GetVersion() string {
 // Inspect returns the JSON representation of the container obtained from
 // the Docker engine
 func (s *DockerService) Inspect() (*types.ContainerJSON, error) {
-	json, err := docker.InspectContainer(s.GetContainerName())
+	json, err := docker.InspectContainer(s.GetName() + "-" + s.GetVersion())
 	if err != nil {
 		return nil, fmt.Errorf("Could not inspect the container: %v", err)
 	}
@@ -106,6 +114,34 @@ func (s *DockerService) SetVersion(version string) {
 	s.Version = version
 }
 
+func (s *DockerService) toString(json *types.ContainerJSON) string {
+	ip := json.NetworkSettings.IPAddress
+	ports := json.NetworkSettings.Ports
+
+	toString := ""
+	toString += fmt.Sprintf("\tService: %s\n", s.GetName())
+	toString += fmt.Sprintf("\tImage : %s:%s\n", s.Image, s.GetVersion())
+	toString += fmt.Sprintf("\tNetwork: %v\n", "elastic-dev-network")
+	toString += fmt.Sprintf("\tContainer Name: %s\n", s.GetContainerName())
+	toString += fmt.Sprintf("\tNetwork Alias: %s\n", s.GetNetworkAlias())
+	toString += fmt.Sprintf("\tIP: %s\n", ip)
+	toString += fmt.Sprintf("\tApplication Ports\n")
+	for _, port := range s.ExposedPorts {
+		sPort := fmt.Sprintf("%d/tcp", port)
+		toString += fmt.Sprintf("\t\t%d -> %v\n", port, ports[nat.Port(sPort)])
+	}
+	toString += fmt.Sprintf("\tBind Mounts:\n")
+	for bm, path := range s.BindMounts {
+		toString += fmt.Sprintf("\t\t%s -> %s\n", bm, path)
+	}
+	toString += fmt.Sprintf("\tEnvironment Variables:\n")
+	for k, v := range s.Env {
+		toString += fmt.Sprintf("\t\t%s : %s\n", k, v)
+	}
+
+	return toString
+}
+
 // ExposedPort represents the structure for how services expose ports
 type ExposedPort struct {
 	Address       string
@@ -125,6 +161,11 @@ func (s *DockerService) Destroy() error {
 		return err
 	}
 
+	if json == nil {
+		log.Info("The service for %s is not present in the system", s.GetName())
+		return nil
+	}
+
 	return docker.RemoveContainer(json.Name)
 }
 
@@ -134,15 +175,24 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 
 	exposedPorts := []string{}
 
-	if s.ExposedPort != 0 {
+	for i := range s.ExposedPorts {
 		exposedPort := ExposedPort{
 			Address:       "0.0.0.0",
-			ContainerPort: s.GetExposedPort(),
+			ContainerPort: s.GetExposedPort(i),
 			Protocol:      "tcp",
 		}
 
 		exposedPorts = append(exposedPorts, exposedPort.toString())
 	}
+
+	if s.Labels == nil {
+		s.Labels = map[string]string{}
+	}
+
+	s.Labels["service.owner"] = "co.elastic.observability"
+	s.Labels["service.container.name"] = s.GetName() + "-" + s.GetVersion()
+
+	s.SetContainerName(s.GetContainerName() + "-" + strconv.Itoa(int(time.Now().UnixNano())))
 
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
@@ -170,9 +220,8 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 
 	docker.ConnectContainerToDevNetwork(json.ContainerJSONBase.ID, s.GetNetworkAlias())
 
-	ip := json.NetworkSettings.IPAddress
-	ports := json.NetworkSettings.Ports
-	log.Info("The service (%s) runs on %s %v", s.GetName(), ip, ports)
+	log.Success("The service (%s) has been created successfully:", s.GetName())
+	log.Log("%s", s.toString(json))
 
 	return service, nil
 }

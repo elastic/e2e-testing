@@ -10,7 +10,6 @@ require (
 	github.com/docker/docker v0.7.3-0.20190506211059-b20a14b54661
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/kisielk/errcheck v1.2.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
@@ -33,3 +32,5 @@ require (
 	golang.org/x/tools v0.0.0-20190719005602-e377ae9d6386 // indirect
 	google.golang.org/grpc v1.22.0 // indirect
 )
+
+replace github.com/spf13/viper v1.3.2 => github.com/mdelapenya/viper v1.4.1

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 
@@ -51,12 +52,23 @@ func InspectContainer(name string) (*types.ContainerJSON, error) {
 
 	ctx := context.Background()
 
-	inspect, err := dockerClient.ContainerInspect(ctx, name)
-	if err != nil {
-		return nil, err
+	labelFilters := filters.NewArgs()
+	labelFilters.Add("label", "service.owner=co.elastic.observability")
+	labelFilters.Add("label", "service.container.name="+name)
+
+	containers, err := dockerClient.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: labelFilters})
+	log.CheckIfError(err)
+
+	for _, c := range containers {
+		inspect, err := dockerClient.ContainerInspect(ctx, c.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		return &inspect, nil
 	}
 
-	return &inspect, nil
+	return nil, nil
 }
 
 // RemoveContainer removes a container identified by its container name

@@ -2,7 +2,6 @@ TEST_TIMEOUT?=5m
 FEATURE?=
 FLAG?=
 FORMAT?=pretty
-
 .PHONY: install-godog
 install-godog:
 	go get github.com/DATA-DOG/godog/cmd/godog
