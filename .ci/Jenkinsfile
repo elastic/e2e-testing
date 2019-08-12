@@ -147,6 +147,33 @@ pipeline {
             }
           }
         }
+        stage('Release') {
+          options { skipDefaultCheckout() }
+          when {
+            beforeAgent true
+            expression { branch 'master' }
+          }
+          environment {
+            GO111MODULE = 'on'
+            GOPROXY = 'https://proxy.golang.org'
+          }
+          steps {
+            deleteDir()
+            unstash 'source'
+            dir("${BASE_DIR}") {
+              script {
+                def matrix = readYaml(file: '.ci/.package.yaml')
+                def parallelTasks = [:]
+                matrix['OSS'].each { oss ->
+                  matrix['PLATFORM'].each { platform ->
+                    parallelTasks["${oss}-${platform}"] = generateStep(oss: "${oss}", platform: "${platform}")
+                  }
+                }
+                parallel(parallelTasks)
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -157,6 +184,27 @@ pipeline {
   }
 }
 
+def generateStep(Map params = [:]){
+  def oss = params.get('oss')
+  def platform = params.get('platform')
+  return {
+    node('docker && linux && immutable') {
+      try {
+        deleteDir()
+        unstash 'build'
+        dir(BASE_DIR) {
+          withEnv(["GOOS=${oss}", "GOARCH=${platform}"]) {
+            sh script: 'build.sh', label: 'Create docker tag'
+          }
+        }
+      } catch(e) {
+        error(e.toString())
+      } finally {
+        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/.github/releases/download/**"
+      }
+    }
+  }
+}
 
 /**
  Notify the GitHub check of the parent stream
