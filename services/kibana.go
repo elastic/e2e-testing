@@ -10,7 +10,7 @@ func RunKibanaService(version string, asDaemon bool, elasticsearchService Servic
 	ip := inspect.NetworkSettings.IPAddress
 
 	env := map[string]string{
-		"ELASTICSEARCH_HOSTS": "http://" + ip + ":" + elasticsearchService.GetExposedPort(),
+		"ELASTICSEARCH_HOSTS": "http://" + ip + ":" + elasticsearchService.GetExposedPort(0),
 	}
 
 	serviceManager := NewServiceManager()

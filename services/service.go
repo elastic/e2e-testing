@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
 
 	config "github.com/elastic/metricbeat-tests-poc/config"
@@ -18,7 +19,8 @@ import (
 type Service interface {
 	Destroy() error
 	GetContainerName() string
-	GetExposedPort() string
+	GetExposedPort(int) string
+	GetExposedPorts() []int
 	GetName() string
 	GetNetworkAlias() string
 	GetVersion() string
@@ -42,9 +44,14 @@ func (s *DockerService) GetContainerName() string {
 	return s.ContainerName
 }
 
-// GetExposedPort returns the string representation of a service's well-known exposed port
-func (s *DockerService) GetExposedPort() string {
-	return strconv.Itoa(s.ExposedPort)
+// GetExposedPort returns the string representation of a service's well-known exposed ports
+func (s *DockerService) GetExposedPort(i int) string {
+	return strconv.Itoa(s.ExposedPorts[i])
+}
+
+// GetExposedPorts returns a service's well-known exposed ports
+func (s *DockerService) GetExposedPorts() []int {
+	return s.ExposedPorts
 }
 
 // GetName returns service name
@@ -118,7 +125,11 @@ func (s *DockerService) toString(json *types.ContainerJSON) string {
 	toString += fmt.Sprintf("\tContainer Name: %s\n", s.GetContainerName())
 	toString += fmt.Sprintf("\tNetwork Alias: %s\n", s.GetNetworkAlias())
 	toString += fmt.Sprintf("\tIP: %s\n", ip)
-	toString += fmt.Sprintf("\tApplication Port: %d -> %v\n", s.ExposedPort, ports["3306/tcp"])
+	toString += fmt.Sprintf("\tApplication Ports\n")
+	for _, port := range s.ExposedPorts {
+		sPort := fmt.Sprintf("%d/tcp", port)
+		toString += fmt.Sprintf("\t\t%d -> %v\n", port, ports[nat.Port(sPort)])
+	}
 	toString += fmt.Sprintf("\tBind Mounts:\n")
 	for bm, path := range s.BindMounts {
 		toString += fmt.Sprintf("\t\t%s -> %s\n", bm, path)
@@ -164,10 +175,10 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 
 	exposedPorts := []string{}
 
-	if s.ExposedPort != 0 {
+	for i := range s.ExposedPorts {
 		exposedPort := ExposedPort{
 			Address:       "0.0.0.0",
-			ContainerPort: s.GetExposedPort(),
+			ContainerPort: s.GetExposedPort(i),
 			Protocol:      "tcp",
 		}
 
