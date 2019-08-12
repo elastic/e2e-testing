@@ -143,15 +143,17 @@ func Init() {
 
 // InitConfig initialises configuration
 func InitConfig() {
+	if Op != nil {
+		return
+	}
+
 	usr, _ := user.Current()
 
 	w := filepath.Join(usr.HomeDir, ".op")
 
-	checkConfigFile(w)
+	newConfig(w)
 
 	OpWorkspace = w
-
-	newConfig(w)
 }
 
 // OpConfig tool configuration
@@ -184,8 +186,8 @@ func newConfig(workspace string) {
 }
 
 func checkConfigFile(workspace string) {
-	_, err := os.Stat(workspace)
-	if os.IsExist(err) {
+	found, err := exists(workspace)
+	if found && err != nil {
 		return
 	}
 	err = os.MkdirAll(workspace, 0755)
@@ -210,6 +212,17 @@ func checkConfigFile(workspace string) {
 	err = v.WriteConfig()
 	log.CheckIfErrorMessage(err, `Cannot save default configuration file at `+configFilePath)
 	log.Success("Config file initialised with default values")
+}
+
+func exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
 }
 
 func readConfig(workspace string) (OpConfig, error) {
