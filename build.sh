@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -exuo pipefail
 
-function git_branch_name() {
-  echo $(git symbolic-ref --short HEAD)
-}
-
 readonly supportedOSS=("darwin" "linux" "windows")
 readonly supportedArchs=("386" "amd64")
 
@@ -24,15 +20,9 @@ if [[ ! " ${supportedArchs[@]} " =~ " ${GOARCH} " ]]; then
     exit 1
 fi
 
-readonly BRANCH="$(git_branch_name)"
-readonly GO_VERSION="1.12.7"
+readonly GO_VERSION="${GO_VERSION:-1.12.7}"
 readonly GO_WORKSPACE="/usr/local/go/src/github.com/elastic/op"
 readonly VERSION="$(cat ./VERSION.txt)"
-
-if [[ "$BRANCH" != "master" ]]; then
-    echo "It's not possible to build from a branch different to master"
-    exit 1
-fi
 
 arch="${GOARCH}"
 goos="${GOOS}"
