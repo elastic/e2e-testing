@@ -78,7 +78,7 @@ pipeline {
                   deleteDir()
                   unstash 'source'
                   dir(BASE_DIR){
-                    sh script: '.ci/scripts/build-test.sh', label: 'Build and test'
+                    sh script: """.ci/scripts/build-test.sh "${GO_VERSION}" """, label: 'Build and test'
                   }
                   stash allowEmpty: false, name: 'build', useDefaultExcludes: false, excludes: '.gimme/**'
                 }
@@ -106,7 +106,7 @@ pipeline {
                             branch: params.PR, credentialsId: env.JOB_GIT_CREDENTIALS)
                 unstash 'scripts'
                 dir(BASE_DIR){
-                  sh script: ".ci/scripts/build-metricbeats.sh ${WORKSPACE}/${BEATS_BASE_DIR}/metricbeat", label: 'Build metricbeats'
+                  sh script: """.ci/scripts/build-metricbeats.sh "${GO_VERSION}" "${WORKSPACE}/${BEATS_BASE_DIR}/metricbeat" """, label: 'Build metricbeats'
                 }
                 dir("${BEATS_BASE_DIR}/metricbeat/build/distributions"){
                   stash allowEmpty: false, name: 'docker', useDefaultExcludes: true, includes: '*docker.tar.gz'
@@ -136,7 +136,7 @@ pipeline {
             dir(BASE_DIR){
               unstash 'docker'
               sh script: '.ci/scripts/tag-metricbeats.sh', label: 'Create docker tag'
-              sh script: '.ci/scripts/functional-test.sh', label: 'Run functional tests'
+              sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${FEATURE}" """, label: 'Run functional tests'
             }
           }
           post {
