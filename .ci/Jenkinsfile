@@ -194,6 +194,7 @@ def generateStep(Map params = [:]){
         unstash 'build'
         dir(BASE_DIR) {
           withEnv(["GOOS=${oss}", "GOARCH=${platform}"]) {
+            sh script: 'ls -ltrah', label: 'Debug'
             sh script: 'build.sh', label: 'Create docker tag'
           }
         }
