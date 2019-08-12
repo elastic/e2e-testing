@@ -99,9 +99,12 @@ func (s *DockerService) SetBindMounts(bindMounts map[string]string) {
 	s.BindMounts = bindMounts
 }
 
-// SetEnv set environment variables for a service
+// SetEnv set environment variables for a service, overriding default one with
+// those defined in the configuration file
 func (s *DockerService) SetEnv(env map[string]string) {
-	s.Env = env
+	for k, v := range env {
+		s.Env[k] = v
+	}
 }
 
 // SetLabels set labels for a service
