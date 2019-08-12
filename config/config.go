@@ -25,18 +25,25 @@ const fileName = "config.json"
 // the application directory as initial configuration, in the form of a JSON file
 var servicesDefaults = map[string]Service{
 	"apache": {
-		ContainerName: "apache-2.4",
-		ExposedPort:   80,
-		Image:         "httpd",
-		Name:          "apache",
-		NetworkAlias:  "apache",
-		Version:       "2.4",
+		ExposedPorts: []int{80},
+		Image:        "httpd",
+		Name:         "apache",
+		NetworkAlias: "apache",
+		Version:      "2.4",
+	},
+	"apm-server": {
+		BuildBranch:     "master",
+		BuildRepository: "elastic/apm-server",
+		ExposedPorts:    []int{6060, 8200},
+		Image:           "docker.elastic.co/apm/apm-server",
+		Name:            "apm-server",
+		NetworkAlias:    "apm-server",
+		Version:         "7.2.0",
 	},
 	"elasticsearch": {
 		BuildBranch:     "master",
 		BuildRepository: "elastic/elasticsearch",
-		ContainerName:   "elasticsearch-7.2.0",
-		ExposedPort:     9200,
+		ExposedPorts:    []int{9200},
 		Env: map[string]string{
 			"bootstrap.memory_lock":  "true",
 			"discovery.type":         "single-node",
@@ -49,18 +56,16 @@ var servicesDefaults = map[string]Service{
 		Version:      "7.2.0",
 	},
 	"kafka": {
-		ContainerName: "kafka",
-		ExposedPort:   9092,
-		Image:         "wurstmeister/kafka",
-		Name:          "kafka",
-		NetworkAlias:  "kafka",
-		Version:       "latest",
+		ExposedPorts: []int{9092},
+		Image:        "wurstmeister/kafka",
+		Name:         "kafka",
+		NetworkAlias: "kafka",
+		Version:      "latest",
 	},
 	"kibana": {
 		BuildBranch:     "master",
 		BuildRepository: "elastic/kibana",
-		ContainerName:   "kibana-7.2.0",
-		ExposedPort:     5601,
+		ExposedPorts:    []int{5601},
 		Image:           "docker.elastic.co/kibana/kibana",
 		Name:            "kibana",
 		NetworkAlias:    "kibana",
@@ -69,38 +74,34 @@ var servicesDefaults = map[string]Service{
 	"metricbeat": {
 		BuildBranch:     "master",
 		BuildRepository: "elastic/beats",
-		ContainerName:   "metricbeat-7.2.0",
 		Image:           "docker.elastic.co/beats/metricbeat",
 		Name:            "metricbeat",
 		NetworkAlias:    "metricbeat",
 		Version:         "7.2.0",
 	},
 	"mongodb": {
-		ContainerName: "mongodb",
-		ExposedPort:   27017,
-		Image:         "mongo",
-		Name:          "mongodb",
-		NetworkAlias:  "mongodb",
-		Version:       "latest",
+		ExposedPorts: []int{27017},
+		Image:        "mongo",
+		Name:         "mongodb",
+		NetworkAlias: "mongodb",
+		Version:      "latest",
 	},
 	"mysql": {
-		ContainerName: "mysql",
 		Env: map[string]string{
 			"MYSQL_ROOT_PASSWORD": "secret",
 		},
-		ExposedPort:  3306,
+		ExposedPorts: []int{3306},
 		Image:        "mysql",
 		Name:         "mysql",
 		NetworkAlias: "mysql",
 		Version:      "latest",
 	},
 	"redis": {
-		ContainerName: "redis",
-		ExposedPort:   6379,
-		Image:         "redis",
-		Name:          "redis",
-		NetworkAlias:  "redis",
-		Version:       "latest",
+		ExposedPorts: []int{6379},
+		Image:        "redis",
+		Name:         "redis",
+		NetworkAlias: "redis",
+		Version:      "latest",
 	},
 }
 
@@ -112,7 +113,7 @@ type Service struct {
 	ContainerName   string            `mapstructure:"ContainerName"`
 	Daemon          bool              `mapstructure:"AsDaemon"`
 	Env             map[string]string `mapstructure:"Env"`
-	ExposedPort     int               `mapstructure:"ExposedPort"`
+	ExposedPorts    []int             `mapstructure:"ExposedPorts"`
 	Image           string            `mapstructure:"Image"`
 	Labels          map[string]string `mapstructure:"Labels"`
 	Name            string            `mapstructure:"Name"`

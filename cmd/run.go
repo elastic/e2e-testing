@@ -71,8 +71,8 @@ func buildRunServiceCommand(service string) *cobra.Command {
 
 var runStackCmd = &cobra.Command{
 	Use:   "stack",
-	Short: "Runs an Elastic Stack (Elasticsearch + Kibana)",
-	Long: `Runs an Elastic Stack (Elasticsearch + Kibana), spinning up Docker containers for them and exposing their internal
+	Short: "Runs an Elastic Stack (Elasticsearch + Kibana + APM Server)",
+	Long: `Runs an Elastic Stack (Elasticsearch + Kibana + APM Server), spinning up Docker containers for them and exposing their internal
 	configuration so that you are able to connect to them in an easy manner`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 1 {
@@ -85,7 +85,10 @@ var runStackCmd = &cobra.Command{
 		es := serviceManager.Build("elasticsearch", versionToRun, true)
 		serviceManager.Run(es)
 
-		s := services.RunKibanaService(versionToRun, true, es)
-		serviceManager.Run(s)
+		kibana := services.RunKibanaService(versionToRun, true, es)
+		serviceManager.Run(kibana)
+
+		apmServer := services.RunAPMServerService(versionToRun, true, es, kibana)
+		serviceManager.Run(apmServer)
 	},
 }

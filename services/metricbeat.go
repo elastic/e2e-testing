@@ -3,8 +3,6 @@ package services
 import (
 	"fmt"
 	"os"
-	"strconv"
-	"time"
 
 	config "github.com/elastic/metricbeat-tests-poc/config"
 	"github.com/elastic/metricbeat-tests-poc/log"
@@ -14,11 +12,10 @@ import (
 func NewMetricbeatService(version string, asDaemon bool) Service {
 	service := &DockerService{
 		Service: config.Service{
-			ContainerName: "metricbeat-" + version + "-" + strconv.Itoa(int(time.Now().UnixNano())),
-			Daemon:        asDaemon,
-			Image:         "docker.elastic.co/beats/metricbeat",
-			Name:          "metricbeat",
-			Version:       version,
+			Daemon:  asDaemon,
+			Image:   "docker.elastic.co/beats/metricbeat",
+			Name:    "metricbeat",
+			Version: version,
 		},
 	}
 
