@@ -39,9 +39,9 @@ type DockerService struct {
 	config.Service
 }
 
-// GetContainerName returns service name
+// GetContainerName returns service name, which is calculated from service name and version
 func (s *DockerService) GetContainerName() string {
-	return s.ContainerName
+	return s.Name + "-" + s.Version
 }
 
 // GetExposedPort returns the string representation of a service's well-known exposed ports
@@ -192,8 +192,7 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 	s.Labels["service.owner"] = "co.elastic.observability"
 	s.Labels["service.container.name"] = s.GetName() + "-" + s.GetVersion()
 
-	s.SetContainerName(
-		s.GetName() + "-" + s.GetVersion() + "-" + strconv.Itoa(int(time.Now().UnixNano())))
+	s.SetContainerName(s.GetContainerName() + "-" + strconv.Itoa(int(time.Now().UnixNano())))
 
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
