@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -exuo pipefail
 
 function git_branch_name() {
   echo $(git symbolic-ref --short HEAD)
