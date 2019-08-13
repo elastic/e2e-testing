@@ -45,7 +45,7 @@ pipeline {
       stages {
         stage('Checkout') {
           steps {
-            gitCheckout(basedir: BASE_DIR, branch: 'master', githubNotifyFirstTimeContributor: false)
+            gitCheckout(basedir: BASE_DIR, branch: 'master', credentialsId: env.JOB_GIT_CREDENTIALS, githubNotifyFirstTimeContributor: false)
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
             stash allowEmpty: false, name: 'scripts', useDefaultExcludes: true, includes: "${BASE_DIR}/.ci/**"
           }
