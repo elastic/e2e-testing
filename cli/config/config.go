@@ -256,20 +256,8 @@ func readConfig(workspace string) (OpConfig, error) {
 		viper.ReadInConfig()
 	}
 
-	services := map[string]Service{}
-	viper.Unmarshal(&services)
-
-	for sd := range servicesDefaults {
-		s := Service{}
-		err := viper.UnmarshalKey(sd, &s)
-		log.CheckIfErrorMessage(err, "Unable to decode configuration into struct")
-
-		services[sd] = s
-	}
-
-	cfg := OpConfig{
-		Services: services,
-	}
+	cfg := OpConfig{}
+	viper.Unmarshal(&cfg)
 
 	return cfg, nil
 }
