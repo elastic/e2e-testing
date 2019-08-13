@@ -259,6 +259,10 @@ func readConfig(workspace string) (OpConfig, error) {
 	cfg := OpConfig{}
 	viper.Unmarshal(&cfg)
 
+	s := Service{}
+	viper.UnmarshalKey("services.elasticsearch", &s)
+	cfg.Services["elasticsearch"] = s
+
 	return cfg, nil
 }
 
