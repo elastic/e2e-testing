@@ -1,4 +1,4 @@
-module github.com/elastic/metricbeat-tests-poc
+module github.com/elastic/metricbeat-tests-poc/cli
 
 go 1.12
 
