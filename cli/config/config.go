@@ -121,6 +121,24 @@ type Service struct {
 	Version         string            `mapstructure:"Version"`
 }
 
+var stacksDefaults = map[string]Stack{
+	"apm-server": {
+		Name: "APM Server",
+	},
+	"apm-agents": {
+		Name: "APM Agents",
+	},
+	"observability": {
+		Name: "Observability",
+	},
+}
+
+// Stack represents the configuration for a stack, which is an aggregation of services
+type Stack struct {
+	Name     string    `mapstructure:"Name"`
+	Services []Service `mapstructure:"Services"`
+}
+
 // checkInstalledSoftware checks that the required software is present
 func checkInstalledSoftware() {
 	log.Info("Validating required tools...")
@@ -160,6 +178,7 @@ func InitConfig() {
 // OpConfig tool configuration
 type OpConfig struct {
 	Services map[string]Service `mapstructure:"services"`
+	Stacks   map[string]Stack   `mapstructure:"stacks"`
 }
 
 // AvailableServices return the services in the configuration file
@@ -202,9 +221,8 @@ func checkConfigFile(workspace string) {
 	os.Create(configFilePath)
 
 	v := viper.New()
-	for key, value := range servicesDefaults {
-		v.SetDefault(key, value)
-	}
+	v.SetDefault("services", servicesDefaults)
+	v.SetDefault("stacks", stacksDefaults)
 
 	v.SetConfigType("json")
 	v.SetConfigName("config")
