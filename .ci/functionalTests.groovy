@@ -44,8 +44,10 @@ pipeline {
       }
       stages {
         stage('Checkout') {
+          options { skipDefaultCheckout() }
           steps {
-            gitCheckout(basedir: BASE_DIR, branch: 'master', credentialsId: env.JOB_GIT_CREDENTIALS, githubNotifyFirstTimeContributor: false)
+            gitCheckout(basedir: BASE_DIR, repo: "git@github.com:elastic/${env.REPO}.git", branch: 'master',
+                        credentialsId: env.JOB_GIT_CREDENTIALS, githubNotifyFirstTimeContributor: false)
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
             stash allowEmpty: false, name: 'scripts', useDefaultExcludes: true, includes: "${BASE_DIR}/.ci/**"
           }
