@@ -27,11 +27,10 @@ pipeline {
   }
   parameters {
     string(name: 'GO_VERSION', defaultValue: '1.12.7', description: "Go version to use.")
-    string(name: 'PR', defaultValue: '', description: "PR to be tested out")
     string(name: 'FEATURE', defaultValue: '', description: 'What feature to be tested out (feature filename or all are allowed)')
-    string(name: 'GITHUB_CHECK_NAME', defaultValue: '', description: 'Name of the GitHub check to be updated. Only if this build is triggered by another parent stream.')
-    string(name: 'GITHUB_CHECK_REPO', defaultValue: '', description: 'Name of the GitHub repo to be updated. Only if this build is triggered by another parent stream.')
-    string(name: 'GITHUB_CHECK_SHA1', defaultValue: '', description: 'Name of the GitHub repo to be updated. Only if this build is triggered by another parent stream.')
+    string(name: 'GITHUB_CHECK_NAME', defaultValue: '', description: 'Name of the GitHub check to be updated.')
+    string(name: 'GITHUB_CHECK_REPO', defaultValue: '', description: 'Name of the GitHub repo to be updated.')
+    string(name: 'GITHUB_CHECK_SHA1', defaultValue: '', description: 'Git sha to be used.')
   }
   stages {
     stage('Initializing'){
@@ -46,7 +45,7 @@ pipeline {
       stages {
         stage('Checkout') {
           steps {
-            gitCheckout(basedir: BASE_DIR, githubNotifyFirstTimeContributor: true)
+            gitCheckout(basedir: BASE_DIR, branch: 'master', githubNotifyFirstTimeContributor: false)
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
             stash allowEmpty: false, name: 'scripts', useDefaultExcludes: true, includes: "${BASE_DIR}/.ci/**"
           }
@@ -54,10 +53,6 @@ pipeline {
         stage('Beats') {
           agent { label 'linux && immutable && docker' }
           options { skipDefaultCheckout() }
-          when {
-            beforeAgent true
-            expression { return params.PR.trim() }
-          }
           environment {
             PLATFORMS = 'linux/amd64'
           }
@@ -65,7 +60,7 @@ pipeline {
             githubCheckNotify('PENDING')
             deleteDir()
             gitCheckout(basedir: env.BEATS_BASE_DIR, repo: 'git@github.com:elastic/beats.git',
-                        branch: params.PR, credentialsId: env.JOB_GIT_CREDENTIALS)
+                        branch: params.GITHUB_CHECK_SHA1, credentialsId: env.JOB_GIT_CREDENTIALS)
             unstash 'scripts'
             dir(BASE_DIR){
               sh script: """.ci/scripts/build-metricbeats.sh "${GO_VERSION}" "${WORKSPACE}/${BEATS_BASE_DIR}/metricbeat" """, label: 'Build metricbeats'
@@ -82,10 +77,7 @@ pipeline {
         }
         stage('Functional testing') {
           agent { label 'linux && immutable && docker' }
-          when {
-            beforeAgent true
-            expression { return params.PR.trim() }
-          }
+          options { skipDefaultCheckout() }
           environment {
             GO111MODULE = 'on'
             GOPROXY = 'https://proxy.golang.org'
