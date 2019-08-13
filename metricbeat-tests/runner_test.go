@@ -11,6 +11,7 @@ import (
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/colors"
 
+	"github.com/elastic/metricbeat-tests-poc/cli/config"
 	"github.com/elastic/metricbeat-tests-poc/cli/docker"
 	"github.com/elastic/metricbeat-tests-poc/cli/log"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
@@ -22,6 +23,8 @@ var metricbeatService services.Service
 var serviceManager services.ServiceManager
 
 func init() {
+	config.InitConfig()
+
 	godog.BindFlags("godog.", flag.CommandLine, &opt)
 
 	serviceManager = services.NewServiceManager()

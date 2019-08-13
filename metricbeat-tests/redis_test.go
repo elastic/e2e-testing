@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/DATA-DOG/godog"
-	"github.com/elastic/metricbeat-tests-poc/services"
+	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
 var redisService services.Service
