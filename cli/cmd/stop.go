@@ -17,15 +17,16 @@ func init() {
 	rootCmd.AddCommand(stopCmd)
 
 	for k, srv := range config.AvailableServices() {
-		stopSubcommand := buildStopServiceCommand(k)
+		serviceSubcommand := buildStopServiceCommand(k)
 
-		stopSubcommand.Flags().StringVarP(&versionToStop, "version", "v", srv.Version, "Sets the image version to stop")
+		serviceSubcommand.Flags().StringVarP(&versionToStop, "version", "v", srv.Version, "Sets the image version to stop")
 
-		stopCmd.AddCommand(stopSubcommand)
+		stopServiceCmd.AddCommand(serviceSubcommand)
 	}
 
 	stopStackCmd.Flags().StringVarP(&versionToStop, "version", "v", "", "Sets the image version to run")
 
+	stopCmd.AddCommand(stopServiceCmd)
 	stopCmd.AddCommand(stopStackCmd)
 }
 
@@ -67,6 +68,15 @@ func buildStopServiceCommand(service string) *cobra.Command {
 			serviceManager.Stop(s)
 		},
 	}
+}
+
+var stopServiceCmd = &cobra.Command{
+	Use:   "service",
+	Short: "Allows to stop a service, defined as subcommands",
+	Long:  `Allows to stop a service, defined as subcommands, stopping the Docker containers for them.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		// NOOP
+	},
 }
 
 var stopStackCmd = &cobra.Command{

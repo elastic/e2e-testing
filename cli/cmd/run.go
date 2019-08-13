@@ -17,15 +17,16 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 
 	for k, srv := range config.AvailableServices() {
-		runSubcommand := buildRunServiceCommand(k)
+		serviceSubcommand := buildRunServiceCommand(k)
 
-		runSubcommand.Flags().StringVarP(&versionToRun, "version", "v", srv.Version, "Sets the image version to run")
+		serviceSubcommand.Flags().StringVarP(&versionToRun, "version", "v", srv.Version, "Sets the image version to run")
 
-		runCmd.AddCommand(runSubcommand)
+		runServiceCmd.AddCommand(serviceSubcommand)
 	}
 
 	runStackCmd.Flags().StringVarP(&versionToRun, "version", "v", "", "Sets the image version to run")
 
+	runCmd.AddCommand(runServiceCmd)
 	runCmd.AddCommand(runStackCmd)
 }
 
@@ -67,6 +68,16 @@ func buildRunServiceCommand(service string) *cobra.Command {
 			serviceManager.Run(s)
 		},
 	}
+}
+
+var runServiceCmd = &cobra.Command{
+	Use:   "service",
+	Short: "Allows to run a service, defined as subcommands",
+	Long: `Allows to run a service, defined as subcommands, spinning up Docker containers for them and exposing their internal
+	configuration so that you are able to connect to them in an easy manner`,
+	Run: func(cmd *cobra.Command, args []string) {
+		// NOOP
+	},
 }
 
 var runStackCmd = &cobra.Command{
