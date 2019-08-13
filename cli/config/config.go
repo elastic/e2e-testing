@@ -18,11 +18,11 @@ var OpWorkspace string
 // Op the tool's configuration, read from tool's workspace
 var Op *OpConfig
 
-const fileName = "config.json"
+const fileName = "config.yml"
 
 // servicesDefaults initial service configuration that could be overwritten by
 // users on their local configuration. This configuration will be persisted in
-// the application directory as initial configuration, in the form of a JSON file
+// the application directory as initial configuration, in the form of a YAML file
 var servicesDefaults = map[string]Service{
 	"apache": {
 		ExposedPorts: []int{80},
@@ -224,7 +224,7 @@ func checkConfigFile(workspace string) {
 	v.SetDefault("services", servicesDefaults)
 	v.SetDefault("stacks", stacksDefaults)
 
-	v.SetConfigType("json")
+	v.SetConfigType("yaml")
 	v.SetConfigName("config")
 	v.AddConfigPath(workspace)
 
@@ -245,7 +245,7 @@ func exists(path string) (bool, error) {
 }
 
 func readConfig(workspace string) (OpConfig, error) {
-	viper.SetConfigType("json")
+	viper.SetConfigType("yml")
 	viper.SetConfigName("config")
 	viper.AddConfigPath(workspace)
 
