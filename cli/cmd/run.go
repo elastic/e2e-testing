@@ -3,8 +3,8 @@ package cmd
 import (
 	"errors"
 
-	"github.com/elastic/metricbeat-tests-poc/config"
-	"github.com/elastic/metricbeat-tests-poc/services"
+	"github.com/elastic/metricbeat-tests-poc/cli/config"
+	"github.com/elastic/metricbeat-tests-poc/cli/services"
 
 	"github.com/spf13/cobra"
 )

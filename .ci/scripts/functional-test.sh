@@ -30,7 +30,7 @@ fi
 ## Generate test report even if make failed.
 set +e
 exit_status=0
-if ! FLAG=${FLAG} FEATURE=${FEATURE} FORMAT=junit make functional-test | tee ${REPORT}  ; then
+if ! FLAG=${FLAG} FEATURE=${FEATURE} FORMAT=junit make -C metricbeat-tests functional-test | tee ${REPORT}  ; then
   echo 'ERROR: functional-test failed'
   exit_status=1
 fi

@@ -5,8 +5,8 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/elastic/metricbeat-tests-poc/config"
-	"github.com/elastic/metricbeat-tests-poc/log"
+	"github.com/elastic/metricbeat-tests-poc/cli/config"
+	"github.com/elastic/metricbeat-tests-poc/cli/log"
 )
 
 // ServiceManager manages lifecycle of a service

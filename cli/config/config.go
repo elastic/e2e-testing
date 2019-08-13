@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/elastic/metricbeat-tests-poc/docker"
-	"github.com/elastic/metricbeat-tests-poc/log"
+	"github.com/elastic/metricbeat-tests-poc/cli/docker"
+	"github.com/elastic/metricbeat-tests-poc/cli/log"
 )
 
 // OpWorkspace where the application works

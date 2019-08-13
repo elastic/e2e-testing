@@ -11,9 +11,9 @@ import (
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/colors"
 
-	"github.com/elastic/metricbeat-tests-poc/docker"
-	"github.com/elastic/metricbeat-tests-poc/log"
-	"github.com/elastic/metricbeat-tests-poc/services"
+	"github.com/elastic/metricbeat-tests-poc/cli/docker"
+	"github.com/elastic/metricbeat-tests-poc/cli/log"
+	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
 var opt = godog.Options{Output: colors.Colored(os.Stdout)}
