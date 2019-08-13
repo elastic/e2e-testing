@@ -233,6 +233,16 @@ func checkConfigFile(workspace string) {
 	log.Success("Config file initialised with default values")
 }
 
+func checkServices(cfg OpConfig) {
+	for k := range servicesDefaults {
+		if _, exists := cfg.Services[k]; !exists {
+			s := Service{}
+			viper.UnmarshalKey("services."+k, &s)
+			cfg.Services[k] = s
+		}
+	}
+}
+
 func exists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -259,9 +269,7 @@ func readConfig(workspace string) (OpConfig, error) {
 	cfg := OpConfig{}
 	viper.Unmarshal(&cfg)
 
-	s := Service{}
-	viper.UnmarshalKey("services.elasticsearch", &s)
-	cfg.Services["elasticsearch"] = s
+	checkServices(cfg)
 
 	return cfg, nil
 }
