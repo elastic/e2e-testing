@@ -137,8 +137,8 @@ var stacksDefaults = map[string]Stack{
 
 // Stack represents the configuration for a stack, which is an aggregation of services
 type Stack struct {
-	Name     string    `mapstructure:"Name"`
-	Services []Service `mapstructure:"Services"`
+	Name     string             `mapstructure:"Name"`
+	Services map[string]Service `mapstructure:"Services"`
 }
 
 // checkInstalledSoftware checks that the required software is present
