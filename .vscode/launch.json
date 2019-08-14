@@ -16,6 +16,28 @@
             "args": ["run", "-h"]
         },
         {
+            "name": "Debug Running Services",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cli",
+            "env": {
+                "GO111MODULE": "on",
+            },
+            "args": ["run", "service", "mysql", "5.6"]
+        },
+        {
+            "name": "Debug Running Stacks",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cli",
+            "env": {
+                "GO111MODULE": "on",
+            },
+            "args": ["run", "stack", "observability"]
+        },
+        {
             "name": "Godog Tests",
             "type": "go",
             "request": "launch",
