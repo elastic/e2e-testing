@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"reflect"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
@@ -121,6 +122,11 @@ type Service struct {
 	Name            string            `mapstructure:"Name"`
 	NetworkAlias    string            `mapstructure:"NetworkAlias"`
 	Version         string            `mapstructure:"Version"`
+}
+
+// Equals checks than the Service is equals to other service
+func (s Service) Equals(o Service) bool {
+	return reflect.DeepEqual(s, o)
 }
 
 var stacksDefaults = map[string]Stack{
