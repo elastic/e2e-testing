@@ -34,7 +34,6 @@ func (sm *DockerServiceManager) Build(service string, version string, asDaemon b
 	cfg, exists := config.Op.GetServiceConfig(service)
 	if !exists {
 		log.Error("Cannot find service %s in configuration file.", service)
-		return nil
 	}
 
 	srv := config.Service{}

@@ -14,7 +14,6 @@ func CheckIfError(err error) {
 	}
 
 	Error(err.Error())
-	os.Exit(1)
 }
 
 // CheckIfErrorMessage should be used to naively panics if an error is not nil.
@@ -24,12 +23,12 @@ func CheckIfErrorMessage(err error, message string) {
 	}
 
 	Error(message, err.Error())
-	os.Exit(1)
 }
 
-// Error should be used to describe error messages.
+// Error should be used to describe error messages. It will finish program execution
 func Error(format string, args ...interface{}) {
 	fmt.Printf("%s\n", Bold(Red(fmt.Sprintf(format, args...))))
+	os.Exit(1)
 }
 
 // Info should be used to describe the example commands that are about to run.
