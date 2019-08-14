@@ -1,11 +1,13 @@
 package config
 
 import (
+	"bytes"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/viper"
 
 	"github.com/elastic/metricbeat-tests-poc/cli/docker"
@@ -207,7 +209,7 @@ func newConfig(workspace string) {
 
 func checkConfigFile(workspace string) {
 	found, err := exists(workspace)
-	if found && err != nil {
+	if found && err == nil {
 		return
 	}
 	err = os.MkdirAll(workspace, 0755)
@@ -255,15 +257,18 @@ func exists(path string) (bool, error) {
 }
 
 func readConfig(workspace string) (OpConfig, error) {
+	checkConfigFile(workspace)
+
 	viper.SetConfigType("yml")
 	viper.SetConfigName("config")
 	viper.AddConfigPath(workspace)
+	viper.ReadInConfig()
 
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Warn("%v", err)
-		checkConfigFile(workspace)
-		viper.ReadInConfig()
+	// read user-defined configuration at execution path
+	fs := afero.NewOsFs()
+	userFile, _ := afero.ReadFile(fs, fileName)
+	if userFile != nil {
+		viper.MergeConfig(bytes.NewReader(userFile))
 	}
 
 	cfg := OpConfig{}
