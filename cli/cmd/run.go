@@ -24,8 +24,6 @@ func init() {
 		runServiceCmd.AddCommand(serviceSubcommand)
 	}
 
-	runStackCmd.Flags().StringVarP(&versionToRun, "version", "v", "", "Sets the image version to run")
-
 	runCmd.AddCommand(runServiceCmd)
 	runCmd.AddCommand(runStackCmd)
 }
@@ -82,9 +80,9 @@ var runServiceCmd = &cobra.Command{
 
 var runStackCmd = &cobra.Command{
 	Use:   "stack",
-	Short: "Runs an Elastic Stack (Elasticsearch + Kibana + APM Server)",
-	Long: `Runs an Elastic Stack (Elasticsearch + Kibana + APM Server), spinning up Docker containers for them and exposing their internal
-	configuration so that you are able to connect to them in an easy manner`,
+	Short: "Runs a Stack",
+	Long: `Runs a Stack, compounded by different services that cooperate, spinning up Docker containers for them and exposing
+	their internal configuration so that you are able to connect to them in an easy manner`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 1 {
 			return errors.New("run requires zero or one argument representing the image tag to be run")
@@ -93,13 +91,6 @@ var runStackCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		es := serviceManager.Build("elasticsearch", versionToRun, true)
-		serviceManager.Run(es)
-
-		kibana := services.RunKibanaService(versionToRun, true, es)
-		serviceManager.Run(kibana)
-
-		apmServer := services.RunAPMServerService(versionToRun, true, es, kibana)
-		serviceManager.Run(apmServer)
+		// NOOP
 	},
 }

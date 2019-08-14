@@ -24,8 +24,6 @@ func init() {
 		stopServiceCmd.AddCommand(serviceSubcommand)
 	}
 
-	stopStackCmd.Flags().StringVarP(&versionToStop, "version", "v", "", "Sets the image version to run")
-
 	stopCmd.AddCommand(stopServiceCmd)
 	stopCmd.AddCommand(stopStackCmd)
 }
@@ -81,9 +79,8 @@ var stopServiceCmd = &cobra.Command{
 
 var stopStackCmd = &cobra.Command{
 	Use:   "stack",
-	Short: "Stops an Elastic Stack (Elasticsearch + Kibana + APM Server)",
-	Long: `Stops an Elastic Stack (Elasticsearch + Kibana + APM Server), stoppping the Docker containers for it that exposes its internal
-	configuration so that you are able to connect to it in an easy manner`,
+	Short: "Stops a Stack",
+	Long:  `Stops a Stack, compounded by different services that cooperate, stoppping the Docker containers for them that expose their internal configurations`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 1 {
 			return errors.New("run requires zero or one argument representing the image tag to be run")
@@ -92,12 +89,6 @@ var stopStackCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		es := serviceManager.Build("elasticsearch", versionToStop, true)
-		kibana := serviceManager.Build("kibana", versionToStop, true)
-		apmServer := serviceManager.Build("apm-server", versionToStop, true)
-
-		serviceManager.Stop(kibana)
-		serviceManager.Stop(es)
-		serviceManager.Stop(apmServer)
+		// NOOP
 	},
 }
