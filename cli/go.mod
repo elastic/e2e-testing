@@ -11,11 +11,11 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/gorilla/mux v1.7.3 // indirect
+	github.com/imdario/mergo v0.3.7
 	github.com/kisielk/errcheck v1.2.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/logrusorgru/aurora v0.0.0-20190428105938-cea283e61946
-	github.com/mitchellh/mapstructure v1.1.2
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/spf13/afero v1.1.2
