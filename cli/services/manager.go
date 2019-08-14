@@ -3,8 +3,6 @@ package services
 import (
 	"fmt"
 
-	"github.com/mitchellh/mapstructure"
-
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
 	"github.com/elastic/metricbeat-tests-poc/cli/log"
 )
@@ -12,6 +10,7 @@ import (
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
 	Build(string, string, bool) Service
+	BuildFromConfig(config.Service) Service
 	Run(Service) error
 	Stop(Service) error
 }
@@ -31,20 +30,22 @@ func (sm *DockerServiceManager) Build(service string, version string, asDaemon b
 		return NewMetricbeatService(version, asDaemon)
 	}
 
-	cfg, exists := config.Op.GetServiceConfig(service)
+	cfg, exists := config.GetServiceConfig(service)
 	if !exists {
 		log.Error("Cannot find service %s in configuration file.", service)
 	}
 
-	srv := config.Service{}
+	cfg.Daemon = asDaemon
+	cfg.Version = version
 
-	mapstructure.Decode(cfg, &srv)
+	return sm.BuildFromConfig(cfg)
+}
 
+// BuildFromConfig builds a service domain entity from its configuration
+func (sm *DockerServiceManager) BuildFromConfig(service config.Service) Service {
 	dockerService := DockerService{
-		Service: srv,
+		Service: service,
 	}
-	dockerService.SetAsDaemon(asDaemon)
-	dockerService.SetVersion(version)
 
 	return &dockerService
 }
