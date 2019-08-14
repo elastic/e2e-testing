@@ -25,6 +25,13 @@ func init() {
 	}
 
 	stopCmd.AddCommand(stopServiceCmd)
+
+	for k, stack := range config.AvailableStacks() {
+		stackSubcommand := buildStopStackCommand(k, stack)
+
+		stopStackCmd.AddCommand(stackSubcommand)
+	}
+
 	stopCmd.AddCommand(stopStackCmd)
 }
 
@@ -64,6 +71,17 @@ func buildStopServiceCommand(service string) *cobra.Command {
 			s := serviceManager.Build(service, versionToStop, true)
 
 			serviceManager.Stop(s)
+		},
+	}
+}
+
+func buildStopStackCommand(key string, stack config.Stack) *cobra.Command {
+	return &cobra.Command{
+		Use:   key,
+		Short: `Stops the ` + stack.Name + ` stack`,
+		Long:  `Stops the ` + stack.Name + ` stack, stopping the Services that compound it`,
+		Run: func(cmd *cobra.Command, args []string) {
+			// NOOP
 		},
 	}
 }

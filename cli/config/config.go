@@ -188,6 +188,11 @@ func AvailableServices() map[string]Service {
 	return Op.Services
 }
 
+// AvailableStacks return the stacks in the configuration file
+func AvailableStacks() map[string]Stack {
+	return Op.Stacks
+}
+
 // GetServiceConfig configuration of a service
 func (c *OpConfig) GetServiceConfig(service string) (Service, bool) {
 	srv, exists := c.Services[service]
@@ -245,6 +250,16 @@ func checkServices(cfg OpConfig) {
 	}
 }
 
+func checkStacks(cfg OpConfig) {
+	for k := range stacksDefaults {
+		if _, exists := cfg.Stacks[k]; !exists {
+			s := Stack{}
+			viper.UnmarshalKey("stacks."+k, &s)
+			cfg.Stacks[k] = s
+		}
+	}
+}
+
 func exists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -275,6 +290,7 @@ func readConfig(workspace string) (OpConfig, error) {
 	viper.Unmarshal(&cfg)
 
 	checkServices(cfg)
+	checkStacks(cfg)
 
 	return cfg, nil
 }

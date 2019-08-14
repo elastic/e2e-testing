@@ -25,6 +25,13 @@ func init() {
 	}
 
 	runCmd.AddCommand(runServiceCmd)
+
+	for k, stack := range config.AvailableStacks() {
+		stackSubcommand := buildRunStackCommand(k, stack)
+
+		runStackCmd.AddCommand(stackSubcommand)
+	}
+
 	runCmd.AddCommand(runStackCmd)
 }
 
@@ -64,6 +71,17 @@ func buildRunServiceCommand(service string) *cobra.Command {
 			s := serviceManager.Build(service, versionToRun, true)
 
 			serviceManager.Run(s)
+		},
+	}
+}
+
+func buildRunStackCommand(key string, stack config.Stack) *cobra.Command {
+	return &cobra.Command{
+		Use:   key,
+		Short: `Runs the ` + stack.Name + ` stack`,
+		Long:  `Runs the ` + stack.Name + ` stack, spinning up the Services that compound it`,
+		Run: func(cmd *cobra.Command, args []string) {
+			// NOOP
 		},
 	}
 }
