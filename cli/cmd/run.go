@@ -79,6 +79,9 @@ func buildRunStackCommand(key string, stack config.Stack) *cobra.Command {
 				}
 
 				srv.Daemon = true
+				srv.Labels = map[string]string{
+					"stack": stack.Name,
+				}
 				s := serviceManager.BuildFromConfig(srv)
 				serviceManager.Run(s)
 			}
