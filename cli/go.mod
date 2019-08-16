@@ -3,6 +3,7 @@ module github.com/elastic/metricbeat-tests-poc/cli
 go 1.12
 
 require (
+	github.com/Flaque/filet v0.0.0-20190209224823-fc4d33cfcf93
 	github.com/Microsoft/go-winio v0.4.12 // indirect
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v0.7.3-0.20190506211059-b20a14b54661
