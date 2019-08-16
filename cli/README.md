@@ -8,27 +8,27 @@ The tool will use Golang's de-facto standard for writing CLIs [`Cobra`](https://
 
 ```sh
 # if you are in the Go development world
-$ GO111MODULE=on go run main.go run apache -v 2.4
-$ GO111MODULE=on go run main.go run mysql -v 5.6
+$ GO111MODULE=on go run main.go run service apache -v 2.4
+$ GO111MODULE=on go run main.go run service mysql -v 5.6
 
 # if you prefer to install the CLI
 $ GO111MODULE=on go build -i -o op
-$ ./op run apache -v 2.4
-$ ./op run mysql -v 5.6
-$ ./op run stack -v 7.2.0
+$ ./op run service apache -v 2.4
+$ ./op run service mysql -v 5.6
+$ ./op run stack observability
 ```
 
 The tool also provides a way to stop those running services:
 ```sh
 # if you are in the Go development world
-$ GO111MODULE=on go run main.go stop apache -v 2.4
-$ GO111MODULE=on go run main.go stop mysql -v 5.6
+$ GO111MODULE=on go run main.go stop service apache -v 2.4
+$ GO111MODULE=on go run main.go stop service mysql -v 5.6
 
 # if you prefer to install the CLI
 $ GO111MODULE=on go build -i -o op
-$ ./op stop apache -v 2.4
-$ ./op stop mysql -v 5.6
-$ ./op stop stack -v 7.2.0
+$ ./op stop service apache -v 2.4
+$ ./op stop service mysql -v 5.6
+$ ./op stop stack observability
 ```
 
 >By the way, `op` comes from `Observability Provisioner`.
