@@ -33,6 +33,23 @@ $ ./op stop stack observability
 
 >By the way, `op` comes from `Observability Provisioner`.
 
+## Configuring the CLI
+The CLI uses a set of YAML files where the configuration is stored, defining a precedence in those files so that it's possible to override or append new configurations to the CLI.
+
+The **default configuration file** is located under `$HOME/.op`, which is the workspace for the tool. If this directory does not exist when the CLI is run, it will create it under the hood, populating the configuration file (`config.yml`) with the default values.
+
+>Those default values are defined at [config.go](./config/config.go).
+
+A **second layer for the configuration file** is defined by CLI's execution path, so if a `config.yml` exists at the location where the tool is executed, then the CLI will merge this file into the default one, with higher precedence over defaults.
+
+**Last layer for the configuration file** is defined by the `OP_CONFIG_PATH` environment variable, so if a `config.yml` exists at the location defined by that environment variable, then the CLI will merge this file into the previous ones, with higher precedence over them.
+
+This way, the configuration precedence is defined by:
+
+`$HOME/.op/config.yml < $(pwd)/config.yml < $OP_CONFIG_PATH/config.yml`
+
+A clear benefit of this layered configuration is to be able to define custom services/stacks at the higher layers of the configuration: the user could define a service or a stack just for that execution, which could be shared accross teams simply copying the configuration file in the proper path. If that configuration is valuable enough, it could be contributed to the tool.
+
 ## Why this tool is not building software dependencies
 
 One common issue we have seen across Observability projects is related to the constant need for a project consumer of building Docker images for most of its dependencies (metricbeat building integrations, apm-integration-tests building opbeans, etc.)
