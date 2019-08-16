@@ -37,11 +37,24 @@ var servicesDefaults = map[string]Service{
 	"apm-server": {
 		BuildBranch:     "master",
 		BuildRepository: "elastic/apm-server",
-		ExposedPorts:    []int{6060, 8200},
-		Image:           "docker.elastic.co/apm/apm-server",
-		Name:            "apm-server",
-		NetworkAlias:    "apm-server",
-		Version:         "7.2.0",
+		Env: map[string]string{
+			"apm-server.frontend.enabled":                      "true",
+			"apm-server.frontend.rate_limit":                   "100000",
+			"apm-server.host":                                  "0.0.0.0:8200",
+			"apm-server.read_timeout":                          "1m",
+			"apm-server.shutdown_timeout":                      "2m",
+			"apm-server.write_timeout":                         "1m",
+			"output.elasticsearch.enabled":                     "true",
+			"setup.elasticsearch.host":                         "http://elasticsearch:9200",
+			"setup.kibana.host":                                "http://kibana:5601",
+			"setup.template.settings.index.number_of_replicas": "0",
+			"xpack.monitoring.elasticsearch":                   "true",
+		},
+		ExposedPorts: []int{6060, 8200},
+		Image:        "docker.elastic.co/apm/apm-server",
+		Name:         "apm-server",
+		NetworkAlias: "apm-server",
+		Version:      "7.2.0",
 	},
 	"elasticsearch": {
 		BuildBranch:     "master",
@@ -68,11 +81,14 @@ var servicesDefaults = map[string]Service{
 	"kibana": {
 		BuildBranch:     "master",
 		BuildRepository: "elastic/kibana",
-		ExposedPorts:    []int{5601},
-		Image:           "docker.elastic.co/kibana/kibana",
-		Name:            "kibana",
-		NetworkAlias:    "kibana",
-		Version:         "7.2.0",
+		Env: map[string]string{
+			"ELASTICSEARCH_HOSTS": "http://elasticsearch:9200",
+		},
+		ExposedPorts: []int{5601},
+		Image:        "docker.elastic.co/kibana/kibana",
+		Name:         "kibana",
+		NetworkAlias: "kibana",
+		Version:      "7.2.0",
 	},
 	"metricbeat": {
 		BuildBranch:     "master",
@@ -138,6 +154,11 @@ var stacksDefaults = map[string]Stack{
 	},
 	"observability": {
 		Name: "Observability",
+		Services: map[string]Service{
+			"elasticsearch": Service{},
+			"kibana":        Service{},
+			"apm-server":    Service{},
+		},
 	},
 }
 
