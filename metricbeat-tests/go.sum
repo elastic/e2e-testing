@@ -35,6 +35,8 @@ github.com/elastic/metricbeat-tests-poc/cli v0.0.0-20190813142051-273771c3c157 h
 github.com/elastic/metricbeat-tests-poc/cli v0.0.0-20190813142051-273771c3c157/go.mod h1:RE1znZDXhuuLMETce4haSYZq4FYAVZTYlaysRVIKcyU=
 github.com/elastic/metricbeat-tests-poc/cli v0.0.0-20190814102254-b3b72ea9a775 h1:dD55lsQ2vgC6TcjGxYa7ODjt0fsXglbFTpQfBOK1NVk=
 github.com/elastic/metricbeat-tests-poc/cli v0.0.0-20190814102254-b3b72ea9a775/go.mod h1:TKv1Xgp6LJNB4zGQkZX2Tc4qpbB+zvoQ8fzU9GinkLw=
+github.com/elastic/metricbeat-tests-poc/cli v0.0.0-20190816113444-d9f62e254fdc h1:XjKNdtkT3VFtmZQHUFSqYKnFZ/3NgepncQywAAtbZ20=
+github.com/elastic/metricbeat-tests-poc/cli v0.0.0-20190816113444-d9f62e254fdc/go.mod h1:eFUme/3wRAs5C/ckuU/ey5jTBx36gy9KggeCiwyZPyg=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/go-sql-driver/mysql v1.4.1/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
