@@ -121,6 +121,36 @@ var servicesDefaults = map[string]Service{
 		NetworkAlias: "mysql",
 		Version:      "latest",
 	},
+	"opbeans-go": {
+		Env: map[string]string{
+			"ELASTIC_APM_APPLICATION_PACKAGES": "co.elastic.apm.opbeans",
+			"ELASTIC_APM_JS_SERVER_URL":        "http://localhost:8000",
+			"ELASTIC_APM_SERVER_URL":           "http://apm-server:8200",
+			"ELASTIC_APM_SERVICE_NAME":         "opbeans-go",
+			"ELASTIC_APM_LOG_FILE":             "stderr",
+			"ELASTIC_APM_LOG_LEVEL":            "debug",
+			"OPBEANS_SERVER_PORT":              "8000",
+		},
+		ExposedPorts: []int{8000},
+		Image:        "opbeans/opbeans-go",
+		Name:         "opbeans-go",
+		NetworkAlias: "opbeans-go",
+		Version:      "latest",
+	},
+	"opbeans-java": {
+		Env: map[string]string{
+			"ELASTIC_APM_APPLICATION_PACKAGES": "co.elastic.apm.opbeans",
+			"ELASTIC_APM_JS_SERVER_URL":        "http://localhost:8000",
+			"ELASTIC_APM_SERVER_URL":           "http://apm-server:8200",
+			"ELASTIC_APM_SERVICE_NAME":         "opbeans-java",
+			"OPBEANS_SERVER_PORT":              "8000",
+		},
+		ExposedPorts: []int{8000},
+		Image:        "opbeans/opbeans-java",
+		Name:         "opbeans-java",
+		NetworkAlias: "opbeans-java",
+		Version:      "latest",
+	},
 	"redis": {
 		ExposedPorts: []int{6379},
 		Image:        "redis",
@@ -154,9 +184,21 @@ func (s Service) Equals(o Service) bool {
 var stacksDefaults = map[string]Stack{
 	"apm-server": {
 		Name: "APM Server",
+		Services: map[string]Service{
+			"elasticsearch": Service{},
+			"kibana":        Service{},
+			"apm-server":    Service{},
+		},
 	},
 	"apm-agents": {
 		Name: "APM Agents",
+		Services: map[string]Service{
+			"elasticsearch": Service{},
+			"kibana":        Service{},
+			"apm-server":    Service{},
+			"opbeans-java":  Service{},
+			"opbeans-go":    Service{},
+		},
 	},
 	"metricbeat": {
 		Name: "Metricbeat Integrations",
@@ -171,6 +213,8 @@ var stacksDefaults = map[string]Stack{
 			"elasticsearch": Service{},
 			"kibana":        Service{},
 			"apm-server":    Service{},
+			"opbeans-java":  Service{},
+			"opbeans-go":    Service{},
 		},
 	},
 }
