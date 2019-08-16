@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"path"
 	"path/filepath"
 	"reflect"
 
@@ -328,6 +329,16 @@ func readConfig(workspace string) (OpConfig, error) {
 	userFile, _ := afero.ReadFile(fs, fileName)
 	if userFile != nil {
 		viper.MergeConfig(bytes.NewReader(userFile))
+	}
+
+	envConfigPath := os.Getenv("OP_CONFIG_PATH")
+	if envConfigPath != "" {
+		// read user-defined configuration from environment variable
+		fs := afero.NewOsFs()
+		userFile, _ := afero.ReadFile(fs, path.Join(envConfigPath, fileName))
+		if userFile != nil {
+			viper.MergeConfig(bytes.NewReader(userFile))
+		}
 	}
 
 	cfg := OpConfig{}
