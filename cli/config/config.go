@@ -153,6 +153,13 @@ var stacksDefaults = map[string]Stack{
 	"apm-agents": {
 		Name: "APM Agents",
 	},
+	"metricbeat": {
+		Name: "Metricbeat Integrations",
+		Services: map[string]Service{
+			"elasticsearch": Service{},
+			"kibana":        Service{},
+		},
+	},
 	"observability": {
 		Name: "Observability",
 		Services: map[string]Service{
