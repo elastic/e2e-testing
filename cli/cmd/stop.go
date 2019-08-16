@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"errors"
-
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
 	"github.com/elastic/metricbeat-tests-poc/cli/log"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
@@ -39,16 +37,8 @@ func init() {
 
 var stopCmd = &cobra.Command{
 	Use:   "stop",
-	Short: "Stops a Service",
-	Long: `Stops a Service, stoppping the Docker container for it that exposes its internal
-	configuration so that you are able to connect to it in an easy manner`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) > 1 {
-			return errors.New("run requires zero or one argument representing the image tag to be run")
-		}
-
-		return nil
-	},
+	Short: "Stops a Service or Stack",
+	Long:  "Stops a Service or Stack, stoppping the Docker containers that expose their internal configuration",
 	Run: func(cmd *cobra.Command, args []string) {
 		// NOOP
 	},
@@ -58,15 +48,7 @@ func buildStopServiceCommand(srv string, service config.Service) *cobra.Command 
 	return &cobra.Command{
 		Use:   srv,
 		Short: `Stops a ` + srv + ` service`,
-		Long: `Stops a ` + srv + ` service, stoppping the Docker container for it that exposes its internal
-		configuration so that you are able to connect to it in an easy manner`,
-		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) > 1 {
-				return errors.New("run requires zero or one argument representing the image tag to be run")
-			}
-
-			return nil
-		},
+		Long:  `Stops a ` + srv + ` service, stoppping its Docker container`,
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
@@ -115,15 +97,8 @@ var stopServiceCmd = &cobra.Command{
 
 var stopStackCmd = &cobra.Command{
 	Use:   "stack",
-	Short: "Stops a Stack",
-	Long:  `Stops a Stack, compounded by different services that cooperate, stoppping the Docker containers for them that expose their internal configurations`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) > 1 {
-			return errors.New("run requires zero or one argument representing the image tag to be run")
-		}
-
-		return nil
-	},
+	Short: "Allows to stop a Stack, defined as subcommands",
+	Long:  `Allows to stop a Stack, defined as subcommands, stopping all different services that compound the stack`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// NOOP
 	},

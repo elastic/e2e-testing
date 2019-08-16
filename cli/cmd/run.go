@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"errors"
-
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
 	"github.com/elastic/metricbeat-tests-poc/cli/log"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
@@ -39,16 +37,8 @@ func init() {
 
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "Runs a Service",
-	Long: `Runs a Service, spinning up a Docker container for it and exposing its internal.
-	configuration so that you are able to connect to it in an easy manner`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) > 1 {
-			return errors.New("run requires zero or one argument representing the image tag to be run")
-		}
-
-		return nil
-	},
+	Short: "Runs a Service or Stack",
+	Long:  "Runs a Service or Stack, spinning up Docker containers exposing its internal configuration so that you are able to connect to it in an easy manner",
 	Run: func(cmd *cobra.Command, args []string) {
 		// NOOP
 	},
@@ -58,15 +48,7 @@ func buildRunServiceCommand(srv string, service config.Service) *cobra.Command {
 	return &cobra.Command{
 		Use:   srv,
 		Short: `Runs a ` + srv + ` service`,
-		Long: `Runs a ` + srv + ` service, spinning up a Docker container for it and exposing its internal
-		configuration so that you are able to connect to it in an easy manner`,
-		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) > 1 {
-				return errors.New("run requires zero or one argument representing the image tag to be run")
-			}
-
-			return nil
-		},
+		Long:  `Runs a ` + srv + ` service, spinning up a Docker container for it and exposing its internal configuration so that you are able to connect to it in an easy manner`,
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
@@ -107,8 +89,7 @@ func buildRunStackCommand(key string, stack config.Stack) *cobra.Command {
 var runServiceCmd = &cobra.Command{
 	Use:   "service",
 	Short: "Allows to run a service, defined as subcommands",
-	Long: `Allows to run a service, defined as subcommands, spinning up Docker containers for them and exposing their internal
-	configuration so that you are able to connect to them in an easy manner`,
+	Long:  `Allows to run a service, defined as subcommands, spinning up Docker containers for them and exposing their internal configuration so that you are able to connect to them in an easy manner`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// NOOP
 	},
@@ -116,16 +97,8 @@ var runServiceCmd = &cobra.Command{
 
 var runStackCmd = &cobra.Command{
 	Use:   "stack",
-	Short: "Runs a Stack",
-	Long: `Runs a Stack, compounded by different services that cooperate, spinning up Docker containers for them and exposing
-	their internal configuration so that you are able to connect to them in an easy manner`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) > 1 {
-			return errors.New("run requires zero or one argument representing the image tag to be run")
-		}
-
-		return nil
-	},
+	Short: "Allows to run a Stack, defined as subcommands",
+	Long:  `Allows to run a Stack, defined as subcommands, and compounded by different services that cooperate between them`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// NOOP
 	},
