@@ -55,7 +55,7 @@ var servicesDefaults = map[string]Service{
 		Image:        "docker.elastic.co/apm/apm-server",
 		Name:         "apm-server",
 		NetworkAlias: "apm-server",
-		Version:      "7.2.0",
+		Version:      "7.3.0",
 	},
 	"elasticsearch": {
 		BuildBranch:     "master",
@@ -73,7 +73,7 @@ var servicesDefaults = map[string]Service{
 		Image:        "docker.elastic.co/elasticsearch/elasticsearch",
 		Name:         "elasticsearch",
 		NetworkAlias: "elasticsearch",
-		Version:      "7.2.0",
+		Version:      "7.3.0",
 	},
 	"kafka": {
 		ExposedPorts: []int{9092},
@@ -94,7 +94,7 @@ var servicesDefaults = map[string]Service{
 		Image:        "docker.elastic.co/kibana/kibana",
 		Name:         "kibana",
 		NetworkAlias: "kibana",
-		Version:      "7.2.0",
+		Version:      "7.3.0",
 	},
 	"metricbeat": {
 		BuildBranch:     "master",
@@ -102,7 +102,7 @@ var servicesDefaults = map[string]Service{
 		Image:           "docker.elastic.co/beats/metricbeat",
 		Name:            "metricbeat",
 		NetworkAlias:    "metricbeat",
-		Version:         "7.2.0",
+		Version:         "7.3.0",
 	},
 	"mongodb": {
 		ExposedPorts: []int{27017},
