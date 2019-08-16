@@ -32,3 +32,36 @@ $ ./op stop stack -v 7.2.0
 ```
 
 >By the way, `op` comes from `Observability Provisioner`.
+
+## Why this tool is not building software dependencies
+
+One common issue we have seen across Observability projects is related to the constant need for a project consumer of building Docker images for most of its dependencies (metricbeat building integrations, apm-integration-tests building opbeans, etc.)
+
+We believe that the responsibility of creating those Docker images must fall under the software producer instead of the consumer. And we believe this because a consumer software doesn't have to know how to build its dependencies, it just consumes them in the form of artefacts. Those artefacts could be Docker images, binaries (Go binaries, JAR files, etc) or packages (NPM), and they might be created on their own repositories.
+
+A dependency is identified by its coordinates:
+    - Docker: qualifies namespace + tag
+    - Java, NPM: qualified namespace + version
+    - Go (before modules): Github repository
+    - Go (after modules): Github repository + version
+
+If we are able to produce qualified artefacts from each repository that produces a dependency, then we will be able to consume them in an easy manner.
+
+### What are the benefits of consuming instead of building dependencies?
+
+The three biggest benefits are: Developer experience, Build time and Cloud cost.
+
+> As an example, we estimate that metricbeat uses 20% of its build time building Docker images. Let's use the benefits below to understand the impact of applying this strategy to a real project.
+
+#### Developer Experience
+Projects that have to build a dependency are harder to maintain, because the way a dependency is built could change. It's true that Docker simplifies the process a lot, but the Dockerfile used to build it could change in the same manner. So the consumer software is forced to update its code to update the build process for each dependency.
+
+If we are able to remove this build part on a consumer, then the code base would be simpler, increasing how it's used by developers.
+
+#### Build time
+Projects that have to build a dependency uses more CI time, as they have to build the dependencies each time the CI triggers a job, be it a PR or branch. It's true that Jenkins (an other CI providers) allows to skip stages depending on conditions, but in the end we always need to build the dependencies at some point (probably at the merge to master).
+
+If we are able to remove this build part on a consumer, then the CI build will take less time to finish, as we will consume already published artefacts instead of building them. The pull time will be taken into consideration too, but it would be way faster than the build time.
+
+#### Cloud costs
+For the same reason as the previous one, less build time means less life time for a ephemeral build agent on CI, so the cloud costs of running them will decrease in the same percentage as the build time.
