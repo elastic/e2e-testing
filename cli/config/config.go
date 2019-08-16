@@ -316,6 +316,16 @@ func exists(path string) (bool, error) {
 	return true, err
 }
 
+// read user-defined configuration located at file path, which will be merged
+// with current Viper's configuration
+func mergeConfigFiles(filePath string) {
+	fs := afero.NewOsFs()
+	f, _ := afero.ReadFile(fs, filePath)
+	if f != nil {
+		viper.MergeConfig(bytes.NewReader(f))
+	}
+}
+
 func readConfig(workspace string) (OpConfig, error) {
 	checkConfigFile(workspace)
 
@@ -325,20 +335,12 @@ func readConfig(workspace string) (OpConfig, error) {
 	viper.ReadInConfig()
 
 	// read user-defined configuration at execution path
-	fs := afero.NewOsFs()
-	userFile, _ := afero.ReadFile(fs, fileName)
-	if userFile != nil {
-		viper.MergeConfig(bytes.NewReader(userFile))
-	}
+	mergeConfigFiles(fileName)
 
 	envConfigPath := os.Getenv("OP_CONFIG_PATH")
 	if envConfigPath != "" {
 		// read user-defined configuration from environment variable
-		fs := afero.NewOsFs()
-		userFile, _ := afero.ReadFile(fs, path.Join(envConfigPath, fileName))
-		if userFile != nil {
-			viper.MergeConfig(bytes.NewReader(userFile))
-		}
+		mergeConfigFiles(path.Join(envConfigPath, fileName))
 	}
 
 	cfg := OpConfig{}
