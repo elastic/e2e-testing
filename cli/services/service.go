@@ -145,6 +145,10 @@ func (s *DockerService) toString(json *types.ContainerJSON) string {
 	for k, v := range s.Env {
 		toString += fmt.Sprintf("\t\t%s : %s\n", k, v)
 	}
+	toString += fmt.Sprintf("\tLabels:\n")
+	for lb, label := range s.Labels {
+		toString += fmt.Sprintf("\t\t%s -> %s\n", lb, label)
+	}
 
 	return toString
 }
