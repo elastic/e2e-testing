@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"reflect"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
 
 	"github.com/elastic/metricbeat-tests-poc/cli/docker"
-	"github.com/elastic/metricbeat-tests-poc/cli/log"
 )
 
 // Op the tool's configuration, read from tool's workspace
@@ -224,7 +224,7 @@ type Stack struct {
 
 // checkInstalledSoftware checks that the required software is present
 func checkInstalledSoftware() {
-	log.Info("Validating required tools...")
+	log.Debug("Validating required tools...")
 	binaries := []string{
 		"docker",
 	}
@@ -291,7 +291,11 @@ func newConfig(workspace string) {
 	}
 
 	opConfig, err := readConfig(workspace)
-	log.CheckIfErrorMessage(err, "Error when reading config.")
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Fatal("Error reading configuration")
+	}
 
 	Op = &opConfig
 }
@@ -302,10 +306,21 @@ func checkConfigFile(workspace string) {
 		return
 	}
 	err = os.MkdirAll(workspace, 0755)
-	log.CheckIfErrorMessage(err, "Cannot create workdir for 'op' at "+workspace)
-	log.Success("'op' workdir created at " + workspace)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"path":  workspace,
+		}).Fatal("Cannot create workdir for 'op'")
+	}
 
-	log.Info("Creating %s with default values in %s.", fileName, workspace)
+	log.WithFields(log.Fields{
+		"path": workspace,
+	}).Info("'op' workdir created.")
+
+	log.WithFields(log.Fields{
+		"file": fileName,
+		"path": workspace,
+	}).Debug("Creating configuration file")
 
 	configFilePath := filepath.Join(workspace, fileName)
 
@@ -320,8 +335,14 @@ func checkConfigFile(workspace string) {
 	v.AddConfigPath(workspace)
 
 	err = v.WriteConfig()
-	log.CheckIfErrorMessage(err, `Cannot save default configuration file at `+configFilePath)
-	log.Success("Config file initialised with default values")
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"path":  configFilePath,
+		}).Fatal("Cannot save default configuration file for 'op'")
+	}
+
+	log.Info("Config file initialised with default values.")
 }
 
 func checkServices(cfg OpConfig) {
@@ -394,6 +415,15 @@ func readConfig(workspace string) (OpConfig, error) {
 // which checks if software is installed
 func which(software string) {
 	path, err := exec.LookPath(software)
-	log.CheckIfError(err)
-	log.Success("%s is present at %s", software, path)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":    err,
+			"software": software,
+		}).Fatal("Required binary is not present")
+	}
+
+	log.WithFields(log.Fields{
+		"software": software,
+		"path":     path,
+	}).Debug("Binary is present")
 }

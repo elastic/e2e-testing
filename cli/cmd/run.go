@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
-	"github.com/elastic/metricbeat-tests-poc/cli/log"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
 
 	"github.com/imdario/mergo"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -69,7 +69,10 @@ func buildRunStackCommand(key string, stack config.Stack) *cobra.Command {
 
 			services := config.AvailableServices()
 			if len(stack.Services) == 0 {
-				log.Error("The Stack does not contain services. Please check configuration files")
+				log.WithFields(log.Fields{
+					"command": "run",
+					"stack":   key,
+				}).Fatal("The Stack does not contain services. Please check configuration files")
 			}
 
 			for k, srv := range stack.Services {

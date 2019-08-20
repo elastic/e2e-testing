@@ -8,11 +8,11 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/go-connections/nat"
+	log "github.com/sirupsen/logrus"
 	"github.com/testcontainers/testcontainers-go"
 
 	config "github.com/elastic/metricbeat-tests-poc/cli/config"
 	docker "github.com/elastic/metricbeat-tests-poc/cli/docker"
-	"github.com/elastic/metricbeat-tests-poc/cli/log"
 )
 
 // Service represents the contract for services
@@ -173,7 +173,10 @@ func (s *DockerService) Destroy() error {
 	}
 
 	if json == nil {
-		log.Info("The service for %s is not present in the system", s.GetName())
+		log.WithFields(log.Fields{
+			"service": s.GetName(),
+		}).Info("The service is not present in the system")
+
 		return nil
 	}
 
@@ -231,8 +234,10 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 
 	docker.ConnectContainerToDevNetwork(json.ContainerJSONBase.ID, s.GetNetworkAlias())
 
-	log.Success("The service (%s) has been created successfully:", s.GetName())
-	log.Log("%s", s.toString(json))
+	log.WithFields(log.Fields{
+		"service": s.GetName(),
+		"json":    s.toString(json),
+	}).Info("Service created")
 
 	return service, nil
 }

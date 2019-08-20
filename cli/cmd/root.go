@@ -1,9 +1,9 @@
 package cmd
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/elastic/metricbeat-tests-poc/cli/log"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
@@ -22,5 +22,9 @@ var rootCmd = &cobra.Command{
 // Execute execute root command
 func Execute() {
 	err := rootCmd.Execute()
-	log.CheckIfError(err)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Fatal("Error executing command")
+	}
 }
