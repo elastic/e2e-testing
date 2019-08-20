@@ -289,18 +289,6 @@ func (c *OpConfig) GetServiceConfig(service string) (Service, bool) {
 	return srv, exists
 }
 
-// GetStackConfig configuration of a stack
-func GetStackConfig(stack string) (Stack, bool) {
-	return Op.GetStackConfig(stack)
-}
-
-// GetStackConfig configuration of a stack
-func (c *OpConfig) GetStackConfig(stack string) (Stack, bool) {
-	stck, exists := c.Stacks[stack]
-
-	return stck, exists
-}
-
 // newConfig returns a new configuration
 func newConfig(workspace string) {
 	if Op != nil {

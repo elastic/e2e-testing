@@ -90,28 +90,6 @@ func TestDefaultConfigFileContainsServicesAndStacks(t *testing.T) {
 	assert.True(t, (cfg.Stacks != nil))
 }
 
-func TestGetStackConfigReturnsAValidStack(t *testing.T) {
-	defer filet.CleanUp(t)
-
-	initTestConfig(t)
-
-	stack, exists := GetStackConfig("observability")
-	assert.True(t, exists)
-	assert.Equal(t, "Observability", stack.Name)
-}
-
-func TestGetStackConfigReturnsANonExistingStack(t *testing.T) {
-	defer filet.CleanUp(t)
-
-	initTestConfig(t)
-
-	stack, exists := GetStackConfig("foo")
-
-	assert.False(t, exists)
-	assert.Equal(t, "", stack.Name)
-	assert.Equal(t, 0, len(stack.Services))
-}
-
 func TestMergeConfigurationFromAll(t *testing.T) {
 	defer filet.CleanUp(t)
 
