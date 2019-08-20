@@ -1,14 +1,15 @@
-package services
+package main
 
 import (
 	"fmt"
 	"os"
 
 	"github.com/elastic/metricbeat-tests-poc/cli/log"
+	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
 // RunMetricbeatService runs a metricbeat service entity for a service to monitor
-func RunMetricbeatService(version string, monitoredService Service) (Service, error) {
+func RunMetricbeatService(version string, monitoredService services.Service) (services.Service, error) {
 	dir, _ := os.Getwd()
 
 	serviceName := monitoredService.GetName()
@@ -29,7 +30,7 @@ func RunMetricbeatService(version string, monitoredService Service) (Service, er
 		"co.elastic.logs/module": serviceName,
 	}
 
-	serviceManager := NewServiceManager()
+	serviceManager := services.NewServiceManager()
 
 	service := serviceManager.Build("metricbeat", version, false)
 

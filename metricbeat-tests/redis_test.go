@@ -14,7 +14,7 @@ func redisIsRunning(redisVersion string) error {
 }
 
 func metricbeatIsInstalledAndConfiguredForRedisModule(metricbeatVersion string) error {
-	s, err := services.RunMetricbeatService(metricbeatVersion, redisService)
+	s, err := RunMetricbeatService(metricbeatVersion, redisService)
 
 	metricbeatService = s
 
