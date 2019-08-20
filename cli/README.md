@@ -65,6 +65,12 @@ $ export OP_LOG_LEVEL=FATAL
 $ export OP_LOG_LEVEL=PANIC
 ```
 
+It's also possible to add current timestamp to each log line. To do so, please set the environment variable `OP_LOG_INCLUDE_TIMESTAMP`, with "true" (case-insensitive).
+
+```
+$ export OP_LOG_INCLUDE_TIMESTAMP=TRUE
+$ export OP_LOG_INCLUDE_TIMESTAMP=true
+```
 
 ## Why this tool is not building software dependencies
 

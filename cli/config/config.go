@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -368,8 +369,11 @@ func checkStacks(cfg OpConfig) {
 }
 
 func configureLogger() {
+	includeTimestamp := os.Getenv("OP_LOG_INCLUDE_TIMESTAMP")
+	fullTimestamp := (strings.ToUpper(includeTimestamp) == "TRUE")
+
 	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
+		FullTimestamp: fullTimestamp,
 	})
 
 	switch logLevel := os.Getenv("OP_LOG_LEVEL"); logLevel {
