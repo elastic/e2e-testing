@@ -121,36 +121,43 @@ func (s *DockerService) SetVersion(version string) {
 	s.Version = version
 }
 
-func (s *DockerService) toString(json *types.ContainerJSON) string {
+func (s *DockerService) toLogFields(json *types.ContainerJSON) log.Fields {
 	ip := json.NetworkSettings.IPAddress
 	ports := json.NetworkSettings.Ports
 
-	toString := ""
-	toString += fmt.Sprintf("\tService: %s\n", s.GetName())
-	toString += fmt.Sprintf("\tImage : %s:%s\n", s.Image, s.GetVersion())
-	toString += fmt.Sprintf("\tNetwork: %v\n", "elastic-dev-network")
-	toString += fmt.Sprintf("\tContainer Name: %s\n", s.GetContainerName())
-	toString += fmt.Sprintf("\tNetwork Alias: %s\n", s.GetNetworkAlias())
-	toString += fmt.Sprintf("\tIP: %s\n", ip)
-	toString += fmt.Sprintf("\tApplication Ports\n")
-	for _, port := range s.ExposedPorts {
-		sPort := fmt.Sprintf("%d/tcp", port)
-		toString += fmt.Sprintf("\t\t%d -> %v\n", port, ports[nat.Port(sPort)])
-	}
-	toString += fmt.Sprintf("\tBind Mounts:\n")
-	for bm, path := range s.BindMounts {
-		toString += fmt.Sprintf("\t\t%s -> %s\n", bm, path)
-	}
-	toString += fmt.Sprintf("\tEnvironment Variables:\n")
-	for k, v := range s.Env {
-		toString += fmt.Sprintf("\t\t%s : %s\n", k, v)
-	}
-	toString += fmt.Sprintf("\tLabels:\n")
-	for lb, label := range s.Labels {
-		toString += fmt.Sprintf("\t\t%s -> %s\n", lb, label)
+	fields := log.Fields{
+		"service":       s.GetName(),
+		"image":         s.Image + ":" + s.GetVersion(),
+		"network":       "elastic-dev-network",
+		"containerName": s.GetContainerName(),
+		"networkAlias":  s.GetNetworkAlias(),
+		"IP":            ip,
 	}
 
-	return toString
+	for i, port := range s.ExposedPorts {
+		sPort := fmt.Sprintf("%d/tcp", port)
+		fields[fmt.Sprintf("applicationPort_%d", i)] = fmt.Sprintf("%d:%v", port, ports[nat.Port(sPort)])
+	}
+
+	i := 0
+	for bm, path := range s.BindMounts {
+		fields[fmt.Sprintf("bindMount_%d", i)] = fmt.Sprintf("%s=%s", bm, path)
+		i++
+	}
+
+	i = 0
+	for k, v := range s.Env {
+		fields[fmt.Sprintf("envVar_%d", i)] = fmt.Sprintf("%s=%s", k, v)
+		i++
+	}
+
+	i = 0
+	for lb, label := range s.Labels {
+		fields[fmt.Sprintf("label_%d", i)] = fmt.Sprintf("%s=%s", lb, label)
+		i++
+	}
+
+	return fields
 }
 
 // ExposedPort represents the structure for how services expose ports
@@ -234,10 +241,7 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 
 	docker.ConnectContainerToDevNetwork(json.ContainerJSONBase.ID, s.GetNetworkAlias())
 
-	log.WithFields(log.Fields{
-		"service": s.GetName(),
-		"json":    s.toString(json),
-	}).Info("Service created")
+	log.WithFields(s.toLogFields(json)).Info("Service created")
 
 	return service, nil
 }
