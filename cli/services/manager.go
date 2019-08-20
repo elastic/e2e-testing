@@ -26,10 +26,6 @@ func NewServiceManager() ServiceManager {
 
 // Build builds a service domain entity from just its name and version
 func (sm *DockerServiceManager) Build(service string, version string, asDaemon bool) Service {
-	if service == "metricbeat" {
-		return NewMetricbeatService(version, asDaemon)
-	}
-
 	cfg, exists := config.GetServiceConfig(service)
 	if !exists {
 		log.Error("Cannot find service %s in configuration file.", service)

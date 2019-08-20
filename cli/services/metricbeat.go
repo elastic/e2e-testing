@@ -4,23 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	config "github.com/elastic/metricbeat-tests-poc/cli/config"
 	"github.com/elastic/metricbeat-tests-poc/cli/log"
 )
-
-// NewMetricbeatService returns a metricbeat service entity
-func NewMetricbeatService(version string, asDaemon bool) Service {
-	service := &DockerService{
-		Service: config.Service{
-			Daemon:  asDaemon,
-			Image:   "docker.elastic.co/beats/metricbeat",
-			Name:    "metricbeat",
-			Version: version,
-		},
-	}
-
-	return service
-}
 
 // RunMetricbeatService runs a metricbeat service entity for a service to monitor
 func RunMetricbeatService(version string, monitoredService Service) (Service, error) {
@@ -44,7 +29,9 @@ func RunMetricbeatService(version string, monitoredService Service) (Service, er
 		"co.elastic.logs/module": serviceName,
 	}
 
-	service := NewMetricbeatService(version, false)
+	serviceManager := NewServiceManager()
+
+	service := serviceManager.Build("metricbeat", version, false)
 
 	env := map[string]string{
 		"BEAT_STRICT_PERMS": "false",
