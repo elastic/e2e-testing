@@ -236,6 +236,8 @@ func checkInstalledSoftware() {
 
 // Init creates this tool workspace under user's home, in a hidden directory named ".op"
 func Init() {
+	configureLogger()
+
 	checkInstalledSoftware()
 
 	InitConfig()
@@ -362,6 +364,29 @@ func checkStacks(cfg OpConfig) {
 			viper.UnmarshalKey("stacks."+k, &s)
 			cfg.Stacks[k] = s
 		}
+	}
+}
+
+func configureLogger() {
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+	})
+
+	switch logLevel := os.Getenv("OP_LOG_LEVEL"); logLevel {
+	case "TRACE":
+		log.SetLevel(log.TraceLevel)
+	case "DEBUG":
+		log.SetLevel(log.DebugLevel)
+	case "WARN":
+		log.SetLevel(log.WarnLevel)
+	case "ERROR":
+		log.SetLevel(log.ErrorLevel)
+	case "FATAL":
+		log.SetLevel(log.FatalLevel)
+	case "PANIC":
+		log.SetLevel(log.PanicLevel)
+	default:
+		log.SetLevel(log.InfoLevel)
 	}
 }
 
