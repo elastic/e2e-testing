@@ -45,6 +45,8 @@ var yaml2 = []byte(`services:
 `)
 
 func TestCheckConfigFileCreatesWorkspaceAtHome(t *testing.T) {
+	defer filet.CleanUp(t)
+
 	tmpDir := filet.TmpDir(t, "")
 
 	workspace := path.Join(tmpDir, ".op")
@@ -59,6 +61,8 @@ func TestCheckConfigFileCreatesWorkspaceAtHome(t *testing.T) {
 }
 
 func TestCheckConfigCreatesConfigFileAtHome(t *testing.T) {
+	defer filet.CleanUp(t)
+
 	tmpDir := filet.TmpDir(t, "")
 
 	workspace := path.Join(tmpDir, ".op")
@@ -74,6 +78,8 @@ func TestCheckConfigCreatesConfigFileAtHome(t *testing.T) {
 }
 
 func TestDefaultConfigFileContainsServicesAndStacks(t *testing.T) {
+	defer filet.CleanUp(t)
+
 	tmpDir := filet.TmpDir(t, "")
 
 	workspace := path.Join(tmpDir, ".op")
@@ -85,6 +91,8 @@ func TestDefaultConfigFileContainsServicesAndStacks(t *testing.T) {
 }
 
 func TestGetStackConfigReturnsAValidStack(t *testing.T) {
+	defer filet.CleanUp(t)
+
 	initTestConfig(t)
 
 	stack, exists := GetStackConfig("observability")
@@ -93,6 +101,8 @@ func TestGetStackConfigReturnsAValidStack(t *testing.T) {
 }
 
 func TestGetStackConfigReturnsANonExistingStack(t *testing.T) {
+	defer filet.CleanUp(t)
+
 	initTestConfig(t)
 
 	stack, exists := GetStackConfig("foo")
@@ -103,6 +113,8 @@ func TestGetStackConfigReturnsANonExistingStack(t *testing.T) {
 }
 
 func TestMergeConfigurationFromAll(t *testing.T) {
+	defer filet.CleanUp(t)
+
 	currentContextPath := path.Join(".", "config.yml")
 	ioutil.WriteFile(currentContextPath, yaml, 0644)
 	defer func() {
@@ -129,6 +141,8 @@ func TestMergeConfigurationFromAll(t *testing.T) {
 }
 
 func TestMergeConfigurationFromCurrentExecutionContext(t *testing.T) {
+	defer filet.CleanUp(t)
+
 	currentContextPath := path.Join(".", "config.yml")
 	ioutil.WriteFile(currentContextPath, yaml, 0644)
 	defer func() {
@@ -146,6 +160,8 @@ func TestMergeConfigurationFromCurrentExecutionContext(t *testing.T) {
 }
 
 func TestMergeConfigurationFromEnvVariable(t *testing.T) {
+	defer filet.CleanUp(t)
+
 	envDir := filet.TmpDir(t, "")
 	os.Setenv("OP_CONFIG_PATH", envDir)
 	ioutil.WriteFile(path.Join(envDir, "config.yml"), yaml, 0644)
@@ -161,6 +177,8 @@ func TestMergeConfigurationFromEnvVariable(t *testing.T) {
 }
 
 func TestNewConfigPopulatesConfiguration(t *testing.T) {
+	defer filet.CleanUp(t)
+
 	initTestConfig(t)
 
 	assert.True(t, (Op.Services != nil))
