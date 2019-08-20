@@ -16,9 +16,6 @@ import (
 	"github.com/elastic/metricbeat-tests-poc/cli/log"
 )
 
-// OpWorkspace where the application works
-var OpWorkspace string
-
 // Op the tool's configuration, read from tool's workspace
 var Op *OpConfig
 
@@ -257,8 +254,6 @@ func InitConfig() {
 	w := filepath.Join(usr.HomeDir, ".op")
 
 	newConfig(w)
-
-	OpWorkspace = w
 }
 
 // OpConfig tool configuration
