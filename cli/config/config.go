@@ -381,7 +381,7 @@ func configureLogger() {
 		log.SetLevel(log.TraceLevel)
 	case "DEBUG":
 		log.SetLevel(log.DebugLevel)
-	case "WARN":
+	case "WARNING":
 		log.SetLevel(log.WarnLevel)
 	case "ERROR":
 		log.SetLevel(log.ErrorLevel)

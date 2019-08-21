@@ -59,7 +59,7 @@ To set the log level, please set the environment variable `OP_LOG_LEVEL` to one 
 $ export OP_LOG_LEVEL=TRACE
 $ export OP_LOG_LEVEL=DEBUG
 $ export OP_LOG_LEVEL=INFO
-$ export OP_LOG_LEVEL=WARN
+$ export OP_LOG_LEVEL=WARNING
 $ export OP_LOG_LEVEL=ERROR
 $ export OP_LOG_LEVEL=FATAL
 $ export OP_LOG_LEVEL=PANIC
