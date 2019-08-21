@@ -86,7 +86,7 @@ pipeline {
         }
         stage('Release') {
           options { skipDefaultCheckout() }
-          when { branch 'master' }
+          when { tag "v*" }
           environment {
             GO111MODULE = 'on'
             GOPROXY = 'https://proxy.golang.org'
