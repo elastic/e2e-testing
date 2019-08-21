@@ -81,6 +81,7 @@ func buildStopStackCommand(key string, stack config.Stack) *cobra.Command {
 					mergo.Merge(&originalSrv, srv)
 				}
 
+				originalSrv.Name = originalSrv.Name + "-" + key
 				originalSrv.Daemon = true
 				s := serviceManager.BuildFromConfig(originalSrv)
 				serviceManager.Stop(s)

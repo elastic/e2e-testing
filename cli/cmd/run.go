@@ -81,6 +81,7 @@ func buildRunStackCommand(key string, stack config.Stack) *cobra.Command {
 					mergo.Merge(&srv, originalSrv)
 				}
 
+				srv.Name = srv.Name + "-" + key
 				srv.Daemon = true
 				srv.Labels = map[string]string{
 					"stack": stack.Name,
