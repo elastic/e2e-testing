@@ -7,6 +7,12 @@ metricbeat.modules:
   # Redis hosts
   hosts: ["http://${HOST}:6379"]
 
-output.file:
-  path: "/tmp"
-  filename: "${FILE_NAME}.metrics"
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+  username: "elastic"
+  password: "p4ssw0rd"
+
+setup.kibana:
+  host: "http://kibana:5601"
+  username: "elastic"
+  password: "p4ssw0rd"

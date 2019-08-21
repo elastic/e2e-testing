@@ -4,6 +4,12 @@ metricbeat.modules:
     #username: root
     #password: secret
 
-output.file:
-  path: "/tmp"
-  filename: "${FILE_NAME}.metrics"
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+  username: "elastic"
+  password: "p4ssw0rd"
+
+setup.kibana:
+  host: "http://kibana:5601"
+  username: "elastic"
+  password: "p4ssw0rd"
