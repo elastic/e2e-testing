@@ -48,6 +48,10 @@ pipeline {
           parallel {
             stage('Sanity checks') {
               agent { label 'linux && immutable && docker' }
+              environment {
+                GOROOT = "${env.WORKSPACE}/.gvm/versions/go${env.GO_VERSION}.linux.amd64"
+                PATH = "${env.PATH}:${env.GOROOT}/bin"
+              }
               options { skipDefaultCheckout() }
               steps {
                 withGithubNotify(context: 'Sanity checks', tab: 'tests') {
