@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
-	"github.com/elastic/metricbeat-tests-poc/cli/log"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // ServiceManager manages lifecycle of a service
@@ -28,7 +29,11 @@ func NewServiceManager() ServiceManager {
 func (sm *DockerServiceManager) Build(service string, version string, asDaemon bool) Service {
 	cfg, exists := config.GetServiceConfig(service)
 	if !exists {
-		log.Error("Cannot find service %s in configuration file.", service)
+		log.WithFields(log.Fields{
+			"service": service,
+			"version": version,
+			"daemon":  asDaemon,
+		}).Fatal("Cannot find service in configuration.")
 	}
 
 	cfg.Daemon = asDaemon

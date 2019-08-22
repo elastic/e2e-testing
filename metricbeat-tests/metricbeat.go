@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/elastic/metricbeat-tests-poc/cli/log"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
@@ -49,7 +50,10 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 		return nil, fmt.Errorf("Could not run Metricbeat %s for %s: %v", version, serviceName, err)
 	}
 
-	log.Info("Metricbeat %s is running configured for %s", version, serviceName)
+	log.WithFields(log.Fields{
+		"metricbeatVersion": version,
+		"service":           serviceName,
+	}).Info("Metricbeat is running configured for the service")
 
 	return service, nil
 }

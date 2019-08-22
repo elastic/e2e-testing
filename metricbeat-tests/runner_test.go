@@ -10,10 +10,10 @@ import (
 
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/colors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
 	"github.com/elastic/metricbeat-tests-poc/cli/docker"
-	"github.com/elastic/metricbeat-tests-poc/cli/log"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
@@ -38,12 +38,12 @@ func TestMain(m *testing.M) {
 
 	status := godog.RunWithOptions("godog", func(s *godog.Suite) {
 		s.BeforeScenario(func(interface{}) {
-			log.Info("Before scenario...")
+			log.Debug("Before scenario...")
 			cleanUpOutputs()
 		})
 
 		s.AfterScenario(func(interface{}, error) {
-			log.Info("After scenario...")
+			log.Debug("After scenario...")
 			cleanUpOutputs()
 		})
 	}, opt)
@@ -57,12 +57,24 @@ func TestMain(m *testing.M) {
 func cleanUpOutputs() {
 	dir, _ := os.Getwd()
 
-	files, err := filepath.Glob(dir + "/outputs/*.metrics*")
-	log.CheckIfErrorMessage(err, "Cannot remove outputs :(")
+	pattern := dir + "/outputs/*.metrics*"
+
+	files, err := filepath.Glob(pattern)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"path":  pattern,
+		}).Fatal("Cannot retrieve outputs :(")
+	}
 
 	for _, f := range files {
 		err := os.Remove(f)
-		log.CheckIfErrorMessage(err, "Cannot remove output file "+f+" :(")
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"path":  f,
+			}).Fatal("Cannot remove output file :(")
+		}
 	}
 }
 
@@ -90,7 +102,12 @@ func metricbeatOutputsMetricsToTheFile(fileName string) error {
 			return fmt.Errorf("Could not find the file %s after %d seconds", fileName, (initialLoops * seconds))
 		}
 
-		log.Log("Waiting for the file %s to be present (%d seconds left)", fileName, (loops * seconds))
+		log.WithFields(log.Fields{
+			"file":    fileName,
+			"times":   loops,
+			"seconds": (loops * seconds),
+		}).Debug("Waiting for the file to be present")
+
 		time.Sleep(time.Duration(seconds) * time.Second)
 		loops--
 	}
@@ -100,7 +117,7 @@ func metricbeatOutputsMetricsToTheFile(fileName string) error {
 
 func fileChecker(c chan bool) {
 	if <-c {
-		log.Success("File found!")
+		log.Info("File found!")
 	}
 }
 
