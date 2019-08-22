@@ -136,7 +136,8 @@ func (s *DockerService) toLogFields(json *types.ContainerJSON) log.Fields {
 
 	for i, port := range s.ExposedPorts {
 		sPort := fmt.Sprintf("%d/tcp", port)
-		fields[fmt.Sprintf("applicationPort_%d", i)] = fmt.Sprintf("%d:%v", port, ports[nat.Port(sPort)])
+		binding := ports[nat.Port(sPort)]
+		fields[fmt.Sprintf("applicationPort_%d", i)] = fmt.Sprintf("%d:%s:%s", port, binding[0].HostIP, binding[0].HostPort)
 	}
 
 	i := 0
