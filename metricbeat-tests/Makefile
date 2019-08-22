@@ -16,7 +16,7 @@ install-godog:
 	go get github.com/DATA-DOG/godog/cmd/godog
 
 .PHONY: functional-test
-functional-test: install-godog install
+functional-test: install-godog 
 	godog --format=${FORMAT} ${FLAG} ${FEATURE}
 
 .PHONY: run-elastic-stack
