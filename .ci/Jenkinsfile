@@ -54,6 +54,7 @@ pipeline {
                   deleteDir()
                   unstash 'source'
                   dir(BASE_DIR){
+                    sh "gvm ${GO_VERSION}"
                     preCommit(commit: "${GIT_BASE_COMMIT}", junit: true)
                   }
                 }
