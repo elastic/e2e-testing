@@ -306,9 +306,7 @@ func checkConfigFile(workspace string) {
 	log.Success("'op' workdir created at " + workspace)
 
 	log.Info("Creating %s with default values in %s.", fileName, workspace)
-
 	configFilePath := filepath.Join(workspace, fileName)
-
 	os.Create(configFilePath)
 
 	v := viper.New()
