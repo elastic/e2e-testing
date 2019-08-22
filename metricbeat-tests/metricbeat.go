@@ -24,7 +24,6 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 
 	bindMounts := map[string]string{
 		dir + "/configurations/" + serviceName + ".yml": "/usr/share/metricbeat/metricbeat.yml",
-		dir + "/outputs": "/tmp",
 	}
 
 	labels := map[string]string{
