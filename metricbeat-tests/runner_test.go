@@ -23,7 +23,8 @@ var query ElasticsearchQuery
 var serviceManager services.ServiceManager
 
 type ElasticsearchQuery struct {
-	EventModule string
+	EventModule    string
+	ServiceVersion string
 }
 
 func init() {
@@ -57,10 +58,12 @@ func TestMain(m *testing.M) {
 }
 
 // assertHitsArePresent returns an error if no hits are present
-func assertHitsArePresent(hits map[string]interface{}, module string) error {
+func assertHitsArePresent(hits map[string]interface{}, q ElasticsearchQuery) error {
 	hitsCount := len(hits["hits"].(map[string]interface{})["hits"].([]interface{}))
 	if hitsCount == 0 {
-		return fmt.Errorf("There aren't documents for %s on Metricbeat index", query.EventModule)
+		return fmt.Errorf(
+			"There aren't documents for %s-%s on Metricbeat index",
+			q.EventModule, q.ServiceVersion)
 	}
 
 	return nil
@@ -68,7 +71,7 @@ func assertHitsArePresent(hits map[string]interface{}, module string) error {
 
 // assertHitsDoNotContainErrors returns an error if any of the returned entries contains
 // an "error.message" field in the "_source" document
-func assertHitsDoNotContainErrors(hits map[string]interface{}, module string) error {
+func assertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQuery) error {
 	for _, hit := range hits["hits"].(map[string]interface{})["hits"].([]interface{}) {
 		source := hit.(map[string]interface{})["_source"]
 		if val, ok := source.(map[string]interface{})["error"]; ok {
@@ -78,7 +81,9 @@ func assertHitsDoNotContainErrors(hits map[string]interface{}, module string) er
 					"error.message": msg,
 				}).Error("Error Hit found")
 
-				return fmt.Errorf("There are errors for %s on Metricbeat index", module)
+				return fmt.Errorf(
+					"There are errors for %s-%s on Metricbeat index",
+					q.EventModule, q.ServiceVersion)
 			}
 		}
 	}
@@ -98,6 +103,11 @@ func thereAreNoErrorsInTheIndex(metricbeatVersion string) error {
 							"event.module": query.EventModule,
 						},
 					},
+					{
+						"match": map[string]interface{}{
+							"service.version": query.ServiceVersion,
+						},
+					},
 				},
 			},
 		},
@@ -110,12 +120,12 @@ func thereAreNoErrorsInTheIndex(metricbeatVersion string) error {
 
 	r := result.Result
 
-	err = assertHitsArePresent(r, query.EventModule)
+	err = assertHitsArePresent(r, query)
 	if err != nil {
 		return err
 	}
 
-	err = assertHitsDoNotContainErrors(r, query.EventModule)
+	err = assertHitsDoNotContainErrors(r, query)
 	if err != nil {
 		return err
 	}

@@ -19,7 +19,8 @@ func metricbeatIsInstalledAndConfiguredForRedisModule(metricbeatVersion string) 
 	metricbeatService = s
 
 	query = ElasticsearchQuery{
-		EventModule: "redis",
+		EventModule:    "redis",
+		ServiceVersion: redisService.GetVersion(),
 	}
 
 	return err

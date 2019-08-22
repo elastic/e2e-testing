@@ -19,7 +19,8 @@ func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) 
 	metricbeatService = s
 
 	query = ElasticsearchQuery{
-		EventModule: "mysql",
+		EventModule:    "mysql",
+		ServiceVersion: mysqlService.GetVersion(),
 	}
 
 	return err

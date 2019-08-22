@@ -19,7 +19,8 @@ func metricbeatIsInstalledAndConfiguredForApacheModule(metricbeatVersion string)
 	metricbeatService = s
 
 	query = ElasticsearchQuery{
-		EventModule: "apache",
+		EventModule:    "apache",
+		ServiceVersion: apacheService.GetVersion(),
 	}
 
 	return err
