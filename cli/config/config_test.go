@@ -147,6 +147,7 @@ func TestMergeConfigurationFromEnvVariable(t *testing.T) {
 	initTestConfig(t)
 
 	srv, exists := Op.Services["liferay"]
+
 	assert.True(t, exists)
 	assert.Equal(t, "liferay/portal", srv.Image)
 	assert.Equal(t, []int{8080}, srv.ExposedPorts)
