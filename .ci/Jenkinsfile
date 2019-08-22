@@ -49,7 +49,7 @@ pipeline {
             stage('Sanity checks') {
               agent { label 'linux && immutable && docker' }
               environment {
-                GOROOT = "${env.WORKSPACE}/.gvm/versions/go${env.GO_VERSION}.linux.amd64"
+                GOROOT = "${env.WORKSPACE}/.gimme/versions/go${env.GO_VERSION}.linux.amd64"
                 PATH = "${env.PATH}:${env.GOROOT}/bin"
               }
               options { skipDefaultCheckout() }
@@ -58,7 +58,7 @@ pipeline {
                   deleteDir()
                   unstash 'source'
                   dir(BASE_DIR){
-                    sh "gvm ${GO_VERSION}"
+                    sh script: """.ci/scripts/install-dependencies.sh "${GO_VERSION}" """, label: 'Install dependencies'
                     preCommit(commit: "${GIT_BASE_COMMIT}", junit: true)
                   }
                 }
