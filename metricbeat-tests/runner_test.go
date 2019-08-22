@@ -56,6 +56,36 @@ func TestMain(m *testing.M) {
 	os.Exit(status)
 }
 
+// assertHitsArePresent returns an error if no hits are present
+func assertHitsArePresent(hits map[string]interface{}, module string) error {
+	hitsCount := len(hits["hits"].(map[string]interface{})["hits"].([]interface{}))
+	if hitsCount == 0 {
+		return fmt.Errorf("There aren't documents for %s on Metricbeat index", query.EventModule)
+	}
+
+	return nil
+}
+
+// assertHitsDoNotContainErrors returns an error if any of the returned entries contains
+// an "error.message" field in the "_source" document
+func assertHitsDoNotContainErrors(hits map[string]interface{}, module string) error {
+	for _, hit := range hits["hits"].(map[string]interface{})["hits"].([]interface{}) {
+		source := hit.(map[string]interface{})["_source"]
+		if val, ok := source.(map[string]interface{})["error"]; ok {
+			if msg, exists := val.(map[string]interface{})["message"]; exists {
+				log.WithFields(log.Fields{
+					"ID":            hit.(map[string]interface{})["_id"],
+					"error.message": msg,
+				}).Error("Error Hit found")
+
+				return fmt.Errorf("There are errors for %s on Metricbeat index", module)
+			}
+		}
+	}
+
+	return nil
+}
+
 func thereAreNoErrorsInTheIndex(metricbeatVersion string) error {
 	esIndexName := strings.ReplaceAll(metricbeatVersion, "-SNAPSHOT", "")
 
@@ -80,24 +110,14 @@ func thereAreNoErrorsInTheIndex(metricbeatVersion string) error {
 
 	r := result.Result
 
-	hitsCount := len(r["hits"].(map[string]interface{})["hits"].([]interface{}))
-	if hitsCount == 0 {
-		return fmt.Errorf("There aren't documents for %s on Metricbeat index", query.EventModule)
+	err = assertHitsArePresent(r, query.EventModule)
+	if err != nil {
+		return err
 	}
 
-	// assert there are no errors
-	for _, hit := range r["hits"].(map[string]interface{})["hits"].([]interface{}) {
-		source := hit.(map[string]interface{})["_source"]
-		if val, ok := source.(map[string]interface{})["error"]; ok {
-			if msg, exists := val.(map[string]interface{})["message"]; exists {
-				log.WithFields(log.Fields{
-					"ID":            hit.(map[string]interface{})["_id"],
-					"error.message": msg,
-				}).Error("Error Hit found")
-
-				return fmt.Errorf("There are errors for %s on Metricbeat index", query.EventModule)
-			}
-		}
+	err = assertHitsDoNotContainErrors(r, query.EventModule)
+	if err != nil {
+		return err
 	}
 
 	return nil
