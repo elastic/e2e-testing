@@ -28,6 +28,7 @@ type Service interface {
 	Run() (testcontainers.Container, error)
 	SetAsDaemon(bool)
 	SetBindMounts(map[string]string)
+	SetCmd(string)
 	SetContainerName(string)
 	SetEnv(map[string]string)
 	SetLabels(map[string]string)
@@ -37,6 +38,7 @@ type Service interface {
 // DockerService represents a Docker service to be run
 type DockerService struct {
 	config.Service
+	Cmd string
 }
 
 // GetContainerName returns service name, which is calculated from service name and version
@@ -87,6 +89,11 @@ func (s *DockerService) Inspect() (*types.ContainerJSON, error) {
 // SetAsDaemon set if the service must be run as daemon
 func (s *DockerService) SetAsDaemon(asDaemon bool) {
 	s.Daemon = asDaemon
+}
+
+// SetCmd set the command to be executed on service startup
+func (s *DockerService) SetCmd(cmd string) {
+	s.Cmd = cmd
 }
 
 // SetContainerName set container name for a service
@@ -220,6 +227,7 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 	req := testcontainers.ContainerRequest{
 		Image:        imageTag,
 		BindMounts:   s.BindMounts,
+		Cmd:          s.Cmd,
 		Env:          s.Env,
 		ExposedPorts: exposedPorts,
 		Labels:       s.Labels,

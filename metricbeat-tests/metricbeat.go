@@ -41,6 +41,7 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 	}
 
 	service.SetBindMounts(bindMounts)
+	service.SetCmd("metricbeat setup")
 	service.SetEnv(env)
 	service.SetLabels(labels)
 
