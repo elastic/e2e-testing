@@ -23,9 +23,12 @@ type searchResult struct {
 // at configuration level. Then we will inspect the running container to get its port bindings
 // and from them, get the one related to the Elasticsearch port (9200). As it is bound to a
 // random port at localhost, we will build the URL with the bound port at localhost.
-func getElasticsearchClient() *es.Client {
+func getElasticsearchClient(stackName string) *es.Client {
 	elasticsearchCfg, _ := config.GetServiceConfig("elasticsearch")
+	elasticsearchCfg.Name = elasticsearchCfg.Name + "-" + stackName
+
 	elasticsearchSrv := serviceManager.BuildFromConfig(elasticsearchCfg)
+
 	esJSON, _ := docker.InspectContainer(elasticsearchSrv.GetContainerName())
 
 	ports := esJSON.NetworkSettings.Ports
@@ -40,8 +43,8 @@ func getElasticsearchClient() *es.Client {
 	return esClient
 }
 
-func search(indexName string, query map[string]interface{}) (searchResult, error) {
-	esClient := getElasticsearchClient()
+func search(stackName string, indexName string, query map[string]interface{}) (searchResult, error) {
+	esClient := getElasticsearchClient(stackName)
 
 	result := searchResult{}
 

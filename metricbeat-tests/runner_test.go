@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -22,7 +23,7 @@ var query ElasticsearchQuery
 var serviceManager services.ServiceManager
 
 type ElasticsearchQuery struct {
-	EventDataset string
+	EventModule string
 }
 
 func init() {
@@ -55,27 +56,48 @@ func TestMain(m *testing.M) {
 	os.Exit(status)
 }
 
-func metricbeatStoresMetricsToElasticsearchInTheIndex(metricbeatVersion string) error {
+func thereAreNoErrorsInTheIndex(metricbeatVersion string) error {
 	esIndexName := strings.ReplaceAll(metricbeatVersion, "-SNAPSHOT", "")
 
-	query := map[string]interface{}{
+	esQuery := map[string]interface{}{
 		"query": map[string]interface{}{
-			"match_all": map[string]interface{}{},
+			"bool": map[string]interface{}{
+				"must": []map[string]interface{}{
+					{
+						"match": map[string]interface{}{
+							"event.module": query.EventModule,
+						},
+					},
+				},
+			},
 		},
 	}
 
-	result, err := search(esIndexName, query)
+	result, err := search("metricbeat", esIndexName, esQuery)
 	if err != nil {
 		return err
 	}
 
 	r := result.Result
 
+	hitsCount := len(r["hits"].(map[string]interface{})["hits"].([]interface{}))
+	if hitsCount == 0 {
+		return fmt.Errorf("There aren't documents for %s on Metricbeat index", query.EventModule)
+	}
+
+	// assert there are no errors
 	for _, hit := range r["hits"].(map[string]interface{})["hits"].([]interface{}) {
-		log.WithFields(log.Fields{
-			"ID":     hit.(map[string]interface{})["_id"],
-			"source": hit.(map[string]interface{})["_source"],
-		}).Info("Hit found")
+		source := hit.(map[string]interface{})["_source"]
+		if val, ok := source.(map[string]interface{})["error"]; ok {
+			if msg, exists := val.(map[string]interface{})["message"]; exists {
+				log.WithFields(log.Fields{
+					"ID":            hit.(map[string]interface{})["_id"],
+					"error.message": msg,
+				}).Error("Error Hit found")
+
+				return fmt.Errorf("There are errors for %s on Metricbeat index", query.EventModule)
+			}
+		}
 	}
 
 	return nil

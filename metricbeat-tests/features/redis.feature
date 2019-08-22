@@ -1,10 +1,10 @@
 @redis
 Feature: As a Metricbeat developer I want to check that the Redis module works as expected
 
-Scenario Outline: Check module is sending metrics to a file
+Scenario Outline: Check module is sending metrics to Elasticsearch
   Given Redis "<redis_version>" is running
     And metricbeat "<metricbeat_version>" is installed and configured for Redis module
-  Then metricbeat stores metrics to elasticsearch in the index "metricbeat-<metricbeat_version>"
+  Then there are no errors in the "metricbeat-<metricbeat_version>" index
 Examples:
 | redis_version | metricbeat_version |
 | 4.0  | 7.3.0 |

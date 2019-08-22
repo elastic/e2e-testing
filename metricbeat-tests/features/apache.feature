@@ -1,10 +1,10 @@
 @apache
 Feature: As a Metricbeat developer I want to check that the Apache module works as expected
 
-Scenario Outline: Check module is sending metrics to a file
+Scenario Outline: Check module is sending metrics to Elasticsearch
   Given Apache "<apache_version>" is running
     And metricbeat "<metricbeat_version>" is installed and configured for Apache module
-  Then metricbeat stores metrics to elasticsearch in the index "metricbeat-<metricbeat_version>"
+  Then there are no errors in the "metricbeat-<metricbeat_version>" index
 Examples:
 | apache_version | metricbeat_version |
 | 2.2  | 7.3.0 |

@@ -10,7 +10,7 @@ var mysqlService services.Service
 func MySQLFeatureContext(s *godog.Suite) {
 	s.Step(`^MySQL "([^"]*)" is running$`, mySQLIsRunning)
 	s.Step(`^metricbeat "([^"]*)" is installed and configured for MySQL module$`, metricbeatIsInstalledAndConfiguredForMySQLModule)
-	s.Step(`^metricbeat stores metrics to elasticsearch in the index "([^"]*)"$`, metricbeatStoresMetricsToElasticsearchInTheIndex)
+	s.Step(`^there are no errors in the "([^"]*)" index$`, thereAreNoErrorsInTheIndex)
 }
 
 func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) error {
@@ -19,7 +19,7 @@ func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) 
 	metricbeatService = s
 
 	query = ElasticsearchQuery{
-		EventDataset: "mysql.status",
+		EventModule: "mysql",
 	}
 
 	return err

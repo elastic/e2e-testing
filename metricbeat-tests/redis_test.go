@@ -19,7 +19,7 @@ func metricbeatIsInstalledAndConfiguredForRedisModule(metricbeatVersion string) 
 	metricbeatService = s
 
 	query = ElasticsearchQuery{
-		EventDataset: "redis.info",
+		EventModule: "redis",
 	}
 
 	return err
@@ -28,5 +28,5 @@ func metricbeatIsInstalledAndConfiguredForRedisModule(metricbeatVersion string) 
 func RedisFeatureContext(s *godog.Suite) {
 	s.Step(`^Redis "([^"]*)" is running$`, redisIsRunning)
 	s.Step(`^metricbeat "([^"]*)" is installed and configured for Redis module$`, metricbeatIsInstalledAndConfiguredForRedisModule)
-	s.Step(`^metricbeat stores metrics to elasticsearch in the index "([^"]*)"$`, metricbeatStoresMetricsToElasticsearchInTheIndex)
+	s.Step(`^there are no errors in the "([^"]*)" index$`, thereAreNoErrorsInTheIndex)
 }

@@ -10,7 +10,7 @@ var apacheService services.Service
 func ApacheFeatureContext(s *godog.Suite) {
 	s.Step(`^Apache "([^"]*)" is running$`, apacheIsRunning)
 	s.Step(`^metricbeat "([^"]*)" is installed and configured for Apache module$`, metricbeatIsInstalledAndConfiguredForApacheModule)
-	s.Step(`^metricbeat stores metrics to elasticsearch in the index "([^"]*)"$`, metricbeatStoresMetricsToElasticsearchInTheIndex)
+	s.Step(`^there are no errors in the "([^"]*)" index$`, thereAreNoErrorsInTheIndex)
 }
 
 func metricbeatIsInstalledAndConfiguredForApacheModule(metricbeatVersion string) error {
@@ -19,7 +19,7 @@ func metricbeatIsInstalledAndConfiguredForApacheModule(metricbeatVersion string)
 	metricbeatService = s
 
 	query = ElasticsearchQuery{
-		EventDataset: "apache.status",
+		EventModule: "apache",
 	}
 
 	return err
