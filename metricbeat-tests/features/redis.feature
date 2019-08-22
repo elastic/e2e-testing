@@ -7,7 +7,7 @@ Scenario Outline: Check module is sending metrics to Elasticsearch
   Then there are no errors in the "metricbeat-<metricbeat_version>" index
 Examples:
 | redis_version | metricbeat_version |
-| 4.0  | 7.3.0 |
-| 4.0  | 8.0.0-SNAPSHOT |
-| 5.0  | 7.3.0 |
-| 5.0  | 8.0.0-SNAPSHOT |
+| 4.0.14  | 7.3.0 |
+| 4.0.14  | 8.0.0-SNAPSHOT |
+| 5.0.5  | 7.3.0 |
+| 5.0.5  | 8.0.0-SNAPSHOT |
