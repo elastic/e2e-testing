@@ -242,7 +242,7 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 
 	docker.ConnectContainerToDevNetwork(json.ContainerJSONBase.ID, s.GetNetworkAlias())
 
-	log.WithFields(s.toLogFields(json)).Info("Service created")
+	log.WithFields(s.toLogFields(json)).Debug("Service created")
 
 	return service, nil
 }
