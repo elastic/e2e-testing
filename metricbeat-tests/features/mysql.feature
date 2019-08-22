@@ -4,7 +4,7 @@ Feature: As a Metricbeat developer I want to check that the MySQL module works a
 Scenario Outline: Check module is sending metrics to a file
   Given MySQL "<mysql_version>" is running
     And metricbeat "<metricbeat_version>" is installed and configured for MySQL module
-  Then metricbeat outputs metrics to the file "metricbeat-<metricbeat_version>-mysql-<mysql_version>.metrics"
+  Then metricbeat stores metrics to elasticsearch in the index "metricbeat-<metricbeat_version>"
 Examples:
 | mysql_version | metricbeat_version |
 | 5.6  | 7.3.0 |
