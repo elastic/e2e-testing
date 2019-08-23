@@ -10,6 +10,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	log "github.com/sirupsen/logrus"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 
 	config "github.com/elastic/metricbeat-tests-poc/cli/config"
 	docker "github.com/elastic/metricbeat-tests-poc/cli/docker"
@@ -34,12 +35,14 @@ type Service interface {
 	SetLabels(map[string]string)
 	SetNetworkAlias(string)
 	SetVersion(string)
+	SetWaitFor(wait.Strategy)
 }
 
 // DockerService represents a Docker service to be run
 type DockerService struct {
 	config.Service
-	Cmd string
+	Cmd     string
+	WaitFor wait.Strategy
 }
 
 // GetContainerName returns service name, which is calculated from service name and version
@@ -132,6 +135,11 @@ func (s *DockerService) SetNetworkAlias(alias string) {
 // SetVersion set version for a service
 func (s *DockerService) SetVersion(version string) {
 	s.Version = version
+}
+
+// SetWaitFor set the Testcontainers' strategy to wait for
+func (s *DockerService) SetWaitFor(strategy wait.Strategy) {
+	s.WaitFor = strategy
 }
 
 func (s *DockerService) toLogFields(json *types.ContainerJSON) log.Fields {
@@ -239,6 +247,7 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 		Labels:       s.Labels,
 		Name:         s.ContainerName,
 		SkipReaper:   !s.Daemon,
+		WaitingFor:   s.WaitFor,
 	}
 
 	service, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
