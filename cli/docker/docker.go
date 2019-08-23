@@ -26,6 +26,34 @@ func ConnectContainerToDevNetwork(containerID string, aliases ...string) error {
 		})
 }
 
+// ExecCommandIntoContainer executes a command, as a user, into a container
+func ExecCommandIntoContainer(containerName string, user string, cmd []string) error {
+	dockerClient := getDockerClient()
+
+	response, err := dockerClient.ContainerExecCreate(
+		context.Background(), containerName, types.ExecConfig{
+			User:         user,
+			Tty:          false,
+			AttachStdin:  false,
+			AttachStderr: false,
+			AttachStdout: false,
+			Detach:       true,
+			Cmd:          cmd,
+		})
+
+	if err != nil {
+		return err
+	}
+
+	err = dockerClient.ContainerExecStart(
+		context.Background(), response.ID, types.ExecStartCheck{
+			Detach: true,
+			Tty:    false,
+		})
+
+	return err
+}
+
 // GetDevNetwork returns the developer network, creating it if it does not exist
 func GetDevNetwork() (types.NetworkResource, error) {
 	dockerClient := getDockerClient()
