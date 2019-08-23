@@ -53,6 +53,7 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 	log.WithFields(log.Fields{
 		"metricbeatVersion": version,
 		"service":           serviceName,
+		"serviceVersion":    monitoredService.GetVersion(),
 	}).Info("Metricbeat is running configured for the service")
 
 	return service, nil
