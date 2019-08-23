@@ -243,7 +243,7 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 
 	service, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
-		Started:          true,
+		Started:          false,
 	})
 	if err != nil {
 		return nil, err
@@ -255,6 +255,12 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 	}
 
 	docker.ConnectContainerToDevNetwork(json.ContainerJSONBase.ID, s.GetNetworkAlias())
+	log.WithFields(log.Fields{
+		"containerID":  json.ContainerJSONBase.ID,
+		"networkAlias": s.GetNetworkAlias(),
+	}).Debug("Service attached to Dev network")
+
+	service.Start(ctx)
 
 	log.WithFields(s.toLogFields(json)).Debug("Service created")
 
