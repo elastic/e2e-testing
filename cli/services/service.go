@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/go-connections/nat"
 	log "github.com/sirupsen/logrus"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -144,7 +143,6 @@ func (s *DockerService) SetWaitFor(strategy wait.Strategy) {
 
 func (s *DockerService) toLogFields(json *types.ContainerJSON) log.Fields {
 	ip := json.NetworkSettings.IPAddress
-	ports := json.NetworkSettings.Ports
 
 	fields := log.Fields{
 		"service":       s.GetName(),
@@ -153,12 +151,6 @@ func (s *DockerService) toLogFields(json *types.ContainerJSON) log.Fields {
 		"containerName": s.GetContainerName(),
 		"networkAlias":  s.GetNetworkAlias(),
 		"IP":            ip,
-	}
-
-	for i, port := range s.ExposedPorts {
-		sPort := fmt.Sprintf("%d/tcp", port)
-		binding := ports[nat.Port(sPort)]
-		fields[fmt.Sprintf("applicationPort_%d", i)] = fmt.Sprintf("%d:%s:%s", port, binding[0].HostIP, binding[0].HostPort)
 	}
 
 	i := 0
