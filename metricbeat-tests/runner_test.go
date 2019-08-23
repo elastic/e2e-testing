@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/colors"
@@ -93,6 +94,13 @@ func assertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQu
 
 func thereAreNoErrorsInTheIndex(metricbeatVersion string) error {
 	esIndexName := strings.ReplaceAll(metricbeatVersion, "-SNAPSHOT", "")
+	now := time.Now()
+
+	formattedDate := strings.ReplaceAll(now.Format("2006-01-02"), "-", ".")
+
+	// TODO: this index name is hardcoded after checking the index name on Kibana
+	// I would need help setting up the index name from metricbeat configuration
+	esIndexName += "-" + formattedDate + "-000001"
 
 	esQuery := map[string]interface{}{
 		"query": map[string]interface{}{
