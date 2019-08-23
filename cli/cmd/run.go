@@ -7,6 +7,7 @@ import (
 	"github.com/imdario/mergo"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 var versionToRun string
@@ -89,6 +90,10 @@ func buildRunStackCommand(key string, stack config.Stack) *cobra.Command {
 					"stack": stack.Name,
 				}
 				s := serviceManager.BuildFromConfig(srv)
+
+				if k == "kibana" {
+					s.SetWaitFor(wait.ForLog("http server running"))
+				}
 
 				if k == "elasticsearch" {
 					serviceManager.Run(s)
