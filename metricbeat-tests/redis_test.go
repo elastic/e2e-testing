@@ -7,8 +7,11 @@ import (
 
 var redisService services.Service
 
-func redisIsRunning(redisVersion string) error {
+func redisIsRunningForMetricbeat(redisVersion string, metricbeatVersion string) error {
 	redisService = serviceManager.Build("redis", redisVersion, false)
+
+	redisService.SetNetworkAlias("redis_" + redisVersion + "-metricbeat_" + metricbeatVersion)
+	redisService.SetAsDaemon(true)
 
 	return serviceManager.Run(redisService)
 }
@@ -27,7 +30,7 @@ func metricbeatIsInstalledAndConfiguredForRedisModule(metricbeatVersion string) 
 }
 
 func RedisFeatureContext(s *godog.Suite) {
-	s.Step(`^Redis "([^"]*)" is running$`, redisIsRunning)
+	s.Step(`^Redis "([^"]*)" is running for metricbeat "([^"]*)"$`, redisIsRunningForMetricbeat)
 	s.Step(`^metricbeat "([^"]*)" is installed and configured for Redis module$`, metricbeatIsInstalledAndConfiguredForRedisModule)
 	s.Step(`^there are no errors in the "([^"]*)" index$`, thereAreNoErrorsInTheIndex)
 }

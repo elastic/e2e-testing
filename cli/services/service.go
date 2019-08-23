@@ -32,6 +32,7 @@ type Service interface {
 	SetContainerName(string)
 	SetEnv(map[string]string)
 	SetLabels(map[string]string)
+	SetNetworkAlias(string)
 	SetVersion(string)
 }
 
@@ -121,6 +122,11 @@ func (s *DockerService) SetEnv(env map[string]string) {
 // SetLabels set labels for a service
 func (s *DockerService) SetLabels(labels map[string]string) {
 	s.Labels = labels
+}
+
+// SetNetworkAlias set network alias for a service
+func (s *DockerService) SetNetworkAlias(alias string) {
+	s.NetworkAlias = alias
 }
 
 // SetVersion set version for a service

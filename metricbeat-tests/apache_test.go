@@ -8,7 +8,7 @@ import (
 var apacheService services.Service
 
 func ApacheFeatureContext(s *godog.Suite) {
-	s.Step(`^Apache "([^"]*)" is running$`, apacheIsRunning)
+	s.Step(`^Apache "([^"]*)" is running for metricbeat "([^"]*)"$`, apacheIsRunningForMetricbeat)
 	s.Step(`^metricbeat "([^"]*)" is installed and configured for Apache module$`, metricbeatIsInstalledAndConfiguredForApacheModule)
 	s.Step(`^there are no errors in the "([^"]*)" index$`, thereAreNoErrorsInTheIndex)
 }
@@ -26,8 +26,10 @@ func metricbeatIsInstalledAndConfiguredForApacheModule(metricbeatVersion string)
 	return err
 }
 
-func apacheIsRunning(apacheVersion string) error {
+func apacheIsRunningForMetricbeat(apacheVersion string, metricbeatVersion string) error {
 	apacheService = serviceManager.Build("apache", apacheVersion, false)
+
+	apacheService.SetNetworkAlias("apache_" + apacheVersion + "-metricbeat_" + metricbeatVersion)
 
 	return serviceManager.Run(apacheService)
 }

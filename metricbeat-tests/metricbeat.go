@@ -6,6 +6,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/elastic/metricbeat-tests-poc/cli/docker"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
@@ -14,13 +15,6 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 	dir, _ := os.Getwd()
 
 	serviceName := monitoredService.GetName()
-
-	inspect, err := monitoredService.Inspect()
-	if err != nil {
-		return nil, err
-	}
-
-	ip := inspect.NetworkSettings.IPAddress
 
 	bindMounts := map[string]string{
 		dir + "/configurations/" + serviceName + ".yml": "/usr/share/metricbeat/metricbeat.yml",
@@ -36,12 +30,11 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 
 	env := map[string]string{
 		"BEAT_STRICT_PERMS": "false",
-		"HOST":              ip,
+		"MONITORED_HOST":    monitoredService.GetNetworkAlias(),
 		"FILE_NAME":         service.GetName() + "-" + service.GetVersion() + "-" + monitoredService.GetName() + "-" + monitoredService.GetVersion(),
 	}
 
 	service.SetBindMounts(bindMounts)
-	service.SetCmd("metricbeat setup")
 	service.SetEnv(env)
 	service.SetLabels(labels)
 
@@ -55,6 +48,17 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 		"service":           serviceName,
 		"serviceVersion":    monitoredService.GetVersion(),
 	}).Info("Metricbeat is running configured for the service")
+
+	log.WithFields(log.Fields{
+		"metricbeatVersion": version,
+		"service":           serviceName,
+	}).Debug("Installing Kibana dashboards")
+	docker.ExecCommandIntoContainer(
+		service.GetContainerName(), "root", []string{"metricbeat", "setup"})
+	log.WithFields(log.Fields{
+		"metricbeatVersion": version,
+		"service":           serviceName,
+	}).Debug("Kibana dashboards installed")
 
 	return service, nil
 }

@@ -2,7 +2,7 @@
 Feature: As a Metricbeat developer I want to check that the Apache module works as expected
 
 Scenario Outline: Check module is sending metrics to Elasticsearch
-  Given Apache "<apache_version>" is running
+  Given Apache "<apache_version>" is running for metricbeat "<metricbeat_version>"
     And metricbeat "<metricbeat_version>" is installed and configured for Apache module
   Then there are no errors in the "metricbeat-<metricbeat_version>" index
 Examples:
