@@ -90,6 +90,8 @@ pipeline {
             dir(BASE_DIR){
               unstash 'docker'
               sh script: '.ci/scripts/tag-metricbeats.sh', label: 'Create docker tag'
+              sh script: 'make -C metricbeat-tests build-binary', label: 'Build OP Binary'
+              sh script: 'make -C metricbeat-tests run-elastic-stack', label: 'Build runtime dependencies'
               sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${FEATURE}" """, label: 'Run functional tests'
             }
           }
@@ -98,6 +100,7 @@ pipeline {
               junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/junit-*.xml")
               archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/junit-*"
               githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
+              sh script: 'make -C metricbeat-tests shutdown-elastic-stack', label: 'Shutdown runtime dependencies'
             }
           }
         }
