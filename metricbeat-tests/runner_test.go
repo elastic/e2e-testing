@@ -92,8 +92,8 @@ func assertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQu
 	return nil
 }
 
-func thereAreNoErrorsInTheIndex(metricbeatVersion string) error {
-	esIndexName := strings.ReplaceAll(metricbeatVersion, "-SNAPSHOT", "")
+func thereAreNoErrorsInTheIndex(index string) error {
+	esIndexName := strings.ReplaceAll(index, "-SNAPSHOT", "")
 	now := time.Now()
 
 	formattedDate := strings.ReplaceAll(now.Format("2006-01-02"), "-", ".")
