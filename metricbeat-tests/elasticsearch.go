@@ -133,7 +133,7 @@ func search(stackName string, indexName string, query map[string]interface{}) (s
 		"status": res.Status(),
 		"hits":   int(r["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64)),
 		"took":   int(r["took"].(float64)),
-	}).Info("Response information")
+	}).Debug("Response information")
 
 	return result, nil
 }
