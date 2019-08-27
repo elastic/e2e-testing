@@ -62,7 +62,6 @@ func search(stackName string, indexName string, query map[string]interface{}) (s
 	}).Debug("Elasticsearch query")
 
 	res, err := esClient.Search(
-		esClient.Search.WithContext(context.Background()),
 		esClient.Search.WithIndex(indexName),
 		esClient.Search.WithBody(&buf),
 		esClient.Search.WithTrackTotalHits(true),
