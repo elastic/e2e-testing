@@ -23,30 +23,48 @@ type searchResult struct {
 // at configuration level. Then we will inspect the running container to get its port bindings
 // and from them, get the one related to the Elasticsearch port (9200). As it is bound to a
 // random port at localhost, we will build the URL with the bound port at localhost.
-func getElasticsearchClient(stackName string) *es.Client {
+func getElasticsearchClient(stackName string) (*es.Client, error) {
 	elasticsearchCfg, _ := config.GetServiceConfig("elasticsearch")
 	elasticsearchCfg.Name = elasticsearchCfg.Name + "-" + stackName
 
 	elasticsearchSrv := serviceManager.BuildFromConfig(elasticsearchCfg)
 
-	esJSON, _ := docker.InspectContainer(elasticsearchSrv.GetContainerName())
+	esJSON, err := docker.InspectContainer(elasticsearchSrv.GetContainerName())
+	if err != nil {
+		log.WithFields(log.Fields{
+			"containerName": elasticsearchSrv.GetContainerName(),
+			"error":         err,
+		}).Error("Could not inspect the elasticsearch container")
+
+		return nil, err
+	}
 
 	ports := esJSON.NetworkSettings.Ports
 	binding := ports[nat.Port("9200/tcp")]
 
-	esClient, _ := es.NewClient(
-		es.Config{
-			Addresses: []string{fmt.Sprintf("http://localhost:%s", binding[0].HostPort)},
-		},
-	)
+	cfg := es.Config{
+		Addresses: []string{fmt.Sprintf("http://localhost:%s", binding[0].HostPort)},
+	}
+	esClient, err := es.NewClient(cfg)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"config": cfg,
+			"error":  err,
+		}).Error("Could not obtain an Elasticsearch client")
 
-	return esClient
+		return nil, err
+	}
+
+	return esClient, nil
 }
 
 func search(stackName string, indexName string, query map[string]interface{}) (searchResult, error) {
-	esClient := getElasticsearchClient(stackName)
-
 	result := searchResult{}
+
+	esClient, err := getElasticsearchClient(stackName)
+	if err != nil {
+		return result, err
+	}
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(query); err != nil {
