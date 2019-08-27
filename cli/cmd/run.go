@@ -92,7 +92,7 @@ func buildRunStackCommand(key string, stack config.Stack) *cobra.Command {
 				s := serviceManager.BuildFromConfig(srv)
 
 				if k == "kibana" {
-					s.SetWaitFor(wait.ForLog("http server running"))
+					s.SetWaitFor(wait.ForHTTP("/api/status"))
 				}
 
 				if k == "elasticsearch" {
