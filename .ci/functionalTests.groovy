@@ -90,8 +90,6 @@ pipeline {
             dir(BASE_DIR){
               unstash 'docker'
               sh script: '.ci/scripts/tag-metricbeats.sh', label: 'Create docker tag'
-              sh script: 'make -C metricbeat-tests build-binary', label: 'Build OP Binary'
-              sh script: 'make -C metricbeat-tests run-elastic-stack', label: 'Build runtime dependencies'
               sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${FEATURE}" """, label: 'Run functional tests'
             }
           }
