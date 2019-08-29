@@ -118,6 +118,12 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 		return retrySearch(stackName, indexName, esQuery, (attempts - 1))
 	}
 
+	log.WithFields(log.Fields{
+		"query": query,
+		"index": indexName,
+	}).Debug("Waiting 20 seconds so that metricbeat is able to grab metrics from the integration module")
+	time.Sleep(20 * time.Second)
+
 	return search(stackName, indexName, esQuery)
 }
 
