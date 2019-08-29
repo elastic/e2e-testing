@@ -26,8 +26,8 @@ func ConnectContainerToDevNetwork(containerID string, aliases ...string) error {
 		})
 }
 
-// ExecCommandIntoContainer executes a command, as a user, into a container
-func ExecCommandIntoContainer(ctx context.Context, containerName string, user string, cmd []string) error {
+// ExecCommandIntoContainer executes a command, as a user, into a container, in a detach state
+func ExecCommandIntoContainer(ctx context.Context, containerName string, user string, cmd []string, detach bool) error {
 	dockerClient := getDockerClient()
 
 	response, err := dockerClient.ContainerExecCreate(
@@ -37,7 +37,7 @@ func ExecCommandIntoContainer(ctx context.Context, containerName string, user st
 			AttachStdin:  false,
 			AttachStderr: false,
 			AttachStdout: false,
-			Detach:       true,
+			Detach:       detach,
 			Cmd:          cmd,
 		})
 
@@ -46,7 +46,7 @@ func ExecCommandIntoContainer(ctx context.Context, containerName string, user st
 	}
 
 	err = dockerClient.ContainerExecStart(ctx, response.ID, types.ExecStartCheck{
-		Detach: true,
+		Detach: detach,
 		Tty:    false,
 	})
 

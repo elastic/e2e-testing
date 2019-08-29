@@ -55,7 +55,7 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 		"service":           serviceName,
 	}).Debug("Installing Kibana dashboards")
 	docker.ExecCommandIntoContainer(
-		context.Background(), service.GetContainerName(), "root", []string{"metricbeat", "setup", "--index-management"})
+		context.Background(), service.GetContainerName(), "root", []string{"metricbeat", "setup"}, false)
 	log.WithFields(log.Fields{
 		"metricbeatVersion": version,
 		"service":           serviceName,
