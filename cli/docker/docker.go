@@ -30,6 +30,13 @@ func ConnectContainerToDevNetwork(containerID string, aliases ...string) error {
 func ExecCommandIntoContainer(ctx context.Context, containerName string, user string, cmd []string, detach bool) error {
 	dockerClient := getDockerClient()
 
+	log.WithFields(log.Fields{
+		"container": containerName,
+		"command":   cmd,
+		"detach":    detach,
+		"tty":       false,
+	}).Debug("Creating command to be executed in container")
+
 	response, err := dockerClient.ContainerExecCreate(
 		ctx, containerName, types.ExecConfig{
 			User:         user,
@@ -42,13 +49,34 @@ func ExecCommandIntoContainer(ctx context.Context, containerName string, user st
 		})
 
 	if err != nil {
+		log.WithFields(log.Fields{
+			"container": containerName,
+			"command":   cmd,
+			"error":     err,
+			"detach":    detach,
+			"tty":       false,
+		}).Error("Could not create command in container")
 		return err
 	}
+
+	log.WithFields(log.Fields{
+		"container": containerName,
+		"command":   cmd,
+		"detach":    detach,
+		"tty":       false,
+	}).Debug("Command to be executed in container created")
 
 	err = dockerClient.ContainerExecStart(ctx, response.ID, types.ExecStartCheck{
 		Detach: detach,
 		Tty:    false,
 	})
+
+	log.WithFields(log.Fields{
+		"container": containerName,
+		"command":   cmd,
+		"detach":    detach,
+		"tty":       false,
+	}).Debug("Command sucessfully executed in container")
 
 	return err
 }
