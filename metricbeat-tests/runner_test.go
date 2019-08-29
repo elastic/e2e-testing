@@ -14,7 +14,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
-	"github.com/elastic/metricbeat-tests-poc/cli/docker"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
@@ -53,7 +52,7 @@ func getIntegerFromEnv(envVar string, defaultValue int) int {
 }
 
 func init() {
-	config.InitConfig()
+	config.Init()
 
 	godog.BindFlags("godog.", flag.CommandLine, &opt)
 
@@ -67,8 +66,6 @@ func init() {
 func TestMain(m *testing.M) {
 	flag.Parse()
 	opt.Paths = flag.Args()
-
-	docker.GetDevNetwork()
 
 	status := godog.RunWithOptions("godog", func(s *godog.Suite) {
 		s.BeforeScenario(func(interface{}) {
