@@ -11,12 +11,8 @@ build-binary:
 install:
 	go get -v -t ./...
 
-.PHONY: install-godog
-install-godog:
-	go get github.com/DATA-DOG/godog/cmd/godog
-
 .PHONY: functional-test
-functional-test: install-godog 
+functional-test:
 	godog --format=${FORMAT} ${FLAG} ${FEATURE}
 
 .PHONY: run-elastic-stack
