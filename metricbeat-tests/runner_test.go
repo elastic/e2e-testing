@@ -92,6 +92,35 @@ func assertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQu
 	return nil
 }
 
+func retrySearch(stackName string, indexName string, esQuery map[string]interface{}, attempts int) (searchResult, error) {
+	if attempts == 1 {
+		err := fmt.Errorf("Could not send query to Elasticsearch in the specified time")
+
+		log.WithFields(log.Fields{
+			"query": esQuery,
+			"error": err,
+		}).Error(err.Error())
+
+		return searchResult{}, err
+	}
+
+	_, err := search("metricbeat", indexName, esQuery)
+	if err != nil {
+		time.Sleep(3 * time.Second)
+
+		log.WithFields(log.Fields{
+			"attempt":    attempts,
+			"errorCause": err.Error(),
+			"index":      indexName,
+		}).Debug("Waiting 3 seconds for the index to be ready")
+
+		// recursive approach for retrying the query
+		return retrySearch(stackName, indexName, esQuery, (attempts - 1))
+	}
+
+	return search(stackName, indexName, esQuery)
+}
+
 func thereAreNoErrorsInTheIndex(index string) error {
 	esIndexName := strings.ReplaceAll(index, "-SNAPSHOT", "")
 	now := time.Now()
@@ -121,7 +150,9 @@ func thereAreNoErrorsInTheIndex(index string) error {
 		},
 	}
 
-	result, err := search("metricbeat", esIndexName, esQuery)
+	stackName := "metricbeat"
+
+	result, err := retrySearch(stackName, esIndexName, esQuery, 5)
 	if err != nil {
 		return err
 	}
