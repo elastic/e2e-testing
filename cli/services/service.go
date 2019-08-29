@@ -46,7 +46,11 @@ type DockerService struct {
 
 // GetContainerName returns service name, which is calculated from service name and version
 func (s *DockerService) GetContainerName() string {
-	return s.Name + "-" + s.Version
+	if s.ContainerName == "" {
+		return s.Name + "-" + s.Version
+	}
+
+	return s.ContainerName
 }
 
 // GetExposedPort returns the string representation of a service's well-known exposed ports
