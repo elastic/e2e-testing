@@ -141,7 +141,7 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 			"attempt":    attempts,
 			"errorCause": err.Error(),
 			"index":      indexName,
-		}).Debug("Waiting %d seconds for the index to be ready", queryRetryTimeout)
+		}).Debugf("Waiting %d seconds for the index to be ready", queryRetryTimeout)
 
 		// recursive approach for retrying the query
 		return retrySearch(stackName, indexName, esQuery, (attempts - 1))
@@ -150,7 +150,7 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 	log.WithFields(log.Fields{
 		"query": query,
 		"index": indexName,
-	}).Debug("Waiting %d seconds so that metricbeat is able to grab metrics from the integration module", queryMetricbeatFetchTimeout)
+	}).Debugf("Waiting %d seconds so that metricbeat is able to grab metrics from the integration module", queryMetricbeatFetchTimeout)
 	time.Sleep(time.Duration(queryMetricbeatFetchTimeout) * time.Second)
 
 	return search(stackName, indexName, esQuery)
