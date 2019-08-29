@@ -11,7 +11,6 @@ func redisIsRunningForMetricbeat(redisVersion string, metricbeatVersion string) 
 	redisService = serviceManager.Build("redis", redisVersion, false)
 
 	redisService.SetNetworkAlias("redis_" + redisVersion + "-metricbeat_" + metricbeatVersion)
-	redisService.SetAsDaemon(true)
 
 	return serviceManager.Run(redisService)
 }
