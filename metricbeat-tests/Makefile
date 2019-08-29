@@ -13,7 +13,7 @@ install:
 
 .PHONY: functional-test
 functional-test:
-	godog --format=${FORMAT} ${FLAG} ${FEATURE}
+	OP_LOG_LEVEL=${LOG_LEVEL} godog --format=${FORMAT} ${FLAG} ${FEATURE}
 
 .PHONY: run-elastic-stack
 run-elastic-stack:
