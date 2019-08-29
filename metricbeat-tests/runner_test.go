@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -23,9 +24,32 @@ var metricbeatService services.Service
 var query ElasticsearchQuery
 var serviceManager services.ServiceManager
 
+// queryMaxAttempts Number of attempts to query elasticsearch before aborting
+// It can be overriden by OP_QUERY_MAX_ATTEMPTS env var
+var queryMaxAttempts = 5
+
+// queryMetricbeatFetchTimeout Number of seconds that metricbeat has to grab metrics from the module
+// It can be overriden by OP_METRICBEAT_FETCH_TIMEOUT env var
+var queryMetricbeatFetchTimeout = 20
+
+// queryRetryTimeout Number of seconds between elasticsearch retry queries.
+// It can be overriden by OP_RETRY_TIMEOUT env var
+var queryRetryTimeout = 3
+
 type ElasticsearchQuery struct {
 	EventModule    string
 	ServiceVersion string
+}
+
+func getIntegerFromEnv(envVar string, defaultValue int) int {
+	if value, exists := os.LookupEnv(envVar); exists {
+		v, err := strconv.Atoi(value)
+		if err == nil {
+			return v
+		}
+	}
+
+	return defaultValue
 }
 
 func init() {
@@ -34,6 +58,10 @@ func init() {
 	godog.BindFlags("godog.", flag.CommandLine, &opt)
 
 	serviceManager = services.NewServiceManager()
+
+	queryMaxAttempts = getIntegerFromEnv("OP_QUERY_MAX_ATTEMPTS", queryMaxAttempts)
+	queryMetricbeatFetchTimeout = getIntegerFromEnv("OP_METRICBEAT_FETCH_TIMEOUT", queryMetricbeatFetchTimeout)
+	queryRetryTimeout = getIntegerFromEnv("OP_RETRY_TIMEOUT", queryRetryTimeout)
 }
 
 func TestMain(m *testing.M) {
@@ -92,6 +120,7 @@ func assertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQu
 	return nil
 }
 
+// attempts could be redefined in the OP_QUERY_MAX_ATTEMPTS environment variable
 func retrySearch(stackName string, indexName string, esQuery map[string]interface{}, attempts int) (searchResult, error) {
 	if attempts == 1 {
 		err := fmt.Errorf("Could not send query to Elasticsearch in the specified time")
@@ -106,13 +135,13 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 
 	_, err := search("metricbeat", indexName, esQuery)
 	if err != nil {
-		time.Sleep(3 * time.Second)
+		time.Sleep(time.Duration(queryRetryTimeout) * time.Second)
 
 		log.WithFields(log.Fields{
 			"attempt":    attempts,
 			"errorCause": err.Error(),
 			"index":      indexName,
-		}).Debug("Waiting 3 seconds for the index to be ready")
+		}).Debug("Waiting %d seconds for the index to be ready", queryRetryTimeout)
 
 		// recursive approach for retrying the query
 		return retrySearch(stackName, indexName, esQuery, (attempts - 1))
@@ -121,8 +150,8 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 	log.WithFields(log.Fields{
 		"query": query,
 		"index": indexName,
-	}).Debug("Waiting 20 seconds so that metricbeat is able to grab metrics from the integration module")
-	time.Sleep(20 * time.Second)
+	}).Debug("Waiting %d seconds so that metricbeat is able to grab metrics from the integration module", queryMetricbeatFetchTimeout)
+	time.Sleep(time.Duration(queryMetricbeatFetchTimeout) * time.Second)
 
 	return search(stackName, indexName, esQuery)
 }
@@ -158,7 +187,7 @@ func thereAreNoErrorsInTheIndex(index string) error {
 
 	stackName := "metricbeat"
 
-	result, err := retrySearch(stackName, esIndexName, esQuery, 5)
+	result, err := retrySearch(stackName, esIndexName, esQuery, queryMaxAttempts)
 	if err != nil {
 		return err
 	}
