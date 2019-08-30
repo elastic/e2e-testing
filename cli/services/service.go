@@ -155,6 +155,7 @@ func (s *DockerService) toLogFields(json *types.ContainerJSON) log.Fields {
 		"containerName": s.GetContainerName(),
 		"networkAlias":  s.GetNetworkAlias(),
 		"IP":            ip,
+		"Cmd":           s.Cmd,
 	}
 
 	i := 0
