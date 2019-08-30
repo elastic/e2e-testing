@@ -55,7 +55,7 @@ func ExecCommandIntoContainer(ctx context.Context, containerName string, user st
 			"error":     err,
 			"detach":    detach,
 			"tty":       false,
-		}).Error("Could not create command in container")
+		}).Warn("Could not create command in container")
 		return err
 	}
 
