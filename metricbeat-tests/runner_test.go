@@ -163,13 +163,13 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 
 func thereAreNoErrorsInTheIndex(index string) error {
 	esIndexName := strings.ReplaceAll(index, "-SNAPSHOT", "")
-	now := time.Now()
 
-	formattedDate := strings.ReplaceAll(now.Format("2006-01-02"), "-", ".")
-
-	// TODO: this index name is hardcoded after checking the index name on Kibana
-	// I would need help setting up the index name from metricbeat configuration
-	esIndexName += "-" + formattedDate + "-000001"
+	// As we are using an index per scenario outline, with an index name
+	// formed by metricbeat-version1-module-version2, and because of the
+	// ILM is configured on metricbeat side, then we can use an asterisk
+	// for the index name: each scenario outline will be namespaced, so
+	// no collitions between different test cases should appear
+	esIndexName += "-*"
 
 	esQuery := map[string]interface{}{
 		"query": map[string]interface{}{

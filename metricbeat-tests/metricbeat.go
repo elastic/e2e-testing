@@ -37,6 +37,7 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 
 	setupCommands := []string{
 		"metricbeat",
+		"-E", fmt.Sprintf("setup.ilm.rollover_alias=metricbeat-%s-%s-%s", version, serviceName, monitoredService.GetVersion()),
 		"-E", "output.elasticsearch.hosts=http://elasticsearch:9200",
 		"-E", "output.elasticsearch.password=p4ssw0rd",
 		"-E", "output.elasticsearch.username=elastic",

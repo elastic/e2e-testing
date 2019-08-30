@@ -4,7 +4,7 @@ Feature: As a Metricbeat developer I want to check that the Redis module works a
 Scenario Outline: Check module is sending metrics to Elasticsearch
   Given Redis "<redis_version>" is running for metricbeat "<metricbeat_version>"
     And metricbeat "<metricbeat_version>" is installed and configured for Redis module
-  Then there are no errors in the "metricbeat-<metricbeat_version>" index
+  Then there are no errors in the "metricbeat-<metricbeat_version>-redis-<redis_version>" index
 Examples:
 | redis_version | metricbeat_version |
 | 4.0.14  | 7.3.0 |
