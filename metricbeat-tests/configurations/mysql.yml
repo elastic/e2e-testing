@@ -3,13 +3,3 @@ metricbeat.modules:
     hosts: ["root:secret@tcp(${MONITORED_HOST}:3306)/"]
     #username: root
     #password: secret
-
-output.elasticsearch:
-  hosts: ["http://elasticsearch:9200"]
-  username: "elastic"
-  password: "p4ssw0rd"
-
-setup.kibana:
-  host: "http://kibana:5601"
-  username: "elastic"
-  password: "p4ssw0rd"

@@ -6,13 +6,3 @@ metricbeat.modules:
 
   # Redis hosts
   hosts: ["http://${MONITORED_HOST}:6379"]
-
-output.elasticsearch:
-  hosts: ["http://elasticsearch:9200"]
-  username: "elastic"
-  password: "p4ssw0rd"
-
-setup.kibana:
-  host: "http://kibana:5601"
-  username: "elastic"
-  password: "p4ssw0rd"

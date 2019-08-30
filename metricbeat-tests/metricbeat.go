@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 
@@ -32,10 +33,20 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 	env := map[string]string{
 		"BEAT_STRICT_PERMS": "false",
 		"MONITORED_HOST":    monitoredService.GetNetworkAlias(),
-		"FILE_NAME":         service.GetName() + "-" + service.GetVersion() + "-" + monitoredService.GetName() + "-" + monitoredService.GetVersion(),
+	}
+
+	setupCommands := []string{
+		"metricbeat",
+		"-E", "output.elasticsearch.hosts=http://elasticsearch:9200",
+		"-E", "output.elasticsearch.password=p4ssw0rd",
+		"-E", "output.elasticsearch.username=elastic",
+		"-E", "setup.kibana.host=http://kibana:5601",
+		"-E", "setup.kibana.password=p4ssw0rd",
+		"-E", "setup.kibana.username=elastic",
 	}
 
 	service.SetBindMounts(bindMounts)
+	service.SetCmd(strings.Join(setupCommands, " "))
 	service.SetEnv(env)
 	service.SetLabels(labels)
 
