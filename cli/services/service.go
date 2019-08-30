@@ -268,7 +268,12 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 
 	service.Start(ctx)
 
-	log.WithFields(s.toLogFields(json)).Debug("Service created")
+	log.WithFields(s.toLogFields(json)).Debug("Service information")
+	log.WithFields(log.Fields{
+		"containerName": s.GetContainerName(),
+		"service":       s.GetName(),
+		"version":       s.GetVersion(),
+	}).Info("Service created")
 
 	return service, nil
 }
