@@ -26,6 +26,61 @@ func ConnectContainerToDevNetwork(containerID string, aliases ...string) error {
 		})
 }
 
+// ExecCommandIntoContainer executes a command, as a user, into a container, in a detach state
+func ExecCommandIntoContainer(ctx context.Context, containerName string, user string, cmd []string, detach bool) error {
+	dockerClient := getDockerClient()
+
+	log.WithFields(log.Fields{
+		"container": containerName,
+		"command":   cmd,
+		"detach":    detach,
+		"tty":       false,
+	}).Debug("Creating command to be executed in container")
+
+	response, err := dockerClient.ContainerExecCreate(
+		ctx, containerName, types.ExecConfig{
+			User:         user,
+			Tty:          false,
+			AttachStdin:  false,
+			AttachStderr: false,
+			AttachStdout: false,
+			Detach:       detach,
+			Cmd:          cmd,
+		})
+
+	if err != nil {
+		log.WithFields(log.Fields{
+			"container": containerName,
+			"command":   cmd,
+			"error":     err,
+			"detach":    detach,
+			"tty":       false,
+		}).Warn("Could not create command in container")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"container": containerName,
+		"command":   cmd,
+		"detach":    detach,
+		"tty":       false,
+	}).Debug("Command to be executed in container created")
+
+	err = dockerClient.ContainerExecStart(ctx, response.ID, types.ExecStartCheck{
+		Detach: detach,
+		Tty:    false,
+	})
+
+	log.WithFields(log.Fields{
+		"container": containerName,
+		"command":   cmd,
+		"detach":    detach,
+		"tty":       false,
+	}).Debug("Command sucessfully executed in container")
+
+	return err
+}
+
 // GetDevNetwork returns the developer network, creating it if it does not exist
 func GetDevNetwork() (types.NetworkResource, error) {
 	dockerClient := getDockerClient()

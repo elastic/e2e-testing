@@ -18,6 +18,13 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func TestBuildService_ContainerNameHonorsSet(t *testing.T) {
+	srv := serviceManager.Build("apache", "2.2", false)
+	srv.SetContainerName("foobar")
+
+	assert.Contains(t, srv.GetContainerName(), "foobar")
+}
+
 func TestBuildService_ContainerNameIncludesVersionAsSuffix(t *testing.T) {
 	srv := serviceManager.Build("apache", "2.2", false)
 

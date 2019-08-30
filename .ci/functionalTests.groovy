@@ -98,6 +98,7 @@ pipeline {
               junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/junit-*.xml")
               archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/junit-*"
               githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
+              sh script: 'make -C metricbeat-tests shutdown-elastic-stack', label: 'Shutdown runtime dependencies'
             }
           }
         }

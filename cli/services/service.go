@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/go-connections/nat"
 	log "github.com/sirupsen/logrus"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 
 	config "github.com/elastic/metricbeat-tests-poc/cli/config"
 	docker "github.com/elastic/metricbeat-tests-poc/cli/docker"
@@ -28,20 +28,29 @@ type Service interface {
 	Run() (testcontainers.Container, error)
 	SetAsDaemon(bool)
 	SetBindMounts(map[string]string)
+	SetCmd(string)
 	SetContainerName(string)
 	SetEnv(map[string]string)
 	SetLabels(map[string]string)
+	SetNetworkAlias(string)
 	SetVersion(string)
+	SetWaitFor(wait.Strategy)
 }
 
 // DockerService represents a Docker service to be run
 type DockerService struct {
 	config.Service
+	Cmd     string
+	WaitFor wait.Strategy
 }
 
 // GetContainerName returns service name, which is calculated from service name and version
 func (s *DockerService) GetContainerName() string {
-	return s.Name + "-" + s.Version
+	if s.ContainerName == "" {
+		return s.Name + "-" + s.Version
+	}
+
+	return s.ContainerName
 }
 
 // GetExposedPort returns the string representation of a service's well-known exposed ports
@@ -89,6 +98,11 @@ func (s *DockerService) SetAsDaemon(asDaemon bool) {
 	s.Daemon = asDaemon
 }
 
+// SetCmd set the command to be executed on service startup
+func (s *DockerService) SetCmd(cmd string) {
+	s.Cmd = cmd
+}
+
 // SetContainerName set container name for a service
 func (s *DockerService) SetContainerName(name string) {
 	s.ContainerName = name
@@ -116,14 +130,23 @@ func (s *DockerService) SetLabels(labels map[string]string) {
 	s.Labels = labels
 }
 
+// SetNetworkAlias set network alias for a service
+func (s *DockerService) SetNetworkAlias(alias string) {
+	s.NetworkAlias = alias
+}
+
 // SetVersion set version for a service
 func (s *DockerService) SetVersion(version string) {
 	s.Version = version
 }
 
+// SetWaitFor set the Testcontainers' strategy to wait for
+func (s *DockerService) SetWaitFor(strategy wait.Strategy) {
+	s.WaitFor = strategy
+}
+
 func (s *DockerService) toLogFields(json *types.ContainerJSON) log.Fields {
 	ip := json.NetworkSettings.IPAddress
-	ports := json.NetworkSettings.Ports
 
 	fields := log.Fields{
 		"service":       s.GetName(),
@@ -132,11 +155,7 @@ func (s *DockerService) toLogFields(json *types.ContainerJSON) log.Fields {
 		"containerName": s.GetContainerName(),
 		"networkAlias":  s.GetNetworkAlias(),
 		"IP":            ip,
-	}
-
-	for i, port := range s.ExposedPorts {
-		sPort := fmt.Sprintf("%d/tcp", port)
-		fields[fmt.Sprintf("applicationPort_%d", i)] = fmt.Sprintf("%d:%v", port, ports[nat.Port(sPort)])
+		"Cmd":           s.Cmd,
 	}
 
 	i := 0
@@ -219,16 +238,18 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 	req := testcontainers.ContainerRequest{
 		Image:        imageTag,
 		BindMounts:   s.BindMounts,
+		Cmd:          s.Cmd,
 		Env:          s.Env,
 		ExposedPorts: exposedPorts,
 		Labels:       s.Labels,
 		Name:         s.ContainerName,
 		SkipReaper:   !s.Daemon,
+		WaitingFor:   s.WaitFor,
 	}
 
 	service, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
-		Started:          true,
+		Started:          false,
 	})
 	if err != nil {
 		return nil, err
@@ -240,8 +261,19 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 	}
 
 	docker.ConnectContainerToDevNetwork(json.ContainerJSONBase.ID, s.GetNetworkAlias())
+	log.WithFields(log.Fields{
+		"containerID":  json.ContainerJSONBase.ID,
+		"networkAlias": s.GetNetworkAlias(),
+	}).Debug("Service attached to Dev network")
 
-	log.WithFields(s.toLogFields(json)).Info("Service created")
+	service.Start(ctx)
+
+	log.WithFields(s.toLogFields(json)).Debug("Service information")
+	log.WithFields(log.Fields{
+		"containerName": s.GetContainerName(),
+		"service":       s.GetName(),
+		"version":       s.GetVersion(),
+	}).Info("Service created")
 
 	return service, nil
 }

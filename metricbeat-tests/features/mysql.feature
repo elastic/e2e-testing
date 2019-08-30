@@ -1,10 +1,10 @@
 @mysql
 Feature: As a Metricbeat developer I want to check that the MySQL module works as expected
 
-Scenario Outline: Check module is sending metrics to a file
-  Given MySQL "<mysql_version>" is running
+Scenario Outline: Check module is sending metrics to Elasticsearch
+  Given MySQL "<mysql_version>" is running for metricbeat "<metricbeat_version>"
     And metricbeat "<metricbeat_version>" is installed and configured for MySQL module
-  Then metricbeat outputs metrics to the file "metricbeat-<metricbeat_version>-mysql-<mysql_version>.metrics"
+  Then there are no errors in the "metricbeat-<metricbeat_version>-mysql-<mysql_version>" index
 Examples:
 | mysql_version | metricbeat_version |
 | 5.6  | 7.3.0 |

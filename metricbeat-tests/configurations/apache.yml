@@ -5,7 +5,7 @@ metricbeat.modules:
   enabled: true
 
   # Apache hosts
-  hosts: ["http://${HOST}"]
+  hosts: ["http://${MONITORED_HOST}"]
 
   # Path to server status. Default server-status
   #server_status_path: "server-status"
@@ -15,7 +15,3 @@ metricbeat.modules:
 
   # Password of hosts. Empty by default
   #password: password
-
-output.file:
-  path: "/tmp"
-  filename: "${FILE_NAME}.metrics"
