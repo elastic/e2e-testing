@@ -51,7 +51,16 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 
 	container, err := service.Run()
 	if err != nil || container == nil {
-		return nil, fmt.Errorf("Could not run Metricbeat %s for %s: %v", version, serviceName, err)
+		msg := fmt.Sprintf("Could not run Metricbeat %s for %s %v", version, serviceName, err)
+
+		log.WithFields(log.Fields{
+			"error":             err,
+			"metricbeatVersion": version,
+			"service":           serviceName,
+			"serviceVersion":    monitoredService.GetVersion(),
+		}).Error(msg)
+
+		return nil, err
 	}
 
 	log.WithFields(log.Fields{
