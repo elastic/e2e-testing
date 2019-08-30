@@ -119,7 +119,7 @@ func assertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQu
 
 // attempts could be redefined in the OP_QUERY_MAX_ATTEMPTS environment variable
 func retrySearch(stackName string, indexName string, esQuery map[string]interface{}, attempts int) (searchResult, error) {
-	if attempts == 1 {
+	if attempts == 0 {
 		err := fmt.Errorf("Could not send query to Elasticsearch in the specified time")
 
 		log.WithFields(log.Fields{
