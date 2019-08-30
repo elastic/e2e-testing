@@ -1,14 +1,12 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/elastic/metricbeat-tests-poc/cli/docker"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
@@ -61,17 +59,6 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 		"service":           serviceName,
 		"serviceVersion":    monitoredService.GetVersion(),
 	}).Info("Metricbeat is running configured for the service")
-
-	log.WithFields(log.Fields{
-		"metricbeatVersion": version,
-		"service":           serviceName,
-	}).Debug("Installing Kibana dashboards")
-	docker.ExecCommandIntoContainer(
-		context.Background(), service.GetContainerName(), "root", []string{"metricbeat", "setup"}, false)
-	log.WithFields(log.Fields{
-		"metricbeatVersion": version,
-		"service":           serviceName,
-	}).Debug("Kibana dashboards installed")
 
 	return service, nil
 }
