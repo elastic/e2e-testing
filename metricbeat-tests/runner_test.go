@@ -120,11 +120,14 @@ func assertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQu
 // attempts could be redefined in the OP_QUERY_MAX_ATTEMPTS environment variable
 func retrySearch(stackName string, indexName string, esQuery map[string]interface{}, attempts int) (searchResult, error) {
 	if attempts == 0 {
-		err := fmt.Errorf("Could not send query to Elasticsearch in the specified time")
+		retryMaxTime := queryMaxAttempts * queryRetryTimeout
+		err := fmt.Errorf("Could not send query to Elasticsearch in the specified time (%d seconds)", retryMaxTime)
 
 		log.WithFields(log.Fields{
-			"query": esQuery,
-			"error": err,
+			"error":         err,
+			"query":         esQuery,
+			"retryAttempts": queryMaxAttempts,
+			"retryTimeout":  queryRetryTimeout,
 		}).Error(err.Error())
 
 		return searchResult{}, err
@@ -135,9 +138,12 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 		time.Sleep(time.Duration(queryRetryTimeout) * time.Second)
 
 		log.WithFields(log.Fields{
-			"attempt":    attempts,
-			"errorCause": err.Error(),
-			"index":      indexName,
+			"attempt":       attempts,
+			"errorCause":    err.Error(),
+			"index":         indexName,
+			"query":         esQuery,
+			"retryAttempts": queryMaxAttempts,
+			"retryTimeout":  queryRetryTimeout,
 		}).Debugf("Waiting %d seconds for the index to be ready", queryRetryTimeout)
 
 		// recursive approach for retrying the query
@@ -145,8 +151,10 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 	}
 
 	log.WithFields(log.Fields{
-		"query": query,
-		"index": indexName,
+		"index":        indexName,
+		"query":        esQuery,
+		"attempts":     attempts,
+		"fetchTimeout": queryMetricbeatFetchTimeout,
 	}).Debugf("Waiting %d seconds so that metricbeat is able to grab metrics from the integration module", queryMetricbeatFetchTimeout)
 	time.Sleep(time.Duration(queryMetricbeatFetchTimeout) * time.Second)
 
