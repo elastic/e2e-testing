@@ -39,7 +39,7 @@ Then we need a manner to connect that plain English feature specification with c
 As metricbeat is a Golang project, we are going to use Golang for writing the functional tests, so we would need the Golang implementation for `Cucumber`. That implementation is [`Godog`](https://github.com/DATA-DOG/godog), which is the glue between the specs files and the Go code. Godog is a wrapper over the traditional `go test` command, adding the ability to run the functional steps defined in the feature files.
 
 ### Integration Modules
-The integration modules supported by Metricbeat will be started in the form of Docker containers. To manage the life cycle of those containers in test time we are going to use [`Testcontainers`](https://testcontainers.org), a set of libraries to simplify the usage of the Docker client, attaching container life cycles to the tests, so whenever the tests finish, the containers will stop in consequence.
+The services supported by Metricbeat integrations will be started in the form of Docker containers. To manage the life cycle of those containers in test time we are going to use [`Testcontainers`](https://testcontainers.org), a set of libraries to simplify the usage of the Docker client, attaching container life cycles to the tests, so whenever the tests finish, the containers will stop in consequence.
 
 ### Runtime dependencies
 We want to store the metrics in Elasticsearch, so at some point we must start up an Elasticsearch instance. Besides that, we want to query the Elasticsearch to perform assertions on the metrics, such as there are no errors, or the field `f.foo` takes the value `bar`. For that reason we need an Elasticsearch in a well-known location. Here it appears the usage of the [Observability Provisioner CLI tool](../cli/README.md), which is a CLI writen in Go which exposes an API to query the specific runtime resources needed to run the tests. In our case, Metricbeat, we need just an Elasticsearch, but a Kibana could be needed in the case of verifying the dashboards are correct.
@@ -196,8 +196,21 @@ where:
 - FEATURE: sets the tag to filter by (apache, mysql, redis)
 
 ### Advanced usage
-There are some environment variables you can use to improve the experience running the tests.
+There are some environment variables you can use to improve the experience running the tests with `Make`.
 
 - **METRICBEAT_FETCH_TIMEOUT** (default: 20). This is the time in seconds we leave metricbeat grabbing metrics from the monitored integration module.
 - **QUERY_MAX_ATTEMPTS** (default: 5). It's possible that the Elasticsearch is not ready for writes, so we can define a retry strategy to wait for our index to be ready. This variable defines the number of attempts the retry process will happen.
 - **RETRY_TIMEOUT** (default: 3). For same reason as above, this variable defines the delay between attempts, before a successful connection to Elasticsearch is made.
+
+>Interested in running the tests directly using Godog? Please check out [the Makefile](./Makefile#L19).
+
+```shell
+export OP_LOG_LEVEL=${OP_LOG_LEVEL:-INFO}
+export OP_LOG_INCLUDE_TIMESTAMP=${OP_LOG_INCLUDE_TIMESTAMP:-false}
+export OP_METRICBEAT_FETCH_TIMEOUT=${OP_METRICBEAT_FETCH_TIMEOUT:-20}
+export OP_QUERY_MAX_ATTEMPTS=${OP_QUERY_MAX_ATTEMPTS:-5}
+export OP_RETRY_TIMEOUT=${OP_RETRY_TIMEOUT:-3}
+export FORMAT=${FORMAT:-pretty}
+# If you do not pass a '-t moduleName' argument, then all tests will be run
+godog --format=${FORMAT} -t redis
+```
