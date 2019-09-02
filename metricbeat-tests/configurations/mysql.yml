@@ -1,9 +1,5 @@
 metricbeat.modules:
   - module: mysql
-    hosts: ["root:secret@tcp(${HOST}:3306)/"]
+    hosts: ["root:secret@tcp(${MONITORED_HOST}:3306)/"]
     #username: root
     #password: secret
-
-output.file:
-  path: "/tmp"
-  filename: "${FILE_NAME}.metrics"

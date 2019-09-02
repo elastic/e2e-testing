@@ -8,9 +8,9 @@ import (
 var mysqlService services.Service
 
 func MySQLFeatureContext(s *godog.Suite) {
-	s.Step(`^MySQL "([^"]*)" is running$`, mySQLIsRunning)
+	s.Step(`^MySQL "([^"]*)" is running for metricbeat "([^"]*)"$`, mySQLIsRunningForMetricbeat)
 	s.Step(`^metricbeat "([^"]*)" is installed and configured for MySQL module$`, metricbeatIsInstalledAndConfiguredForMySQLModule)
-	s.Step(`^metricbeat outputs metrics to the file "([^"]*)"$`, metricbeatOutputsMetricsToTheFile)
+	s.Step(`^there are no errors in the "([^"]*)" index$`, thereAreNoErrorsInTheIndex)
 }
 
 func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) error {
@@ -18,11 +18,18 @@ func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) 
 
 	metricbeatService = s
 
+	query = ElasticsearchQuery{
+		EventModule:    "mysql",
+		ServiceVersion: mysqlService.GetVersion(),
+	}
+
 	return err
 }
 
-func mySQLIsRunning(mysqlVersion string) error {
+func mySQLIsRunningForMetricbeat(mysqlVersion string, metricbeatVersion string) error {
 	mysqlService = serviceManager.Build("mysql", mysqlVersion, false)
+
+	mysqlService.SetNetworkAlias("mysql_" + mysqlVersion + "-metricbeat_" + metricbeatVersion)
 
 	return serviceManager.Run(mysqlService)
 }

@@ -15,6 +15,12 @@ FEATURE=${2:-''}
 # shellcheck disable=SC1091
 source .ci/scripts/install-go.sh "${GO_VERSION}"
 
+# Build OP Binary
+make -C metricbeat-tests build-binary
+
+# Build runtime dependencies
+make -C metricbeat-tests run-elastic-stack
+
 rm -rf outputs || true
 mkdir -p outputs
 REPORT=outputs/junit-functional-tests

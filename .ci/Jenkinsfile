@@ -139,7 +139,7 @@ def generateStep(Map params = [:]){
       } catch(e) {
         error(e.toString())
       } finally {
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/.github/releases/download/**"
+        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/cli/.github/releases/download/**"
       }
     }
   }

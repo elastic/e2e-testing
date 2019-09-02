@@ -50,6 +50,28 @@ This way, the configuration precedence is defined by:
 
 A clear benefit of this layered configuration is to be able to define custom services/stacks at the higher layers of the configuration: the user could define a service or a stack just for that execution, which could be shared accross teams simply copying the configuration file in the proper path. If that configuration is valuable enough, it could be contributed to the tool.
 
+## Logging
+The CLI uses [`Logrus`](https://github.com/sirupsen/logrus) as default Logger, so it's possible to configure the logger using [Logging levels](https://github.com/sirupsen/logrus#level-logging) to enrich the output of the tool.
+
+To set the log level, please set the environment variable `OP_LOG_LEVEL` to one of the following values, being `INFO` the default one:
+
+```
+$ export OP_LOG_LEVEL=TRACE
+$ export OP_LOG_LEVEL=DEBUG
+$ export OP_LOG_LEVEL=INFO
+$ export OP_LOG_LEVEL=WARNING
+$ export OP_LOG_LEVEL=ERROR
+$ export OP_LOG_LEVEL=FATAL
+$ export OP_LOG_LEVEL=PANIC
+```
+
+It's also possible to add current timestamp to each log line. To do so, please set the environment variable `OP_LOG_INCLUDE_TIMESTAMP`, with "true" (case-insensitive).
+
+```
+$ export OP_LOG_INCLUDE_TIMESTAMP=TRUE
+$ export OP_LOG_INCLUDE_TIMESTAMP=true
+```
+
 ## Why this tool is not building software dependencies
 
 One common issue we have seen across Observability projects is related to the constant need for a project consumer of building Docker images for most of its dependencies (metricbeat building integrations, apm-integration-tests building opbeans, etc.)

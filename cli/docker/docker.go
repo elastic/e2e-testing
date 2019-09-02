@@ -7,8 +7,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
-
-	"github.com/elastic/metricbeat-tests-poc/cli/log"
+	log "github.com/sirupsen/logrus"
 )
 
 var instance *client.Client
@@ -27,6 +26,61 @@ func ConnectContainerToDevNetwork(containerID string, aliases ...string) error {
 		})
 }
 
+// ExecCommandIntoContainer executes a command, as a user, into a container, in a detach state
+func ExecCommandIntoContainer(ctx context.Context, containerName string, user string, cmd []string, detach bool) error {
+	dockerClient := getDockerClient()
+
+	log.WithFields(log.Fields{
+		"container": containerName,
+		"command":   cmd,
+		"detach":    detach,
+		"tty":       false,
+	}).Debug("Creating command to be executed in container")
+
+	response, err := dockerClient.ContainerExecCreate(
+		ctx, containerName, types.ExecConfig{
+			User:         user,
+			Tty:          false,
+			AttachStdin:  false,
+			AttachStderr: false,
+			AttachStdout: false,
+			Detach:       detach,
+			Cmd:          cmd,
+		})
+
+	if err != nil {
+		log.WithFields(log.Fields{
+			"container": containerName,
+			"command":   cmd,
+			"error":     err,
+			"detach":    detach,
+			"tty":       false,
+		}).Warn("Could not create command in container")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"container": containerName,
+		"command":   cmd,
+		"detach":    detach,
+		"tty":       false,
+	}).Debug("Command to be executed in container created")
+
+	err = dockerClient.ContainerExecStart(ctx, response.ID, types.ExecStartCheck{
+		Detach: detach,
+		Tty:    false,
+	})
+
+	log.WithFields(log.Fields{
+		"container": containerName,
+		"command":   cmd,
+		"detach":    detach,
+		"tty":       false,
+	}).Debug("Command sucessfully executed in container")
+
+	return err
+}
+
 // GetDevNetwork returns the developer network, creating it if it does not exist
 func GetDevNetwork() (types.NetworkResource, error) {
 	dockerClient := getDockerClient()
@@ -37,7 +91,9 @@ func GetDevNetwork() (types.NetworkResource, error) {
 		Verbose: true,
 	})
 	if err != nil {
-		log.Info("Dev Network (%s) not found! Creating it now.", networkName)
+		log.WithFields(log.Fields{
+			"network": networkName,
+		}).Warn("Dev Network not found! Creating it now.")
 
 		initDevNetwork()
 	}
@@ -57,7 +113,12 @@ func InspectContainer(name string) (*types.ContainerJSON, error) {
 	labelFilters.Add("label", "service.container.name="+name)
 
 	containers, err := dockerClient.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: labelFilters})
-	log.CheckIfError(err)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":  err,
+			"labels": labelFilters,
+		}).Fatal("Cannot list containers")
+	}
 
 	for _, c := range containers {
 		inspect, err := dockerClient.ContainerInspect(ctx, c.ID)
@@ -83,11 +144,17 @@ func RemoveContainer(containerName string) error {
 	}
 
 	if err := dockerClient.ContainerRemove(ctx, containerName, options); err != nil {
-		log.Warn("Service %s could not be removed: %v", containerName, err)
+		log.WithFields(log.Fields{
+			"error":   err,
+			"service": containerName,
+		}).Warn("Service could not be removed")
+
 		return err
 	}
 
-	log.Info("Service has been %s removed!", containerName)
+	log.WithFields(log.Fields{
+		"service": containerName,
+	}).Info("Service has been removed")
 
 	return nil
 }
@@ -98,12 +165,17 @@ func RemoveDevNetwork() error {
 
 	ctx := context.Background()
 
-	log.Info("Removing Dev Network (%s).", networkName)
+	log.WithFields(log.Fields{
+		"network": networkName,
+	}).Debug("Removing Dev Network...")
+
 	if err := dockerClient.NetworkRemove(ctx, networkName); err != nil {
 		return err
 	}
 
-	log.Success("Dev Network has been %s removed!", networkName)
+	log.WithFields(log.Fields{
+		"network": networkName,
+	}).Debug("Dev Network has been removed")
 
 	return nil
 }
@@ -125,9 +197,17 @@ func initDevNetwork() types.NetworkCreateResponse {
 	}
 
 	response, err := dockerClient.NetworkCreate(ctx, networkName, nc)
-	log.CheckIfErrorMessage(err, "Cannot create Docker Dev Network which is necessary. Aborting")
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"network": networkName,
+		}).Fatal("Cannot create Docker Dev Network, which is necessary")
+	}
 
-	log.Success("Dev Network (%s) has been created with ID %s.", networkName, response.ID)
+	log.WithFields(log.Fields{
+		"network": networkName,
+		"id":      response.ID,
+	}).Debug("Dev Network has been created")
 
 	return response
 }
@@ -137,8 +217,15 @@ func getDockerClient() *client.Client {
 		return instance
 	}
 
-	instance, err := client.NewClientWithOpts(client.WithVersion("1.39"))
-	log.CheckIfError(err)
+	clientVersion := "1.39"
+
+	instance, err := client.NewClientWithOpts(client.WithVersion(clientVersion))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":         err,
+			"clientVersion": clientVersion,
+		}).Fatal("Cannot get Docker Client")
+	}
 
 	return instance
 }
