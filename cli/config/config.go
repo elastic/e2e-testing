@@ -326,7 +326,6 @@ func checkConfigFile(workspace string) {
 	}).Debug("Creating configuration file")
 
 	configFilePath := filepath.Join(workspace, fileName)
-
 	os.Create(configFilePath)
 
 	v := viper.New()

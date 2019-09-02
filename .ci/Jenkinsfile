@@ -35,6 +35,8 @@ pipeline {
         GOPATH = "${env.WORKSPACE}"
         GO_VERSION = "${params.GO_VERSION.trim()}"
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
+        GO111MODULE = 'on'
+        GOPROXY = 'https://proxy.golang.org'
       }
       stages {
         stage('Checkout') {
@@ -48,12 +50,17 @@ pipeline {
           parallel {
             stage('Sanity checks') {
               agent { label 'linux && immutable && docker' }
+              environment {
+                GOROOT = "${env.WORKSPACE}/.gimme/versions/go${env.GO_VERSION}.linux.amd64"
+                PATH = "${env.PATH}:${env.GOROOT}/bin"
+              }
               options { skipDefaultCheckout() }
               steps {
                 withGithubNotify(context: 'Sanity checks', tab: 'tests') {
                   deleteDir()
                   unstash 'source'
                   dir(BASE_DIR){
+                    sh script: """.ci/scripts/install-dependencies.sh "${GO_VERSION}" """, label: 'Install dependencies'
                     preCommit(commit: "${GIT_BASE_COMMIT}", junit: true)
                   }
                 }
@@ -62,10 +69,6 @@ pipeline {
             stage('Unit Tests') {
               agent { label 'linux && immutable' }
               options { skipDefaultCheckout() }
-              environment {
-                GO111MODULE = 'on'
-                GOPROXY = 'https://proxy.golang.org'
-              }
               steps {
                 withGithubNotify(context: 'Tests', tab: 'tests') {
                   deleteDir()
@@ -87,10 +90,6 @@ pipeline {
         stage('Release') {
           options { skipDefaultCheckout() }
           when { tag "v*" }
-          environment {
-            GO111MODULE = 'on'
-            GOPROXY = 'https://proxy.golang.org'
-          }
           steps {
             deleteDir()
             unstash 'source'
