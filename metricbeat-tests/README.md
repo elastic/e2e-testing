@@ -28,7 +28,7 @@ For the CI, we have a set of scripts preparing the environment, so that a build 
 A consequence of the above goal, is that it's easier to run the tests, so a developer is more willing to participate in the development checking that his/her changes are still valid.
 
 ### Run tests against the integrations compatibility matrix
-With the Scenario outline approach, wehere we provide a table of possible values, it's possible to iterate through that table and execute a test per row. So if we are smart enough to build the table in the proper manner, then we will be able to create a compatibility matrix for each version of the integration module.
+With the Scenario outline approach, where we provide a table of possible values, it's possible to iterate through that table and execute a test per row. So if we are smart enough to build the table in the proper manner, then we will be able to create a compatibility matrix for each version of the integration module.
 
 ## Technology stack
 
