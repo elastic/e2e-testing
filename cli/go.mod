@@ -20,7 +20,7 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.3.0
-	github.com/testcontainers/testcontainers-go v0.0.5-0.20190614112146-b130c69aad64
+	github.com/testcontainers/testcontainers-go v0.0.6
 	golang.org/x/net v0.0.0-20190628185345-da137c7871d7 // indirect
 	golang.org/x/sys v0.0.0-20190712062909-fae7ac547cb7 // indirect
 	google.golang.org/appengine v1.6.1 // indirect
