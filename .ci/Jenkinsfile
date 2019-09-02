@@ -53,6 +53,7 @@ pipeline {
               environment {
                 GOROOT = "${env.WORKSPACE}/.gimme/versions/go${env.GO_VERSION}.linux.amd64"
                 PATH = "${env.PATH}:${env.GOROOT}/bin"
+                GO111MODULE = 'off'
               }
               options { skipDefaultCheckout() }
               steps {
