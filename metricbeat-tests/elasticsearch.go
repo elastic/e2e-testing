@@ -18,6 +18,50 @@ type searchResult struct {
 	Result map[string]interface{}
 }
 
+type queryBuilder map[string]interface{}
+
+func (b queryBuilder) Build(q elasticsearchQuery) queryBuilder {
+	b["query"] = q
+
+	return b
+}
+
+type elasticsearchQuery map[string]boolQuery
+
+func (q elasticsearchQuery) WithBool(b boolQuery) elasticsearchQuery {
+	q["bool"] = b
+
+	return q
+}
+
+type boolQuery map[string]mustQuery
+
+func (b boolQuery) WithMust(m mustQuery) boolQuery {
+	b["must"] = m
+
+	return b
+}
+
+type mustQuery []matchQuery
+
+func (mu mustQuery) WithMatches(mas ...matchQuery) mustQuery {
+	for _, m := range mas {
+		mu = append(mu, m)
+	}
+
+	return mu
+}
+
+type matchQuery map[string]interface{}
+
+func (m matchQuery) WithMatchEntry(e matchEntry) matchQuery {
+	m["match"] = e
+
+	return m
+}
+
+type matchEntry map[string]interface{}
+
 // getElasticsearchClient returns a client connected to the running elasticseach, defined
 // at configuration level. Then we will inspect the running container to get its port bindings
 // and from them, get the one related to the Elasticsearch port (9200). As it is bound to a

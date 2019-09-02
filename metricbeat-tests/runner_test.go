@@ -171,28 +171,24 @@ func thereAreNoErrorsInTheIndex(index string) error {
 	// no collitions between different test cases should appear
 	esIndexName += "-*"
 
-	esQuery := map[string]interface{}{
-		"query": map[string]interface{}{
-			"bool": map[string]interface{}{
-				"must": []map[string]interface{}{
-					{
-						"match": map[string]interface{}{
-							"event.module": query.EventModule,
-						},
-					},
-					{
-						"match": map[string]interface{}{
-							"service.version": query.ServiceVersion,
-						},
-					},
-				},
-			},
-		},
-	}
+	must := mustQuery{}.WithMatches(
+		matchQuery{}.WithMatchEntry(
+			matchEntry{
+				"event.module": query.EventModule,
+			}),
+		matchQuery{}.WithMatchEntry(
+			matchEntry{
+				"service.version": query.ServiceVersion,
+			}),
+	)
+
+	b := boolQuery{}.WithMust(must)
+	q := elasticsearchQuery{}.WithBool(b)
+	builder := queryBuilder{}
 
 	stackName := "metricbeat"
 
-	result, err := retrySearch(stackName, esIndexName, esQuery, queryMaxAttempts)
+	result, err := retrySearch(stackName, esIndexName, builder.Build(q), queryMaxAttempts)
 	if err != nil {
 		return err
 	}
