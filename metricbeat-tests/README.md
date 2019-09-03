@@ -203,12 +203,12 @@ There are some environment variables you can use to improve the experience runni
 >Interested in running the tests directly using Godog? Please check out [the Makefile](./Makefile#L19).
 
 ```shell
-export OP_LOG_LEVEL=${OP_LOG_LEVEL:-INFO}
-export OP_LOG_INCLUDE_TIMESTAMP=${OP_LOG_INCLUDE_TIMESTAMP:-false}
 export OP_METRICBEAT_FETCH_TIMEOUT=${OP_METRICBEAT_FETCH_TIMEOUT:-20}
 export OP_QUERY_MAX_ATTEMPTS=${OP_QUERY_MAX_ATTEMPTS:-5}
 export OP_RETRY_TIMEOUT=${OP_RETRY_TIMEOUT:-3}
-export FORMAT=${FORMAT:-pretty}
+export FORMAT=${FORMAT:-pretty} # valid formats are: pretty, junit
 # If you do not pass a '-t moduleName' argument, then all tests will be run
 godog --format=${FORMAT} -t redis
 ```
+
+>For environment variables reference affecting the logs, please check out [CLI's docs](../cli/README.md#logging)
