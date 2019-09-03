@@ -14,9 +14,7 @@ import (
 )
 
 // searchResult wraps a search result
-type searchResult struct {
-	Result map[string]interface{}
-}
+type searchResult map[string]interface{}
 
 // getElasticsearchClient returns a client connected to the running elasticseach, defined
 // at configuration level. Then we will inspect the running container to get its port bindings
@@ -116,9 +114,7 @@ func search(stackName string, indexName string, query map[string]interface{}) (s
 			e["error"].(map[string]interface{})["reason"])
 	}
 
-	var r map[string]interface{}
-
-	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Error("Error parsing response body from Elasticsearch")
@@ -126,12 +122,10 @@ func search(stackName string, indexName string, query map[string]interface{}) (s
 		return result, err
 	}
 
-	result.Result = r
-
 	log.WithFields(log.Fields{
 		"status": res.Status(),
-		"hits":   int(r["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64)),
-		"took":   int(r["took"].(float64)),
+		"hits":   int(result["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64)),
+		"took":   int(result["took"].(float64)),
 	}).Debug("Response information")
 
 	return result, nil
