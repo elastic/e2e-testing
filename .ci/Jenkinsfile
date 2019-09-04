@@ -52,7 +52,7 @@ pipeline {
               agent { label 'linux && immutable && docker' }
               environment {
                 GOROOT = "${env.WORKSPACE}/.gimme/versions/go${env.GO_VERSION}.linux.amd64"
-                PATH = "${env.PATH}:${env.GOROOT}/bin"
+                PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.PATH}:${env.GOROOT}/bin"
               }
               options { skipDefaultCheckout() }
               steps {
