@@ -180,11 +180,6 @@ func thereAreNoErrorsInTheIndex(index string) error {
 							"event.module": query.EventModule,
 						},
 					},
-					{
-						"match": map[string]interface{}{
-							"service.version": query.ServiceVersion,
-						},
-					},
 				},
 			},
 		},

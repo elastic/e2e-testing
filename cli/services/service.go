@@ -243,7 +243,7 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 		ExposedPorts: exposedPorts,
 		Labels:       s.Labels,
 		Name:         s.ContainerName,
-		SkipReaper:   !s.Daemon,
+		SkipReaper:   s.Daemon,
 		WaitingFor:   s.WaitFor,
 	}
 
