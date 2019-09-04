@@ -197,14 +197,12 @@ func thereAreNoErrorsInTheIndex(index string) error {
 		return err
 	}
 
-	r := result.Result
-
-	err = assertHitsArePresent(r, query)
+	err = assertHitsArePresent(result, query)
 	if err != nil {
 		return err
 	}
 
-	err = assertHitsDoNotContainErrors(r, query)
+	err = assertHitsDoNotContainErrors(result, query)
 	if err != nil {
 		return err
 	}
