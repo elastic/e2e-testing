@@ -50,9 +50,9 @@ pipeline {
             stage('Sanity checks') {
               agent { label 'linux && immutable && docker' }
               environment {
-                HOME = "${env.WORKSPACE}/${env.BASE_DIR}"
-                GOROOT = "${env.HOME}/.gimme/versions/go${env.GO_VERSION}.linux.amd64"
-                PATH = "${env.HOME}/bin:${env.GOROOT}/bin:${env.PATH}"
+                HOME = "${env.WORKSPACE}"
+                GOROOT = "${env.HOME}/${env.BASE_DIR}/.gimme/versions/go${env.GO_VERSION}.linux.amd64"
+                PATH = "${env.HOME}/${env.BASE_DIR}/bin:${env.GOROOT}/bin:${env.PATH}"
               }
               options { skipDefaultCheckout() }
               steps {
