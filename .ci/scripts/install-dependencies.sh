@@ -21,9 +21,7 @@ go get -v -u golang.org/x/lint/golint
 go get -v -u github.com/golangci/golangci-lint/cmd/golangci-lint
 go get -v -u github.com/go-lintpack/lintpack/...
 go get -v -u github.com/go-critic/go-critic/...
-
-# Gometalinter is deprecated so let's use the sh instead
-curl https://raw.githubusercontent.com/alecthomas/gometalinter/master/scripts/install.sh | sh
+lintpack build -o bin/gocritic -linter.version='v0.3.4' -linter.name='gocritic' github.com/go-critic/go-critic/checkers
 
 # enable GOPROXY
 GOPROXY=${GOPROXY_CONTEXT}
