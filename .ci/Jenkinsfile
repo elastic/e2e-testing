@@ -61,6 +61,7 @@ pipeline {
                   unstash 'source'
                   dir(BASE_DIR){
                     sh script: """.ci/scripts/install-dependencies.sh "${GO_VERSION}" """, label: 'Install dependencies'
+                    sh 'ls -ltrah && pwd && env | sort'
                     preCommit(commit: "${GIT_BASE_COMMIT}", junit: true)
                   }
                 }
