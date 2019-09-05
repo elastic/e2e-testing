@@ -304,7 +304,7 @@ func newConfig(workspace string) {
 }
 
 func checkConfigFile(workspace string) {
-	found, err := exists(workspace)
+	found, err := exists(path.Join(workspace, fileName))
 	if found && err == nil {
 		return
 	}
