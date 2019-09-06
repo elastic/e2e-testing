@@ -41,6 +41,23 @@ type MetricbeatTestSuite struct {
 	Service    services.Service // the service to be monitored by metricbeat
 }
 
+// CleanUp cleans up services in the test suite
+func (mts *MetricbeatTestSuite) CleanUp() error {
+	var err error
+
+	if mts.Service != nil {
+		log.Debugf("Stopping service %s", mts.Service.GetName())
+		err = serviceManager.Stop(mts.Service)
+	}
+
+	if mts.Metricbeat != nil {
+		log.Debugf("Stopping metricbeat %s", mts.Metricbeat.GetVersion())
+		err = serviceManager.Stop(mts.Metricbeat)
+	}
+
+	return err
+}
+
 type ElasticsearchQuery struct {
 	EventModule    string
 	ServiceVersion string

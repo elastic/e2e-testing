@@ -5,10 +5,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var redisTestSuite = MetricbeatTestSuite{}
+var redisTestSuite MetricbeatTestSuite
 
 func redisIsRunningForMetricbeat(redisVersion string, metricbeatVersion string) error {
-	redisService := serviceManager.Build("redis", redisVersion, false)
+	redisService := serviceManager.Build("redis", redisVersion, true)
 
 	redisService.SetNetworkAlias("redis_" + redisVersion + "-metricbeat_" + metricbeatVersion)
 
@@ -43,8 +43,10 @@ func RedisFeatureContext(s *godog.Suite) {
 
 	s.BeforeScenario(func(interface{}) {
 		log.Debug("Before scenario...")
+		redisTestSuite = MetricbeatTestSuite{}
 	})
 	s.AfterScenario(func(interface{}, error) {
 		log.Debug("After scenario...")
+		redisTestSuite.CleanUp()
 	})
 }

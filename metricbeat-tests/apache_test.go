@@ -5,7 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var apacheTestSuite = MetricbeatTestSuite{}
+var apacheTestSuite MetricbeatTestSuite
 
 func ApacheFeatureContext(s *godog.Suite) {
 	s.Step(`^Apache "([^"]*)" is running for metricbeat "([^"]*)"$`, apacheIsRunningForMetricbeat)
@@ -14,9 +14,11 @@ func ApacheFeatureContext(s *godog.Suite) {
 
 	s.BeforeScenario(func(interface{}) {
 		log.Debug("Before scenario...")
+		apacheTestSuite = MetricbeatTestSuite{}
 	})
 	s.AfterScenario(func(interface{}, error) {
 		log.Debug("After scenario...")
+		apacheTestSuite.CleanUp()
 	})
 }
 
@@ -37,7 +39,7 @@ func metricbeatIsInstalledAndConfiguredForApacheModule(metricbeatVersion string)
 }
 
 func apacheIsRunningForMetricbeat(apacheVersion string, metricbeatVersion string) error {
-	apacheService := serviceManager.Build("apache", apacheVersion, false)
+	apacheService := serviceManager.Build("apache", apacheVersion, true)
 
 	apacheService.SetNetworkAlias("apache_" + apacheVersion + "-metricbeat_" + metricbeatVersion)
 

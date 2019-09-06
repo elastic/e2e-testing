@@ -123,7 +123,7 @@ import (
 // global variable to be reused across methods in this file
 // the MetricbeatTestSuite holds a reference to both
 // metricbeat and the service to monitor
-var redisTestSuite = MetricbeatTestSuite{}
+var redisTestSuite MetricbeatTestSuite
 
 // Matches the 'Given Redis "<redis_version>" is running for metricbeat "<metricbeat_version>"' clause
 // There are two input parameters, as there are two words in double quotes.
@@ -131,7 +131,7 @@ var redisTestSuite = MetricbeatTestSuite{}
 // the function must return error, so that the test fails if the redis service is not run
 func redisIsRunningForMetricbeat(redisVersion string, metricbeatVersion string) error {
   // build the object holding the configuration to run a Docker service for the integration module
-  redisService := serviceManager.Build("redis", redisVersion, false)
+  redisService := serviceManager.Build("redis", redisVersion, true)
 
   // network alias to enable network discovery: metricbeat will use this as the service to monitor
   redisService.SetNetworkAlias("redis_" + redisVersion + "-metricbeat_" + metricbeatVersion)
@@ -184,9 +184,11 @@ func RedisFeatureContext(s *godog.Suite) {
 
   s.BeforeScenario(func(interface{}) {
     log.Debug("Before scenario...")
+    redisTestSuite = MetricbeatTestSuite{}
   })
   s.AfterScenario(func(interface{}, error) {
     log.Debug("After scenario...")
+    redisTestSuite.CleanUp()
   })
 }
 

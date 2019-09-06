@@ -5,7 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var mysqlTestSuite = MetricbeatTestSuite{}
+var mysqlTestSuite MetricbeatTestSuite
 
 func MySQLFeatureContext(s *godog.Suite) {
 	s.Step(`^MySQL "([^"]*)" is running for metricbeat "([^"]*)"$`, mySQLIsRunningForMetricbeat)
@@ -14,9 +14,11 @@ func MySQLFeatureContext(s *godog.Suite) {
 
 	s.BeforeScenario(func(interface{}) {
 		log.Debug("Before scenario...")
+		mysqlTestSuite = MetricbeatTestSuite{}
 	})
 	s.AfterScenario(func(interface{}, error) {
 		log.Debug("After scenario...")
+		mysqlTestSuite.CleanUp()
 	})
 }
 
@@ -37,7 +39,7 @@ func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) 
 }
 
 func mySQLIsRunningForMetricbeat(mysqlVersion string, metricbeatVersion string) error {
-	mysqlService := serviceManager.Build("mysql", mysqlVersion, false)
+	mysqlService := serviceManager.Build("mysql", mysqlVersion, true)
 
 	mysqlService.SetNetworkAlias("mysql_" + mysqlVersion + "-metricbeat_" + metricbeatVersion)
 
