@@ -17,6 +17,7 @@ import (
 
 // Service represents the contract for services
 type Service interface {
+	CleanUp(context.Context) error
 	Destroy() error
 	GetContainerName() string
 	GetExposedPort(int) string
@@ -28,6 +29,7 @@ type Service interface {
 	Run() (testcontainers.Container, error)
 	SetAsDaemon(bool)
 	SetBindMounts(map[string]string)
+	SetCleanUp(func(context.Context) error)
 	SetCmd(string)
 	SetContainerName(string)
 	SetEnv(map[string]string)
@@ -40,8 +42,18 @@ type Service interface {
 // DockerService represents a Docker service to be run
 type DockerService struct {
 	config.Service
-	Cmd     string
-	WaitFor wait.Strategy
+	Cmd         string
+	CleanUpFunc func(context.Context) error // function to execute when removing the container
+	WaitFor     wait.Strategy
+}
+
+// CleanUp executes a function that performs clean up tasks
+func (s *DockerService) CleanUp(ctx context.Context) error {
+	if s.CleanUpFunc == nil {
+		return nil
+	}
+
+	return s.CleanUpFunc(ctx)
 }
 
 // GetContainerName returns service name, which is calculated from service name and version
@@ -111,6 +123,11 @@ func (s *DockerService) SetContainerName(name string) {
 // SetBindMounts set bind mounts for a service
 func (s *DockerService) SetBindMounts(bindMounts map[string]string) {
 	s.BindMounts = bindMounts
+}
+
+// SetCleanUp set the clean up function to be executed when cleaning up the service
+func (s *DockerService) SetCleanUp(fn func(ctx context.Context) error) {
+	s.CleanUpFunc = fn
 }
 
 // SetEnv set environment variables for a service, overriding default one with
@@ -206,7 +223,18 @@ func (s *DockerService) Destroy() error {
 		return nil
 	}
 
-	return docker.RemoveContainer(json.Name)
+	ctx := context.Background()
+
+	err = docker.RemoveContainer(json.Name)
+	if err == nil {
+		s.CleanUp(ctx)
+
+		log.WithFields(log.Fields{
+			"service": s.GetName(),
+		}).Debug("Service cleaned up")
+	}
+
+	return err
 }
 
 // Run runs a container for the service
