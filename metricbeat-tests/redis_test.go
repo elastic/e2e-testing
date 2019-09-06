@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/DATA-DOG/godog"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
@@ -32,4 +34,11 @@ func RedisFeatureContext(s *godog.Suite) {
 	s.Step(`^Redis "([^"]*)" is running for metricbeat "([^"]*)"$`, redisIsRunningForMetricbeat)
 	s.Step(`^metricbeat "([^"]*)" is installed and configured for Redis module$`, metricbeatIsInstalledAndConfiguredForRedisModule)
 	s.Step(`^there are no errors in the "([^"]*)" index$`, thereAreNoErrorsInTheIndex)
+
+	s.BeforeScenario(func(interface{}) {
+		log.Debug("Before scenario...")
+	})
+	s.AfterScenario(func(interface{}, error) {
+		log.Debug("After scenario...")
+	})
 }

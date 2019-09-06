@@ -67,15 +67,7 @@ func TestMain(m *testing.M) {
 	flag.Parse()
 	opt.Paths = flag.Args()
 
-	status := godog.RunWithOptions("godog", func(s *godog.Suite) {
-		s.BeforeScenario(func(interface{}) {
-			log.Debug("Before scenario...")
-		})
-
-		s.AfterScenario(func(interface{}, error) {
-			log.Debug("After scenario...")
-		})
-	}, opt)
+	status := godog.RunWithOptions("godog", func(s *godog.Suite) {}, opt)
 
 	if st := m.Run(); st > status {
 		status = st
