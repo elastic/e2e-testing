@@ -3,11 +3,9 @@ package main
 import (
 	"github.com/DATA-DOG/godog"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
-var apacheService services.Service
+var apacheTestSuite = MetricbeatTestSuite{}
 
 func ApacheFeatureContext(s *godog.Suite) {
 	s.Step(`^Apache "([^"]*)" is running for metricbeat "([^"]*)"$`, apacheIsRunningForMetricbeat)
@@ -23,9 +21,12 @@ func ApacheFeatureContext(s *godog.Suite) {
 }
 
 func metricbeatIsInstalledAndConfiguredForApacheModule(metricbeatVersion string) error {
-	s, err := RunMetricbeatService(metricbeatVersion, apacheService)
+	apacheService := apacheTestSuite.Service
 
-	metricbeatService = s
+	s, err := RunMetricbeatService(metricbeatVersion, apacheService)
+	if err == nil {
+		apacheTestSuite.Metricbeat = s
+	}
 
 	query = ElasticsearchQuery{
 		EventModule:    "apache",
@@ -36,9 +37,14 @@ func metricbeatIsInstalledAndConfiguredForApacheModule(metricbeatVersion string)
 }
 
 func apacheIsRunningForMetricbeat(apacheVersion string, metricbeatVersion string) error {
-	apacheService = serviceManager.Build("apache", apacheVersion, false)
+	apacheService := serviceManager.Build("apache", apacheVersion, false)
 
 	apacheService.SetNetworkAlias("apache_" + apacheVersion + "-metricbeat_" + metricbeatVersion)
 
-	return serviceManager.Run(apacheService)
+	err := serviceManager.Run(apacheService)
+	if err == nil {
+		apacheTestSuite.Service = apacheService
+	}
+
+	return err
 }

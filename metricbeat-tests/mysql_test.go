@@ -3,11 +3,9 @@ package main
 import (
 	"github.com/DATA-DOG/godog"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
-var mysqlService services.Service
+var mysqlTestSuite = MetricbeatTestSuite{}
 
 func MySQLFeatureContext(s *godog.Suite) {
 	s.Step(`^MySQL "([^"]*)" is running for metricbeat "([^"]*)"$`, mySQLIsRunningForMetricbeat)
@@ -23,9 +21,12 @@ func MySQLFeatureContext(s *godog.Suite) {
 }
 
 func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) error {
-	s, err := RunMetricbeatService(metricbeatVersion, mysqlService)
+	mysqlService := mysqlTestSuite.Service
 
-	metricbeatService = s
+	s, err := RunMetricbeatService(metricbeatVersion, mysqlService)
+	if err == nil {
+		mysqlTestSuite.Metricbeat = s
+	}
 
 	query = ElasticsearchQuery{
 		EventModule:    "mysql",
@@ -36,9 +37,14 @@ func metricbeatIsInstalledAndConfiguredForMySQLModule(metricbeatVersion string) 
 }
 
 func mySQLIsRunningForMetricbeat(mysqlVersion string, metricbeatVersion string) error {
-	mysqlService = serviceManager.Build("mysql", mysqlVersion, false)
+	mysqlService := serviceManager.Build("mysql", mysqlVersion, false)
 
 	mysqlService.SetNetworkAlias("mysql_" + mysqlVersion + "-metricbeat_" + metricbeatVersion)
 
-	return serviceManager.Run(mysqlService)
+	err := serviceManager.Run(mysqlService)
+	if err == nil {
+		mysqlTestSuite.Service = mysqlService
+	}
+
+	return err
 }

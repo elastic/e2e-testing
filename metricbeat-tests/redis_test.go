@@ -3,24 +3,30 @@ package main
 import (
 	"github.com/DATA-DOG/godog"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
-var redisService services.Service
+var redisTestSuite = MetricbeatTestSuite{}
 
 func redisIsRunningForMetricbeat(redisVersion string, metricbeatVersion string) error {
-	redisService = serviceManager.Build("redis", redisVersion, false)
+	redisService := serviceManager.Build("redis", redisVersion, false)
 
 	redisService.SetNetworkAlias("redis_" + redisVersion + "-metricbeat_" + metricbeatVersion)
 
-	return serviceManager.Run(redisService)
+	err := serviceManager.Run(redisService)
+	if err == nil {
+		redisTestSuite.Service = redisService
+	}
+
+	return err
 }
 
 func metricbeatIsInstalledAndConfiguredForRedisModule(metricbeatVersion string) error {
-	s, err := RunMetricbeatService(metricbeatVersion, redisService)
+	redisService := redisTestSuite.Service
 
-	metricbeatService = s
+	s, err := RunMetricbeatService(metricbeatVersion, redisService)
+	if err == nil {
+		redisTestSuite.Metricbeat = s
+	}
 
 	query = ElasticsearchQuery{
 		EventModule:    "redis",

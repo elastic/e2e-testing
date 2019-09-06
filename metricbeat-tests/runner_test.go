@@ -19,7 +19,6 @@ import (
 
 var opt = godog.Options{Output: colors.Colored(os.Stdout)}
 
-var metricbeatService services.Service
 var query ElasticsearchQuery
 var serviceManager services.ServiceManager
 
@@ -34,6 +33,13 @@ var queryMetricbeatFetchTimeout = 20
 // queryRetryTimeout Number of seconds between elasticsearch retry queries.
 // It can be overriden by OP_RETRY_TIMEOUT env var
 var queryRetryTimeout = 3
+
+// MetricbeatTestSuite represents a test suite, holding references to both metricbeat ant
+// the service to be monitored
+type MetricbeatTestSuite struct {
+	Metricbeat services.Service // the metricbeat instance for the test
+	Service    services.Service // the service to be monitored by metricbeat
+}
 
 type ElasticsearchQuery struct {
 	EventModule    string
