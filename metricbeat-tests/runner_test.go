@@ -184,7 +184,7 @@ func thereAreNoErrorsInTheIndex(index string) error {
 	// ILM is configured on metricbeat side, then we can use an asterisk
 	// for the index name: each scenario outline will be namespaced, so
 	// no collitions between different test cases should appear
-	esIndexName += "-*"
+	esIndexName += "-test*"
 
 	esQuery := map[string]interface{}{
 		"query": map[string]interface{}{

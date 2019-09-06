@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -33,9 +34,11 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 		"MONITORED_HOST":    monitoredService.GetNetworkAlias(),
 	}
 
+	indexName := fmt.Sprintf("metricbeat-%s-%s-%s-test", version, serviceName, monitoredService.GetVersion())
+
 	setupCommands := []string{
 		"metricbeat",
-		"-E", fmt.Sprintf("setup.ilm.rollover_alias=metricbeat-%s-%s-%s", version, serviceName, monitoredService.GetVersion()),
+		"-E", fmt.Sprintf("setup.ilm.rollover_alias=%s", indexName),
 		"-E", "output.elasticsearch.hosts=http://elasticsearch:9200",
 		"-E", "output.elasticsearch.password=p4ssw0rd",
 		"-E", "output.elasticsearch.username=elastic",
@@ -49,6 +52,11 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 	service.SetEnv(env)
 	service.SetAsDaemon(true)
 	service.SetLabels(labels)
+
+	fn := func(ctx context.Context) error {
+		return deleteIndex(ctx, "metricbeat", indexName)
+	}
+	service.SetCleanUp(fn)
 
 	err := serviceManager.Run(service)
 	if err != nil {
