@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -15,6 +16,44 @@ import (
 
 // searchResult wraps a search result
 type searchResult map[string]interface{}
+
+// deleteIndex deletes an index from the elasticsearch of the stack
+func deleteIndex(ctx context.Context, stackName string, index string) error {
+	esClient, err := getElasticsearchClient(stackName)
+	if err != nil {
+		return err
+	}
+
+	res, err := esClient.Indices.Delete([]string{index})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"indexName": index,
+			"error":     err,
+		}).Error("Could not delete index using Elasticsearch Go client")
+
+		return err
+	}
+	log.WithFields(log.Fields{
+		"indexName": index,
+		"status":    res.Status,
+	}).Debug("Index deleted using Elasticsearch Go client")
+
+	res, err = esClient.Indices.DeleteAlias([]string{index}, []string{index})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"indexAlias": index,
+			"error":      err,
+		}).Error("Could not delete index alias using Elasticsearch Go client")
+
+		return err
+	}
+	log.WithFields(log.Fields{
+		"indexAlias": index,
+		"status":     res.Status,
+	}).Debug("Index Alias deleted using Elasticsearch Go client")
+
+	return nil
+}
 
 // getElasticsearchClient returns a client connected to the running elasticseach, defined
 // at configuration level. Then we will inspect the running container to get its port bindings
