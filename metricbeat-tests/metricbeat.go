@@ -49,8 +49,8 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 	service.SetEnv(env)
 	service.SetLabels(labels)
 
-	container, err := service.Run()
-	if err != nil || container == nil {
+	err := serviceManager.Run(service)
+	if err != nil {
 		msg := fmt.Sprintf("Could not run Metricbeat %s for %s %v", version, serviceName, err)
 
 		log.WithFields(log.Fields{
