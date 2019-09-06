@@ -98,40 +98,6 @@ func TestMain(m *testing.M) {
 	os.Exit(status)
 }
 
-// assertHitsArePresent returns an error if no hits are present
-func assertHitsArePresent(hits map[string]interface{}, q ElasticsearchQuery) error {
-	hitsCount := len(hits["hits"].(map[string]interface{})["hits"].([]interface{}))
-	if hitsCount == 0 {
-		return fmt.Errorf(
-			"There aren't documents for %s-%s on Metricbeat index",
-			q.EventModule, q.ServiceVersion)
-	}
-
-	return nil
-}
-
-// assertHitsDoNotContainErrors returns an error if any of the returned entries contains
-// an "error.message" field in the "_source" document
-func assertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQuery) error {
-	for _, hit := range hits["hits"].(map[string]interface{})["hits"].([]interface{}) {
-		source := hit.(map[string]interface{})["_source"]
-		if val, ok := source.(map[string]interface{})["error"]; ok {
-			if msg, exists := val.(map[string]interface{})["message"]; exists {
-				log.WithFields(log.Fields{
-					"ID":            hit.(map[string]interface{})["_id"],
-					"error.message": msg,
-				}).Error("Error Hit found")
-
-				return fmt.Errorf(
-					"There are errors for %s-%s on Metricbeat index",
-					q.EventModule, q.ServiceVersion)
-			}
-		}
-	}
-
-	return nil
-}
-
 // attempts could be redefined in the OP_QUERY_MAX_ATTEMPTS environment variable
 func retrySearch(stackName string, indexName string, esQuery map[string]interface{}, attempts int) (searchResult, error) {
 	if attempts == 0 {
