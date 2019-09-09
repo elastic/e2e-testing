@@ -1,3 +1,5 @@
+[![Build Status](https://apm-ci.elastic.co/buildStatus/icon?job=beats%2Fpoc-metricbeat-tests-poc-mbp%2Fmaster)](https://apm-ci.elastic.co/job/beats/job/poc-metricbeat-tests-poc-mbp/job/master/)
+
 # Environment Provisioner for Observability
 
 ## How to run tests
