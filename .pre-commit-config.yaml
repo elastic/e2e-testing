@@ -17,9 +17,6 @@ repos:
     -   id: go-lint
     -   id: validate-toml
     -   id: no-go-testing
-    -   id: golangci-lint
-        pass_filenames: true
-        files: '\.go$'
     -   id: go-critic
 
 -   repo: git@github.com:elastic/apm-pipeline-library
@@ -33,3 +30,14 @@ repos:
     -   id: remove-en-dashes
     -   id: check-jjbb
     -   id: check-gherkin-lint
+
+
+-   repo: local
+    hooks:
+    -   id: golangci-lint
+        name: 'golangci-lint'
+        entry: 'golangci-lint run'
+        types: [go]
+        language: 'system'
+        files: '\.go$'
+        description: "Runs `golangci-lint`, requires https://github.com/golangci/golangci-lint"
