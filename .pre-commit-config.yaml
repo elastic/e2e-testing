@@ -31,7 +31,6 @@ repos:
     -   id: check-jjbb
     -   id: check-gherkin-lint
 
-
 -   repo: local
     hooks:
     -   id: golangci-lint
