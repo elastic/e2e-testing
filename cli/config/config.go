@@ -238,6 +238,7 @@ func checkInstalledSoftware() {
 
 // Init creates this tool workspace under user's home, in a hidden directory named ".op"
 func Init() {
+
 	configureLogger()
 
 	checkInstalledSoftware()
