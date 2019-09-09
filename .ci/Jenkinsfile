@@ -60,7 +60,17 @@ pipeline {
                   unstash 'source'
                   dir(BASE_DIR){
                     sh script: """.ci/scripts/install-dependencies.sh "${GO_VERSION}" """, label: 'Install dependencies'
-                    preCommit(commit: "${GIT_BASE_COMMIT}", junit: true)
+                    sh """
+                      curl https://pre-commit.com/install-local.py | python -
+                      echo 'debug'
+                      env | sort
+                      pwd
+                      ls -ltrah
+                      echo 'List files which changed'
+                      git diff-tree --no-commit-id --name-only -r ${GIT_BASE_COMMIT} | xargs ls -l || true
+                      echo 'Run pre-commit'
+                      git diff-tree --no-commit-id --name-only -r ${GIT_BASE_COMMIT} | xargs pre-commit run --files
+                    """
                   }
                 }
               }
