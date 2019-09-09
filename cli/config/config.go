@@ -233,6 +233,7 @@ func checkInstalledSoftware() {
 	for _, binary := range binaries {
 		which(binary)
 	}
+
 }
 
 // Init creates this tool workspace under user's home, in a hidden directory named ".op"
