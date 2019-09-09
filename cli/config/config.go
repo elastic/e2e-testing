@@ -245,6 +245,7 @@ func Init() {
 	InitConfig()
 
 	docker.GetDevNetwork()
+
 }
 
 // InitConfig initialises configuration
