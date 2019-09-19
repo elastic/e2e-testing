@@ -58,6 +58,40 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	return err
 }
 
+func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, serviceType string) error {
+	service := mts.Service
+
+	serviceType = strings.ToLower(serviceType)
+
+	s, err := RunMetricbeatService(version, service)
+	if err == nil {
+		mts.Metricbeat = s
+	}
+
+	query = ElasticsearchQuery{
+		EventModule:    serviceType,
+		ServiceVersion: service.GetVersion(),
+	}
+
+	return err
+}
+
+func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(
+	serviceType string, serviceVersion string, metricbeatVersion string) error {
+
+	serviceType = strings.ToLower(serviceType)
+	service := serviceManager.Build(serviceType, serviceVersion, true)
+
+	service.SetNetworkAlias(serviceType + "_" + serviceVersion + "-metricbeat_" + metricbeatVersion)
+
+	err := serviceManager.Run(service)
+	if err == nil {
+		mts.Service = service
+	}
+
+	return err
+}
+
 type ElasticsearchQuery struct {
 	EventModule    string
 	ServiceVersion string
