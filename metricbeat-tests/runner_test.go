@@ -19,7 +19,6 @@ import (
 
 var opt = godog.Options{Output: colors.Colored(os.Stdout)}
 
-var metricbeatService services.Service
 var query ElasticsearchQuery
 var serviceManager services.ServiceManager
 
@@ -34,6 +33,64 @@ var queryMetricbeatFetchTimeout = 20
 // queryRetryTimeout Number of seconds between elasticsearch retry queries.
 // It can be overriden by OP_RETRY_TIMEOUT env var
 var queryRetryTimeout = 3
+
+// MetricbeatTestSuite represents a test suite, holding references to both metricbeat ant
+// the service to be monitored
+type MetricbeatTestSuite struct {
+	Metricbeat services.Service // the metricbeat instance for the test
+	Service    services.Service // the service to be monitored by metricbeat
+}
+
+// CleanUp cleans up services in the test suite
+func (mts *MetricbeatTestSuite) CleanUp() error {
+	var err error
+
+	if mts.Service != nil {
+		log.Debugf("Stopping service %s", mts.Service.GetName())
+		err = serviceManager.Stop(mts.Service)
+	}
+
+	if mts.Metricbeat != nil {
+		log.Debugf("Stopping metricbeat %s", mts.Metricbeat.GetVersion())
+		err = serviceManager.Stop(mts.Metricbeat)
+	}
+
+	return err
+}
+
+func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, serviceType string) error {
+	service := mts.Service
+
+	serviceType = strings.ToLower(serviceType)
+
+	s, err := RunMetricbeatService(version, service)
+	if err == nil {
+		mts.Metricbeat = s
+	}
+
+	query = ElasticsearchQuery{
+		EventModule:    serviceType,
+		ServiceVersion: service.GetVersion(),
+	}
+
+	return err
+}
+
+func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(
+	serviceType string, serviceVersion string, metricbeatVersion string) error {
+
+	serviceType = strings.ToLower(serviceType)
+	service := serviceManager.Build(serviceType, serviceVersion, true)
+
+	service.SetNetworkAlias(serviceType + "_" + serviceVersion + "-metricbeat_" + metricbeatVersion)
+
+	err := serviceManager.Run(service)
+	if err == nil {
+		mts.Service = service
+	}
+
+	return err
+}
 
 type ElasticsearchQuery struct {
 	EventModule    string
@@ -67,54 +124,12 @@ func TestMain(m *testing.M) {
 	flag.Parse()
 	opt.Paths = flag.Args()
 
-	status := godog.RunWithOptions("godog", func(s *godog.Suite) {
-		s.BeforeScenario(func(interface{}) {
-			log.Debug("Before scenario...")
-		})
-
-		s.AfterScenario(func(interface{}, error) {
-			log.Debug("After scenario...")
-		})
-	}, opt)
+	status := godog.RunWithOptions("godog", func(s *godog.Suite) {}, opt)
 
 	if st := m.Run(); st > status {
 		status = st
 	}
 	os.Exit(status)
-}
-
-// assertHitsArePresent returns an error if no hits are present
-func assertHitsArePresent(hits map[string]interface{}, q ElasticsearchQuery) error {
-	hitsCount := len(hits["hits"].(map[string]interface{})["hits"].([]interface{}))
-	if hitsCount == 0 {
-		return fmt.Errorf(
-			"There aren't documents for %s-%s on Metricbeat index",
-			q.EventModule, q.ServiceVersion)
-	}
-
-	return nil
-}
-
-// assertHitsDoNotContainErrors returns an error if any of the returned entries contains
-// an "error.message" field in the "_source" document
-func assertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQuery) error {
-	for _, hit := range hits["hits"].(map[string]interface{})["hits"].([]interface{}) {
-		source := hit.(map[string]interface{})["_source"]
-		if val, ok := source.(map[string]interface{})["error"]; ok {
-			if msg, exists := val.(map[string]interface{})["message"]; exists {
-				log.WithFields(log.Fields{
-					"ID":            hit.(map[string]interface{})["_id"],
-					"error.message": msg,
-				}).Error("Error Hit found")
-
-				return fmt.Errorf(
-					"There are errors for %s-%s on Metricbeat index",
-					q.EventModule, q.ServiceVersion)
-			}
-		}
-	}
-
-	return nil
 }
 
 // attempts could be redefined in the OP_QUERY_MAX_ATTEMPTS environment variable
@@ -169,7 +184,7 @@ func thereAreNoErrorsInTheIndex(index string) error {
 	// ILM is configured on metricbeat side, then we can use an asterisk
 	// for the index name: each scenario outline will be namespaced, so
 	// no collitions between different test cases should appear
-	esIndexName += "-*"
+	esIndexName += "-test*"
 
 	esQuery := map[string]interface{}{
 		"query": map[string]interface{}{

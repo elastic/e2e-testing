@@ -117,25 +117,33 @@ package main
 
 import (
 	"github.com/DATA-DOG/godog"
-	"github.com/elastic/metricbeat-tests-poc/cli/services"
+	log "github.com/sirupsen/logrus"
 )
 
 // global variable to be reused across methods in this file
-var redisService services.Service
+// the MetricbeatTestSuite holds a reference to both
+// metricbeat and the service to monitor
+var redisTestSuite MetricbeatTestSuite
 
 // Matches the 'Given Redis "<redis_version>" is running for metricbeat "<metricbeat_version>"' clause
 // There are two input parameters, as there are two words in double quotes.
 // As the variables are using <>, they are dynamic and populated from the Examples table
 // the function must return error, so that the test fails if the redis service is not run
 func redisIsRunningForMetricbeat(redisVersion string, metricbeatVersion string) error {
-    // build the object holding the configuration to run a Docker service for the integration module
-	redisService = serviceManager.Build("redis", redisVersion, false)
+  // build the object holding the configuration to run a Docker service for the integration module
+  redisService := serviceManager.Build("redis", redisVersion, true)
 
-    // network alias to enable network discovery: metricbeat will use this as the service to monitor
-	redisService.SetNetworkAlias("redis_" + redisVersion + "-metricbeat_" + metricbeatVersion)
+  // network alias to enable network discovery: metricbeat will use this as the service to monitor
+  redisService.SetNetworkAlias("redis_" + redisVersion + "-metricbeat_" + metricbeatVersion)
 
-    // runs the service to mmonitor
-	return serviceManager.Run(redisService)
+  // runs the service to mmonitor
+  err := serviceManager.Run(redisService)
+  if err == nil {
+    // populate test suite object if OK
+    redisTestSuite.Service = redisService    
+  }
+
+	return err
 }
 
 // Matches the 'And metricbeat "<metricbeat_version>" is installed and configured for Redis module'
@@ -143,19 +151,23 @@ func redisIsRunningForMetricbeat(redisVersion string, metricbeatVersion string) 
 // The function must return error, so that the test fails if metricbeat configured for the
 // redis service is not run
 func metricbeatIsInstalledAndConfiguredForRedisModule(metricbeatVersion string) error {
-	s, err := RunMetricbeatService(metricbeatVersion, redisService)
+  // get the reference from the test suite object
+  redisService := redisTestSuite.Service
 
+  s, err := RunMetricbeatService(metricbeatVersion, redisService)
+  if err == nil {
     // this global variable is defined at test runner level
     // we populate it here so that it can be used in reusable steps/functions
-	metricbeatService = s
+    redisTestSuite.Metricbeat = s
+  }
 
-    // each module must contribute some specific fields for querying elasticsearch
-	query = ElasticsearchQuery{
-		EventModule:    "redis",                     // event.module field
-		ServiceVersion: redisService.GetVersion(),   // service.version field
-	}
+  // each module must contribute some specific fields for querying elasticsearch
+  query = ElasticsearchQuery{
+    EventModule:    "redis",                     // event.module field
+    ServiceVersion: redisService.GetVersion(),   // service.version field
+  }
 
-	return err
+  return err
 }
 
 // Here it happens the magic!
@@ -164,11 +176,20 @@ func metricbeatIsInstalledAndConfiguredForRedisModule(metricbeatVersion string) 
 // complain that no implemetation has been found, writing in console the signatures missing
 // (basically the above functions but empty, and exactly the below context suite)
 func RedisFeatureContext(s *godog.Suite) {
-	s.Step(`^Redis "([^"]*)" is running for metricbeat "([^"]*)"$`, redisIsRunningForMetricbeat)
-    s.Step(`^metricbeat "([^"]*)" is installed and configured for Redis module$`, metricbeatIsInstalledAndConfiguredForRedisModule)
-    // this last function is common a to all the modules
-    // so it will be declared at framework/test runner level (see runner_test.go)
-	s.Step(`^there are no errors in the "([^"]*)" index$`, thereAreNoErrorsInTheIndex)
+  s.Step(`^Redis "([^"]*)" is running for metricbeat "([^"]*)"$`, redisIsRunningForMetricbeat)
+  s.Step(`^metricbeat "([^"]*)" is installed and configured for Redis module$`, metricbeatIsInstalledAndConfiguredForRedisModule)
+  // this last function is common a to all the modules
+  // so it will be declared at framework/test runner level (see runner_test.go)
+  s.Step(`^there are no errors in the "([^"]*)" index$`, thereAreNoErrorsInTheIndex)
+
+  s.BeforeScenario(func(interface{}) {
+    log.Debug("Before scenario...")
+    redisTestSuite = MetricbeatTestSuite{}
+  })
+  s.AfterScenario(func(interface{}, error) {
+    log.Debug("After scenario...")
+    redisTestSuite.CleanUp()
+  })
 }
 
 ```
