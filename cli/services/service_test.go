@@ -10,7 +10,7 @@ import (
 	services "github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
-var serviceManager services.ServiceManager = services.NewServiceManager()
+var serviceManager = services.NewServiceManager()
 
 func TestMain(m *testing.M) {
 	config.Init()
