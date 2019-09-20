@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -10,12 +11,17 @@ import (
 	"reflect"
 	"strings"
 
+	packr "github.com/gobuffalo/packr/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
 
 	"github.com/elastic/metricbeat-tests-poc/cli/docker"
 )
+
+// OpComposeBox the tool's static files where we will embed default Docker compose
+// files representing the services and the stacks
+var OpComposeBox *packr.Box
 
 // Op the tool's configuration, read from tool's workspace
 var Op *OpConfig
@@ -293,6 +299,8 @@ func newConfig(workspace string) {
 		return
 	}
 
+	OpComposeBox = packComposeFiles()
+
 	opConfig, err := readConfig(workspace)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -454,4 +462,53 @@ func which(software string) {
 		"software": software,
 		"path":     path,
 	}).Debug("Binary is present")
+}
+
+func packComposeFiles() *packr.Box {
+	return packr.New("Compose Files", "./compose")
+}
+
+// GetPackedCompose returns the path of the compose file, looking up the
+// static resources already packaged in the binary
+func GetPackedCompose(isStack bool, composeName string) (string, error) {
+	composeFileName := composeName + ".yml"
+	serviceType := "services"
+	if isStack {
+		serviceType = "stacks"
+	}
+
+	tmp, err := ioutil.TempDir("", "op")
+	if err != nil {
+		log.WithFields(log.Fields{
+			"compose": composeName,
+			"error":   err,
+			"isStack": isStack,
+			"type":    serviceType,
+		}).Warn("Cannot create temporary directory. Trying locally")
+
+		tmp = "."
+	}
+
+	composeBytes, _ := OpComposeBox.Find(path.Join(serviceType, composeFileName))
+
+	composeFilePath := path.Join(tmp, composeFileName)
+	err = ioutil.WriteFile(composeFilePath, composeBytes, 0755)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"composeFilePath": composeFilePath,
+			"error":           err,
+			"isStack":         isStack,
+			"type":            serviceType,
+		}).Error("Cannot write file.")
+
+		return composeFilePath, err
+	}
+
+	log.WithFields(log.Fields{
+		"composeFilePath": composeFilePath,
+		"isStack":         isStack,
+		"type":            serviceType,
+	}).Debug("Temporary compose file generated.")
+
+	return composeFilePath, nil
 }

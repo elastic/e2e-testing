@@ -3,11 +3,9 @@ package cmd
 import (
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
-
-	"github.com/imdario/mergo"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/spf13/cobra"
-	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 var versionToRun string
@@ -68,42 +66,11 @@ func buildRunStackCommand(key string, stack config.Stack) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
-			availableServices := config.AvailableServices()
-			if len(stack.Services) == 0 {
+			err := serviceManager.RunCompose(true, key)
+			if err != nil {
 				log.WithFields(log.Fields{
-					"command": "run",
-					"stack":   key,
-				}).Fatal("The Stack does not contain services. Please check configuration files")
-			}
-
-			servicesToRun := map[string]services.Service{}
-
-			for k, srv := range stack.Services {
-				originalSrv := availableServices[k]
-				if !srv.Equals(originalSrv) {
-					mergo.Merge(&srv, originalSrv)
-				}
-
-				srv.Name = srv.Name + "-" + key
-				srv.Daemon = true
-				srv.Labels = map[string]string{
-					"stack": stack.Name,
-				}
-				s := serviceManager.BuildFromConfig(srv)
-
-				if k == "kibana" {
-					s.SetWaitFor(wait.ForLog("http server running"))
-				}
-
-				if k == "elasticsearch" {
-					serviceManager.Run(s)
-				} else {
-					servicesToRun[k] = s
-				}
-			}
-
-			for _, srv := range servicesToRun {
-				serviceManager.Run(srv)
+					"stack": key,
+				}).Error("Could not run the stack.")
 			}
 		},
 	}

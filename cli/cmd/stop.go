@@ -3,9 +3,8 @@ package cmd
 import (
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
-
-	"github.com/imdario/mergo"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/spf13/cobra"
 )
 
@@ -67,24 +66,11 @@ func buildStopStackCommand(key string, stack config.Stack) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
-			services := config.AvailableServices()
-			if len(stack.Services) == 0 {
+			err := serviceManager.StopCompose(true, key)
+			if err != nil {
 				log.WithFields(log.Fields{
-					"command": "stop",
-					"stack":   key,
-				}).Fatal("The Stack does not contain services. Please check configuration files")
-			}
-
-			for k, srv := range stack.Services {
-				originalSrv := services[k]
-				if !srv.Equals(originalSrv) {
-					mergo.Merge(&originalSrv, srv)
-				}
-
-				originalSrv.Name = originalSrv.Name + "-" + key
-				originalSrv.Daemon = true
-				s := serviceManager.BuildFromConfig(originalSrv)
-				serviceManager.Stop(s)
+					"stack": key,
+				}).Error("Could not stop the stack.")
 			}
 		},
 	}
