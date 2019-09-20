@@ -51,7 +51,7 @@ func buildStopServiceCommand(srv string) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
-			err := serviceManager.StopCompose(false, srv)
+			err := serviceManager.StopCompose(false, []string{srv})
 			if err != nil {
 				log.WithFields(log.Fields{
 					"service": srv,
@@ -69,7 +69,7 @@ func buildStopStackCommand(key string, stack config.Stack) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
-			err := serviceManager.StopCompose(true, key)
+			err := serviceManager.StopCompose(true, []string{key})
 			if err != nil {
 				log.WithFields(log.Fields{
 					"stack": key,
