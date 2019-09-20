@@ -12,13 +12,12 @@ require (
 	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/imdario/mergo v0.3.7
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/pkg/errors v0.8.1 // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/afero v1.1.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.3.0
-	github.com/testcontainers/testcontainers-go v0.0.6
+	github.com/testcontainers/testcontainers-go v0.0.8
 	golang.org/x/net v0.0.0-20190628185345-da137c7871d7 // indirect
 	golang.org/x/sys v0.0.0-20190712062909-fae7ac547cb7 // indirect
 	google.golang.org/appengine v1.6.1 // indirect
