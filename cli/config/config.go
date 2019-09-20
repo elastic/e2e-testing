@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bytes"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -13,8 +12,6 @@ import (
 
 	packr "github.com/gobuffalo/packr/v2"
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/afero"
-	"github.com/spf13/viper"
 
 	"github.com/elastic/metricbeat-tests-poc/cli/docker"
 )
@@ -273,60 +270,6 @@ func newConfig(workspace string) {
 	OpComposeBox = packComposeFiles(Op)
 }
 
-func checkConfigFile(workspace string) {
-	found, err := exists(path.Join(workspace, fileName))
-	if found && err == nil {
-		return
-	}
-	err = os.MkdirAll(workspace, 0755)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"path":  workspace,
-		}).Fatal("Cannot create workdir for 'op'")
-	}
-
-	log.WithFields(log.Fields{
-		"path": workspace,
-	}).Info("'op' workdir created.")
-
-	log.WithFields(log.Fields{
-		"file": fileName,
-		"path": workspace,
-	}).Debug("Creating configuration file")
-
-	configFilePath := filepath.Join(workspace, fileName)
-	os.Create(configFilePath)
-
-	v := viper.New()
-	v.SetDefault("services", servicesDefaults)
-	v.SetDefault("stacks", stacksDefaults)
-
-	v.SetConfigType("yaml")
-	v.SetConfigName("config")
-	v.AddConfigPath(workspace)
-
-	err = v.WriteConfig()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"path":  configFilePath,
-		}).Fatal("Cannot save default configuration file for 'op'")
-	}
-
-	log.Info("Config file initialised with default values.")
-}
-
-func checkServices(cfg OpConfig) {
-	for k := range servicesDefaults {
-		if _, exists := cfg.Services[k]; !exists {
-			s := Service{}
-			viper.UnmarshalKey("services."+k, &s)
-			cfg.Services[k] = s
-		}
-	}
-}
-
 func configureLogger() {
 	includeTimestamp := os.Getenv("OP_LOG_INCLUDE_TIMESTAMP")
 	fullTimestamp := (strings.ToUpper(includeTimestamp) == "TRUE")
@@ -362,41 +305,6 @@ func exists(path string) (bool, error) {
 		return false, nil
 	}
 	return true, err
-}
-
-// read user-defined configuration located at file path, which will be merged
-// with current Viper's configuration
-func mergeConfigFiles(filePath string) {
-	fs := afero.NewOsFs()
-	f, _ := afero.ReadFile(fs, filePath)
-	if f != nil {
-		viper.MergeConfig(bytes.NewReader(f))
-	}
-}
-
-func readConfig(workspace string) (OpConfig, error) {
-	checkConfigFile(workspace)
-
-	viper.SetConfigType("yml")
-	viper.SetConfigName("config")
-	viper.AddConfigPath(workspace)
-	viper.ReadInConfig()
-
-	// read user-defined configuration at execution path
-	mergeConfigFiles(fileName)
-
-	envConfigPath := os.Getenv("OP_CONFIG_PATH")
-	if envConfigPath != "" {
-		// read user-defined configuration from environment variable
-		mergeConfigFiles(path.Join(envConfigPath, fileName))
-	}
-
-	cfg := OpConfig{}
-	viper.Unmarshal(&cfg)
-
-	checkServices(cfg)
-
-	return cfg, nil
 }
 
 // which checks if software is installed
