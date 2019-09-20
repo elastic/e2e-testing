@@ -12,7 +12,7 @@ import (
 
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
-	RunCompose(bool, string) error
+	RunCompose(bool, string, map[string]string) error
 	StopCompose(bool, string) error
 }
 
@@ -26,7 +26,9 @@ func NewServiceManager() ServiceManager {
 }
 
 // RunCompose runs a docker compose by its name
-func (sm *DockerServiceManager) RunCompose(isStack bool, composeName string) error {
+func (sm *DockerServiceManager) RunCompose(
+	isStack bool, composeName string, env map[string]string) error {
+
 	composeFilePath, err := config.GetPackedCompose(isStack, composeName)
 	if err != nil {
 		return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
@@ -34,7 +36,10 @@ func (sm *DockerServiceManager) RunCompose(isStack bool, composeName string) err
 	defer os.Remove(composeFilePath)
 
 	compose := tc.NewLocalDockerCompose([]string{composeFilePath}, composeName)
-	execError := compose.WithCommand([]string{"up", "-d"}).Invoke()
+	execError := compose.
+		WithCommand([]string{"up", "-d"}).
+		WithEnv(env).
+		Invoke()
 	err = execError.Error
 	if err != nil {
 		return fmt.Errorf("Could not run compose file: %s - %v", composeFilePath, err)
