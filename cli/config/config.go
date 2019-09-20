@@ -185,48 +185,13 @@ func (s Service) Equals(o Service) bool {
 	return reflect.DeepEqual(s, o)
 }
 
-var stacksDefaults = map[string]Stack{
-	"apm-server": {
-		Name: "APM Server",
-		Services: map[string]Service{
-			"elasticsearch": Service{},
-			"kibana":        Service{},
-			"apm-server":    Service{},
-		},
-	},
-	"apm-agents": {
-		Name: "APM Agents",
-		Services: map[string]Service{
-			"elasticsearch": Service{},
-			"kibana":        Service{},
-			"apm-server":    Service{},
-			"opbeans-java":  Service{},
-			"opbeans-go":    Service{},
-		},
-	},
-	"metricbeat": {
-		Name: "Metricbeat Integrations",
-		Services: map[string]Service{
-			"elasticsearch": Service{},
-			"kibana":        Service{},
-		},
-	},
-	"observability": {
-		Name: "Observability",
-		Services: map[string]Service{
-			"elasticsearch": Service{},
-			"kibana":        Service{},
-			"apm-server":    Service{},
-			"opbeans-java":  Service{},
-			"opbeans-go":    Service{},
-		},
-	},
-}
+var stacksDefaults = map[string]Stack{}
 
 // Stack represents the configuration for a stack, which is an aggregation of services
+// represented by a Docker Compose
 type Stack struct {
-	Name     string             `mapstructure:"Name"`
-	Services map[string]Service `mapstructure:"Services"`
+	Name string `mapstructure:"Name"`
+	Path string `mapstructure:"Path"`
 }
 
 // checkInstalledSoftware checks that the required software is present
@@ -299,16 +264,13 @@ func newConfig(workspace string) {
 		return
 	}
 
-	OpComposeBox = packComposeFiles()
-
-	opConfig, err := readConfig(workspace)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Fatal("Error reading configuration")
+	opConfig := OpConfig{
+		Services: map[string]Service{},
+		Stacks:   map[string]Stack{},
 	}
 
 	Op = &opConfig
+	OpComposeBox = packComposeFiles(Op)
 }
 
 func checkConfigFile(workspace string) {
@@ -361,16 +323,6 @@ func checkServices(cfg OpConfig) {
 			s := Service{}
 			viper.UnmarshalKey("services."+k, &s)
 			cfg.Services[k] = s
-		}
-	}
-}
-
-func checkStacks(cfg OpConfig) {
-	for k := range stacksDefaults {
-		if _, exists := cfg.Stacks[k]; !exists {
-			s := Stack{}
-			viper.UnmarshalKey("stacks."+k, &s)
-			cfg.Stacks[k] = s
 		}
 	}
 }
@@ -443,7 +395,6 @@ func readConfig(workspace string) (OpConfig, error) {
 	viper.Unmarshal(&cfg)
 
 	checkServices(cfg)
-	checkStacks(cfg)
 
 	return cfg, nil
 }
@@ -464,8 +415,27 @@ func which(software string) {
 	}).Debug("Binary is present")
 }
 
-func packComposeFiles() *packr.Box {
-	return packr.New("Compose Files", "./compose")
+func packComposeFiles(op *OpConfig) *packr.Box {
+	box := packr.New("Compose Files", "./compose")
+
+	box.Walk(func(boxedPath string, f packr.File) error {
+		log.WithFields(log.Fields{
+			"path": boxedPath,
+		}).Debug("Boxed file")
+
+		composeType, composeNameWithExtension := path.Split(boxedPath)
+		composeName := strings.TrimSuffix(composeNameWithExtension, filepath.Ext(composeNameWithExtension))
+		if composeType == "stacks/" {
+			op.Stacks[composeName] = Stack{
+				Name: composeName,
+				Path: boxedPath,
+			}
+		}
+
+		return nil
+	})
+
+	return box
 }
 
 // GetPackedCompose returns the path of the compose file, looking up the

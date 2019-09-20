@@ -124,19 +124,6 @@ func TestConfigureLoggerWithWrongLogLevel(t *testing.T) {
 	checkLoggerWithLogLevel(t, "FOO_BAR")
 }
 
-func TestDefaultConfigFileContainsServicesAndStacks(t *testing.T) {
-	defer filet.CleanUp(t)
-
-	tmpDir := filet.TmpDir(t, "")
-
-	workspace := path.Join(tmpDir, ".op")
-
-	cfg, _ := readConfig(workspace)
-
-	assert.True(t, (cfg.Services != nil))
-	assert.True(t, (cfg.Stacks != nil))
-}
-
 func TestMergeConfigurationFromAll(t *testing.T) {
 	defer filet.CleanUp(t)
 
