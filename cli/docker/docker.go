@@ -5,26 +5,14 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 )
 
 var instance *client.Client
 
-const networkName = "elastic-dev-network"
-
-// ConnectContainerToDevNetwork connects a container to the Dev Network
-func ConnectContainerToDevNetwork(containerID string, aliases ...string) error {
-	dockerClient := getDockerClient()
-
-	ctx := context.Background()
-
-	return dockerClient.NetworkConnect(
-		ctx, networkName, containerID, &network.EndpointSettings{
-			Aliases: aliases,
-		})
-}
+// OPNetworkName name of the network used by the tool
+const OPNetworkName = "elastic-dev-network"
 
 // ExecCommandIntoContainer executes a command, as a user, into a container, in a detach state
 func ExecCommandIntoContainer(ctx context.Context, containerName string, user string, cmd []string, detach bool) error {
@@ -87,12 +75,12 @@ func GetDevNetwork() (types.NetworkResource, error) {
 
 	ctx := context.Background()
 
-	networkResource, err := dockerClient.NetworkInspect(ctx, networkName, types.NetworkInspectOptions{
+	networkResource, err := dockerClient.NetworkInspect(ctx, OPNetworkName, types.NetworkInspectOptions{
 		Verbose: true,
 	})
 	if err != nil {
 		log.WithFields(log.Fields{
-			"network": networkName,
+			"network": OPNetworkName,
 		}).Warn("Dev Network not found! Creating it now.")
 
 		initDevNetwork()
@@ -166,15 +154,15 @@ func RemoveDevNetwork() error {
 	ctx := context.Background()
 
 	log.WithFields(log.Fields{
-		"network": networkName,
+		"network": OPNetworkName,
 	}).Debug("Removing Dev Network...")
 
-	if err := dockerClient.NetworkRemove(ctx, networkName); err != nil {
+	if err := dockerClient.NetworkRemove(ctx, OPNetworkName); err != nil {
 		return err
 	}
 
 	log.WithFields(log.Fields{
-		"network": networkName,
+		"network": OPNetworkName,
 	}).Debug("Dev Network has been removed")
 
 	return nil
@@ -196,16 +184,16 @@ func initDevNetwork() types.NetworkCreateResponse {
 		},
 	}
 
-	response, err := dockerClient.NetworkCreate(ctx, networkName, nc)
+	response, err := dockerClient.NetworkCreate(ctx, OPNetworkName, nc)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
-			"network": networkName,
+			"network": OPNetworkName,
 		}).Fatal("Cannot create Docker Dev Network, which is necessary")
 	}
 
 	log.WithFields(log.Fields{
-		"network": networkName,
+		"network": OPNetworkName,
 		"id":      response.ID,
 	}).Debug("Dev Network has been created")
 

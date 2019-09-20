@@ -30,7 +30,7 @@ type Service interface {
 	SetAsDaemon(bool)
 	SetBindMounts(map[string]string)
 	SetCleanUp(func(context.Context) error)
-	SetCmd(string)
+	SetCmd([]string)
 	SetContainerName(string)
 	SetEnv(map[string]string)
 	SetLabels(map[string]string)
@@ -42,7 +42,7 @@ type Service interface {
 // DockerService represents a Docker service to be run
 type DockerService struct {
 	config.Service
-	Cmd         string
+	Cmd         []string
 	CleanUpFunc func(context.Context) error // function to execute when removing the container
 	WaitFor     wait.Strategy
 }
@@ -111,7 +111,7 @@ func (s *DockerService) SetAsDaemon(asDaemon bool) {
 }
 
 // SetCmd set the command to be executed on service startup
-func (s *DockerService) SetCmd(cmd string) {
+func (s *DockerService) SetCmd(cmd []string) {
 	s.Cmd = cmd
 }
 
@@ -271,32 +271,36 @@ func (s *DockerService) Run() (testcontainers.Container, error) {
 		ExposedPorts: exposedPorts,
 		Labels:       s.Labels,
 		Name:         s.ContainerName,
-		SkipReaper:   s.Daemon,
-		WaitingFor:   s.WaitFor,
+		Networks:     []string{docker.OPNetworkName},
+		NetworkAliases: map[string][]string{
+			docker.OPNetworkName: []string{s.GetNetworkAlias()},
+		},
+		SkipReaper: s.Daemon,
+		WaitingFor: s.WaitFor,
 	}
 
 	service, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
-		Started:          false,
+		Started:          true,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	json, err := s.Inspect()
-	if err != nil {
-		return nil, err
-	}
-
-	docker.ConnectContainerToDevNetwork(json.ContainerJSONBase.ID, s.GetNetworkAlias())
 	log.WithFields(log.Fields{
-		"containerID":  json.ContainerJSONBase.ID,
+		"containerID":  s.GetContainerName(),
 		"networkAlias": s.GetNetworkAlias(),
 	}).Debug("Service attached to Dev network")
 
-	service.Start(ctx)
+	if log.IsLevelEnabled(log.DebugLevel) {
+		json, err := s.Inspect()
+		if err != nil {
+			return nil, err
+		}
 
-	log.WithFields(s.toLogFields(json)).Debug("Service information")
+		log.WithFields(s.toLogFields(json)).Debug("Service information")
+	}
+
 	log.WithFields(log.Fields{
 		"containerName": s.GetContainerName(),
 		"service":       s.GetName(),

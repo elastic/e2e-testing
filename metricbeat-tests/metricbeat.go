@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 
@@ -48,7 +47,7 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 	}
 
 	service.SetBindMounts(bindMounts)
-	service.SetCmd(strings.Join(setupCommands, " "))
+	service.SetCmd(setupCommands)
 	service.SetEnv(env)
 	service.SetAsDaemon(true)
 	service.SetLabels(labels)
