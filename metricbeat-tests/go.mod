@@ -84,3 +84,5 @@ require (
 	mvdan.cc/unparam v0.0.0-20190720180237-d51796306d8f // indirect
 	sourcegraph.com/sqs/pbtypes v1.0.0 // indirect
 )
+
+replace github.com/testcontainers/testcontainers-go v0.0.8 => github.com/mdelapenya/testcontainers-go v0.0.9-compose

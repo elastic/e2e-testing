@@ -26,3 +26,5 @@ require (
 )
 
 replace github.com/spf13/viper v1.3.2 => github.com/mdelapenya/viper v1.4.1
+
+replace github.com/testcontainers/testcontainers-go v0.0.8 => github.com/mdelapenya/testcontainers-go v0.0.9-compose
