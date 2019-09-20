@@ -1,6 +1,6 @@
 version: '3'
 services:
   apache:
-    image: "httpd:${imageTag}"
+    image: "httpd:${apacheTag}"
     ports:
       - "80:80"

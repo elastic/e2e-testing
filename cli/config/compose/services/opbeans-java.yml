@@ -7,6 +7,6 @@ services:
       - ELASTIC_APM_SERVER_URL=http://localhost:8200
       - ELASTIC_APM_SERVICE_NAME=opbeans-java
       - OPBEANS_SERVER_PORT=8000
-    image: "opbeans/opbeans-java:${imageTag}"
+    image: "opbeans/opbeans-java:${opbeansJavaTag}"
     ports:
       - "8000:8000"

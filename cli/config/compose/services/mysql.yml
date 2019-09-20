@@ -3,6 +3,6 @@ services:
   mysql:
     environment:
       - MYSQL_ROOT_PASSWORD=secret
-    image: "mysql:${imageTag}"
+    image: "mysql:${mysqlTag}"
     ports:
       - "3306:3306"

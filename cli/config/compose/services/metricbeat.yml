@@ -1,4 +1,4 @@
 version: '3'
 services:
   metricbeat:
-    image: "docker.elastic.co/beats/metricbeat:${imageTag}"
+    image: "docker.elastic.co/beats/metricbeat:${metricbeatTag}"

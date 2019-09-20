@@ -9,6 +9,6 @@ services:
       - ELASTIC_APM_LOG_FILE=stderr
       - ELASTIC_APM_LOG_LEVEL=debug
       - OPBEANS_SERVER_PORT=8000
-    image: "opbeans/opbeans-go:${imageTag}"
+    image: "opbeans/opbeans-go:${opbeansGoTag}"
     ports:
       - "8000:8000"

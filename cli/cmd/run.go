@@ -52,7 +52,7 @@ func buildRunServiceCommand(srv string) *cobra.Command {
 			serviceManager := services.NewServiceManager()
 
 			env := map[string]string{
-				"imageTag": versionToRun,
+				srv + "Tag": versionToRun,
 			}
 
 			err := serviceManager.RunCompose(false, []string{srv}, env)
