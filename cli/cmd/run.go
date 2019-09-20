@@ -15,10 +15,10 @@ func init() {
 
 	rootCmd.AddCommand(runCmd)
 
-	for k, srv := range config.AvailableServices() {
-		serviceSubcommand := buildRunServiceCommand(k, srv)
+	for k := range config.AvailableServices() {
+		serviceSubcommand := buildRunServiceCommand(k)
 
-		serviceSubcommand.Flags().StringVarP(&versionToRun, "version", "v", srv.Version, "Sets the image version to run")
+		serviceSubcommand.Flags().StringVarP(&versionToRun, "version", "v", "latest", "Sets the image version to run")
 
 		runServiceCmd.AddCommand(serviceSubcommand)
 	}
@@ -43,7 +43,7 @@ var runCmd = &cobra.Command{
 	},
 }
 
-func buildRunServiceCommand(srv string, service config.Service) *cobra.Command {
+func buildRunServiceCommand(srv string) *cobra.Command {
 	return &cobra.Command{
 		Use:   srv,
 		Short: `Runs a ` + srv + ` service`,
@@ -51,9 +51,12 @@ func buildRunServiceCommand(srv string, service config.Service) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
-			s := serviceManager.Build(srv, versionToRun, true)
-
-			serviceManager.Run(s)
+			err := serviceManager.RunCompose(false, srv)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"service": srv,
+				}).Error("Could not run the service.")
+			}
 		},
 	}
 }

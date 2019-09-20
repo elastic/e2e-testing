@@ -1,0 +1,12 @@
+version: '3'
+services:
+  opbeans-java:
+    environment:
+      - ELASTIC_APM_APPLICATION_PACKAGES=co.elastic.apm.opbeans
+      - ELASTIC_APM_JS_SERVER_URL=http://localhost:8000
+      - ELASTIC_APM_SERVER_URL=http://localhost:8200
+      - ELASTIC_APM_SERVICE_NAME=opbeans-java
+      - OPBEANS_SERVER_PORT=8000
+    image: "opbeans/opbeans-java:${imageTag}"
+    ports:
+      - "8000:8000"

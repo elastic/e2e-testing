@@ -15,10 +15,10 @@ func init() {
 
 	rootCmd.AddCommand(stopCmd)
 
-	for k, srv := range config.AvailableServices() {
-		serviceSubcommand := buildStopServiceCommand(k, srv)
+	for k := range config.AvailableServices() {
+		serviceSubcommand := buildStopServiceCommand(k)
 
-		serviceSubcommand.Flags().StringVarP(&versionToStop, "version", "v", srv.Version, "Sets the image version to stop")
+		serviceSubcommand.Flags().StringVarP(&versionToStop, "version", "v", "latest", "Sets the image version to stop")
 
 		stopServiceCmd.AddCommand(serviceSubcommand)
 	}
@@ -43,7 +43,7 @@ var stopCmd = &cobra.Command{
 	},
 }
 
-func buildStopServiceCommand(srv string, service config.Service) *cobra.Command {
+func buildStopServiceCommand(srv string) *cobra.Command {
 	return &cobra.Command{
 		Use:   srv,
 		Short: `Stops a ` + srv + ` service`,
@@ -51,9 +51,12 @@ func buildStopServiceCommand(srv string, service config.Service) *cobra.Command 
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
-			s := serviceManager.Build(srv, versionToStop, true)
-
-			serviceManager.Stop(s)
+			err := serviceManager.StopCompose(false, srv)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"service": srv,
+				}).Error("Could not stop the service.")
+			}
 		},
 	}
 }

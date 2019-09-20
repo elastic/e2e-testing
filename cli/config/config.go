@@ -7,7 +7,6 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
-	"reflect"
 	"strings"
 
 	packr "github.com/gobuffalo/packr/v2"
@@ -25,161 +24,13 @@ var Op *OpConfig
 
 const fileName = "config.yml"
 
-// servicesDefaults initial service configuration that could be overwritten by
-// users on their local configuration. This configuration will be persisted in
-// the application directory as initial configuration, in the form of a YAML file
-var servicesDefaults = map[string]Service{
-	"apache": {
-		ExposedPorts: []int{80},
-		Image:        "httpd",
-		Name:         "apache",
-		NetworkAlias: "apache",
-		Version:      "2.4",
-	},
-	"apm-server": {
-		BuildBranch:     "master",
-		BuildRepository: "elastic/apm-server",
-		Env: map[string]string{
-			"apm-server.frontend.enabled":                      "true",
-			"apm-server.frontend.rate_limit":                   "100000",
-			"apm-server.host":                                  "0.0.0.0:8200",
-			"apm-server.read_timeout":                          "1m",
-			"apm-server.shutdown_timeout":                      "2m",
-			"apm-server.write_timeout":                         "1m",
-			"output.elasticsearch.enabled":                     "true",
-			"setup.elasticsearch.host":                         "http://elasticsearch:9200",
-			"setup.kibana.host":                                "http://kibana:5601",
-			"setup.template.settings.index.number_of_replicas": "0",
-			"xpack.monitoring.elasticsearch":                   "true",
-		},
-		ExposedPorts: []int{6060, 8200},
-		Image:        "docker.elastic.co/apm/apm-server",
-		Name:         "apm-server",
-		NetworkAlias: "apm-server",
-		Version:      "7.3.0",
-	},
-	"elasticsearch": {
-		BuildBranch:     "master",
-		BuildRepository: "elastic/elasticsearch",
-		ExposedPorts:    []int{9200},
-		Env: map[string]string{
-			"bootstrap.memory_lock":               "true",
-			"discovery.type":                      "single-node",
-			"ES_JAVA_OPTS":                        "-Xms512m -Xmx512m",
-			"xpack.security.enabled":              "false",
-			"xpack.monitoring.collection.enabled": "true",
-			"ELASTIC_USERNAME":                    "elastic",
-			"ELASTIC_PASSWORD":                    "p4ssw0rd",
-		},
-		Image:        "docker.elastic.co/elasticsearch/elasticsearch",
-		Name:         "elasticsearch",
-		NetworkAlias: "elasticsearch",
-		Version:      "7.3.0",
-	},
-	"kafka": {
-		ExposedPorts: []int{9092},
-		Image:        "wurstmeister/kafka",
-		Name:         "kafka",
-		NetworkAlias: "kafka",
-		Version:      "latest",
-	},
-	"kibana": {
-		BuildBranch:     "master",
-		BuildRepository: "elastic/kibana",
-		Env: map[string]string{
-			"ELASTICSEARCH_HOSTS": "http://elasticsearch:9200",
-			"ELASTIC_USERNAME":    "elastic",
-			"ELASTIC_PASSWORD":    "p4ssw0rd",
-		},
-		ExposedPorts: []int{5601},
-		Image:        "docker.elastic.co/kibana/kibana",
-		Name:         "kibana",
-		NetworkAlias: "kibana",
-		Version:      "7.3.0",
-	},
-	"metricbeat": {
-		BuildBranch:     "master",
-		BuildRepository: "elastic/beats",
-		Image:           "docker.elastic.co/beats/metricbeat",
-		Name:            "metricbeat",
-		NetworkAlias:    "metricbeat",
-		Version:         "7.3.0",
-	},
-	"mongodb": {
-		ExposedPorts: []int{27017},
-		Image:        "mongo",
-		Name:         "mongodb",
-		NetworkAlias: "mongodb",
-		Version:      "latest",
-	},
-	"mysql": {
-		Env: map[string]string{
-			"MYSQL_ROOT_PASSWORD": "secret",
-		},
-		ExposedPorts: []int{3306},
-		Image:        "mysql",
-		Name:         "mysql",
-		NetworkAlias: "mysql",
-		Version:      "latest",
-	},
-	"opbeans-go": {
-		Env: map[string]string{
-			"ELASTIC_APM_APPLICATION_PACKAGES": "co.elastic.apm.opbeans",
-			"ELASTIC_APM_JS_SERVER_URL":        "http://localhost:8000",
-			"ELASTIC_APM_SERVER_URL":           "http://apm-server:8200",
-			"ELASTIC_APM_SERVICE_NAME":         "opbeans-go",
-			"ELASTIC_APM_LOG_FILE":             "stderr",
-			"ELASTIC_APM_LOG_LEVEL":            "debug",
-			"OPBEANS_SERVER_PORT":              "8000",
-		},
-		ExposedPorts: []int{8000},
-		Image:        "opbeans/opbeans-go",
-		Name:         "opbeans-go",
-		NetworkAlias: "opbeans-go",
-		Version:      "latest",
-	},
-	"opbeans-java": {
-		Env: map[string]string{
-			"ELASTIC_APM_APPLICATION_PACKAGES": "co.elastic.apm.opbeans",
-			"ELASTIC_APM_JS_SERVER_URL":        "http://localhost:8000",
-			"ELASTIC_APM_SERVER_URL":           "http://apm-server:8200",
-			"ELASTIC_APM_SERVICE_NAME":         "opbeans-java",
-			"OPBEANS_SERVER_PORT":              "8000",
-		},
-		ExposedPorts: []int{8000},
-		Image:        "opbeans/opbeans-java",
-		Name:         "opbeans-java",
-		NetworkAlias: "opbeans-java",
-		Version:      "latest",
-	},
-	"redis": {
-		ExposedPorts: []int{6379},
-		Image:        "redis",
-		Name:         "redis",
-		NetworkAlias: "redis",
-		Version:      "latest",
-	},
-}
+// servicesDefaults initial service configuration
+var servicesDefaults = map[string]Service{}
 
 // Service represents the configuration for a service
 type Service struct {
-	BindMounts      map[string]string `mapstructure:"BindMounts"`
-	BuildBranch     string            `mapstructure:"BuildBranch"`
-	BuildRepository string            `mapstructure:"BuildRepository"`
-	ContainerName   string            `mapstructure:"ContainerName"`
-	Daemon          bool              `mapstructure:"AsDaemon"`
-	Env             map[string]string `mapstructure:"Env"`
-	ExposedPorts    []int             `mapstructure:"ExposedPorts"`
-	Image           string            `mapstructure:"Image"`
-	Labels          map[string]string `mapstructure:"Labels"`
-	Name            string            `mapstructure:"Name"`
-	NetworkAlias    string            `mapstructure:"NetworkAlias"`
-	Version         string            `mapstructure:"Version"`
-}
-
-// Equals checks than the Service is equals to other service
-func (s Service) Equals(o Service) bool {
-	return reflect.DeepEqual(s, o)
+	Name string `mapstructure:"Name"`
+	Path string `mapstructure:"Path"`
 }
 
 var stacksDefaults = map[string]Stack{}
@@ -335,6 +186,11 @@ func packComposeFiles(op *OpConfig) *packr.Box {
 		composeName := strings.TrimSuffix(composeNameWithExtension, filepath.Ext(composeNameWithExtension))
 		if composeType == "stacks/" {
 			op.Stacks[composeName] = Stack{
+				Name: composeName,
+				Path: boxedPath,
+			}
+		} else if composeType == "services/" {
+			op.Services[composeName] = Service{
 				Name: composeName,
 				Path: boxedPath,
 			}

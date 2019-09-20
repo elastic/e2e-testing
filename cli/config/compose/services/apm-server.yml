@@ -1,0 +1,19 @@
+version: '3'
+services:
+  apm-server:
+    environment:
+      - apm-server.frontend.enabled=true
+      - apm-server.frontend.rate_limit=100000
+      - apm-server.host=0.0.0.0:8200
+      - apm-server.read_timeout=1m
+      - apm-server.shutdown_timeout=2m
+      - apm-server.write_timeout=1m
+      - output.elasticsearch.enabled=true
+      - setup.elasticsearch.host=http://elasticsearch:9200
+      - setup.kibana.host=http://kibana:5601
+      - setup.template.settings.index.number_of_replicas=0
+      - xpack.monitoring.elasticsearch=true
+    image: "docker.elastic.co/apm/apm-server:${imageTag}"
+    ports:
+      - "6060:6060"
+      - "8200:8200"
