@@ -1,4 +1,9 @@
 version: '3'
 services:
   metricbeat:
+    command: ["metricbeat", "-E", "setup.ilm.rollover_alias=${indexName}", "-E", "output.elasticsearch.hosts=http://elasticsearch:9200", "-E", "output.elasticsearch.password=p4ssw0rd", "-E", "output.elasticsearch.username=elastic", "-E", "setup.kibana.host=http://kibana:5601", "-E", "setup.kibana.password=p4ssw0rd", "-E", "setup.kibana.username=elastic"]
+    environment:
+      - BEAT_STRICT_PERMS=${beatStricPerms:-false}
     image: "docker.elastic.co/beats/metricbeat:${metricbeatTag}"
+    labels:
+      co.elastic.logs/module: "${serviceName}"
