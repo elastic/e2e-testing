@@ -223,7 +223,17 @@ func GetPackedCompose(isStack bool, composeName string) (string, error) {
 		tmp = "."
 	}
 
-	composeBytes, _ := OpComposeBox.Find(path.Join(serviceType, composeFileName))
+	composeBytes, err := OpComposeBox.Find(path.Join(serviceType, composeFileName))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"composeFileName": composeFileName,
+			"error":           err,
+			"isStack":         isStack,
+			"type":            serviceType,
+		}).Error("Could not find compose file.")
+
+		return "", err
+	}
 
 	composeFilePath := path.Join(tmp, composeFileName)
 	err = ioutil.WriteFile(composeFilePath, composeBytes, 0755)
