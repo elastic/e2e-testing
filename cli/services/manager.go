@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
 
@@ -43,7 +42,6 @@ func (sm *DockerServiceManager) AddServicesToCompose(
 	if err != nil {
 		return fmt.Errorf("Could not get compose file for the stack: %s - %v", composeFilePath, err)
 	}
-	defer os.Remove(composeFilePath)
 	// first compose file is the one relative to the stack
 	composeFilePaths[0] = composeFilePath
 
@@ -52,7 +50,6 @@ func (sm *DockerServiceManager) AddServicesToCompose(
 		if err != nil {
 			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
 		}
-		defer os.Remove(composeFilePath)
 		composeFilePaths[i+1] = composeFilePath
 	}
 
@@ -88,7 +85,6 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(stack string, composeN
 	if err != nil {
 		return fmt.Errorf("Could not get compose file for the stack: %s - %v", composeFilePath, err)
 	}
-	defer os.Remove(composeFilePath)
 	// first compose file is the one relative to the stack
 	composeFilePaths[0] = composeFilePath
 
@@ -97,7 +93,6 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(stack string, composeN
 		if err != nil {
 			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
 		}
-		defer os.Remove(composeFilePath)
 		composeFilePaths[i+1] = composeFilePath
 	}
 
@@ -131,7 +126,6 @@ func (sm *DockerServiceManager) RunCompose(
 		if err != nil {
 			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
 		}
-		defer os.Remove(composeFilePath)
 		composeFilePaths[i] = composeFilePath
 	}
 
@@ -161,7 +155,6 @@ func (sm *DockerServiceManager) StopCompose(isStack bool, composeNames []string)
 		if err != nil {
 			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
 		}
-		defer os.Remove(composeFilePath)
 		composeFilePaths[i] = composeFilePath
 	}
 
