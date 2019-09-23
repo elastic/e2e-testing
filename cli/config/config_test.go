@@ -12,6 +12,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestCheckConfigDirsCreatesWorkspaceAtHome(t *testing.T) {
+	defer filet.CleanUp(t)
+
+	tmpDir := filet.TmpDir(t, "")
+
+	workspace := path.Join(tmpDir, ".op")
+
+	e, _ := exists(workspace)
+	assert.False(t, e)
+
+	checkConfigDirs(workspace)
+
+	e, _ = exists(workspace)
+	assert.True(t, e)
+	e, _ = exists(path.Join(workspace, "compose", "services"))
+	assert.True(t, e)
+	e, _ = exists(path.Join(workspace, "compose", "stacks"))
+	assert.True(t, e)
+}
+
 func TestConfigureLoggerWithTimestamps(t *testing.T) {
 	os.Setenv("OP_LOG_INCLUDE_TIMESTAMP", "true")
 	defer cleanUpEnv()

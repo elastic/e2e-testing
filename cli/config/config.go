@@ -15,9 +15,9 @@ import (
 	"github.com/elastic/metricbeat-tests-poc/cli/docker"
 )
 
-// OpComposeBox the tool's static files where we will embed default Docker compose
+// opComposeBox the tool's static files where we will embed default Docker compose
 // files representing the services and the stacks
-var OpComposeBox *packr.Box
+var opComposeBox *packr.Box
 
 // Op the tool's configuration, read from tool's workspace
 var Op *OpConfig
@@ -80,8 +80,9 @@ func InitConfig() {
 
 // OpConfig tool configuration
 type OpConfig struct {
-	Services map[string]Service `mapstructure:"services"`
-	Stacks   map[string]Stack   `mapstructure:"stacks"`
+	Services  map[string]Service `mapstructure:"services"`
+	Stacks    map[string]Stack   `mapstructure:"stacks"`
+	Workspace string             `mapstructure:"workspace"`
 }
 
 // AvailableServices return the services in the configuration file
@@ -106,19 +107,49 @@ func (c *OpConfig) GetServiceConfig(service string) (Service, bool) {
 	return srv, exists
 }
 
+func checkConfigDirs(workspace string) {
+	servicesPath := path.Join(workspace, "compose", "services")
+	stacksPath := path.Join(workspace, "compose", "stacks")
+
+	checkConfigDirectory(servicesPath)
+	checkConfigDirectory(stacksPath)
+
+	log.WithFields(log.Fields{
+		"servicesPath": servicesPath,
+		"stacksPath":   stacksPath,
+	}).Debug("'op' workdirs created.")
+}
+
+func checkConfigDirectory(dir string) {
+	found, err := exists(dir)
+	if found && err == nil {
+		return
+	}
+	err = os.MkdirAll(dir, 0755)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"path":  dir,
+		}).Fatal("Cannot create directory")
+	}
+}
+
 // newConfig returns a new configuration
 func newConfig(workspace string) {
 	if Op != nil {
 		return
 	}
 
+	checkConfigDirs(workspace)
+
 	opConfig := OpConfig{
-		Services: map[string]Service{},
-		Stacks:   map[string]Stack{},
+		Services:  map[string]Service{},
+		Stacks:    map[string]Stack{},
+		Workspace: workspace,
 	}
 
 	Op = &opConfig
-	OpComposeBox = packComposeFiles(Op)
+	opComposeBox = packComposeFiles(Op)
 }
 
 func configureLogger() {
@@ -203,7 +234,7 @@ func packComposeFiles(op *OpConfig) *packr.Box {
 }
 
 // GetPackedCompose returns the path of the compose file, looking up the
-// static resources already packaged in the binary
+// tool's workdir or in the static resources already packaged in the binary
 func GetPackedCompose(isStack bool, composeName string) (string, error) {
 	composeFileName := composeName + ".yml"
 	serviceType := "services"
@@ -211,19 +242,23 @@ func GetPackedCompose(isStack bool, composeName string) (string, error) {
 		serviceType = "stacks"
 	}
 
-	tmp, err := ioutil.TempDir("", "op")
-	if err != nil {
+	composeFilePath := path.Join(Op.Workspace, "compose", serviceType, composeFileName)
+	found, err := exists(composeFilePath)
+	if found && err == nil {
 		log.WithFields(log.Fields{
-			"compose": composeName,
-			"error":   err,
-			"isStack": isStack,
-			"type":    serviceType,
-		}).Warn("Cannot create temporary directory. Trying locally")
+			"composeFilePath": composeFilePath,
+			"type":            serviceType,
+		}).Debug("Compose file found at workdir")
 
-		tmp = "."
+		return composeFilePath, nil
 	}
 
-	composeBytes, err := OpComposeBox.Find(path.Join(serviceType, composeFileName))
+	log.WithFields(log.Fields{
+		"composeFilePath": composeFilePath,
+		"type":            serviceType,
+	}).Debug("Compose file not found at workdir. Extracting from binary resources")
+
+	composeBytes, err := opComposeBox.Find(path.Join(serviceType, composeFileName))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"composeFileName": composeFileName,
@@ -235,7 +270,6 @@ func GetPackedCompose(isStack bool, composeName string) (string, error) {
 		return "", err
 	}
 
-	composeFilePath := path.Join(tmp, composeFileName)
 	err = ioutil.WriteFile(composeFilePath, composeBytes, 0755)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -243,7 +277,7 @@ func GetPackedCompose(isStack bool, composeName string) (string, error) {
 			"error":           err,
 			"isStack":         isStack,
 			"type":            serviceType,
-		}).Error("Cannot write file.")
+		}).Error("Cannot write file at workdir.")
 
 		return composeFilePath, err
 	}
@@ -252,7 +286,7 @@ func GetPackedCompose(isStack bool, composeName string) (string, error) {
 		"composeFilePath": composeFilePath,
 		"isStack":         isStack,
 		"type":            serviceType,
-	}).Debug("Temporary compose file generated.")
+	}).Debug("Compose file generated at workdir.")
 
 	return composeFilePath, nil
 }
