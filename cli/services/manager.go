@@ -36,7 +36,7 @@ func (sm *DockerServiceManager) AddServicesToCompose(stack string, composeNames 
 	newComposeNames := []string{stack}
 	newComposeNames = append(newComposeNames, composeNames...)
 
-	return executeCompose(sm, false, newComposeNames, []string{"up", "-d"}, map[string]string{})
+	return executeCompose(sm, false, newComposeNames, []string{"up", "-d"}, env)
 }
 
 // RemoveServicesFromCompose removes services from a running docker compose
@@ -64,7 +64,12 @@ func (sm *DockerServiceManager) RunCompose(isStack bool, composeNames []string, 
 func (sm *DockerServiceManager) StopCompose(isStack bool, composeNames []string) error {
 	composeFilePaths := make([]string, len(composeNames))
 	for i, composeName := range composeNames {
-		composeFilePath, err := config.GetPackedCompose(isStack, composeName)
+		b := isStack
+		if i == 0 && !b {
+			b = true
+		}
+
+		composeFilePath, err := config.GetPackedCompose(b, composeName)
 		if err != nil {
 			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
 		}
@@ -89,7 +94,12 @@ func (sm *DockerServiceManager) StopCompose(isStack bool, composeNames []string)
 func executeCompose(sm *DockerServiceManager, isStack bool, composeNames []string, command []string, env map[string]string) error {
 	composeFilePaths := make([]string, len(composeNames))
 	for i, composeName := range composeNames {
-		composeFilePath, err := config.GetPackedCompose(isStack, composeName)
+		b := isStack
+		if i == 0 && !b {
+			b = true
+		}
+
+		composeFilePath, err := config.GetPackedCompose(b, composeName)
 		if err != nil {
 			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
 		}

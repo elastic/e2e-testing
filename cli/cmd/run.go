@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
 	log "github.com/sirupsen/logrus"
@@ -8,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var servicesToRun string
 var versionToRun string
 
 func init() {
@@ -27,6 +30,8 @@ func init() {
 
 	for k, stack := range config.AvailableStacks() {
 		stackSubcommand := buildRunStackCommand(k, stack)
+
+		stackSubcommand.Flags().StringVarP(&servicesToRun, "withServices", "s", "", "Sets a list of comma-separated services to be depoyed alongside the stack")
 
 		runStackCmd.AddCommand(stackSubcommand)
 	}
@@ -78,6 +83,29 @@ func buildRunStackCommand(key string, stack config.Stack) *cobra.Command {
 				log.WithFields(log.Fields{
 					"stack": key,
 				}).Error("Could not run the stack.")
+			}
+
+			composeNames := []string{}
+			env := map[string]string{}
+			if servicesToRun != "" {
+				services := strings.Split(servicesToRun, ",")
+
+				for _, srv := range services {
+					arr := strings.Split(srv, ":")
+					image := arr[0]
+					tag := arr[1]
+
+					env[image+"Tag"] = tag
+					composeNames = append(composeNames, image)
+				}
+
+				err = serviceManager.AddServicesToCompose(key, composeNames, env)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"stack":    key,
+						"services": servicesToRun,
+					}).Error("Could not add services to the stack.")
+				}
 			}
 		},
 	}
