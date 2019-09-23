@@ -27,7 +27,7 @@
             "args": ["run", "service", "mysql", "5.6"]
         },
         {
-            "name": "Debug Running Stacks",
+            "name": "Debug Deploying a Service",
             "type": "go",
             "request": "launch",
             "mode": "auto",
@@ -35,7 +35,19 @@
             "env": {
                 "GO111MODULE": "on",
             },
-            "args": ["run", "stack", "observability"]
+            "args": ["deploy", "mysql", "--version", "5.6asda", "--stack", "metricbeat"]
+        },
+        {
+            "name": "Debug Running Stacks",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cli",
+            "env": {
+                "GO111MODULE": "on",
+                "OP_LOG_LEVEL": "DEBUG",
+            },
+            "args": ["run", "stack", "metricbeat", "--withServices", "apache:2.2,redis:latest"]
         },
         {
             "name": "Godog Tests",
