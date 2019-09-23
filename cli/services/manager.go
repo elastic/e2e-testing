@@ -27,48 +27,16 @@ func NewServiceManager() ServiceManager {
 }
 
 // AddServicesToCompose adds services to a running docker compose
-func (sm *DockerServiceManager) AddServicesToCompose(
-	stack string, composeNames []string, env map[string]string) error {
-
+func (sm *DockerServiceManager) AddServicesToCompose(stack string, composeNames []string, env map[string]string) error {
 	log.WithFields(log.Fields{
 		"stack":    stack,
 		"services": composeNames,
 	}).Debug("Adding services to compose")
 
-	// add services to the running stack
-	composeFilePaths := make([]string, len(composeNames)+1)
+	newComposeNames := []string{stack}
+	newComposeNames = append(newComposeNames, composeNames...)
 
-	composeFilePath, err := config.GetPackedCompose(true, stack)
-	if err != nil {
-		return fmt.Errorf("Could not get compose file for the stack: %s - %v", composeFilePath, err)
-	}
-	// first compose file is the one relative to the stack
-	composeFilePaths[0] = composeFilePath
-
-	for i, composeName := range composeNames {
-		composeFilePath, err := config.GetPackedCompose(false, composeName)
-		if err != nil {
-			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
-		}
-		composeFilePaths[i+1] = composeFilePath
-	}
-
-	compose := tc.NewLocalDockerCompose(composeFilePaths, stack)
-	execError := compose.
-		WithCommand([]string{"up", "-d"}).
-		WithEnv(env).
-		Invoke()
-	err = execError.Error
-	if err != nil {
-		return fmt.Errorf("Could not run compose file: %v - %v", composeFilePaths, err)
-	}
-
-	log.WithFields(log.Fields{
-		"composeFilePaths": composeFilePaths,
-		"stack":            composeNames[0],
-	}).Debug("Services added to the stack.")
-
-	return nil
+	return executeCompose(sm, false, newComposeNames, []string{"up", "-d"}, map[string]string{})
 }
 
 // RemoveServicesFromCompose removes services from a running docker compose
@@ -78,73 +46,18 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(stack string, composeN
 		"services": composeNames,
 	}).Debug("Removing services to compose")
 
-	// add services to the running stack
-	composeFilePaths := make([]string, len(composeNames)+1)
-
-	composeFilePath, err := config.GetPackedCompose(true, stack)
-	if err != nil {
-		return fmt.Errorf("Could not get compose file for the stack: %s - %v", composeFilePath, err)
-	}
-	// first compose file is the one relative to the stack
-	composeFilePaths[0] = composeFilePath
-
-	for i, composeName := range composeNames {
-		composeFilePath, err := config.GetPackedCompose(false, composeName)
-		if err != nil {
-			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
-		}
-		composeFilePaths[i+1] = composeFilePath
-	}
+	newComposeNames := []string{stack}
+	newComposeNames = append(newComposeNames, composeNames...)
 
 	command := []string{"kill"}
 	command = append(command, composeNames...)
 
-	compose := tc.NewLocalDockerCompose(composeFilePaths, stack)
-	execError := compose.
-		WithCommand(command).
-		Invoke()
-	err = execError.Error
-	if err != nil {
-		return fmt.Errorf("Could not run compose file: %v - %v", composeFilePaths, err)
-	}
-
-	log.WithFields(log.Fields{
-		"composeFilePaths": composeFilePaths,
-		"stack":            composeNames[0],
-	}).Debug("Services removed from the stack.")
-
-	return nil
+	return executeCompose(sm, false, newComposeNames, command, map[string]string{})
 }
 
 // RunCompose runs a docker compose by its name
-func (sm *DockerServiceManager) RunCompose(
-	isStack bool, composeNames []string, env map[string]string) error {
-
-	composeFilePaths := make([]string, len(composeNames))
-	for i, composeName := range composeNames {
-		composeFilePath, err := config.GetPackedCompose(isStack, composeName)
-		if err != nil {
-			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
-		}
-		composeFilePaths[i] = composeFilePath
-	}
-
-	compose := tc.NewLocalDockerCompose(composeFilePaths, composeNames[0])
-	execError := compose.
-		WithCommand([]string{"up", "-d"}).
-		WithEnv(env).
-		Invoke()
-	err := execError.Error
-	if err != nil {
-		return fmt.Errorf("Could not run compose file: %v - %v", composeFilePaths, err)
-	}
-
-	log.WithFields(log.Fields{
-		"composeFilePaths": composeFilePaths,
-		"stack":            composeNames[0],
-	}).Debug("Docker compose up.")
-
-	return nil
+func (sm *DockerServiceManager) RunCompose(isStack bool, composeNames []string, env map[string]string) error {
+	return executeCompose(sm, isStack, composeNames, []string{"up", "-d"}, env)
 }
 
 // StopCompose stops a docker compose by its name
@@ -169,6 +82,36 @@ func (sm *DockerServiceManager) StopCompose(isStack bool, composeNames []string)
 		"composeFilePath": composeFilePaths,
 		"stack":           composeNames[0],
 	}).Debug("Docker compose down.")
+
+	return nil
+}
+
+func executeCompose(sm *DockerServiceManager, isStack bool, composeNames []string, command []string, env map[string]string) error {
+	composeFilePaths := make([]string, len(composeNames))
+	for i, composeName := range composeNames {
+		composeFilePath, err := config.GetPackedCompose(isStack, composeName)
+		if err != nil {
+			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
+		}
+		composeFilePaths[i] = composeFilePath
+	}
+
+	compose := tc.NewLocalDockerCompose(composeFilePaths, composeNames[0])
+	execError := compose.
+		WithCommand(command).
+		WithEnv(env).
+		Invoke()
+	err := execError.Error
+	if err != nil {
+		return fmt.Errorf("Could not run compose file: %v - %v", composeFilePaths, err)
+	}
+
+	log.WithFields(log.Fields{
+		"cmd":              command,
+		"composeFilePaths": composeFilePaths,
+		"env":              env,
+		"stack":            composeNames[0],
+	}).Debug("Docker compose executed.")
 
 	return nil
 }
