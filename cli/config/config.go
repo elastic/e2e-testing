@@ -47,6 +47,7 @@ func checkInstalledSoftware() {
 	log.Debug("Validating required tools...")
 	binaries := []string{
 		"docker",
+		"docker-compose",
 	}
 
 	for _, binary := range binaries {
