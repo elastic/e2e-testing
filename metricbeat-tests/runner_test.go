@@ -53,7 +53,8 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	}
 	defer fn(context.Background())
 
-	err := serviceManager.RemoveServicesFromCompose("metricbeat", []string{mts.ServiceName})
+	err := serviceManager.RemoveServicesFromCompose(
+		"metricbeat", []string{"metricbeat", mts.ServiceName})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": mts.ServiceName,
