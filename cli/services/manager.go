@@ -6,14 +6,15 @@ import (
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
 
 	log "github.com/sirupsen/logrus"
+	tc "github.com/testcontainers/testcontainers-go"
 )
 
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
-	Build(string, string, bool) Service
-	BuildFromConfig(config.Service) Service
-	Run(Service) error
-	Stop(Service) error
+	AddServicesToCompose(stack string, composeNames []string, env map[string]string) error
+	RemoveServicesFromCompose(stack string, composeNames []string) error
+	RunCompose(isStack bool, composeNames []string, env map[string]string) error
+	StopCompose(isStack bool, composeNames []string) error
 }
 
 // DockerServiceManager implementation of the service manager interface
@@ -25,48 +26,102 @@ func NewServiceManager() ServiceManager {
 	return &DockerServiceManager{}
 }
 
-// Build builds a service domain entity from just its name and version
-func (sm *DockerServiceManager) Build(service string, version string, asDaemon bool) Service {
-	cfg, exists := config.GetServiceConfig(service)
-	if !exists {
-		log.WithFields(log.Fields{
-			"service": service,
-			"version": version,
-			"daemon":  asDaemon,
-		}).Fatal("Cannot find service in configuration.")
-	}
+// AddServicesToCompose adds services to a running docker compose
+func (sm *DockerServiceManager) AddServicesToCompose(stack string, composeNames []string, env map[string]string) error {
+	log.WithFields(log.Fields{
+		"stack":    stack,
+		"services": composeNames,
+	}).Debug("Adding services to compose")
 
-	cfg.Daemon = asDaemon
-	cfg.Version = version
+	newComposeNames := []string{stack}
+	newComposeNames = append(newComposeNames, composeNames...)
 
-	return sm.BuildFromConfig(cfg)
+	return executeCompose(sm, false, newComposeNames, []string{"up", "-d"}, env)
 }
 
-// BuildFromConfig builds a service domain entity from its configuration
-func (sm *DockerServiceManager) BuildFromConfig(service config.Service) Service {
-	dockerService := DockerService{
-		Service: service,
-	}
+// RemoveServicesFromCompose removes services from a running docker compose
+func (sm *DockerServiceManager) RemoveServicesFromCompose(stack string, composeNames []string) error {
+	log.WithFields(log.Fields{
+		"stack":    stack,
+		"services": composeNames,
+	}).Debug("Removing services to compose")
 
-	return &dockerService
+	newComposeNames := []string{stack}
+	newComposeNames = append(newComposeNames, composeNames...)
+
+	command := []string{"rm", "-fv"}
+	command = append(command, composeNames...)
+
+	return executeCompose(sm, false, newComposeNames, command, map[string]string{})
 }
 
-// Run runs a service
-func (sm *DockerServiceManager) Run(s Service) error {
-	_, err := s.Run()
+// RunCompose runs a docker compose by its name
+func (sm *DockerServiceManager) RunCompose(isStack bool, composeNames []string, env map[string]string) error {
+	return executeCompose(sm, isStack, composeNames, []string{"up", "-d"}, env)
+}
+
+// StopCompose stops a docker compose by its name
+func (sm *DockerServiceManager) StopCompose(isStack bool, composeNames []string) error {
+	composeFilePaths := make([]string, len(composeNames))
+	for i, composeName := range composeNames {
+		b := isStack
+		if i == 0 && !b {
+			b = true
+		}
+
+		composeFilePath, err := config.GetPackedCompose(b, composeName)
+		if err != nil {
+			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
+		}
+		composeFilePaths[i] = composeFilePath
+	}
+
+	compose := tc.NewLocalDockerCompose(composeFilePaths, composeNames[0])
+	execError := compose.Down()
+	err := execError.Error
 	if err != nil {
-		return fmt.Errorf("Could not run service: %v", err)
+		return fmt.Errorf("Could not stop compose file: %v - %v", composeFilePaths, err)
 	}
+
+	log.WithFields(log.Fields{
+		"composeFilePath": composeFilePaths,
+		"stack":           composeNames[0],
+	}).Debug("Docker compose down.")
 
 	return nil
 }
 
-// Stop stops a service
-func (sm *DockerServiceManager) Stop(s Service) error {
-	err := s.Destroy()
-	if err != nil {
-		return err
+func executeCompose(sm *DockerServiceManager, isStack bool, composeNames []string, command []string, env map[string]string) error {
+	composeFilePaths := make([]string, len(composeNames))
+	for i, composeName := range composeNames {
+		b := isStack
+		if i == 0 && !b {
+			b = true
+		}
+
+		composeFilePath, err := config.GetPackedCompose(b, composeName)
+		if err != nil {
+			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
+		}
+		composeFilePaths[i] = composeFilePath
 	}
+
+	compose := tc.NewLocalDockerCompose(composeFilePaths, composeNames[0])
+	execError := compose.
+		WithCommand(command).
+		WithEnv(env).
+		Invoke()
+	err := execError.Error
+	if err != nil {
+		return fmt.Errorf("Could not run compose file: %v - %v", composeFilePaths, err)
+	}
+
+	log.WithFields(log.Fields{
+		"cmd":              command,
+		"composeFilePaths": composeFilePaths,
+		"env":              env,
+		"stack":            composeNames[0],
+	}).Debug("Docker compose executed.")
 
 	return nil
 }

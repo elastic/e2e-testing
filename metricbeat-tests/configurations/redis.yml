@@ -5,4 +5,4 @@ metricbeat.modules:
   enabled: true
 
   # Redis hosts
-  hosts: ["http://${MONITORED_HOST}:6379"]
+  hosts: ["http://redis:6379"]

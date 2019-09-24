@@ -1,0 +1,10 @@
+version: '3'
+services:
+  kibana:
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTIC_USERNAME=elastic
+      - ELASTIC_PASSWORD=p4ssw0rd
+    image: "docker.elastic.co/kibana/kibana:${kibanaTag}"
+    ports:
+      - "5601:5601"

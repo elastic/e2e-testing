@@ -37,40 +37,39 @@ var queryRetryTimeout = 3
 // MetricbeatTestSuite represents a test suite, holding references to both metricbeat ant
 // the service to be monitored
 type MetricbeatTestSuite struct {
-	Metricbeat services.Service // the metricbeat instance for the test
-	Service    services.Service // the service to be monitored by metricbeat
+	ServiceName    string // the service to be monitored by metricbeat
+	ServiceVersion string // the version of the service to be monitored by metricbeat
+	Version        string // the metricbeat version for the test
 }
 
 // CleanUp cleans up services in the test suite
 func (mts *MetricbeatTestSuite) CleanUp() error {
-	var err error
+	serviceManager := services.NewServiceManager()
 
-	if mts.Service != nil {
-		log.Debugf("Stopping service %s", mts.Service.GetName())
-		err = serviceManager.Stop(mts.Service)
+	err := serviceManager.RemoveServicesFromCompose("metricbeat", []string{mts.ServiceName})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"service": mts.ServiceName,
+		}).Error("Could not stop the service.")
 	}
 
-	if mts.Metricbeat != nil {
-		log.Debugf("Stopping metricbeat %s", mts.Metricbeat.GetVersion())
-		err = serviceManager.Stop(mts.Metricbeat)
-	}
-
+	log.WithFields(log.Fields{
+		"service": mts.ServiceName,
+	}).Debug("Service removed from compose.")
 	return err
 }
 
 func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, serviceType string) error {
-	service := mts.Service
-
 	serviceType = strings.ToLower(serviceType)
 
-	s, err := RunMetricbeatService(version, service)
+	err := RunMetricbeatService(version, serviceType, mts.ServiceVersion)
 	if err == nil {
-		mts.Metricbeat = s
+		mts.Version = version
 	}
 
 	query = ElasticsearchQuery{
 		EventModule:    serviceType,
-		ServiceVersion: service.GetVersion(),
+		ServiceVersion: mts.ServiceVersion,
 	}
 
 	return err
@@ -80,14 +79,21 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(
 	serviceType string, serviceVersion string, metricbeatVersion string) error {
 
 	serviceType = strings.ToLower(serviceType)
-	service := serviceManager.Build(serviceType, serviceVersion, true)
 
-	service.SetNetworkAlias(serviceType + "_" + serviceVersion + "-metricbeat_" + metricbeatVersion)
-
-	err := serviceManager.Run(service)
-	if err == nil {
-		mts.Service = service
+	env := map[string]string{
+		serviceType + "Tag": serviceVersion,
 	}
+
+	err := serviceManager.AddServicesToCompose("metricbeat", []string{serviceType}, env)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"service": serviceType,
+			"version": serviceVersion,
+		}).Error("Could not run the service.")
+	}
+
+	mts.ServiceName = serviceType
+	mts.ServiceVersion = serviceVersion
 
 	return err
 }

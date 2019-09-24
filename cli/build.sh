@@ -20,7 +20,7 @@ if [[ ! " ${supportedArchs[@]} " =~ " ${GOARCH} " ]]; then
     exit 1
 fi
 
-readonly GO_VERSION="${GO_VERSION:-1.12.7}"
+readonly GO_VERSION="${GO_VERSION:-v1.12.7}"
 readonly GO_WORKSPACE="/usr/local/go/src/github.com/elastic/op"
 readonly VERSION="$(cat ./VERSION.txt)"
 
@@ -39,5 +39,5 @@ fi
 
 echo ">>> Building for ${GOOS}/${GOARCH}"
 docker run --rm -v "$(pwd)":${GO_WORKSPACE} -w ${GO_WORKSPACE} \
-    -e GOOS=${GOOS} -e GOARCH=${GOARCH} golang:${GO_VERSION} \
-    go build -v -o ${GO_WORKSPACE}/.github/releases/download/${VERSION}/${goos}${arch}-op${extension}
+    -e GOOS=${GOOS} -e GOARCH=${GOARCH} drud/golang-build-container:${GO_VERSION} \
+    packr2 build -v -o ${GO_WORKSPACE}/.github/releases/download/${VERSION}/${goos}${arch}-op${extension}

@@ -5,26 +5,14 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 )
 
 var instance *client.Client
 
-const networkName = "elastic-dev-network"
-
-// ConnectContainerToDevNetwork connects a container to the Dev Network
-func ConnectContainerToDevNetwork(containerID string, aliases ...string) error {
-	dockerClient := getDockerClient()
-
-	ctx := context.Background()
-
-	return dockerClient.NetworkConnect(
-		ctx, networkName, containerID, &network.EndpointSettings{
-			Aliases: aliases,
-		})
-}
+// OPNetworkName name of the network used by the tool
+const OPNetworkName = "elastic-dev-network"
 
 // ExecCommandIntoContainer executes a command, as a user, into a container, in a detach state
 func ExecCommandIntoContainer(ctx context.Context, containerName string, user string, cmd []string, detach bool) error {
@@ -81,26 +69,6 @@ func ExecCommandIntoContainer(ctx context.Context, containerName string, user st
 	return err
 }
 
-// GetDevNetwork returns the developer network, creating it if it does not exist
-func GetDevNetwork() (types.NetworkResource, error) {
-	dockerClient := getDockerClient()
-
-	ctx := context.Background()
-
-	networkResource, err := dockerClient.NetworkInspect(ctx, networkName, types.NetworkInspectOptions{
-		Verbose: true,
-	})
-	if err != nil {
-		log.WithFields(log.Fields{
-			"network": networkName,
-		}).Warn("Dev Network not found! Creating it now.")
-
-		initDevNetwork()
-	}
-
-	return networkResource, err
-}
-
 // InspectContainer returns the JSON representation of the inspection of a
 // Docker container, identified by its name
 func InspectContainer(name string) (*types.ContainerJSON, error) {
@@ -120,16 +88,12 @@ func InspectContainer(name string) (*types.ContainerJSON, error) {
 		}).Fatal("Cannot list containers")
 	}
 
-	for _, c := range containers {
-		inspect, err := dockerClient.ContainerInspect(ctx, c.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		return &inspect, nil
+	inspect, err := dockerClient.ContainerInspect(ctx, containers[0].ID)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, nil
+	return &inspect, nil
 }
 
 // RemoveContainer removes a container identified by its container name
@@ -166,50 +130,18 @@ func RemoveDevNetwork() error {
 	ctx := context.Background()
 
 	log.WithFields(log.Fields{
-		"network": networkName,
+		"network": OPNetworkName,
 	}).Debug("Removing Dev Network...")
 
-	if err := dockerClient.NetworkRemove(ctx, networkName); err != nil {
+	if err := dockerClient.NetworkRemove(ctx, OPNetworkName); err != nil {
 		return err
 	}
 
 	log.WithFields(log.Fields{
-		"network": networkName,
+		"network": OPNetworkName,
 	}).Debug("Dev Network has been removed")
 
 	return nil
-}
-
-func initDevNetwork() types.NetworkCreateResponse {
-	dockerClient := getDockerClient()
-
-	ctx := context.Background()
-
-	nc := types.NetworkCreate{
-		Driver:         "bridge",
-		CheckDuplicate: true,
-		Internal:       true,
-		EnableIPv6:     false,
-		Attachable:     true,
-		Labels: map[string]string{
-			"project": "observability",
-		},
-	}
-
-	response, err := dockerClient.NetworkCreate(ctx, networkName, nc)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"network": networkName,
-		}).Fatal("Cannot create Docker Dev Network, which is necessary")
-	}
-
-	log.WithFields(log.Fields{
-		"network": networkName,
-		"id":      response.ID,
-	}).Debug("Dev Network has been created")
-
-	return response
 }
 
 func getDockerClient() *client.Client {

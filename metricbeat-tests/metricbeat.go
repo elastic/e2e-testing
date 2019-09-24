@@ -1,10 +1,9 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"strings"
+	"path"
 
 	log "github.com/sirupsen/logrus"
 
@@ -12,53 +11,22 @@ import (
 )
 
 // RunMetricbeatService runs a metricbeat service entity for a service to monitor
-func RunMetricbeatService(version string, monitoredService services.Service) (services.Service, error) {
+func RunMetricbeatService(version string, serviceName string, serviceVersion string) error {
 	dir, _ := os.Getwd()
-
-	serviceName := monitoredService.GetName()
-
-	bindMounts := map[string]string{
-		dir + "/configurations/" + serviceName + ".yml": "/usr/share/metricbeat/metricbeat.yml",
-	}
-
-	labels := map[string]string{
-		"co.elastic.logs/module": serviceName,
-	}
+	indexName := fmt.Sprintf("metricbeat-%s-%s-%s-test", version, serviceName, serviceVersion)
 
 	serviceManager := services.NewServiceManager()
 
-	service := serviceManager.Build("metricbeat", version, false)
-
 	env := map[string]string{
-		"BEAT_STRICT_PERMS": "false",
-		"MONITORED_HOST":    monitoredService.GetNetworkAlias(),
+		"BEAT_STRICT_PERMS":    "false",
+		"indexName":            indexName,
+		"metricbeatConfigFile": path.Join(dir, "configurations", serviceName+".yml"),
+		"metricbeatTag":        version,
+		serviceName + "Tag":    serviceVersion,
+		"serviceName":          serviceName,
 	}
 
-	indexName := fmt.Sprintf("metricbeat-%s-%s-%s-test", version, serviceName, monitoredService.GetVersion())
-
-	setupCommands := []string{
-		"metricbeat",
-		"-E", fmt.Sprintf("setup.ilm.rollover_alias=%s", indexName),
-		"-E", "output.elasticsearch.hosts=http://elasticsearch:9200",
-		"-E", "output.elasticsearch.password=p4ssw0rd",
-		"-E", "output.elasticsearch.username=elastic",
-		"-E", "setup.kibana.host=http://kibana:5601",
-		"-E", "setup.kibana.password=p4ssw0rd",
-		"-E", "setup.kibana.username=elastic",
-	}
-
-	service.SetBindMounts(bindMounts)
-	service.SetCmd(strings.Join(setupCommands, " "))
-	service.SetEnv(env)
-	service.SetAsDaemon(true)
-	service.SetLabels(labels)
-
-	fn := func(ctx context.Context) error {
-		return deleteIndex(ctx, "metricbeat", indexName)
-	}
-	service.SetCleanUp(fn)
-
-	err := serviceManager.Run(service)
+	err := serviceManager.AddServicesToCompose("metricbeat", []string{"metricbeat"}, env)
 	if err != nil {
 		msg := fmt.Sprintf("Could not run Metricbeat %s for %s %v", version, serviceName, err)
 
@@ -66,17 +34,24 @@ func RunMetricbeatService(version string, monitoredService services.Service) (se
 			"error":             err,
 			"metricbeatVersion": version,
 			"service":           serviceName,
-			"serviceVersion":    monitoredService.GetVersion(),
+			"serviceVersion":    serviceVersion,
 		}).Error(msg)
 
-		return nil, err
+		return err
 	}
 
 	log.WithFields(log.Fields{
 		"metricbeatVersion": version,
 		"service":           serviceName,
-		"serviceVersion":    monitoredService.GetVersion(),
+		"serviceVersion":    serviceVersion,
 	}).Info("Metricbeat is running configured for the service")
 
-	return service, nil
+	// TO-DO: we have to see how to remove the index from compose
+	/*
+		fn := func(ctx context.Context) error {
+			return deleteIndex(ctx, "metricbeat", indexName)
+		}
+	*/
+
+	return nil
 }

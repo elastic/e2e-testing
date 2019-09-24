@@ -6,12 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/docker/go-connections/nat"
 	es "github.com/elastic/go-elasticsearch/v8"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
-	"github.com/elastic/metricbeat-tests-poc/cli/docker"
 )
 
 // searchResult wraps a search result
@@ -63,23 +61,8 @@ func getElasticsearchClient(stackName string) (*es.Client, error) {
 	elasticsearchCfg, _ := config.GetServiceConfig("elasticsearch")
 	elasticsearchCfg.Name = elasticsearchCfg.Name + "-" + stackName
 
-	elasticsearchSrv := serviceManager.BuildFromConfig(elasticsearchCfg)
-
-	esJSON, err := docker.InspectContainer(elasticsearchSrv.GetContainerName())
-	if err != nil {
-		log.WithFields(log.Fields{
-			"containerName": elasticsearchSrv.GetContainerName(),
-			"error":         err,
-		}).Error("Could not inspect the elasticsearch container")
-
-		return nil, err
-	}
-
-	ports := esJSON.NetworkSettings.Ports
-	binding := ports[nat.Port("9200/tcp")]
-
 	cfg := es.Config{
-		Addresses: []string{fmt.Sprintf("http://localhost:%s", binding[0].HostPort)},
+		Addresses: []string{"http://localhost:9200"},
 	}
 	esClient, err := es.NewClient(cfg)
 	if err != nil {
