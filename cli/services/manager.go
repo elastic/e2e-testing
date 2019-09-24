@@ -49,7 +49,7 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(stack string, composeN
 	newComposeNames := []string{stack}
 	newComposeNames = append(newComposeNames, composeNames...)
 
-	command := []string{"kill"}
+	command := []string{"rm", "-fv"}
 	command = append(command, composeNames...)
 
 	return executeCompose(sm, false, newComposeNames, command, map[string]string{})
