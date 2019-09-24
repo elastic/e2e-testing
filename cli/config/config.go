@@ -235,7 +235,7 @@ func newConfig(workspace string) {
 	Op = &opConfig
 
 	box := packComposeFiles(Op)
-	if box != nil {
+	if box == nil {
 		log.WithFields(log.Fields{
 			"workspace": workspace,
 		}).Error("Could not get packaged compose files")
