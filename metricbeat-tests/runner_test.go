@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"testing"
@@ -75,9 +76,11 @@ func (mts *MetricbeatTestSuite) getIndexName() string {
 func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, serviceType string) error {
 	serviceType = strings.ToLower(serviceType)
 
-	err := RunMetricbeatService(version, serviceType, mts.ServiceVersion)
-	if err == nil {
-		mts.Version = version
+	mts.Version = version
+
+	err := mts.runMetricbeatService()
+	if err != nil {
+		return err
 	}
 
 	query = ElasticsearchQuery{
@@ -85,7 +88,53 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, 
 		ServiceVersion: mts.ServiceVersion,
 	}
 
-	return err
+	return nil
+}
+
+// runMetricbeatService runs a metricbeat service entity for a service to monitor it
+func (mts *MetricbeatTestSuite) runMetricbeatService() error {
+	dir, _ := os.Getwd()
+	indexName := mts.getIndexName()
+
+	serviceManager := services.NewServiceManager()
+
+	env := map[string]string{
+		"BEAT_STRICT_PERMS":     "false",
+		"indexName":             indexName,
+		"metricbeatConfigFile":  path.Join(dir, "configurations", mts.ServiceName+".yml"),
+		"metricbeatTag":         mts.Version,
+		mts.ServiceName + "Tag": mts.ServiceVersion,
+		"serviceName":           mts.ServiceName,
+	}
+
+	err := serviceManager.AddServicesToCompose("metricbeat", []string{"metricbeat"}, env)
+	if err != nil {
+		msg := fmt.Sprintf("Could not run Metricbeat %s for %s %v", mts.Version, mts.ServiceName, err)
+
+		log.WithFields(log.Fields{
+			"error":             err,
+			"metricbeatVersion": mts.Version,
+			"service":           mts.ServiceName,
+			"serviceVersion":    mts.ServiceVersion,
+		}).Error(msg)
+
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"metricbeatVersion": mts.Version,
+		"service":           mts.ServiceName,
+		"serviceVersion":    mts.ServiceVersion,
+	}).Info("Metricbeat is running configured for the service")
+
+	// TO-DO: we have to see how to remove the index from compose
+	/*
+		fn := func(ctx context.Context) error {
+			return deleteIndex(ctx, "metricbeat", indexName)
+		}
+	*/
+
+	return nil
 }
 
 func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(
