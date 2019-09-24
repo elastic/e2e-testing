@@ -11,8 +11,6 @@ import (
 
 	packr "github.com/gobuffalo/packr/v2"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/elastic/metricbeat-tests-poc/cli/docker"
 )
 
 // opComposeBox the tool's static files where we will embed default Docker compose
@@ -22,18 +20,11 @@ var opComposeBox *packr.Box
 // Op the tool's configuration, read from tool's workspace
 var Op *OpConfig
 
-const fileName = "config.yml"
-
-// servicesDefaults initial service configuration
-var servicesDefaults = map[string]Service{}
-
 // Service represents the configuration for a service
 type Service struct {
 	Name string `mapstructure:"Name"`
 	Path string `mapstructure:"Path"`
 }
-
-var stacksDefaults = map[string]Stack{}
 
 // Stack represents the configuration for a stack, which is an aggregation of services
 // represented by a Docker Compose
@@ -62,8 +53,6 @@ func Init() {
 	checkInstalledSoftware()
 
 	InitConfig()
-
-	docker.GetDevNetwork()
 }
 
 // InitConfig initialises configuration
@@ -148,9 +137,17 @@ func newConfig(workspace string) {
 		Stacks:    map[string]Stack{},
 		Workspace: workspace,
 	}
-
 	Op = &opConfig
-	opComposeBox = packComposeFiles(Op)
+
+	box := packComposeFiles(Op)
+	if box != nil {
+		log.WithFields(log.Fields{
+			"workspace": workspace,
+		}).Error("Could not get packaged compose files")
+		return
+	}
+
+	opComposeBox = box
 }
 
 func configureLogger() {
@@ -209,7 +206,7 @@ func which(software string) {
 func packComposeFiles(op *OpConfig) *packr.Box {
 	box := packr.New("Compose Files", "./compose")
 
-	box.Walk(func(boxedPath string, f packr.File) error {
+	err := box.Walk(func(boxedPath string, f packr.File) error {
 		log.WithFields(log.Fields{
 			"path": boxedPath,
 		}).Debug("Boxed file")
@@ -230,6 +227,9 @@ func packComposeFiles(op *OpConfig) *packr.Box {
 
 		return nil
 	})
+	if err != nil {
+		return nil
+	}
 
 	return box
 }
