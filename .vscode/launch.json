@@ -38,6 +38,18 @@
             "args": ["deploy", "mysql", "--version", "5.6asda", "--stack", "metricbeat"]
         },
         {
+            "name": "Debug Undeploying a Service",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cli",
+            "env": {
+                "GO111MODULE": "on",
+                "OP_LOG_LEVEL": "DEBUG",
+            },
+            "args": ["undeploy", "mysql", "--stack", "metricbeat"]
+        },
+        {
             "name": "Debug Running Stacks",
             "type": "go",
             "request": "launch",
