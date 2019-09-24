@@ -1,7 +1,4 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
@@ -12,6 +9,7 @@
             "program": "${workspaceFolder}/cli",
             "env": {
                 "GO111MODULE": "on",
+                "OP_LOG_LEVEL": "DEBUG",
             },
             "args": ["run", "-h"]
         },
@@ -23,6 +21,7 @@
             "program": "${workspaceFolder}/cli",
             "env": {
                 "GO111MODULE": "on",
+                "OP_LOG_LEVEL": "DEBUG",
             },
             "args": ["run", "service", "mysql", "5.6"]
         },
@@ -34,6 +33,7 @@
             "program": "${workspaceFolder}/cli",
             "env": {
                 "GO111MODULE": "on",
+                "OP_LOG_LEVEL": "DEBUG",
             },
             "args": ["deploy", "mysql", "--version", "5.6asda", "--stack", "metricbeat"]
         },
@@ -57,6 +57,7 @@
             "program": "${workspaceFolder}/metricbeat-tests",
             "env": {
                 "GO111MODULE": "on",
+                "OP_LOG_LEVEL": "DEBUG",
             },
             "args": ["godog", "-t", "mysql"]
         }
