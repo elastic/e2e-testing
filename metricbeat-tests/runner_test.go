@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -47,6 +48,11 @@ type MetricbeatTestSuite struct {
 func (mts *MetricbeatTestSuite) CleanUp() error {
 	serviceManager := services.NewServiceManager()
 
+	fn := func(ctx context.Context) error {
+		return deleteIndex(ctx, "metricbeat", mts.getIndexName())
+	}
+	defer fn(context.Background())
+
 	err := serviceManager.RemoveServicesFromCompose("metricbeat", []string{mts.ServiceName})
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -57,6 +63,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	log.WithFields(log.Fields{
 		"service": mts.ServiceName,
 	}).Debug("Service removed from compose.")
+
 	return err
 }
 
@@ -126,13 +133,6 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"service":           mts.ServiceName,
 		"serviceVersion":    mts.ServiceVersion,
 	}).Info("Metricbeat is running configured for the service")
-
-	// TO-DO: we have to see how to remove the index from compose
-	/*
-		fn := func(ctx context.Context) error {
-			return deleteIndex(ctx, "metricbeat", indexName)
-		}
-	*/
 
 	return nil
 }
