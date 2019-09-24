@@ -39,5 +39,5 @@ fi
 
 echo ">>> Building for ${GOOS}/${GOARCH}"
 docker run --rm -v "$(pwd)":${GO_WORKSPACE} -w ${GO_WORKSPACE} \
-    -e GOOS=${GOOS} -e GOARCH=${GOARCH} drud/golang-build-container:${GO_VERSION} \
+    -e GOOS=${GOOS} -e GOARCH=${GOARCH} registry.hub.docker.com/drud/golang-build-container:${GO_VERSION} \
     packr2 build -v -o ${GO_WORKSPACE}/.github/releases/download/${VERSION}/${goos}${arch}-op${extension}
