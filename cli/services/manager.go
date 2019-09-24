@@ -11,10 +11,10 @@ import (
 
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
-	AddServicesToCompose(string, []string, map[string]string) error
-	RemoveServicesFromCompose(string, []string) error
-	RunCompose(bool, []string, map[string]string) error
-	StopCompose(bool, []string) error
+	AddServicesToCompose(stack string, composeNames []string, env map[string]string) error
+	RemoveServicesFromCompose(stack string, composeNames []string) error
+	RunCompose(isStack bool, composeNames []string, env map[string]string) error
+	StopCompose(isStack bool, composeNames []string) error
 }
 
 // DockerServiceManager implementation of the service manager interface
