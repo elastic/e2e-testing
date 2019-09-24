@@ -59,6 +59,19 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	return err
 }
 
+// As we are using an index per scenario outline, with an index name formed by metricbeat-version1-module-version2,
+// and because of the ILM is configured on metricbeat side, then we can use an asterisk for the index name:
+// each scenario outline will be namespaced, so no collitions between different test cases should appear
+func (mts *MetricbeatTestSuite) getIndexName() string {
+	mVersion := strings.ReplaceAll(mts.Version, "-SNAPSHOT", "")
+
+	index := fmt.Sprintf("metricbeat-%s-%s-%s", mVersion, mts.ServiceName, mts.ServiceVersion)
+
+	index += "-test*"
+
+	return index
+}
+
 func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, serviceType string) error {
 	serviceType = strings.ToLower(serviceType)
 
@@ -96,6 +109,41 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(
 	mts.ServiceVersion = serviceVersion
 
 	return err
+}
+
+func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
+	esQuery := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must": []map[string]interface{}{
+					{
+						"match": map[string]interface{}{
+							"event.module": query.EventModule,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	stackName := "metricbeat"
+
+	result, err := retrySearch(stackName, mts.getIndexName(), esQuery, queryMaxAttempts)
+	if err != nil {
+		return err
+	}
+
+	err = assertHitsArePresent(result, query)
+	if err != nil {
+		return err
+	}
+
+	err = assertHitsDoNotContainErrors(result, query)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type ElasticsearchQuery struct {
@@ -180,48 +228,4 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 	time.Sleep(time.Duration(queryMetricbeatFetchTimeout) * time.Second)
 
 	return search(stackName, indexName, esQuery)
-}
-
-func thereAreNoErrorsInTheIndex(index string) error {
-	esIndexName := strings.ReplaceAll(index, "-SNAPSHOT", "")
-
-	// As we are using an index per scenario outline, with an index name
-	// formed by metricbeat-version1-module-version2, and because of the
-	// ILM is configured on metricbeat side, then we can use an asterisk
-	// for the index name: each scenario outline will be namespaced, so
-	// no collitions between different test cases should appear
-	esIndexName += "-test*"
-
-	esQuery := map[string]interface{}{
-		"query": map[string]interface{}{
-			"bool": map[string]interface{}{
-				"must": []map[string]interface{}{
-					{
-						"match": map[string]interface{}{
-							"event.module": query.EventModule,
-						},
-					},
-				},
-			},
-		},
-	}
-
-	stackName := "metricbeat"
-
-	result, err := retrySearch(stackName, esIndexName, esQuery, queryMaxAttempts)
-	if err != nil {
-		return err
-	}
-
-	err = assertHitsArePresent(result, query)
-	if err != nil {
-		return err
-	}
-
-	err = assertHitsDoNotContainErrors(result, query)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
