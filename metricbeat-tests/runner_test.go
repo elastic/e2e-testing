@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"testing"
@@ -46,7 +48,13 @@ type MetricbeatTestSuite struct {
 func (mts *MetricbeatTestSuite) CleanUp() error {
 	serviceManager := services.NewServiceManager()
 
-	err := serviceManager.RemoveServicesFromCompose("metricbeat", []string{mts.ServiceName})
+	fn := func(ctx context.Context) error {
+		return deleteIndex(ctx, "metricbeat", mts.getIndexName())
+	}
+	defer fn(context.Background())
+
+	err := serviceManager.RemoveServicesFromCompose(
+		"metricbeat", []string{"metricbeat", mts.ServiceName})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": mts.ServiceName,
@@ -56,15 +64,31 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	log.WithFields(log.Fields{
 		"service": mts.ServiceName,
 	}).Debug("Service removed from compose.")
+
 	return err
+}
+
+// As we are using an index per scenario outline, with an index name formed by metricbeat-version1-module-version2,
+// and because of the ILM is configured on metricbeat side, then we can use an asterisk for the index name:
+// each scenario outline will be namespaced, so no collitions between different test cases should appear
+func (mts *MetricbeatTestSuite) getIndexName() string {
+	mVersion := strings.ReplaceAll(mts.Version, "-SNAPSHOT", "")
+
+	index := fmt.Sprintf("metricbeat-%s-%s-%s", mVersion, mts.ServiceName, mts.ServiceVersion)
+
+	index += "-test*"
+
+	return index
 }
 
 func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, serviceType string) error {
 	serviceType = strings.ToLower(serviceType)
 
-	err := RunMetricbeatService(version, serviceType, mts.ServiceVersion)
-	if err == nil {
-		mts.Version = version
+	mts.Version = version
+
+	err := mts.runMetricbeatService()
+	if err != nil {
+		return err
 	}
 
 	query = ElasticsearchQuery{
@@ -72,7 +96,46 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, 
 		ServiceVersion: mts.ServiceVersion,
 	}
 
-	return err
+	return nil
+}
+
+// runMetricbeatService runs a metricbeat service entity for a service to monitor it
+func (mts *MetricbeatTestSuite) runMetricbeatService() error {
+	dir, _ := os.Getwd()
+	indexName := mts.getIndexName()
+
+	serviceManager := services.NewServiceManager()
+
+	env := map[string]string{
+		"BEAT_STRICT_PERMS":     "false",
+		"indexName":             indexName,
+		"metricbeatConfigFile":  path.Join(dir, "configurations", mts.ServiceName+".yml"),
+		"metricbeatTag":         mts.Version,
+		mts.ServiceName + "Tag": mts.ServiceVersion,
+		"serviceName":           mts.ServiceName,
+	}
+
+	err := serviceManager.AddServicesToCompose("metricbeat", []string{"metricbeat"}, env)
+	if err != nil {
+		msg := fmt.Sprintf("Could not run Metricbeat %s for %s %v", mts.Version, mts.ServiceName, err)
+
+		log.WithFields(log.Fields{
+			"error":             err,
+			"metricbeatVersion": mts.Version,
+			"service":           mts.ServiceName,
+			"serviceVersion":    mts.ServiceVersion,
+		}).Error(msg)
+
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"metricbeatVersion": mts.Version,
+		"service":           mts.ServiceName,
+		"serviceVersion":    mts.ServiceVersion,
+	}).Info("Metricbeat is running configured for the service")
+
+	return nil
 }
 
 func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(
@@ -96,6 +159,41 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(
 	mts.ServiceVersion = serviceVersion
 
 	return err
+}
+
+func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
+	esQuery := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must": []map[string]interface{}{
+					{
+						"match": map[string]interface{}{
+							"event.module": query.EventModule,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	stackName := "metricbeat"
+
+	result, err := retrySearch(stackName, mts.getIndexName(), esQuery, queryMaxAttempts)
+	if err != nil {
+		return err
+	}
+
+	err = assertHitsArePresent(result, query)
+	if err != nil {
+		return err
+	}
+
+	err = assertHitsDoNotContainErrors(result, query)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type ElasticsearchQuery struct {
@@ -180,48 +278,4 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 	time.Sleep(time.Duration(queryMetricbeatFetchTimeout) * time.Second)
 
 	return search(stackName, indexName, esQuery)
-}
-
-func thereAreNoErrorsInTheIndex(index string) error {
-	esIndexName := strings.ReplaceAll(index, "-SNAPSHOT", "")
-
-	// As we are using an index per scenario outline, with an index name
-	// formed by metricbeat-version1-module-version2, and because of the
-	// ILM is configured on metricbeat side, then we can use an asterisk
-	// for the index name: each scenario outline will be namespaced, so
-	// no collitions between different test cases should appear
-	esIndexName += "-test*"
-
-	esQuery := map[string]interface{}{
-		"query": map[string]interface{}{
-			"bool": map[string]interface{}{
-				"must": []map[string]interface{}{
-					{
-						"match": map[string]interface{}{
-							"event.module": query.EventModule,
-						},
-					},
-				},
-			},
-		},
-	}
-
-	stackName := "metricbeat"
-
-	result, err := retrySearch(stackName, esIndexName, esQuery, queryMaxAttempts)
-	if err != nil {
-		return err
-	}
-
-	err = assertHitsArePresent(result, query)
-	if err != nil {
-		return err
-	}
-
-	err = assertHitsDoNotContainErrors(result, query)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
