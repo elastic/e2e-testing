@@ -50,23 +50,10 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(stack string, composeN
 	newComposeNames = append(newComposeNames, composeNames...)
 
 	for _, composeName := range composeNames {
-		command := []string{"kill"}
+		command := []string{"rm", "-fvs"}
 		command = append(command, composeName)
 
 		err := executeCompose(sm, false, newComposeNames, command, map[string]string{})
-		if err != nil {
-			log.WithFields(log.Fields{
-				"command":  command,
-				"services": composeNames,
-				"stack":    stack,
-			}).Error("Could not stop services")
-			return err
-		}
-
-		command = []string{"rm", "-fv"}
-		command = append(command, composeName)
-
-		err = executeCompose(sm, false, newComposeNames, command, map[string]string{})
 		if err != nil {
 			log.WithFields(log.Fields{
 				"command":  command,
