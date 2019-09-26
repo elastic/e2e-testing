@@ -48,9 +48,7 @@ type MetricbeatTestSuite struct {
 // As we are using an index per scenario outline, with an index name formed by metricbeat-version1-module-version2,
 // and because of the ILM is configured on metricbeat side, then we can use an asterisk for the index name:
 // each scenario outline will be namespaced, so no collitions between different test cases should appear
-func (mts *MetricbeatTestSuite) setIndexName(version string) {
-	mts.Version = version
-
+func (mts *MetricbeatTestSuite) setIndexName() {
 	mVersion := strings.ReplaceAll(mts.Version, "-SNAPSHOT", "")
 
 	index := fmt.Sprintf("metricbeat-%s-%s-%s", mVersion, mts.ServiceName, mts.ServiceVersion)
@@ -88,7 +86,8 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, 
 	serviceType = strings.ToLower(serviceType)
 
 	// at this point we have everything to define the index name
-	mts.setIndexName(version)
+	mts.Version = version
+	mts.setIndexName()
 
 	err := mts.runMetricbeatService()
 	if err != nil {
