@@ -39,9 +39,25 @@ var queryRetryTimeout = 3
 // MetricbeatTestSuite represents a test suite, holding references to both metricbeat ant
 // the service to be monitored
 type MetricbeatTestSuite struct {
+	IndexName      string // the unique name for the index to be used in this test suite
 	ServiceName    string // the service to be monitored by metricbeat
 	ServiceVersion string // the version of the service to be monitored by metricbeat
 	Version        string // the metricbeat version for the test
+}
+
+// As we are using an index per scenario outline, with an index name formed by metricbeat-version1-module-version2,
+// and because of the ILM is configured on metricbeat side, then we can use an asterisk for the index name:
+// each scenario outline will be namespaced, so no collitions between different test cases should appear
+func (mts *MetricbeatTestSuite) setIndexName(version string) {
+	mts.Version = version
+
+	mVersion := strings.ReplaceAll(mts.Version, "-SNAPSHOT", "")
+
+	index := fmt.Sprintf("metricbeat-%s-%s-%s", mVersion, mts.ServiceName, mts.ServiceVersion)
+
+	index += "-test*"
+
+	mts.IndexName = index
 }
 
 // CleanUp cleans up services in the test suite
@@ -49,7 +65,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	serviceManager := services.NewServiceManager()
 
 	fn := func(ctx context.Context) error {
-		return deleteIndex(ctx, "metricbeat", mts.getIndexName())
+		return deleteIndex(ctx, "metricbeat", mts.IndexName)
 	}
 	defer fn(context.Background())
 
@@ -68,23 +84,11 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	return err
 }
 
-// As we are using an index per scenario outline, with an index name formed by metricbeat-version1-module-version2,
-// and because of the ILM is configured on metricbeat side, then we can use an asterisk for the index name:
-// each scenario outline will be namespaced, so no collitions between different test cases should appear
-func (mts *MetricbeatTestSuite) getIndexName() string {
-	mVersion := strings.ReplaceAll(mts.Version, "-SNAPSHOT", "")
-
-	index := fmt.Sprintf("metricbeat-%s-%s-%s", mVersion, mts.ServiceName, mts.ServiceVersion)
-
-	index += "-test*"
-
-	return index
-}
-
 func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, serviceType string) error {
 	serviceType = strings.ToLower(serviceType)
 
-	mts.Version = version
+	// at this point we have everything to define the index name
+	mts.setIndexName(version)
 
 	err := mts.runMetricbeatService()
 	if err != nil {
@@ -102,13 +106,12 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, 
 // runMetricbeatService runs a metricbeat service entity for a service to monitor it
 func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	dir, _ := os.Getwd()
-	indexName := mts.getIndexName()
 
 	serviceManager := services.NewServiceManager()
 
 	env := map[string]string{
 		"BEAT_STRICT_PERMS":     "false",
-		"indexName":             indexName,
+		"indexName":             mts.IndexName,
 		"metricbeatConfigFile":  path.Join(dir, "configurations", mts.ServiceName+".yml"),
 		"metricbeatTag":         mts.Version,
 		mts.ServiceName + "Tag": mts.ServiceVersion,
@@ -178,7 +181,7 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 
 	stackName := "metricbeat"
 
-	result, err := retrySearch(stackName, mts.getIndexName(), esQuery, queryMaxAttempts)
+	result, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts)
 	if err != nil {
 		return err
 	}
