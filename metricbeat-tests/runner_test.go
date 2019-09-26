@@ -55,7 +55,7 @@ func (mts *MetricbeatTestSuite) setIndexName(version string) {
 
 	index := fmt.Sprintf("metricbeat-%s-%s-%s", mVersion, mts.ServiceName, mts.ServiceVersion)
 
-	index += "-test*"
+	index += "-" + strings.ToLower(randomString(8))
 
 	mts.IndexName = index
 }
