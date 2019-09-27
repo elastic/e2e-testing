@@ -206,12 +206,11 @@ $ make functional-tests    # runs the test suite
 You could set up the environment so that it's possible to run one single module. As we are using _tags_ for matching modules, we could tell `make` to run just the tests for redis:
 
 ```shell
-$ LOG_LEVEL=DEBUG FLAG="-t" FEATURE="redis" make functional-test
+$ LOG_LEVEL=DEBUG FEATURE="redis" make functional-test
 ```
 where:
 
 - LOG_LEVEL: sets the default log level in the tool (DEBUG, INFO, WARN, ERROR, FATAL)
-- FLAG: if set as `-t`, it will tell `Godog` to filter by tag.
 - FEATURE: sets the tag to filter by (apache, mysql, redis)
 
 ### Advanced usage
