@@ -36,7 +36,7 @@ func (sm *DockerServiceManager) AddServicesToCompose(stack string, composeNames 
 	newComposeNames := []string{stack}
 	newComposeNames = append(newComposeNames, composeNames...)
 
-	return executeCompose(sm, false, newComposeNames, []string{"up", "-d"}, env)
+	return executeCompose(sm, true, newComposeNames, []string{"up", "-d"}, env)
 }
 
 // RemoveServicesFromCompose removes services from a running docker compose
@@ -53,7 +53,7 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(stack string, composeN
 		command := []string{"rm", "-fvs"}
 		command = append(command, composeName)
 
-		err := executeCompose(sm, false, newComposeNames, command, map[string]string{})
+		err := executeCompose(sm, true, newComposeNames, command, map[string]string{})
 		if err != nil {
 			log.WithFields(log.Fields{
 				"command":  command,
@@ -106,8 +106,8 @@ func (sm *DockerServiceManager) StopCompose(isStack bool, composeNames []string)
 func executeCompose(sm *DockerServiceManager, isStack bool, composeNames []string, command []string, env map[string]string) error {
 	composeFilePaths := make([]string, len(composeNames))
 	for i, composeName := range composeNames {
-		b := isStack
-		if i == 0 && !b {
+		b := false
+		if i == 0 && isStack {
 			b = true
 		}
 
