@@ -238,23 +238,13 @@ func TestMain(m *testing.M) {
 
 // attempts could be redefined in the OP_QUERY_MAX_ATTEMPTS environment variable
 func retrySearch(stackName string, indexName string, esQuery map[string]interface{}, attempts int) (searchResult, error) {
-	if attempts == 0 {
-		retryMaxTime := queryMaxAttempts * queryRetryTimeout
-		err := fmt.Errorf("Could not send query to Elasticsearch in the specified time (%d seconds)", retryMaxTime)
+	totalRetryTime := attempts * queryRetryTimeout
 
-		log.WithFields(log.Fields{
-			"error":         err,
-			"query":         esQuery,
-			"retryAttempts": queryMaxAttempts,
-			"retryTimeout":  queryRetryTimeout,
-		}).Error(err.Error())
-
-		return searchResult{}, err
-	}
-
-	_, err := search("metricbeat", indexName, esQuery)
-	if err != nil {
-		time.Sleep(time.Duration(queryRetryTimeout) * time.Second)
+	for attempts := attempts; attempts > 0; attempts-- {
+		result, err := search(stackName, indexName, esQuery)
+		if err == nil {
+			return result, nil
+		}
 
 		log.WithFields(log.Fields{
 			"attempt":       attempts,
@@ -264,18 +254,19 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 			"retryAttempts": queryMaxAttempts,
 			"retryTimeout":  queryRetryTimeout,
 		}).Warnf("Waiting %d seconds for the index to be ready", queryRetryTimeout)
-
-		// recursive approach for retrying the query
-		return retrySearch(stackName, indexName, esQuery, (attempts - 1))
+		if attempts > 1 {
+			time.Sleep(time.Duration(queryRetryTimeout) * time.Second)
+		}
 	}
 
-	log.WithFields(log.Fields{
-		"index":        indexName,
-		"query":        esQuery,
-		"attempts":     attempts,
-		"fetchTimeout": queryMetricbeatFetchTimeout,
-	}).Debugf("Waiting %d seconds so that metricbeat is able to grab metrics from the integration module", queryMetricbeatFetchTimeout)
-	time.Sleep(time.Duration(queryMetricbeatFetchTimeout) * time.Second)
+	err := fmt.Errorf("Could not send query to Elasticsearch in the specified time (%d seconds)", totalRetryTime)
 
-	return search(stackName, indexName, esQuery)
+	log.WithFields(log.Fields{
+		"error":         err,
+		"query":         esQuery,
+		"retryAttempts": queryMaxAttempts,
+		"retryTimeout":  queryRetryTimeout,
+	}).Error(err.Error())
+
+	return searchResult{}, err
 }
