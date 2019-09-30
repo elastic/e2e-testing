@@ -1,0 +1,9 @@
+version: '3'
+services:
+  vsphere:
+    image: "nimmis/vcsim:${vsphereTag}"
+    container_name: vsphere
+    healthcheck:
+      test: ["CMD", "curl", "--write-out", "'HTTP %{http_code}'", "--silent", "--output", "/dev/null", "http://vsphere:443/"]
+      retries: 10
+      interval: 10s
