@@ -1,11 +1,14 @@
 FEATURE?=
-FLAG?=
 FORMAT?=pretty
 LOG_INCLUDE_TIMESTAMP?=TRUE
 LOG_LEVEL?=INFO
 METRICBEAT_FETCH_TIMEOUT?=20
 QUERY_MAX_ATTEMPTS?=5
 RETRY_TIMEOUT?=3
+
+ifneq ($(FEATURE),)
+FEATURE_FLAG=--tags
+endif
 
 .PHONY: build-binary
 build-binary:
@@ -22,7 +25,7 @@ functional-test:
 	OP_METRICBEAT_FETCH_TIMEOUT=${METRICBEAT_FETCH_TIMEOUT} \
 	OP_QUERY_MAX_ATTEMPTS=${QUERY_MAX_ATTEMPTS} \
 	OP_RETRY_TIMEOUT=${RETRY_TIMEOUT} \
-	godog --format=${FORMAT} ${FLAG} ${FEATURE}
+	godog --format=${FORMAT} ${FEATURE_FLAG} ${FEATURE}
 
 .PHONY: run-elastic-stack
 run-elastic-stack:
