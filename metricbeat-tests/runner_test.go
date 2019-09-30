@@ -24,17 +24,20 @@ var opt = godog.Options{Output: colors.Colored(os.Stdout)}
 var query ElasticsearchQuery
 var serviceManager services.ServiceManager
 
-// queryMaxAttempts Number of attempts to query elasticsearch before aborting
+// queryMaxAttempts is the number of attempts to query elasticsearch before aborting
 // It can be overriden by OP_QUERY_MAX_ATTEMPTS env var
 var queryMaxAttempts = 5
 
-// queryMetricbeatFetchTimeout Number of seconds that metricbeat has to grab metrics from the module
+// queryMetricbeatFetchTimeout is the number of seconds that metricbeat has to grab metrics from the module
 // It can be overriden by OP_METRICBEAT_FETCH_TIMEOUT env var
 var queryMetricbeatFetchTimeout = 20
 
-// queryRetryTimeout Number of seconds between elasticsearch retry queries.
+// queryRetryTimeout is the number of seconds between elasticsearch retry queries.
 // It can be overriden by OP_RETRY_TIMEOUT env var
 var queryRetryTimeout = 3
+
+// runtimeDuration is the time Metricbeat is running and generating events during the test.
+var runtimeDuration = 20 * time.Second
 
 // MetricbeatTestSuite represents a test suite, holding references to both metricbeat ant
 // the service to be monitored
@@ -180,7 +183,13 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 
 	stackName := "metricbeat"
 
-	result, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts)
+	_, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts)
+	if err != nil {
+		return err
+	}
+
+	time.Sleep(runtimeDuration)
+	result, err := retrySearch(stackName, mts.IndexName, esQuery, 3)
 	if err != nil {
 		return err
 	}
