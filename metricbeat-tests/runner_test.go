@@ -36,9 +36,6 @@ var queryMetricbeatFetchTimeout = 20
 // It can be overriden by OP_RETRY_TIMEOUT env var
 var queryRetryTimeout = 3
 
-// runtimeDuration is the time Metricbeat is running and generating events during the test.
-var runtimeDuration = 20 * time.Second
-
 // MetricbeatTestSuite represents a test suite, holding references to both metricbeat ant
 // the service to be monitored
 type MetricbeatTestSuite struct {
@@ -188,8 +185,8 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 		return err
 	}
 
-	time.Sleep(runtimeDuration)
-	result, err := retrySearch(stackName, mts.IndexName, esQuery, 3)
+	time.Sleep(time.Duration(queryMetricbeatFetchTimeout) * time.Second)
+	result, err := search(stackName, mts.IndexName, esQuery)
 	if err != nil {
 		return err
 	}
