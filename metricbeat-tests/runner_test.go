@@ -268,7 +268,7 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 				"query":         esQuery,
 				"retryAttempts": queryMaxAttempts,
 				"retryTimeout":  queryRetryTimeout,
-			}).Warnf("Waiting %d seconds for the index to be ready", queryRetryTimeout)
+			}).Debugf("Waiting %d seconds for the index to be ready", queryRetryTimeout)
 			time.Sleep(time.Duration(queryRetryTimeout) * time.Second)
 		}
 	}
