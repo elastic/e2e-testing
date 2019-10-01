@@ -24,15 +24,15 @@ var opt = godog.Options{Output: colors.Colored(os.Stdout)}
 var query ElasticsearchQuery
 var serviceManager services.ServiceManager
 
-// queryMaxAttempts Number of attempts to query elasticsearch before aborting
+// queryMaxAttempts is the number of attempts to query elasticsearch before aborting
 // It can be overriden by OP_QUERY_MAX_ATTEMPTS env var
 var queryMaxAttempts = 5
 
-// queryMetricbeatFetchTimeout Number of seconds that metricbeat has to grab metrics from the module
+// queryMetricbeatFetchTimeout is the number of seconds that metricbeat has to grab metrics from the module
 // It can be overriden by OP_METRICBEAT_FETCH_TIMEOUT env var
 var queryMetricbeatFetchTimeout = 20
 
-// queryRetryTimeout Number of seconds between elasticsearch retry queries.
+// queryRetryTimeout is the number of seconds between elasticsearch retry queries.
 // It can be overriden by OP_RETRY_TIMEOUT env var
 var queryRetryTimeout = 3
 
@@ -180,7 +180,19 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 
 	stackName := "metricbeat"
 
-	result, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts)
+	_, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts)
+	if err != nil {
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"index":        mts.IndexName,
+		"query":        esQuery,
+		"fetchTimeout": queryMetricbeatFetchTimeout,
+	}).Debugf("Waiting %d seconds for Metricbeat to fetch some data", queryMetricbeatFetchTimeout)
+	time.Sleep(time.Duration(queryMetricbeatFetchTimeout) * time.Second)
+
+	result, err := search(stackName, mts.IndexName, esQuery)
 	if err != nil {
 		return err
 	}
@@ -248,15 +260,15 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 			return result, nil
 		}
 
-		log.WithFields(log.Fields{
-			"attempt":       attempts,
-			"errorCause":    err.Error(),
-			"index":         indexName,
-			"query":         esQuery,
-			"retryAttempts": queryMaxAttempts,
-			"retryTimeout":  queryRetryTimeout,
-		}).Warnf("Waiting %d seconds for the index to be ready", queryRetryTimeout)
 		if attempts > 1 {
+			log.WithFields(log.Fields{
+				"attempt":       attempts,
+				"errorCause":    err.Error(),
+				"index":         indexName,
+				"query":         esQuery,
+				"retryAttempts": queryMaxAttempts,
+				"retryTimeout":  queryRetryTimeout,
+			}).Debugf("Waiting %d seconds for the index to be ready", queryRetryTimeout)
 			time.Sleep(time.Duration(queryRetryTimeout) * time.Second)
 		}
 	}
