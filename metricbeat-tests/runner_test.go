@@ -185,7 +185,13 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 		return err
 	}
 
+	log.WithFields(log.Fields{
+		"index":        mts.IndexName,
+		"query":        esQuery,
+		"fetchTimeout": queryMetricbeatFetchTimeout,
+	}).Infof("Waiting %d seconds for Metricbeat to fetch some data", queryMetricbeatFetchTimeout)
 	time.Sleep(time.Duration(queryMetricbeatFetchTimeout) * time.Second)
+
 	result, err := search(stackName, mts.IndexName, esQuery)
 	if err != nil {
 		return err
