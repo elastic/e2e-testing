@@ -89,7 +89,7 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, 
 	mts.Version = version
 	mts.setIndexName()
 
-	err := mts.runMetricbeatService()
+	err := mts.runMetricbeatService(mts.ServiceName + ".yml")
 	if err != nil {
 		return err
 	}
@@ -102,8 +102,8 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, 
 	return nil
 }
 
-// runMetricbeatService runs a metricbeat service entity for a service to monitor it
-func (mts *MetricbeatTestSuite) runMetricbeatService() error {
+// runMetricbeatService runs a metricbeat service entity for a service to monitor it, using a configuration file
+func (mts *MetricbeatTestSuite) runMetricbeatService(configurationFile string) error {
 	dir, _ := os.Getwd()
 
 	serviceManager := services.NewServiceManager()
@@ -111,7 +111,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	env := map[string]string{
 		"BEAT_STRICT_PERMS":     "false",
 		"indexName":             mts.IndexName,
-		"metricbeatConfigFile":  path.Join(dir, "configurations", mts.ServiceName+".yml"),
+		"metricbeatConfigFile":  path.Join(dir, "configurations", configurationFile),
 		"metricbeatTag":         mts.Version,
 		mts.ServiceName + "Tag": mts.ServiceVersion,
 		"serviceName":           mts.ServiceName,
