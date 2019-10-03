@@ -51,7 +51,12 @@ type MetricbeatTestSuite struct {
 func (mts *MetricbeatTestSuite) setIndexName() {
 	mVersion := strings.ReplaceAll(mts.Version, "-SNAPSHOT", "")
 
-	index := fmt.Sprintf("metricbeat-%s-%s-%s", mVersion, mts.ServiceName, mts.ServiceVersion)
+	var index string
+	if mts.ServiceName != "" {
+		index = fmt.Sprintf("metricbeat-%s-%s-%s", mVersion, mts.ServiceName, mts.ServiceVersion)
+	} else {
+		index = fmt.Sprintf("metricbeat-%s", mVersion)
+	}
 
 	index += "-" + strings.ToLower(randomString(8))
 
@@ -67,8 +72,12 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	}
 	defer fn(context.Background())
 
-	err := serviceManager.RemoveServicesFromCompose(
-		"metricbeat", []string{"metricbeat", mts.ServiceName})
+	services := []string{"metricbeat"}
+	if mts.ServiceName != "" {
+		services = append(services, mts.ServiceName)
+	}
+
+	err := serviceManager.RemoveServicesFromCompose("metricbeat", services)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": mts.ServiceName,
