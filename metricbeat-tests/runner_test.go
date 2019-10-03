@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path"
 	"strconv"
 	"strings"
 	"testing"
@@ -116,7 +115,20 @@ func (mts *MetricbeatTestSuite) installedUsingDefaultConfiguration(version strin
 	mts.Version = version
 	mts.setIndexName()
 
-	err := mts.runMetricbeatService("metricbeat-default.yml")
+	// use master branch for snapshots
+	tag := "v" + version
+	if strings.Contains(version, "SNAPSHOT") {
+		tag = "master"
+	}
+
+	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + tag + "/metricbeat/metricbeat.yml"
+
+	configurationFilePath, err := downloadFile(configurationFileURL)
+	if err != nil {
+		return err
+	}
+
+	err = mts.runMetricbeatService(configurationFilePath)
 	if err != nil {
 		return err
 	}
@@ -131,14 +143,12 @@ func (mts *MetricbeatTestSuite) installedUsingDefaultConfiguration(version strin
 
 // runMetricbeatService runs a metricbeat service entity for a service to monitor it, using a configuration file
 func (mts *MetricbeatTestSuite) runMetricbeatService(configurationFile string) error {
-	dir, _ := os.Getwd()
-
 	serviceManager := services.NewServiceManager()
 
 	env := map[string]string{
 		"BEAT_STRICT_PERMS":     "false",
 		"indexName":             mts.IndexName,
-		"metricbeatConfigFile":  path.Join(dir, "configurations", configurationFile),
+		"metricbeatConfigFile":  configurationFile,
 		"metricbeatTag":         mts.Version,
 		mts.ServiceName + "Tag": mts.ServiceVersion,
 		"serviceName":           mts.ServiceName,
