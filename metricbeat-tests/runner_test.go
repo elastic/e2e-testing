@@ -102,6 +102,24 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, 
 	return nil
 }
 
+func (mts *MetricbeatTestSuite) installedUsingDefaultConfiguration(version string) error {
+	// at this point we have everything to define the index name
+	mts.Version = version
+	mts.setIndexName()
+
+	err := mts.runMetricbeatService("metricbeat-default.yml")
+	if err != nil {
+		return err
+	}
+
+	query = ElasticsearchQuery{
+		EventModule:    "system",
+		ServiceVersion: mts.Version,
+	}
+
+	return nil
+}
+
 // runMetricbeatService runs a metricbeat service entity for a service to monitor it, using a configuration file
 func (mts *MetricbeatTestSuite) runMetricbeatService(configurationFile string) error {
 	dir, _ := os.Getwd()
