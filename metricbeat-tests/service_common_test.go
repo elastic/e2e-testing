@@ -13,7 +13,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^there are no errors in the index$`, testSuite.thereAreNoErrorsInTheIndex)
 	s.Step(`^there are "([^"]*)" events in the index$`, testSuite.thereAreEventsInTheIndex)
 
-	s.Step(`^metricbeat "([^"]*)" is installed using default configuration$`, testSuite.installedUsingDefaultConfiguration)
+	s.Step(`^metricbeat "([^"]*)" is installed using "([^"]*)" configuration$`, testSuite.installedUsingConfiguration)
 
 	s.BeforeScenario(func(interface{}) {
 		log.Debug("Before scenario...")

@@ -110,7 +110,7 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, 
 	return nil
 }
 
-func (mts *MetricbeatTestSuite) installedUsingDefaultConfiguration(version string) error {
+func (mts *MetricbeatTestSuite) installedUsingConfiguration(version string, configuration string) error {
 	// at this point we have everything to define the index name
 	mts.Version = version
 	mts.setIndexName()
@@ -121,7 +121,7 @@ func (mts *MetricbeatTestSuite) installedUsingDefaultConfiguration(version strin
 		tag = "master"
 	}
 
-	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + tag + "/metricbeat/metricbeat.yml"
+	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + tag + "/metricbeat/" + configuration + ".yml"
 
 	configurationFilePath, err := downloadFile(configurationFileURL)
 	if err != nil {
