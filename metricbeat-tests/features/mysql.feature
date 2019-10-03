@@ -1,10 +1,11 @@
 @mysql
 Feature: As a Metricbeat developer I want to check that the MySQL module works as expected
 
-Scenario Outline: Check module is sending metrics to Elasticsearch
+Scenario Outline: Check module is sending metrics to Elasticsearch without errors
   Given MySQL "<mysql_version>" is running for metricbeat "<metricbeat_version>"
     And metricbeat "<metricbeat_version>" is installed and configured for MySQL module
-  Then there are no errors in the index
+  Then there are "MySQL" events in the index
+    And there are no errors in the index
 Examples:
 | mysql_version | metricbeat_version |
 | 5.6  | 7.3.0 |

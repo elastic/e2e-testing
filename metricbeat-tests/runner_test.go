@@ -163,6 +163,43 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(
 	return err
 }
 
+func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
+	esQuery := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must": []map[string]interface{}{
+					{
+						"match": map[string]interface{}{
+							"event.module": query.EventModule,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	stackName := "metricbeat"
+
+	_, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts)
+	if err != nil {
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"index":        mts.IndexName,
+		"query":        esQuery,
+		"fetchTimeout": queryMetricbeatFetchTimeout,
+	}).Debugf("Waiting %d seconds for Metricbeat to fetch some data", queryMetricbeatFetchTimeout)
+	time.Sleep(time.Duration(queryMetricbeatFetchTimeout) * time.Second)
+
+	result, err := search(stackName, mts.IndexName, esQuery)
+	if err != nil {
+		return err
+	}
+
+	return assertHitsArePresent(result, query)
+}
+
 func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 	esQuery := map[string]interface{}{
 		"query": map[string]interface{}{
@@ -197,17 +234,7 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 		return err
 	}
 
-	err = assertHitsArePresent(result, query)
-	if err != nil {
-		return err
-	}
-
-	err = assertHitsDoNotContainErrors(result, query)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return assertHitsDoNotContainErrors(result, query)
 }
 
 type ElasticsearchQuery struct {
