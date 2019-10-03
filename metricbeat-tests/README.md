@@ -48,8 +48,8 @@ We want to store the metrics in Elasticsearch, so at some point we must start up
 Ok, you want to contribute the tests for a new integration module. Then you have to simply add three files, that's all. Therefore, a test is formed by three elements:
 
 - A `feature file`, describing in plain English the use cases and test scenarios.
+- A `compose file`, in Docker Compose format, with any configuration needed for the module.
 - A `configuration file`, in YAML format, with any Metricbeat configuration that is specific to the module.
-- A `Golang test file` representing the implementation of the test.
 
 ### Feature files
 We will create use cases for the module in a separate `.feature` file, ideally named after module's name (i.e. _apache.feature_). This feature file is a Cucumber requirement, that will be parsed by the test runner and matched against the Golang code implementing the tests.
@@ -59,9 +59,9 @@ We will create use cases for the module in a separate `.feature` file, ideally n
 Feature: As a Metricbeat developer I want to check that the Apache module works as expected
 
 Scenario Outline: Check module is sending metrics to Elasticsearch
-  Given Apache "<apache_version>" is running for metricbeat "<metricbeat_version>"
-    And metricbeat "<metricbeat_version>" is installed and configured for Apache module
-  Then there are no errors in the "metricbeat-<metricbeat_version>-apache-<apache_version>" index
+  Given "Apache" "<apache_version>" is running for metricbeat "<metricbeat_version>"
+    And metricbeat "<metricbeat_version>" is installed and configured for "Apache" module
+  Then there are no errors in the index
 Examples:
 | apache_version | metricbeat_version |
 | 2.2  | 7.3.0 |
@@ -88,111 +88,6 @@ The anatomy of a feature file is:
 
 ### Configuration files
 There will exist a configuration YAML file per module, under the `configurations` folder. The name of the file will be the module name (i.e. `apache.yml`). In this file we will add those configurations that are exclusive to the module, as those that are common are already defined at Metricbeat level.
-
-### Golang test files
-To implement the tests defined in the feature file, we must create a Golang file, named after module's name, with the common Golang's suffix `_test.go` (i.e. `redis_test.go`). This file will be located under the `main` package, at the root directory of the project.
-
-In there, we will define Go functions representing each step defined in the feature file. The signature of the function (name and arguments) will be a consequence of how we write the feature file, and must return and `error` to fail the test if not possible to satisfy the specification.
-
-But no worries, if you leave the file empty, and you run the tests, the test runner will complain that no implemetation has been found, writing in console the signatures missing. As an example:
-
-```cucumber
-@redis
-Feature: As a Metricbeat developer I want to check that the Redis module works as expected
-
-Scenario Outline: Check module is sending metrics to Elasticsearch
-  Given Redis "<redis_version>" is running for metricbeat "<metricbeat_version>"
-    And metricbeat "<metricbeat_version>" is installed and configured for Redis module
-  Then there are no errors in the "metricbeat-<metricbeat_version>-redis-<redis_version>" index
-Examples:
-| redis_version | metricbeat_version |
-| 4.0.14  | 7.3.0 |
-| 4.0.14  | 8.0.0-SNAPSHOT |
-| 5.0.5  | 7.3.0 |
-| 5.0.5  | 8.0.0-SNAPSHOT |
-```
-
-```Go
-package main
-
-import (
-	"github.com/DATA-DOG/godog"
-	log "github.com/sirupsen/logrus"
-)
-
-// global variable to be reused across methods in this file
-// the MetricbeatTestSuite holds a reference to both
-// metricbeat and the service to monitor
-var redisTestSuite MetricbeatTestSuite
-
-// Matches the 'Given Redis "<redis_version>" is running for metricbeat "<metricbeat_version>"' clause
-// There are two input parameters, as there are two words in double quotes.
-// As the variables are using <>, they are dynamic and populated from the Examples table
-// the function must return error, so that the test fails if the redis service is not run
-func redisIsRunningForMetricbeat(redisVersion string, metricbeatVersion string) error {
-  // build the object holding the configuration to run a Docker service for the integration module
-  redisService := serviceManager.Build("redis", redisVersion, true)
-
-  // network alias to enable network discovery: metricbeat will use this as the service to monitor
-  redisService.SetNetworkAlias("redis_" + redisVersion + "-metricbeat_" + metricbeatVersion)
-
-  // runs the service to mmonitor
-  err := serviceManager.Run(redisService)
-  if err == nil {
-    // populate test suite object if OK
-    redisTestSuite.Service = redisService    
-  }
-
-	return err
-}
-
-// Matches the 'And metricbeat "<metricbeat_version>" is installed and configured for Redis module'
-// There are one input parameter
-// The function must return error, so that the test fails if metricbeat configured for the
-// redis service is not run
-func metricbeatIsInstalledAndConfiguredForRedisModule(metricbeatVersion string) error {
-  // get the reference from the test suite object
-  redisService := redisTestSuite.Service
-
-  s, err := RunMetricbeatService(metricbeatVersion, redisService)
-  if err == nil {
-    // this global variable is defined at test runner level
-    // we populate it here so that it can be used in reusable steps/functions
-    redisTestSuite.Metricbeat = s
-  }
-
-  // each module must contribute some specific fields for querying elasticsearch
-  query = ElasticsearchQuery{
-    EventModule:    "redis",                     // event.module field
-    ServiceVersion: redisService.GetVersion(),   // service.version field
-  }
-
-  return err
-}
-
-// Here it happens the magic!
-// The test runner parses the feature file and assigns a feature step with a Golang function
-// But no worries, if you leave this file empty, and you run the tests, the test runner will
-// complain that no implemetation has been found, writing in console the signatures missing
-// (basically the above functions but empty, and exactly the below context suite)
-func RedisFeatureContext(s *godog.Suite) {
-  s.Step(`^Redis "([^"]*)" is running for metricbeat "([^"]*)"$`, redisIsRunningForMetricbeat)
-  s.Step(`^metricbeat "([^"]*)" is installed and configured for Redis module$`, metricbeatIsInstalledAndConfiguredForRedisModule)
-  // this last function is common a to all the modules
-  // so it will be declared at framework/test runner level (see runner_test.go)
-  s.Step(`^there are no errors in the "([^"]*)" index$`, thereAreNoErrorsInTheIndex)
-
-  s.BeforeScenario(func(interface{}) {
-    log.Debug("Before scenario...")
-    redisTestSuite = MetricbeatTestSuite{}
-  })
-  s.AfterScenario(func(interface{}, error) {
-    log.Debug("After scenario...")
-    redisTestSuite.CleanUp()
-  })
-}
-
-```
 
 ## Running the tests
 At this moment, the CLI and the functional tests coexist in the same repository, that's why we are building the CLI to get access to its features. Eventually that would change and we would consume it as a binary. Meanwhile:
