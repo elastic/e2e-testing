@@ -23,7 +23,7 @@
                 "GO111MODULE": "on",
                 "OP_LOG_LEVEL": "DEBUG",
             },
-            "args": ["run", "service", "mysql", "5.6"]
+            "args": ["run", "service", "mysql", "--version", "5.6"]
         },
         {
             "name": "Debug Deploying a Service",
