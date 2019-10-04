@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path"
 	"strconv"
 	"strings"
 	"testing"
@@ -51,7 +50,12 @@ type MetricbeatTestSuite struct {
 func (mts *MetricbeatTestSuite) setIndexName() {
 	mVersion := strings.ReplaceAll(mts.Version, "-SNAPSHOT", "")
 
-	index := fmt.Sprintf("metricbeat-%s-%s-%s", mVersion, mts.ServiceName, mts.ServiceVersion)
+	var index string
+	if mts.ServiceName != "" {
+		index = fmt.Sprintf("metricbeat-%s-%s-%s", mVersion, mts.ServiceName, mts.ServiceVersion)
+	} else {
+		index = fmt.Sprintf("metricbeat-%s", mVersion)
+	}
 
 	index += "-" + strings.ToLower(randomString(8))
 
@@ -67,8 +71,12 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	}
 	defer fn(context.Background())
 
-	err := serviceManager.RemoveServicesFromCompose(
-		"metricbeat", []string{"metricbeat", mts.ServiceName})
+	services := []string{"metricbeat"}
+	if mts.ServiceName != "" {
+		services = append(services, mts.ServiceName)
+	}
+
+	err := serviceManager.RemoveServicesFromCompose("metricbeat", services)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": mts.ServiceName,
@@ -89,7 +97,7 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, 
 	mts.Version = version
 	mts.setIndexName()
 
-	err := mts.runMetricbeatService()
+	err := mts.runMetricbeatService(mts.ServiceName + ".yml")
 	if err != nil {
 		return err
 	}
@@ -102,16 +110,45 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, 
 	return nil
 }
 
-// runMetricbeatService runs a metricbeat service entity for a service to monitor it
-func (mts *MetricbeatTestSuite) runMetricbeatService() error {
-	dir, _ := os.Getwd()
+func (mts *MetricbeatTestSuite) installedUsingConfiguration(version string, configuration string) error {
+	// at this point we have everything to define the index name
+	mts.Version = version
+	mts.setIndexName()
 
+	// use master branch for snapshots
+	tag := "v" + version
+	if strings.Contains(version, "SNAPSHOT") {
+		tag = "master"
+	}
+
+	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + tag + "/metricbeat/" + configuration + ".yml"
+
+	configurationFilePath, err := downloadFile(configurationFileURL)
+	if err != nil {
+		return err
+	}
+
+	err = mts.runMetricbeatService(configurationFilePath)
+	if err != nil {
+		return err
+	}
+
+	query = ElasticsearchQuery{
+		EventModule:    "system",
+		ServiceVersion: mts.Version,
+	}
+
+	return nil
+}
+
+// runMetricbeatService runs a metricbeat service entity for a service to monitor it, using a configuration file
+func (mts *MetricbeatTestSuite) runMetricbeatService(configurationFile string) error {
 	serviceManager := services.NewServiceManager()
 
 	env := map[string]string{
 		"BEAT_STRICT_PERMS":     "false",
 		"indexName":             mts.IndexName,
-		"metricbeatConfigFile":  path.Join(dir, "configurations", mts.ServiceName+".yml"),
+		"metricbeatConfigFile":  configurationFile,
 		"metricbeatTag":         mts.Version,
 		mts.ServiceName + "Tag": mts.ServiceVersion,
 		"serviceName":           mts.ServiceName,
@@ -163,6 +200,43 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(
 	return err
 }
 
+func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
+	esQuery := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must": []map[string]interface{}{
+					{
+						"match": map[string]interface{}{
+							"event.module": query.EventModule,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	stackName := "metricbeat"
+
+	_, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts)
+	if err != nil {
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"index":        mts.IndexName,
+		"query":        esQuery,
+		"fetchTimeout": queryMetricbeatFetchTimeout,
+	}).Debugf("Waiting %d seconds for Metricbeat to fetch some data", queryMetricbeatFetchTimeout)
+	time.Sleep(time.Duration(queryMetricbeatFetchTimeout) * time.Second)
+
+	result, err := search(stackName, mts.IndexName, esQuery)
+	if err != nil {
+		return err
+	}
+
+	return assertHitsArePresent(result, query)
+}
+
 func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 	esQuery := map[string]interface{}{
 		"query": map[string]interface{}{
@@ -197,17 +271,7 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 		return err
 	}
 
-	err = assertHitsArePresent(result, query)
-	if err != nil {
-		return err
-	}
-
-	err = assertHitsDoNotContainErrors(result, query)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return assertHitsDoNotContainErrors(result, query)
 }
 
 type ElasticsearchQuery struct {

@@ -11,6 +11,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^([^"]*) "([^"]*)" is running for metricbeat "([^"]*)"$`, testSuite.serviceIsRunningForMetricbeat)
 	s.Step(`^metricbeat "([^"]*)" is installed and configured for ([^"]*) module$`, testSuite.installedAndConfiguredForModule)
 	s.Step(`^there are no errors in the index$`, testSuite.thereAreNoErrorsInTheIndex)
+	s.Step(`^there are "([^"]*)" events in the index$`, testSuite.thereAreEventsInTheIndex)
+
+	s.Step(`^metricbeat "([^"]*)" is installed using "([^"]*)" configuration$`, testSuite.installedUsingConfiguration)
 
 	s.BeforeScenario(func(interface{}) {
 		log.Debug("Before scenario...")
