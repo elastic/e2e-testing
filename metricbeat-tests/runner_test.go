@@ -38,10 +38,11 @@ var queryRetryTimeout = 3
 // MetricbeatTestSuite represents a test suite, holding references to both metricbeat ant
 // the service to be monitored
 type MetricbeatTestSuite struct {
-	IndexName      string // the unique name for the index to be used in this test suite
-	ServiceName    string // the service to be monitored by metricbeat
-	ServiceVersion string // the version of the service to be monitored by metricbeat
-	Version        string // the metricbeat version for the test
+	configurationFile string // the  name of the configuration file to be used in this test suite
+	IndexName         string // the unique name for the index to be used in this test suite
+	ServiceName       string // the service to be monitored by metricbeat
+	ServiceVersion    string // the version of the service to be monitored by metricbeat
+	Version           string // the metricbeat version for the test
 }
 
 // As we are using an index per scenario outline, with an index name formed by metricbeat-version1-module-version2,
@@ -86,6 +87,15 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	log.WithFields(log.Fields{
 		"service": mts.ServiceName,
 	}).Debug("Service removed from compose.")
+
+	if mts.configurationFile != "" {
+		if _, err := os.Stat(mts.configurationFile); err == nil {
+			os.Remove(mts.configurationFile)
+			log.WithFields(log.Fields{
+				"path": mts.configurationFile,
+			}).Debug("Metricbeat configuration file removed.")
+		}
+	}
 
 	return err
 }
@@ -132,6 +142,8 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(version string, conf
 	if err != nil {
 		return err
 	}
+
+	mts.configurationFile = configurationFilePath
 
 	query = ElasticsearchQuery{
 		EventModule:    "system",
