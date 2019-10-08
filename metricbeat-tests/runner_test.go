@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"testing"
@@ -107,7 +108,10 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, 
 	// at this point we have everything to define the index name
 	mts.Version = version
 	mts.setIndexName()
-	mts.configurationFile = mts.ServiceName + ".yml"
+
+	// look up configurations under workspace's configurations directory
+	dir, _ := os.Getwd()
+	mts.configurationFile = path.Join(dir, "configurations", mts.ServiceName+".yml")
 
 	err := mts.runMetricbeatService()
 	if err != nil {
