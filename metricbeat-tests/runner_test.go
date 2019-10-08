@@ -19,6 +19,10 @@ import (
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
+// metricbeatVersion is the version of the metricbeat to use
+// It can be overriden by OP_METRICBEAT_VERSION env var
+var metricbeatVersion = "7.4.0"
+
 var opt = godog.Options{Output: colors.Colored(os.Stdout)}
 
 var query ElasticsearchQuery
@@ -102,11 +106,11 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	return err
 }
 
-func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, serviceType string) error {
+func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType string) error {
 	serviceType = strings.ToLower(serviceType)
 
 	// at this point we have everything to define the index name
-	mts.Version = version
+	mts.Version = metricbeatVersion
 	mts.setIndexName()
 
 	// look up configurations under workspace's configurations directory
@@ -126,14 +130,14 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, 
 	return nil
 }
 
-func (mts *MetricbeatTestSuite) installedUsingConfiguration(version string, configuration string) error {
+func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string) error {
 	// at this point we have everything to define the index name
-	mts.Version = version
+	mts.Version = metricbeatVersion
 	mts.setIndexName()
 
 	// use master branch for snapshots
-	tag := "v" + version
-	if strings.Contains(version, "SNAPSHOT") {
+	tag := "v" + metricbeatVersion
+	if strings.Contains(metricbeatVersion, "SNAPSHOT") {
 		tag = "master"
 	}
 
@@ -195,9 +199,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	return nil
 }
 
-func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(
-	serviceType string, serviceVersion string, metricbeatVersion string) error {
-
+func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(serviceType string, serviceVersion string) error {
 	serviceType = strings.ToLower(serviceType)
 
 	env := map[string]string{
@@ -297,6 +299,14 @@ type ElasticsearchQuery struct {
 	ServiceVersion string
 }
 
+func getEnv(envVar string, defaultValue string) string {
+	if value, exists := os.LookupEnv(envVar); exists {
+		return value
+	}
+
+	return defaultValue
+}
+
 func getIntegerFromEnv(envVar string, defaultValue int) int {
 	if value, exists := os.LookupEnv(envVar); exists {
 		v, err := strconv.Atoi(value)
@@ -314,6 +324,8 @@ func init() {
 	godog.BindFlags("godog.", flag.CommandLine, &opt)
 
 	serviceManager = services.NewServiceManager()
+
+	metricbeatVersion = getEnv("OP_METRICBEAT_VERSION", metricbeatVersion)
 
 	queryMaxAttempts = getIntegerFromEnv("OP_QUERY_MAX_ATTEMPTS", queryMaxAttempts)
 	queryMetricbeatFetchTimeout = getIntegerFromEnv("OP_METRICBEAT_FETCH_TIMEOUT", queryMetricbeatFetchTimeout)
