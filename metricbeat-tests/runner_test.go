@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"testing"
@@ -38,10 +39,12 @@ var queryRetryTimeout = 3
 // MetricbeatTestSuite represents a test suite, holding references to both metricbeat ant
 // the service to be monitored
 type MetricbeatTestSuite struct {
-	IndexName      string // the unique name for the index to be used in this test suite
-	ServiceName    string // the service to be monitored by metricbeat
-	ServiceVersion string // the version of the service to be monitored by metricbeat
-	Version        string // the metricbeat version for the test
+	cleanUpTmpFiles   bool   // if it's needed to clean up temporary files
+	configurationFile string // the  name of the configuration file to be used in this test suite
+	IndexName         string // the unique name for the index to be used in this test suite
+	ServiceName       string // the service to be monitored by metricbeat
+	ServiceVersion    string // the version of the service to be monitored by metricbeat
+	Version           string // the metricbeat version for the test
 }
 
 // As we are using an index per scenario outline, with an index name formed by metricbeat-version1-module-version2,
@@ -87,6 +90,15 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 		"service": mts.ServiceName,
 	}).Debug("Service removed from compose.")
 
+	if mts.cleanUpTmpFiles {
+		if _, err := os.Stat(mts.configurationFile); err == nil {
+			os.Remove(mts.configurationFile)
+			log.WithFields(log.Fields{
+				"path": mts.configurationFile,
+			}).Debug("Metricbeat configuration file removed.")
+		}
+	}
+
 	return err
 }
 
@@ -97,7 +109,11 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(version string, 
 	mts.Version = version
 	mts.setIndexName()
 
-	err := mts.runMetricbeatService(mts.ServiceName + ".yml")
+	// look up configurations under workspace's configurations directory
+	dir, _ := os.Getwd()
+	mts.configurationFile = path.Join(dir, "configurations", mts.ServiceName+".yml")
+
+	err := mts.runMetricbeatService()
 	if err != nil {
 		return err
 	}
@@ -127,8 +143,10 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(version string, conf
 	if err != nil {
 		return err
 	}
+	mts.configurationFile = configurationFilePath
+	mts.cleanUpTmpFiles = true
 
-	err = mts.runMetricbeatService(configurationFilePath)
+	err = mts.runMetricbeatService()
 	if err != nil {
 		return err
 	}
@@ -141,14 +159,14 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(version string, conf
 	return nil
 }
 
-// runMetricbeatService runs a metricbeat service entity for a service to monitor it, using a configuration file
-func (mts *MetricbeatTestSuite) runMetricbeatService(configurationFile string) error {
+// runMetricbeatService runs a metricbeat service entity for a service to monitor it
+func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	serviceManager := services.NewServiceManager()
 
 	env := map[string]string{
 		"BEAT_STRICT_PERMS":     "false",
 		"indexName":             mts.IndexName,
-		"metricbeatConfigFile":  configurationFile,
+		"metricbeatConfigFile":  mts.configurationFile,
 		"metricbeatTag":         mts.Version,
 		mts.ServiceName + "Tag": mts.ServiceVersion,
 		"serviceName":           mts.ServiceName,
