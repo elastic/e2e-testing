@@ -31,6 +31,7 @@ func init() {
 	for k, stack := range config.AvailableStacks() {
 		stackSubcommand := buildRunStackCommand(k, stack)
 
+		stackSubcommand.Flags().StringVarP(&versionToRun, "stackVersion", "v", "latest", "Sets the stack version to run")
 		stackSubcommand.Flags().StringVarP(&servicesToRun, "withServices", "s", "", "Sets a list of comma-separated services to be depoyed alongside the stack")
 
 		runStackCmd.AddCommand(stackSubcommand)
@@ -78,7 +79,11 @@ func buildRunStackCommand(key string, stack config.Stack) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
-			err := serviceManager.RunCompose(true, []string{key}, map[string]string{})
+			env := map[string]string{
+				"stackVersion": versionToRun,
+			}
+
+			err := serviceManager.RunCompose(true, []string{key}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"stack": key,
@@ -86,7 +91,7 @@ func buildRunStackCommand(key string, stack config.Stack) *cobra.Command {
 			}
 
 			composeNames := []string{}
-			env := map[string]string{}
+			env = map[string]string{}
 			if servicesToRun != "" {
 				services := strings.Split(servicesToRun, ",")
 

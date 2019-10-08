@@ -9,7 +9,7 @@ services:
       - xpack.monitoring.collection.enabled=true
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=p4ssw0rd
-    image: "docker.elastic.co/elasticsearch/elasticsearch:7.3.0"
+    image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion}"
     ports:
       - "9200:9200"
   kibana:
@@ -17,6 +17,6 @@ services:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=p4ssw0rd
-    image: "docker.elastic.co/kibana/kibana:7.3.0"
+    image: "docker.elastic.co/kibana/kibana:${stackVersion}"
     ports:
       - "5601:5601"
