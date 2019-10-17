@@ -3,12 +3,19 @@
 @Library('apm@current') _
 
 pipeline {
-  agent any
+  /*
+  * this node will be reused across the nested stages because it's needed to
+  * reuse the Docker cache
+  */
+  agent { label 'linux && immutable' }
   environment {
     REPO = 'metricbeat-tests-poc'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
-    BEATS_BASE_DIR = 'src/github.com/elastic/beats'
+    GOPATH = "${env.WORKSPACE}"
+    GO_VERSION = "1.12.7"
+    HOME = "${env.WORKSPACE}"
     NOTIFY_TO = credentials('notify-to')
+    PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
     JOB_GCS_BUCKET = credentials('gcs-bucket')
     JOB_GIT_CREDENTIALS = '2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken'
   }
@@ -23,84 +30,92 @@ pipeline {
     quietPeriod(10)
   }
   triggers {
-    issueCommentTrigger('(?i).*(?:jenkins\\W+)?run\\W+(?:the\\W+)?tests(?:\\W+please)?.*')
+    issueCommentTrigger('(?i).*jenkins\\W+run\\W+the\\W+tests.*')
   }
   parameters {
-    string(name: 'GO_VERSION', defaultValue: '1.12.7', description: "Go version to use.")
+    string(name: 'STACK_VERSION', defaultValue: '', description: 'SemVer version of the stack to be uses.')
+    string(name: 'STACK_COMMIT_ID', defaultValue: '', description: 'Git sha of the stack to be used (6 digits). Will use a release if empty')
+    string(name: 'BEAT_VERSION', defaultValue: '', description: 'SemVer version of the beat to be used.')
+    string(name: 'BEAT_COMMIT_ID', defaultValue: '', description: 'Git sha of the beat to be used (6 digits). Will use a release if empty')
     string(name: 'FEATURE', defaultValue: '', description: 'What feature to be tested out (feature filename or all are allowed)')
-    string(name: 'GITHUB_CHECK_NAME', defaultValue: '', description: 'Name of the GitHub check to be updated.')
-    string(name: 'GITHUB_CHECK_REPO', defaultValue: '', description: 'Name of the GitHub repo to be updated.')
-    string(name: 'GITHUB_CHECK_SHA1', defaultValue: '', description: 'Git sha to be used.')
   }
   stages {
-    stage('Initializing'){
-      agent { label 'linux && immutable' }
+    stage('Checkout') {
+      options { skipDefaultCheckout() }
+      steps {
+        deleteDir()
+        gitCheckout(basedir: BASE_DIR, repo: "git@github.com:elastic/${env.REPO}.git", branch: 'master',
+                    credentialsId: env.JOB_GIT_CREDENTIALS, githubNotifyFirstTimeContributor: false)
+        stash allowEmpty: true, name: 'source', useDefaultExcludes: false
+        stash allowEmpty: false, name: 'scripts', useDefaultExcludes: true, includes: "${BASE_DIR}/.ci/**"
+      }
+    }
+    stage('Build Stack artifacts') {
+      // reusing agent for Docker cache
+      options { skipDefaultCheckout() }
+      when {
+        expression {
+          params.STACK_COMMIT_ID != ''
+        }
+      }
+      steps {
+        githubCheckNotify('PENDING')
+        deleteDir()
+        unstash 'scripts'
+        dir(BASE_DIR){
+          sh label: 'Build Stack', script: '.ci/scripts/get-build-artifacts.sh "elasticsearch" "${params.STACK_VERSION_ID} "${params.STACK_COMMIT_ID}" '
+          sh label: 'Build Stack', script: '.ci/scripts/get-build-artifacts.sh "kibana" "${params.STACK_VERSION_ID} "${params.STACK_COMMIT_ID}" '
+        }
+      }
+      post {
+        failure {
+          githubCheckNotify(currentBuild.currentResult)
+        }
+      }
+    }
+    stage('Build Beats artifacts') {
+      // reusing agent for Docker cache
+      options { skipDefaultCheckout() }
+      when {
+        expression {
+          params.BEAT_COMMIT_ID != ''
+        }
+      }
+      steps {
+        githubCheckNotify('PENDING')
+        deleteDir()
+        unstash 'scripts'
+        dir(BASE_DIR){
+          sh label: 'Build metricbeat', script: '.ci/scripts/get-build-artifacts.sh "metricbeat" "${params.BEAT_VERSION_ID} "${params.BEAT_COMMIT_ID}" '
+        }
+      }
+      post {
+        failure {
+          githubCheckNotify(currentBuild.currentResult)
+        }
+      }
+    }
+    stage('Functional testing') {
       options { skipDefaultCheckout() }
       environment {
-        HOME = "${env.WORKSPACE}"
-        GOPATH = "${env.WORKSPACE}"
-        GO_VERSION = "${params.GO_VERSION.trim()}"
-        PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
+        GO111MODULE = 'on'
+        GOPROXY = 'https://proxy.golang.org'
+        STACK_VERSION = params.STACK_VERSION
+        METRICBEAT_VERSION = params.METRICBEAT_VERSION
       }
-      stages {
-        stage('Checkout') {
-          options { skipDefaultCheckout() }
-          steps {
-            gitCheckout(basedir: BASE_DIR, repo: "git@github.com:elastic/${env.REPO}.git", branch: 'master',
-                        credentialsId: env.JOB_GIT_CREDENTIALS, githubNotifyFirstTimeContributor: false)
-            stash allowEmpty: true, name: 'source', useDefaultExcludes: false
-            stash allowEmpty: false, name: 'scripts', useDefaultExcludes: true, includes: "${BASE_DIR}/.ci/**"
-          }
+      steps {
+        deleteDir()
+        unstash 'source'
+        dir(BASE_DIR){
+          unstash 'docker'
+          sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${FEATURE}" """, label: 'Run functional tests'
         }
-        stage('Beats') {
-          agent { label 'linux && immutable && docker' }
-          options { skipDefaultCheckout() }
-          environment {
-            PLATFORMS = 'linux/amd64'
-          }
-          steps {
-            githubCheckNotify('PENDING')
-            deleteDir()
-            gitCheckout(basedir: env.BEATS_BASE_DIR, repo: 'git@github.com:elastic/beats.git',
-                        branch: params.GITHUB_CHECK_SHA1, credentialsId: env.JOB_GIT_CREDENTIALS)
-            unstash 'scripts'
-            dir(BASE_DIR){
-              sh script: """.ci/scripts/build-metricbeats.sh "${GO_VERSION}" "${WORKSPACE}/${BEATS_BASE_DIR}/metricbeat" """, label: 'Build metricbeats'
-            }
-            dir("${BEATS_BASE_DIR}/metricbeat/build/distributions"){
-              stash allowEmpty: false, name: 'docker', useDefaultExcludes: true, includes: '*docker.tar.gz'
-            }
-          }
-          post {
-            failure {
-              githubCheckNotify(currentBuild.currentResult)
-            }
-          }
-        }
-        stage('Functional testing') {
-          agent { label 'linux && immutable && docker' }
-          options { skipDefaultCheckout() }
-          environment {
-            GO111MODULE = 'on'
-            GOPROXY = 'https://proxy.golang.org'
-          }
-          steps {
-            deleteDir()
-            unstash 'source'
-            dir(BASE_DIR){
-              unstash 'docker'
-              sh script: '.ci/scripts/tag-metricbeats.sh', label: 'Create docker tag'
-              sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${FEATURE}" """, label: 'Run functional tests'
-            }
-          }
-          post {
-            always {
-              junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/junit-*.xml")
-              archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/junit-*"
-              githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
-              sh script: 'make -C metricbeat-tests shutdown-elastic-stack', label: 'Shutdown runtime dependencies'
-            }
-          }
+      }
+      post {
+        always {
+          junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/junit-*.xml")
+          archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/junit-*"
+          githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
         }
       }
     }

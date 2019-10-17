@@ -5,6 +5,8 @@ LOG_LEVEL?=INFO
 METRICBEAT_FETCH_TIMEOUT?=20
 QUERY_MAX_ATTEMPTS?=5
 RETRY_TIMEOUT?=3
+STACK_VERSION?=
+METRICBEAT_VERSION?=
 
 ifneq ($(FEATURE),)
 FEATURE_FLAG=--tags
@@ -25,11 +27,12 @@ functional-test:
 	OP_METRICBEAT_FETCH_TIMEOUT=${METRICBEAT_FETCH_TIMEOUT} \
 	OP_QUERY_MAX_ATTEMPTS=${QUERY_MAX_ATTEMPTS} \
 	OP_RETRY_TIMEOUT=${RETRY_TIMEOUT} \
+	OP_METRICBEAT_VERSION=${METRICBEAT_VERSION} \
 	godog --format=${FORMAT} ${FEATURE_FLAG} ${FEATURE}
 
 .PHONY: run-elastic-stack
 run-elastic-stack:
-	OP_LOG_LEVEL=${LOG_LEVEL} ./op run stack metricbeat
+	OP_LOG_LEVEL=${LOG_LEVEL} ./op run stack metricbeat -v ${STACK_VERSION}
 
 .PHONY: shutdown-elastic-stack
 shutdown-elastic-stack:
