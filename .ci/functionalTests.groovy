@@ -73,7 +73,7 @@ pipeline {
         }
       }
     }
-    stage('Build Beats artifacts') {
+    stage('Prepare Beats artifacts') {
       // reusing agent for Docker cache
       options { skipDefaultCheckout() }
       when {
