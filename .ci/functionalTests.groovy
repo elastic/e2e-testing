@@ -50,7 +50,7 @@ pipeline {
         stash allowEmpty: false, name: 'scripts', useDefaultExcludes: true, includes: "${BASE_DIR}/.ci/**"
       }
     }
-    stage('Build Stack artifacts') {
+    stage('Prepare Stack artifacts') {
       // reusing agent for Docker cache
       options { skipDefaultCheckout() }
       when {
