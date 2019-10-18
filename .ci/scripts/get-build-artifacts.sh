@@ -28,7 +28,7 @@ COMMIT_ID=${3}
 
 URL="https://staging.elastic.co/${VERSION_ID}-${COMMIT_ID}/docker/${PRODUCT}-${VERSION_ID}-docker-image.tar.gz"
 
-if [[ "$PRODUCT" == "metricbeat" ]]; then
+if [[ "$PRODUCT" == *beat ]]; then
     URL="https://staging.elastic.co/${VERSION_ID}-${COMMIT_ID}/docker/${PRODUCT}-${VERSION_ID}-docker-image-linux-amd64.tar.gz"
 fi
 
