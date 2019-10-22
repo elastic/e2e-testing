@@ -20,8 +20,13 @@ build-binary:
 install:
 	go get -v -t ./...
 
+.PHONY: install-godog
+install-godog: export GO111MODULE := on
+install-godog:
+	mkdir -p temp && cd temp && go mod init && go get -d -v github.com/DATA-DOG/godog@v0.7.13 && cd .. && rm -fr temp
+
 .PHONY: functional-test
-functional-test:
+functional-test: install-godog
 	OP_LOG_LEVEL=${LOG_LEVEL} \
 	OP_LOG_INCLUDE_TIMESTAMP=${LOG_INCLUDE_TIMESTAMP} \
 	OP_METRICBEAT_FETCH_TIMEOUT=${METRICBEAT_FETCH_TIMEOUT} \
