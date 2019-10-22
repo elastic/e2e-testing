@@ -100,8 +100,8 @@ pipeline {
       environment {
         GO111MODULE = 'on'
         GOPROXY = 'https://proxy.golang.org'
-        STACK_VERSION = params.STACK_VERSION
-        METRICBEAT_VERSION = params.METRICBEAT_VERSION
+        STACK_VERSION = "${params.STACK_VERSION}"
+        METRICBEAT_VERSION = "${params.METRICBEAT_VERSION}"
       }
       steps {
         deleteDir()
