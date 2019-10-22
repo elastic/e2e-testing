@@ -107,7 +107,6 @@ pipeline {
         deleteDir()
         unstash 'source'
         dir(BASE_DIR){
-          unstash 'docker'
           sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${FEATURE}" """, label: 'Run functional tests'
         }
       }
