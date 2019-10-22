@@ -23,7 +23,7 @@ install:
 .PHONY: install-godog
 install-godog: export GO111MODULE := on
 install-godog:
-	mkdir -p temp && cd temp && go mod init && go get -d -v github.com/DATA-DOG/godog@v0.7.13 && cd .. && rm -fr temp
+	cd ${HOME} && go get -d -v github.com/DATA-DOG/godog@v0.7.13
 
 .PHONY: functional-test
 functional-test: install-godog
