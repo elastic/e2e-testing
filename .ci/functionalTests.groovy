@@ -100,6 +100,7 @@ pipeline {
       environment {
         GO111MODULE = 'on'
         GOPROXY = 'https://proxy.golang.org'
+        PATH = "${env.GOPATH}/bin:${env.PATH}"
         STACK_VERSION = "${params.STACK_VERSION}"
         METRICBEAT_VERSION = "${params.METRICBEAT_VERSION}"
       }
@@ -107,7 +108,7 @@ pipeline {
         deleteDir()
         unstash 'source'
         dir(BASE_DIR){
-          sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${FEATURE}" """, label: 'Run functional tests'
+          sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${params.FEATURE}" """, label: 'Run functional tests'
         }
       }
       post {
