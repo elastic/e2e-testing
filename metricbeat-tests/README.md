@@ -92,13 +92,26 @@ There will exist a configuration YAML file per module, under the `configurations
 At this moment, the CLI and the functional tests coexist in the same repository, that's why we are building the CLI to get access to its features. Eventually that would change and we would consume it as a binary. Meanwhile, execute this from the ROOT directory of this project:
 
 ```shell
+$ export GO111MODULE=on                            # Go modules support
+$ make -C cli install                              # installs CLI dependencies
 $ export STACK_VERSION=7.5.0                       # exports stack version as runtime
 $ export METRICBEAT_VERSION=7.5.0                  # exports metricbeat version to be tested
 $ # export FEATURE=redis                           # exports which feature to run (default 'all')
+$ make -C metricbeat-tests install                 # installs tests dependencies
 $ make -C metricbeat-tests build-binary            # generates the binary from the repository
 $ make -C metricbeat-tests run-elastic-stack       # runs the stack for metricbeat
 $ make -C metricbeat-tests functional-test         # runs the test suite for Redis and stack 
 $ make -C metricbeat-tests shutdown-elastic-stack  # stops the stack
+```
+
+or simply run as the CI does:
+
+```shell
+$ export GO_VERSION=1.12.7                         # exports which GIMME version to use
+$ export STACK_VERSION=7.5.0                       # exports stack version as runtime
+$ export METRICBEAT_VERSION=7.5.0                  # exports metricbeat version
+$ #export FEATURE=redis                            # exports which feature to run (default 'all')
+$ ./.ci/scripts/functional-test.sh ${GO_VERSION} ${FEATURE}
 ```
 
 You could set up the environment so that it's possible to run one single module. As we are using _tags_ for matching modules, we could tell `make` to run just the tests for redis:

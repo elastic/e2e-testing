@@ -100,7 +100,7 @@ pipeline {
       environment {
         GO111MODULE = 'on'
         GOROOT = "${env.WORKSPACE}/.gimme/versions/go${env.GO_VERSION}.linux.amd64"
-        PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.GOROOT}/bin:${env.GOPATH}/bin:${env.PATH}"
+        PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.GOROOT}/bin:${env.GOPATH}/bin:${HOME}/go/bin:${env.PATH}"
         GOPROXY = 'https://proxy.golang.org'
         STACK_VERSION = "${params.STACK_VERSION}"
         METRICBEAT_VERSION = "${params.METRICBEAT_VERSION}"
