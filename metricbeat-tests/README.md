@@ -58,16 +58,15 @@ We will create use cases for the module in a separate `.feature` file, ideally n
 @apache
 Feature: As a Metricbeat developer I want to check that the Apache module works as expected
 
-Scenario Outline: Check module is sending metrics to Elasticsearch
-  Given "Apache" "<apache_version>" is running for metricbeat "<metricbeat_version>"
-    And metricbeat "<metricbeat_version>" is installed and configured for "Apache" module
-  Then there are no errors in the index
+Scenario Outline: Check module is sending metrics to Elasticsearch without errors
+  Given Apache "<apache_version>" is running for metricbeat
+    And metricbeat is installed and configured for Apache module
+  Then there are "Apache" events in the index
+    And there are no errors in the index
 Examples:
-| apache_version | metricbeat_version |
-| 2.2  | 7.3.0 |
-| 2.2  | 8.0.0-SNAPSHOT |
-| 2.4  | 7.3.0 |
-| 2.4  | 8.0.0-SNAPSHOT |
+| apache_version |
+| 2.2            |
+| 2.4            |
 ```
 
 >You should write as many scenarios as you considering, covering different use cases in each scenario, taking care of duplicated steps that could be reused by other module.
