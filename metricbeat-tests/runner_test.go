@@ -23,6 +23,10 @@ import (
 // It can be overriden by OP_METRICBEAT_VERSION env var
 var metricbeatVersion = "7.4.0"
 
+// stackVersion is the version of the stack to use
+// It can be overriden by OP_STACK_VERSION env var
+var stackVersion = "7.4.0"
+
 var opt = godog.Options{Output: colors.Colored(os.Stdout)}
 
 var query ElasticsearchQuery
@@ -172,6 +176,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"indexName":             mts.IndexName,
 		"metricbeatConfigFile":  mts.configurationFile,
 		"metricbeatTag":         mts.Version,
+		"stackVersion":          stackVersion,
 		mts.ServiceName + "Tag": mts.ServiceVersion,
 		"serviceName":           mts.ServiceName,
 	}
@@ -204,6 +209,7 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(serviceType string
 
 	env := map[string]string{
 		serviceType + "Tag": serviceVersion,
+		"stackVersion":      stackVersion,
 	}
 
 	err := serviceManager.AddServicesToCompose("metricbeat", []string{serviceType}, env)
@@ -326,6 +332,8 @@ func init() {
 	serviceManager = services.NewServiceManager()
 
 	metricbeatVersion = getEnv("OP_METRICBEAT_VERSION", metricbeatVersion)
+
+	stackVersion = getEnv("OP_STACK_VERSION", stackVersion)
 
 	queryMaxAttempts = getIntegerFromEnv("OP_QUERY_MAX_ATTEMPTS", queryMaxAttempts)
 	queryMetricbeatFetchTimeout = getIntegerFromEnv("OP_METRICBEAT_FETCH_TIMEOUT", queryMetricbeatFetchTimeout)
