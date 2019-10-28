@@ -11,6 +11,8 @@ set -euxo pipefail
 
 GO_VERSION=${1:?GO_VERSION is not set}
 FEATURE=${2:-''}
+STACK_VERSION=${3:-'7.5.0'}
+METRICBEAT_VERSION=${4:-'7.5.0'}
 
 # shellcheck disable=SC1091
 source .ci/scripts/install-go.sh "${GO_VERSION}"
@@ -19,7 +21,7 @@ source .ci/scripts/install-go.sh "${GO_VERSION}"
 make -C metricbeat-tests build-binary
 
 # Build runtime dependencies
-make -C metricbeat-tests run-elastic-stack
+STACK_VERSION=${STACK_VERSION} make -C metricbeat-tests run-elastic-stack
 
 rm -rf outputs || true
 mkdir -p outputs
@@ -36,7 +38,7 @@ fi
 ## Generate test report even if make failed.
 set +e
 exit_status=0
-if ! FLAG=${FLAG} FEATURE=${FEATURE} FORMAT=junit make -C metricbeat-tests functional-test | tee ${REPORT}  ; then
+if ! FLAG=${FLAG} FEATURE=${FEATURE} FORMAT=junit STACK_VERSION=${STACK_VERSION} METRICBEAT_VERSION=${METRICBEAT_VERSION} make -C metricbeat-tests functional-test | tee ${REPORT}  ; then
   echo 'ERROR: functional-test failed'
   exit_status=1
 fi
