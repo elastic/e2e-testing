@@ -89,12 +89,16 @@ The anatomy of a feature file is:
 There will exist a configuration YAML file per module, under the `configurations` folder. The name of the file will be the module name (i.e. `apache.yml`). In this file we will add those configurations that are exclusive to the module, as those that are common are already defined at Metricbeat level.
 
 ## Running the tests
-At this moment, the CLI and the functional tests coexist in the same repository, that's why we are building the CLI to get access to its features. Eventually that would change and we would consume it as a binary. Meanwhile:
+At this moment, the CLI and the functional tests coexist in the same repository, that's why we are building the CLI to get access to its features. Eventually that would change and we would consume it as a binary. Meanwhile, execute this from the ROOT directory of this project:
 
 ```shell
-$ make build-binary        # generates the binary from the repository
-$ make run-elastic-stack   # runs the stack for metricbeat
-$ make functional-tests    # runs the test suite
+$ export STACK_VERSION=7.5.0                       # exports stack version as runtime
+$ export METRICBEAT_VERSION=7.5.0                  # exports metricbeat version to be tested
+$ # export FEATURE=redis                           # exports which feature to run (default 'all')
+$ make -C metricbeat-tests build-binary            # generates the binary from the repository
+$ make -C metricbeat-tests run-elastic-stack       # runs the stack for metricbeat
+$ make -C metricbeat-tests functional-test         # runs the test suite for Redis and stack 
+$ make -C metricbeat-tests shutdown-elastic-stack  # stops the stack
 ```
 
 You could set up the environment so that it's possible to run one single module. As we are using _tags_ for matching modules, we could tell `make` to run just the tests for redis:
