@@ -58,16 +58,15 @@ We will create use cases for the module in a separate `.feature` file, ideally n
 @apache
 Feature: As a Metricbeat developer I want to check that the Apache module works as expected
 
-Scenario Outline: Check module is sending metrics to Elasticsearch
-  Given "Apache" "<apache_version>" is running for metricbeat "<metricbeat_version>"
-    And metricbeat "<metricbeat_version>" is installed and configured for "Apache" module
-  Then there are no errors in the index
+Scenario Outline: Check module is sending metrics to Elasticsearch without errors
+  Given Apache "<apache_version>" is running for metricbeat
+    And metricbeat is installed and configured for Apache module
+  Then there are "Apache" events in the index
+    And there are no errors in the index
 Examples:
-| apache_version | metricbeat_version |
-| 2.2  | 7.3.0 |
-| 2.2  | 8.0.0-SNAPSHOT |
-| 2.4  | 7.3.0 |
-| 2.4  | 8.0.0-SNAPSHOT |
+| apache_version |
+| 2.2            |
+| 2.4            |
 ```
 
 >You should write as many scenarios as you considering, covering different use cases in each scenario, taking care of duplicated steps that could be reused by other module.
@@ -90,12 +89,16 @@ The anatomy of a feature file is:
 There will exist a configuration YAML file per module, under the `configurations` folder. The name of the file will be the module name (i.e. `apache.yml`). In this file we will add those configurations that are exclusive to the module, as those that are common are already defined at Metricbeat level.
 
 ## Running the tests
-At this moment, the CLI and the functional tests coexist in the same repository, that's why we are building the CLI to get access to its features. Eventually that would change and we would consume it as a binary. Meanwhile:
+At this moment, the CLI and the functional tests coexist in the same repository, that's why we are building the CLI to get access to its features. Eventually that would change and we would consume it as a binary. Meanwhile, execute this from the ROOT directory of this project:
 
 ```shell
-$ make build-binary        # generates the binary from the repository
-$ make run-elastic-stack   # runs the stack for metricbeat
-$ make functional-tests    # runs the test suite
+$ export STACK_VERSION=7.5.0                       # exports stack version as runtime
+$ export METRICBEAT_VERSION=7.5.0                  # exports metricbeat version to be tested
+$ # export FEATURE=redis                           # exports which feature to run (default 'all')
+$ make -C metricbeat-tests build-binary            # generates the binary from the repository
+$ make -C metricbeat-tests run-elastic-stack       # runs the stack for metricbeat
+$ make -C metricbeat-tests functional-test         # runs the test suite for Redis and stack 
+$ make -C metricbeat-tests shutdown-elastic-stack  # stops the stack
 ```
 
 You could set up the environment so that it's possible to run one single module. As we are using _tags_ for matching modules, we could tell `make` to run just the tests for redis:
