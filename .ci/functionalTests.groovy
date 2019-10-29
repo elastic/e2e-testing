@@ -63,8 +63,8 @@ pipeline {
         deleteDir()
         unstash 'scripts'
         dir(BASE_DIR){
-          sh label: 'Build Stack', script: '.ci/scripts/get-build-artifacts.sh "elasticsearch" "${params.STACK_VERSION_ID} "${params.STACK_COMMIT_ID}" '
-          sh label: 'Build Stack', script: '.ci/scripts/get-build-artifacts.sh "kibana" "${params.STACK_VERSION_ID} "${params.STACK_COMMIT_ID}" '
+          sh label: 'Build Stack', script: '.ci/scripts/get-build-artifacts.sh "elasticsearch" "${params.STACK_VERSION_ID}" "${params.STACK_COMMIT_ID}" '
+          sh label: 'Build Stack', script: '.ci/scripts/get-build-artifacts.sh "kibana" "${params.STACK_VERSION_ID}" "${params.STACK_COMMIT_ID}" '
         }
       }
       post {
