@@ -86,7 +86,7 @@ pipeline {
         deleteDir()
         unstash 'scripts'
         dir(BASE_DIR){
-          sh label: 'Build metricbeat', script: """.ci/scripts/get-build-artifacts.sh "metricbeat" "${params.BEAT_VERSION_ID} "${params.BEAT_COMMIT_ID}" """
+          sh label: 'Build metricbeat', script: """.ci/scripts/get-build-artifacts.sh "metricbeat" "${params.BEAT_VERSION_ID}" "${params.BEAT_COMMIT_ID}" """
         }
       }
       post {
