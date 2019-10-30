@@ -101,7 +101,7 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 				"errorCause":    err.Error(),
 				"index":         indexName,
 				"query":         esQuery,
-				"retryAttempts": queryMaxAttempts,
+				"retryAttempts": maxAttempts,
 				"retryTimeout":  queryRetryTimeout,
 			}).Debugf("Waiting %d seconds for the index to be ready", queryRetryTimeout)
 			time.Sleep(time.Duration(queryRetryTimeout) * time.Second)
@@ -113,7 +113,7 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 	log.WithFields(log.Fields{
 		"error":         err,
 		"query":         esQuery,
-		"retryAttempts": queryMaxAttempts,
+		"retryAttempts": maxAttempts,
 		"retryTimeout":  queryRetryTimeout,
 	}).Error(err.Error())
 
