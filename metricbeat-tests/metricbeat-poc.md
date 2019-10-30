@@ -75,7 +75,3 @@ Each module will define its own file for specificacions, adding specific tags th
 # Will run all scenarios tagged with @mysql
 $ GO111MODULE=on godog -t mysql
 ```
-
-## The result
-
-![image](metricbeat-poc.gif)

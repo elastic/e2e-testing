@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	es "github.com/elastic/go-elasticsearch/v8"
 	log "github.com/sirupsen/logrus"
@@ -12,10 +13,20 @@ import (
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
 )
 
+// ElasticsearchQuery a very reduced representation of an elasticsearch query, where
+// we want to simply override the event.module and service.version fields
+//nolint:unused
+type ElasticsearchQuery struct {
+	EventModule    string
+	ServiceVersion string
+}
+
 // searchResult wraps a search result
+//nolint:unused
 type searchResult map[string]interface{}
 
 // deleteIndex deletes an index from the elasticsearch of the stack
+//nolint:unused
 func deleteIndex(ctx context.Context, stackName string, index string) error {
 	esClient, err := getElasticsearchClient(stackName)
 	if err != nil {
@@ -57,6 +68,7 @@ func deleteIndex(ctx context.Context, stackName string, index string) error {
 // at configuration level. Then we will inspect the running container to get its port bindings
 // and from them, get the one related to the Elasticsearch port (9200). As it is bound to a
 // random port at localhost, we will build the URL with the bound port at localhost.
+//nolint:unused
 func getElasticsearchClient(stackName string) (*es.Client, error) {
 	elasticsearchCfg, _ := config.GetServiceConfig("elasticsearch")
 	elasticsearchCfg.Name = elasticsearchCfg.Name + "-" + stackName
@@ -77,6 +89,43 @@ func getElasticsearchClient(stackName string) (*es.Client, error) {
 	return esClient, nil
 }
 
+// maxAttempts could be redefined in the OP_QUERY_MAX_ATTEMPTS environment variable
+//nolint:unused
+func retrySearch(stackName string, indexName string, esQuery map[string]interface{}, maxAttempts int, retryTimeout int) (searchResult, error) {
+	totalRetryTime := maxAttempts * retryTimeout
+
+	for attempt := maxAttempts; attempt > 0; attempt-- {
+		result, err := search(stackName, indexName, esQuery)
+		if err == nil {
+			return result, nil
+		}
+
+		if attempt > 1 {
+			log.WithFields(log.Fields{
+				"attempt":       attempt,
+				"errorCause":    err.Error(),
+				"index":         indexName,
+				"query":         esQuery,
+				"retryAttempts": maxAttempts,
+				"retryTimeout":  retryTimeout,
+			}).Debugf("Waiting %d seconds for the index to be ready", retryTimeout)
+			time.Sleep(time.Duration(retryTimeout) * time.Second)
+		}
+	}
+
+	err := fmt.Errorf("Could not send query to Elasticsearch in the specified time (%d seconds)", totalRetryTime)
+
+	log.WithFields(log.Fields{
+		"error":         err,
+		"query":         esQuery,
+		"retryAttempts": maxAttempts,
+		"retryTimeout":  retryTimeout,
+	}).Error(err.Error())
+
+	return searchResult{}, err
+}
+
+//nolint:unused
 func search(stackName string, indexName string, query map[string]interface{}) (searchResult, error) {
 	result := searchResult{}
 
