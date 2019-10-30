@@ -5,12 +5,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	es "github.com/elastic/go-elasticsearch/v8"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
 )
+
+// ElasticsearchQuery a very reduced representation of an elasticsearch query, where
+// we want to simply override the event.module and service.version fields
+type ElasticsearchQuery struct {
+	EventModule    string
+	ServiceVersion string
+}
 
 // searchResult wraps a search result
 type searchResult map[string]interface{}
@@ -75,6 +83,41 @@ func getElasticsearchClient(stackName string) (*es.Client, error) {
 	}
 
 	return esClient, nil
+}
+
+// attempts could be redefined in the OP_QUERY_MAX_ATTEMPTS environment variable
+func retrySearch(stackName string, indexName string, esQuery map[string]interface{}, attempts int) (searchResult, error) {
+	totalRetryTime := attempts * queryRetryTimeout
+
+	for attempts := attempts; attempts > 0; attempts-- {
+		result, err := search(stackName, indexName, esQuery)
+		if err == nil {
+			return result, nil
+		}
+
+		if attempts > 1 {
+			log.WithFields(log.Fields{
+				"attempt":       attempts,
+				"errorCause":    err.Error(),
+				"index":         indexName,
+				"query":         esQuery,
+				"retryAttempts": queryMaxAttempts,
+				"retryTimeout":  queryRetryTimeout,
+			}).Debugf("Waiting %d seconds for the index to be ready", queryRetryTimeout)
+			time.Sleep(time.Duration(queryRetryTimeout) * time.Second)
+		}
+	}
+
+	err := fmt.Errorf("Could not send query to Elasticsearch in the specified time (%d seconds)", totalRetryTime)
+
+	log.WithFields(log.Fields{
+		"error":         err,
+		"query":         esQuery,
+		"retryAttempts": queryMaxAttempts,
+		"retryTimeout":  queryRetryTimeout,
+	}).Error(err.Error())
+
+	return searchResult{}, err
 }
 
 func search(stackName string, indexName string, query map[string]interface{}) (searchResult, error) {
