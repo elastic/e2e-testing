@@ -86,8 +86,8 @@ func getElasticsearchClient(stackName string) (*es.Client, error) {
 }
 
 // maxAttempts could be redefined in the OP_QUERY_MAX_ATTEMPTS environment variable
-func retrySearch(stackName string, indexName string, esQuery map[string]interface{}, maxAttempts int) (searchResult, error) {
-	totalRetryTime := maxAttempts * queryRetryTimeout
+func retrySearch(stackName string, indexName string, esQuery map[string]interface{}, maxAttempts int, retryTimeout int) (searchResult, error) {
+	totalRetryTime := maxAttempts * retryTimeout
 
 	for attempt := maxAttempts; attempt > 0; attempt-- {
 		result, err := search(stackName, indexName, esQuery)
@@ -102,9 +102,9 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 				"index":         indexName,
 				"query":         esQuery,
 				"retryAttempts": maxAttempts,
-				"retryTimeout":  queryRetryTimeout,
-			}).Debugf("Waiting %d seconds for the index to be ready", queryRetryTimeout)
-			time.Sleep(time.Duration(queryRetryTimeout) * time.Second)
+				"retryTimeout":  retryTimeout,
+			}).Debugf("Waiting %d seconds for the index to be ready", retryTimeout)
+			time.Sleep(time.Duration(retryTimeout) * time.Second)
 		}
 	}
 
@@ -114,7 +114,7 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 		"error":         err,
 		"query":         esQuery,
 		"retryAttempts": maxAttempts,
-		"retryTimeout":  queryRetryTimeout,
+		"retryTimeout":  retryTimeout,
 	}).Error(err.Error())
 
 	return searchResult{}, err

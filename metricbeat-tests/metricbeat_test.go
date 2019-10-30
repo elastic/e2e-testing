@@ -250,7 +250,7 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 
 	stackName := "metricbeat"
 
-	_, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts)
+	_, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts, queryRetryTimeout)
 	if err != nil {
 		return err
 	}
@@ -287,7 +287,7 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 
 	stackName := "metricbeat"
 
-	_, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts)
+	_, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts, queryRetryTimeout)
 	if err != nil {
 		return err
 	}
