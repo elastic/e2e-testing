@@ -66,8 +66,14 @@ func (mts *MetricbeatTestSuite) setIndexName() {
 func (mts *MetricbeatTestSuite) CleanUp() error {
 	serviceManager := services.NewServiceManager()
 
-	fn := func(ctx context.Context) error {
-		return deleteIndex(ctx, "metricbeat", mts.IndexName)
+	fn := func(ctx context.Context) {
+		err := deleteIndex(ctx, "metricbeat", mts.IndexName)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"stack": "metricbeat",
+				"index": mts.IndexName,
+			}).Warn("The index was not deleted, but we are not failing the test case")
+		}
 	}
 	defer fn(context.Background())
 
@@ -116,7 +122,10 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 	})
 	s.AfterScenario(func(interface{}, error) {
 		log.Debug("After scenario...")
-		testSuite.CleanUp()
+		err := testSuite.CleanUp()
+		if err != nil {
+			log.Errorf("CleanUp failed: %v", err)
+		}
 	})
 }
 
