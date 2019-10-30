@@ -15,15 +15,18 @@ import (
 
 // ElasticsearchQuery a very reduced representation of an elasticsearch query, where
 // we want to simply override the event.module and service.version fields
+//nolint:unused
 type ElasticsearchQuery struct {
 	EventModule    string
 	ServiceVersion string
 }
 
 // searchResult wraps a search result
+//nolint:unused
 type searchResult map[string]interface{}
 
 // deleteIndex deletes an index from the elasticsearch of the stack
+//nolint:unused
 func deleteIndex(ctx context.Context, stackName string, index string) error {
 	esClient, err := getElasticsearchClient(stackName)
 	if err != nil {
@@ -65,6 +68,7 @@ func deleteIndex(ctx context.Context, stackName string, index string) error {
 // at configuration level. Then we will inspect the running container to get its port bindings
 // and from them, get the one related to the Elasticsearch port (9200). As it is bound to a
 // random port at localhost, we will build the URL with the bound port at localhost.
+//nolint:unused
 func getElasticsearchClient(stackName string) (*es.Client, error) {
 	elasticsearchCfg, _ := config.GetServiceConfig("elasticsearch")
 	elasticsearchCfg.Name = elasticsearchCfg.Name + "-" + stackName
@@ -86,6 +90,7 @@ func getElasticsearchClient(stackName string) (*es.Client, error) {
 }
 
 // maxAttempts could be redefined in the OP_QUERY_MAX_ATTEMPTS environment variable
+//nolint:unused
 func retrySearch(stackName string, indexName string, esQuery map[string]interface{}, maxAttempts int, retryTimeout int) (searchResult, error) {
 	totalRetryTime := maxAttempts * retryTimeout
 
@@ -120,6 +125,7 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 	return searchResult{}, err
 }
 
+//nolint:unused
 func search(stackName string, indexName string, query map[string]interface{}) (searchResult, error) {
 	result := searchResult{}
 

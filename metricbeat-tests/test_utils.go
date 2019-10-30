@@ -12,14 +12,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+//nolint:unused
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
+//nolint:unused
 var seededRand *rand.Rand = rand.New(
 	rand.NewSource(time.Now().UnixNano()))
 
 // downloadFile will download a url and store it in a temporary path.
 // It writes to the destination file as it downloads it, without
 // loading the entire file into memory.
+//nolint:unused
 func downloadFile(url string) (string, error) {
 	tempFile, err := ioutil.TempFile(os.TempDir(), path.Base(url))
 	if err != nil {
@@ -68,6 +71,7 @@ func downloadFile(url string) (string, error) {
 	return filepath, nil
 }
 
+//nolint:unused
 func randomStringWithCharset(length int, charset string) string {
 	b := make([]byte, length)
 	for i := range b {
@@ -76,6 +80,7 @@ func randomStringWithCharset(length int, charset string) string {
 	return string(b)
 }
 
+//nolint:unused
 func randomString(length int) string {
 	return randomStringWithCharset(length, charset)
 }

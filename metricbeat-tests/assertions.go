@@ -7,6 +7,7 @@ import (
 )
 
 // assertHitsArePresent returns an error if no hits are present
+//nolint:unused
 func assertHitsArePresent(hits map[string]interface{}, q ElasticsearchQuery) error {
 	hitsCount := len(hits["hits"].(map[string]interface{})["hits"].([]interface{}))
 	if hitsCount == 0 {
@@ -20,6 +21,7 @@ func assertHitsArePresent(hits map[string]interface{}, q ElasticsearchQuery) err
 
 // assertHitsDoNotContainErrors returns an error if any of the returned entries contains
 // an "error.message" field in the "_source" document
+//nolint:unused
 func assertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQuery) error {
 	for _, hit := range hits["hits"].(map[string]interface{})["hits"].([]interface{}) {
 		source := hit.(map[string]interface{})["_source"]

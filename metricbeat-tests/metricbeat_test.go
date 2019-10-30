@@ -17,6 +17,7 @@ import (
 // It can be overriden by OP_METRICBEAT_VERSION env var
 var metricbeatVersion = "7.4.0"
 
+//nolint:unused
 var query ElasticsearchQuery
 
 // queryMetricbeatFetchTimeout is the number of seconds that metricbeat has to grab metrics from the module
@@ -33,6 +34,7 @@ func init() {
 
 // MetricbeatTestSuite represents a test suite, holding references to both metricbeat ant
 // the service to be monitored
+//nolint:unused
 type MetricbeatTestSuite struct {
 	cleanUpTmpFiles   bool   // if it's needed to clean up temporary files
 	configurationFile string // the  name of the configuration file to be used in this test suite
@@ -98,6 +100,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 }
 
 // MetricbeatFeatureContext adds steps to the Godog test suite
+//nolint:deadcode,unused
 func MetricbeatFeatureContext(s *godog.Suite) {
 	testSuite := MetricbeatTestSuite{}
 
