@@ -77,7 +77,7 @@ func (sm *DockerServiceManager) StopCompose(isStack bool, composeNames []string)
 	composeFilePaths := make([]string, len(composeNames))
 	for i, composeName := range composeNames {
 		b := isStack
-		if i == 0 && !b {
+		if i == 0 && !isStack && (len(composeName) == 1) {
 			b = true
 		}
 
