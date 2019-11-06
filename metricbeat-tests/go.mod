@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/DATA-DOG/godog v0.7.13
 	github.com/elastic/go-elasticsearch/v8 v8.0.0-20190731061900-ea052088db25
-	github.com/elastic/metricbeat-tests-poc/cli v0.1.0-7
+	github.com/elastic/metricbeat-tests-poc/cli v0.1.0-rc7
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/sirupsen/logrus v1.4.2
