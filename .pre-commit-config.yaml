@@ -35,8 +35,8 @@ repos:
     hooks:
     -   id: golangci-lint
         name: 'golangci-lint'
-        entry: 'golangci-lint run'
-        types: [go]
-        language: 'system'
+        entry: .ci/scripts/golangci-lint.sh
+        language: 'script'
+        verbose: true
         files: '\.go$'
         description: "Runs `golangci-lint`, requires https://github.com/golangci/golangci-lint"
