@@ -9,6 +9,6 @@ Scenario Outline: Check module is sending metrics to Elasticsearch without error
     And there are no errors in the index
 Examples:
 | mysql_version |
-| 5.6           |
-| 5.7           |
-| 8.0           |
+| 5.7.12        |
+| 5.7.24        |
+| 8.0.13        |
