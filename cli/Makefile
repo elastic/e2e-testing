@@ -1,5 +1,9 @@
 TEST_TIMEOUT?=5m
 
+.PHONY: build
+build:
+	../.ci/scripts/build-cli.sh
+
 .PHONY: install
 install:
 	go get -v -t ./...

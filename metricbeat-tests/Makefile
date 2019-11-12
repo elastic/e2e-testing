@@ -7,14 +7,16 @@ QUERY_MAX_ATTEMPTS?=5
 RETRY_TIMEOUT?=3
 STACK_VERSION?=
 METRICBEAT_VERSION?=
+VERSION_VALUE=`cat ../cli/VERSION.txt`
 
 ifneq ($(FEATURE),)
 FEATURE_FLAG=--tags
 endif
 
-.PHONY: build-binary
-build-binary:
-	cd ../cli && go build -o op && mv op ../metricbeat-tests && cd -
+.PHONY: fetch-binary
+fetch-binary:
+	@$(MAKE) -C ../cli build
+	cp ../cli/.github/releases/download/$(VERSION_VALUE)/op .
 
 .PHONY: install
 install:

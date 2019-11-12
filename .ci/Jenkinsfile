@@ -126,7 +126,7 @@ def generateStep(Map params = [:]){
         unstash 'build'
         dir("${BASE_DIR}/cli") {
           withEnv(["GOOS=${oss}", "GOARCH=${platform}"]) {
-            sh script: '../.ci/scripts/build-cli.sh', label: 'Create releases'
+            sh script: 'make build', label: 'Create releases'
           }
         }
       } catch(e) {

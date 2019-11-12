@@ -98,7 +98,7 @@ $ export STACK_VERSION=7.5.0                       # exports stack version as ru
 $ export METRICBEAT_VERSION=7.5.0                  # exports metricbeat version to be tested
 $ # export FEATURE=redis                           # exports which feature to run (default 'all')
 $ make -C metricbeat-tests install                 # installs tests dependencies
-$ make -C metricbeat-tests build-binary            # generates the binary from the repository
+$ make -C metricbeat-tests fetch-binary            # generates the binary from the repository
 $ make -C metricbeat-tests run-elastic-stack       # runs the stack for metricbeat
 $ make -C metricbeat-tests functional-test         # runs the test suite for Redis and stack 
 $ make -C metricbeat-tests shutdown-elastic-stack  # stops the stack
