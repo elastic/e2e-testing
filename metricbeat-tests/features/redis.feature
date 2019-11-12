@@ -4,6 +4,7 @@ Feature: As a Metricbeat developer I want to check that the Redis module works a
 Scenario Outline: Check module is sending metrics to Elasticsearch without errors
   Given Redis "<redis_version>" is running for metricbeat
     And metricbeat is installed and configured for Redis module
+  When metricbeat runs for "20" seconds after waiting "20" seconds for the service
   Then there are "Redis" events in the index
     And there are no errors in the index
 Examples:

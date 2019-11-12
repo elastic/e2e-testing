@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -20,15 +21,10 @@ var metricbeatVersion = "7.4.0"
 //nolint:unused
 var query ElasticsearchQuery
 
-// queryMetricbeatFetchTimeout is the number of seconds that metricbeat has to grab metrics from the module
-// It can be overriden by OP_METRICBEAT_FETCH_TIMEOUT env var
-var queryMetricbeatFetchTimeout = 20
-
 var serviceManager services.ServiceManager
 
 func init() {
 	metricbeatVersion = getEnv("OP_METRICBEAT_VERSION", metricbeatVersion)
-	queryMetricbeatFetchTimeout = getIntegerFromEnv("OP_METRICBEAT_FETCH_TIMEOUT", queryMetricbeatFetchTimeout)
 	serviceManager = services.NewServiceManager()
 }
 
@@ -40,6 +36,7 @@ type MetricbeatTestSuite struct {
 	configurationFile string // the  name of the configuration file to be used in this test suite
 	IndexName         string // the unique name for the index to be used in this test suite
 	ServiceName       string // the service to be monitored by metricbeat
+	ServiceType       string // the type of the service to be monitored by metricbeat
 	ServiceVersion    string // the version of the service to be monitored by metricbeat
 	Version           string // the metricbeat version for the test
 }
@@ -112,6 +109,7 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 
 	s.Step(`^([^"]*) "([^"]*)" is running for metricbeat$`, testSuite.serviceIsRunningForMetricbeat)
 	s.Step(`^metricbeat is installed and configured for ([^"]*) module$`, testSuite.installedAndConfiguredForModule)
+	s.Step(`^metricbeat runs for "([^"]*)" seconds after waiting "([^"]*)" seconds for the service$`, testSuite.runsForSecondsAfterWaiting)
 	s.Step(`^there are no errors in the index$`, testSuite.thereAreNoErrorsInTheIndex)
 	s.Step(`^there are "([^"]*)" events in the index$`, testSuite.thereAreEventsInTheIndex)
 
@@ -135,20 +133,11 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 	// at this point we have everything to define the index name
 	mts.Version = metricbeatVersion
 	mts.setIndexName()
+	mts.ServiceType = serviceType
 
 	// look up configurations under workspace's configurations directory
 	dir, _ := os.Getwd()
 	mts.configurationFile = path.Join(dir, "configurations", mts.ServiceName+".yml")
-
-	err := mts.runMetricbeatService()
-	if err != nil {
-		return err
-	}
-
-	query = ElasticsearchQuery{
-		EventModule:    serviceType,
-		ServiceVersion: mts.ServiceVersion,
-	}
 
 	return nil
 }
@@ -181,6 +170,46 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 	query = ElasticsearchQuery{
 		EventModule:    "system",
 		ServiceVersion: mts.Version,
+	}
+
+	return nil
+}
+
+// isRunningForSeconds waits for a number of seconds so that metricbeat gets
+// an acceptable number of metrics
+func (mts *MetricbeatTestSuite) runsForSecondsAfterWaiting(runSeconds string, waitSeconds string) error {
+	sleepFn := func(seconds string) error {
+		fields := log.Fields{
+			"index": mts.IndexName,
+			"run":   runSeconds,
+			"wait":  waitSeconds,
+		}
+
+		s, err := strconv.Atoi(waitSeconds)
+		if err != nil {
+			log.WithFields(fields).Errorf("Cannot convert %s to seconds", waitSeconds)
+			return err
+		}
+
+		log.WithFields(fields).Debugf("Waiting %s seconds", seconds)
+		time.Sleep(time.Duration(s) * time.Second)
+
+		return nil
+	}
+
+	sleepFn(waitSeconds)
+
+	// starts metricbeat after the timeout
+	err := mts.runMetricbeatService()
+	if err != nil {
+		return err
+	}
+
+	sleepFn(runSeconds)
+
+	query = ElasticsearchQuery{
+		EventModule:    mts.ServiceType,
+		ServiceVersion: mts.ServiceVersion,
 	}
 
 	return nil
@@ -262,19 +291,7 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 
 	stackName := "metricbeat"
 
-	_, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts, queryRetryTimeout)
-	if err != nil {
-		return err
-	}
-
-	log.WithFields(log.Fields{
-		"index":        mts.IndexName,
-		"query":        esQuery,
-		"fetchTimeout": queryMetricbeatFetchTimeout,
-	}).Debugf("Waiting %d seconds for Metricbeat to fetch some data", queryMetricbeatFetchTimeout)
-	time.Sleep(time.Duration(queryMetricbeatFetchTimeout) * time.Second)
-
-	result, err := search(stackName, mts.IndexName, esQuery)
+	result, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts, queryRetryTimeout)
 	if err != nil {
 		return err
 	}
@@ -299,19 +316,7 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 
 	stackName := "metricbeat"
 
-	_, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts, queryRetryTimeout)
-	if err != nil {
-		return err
-	}
-
-	log.WithFields(log.Fields{
-		"index":        mts.IndexName,
-		"query":        esQuery,
-		"fetchTimeout": queryMetricbeatFetchTimeout,
-	}).Debugf("Waiting %d seconds for Metricbeat to fetch some data", queryMetricbeatFetchTimeout)
-	time.Sleep(time.Duration(queryMetricbeatFetchTimeout) * time.Second)
-
-	result, err := search(stackName, mts.IndexName, esQuery)
+	result, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts, queryRetryTimeout)
 	if err != nil {
 		return err
 	}
