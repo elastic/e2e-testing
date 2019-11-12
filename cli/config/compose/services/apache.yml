@@ -1,6 +1,6 @@
 version: '3'
 services:
   apache:
-    image: "httpd:${apacheTag}"
+    image: "docker.elastic.co/observability-ci/apache:${apacheTag}"
     ports:
       - "80:80"
