@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -83,4 +84,22 @@ func randomStringWithCharset(length int, charset string) string {
 //nolint:unused
 func randomString(length int) string {
 	return randomStringWithCharset(length, charset)
+}
+
+//nolint:unused
+func sleep(seconds string) error {
+	fields := log.Fields{
+		"seconds": seconds,
+	}
+
+	s, err := strconv.Atoi(seconds)
+	if err != nil {
+		log.WithFields(fields).Errorf("Cannot convert %s to seconds", seconds)
+		return err
+	}
+
+	log.WithFields(fields).Debugf("Waiting %s seconds", seconds)
+	time.Sleep(time.Duration(s) * time.Second)
+
+	return nil
 }

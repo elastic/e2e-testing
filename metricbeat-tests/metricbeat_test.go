@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/DATA-DOG/godog"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
@@ -109,7 +107,8 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 
 	s.Step(`^([^"]*) "([^"]*)" is running for metricbeat$`, testSuite.serviceIsRunningForMetricbeat)
 	s.Step(`^metricbeat is installed and configured for ([^"]*) module$`, testSuite.installedAndConfiguredForModule)
-	s.Step(`^metricbeat runs for "([^"]*)" seconds after waiting "([^"]*)" seconds for the service$`, testSuite.runsForSecondsAfterWaiting)
+	s.Step(`^metricbeat waits "([^"]*)" seconds for the service$`, testSuite.waitsSeconds)
+	s.Step(`^metricbeat runs for "([^"]*)" seconds$`, testSuite.runsForSeconds)
 	s.Step(`^there are no errors in the index$`, testSuite.thereAreNoErrorsInTheIndex)
 	s.Step(`^there are "([^"]*)" events in the index$`, testSuite.thereAreEventsInTheIndex)
 
@@ -175,44 +174,20 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 	return nil
 }
 
-// isRunningForSeconds waits for a number of seconds so that metricbeat gets
+// runsForSeconds waits for a number of seconds so that metricbeat gets
 // an acceptable number of metrics
-func (mts *MetricbeatTestSuite) runsForSecondsAfterWaiting(runSeconds string, waitSeconds string) error {
-	sleepFn := func(seconds string) error {
-		fields := log.Fields{
-			"index": mts.IndexName,
-			"run":   runSeconds,
-			"wait":  waitSeconds,
-		}
-
-		s, err := strconv.Atoi(waitSeconds)
-		if err != nil {
-			log.WithFields(fields).Errorf("Cannot convert %s to seconds", waitSeconds)
-			return err
-		}
-
-		log.WithFields(fields).Debugf("Waiting %s seconds", seconds)
-		time.Sleep(time.Duration(s) * time.Second)
-
-		return nil
-	}
-
-	sleepFn(waitSeconds)
-
-	// starts metricbeat after the timeout
+func (mts *MetricbeatTestSuite) runsForSeconds(seconds string) error {
 	err := mts.runMetricbeatService()
 	if err != nil {
 		return err
 	}
-
-	sleepFn(runSeconds)
 
 	query = ElasticsearchQuery{
 		EventModule:    mts.ServiceType,
 		ServiceVersion: mts.ServiceVersion,
 	}
 
-	return nil
+	return sleep(seconds)
 }
 
 // runMetricbeatService runs a metricbeat service entity for a service to monitor it
@@ -322,4 +297,9 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 	}
 
 	return assertHitsDoNotContainErrors(result, query)
+}
+
+// waitsSeconds waits for a number of seconds before the next step
+func (mts *MetricbeatTestSuite) waitsSeconds(seconds string) error {
+	return sleep(seconds)
 }
