@@ -17,10 +17,10 @@ GOPROXY_CONTEXT=${GOPROXY}
 GOPROXY=''
 
 # Install some other dependencies required for the pre-commit
-go get -v -u golang.org/x/lint/golint
-go get -v -u github.com/golangci/golangci-lint/cmd/golangci-lint@v1.18.0
-go get -v -u github.com/go-lintpack/lintpack/...
-go get -v -u github.com/go-critic/go-critic/...
+go get -v golang.org/x/lint/golint
+go get -v github.com/golangci/golangci-lint/cmd/golangci-lint@v1.18.0
+go get -v github.com/go-lintpack/lintpack/...
+go get -v github.com/go-critic/go-critic/...
 lintpack build -o bin/gocritic -linter.version='v0.3.4' -linter.name='gocritic' github.com/go-critic/go-critic/checkers
 
 # enable GOPROXY
