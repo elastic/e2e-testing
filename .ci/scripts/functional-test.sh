@@ -18,7 +18,7 @@ METRICBEAT_VERSION=${4:-'7.5.0'}
 source .ci/scripts/install-go.sh "${GO_VERSION}"
 
 # Build OP Binary
-make -C metricbeat-tests build-binary
+make -C metricbeat-tests fetch-binary
 
 # Build runtime dependencies
 STACK_VERSION=${STACK_VERSION} make -C metricbeat-tests run-elastic-stack

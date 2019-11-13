@@ -1,10 +1,10 @@
 # Building the binary
-We use Gobuffalo's Packr to embbed static resources into the binary, so for that reason we have replaced the default Go build image with one with `packr2` already installed: https://github.com/drud/golang-build-container.
+We use Gobuffalo's Packr to embbed static resources into the binary, so for that reason we are installing `packr2` in the CI worker.
 
-The `build.sh` script builds the binary based on a few environment variables specifying the target distribution:
+The `build-cli.sh` script builds the binary based on a few environment variables specifying the target distribution:
 
 ```shell 
-$ GOOS=("darwin" "linux" "windows") ./build.sh
+$ GOOS=("darwin" "linux" "windows") ./.ci/scripts/build-cli.sh
 # and/or
-$ GOARCH=("386" "amd64") ./build.sh
+$ GOARCH=("386" "amd64") ./.ci/scripts/build-cli.sh
 ```
