@@ -46,7 +46,6 @@ if [[ "${GOARCH}" != "" ]]; then
     separator="-"
 fi
 
-readonly GO_VERSION="${GO_VERSION:-1.13.0}"
 readonly VERSION="$(cat ./VERSION.txt)"
 
 echo ">>> Installing Packr2"
@@ -55,7 +54,7 @@ go get github.com/gobuffalo/packr/v2/packr2@v2.7.1
 echo ">>> Generating Packr boxes"
 packr2
 
-echo ">>> Building for ${GO_OS}/${GO_ARCH}"
+echo ">>> Building CLI"
 go build -v -o $(pwd)/.github/releases/download/${VERSION}/${goos}${arch}${separator}op${extension}
 
 echo ">>> Cleaning up Packr boxes"
