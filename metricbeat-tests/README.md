@@ -134,7 +134,6 @@ There are some environment variables you can use to improve the experience runni
 >Interested in running the tests directly using Godog? Please check out [the Makefile](./Makefile#L19).
 
 ```shell
-export OP_METRICBEAT_FETCH_TIMEOUT=${OP_METRICBEAT_FETCH_TIMEOUT:-20}
 export OP_QUERY_MAX_ATTEMPTS=${OP_QUERY_MAX_ATTEMPTS:-5}
 export OP_RETRY_TIMEOUT=${OP_RETRY_TIMEOUT:-3}
 export FORMAT=${FORMAT:-pretty} # valid formats are: pretty, junit

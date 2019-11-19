@@ -3,6 +3,6 @@ services:
   mysql:
     environment:
       - MYSQL_ROOT_PASSWORD=secret
-    image: "mysql:${mysqlTag}"
+    image: "docker.elastic.co/observability-ci/mysql:${mysqlTag}"
     ports:
       - "3306:3306"
