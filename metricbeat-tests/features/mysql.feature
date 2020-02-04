@@ -9,7 +9,6 @@ Scenario Outline: Check module is sending metrics to Elasticsearch without error
   Then there are "MySQL" events in the index
     And there are no errors in the index
 Examples:
-| mysql_version |
-| 5.7.12        |
-| 5.7.24        |
-| 8.0.13        |
+| mysql_version  |
+| mysql-5.7.12-1 |
+| mysql-8.0.13-1 |

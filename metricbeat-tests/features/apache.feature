@@ -10,5 +10,5 @@ Scenario Outline: Check module is sending metrics to Elasticsearch without error
     And there are no errors in the index
 Examples:
 | apache_version |
-| 2.4.12         |
-| 2.4.20         |
+| 2.4.12-1       |
+| 2.4.20-1       |
