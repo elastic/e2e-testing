@@ -1,6 +1,6 @@
 version: '3'
 services:
   kafka:
-    image: "wurstmeister/kafka:${kafkaTag}"
+    image: "docker.elastic.co/integrations-ci/beats-kafka:${kafkaTag}"
     ports:
       - "9092:9092"
