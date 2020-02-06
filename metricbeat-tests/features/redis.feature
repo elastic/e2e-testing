@@ -10,5 +10,6 @@ Scenario Outline: Check module is sending metrics to Elasticsearch without error
     And there are no errors in the index
 Examples:
 | redis_version |
-| 4.0.14        |
+| 3.2.12        |
+| 4.0.11        |
 | 5.0.5         |
