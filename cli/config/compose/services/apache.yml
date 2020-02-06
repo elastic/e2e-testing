@@ -1,6 +1,6 @@
 version: '3'
 services:
   apache:
-    image: "docker.elastic.co/integrations-ci/beats-apache:${apacheTag}"
+    image: "docker.elastic.co/integrations-ci/beats-apache:${apacheTag}-1"
     ports:
       - "80:80"

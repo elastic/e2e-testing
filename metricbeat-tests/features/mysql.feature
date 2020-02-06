@@ -10,10 +10,10 @@ Scenario Outline: Check module is sending metrics to Elasticsearch without error
     And there are no errors in the index
 Examples:
 | mysql_version      | variant |
-| mariadb-10.2.23-1  | MariaDB |
-| mariadb-10.3.14-1  | MariaDB |
-| mariadb-10.4.4-1   | MariaDB |
-| mysql-5.7.12-1     | MySQL   |
-| mysql-8.0.13-1     | MySQL   |
-| percona-5.7.24-1   | Percona |
-| percona-8.0.13-4-1 | Percona |
+| mariadb-10.2.23    | MariaDB |
+| mariadb-10.3.14    | MariaDB |
+| mariadb-10.4.4     | MariaDB |
+| mysql-5.7.12       | MySQL   |
+| mysql-8.0.13       | MySQL   |
+| percona-5.7.24     | Percona |
+| percona-8.0.13-4   | Percona |
