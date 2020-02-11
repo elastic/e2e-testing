@@ -23,7 +23,7 @@
                 "GO111MODULE": "on",
                 "OP_LOG_LEVEL": "DEBUG",
             },
-            "args": ["sync", "integrations"]
+            "args": ["sync", "integrations", "--remote", "elastic:master"]
         },
         {
             "name": "Debug Running Services",

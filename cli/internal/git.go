@@ -54,12 +54,6 @@ func (b projectBuilder) WithBaseWorkspace(baseWorkspace string) projectBuilder {
 	return builder.Set(b, "BaseWorkspace", baseWorkspace).(projectBuilder)
 }
 
-func (b projectBuilder) WithCoords(coords string) projectBuilder {
-	coordinates := strings.Split(coords, ":")
-
-	return b.withUser(coordinates[0]).withBranch(coordinates[1])
-}
-
 func (b projectBuilder) WithDomain(domain string) projectBuilder {
 	return builder.Set(b, "Domain", domain).(projectBuilder)
 }
@@ -70,6 +64,12 @@ func (b projectBuilder) WithGitProtocol() projectBuilder {
 
 func (b projectBuilder) WithName(name string) projectBuilder {
 	return builder.Set(b, "Name", name).(projectBuilder)
+}
+
+func (b projectBuilder) WithRemote(remote string) projectBuilder {
+	coordinates := strings.Split(remote, ":")
+
+	return b.withUser(coordinates[0]).withBranch(coordinates[1])
 }
 
 func (b projectBuilder) withBranch(branch string) projectBuilder {
