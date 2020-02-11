@@ -8,6 +8,7 @@ import (
 
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
 	git "github.com/elastic/metricbeat-tests-poc/cli/internal"
+	io "github.com/elastic/metricbeat-tests-poc/cli/internal"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -70,5 +71,16 @@ var syncIntegrationsCmd = &cobra.Command{
 		}
 
 		git.Clone(BeatsRepo)
+
+		copyIntegrationsComposeFiles(BeatsRepo, workspace)
 	},
+}
+
+func copyIntegrationsComposeFiles(beats git.Project, target string) {
+	pattern := path.Join(
+		beats.GetWorkspace(), "metricbeat", "module", "**", "docker-compose.yml")
+
+	composeFiles := io.FindFiles(pattern)
+
+	io.CopyComposeFiles(composeFiles, target)
 }

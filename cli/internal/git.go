@@ -27,12 +27,14 @@ type Project struct {
 	User          string
 }
 
-func (d *Project) getURL() string {
+// GetURL Returns the workspace of a Project
+func (d *Project) GetURL() string {
 	return d.Protocol + d.Domain + ":" + d.User + "/" + d.Name
 }
 
-func (d *Project) getWorkspace() string {
-	return d.BaseWorkspace + string(os.PathSeparator) + d.Name
+// GetWorkspace Returns the workspace of a Project
+func (d *Project) GetWorkspace() string {
+	return filepath.Join(d.BaseWorkspace, d.Name)
 }
 
 type projectBuilder builder.Builder
@@ -118,12 +120,12 @@ func Clone(repositories ...Project) {
 		select {
 		case <-resultChannel:
 			log.WithFields(log.Fields{
-				"url": repositories[i].getURL(),
+				"url": repositories[i].GetURL(),
 			}).Info("Git clone succeed")
 		case err := <-errorChannel:
 			if err != nil {
 				log.WithFields(log.Fields{
-					"url":   repositories[i].getURL(),
+					"url":   repositories[i].GetURL(),
 					"error": err,
 				}).Warn("Git clone errored")
 			}
@@ -153,7 +155,7 @@ func GetRemote(gitRepositoryDir string, gitDomain string) string {
 func cloneGithubRepository(
 	githubRepo Project, resultChannel chan bool, errorChannel chan error) {
 
-	gitRepositoryDir := githubRepo.getWorkspace()
+	gitRepositoryDir := githubRepo.GetWorkspace()
 
 	if _, err := os.Stat(gitRepositoryDir); os.IsExist(err) {
 		select {
@@ -165,7 +167,7 @@ func cloneGithubRepository(
 		return
 	}
 
-	githubRepositoryURL := githubRepo.getURL()
+	githubRepositoryURL := githubRepo.GetURL()
 
 	log.WithFields(log.Fields{
 		"url":       githubRepositoryURL,
