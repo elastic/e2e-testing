@@ -1,0 +1,199 @@
+package internal
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/lann/builder"
+	log "github.com/sirupsen/logrus"
+
+	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing"
+	ssh "gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
+)
+
+// GitProtocol the git protocol string representation
+const GitProtocol = "git@"
+
+// Project representes a git project
+type Project struct {
+	BaseWorkspace string
+	Branch        string
+	Domain        string
+	Name          string
+	Protocol      string
+	User          string
+}
+
+func (d *Project) getURL() string {
+	return d.Protocol + d.Domain + ":" + d.User + "/" + d.Name
+}
+
+func (d *Project) getWorkspace() string {
+	return d.BaseWorkspace + string(os.PathSeparator) + d.Name
+}
+
+type projectBuilder builder.Builder
+
+func (b projectBuilder) Build() Project {
+	return builder.GetStruct(b).(Project)
+}
+
+func (b projectBuilder) CheckRemoteAndBranch() projectBuilder {
+	workspace := filepath.Join(b.getField("BaseWorkspace"), b.getField("Name"))
+
+	branch := GetBranch(workspace)
+	remote := GetRemote(workspace, b.getField("Domain"))
+
+	return b.withBranch(branch).withUser(remote)
+}
+
+func (b projectBuilder) WithBaseWorkspace(baseWorkspace string) projectBuilder {
+	return builder.Set(b, "BaseWorkspace", baseWorkspace).(projectBuilder)
+}
+
+func (b projectBuilder) WithCoords(coords string) projectBuilder {
+	coordinates := strings.Split(coords, ":")
+
+	return b.withUser(coordinates[0]).withBranch(coordinates[1])
+}
+
+func (b projectBuilder) WithDomain(domain string) projectBuilder {
+	return builder.Set(b, "Domain", domain).(projectBuilder)
+}
+
+func (b projectBuilder) WithGitProtocol() projectBuilder {
+	return builder.Set(b, "Protocol", GitProtocol).(projectBuilder)
+}
+
+func (b projectBuilder) WithName(name string) projectBuilder {
+	return builder.Set(b, "Name", name).(projectBuilder)
+}
+
+func (b projectBuilder) withBranch(branch string) projectBuilder {
+	return builder.Set(b, "Branch", branch).(projectBuilder)
+}
+
+func (b projectBuilder) withUser(user string) projectBuilder {
+	return builder.Set(b, "User", user).(projectBuilder)
+}
+
+func (b projectBuilder) getField(fieldName string) string {
+	value, _ := builder.Get(b, fieldName)
+
+	return value.(string)
+}
+
+// ProjectBuilder builder for git projects
+var ProjectBuilder = builder.Register(projectBuilder{}, Project{}).(projectBuilder)
+
+// Clone allows cloning an array of repositories simultaneously
+func Clone(repositories ...Project) {
+	repositoriesChannel := make(chan Project, len(repositories))
+	for i := range repositories {
+		repositoriesChannel <- repositories[i]
+	}
+	close(repositoriesChannel)
+
+	workers := 5
+	if len(repositoriesChannel) < workers {
+		workers = len(repositoriesChannel)
+	}
+
+	errorChannel := make(chan error, 1)
+	resultChannel := make(chan bool, len(repositories))
+
+	for i := 0; i < workers; i++ {
+		// Consume work from repositoriesChannel. Loop will end when no more work.
+		for repository := range repositoriesChannel {
+			go cloneGithubRepository(repository, resultChannel, errorChannel)
+		}
+	}
+
+	// Collect results from workers
+
+	for i := 0; i < len(repositories); i++ {
+		select {
+		case <-resultChannel:
+			log.WithFields(log.Fields{
+				"url": repositories[i].getURL(),
+			}).Info("Git clone succeed")
+		case err := <-errorChannel:
+			if err != nil {
+				log.WithFields(log.Fields{
+					"url":   repositories[i].getURL(),
+					"error": err,
+				}).Warn("Git clone errored")
+			}
+		}
+	}
+}
+
+// GetBranch returns the current branch from a git repository
+func GetBranch(gitRepositoryDir string) string {
+	args := []string{"rev-parse", "--abbrev-ref", "HEAD"}
+
+	return Execute(gitRepositoryDir, "git", args[0:]...)
+}
+
+// GetRemote returns the remote from a git repository
+func GetRemote(gitRepositoryDir string, gitDomain string) string {
+	args := []string{"remote", "get-url", "origin"}
+
+	remote := Execute(gitRepositoryDir, "git", args[0:]...)
+
+	remote1 := strings.TrimPrefix(remote, GitProtocol+gitDomain+":")
+	remote2 := strings.Split(remote1, "/")
+
+	return remote2[0]
+}
+
+func cloneGithubRepository(
+	githubRepo Project, resultChannel chan bool, errorChannel chan error) {
+
+	gitRepositoryDir := githubRepo.getWorkspace()
+
+	if _, err := os.Stat(gitRepositoryDir); os.IsExist(err) {
+		select {
+		case errorChannel <- err:
+			// will break parent goroutine out of loop
+		default:
+			// don't care, first error wins
+		}
+		return
+	}
+
+	githubRepositoryURL := githubRepo.getURL()
+
+	log.WithFields(log.Fields{
+		"url":       githubRepositoryURL,
+		"directory": gitRepositoryDir,
+	}).Info("Cloning project. This process could take long depending on its size")
+
+	auth, err1 := ssh.NewSSHAgentAuth("git")
+	if err1 != nil {
+		log.Fatal("Cloning using keys from SSH agent failed")
+	}
+
+	_, err := git.PlainClone(gitRepositoryDir, false, &git.CloneOptions{
+		Auth:          auth,
+		URL:           githubRepositoryURL,
+		Progress:      os.Stdout,
+		ReferenceName: plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", githubRepo.Branch)),
+		SingleBranch:  true,
+	})
+
+	if err != nil {
+		select {
+		case errorChannel <- err:
+			// will break parent goroutine out of loop
+		default:
+			// don't care, first error wins
+		}
+		return
+	}
+
+	resultChannel <- true
+}
