@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	io "github.com/elastic/metricbeat-tests-poc/cli/internal"
+
 	packr "github.com/gobuffalo/packr/v2"
 	log "github.com/sirupsen/logrus"
 )
@@ -53,13 +55,13 @@ func AvailableStacks() map[string]Stack {
 // GetPackedCompose returns the path of the compose file, looking up the
 // tool's workdir or in the static resources already packaged in the binary
 func GetPackedCompose(isStack bool, composeName string) (string, error) {
-	composeFileName := composeName + ".yml"
+	composeFileName := "docker-compose.yml"
 	serviceType := "services"
 	if isStack {
 		serviceType = "stacks"
 	}
 
-	composeFilePath := path.Join(Op.Workspace, "compose", serviceType, composeFileName)
+	composeFilePath := path.Join(Op.Workspace, "compose", serviceType, composeName, composeFileName)
 	found, err := exists(composeFilePath)
 	if found && err == nil {
 		log.WithFields(log.Fields{
@@ -75,7 +77,7 @@ func GetPackedCompose(isStack bool, composeName string) (string, error) {
 		"type":            serviceType,
 	}).Debug("Compose file not found at workdir. Extracting from binary resources")
 
-	composeBytes, err := opComposeBox.Find(path.Join(serviceType, composeFileName))
+	composeBytes, err := opComposeBox.Find(path.Join(serviceType, composeName, composeFileName))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"composeFileName": composeFileName,
@@ -86,6 +88,8 @@ func GetPackedCompose(isStack bool, composeName string) (string, error) {
 
 		return "", err
 	}
+
+	io.MkdirAll(composeFilePath)
 
 	err = ioutil.WriteFile(composeFilePath, composeBytes, 0755)
 	if err != nil {
@@ -253,14 +257,17 @@ func packComposeFiles(op *OpConfig) *packr.Box {
 			"path": boxedPath,
 		}).Debug("Boxed file")
 
-		composeType, composeNameWithExtension := path.Split(boxedPath)
-		composeName := strings.TrimSuffix(composeNameWithExtension, filepath.Ext(composeNameWithExtension))
-		if composeType == "stacks/" {
+		// there must be three tokens: i.e. 'services/aerospike/docker-compose.yml'
+		tokens := strings.Split(boxedPath, string(os.PathSeparator))
+		composeType := tokens[0]
+		composeName := tokens[1]
+
+		if composeType == "stacks" {
 			op.Stacks[composeName] = Stack{
 				Name: composeName,
 				Path: boxedPath,
 			}
-		} else if composeType == "services/" {
+		} else if composeType == "services" {
 			op.Services[composeName] = Service{
 				Name: composeName,
 				Path: boxedPath,
