@@ -1,6 +1,0 @@
-version: '3'
-services:
-  kafka:
-    image: "docker.elastic.co/integrations-ci/beats-kafka:${kafkaTag}-2"
-    ports:
-      - "9092:9092"

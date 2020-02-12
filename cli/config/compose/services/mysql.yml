@@ -1,8 +1,0 @@
-version: '3'
-services:
-  mysql:
-    environment:
-      - MYSQL_ROOT_PASSWORD=secret
-    image: "docker.elastic.co/integrations-ci/beats-mysql:${mysqlTag}-1"
-    ports:
-      - "3306:3306"
