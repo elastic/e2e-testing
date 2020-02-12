@@ -23,6 +23,9 @@ make -C metricbeat-tests fetch-binary
 # Build runtime dependencies
 STACK_VERSION=${STACK_VERSION} make -C metricbeat-tests run-elastic-stack
 
+# Sync integrations
+make -C metricbeat-tests sync-integrations
+
 rm -rf outputs || true
 mkdir -p outputs
 REPORT=outputs/junit-functional-tests

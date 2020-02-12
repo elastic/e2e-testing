@@ -43,3 +43,7 @@ run-elastic-stack:
 .PHONY: shutdown-elastic-stack
 shutdown-elastic-stack:
 	OP_LOG_LEVEL=${LOG_LEVEL} ./op stop stack metricbeat
+
+.PHONY: sync-integrations
+sync-integrations:
+	OP_LOG_LEVEL=${LOG_LEVEL} ./op sync integrations --remove
