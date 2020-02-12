@@ -246,6 +246,10 @@ func newConfig(workspace string) {
 		return
 	}
 
+	// add file system services and stacks
+	readFilesFromFileSystem("services")
+	readFilesFromFileSystem("stacks")
+
 	opComposeBox = box
 }
 
@@ -253,14 +257,15 @@ func packComposeFiles(op *OpConfig) *packr.Box {
 	box := packr.New("Compose Files", "./compose")
 
 	err := box.Walk(func(boxedPath string, f packr.File) error {
-		log.WithFields(log.Fields{
-			"path": boxedPath,
-		}).Debug("Boxed file")
-
 		// there must be three tokens: i.e. 'services/aerospike/docker-compose.yml'
 		tokens := strings.Split(boxedPath, string(os.PathSeparator))
 		composeType := tokens[0]
 		composeName := tokens[1]
+
+		log.WithFields(log.Fields{
+			"service": composeName,
+			"path":    boxedPath,
+		}).Debug("Boxed file")
 
 		if composeType == "stacks" {
 			op.Stacks[composeName] = Stack{
@@ -281,6 +286,47 @@ func packComposeFiles(op *OpConfig) *packr.Box {
 	}
 
 	return box
+}
+
+// reads the docker-compose in the workspace, merging them with what it's
+// already boxed in the binary
+func readFilesFromFileSystem(serviceType string) {
+	basePath := path.Join(Op.Workspace, "compose", serviceType)
+	files, err := ioutil.ReadDir(basePath)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"path": basePath,
+			"type": serviceType,
+		}).Warn("Could not load file system")
+		return
+	}
+
+	for _, f := range files {
+		if f.IsDir() {
+			name := f.Name()
+			composeFilePath := filepath.Join(basePath, name, "docker-compose.yml")
+			found, err := exists(composeFilePath)
+			if found && err == nil {
+				log.WithFields(log.Fields{
+					"service": name,
+					"path":    composeFilePath,
+				}).Debug("Workspace file")
+
+				if serviceType == "services" {
+					// add a service or a stack
+					Op.Services[name] = Service{
+						Name: f.Name(),
+						Path: composeFilePath,
+					}
+				} else if serviceType == "stacks" {
+					Op.Stacks[name] = Stack{
+						Name: f.Name(),
+						Path: composeFilePath,
+					}
+				}
+			}
+		}
+	}
 }
 
 // which checks if software is installed
