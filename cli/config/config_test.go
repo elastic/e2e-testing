@@ -106,7 +106,6 @@ func checkLoggerWithLogLevel(t *testing.T, level string) {
 }
 
 func cleanUpEnv() {
-	os.Unsetenv("OP_CONFIG_PATH")
 	os.Unsetenv("OP_LOG_LEVEL")
 	os.Unsetenv("OP_LOG_INCLUDE_TIMESTAMP")
 }

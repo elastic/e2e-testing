@@ -34,21 +34,27 @@ $ ./op stop stack observability
 >By the way, `op` comes from `Observability Provisioner`.
 
 ## Configuring the CLI
-The CLI uses a set of YAML files where the configuration is stored, defining a precedence in those files so that it's possible to override or append new configurations to the CLI.
+The **default configuration file** is located under `$HOME/.op`, which is the workspace for the tool. If this directory does not exist when the CLI is run, it will create it under the hood, populating the default services already bundled in the tool.
 
-The **default configuration file** is located under `$HOME/.op`, which is the workspace for the tool. If this directory does not exist when the CLI is run, it will create it under the hood, populating the configuration file (`config.yml`) with the default values.
+>Those default services are defined at [config.go](./config/config.go).
 
->Those default values are defined at [config.go](./config/config.go).
+### Updating services from Beats
+The CLI includes a command to fetch Beats integrations from its GitHub repository, making possible to add them to the list of available services. Tu run this command:
 
-A **second layer for the configuration file** is defined by CLI's execution path, so if a `config.yml` exists at the location where the tool is executed, then the CLI will merge this file into the default one, with higher precedence over defaults.
+```
+$ ./op sync integrations -h
+Sync services from Beats, checking out current version of the services from GitHub
 
-**Last layer for the configuration file** is defined by the `OP_CONFIG_PATH` environment variable, so if a `config.yml` exists at the location defined by that environment variable, then the CLI will merge this file into the previous ones, with higher precedence over them.
+Usage:
+  op sync integrations [flags]
 
-This way, the configuration precedence is defined by:
+Flags:
+  -h, --help            help for integrations
+  -r, --remote string   Sets the remote for Beats, using 'user:branch' as format (i.e. elastic:master) (default "elastic:master")
+  -R, --remove          Will remove the existing Beats repository before cloning it again
+```
 
-`$HOME/.op/config.yml < $(pwd)/config.yml < $OP_CONFIG_PATH/config.yml`
-
-A clear benefit of this layered configuration is to be able to define custom services/stacks at the higher layers of the configuration: the user could define a service or a stack just for that execution, which could be shared accross teams simply copying the configuration file in the proper path. If that configuration is valuable enough, it could be contributed to the tool.
+It's possible to update the services from a different remote, using the `--remote` flag, as described above.
 
 ## Logging
 The CLI uses [`Logrus`](https://github.com/sirupsen/logrus) as default Logger, so it's possible to configure the logger using [Logging levels](https://github.com/sirupsen/logrus#level-logging) to enrich the output of the tool.
