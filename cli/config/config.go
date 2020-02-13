@@ -62,7 +62,7 @@ func GetPackedCompose(isStack bool, composeName string) (string, error) {
 	}
 
 	composeFilePath := path.Join(Op.Workspace, "compose", serviceType, composeName, composeFileName)
-	found, err := exists(composeFilePath)
+	found, err := io.Exists(composeFilePath)
 	if found && err == nil {
 		log.WithFields(log.Fields{
 			"composeFilePath": composeFilePath,
@@ -170,7 +170,7 @@ func PutServiceEnvironment(env map[string]string, service string, serviceVersion
 }
 
 func checkConfigDirectory(dir string) {
-	found, err := exists(dir)
+	found, err := io.Exists(dir)
 	if found && err == nil {
 		return
 	}
@@ -233,17 +233,6 @@ func configureLogger() {
 	default:
 		log.SetLevel(log.InfoLevel)
 	}
-}
-
-func exists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return true, err
 }
 
 // newConfig returns a new configuration
@@ -328,7 +317,7 @@ func readFilesFromFileSystem(serviceType string) {
 		if f.IsDir() {
 			name := f.Name()
 			composeFilePath := filepath.Join(basePath, name, "docker-compose.yml")
-			found, err := exists(composeFilePath)
+			found, err := io.Exists(composeFilePath)
 			if found && err == nil {
 				log.WithFields(log.Fields{
 					"service": name,

@@ -118,6 +118,18 @@ func CopyFile(src string, dst string, BUFFERSIZE int64) error {
 	return err
 }
 
+// Exists checks if a path exists in the file system
+func Exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
+}
+
 //MkdirAll creates all directories in a path
 func MkdirAll(file string) error {
 	// check if parent dir for the file exist, otherwise create it
