@@ -91,15 +91,8 @@ func GetComposeFile(isStack bool, composeName string) (string, error) {
 
 	io.MkdirAll(composeFilePath)
 
-	err = ioutil.WriteFile(composeFilePath, composeBytes, 0755)
+	err = io.WriteFile(composeBytes, composeFilePath)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"composeFilePath": composeFilePath,
-			"error":           err,
-			"isStack":         isStack,
-			"type":            serviceType,
-		}).Error("Cannot write file at workdir.")
-
 		return composeFilePath, err
 	}
 

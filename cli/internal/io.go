@@ -163,3 +163,18 @@ func FindFiles(pattern string) []string {
 
 	return matches
 }
+
+// WriteFile writes bytes into target
+func WriteFile(bytes []byte, target string) error {
+	err := ioutil.WriteFile(target, bytes, 0755)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"target": target,
+			"error":  err,
+		}).Error("Cannot write file at workdir.")
+
+		return err
+	}
+
+	return nil
+}
