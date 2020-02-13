@@ -174,13 +174,7 @@ func checkConfigDirectory(dir string) {
 	if found && err == nil {
 		return
 	}
-	err = os.MkdirAll(dir, 0755)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"path":  dir,
-		}).Fatal("Cannot create directory")
-	}
+	io.MkdirAll(dir)
 }
 
 func checkConfigDirs(workspace string) {

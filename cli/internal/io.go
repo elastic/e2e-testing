@@ -33,7 +33,7 @@ func CopyDir(src string, dst string) error {
 		return errors.New("destination already exists")
 	}
 
-	err = os.MkdirAll(dst, si.Mode())
+	err = MkdirAll(dst)
 	if err != nil {
 		return err
 	}
@@ -130,14 +130,19 @@ func Exists(path string) (bool, error) {
 	return true, err
 }
 
-//MkdirAll creates all directories in a path
+// MkdirAll creates all directories in a path
 func MkdirAll(file string) error {
 	// check if parent dir for the file exist, otherwise create it
 	parent := filepath.Dir(file)
 	if _, err := os.Stat(parent); os.IsNotExist(err) {
 		err = os.MkdirAll(parent, 0755)
 		if err != nil {
-			return errors.New("File " + parent + " cannot be created")
+			log.WithFields(log.Fields{
+				"error": err,
+				"path":  parent,
+			}).Fatal("File cannot be created")
+
+			return err
 		}
 	}
 
