@@ -52,9 +52,9 @@ func AvailableStacks() map[string]Stack {
 	return Op.Stacks
 }
 
-// GetPackedCompose returns the path of the compose file, looking up the
+// GetComposeFile returns the path of the compose file, looking up the
 // tool's workdir or in the static resources already packaged in the binary
-func GetPackedCompose(isStack bool, composeName string) (string, error) {
+func GetComposeFile(isStack bool, composeName string) (string, error) {
 	composeFileName := "docker-compose.yml"
 	serviceType := "services"
 	if isStack {

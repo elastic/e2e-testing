@@ -81,7 +81,7 @@ func (sm *DockerServiceManager) StopCompose(isStack bool, composeNames []string)
 			b = true
 		}
 
-		composeFilePath, err := config.GetPackedCompose(b, composeName)
+		composeFilePath, err := config.GetComposeFile(b, composeName)
 		if err != nil {
 			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
 		}
@@ -111,7 +111,7 @@ func executeCompose(sm *DockerServiceManager, isStack bool, composeNames []strin
 			b = true
 		}
 
-		composeFilePath, err := config.GetPackedCompose(b, composeName)
+		composeFilePath, err := config.GetComposeFile(b, composeName)
 		if err != nil {
 			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
 		}
