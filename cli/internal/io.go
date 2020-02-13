@@ -164,6 +164,19 @@ func FindFiles(pattern string) []string {
 	return matches
 }
 
+// ReadDir lists the contents of a directory
+func ReadDir(path string) ([]os.FileInfo, error) {
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"path": path,
+		}).Warn("Could not read file system")
+		return []os.FileInfo{}, err
+	}
+
+	return files, nil
+}
+
 // WriteFile writes bytes into target
 func WriteFile(bytes []byte, target string) error {
 	err := ioutil.WriteFile(target, bytes, 0755)

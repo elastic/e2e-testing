@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -291,7 +290,7 @@ func packComposeFiles(op *OpConfig) *packr.Box {
 // already boxed in the binary
 func readFilesFromFileSystem(serviceType string) {
 	basePath := path.Join(Op.Workspace, "compose", serviceType)
-	files, err := ioutil.ReadDir(basePath)
+	files, err := io.ReadDir(basePath)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"path": basePath,
