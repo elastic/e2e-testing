@@ -146,6 +146,29 @@ func InitConfig() {
 	newConfig(w)
 }
 
+// PutServiceEnvironment puts the environment variables for the service, replacing "SERVICE_"
+// with service name in uppercase. The variables are:
+//  - SERVICE_VARIANT: where SERVICE is the name of the service (i.e. APACHE_VARIANT)
+//  - SERVICE_VERSION: where it represents the version of the service (i.e. APACHE_VERSION)
+//  - SERVICE_PATH: where it represents the path to its compose file (i.e. APACHE_PATH)
+func PutServiceEnvironment(env map[string]string, service string, serviceVersion string) map[string]string {
+	serviceUpper := strings.ToUpper(service)
+
+	env[serviceUpper+"_VARIANT"] = service
+	env[serviceUpper+"_VERSION"] = serviceVersion
+
+	composeFilePath, err := GetPackedCompose(false, service)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"service": service,
+		}).Warn("Could not find compose file")
+	} else {
+		env[serviceUpper+"_PATH"] = filepath.Dir(composeFilePath)
+	}
+
+	return env
+}
+
 func checkConfigDirectory(dir string) {
 	found, err := exists(dir)
 	if found && err == nil {

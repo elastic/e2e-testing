@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/DATA-DOG/godog"
+	"github.com/elastic/metricbeat-tests-poc/cli/config"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
 	log "github.com/sirupsen/logrus"
 )
@@ -231,9 +232,9 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(serviceType string
 	serviceType = strings.ToLower(serviceType)
 
 	env := map[string]string{
-		serviceType + "Tag": serviceVersion,
-		"stackVersion":      stackVersion,
+		"stackVersion": stackVersion,
 	}
+	env = config.PutServiceEnvironment(env, serviceType, serviceVersion)
 
 	err := serviceManager.AddServicesToCompose("metricbeat", []string{serviceType}, env)
 	if err != nil {
