@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
@@ -76,11 +77,40 @@ var syncIntegrationsCmd = &cobra.Command{
 	},
 }
 
+// CopyComposeFiles copies compose files to a target directory. The files
+// will represent the docker-compose.yml from Beats integrations, and we
+// will need to copy them into a directory named as the original service
+// (i.e. aerospike) under this tool's workspace, alongside the services.
+// Besides that, the method will copy the _meta directory for each service
 func copyIntegrationsComposeFiles(beats git.Project, target string) {
 	pattern := path.Join(
 		beats.GetWorkspace(), "metricbeat", "module", "**", "docker-compose.yml")
 
-	composeFiles := io.FindFiles(pattern)
+	files := io.FindFiles(pattern)
 
-	io.CopyComposeFiles(composeFiles, target)
+	for _, file := range files {
+		serviceDir := filepath.Dir(file)
+		service := filepath.Base(serviceDir)
+
+		targetFile := filepath.Join(
+			target, "compose", "services", service, "docker-compose.yml")
+
+		err := io.CopyFile(file, targetFile, 10000)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"file":  file,
+			}).Warn("File was not copied")
+		}
+
+		metaDir := filepath.Join(serviceDir, "_meta")
+		targetMetaDir := filepath.Join(target, "compose", "services", service, "_meta")
+		err = io.CopyDir(metaDir, targetMetaDir)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"_meta": metaDir,
+			}).Warn("Meta dir was not copied")
+		}
+	}
 }
