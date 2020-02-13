@@ -77,25 +77,27 @@ var syncIntegrationsCmd = &cobra.Command{
 	},
 }
 
-// CopyComposeFiles copies compose files to a target directory. The files
-// will represent the docker-compose.yml from Beats integrations, and we
-// will need to copy them into a directory named as the original service
-// (i.e. aerospike) under this tool's workspace, alongside the services.
-// Besides that, the method will copy the _meta directory for each service
+// CopyComposeFiles copies only those services that has a supported-versions.yml
+// file from Beats integrations, and we will need to copy them into a directory
+// named as the original service (i.e. aerospike) under this tool's workspace,
+// alongside the services. Besides that, the method will copy the _meta directory
+// for each service
 func copyIntegrationsComposeFiles(beats git.Project, target string) {
 	pattern := path.Join(
-		beats.GetWorkspace(), "metricbeat", "module", "**", "docker-compose.yml")
+		beats.GetWorkspace(), "metricbeat", "module", "*", "_meta", "supported-versions.yml")
 
 	files := io.FindFiles(pattern)
 
 	for _, file := range files {
-		serviceDir := filepath.Dir(file)
+		metaDir := filepath.Dir(file)
+		serviceDir := filepath.Dir(metaDir)
 		service := filepath.Base(serviceDir)
 
+		composeFile := filepath.Join(serviceDir, "docker-compose.yml")
 		targetFile := filepath.Join(
 			target, "compose", "services", service, "docker-compose.yml")
 
-		err := io.CopyFile(file, targetFile, 10000)
+		err := io.CopyFile(composeFile, targetFile, 10000)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
@@ -103,7 +105,6 @@ func copyIntegrationsComposeFiles(beats git.Project, target string) {
 			}).Warn("File was not copied")
 		}
 
-		metaDir := filepath.Join(serviceDir, "_meta")
 		targetMetaDir := filepath.Join(target, "compose", "services", service, "_meta")
 		err = io.CopyDir(metaDir, targetMetaDir)
 		if err != nil {
