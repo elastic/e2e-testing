@@ -157,13 +157,13 @@ func PutServiceEnvironment(env map[string]string, service string, serviceVersion
 	env[serviceUpper+"_VARIANT"] = service
 	env[serviceUpper+"_VERSION"] = serviceVersion
 
-	composeFilePath, err := GetPackedCompose(false, service)
-	if err != nil {
+	srv, exists := Op.Services[service]
+	if !exists {
 		log.WithFields(log.Fields{
 			"service": service,
 		}).Warn("Could not find compose file")
 	} else {
-		env[serviceUpper+"_PATH"] = filepath.Dir(composeFilePath)
+		env[serviceUpper+"_PATH"] = filepath.Dir(srv.Path)
 	}
 
 	return env
