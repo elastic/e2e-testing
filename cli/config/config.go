@@ -28,6 +28,13 @@ type OpConfig struct {
 	Workspace string             `mapstructure:"workspace"`
 }
 
+// GetServiceConfig configuration of a service
+func (c *OpConfig) GetServiceConfig(service string) (Service, bool) {
+	srv, exists := c.Services[service]
+
+	return srv, exists
+}
+
 // Service represents the configuration for a service
 type Service struct {
 	Name string `mapstructure:"Name"`
@@ -107,13 +114,6 @@ func GetComposeFile(isStack bool, composeName string) (string, error) {
 // GetServiceConfig configuration of a service
 func GetServiceConfig(service string) (Service, bool) {
 	return Op.GetServiceConfig(service)
-}
-
-// GetServiceConfig configuration of a service
-func (c *OpConfig) GetServiceConfig(service string) (Service, bool) {
-	srv, exists := c.Services[service]
-
-	return srv, exists
 }
 
 // Init creates this tool workspace under user's home, in a hidden directory named ".op"
