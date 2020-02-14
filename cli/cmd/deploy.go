@@ -59,9 +59,8 @@ func buildDeployServiceCommand(srv string) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
-			env := map[string]string{
-				srv + "Tag": versionToRun,
-			}
+			env := map[string]string{}
+			env = config.PutServiceEnvironment(env, srv, versionToRun)
 
 			err := serviceManager.AddServicesToCompose(deployToStack, []string{srv}, env)
 			if err != nil {
@@ -82,7 +81,10 @@ func buildUndeployServiceCommand(srv string) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
-			err := serviceManager.RemoveServicesFromCompose(deployToStack, []string{srv})
+			env := map[string]string{}
+			env = config.PutServiceEnvironment(env, srv, versionToRun)
+
+			err := serviceManager.RemoveServicesFromCompose(deployToStack, []string{srv}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"stack":    deployToStack,
