@@ -73,12 +73,16 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	}
 	defer fn(context.Background())
 
+	env := map[string]string{
+		"stackVersion": stackVersion,
+	}
+
 	services := []string{"metricbeat"}
 	if mts.ServiceName != "" {
 		services = append(services, mts.ServiceName)
 	}
 
-	err := serviceManager.RemoveServicesFromCompose("metricbeat", services)
+	err := serviceManager.RemoveServicesFromCompose("metricbeat", services, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": mts.ServiceName,

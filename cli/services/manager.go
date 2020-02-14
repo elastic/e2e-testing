@@ -2,8 +2,10 @@ package services
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
+	state "github.com/elastic/metricbeat-tests-poc/cli/internal"
 
 	log "github.com/sirupsen/logrus"
 	tc "github.com/testcontainers/testcontainers-go"
@@ -12,7 +14,7 @@ import (
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
 	AddServicesToCompose(stack string, composeNames []string, env map[string]string) error
-	RemoveServicesFromCompose(stack string, composeNames []string) error
+	RemoveServicesFromCompose(stack string, composeNames []string, env map[string]string) error
 	RunCompose(isStack bool, composeNames []string, env map[string]string) error
 	StopCompose(isStack bool, composeNames []string) error
 }
@@ -36,11 +38,21 @@ func (sm *DockerServiceManager) AddServicesToCompose(stack string, composeNames 
 	newComposeNames := []string{stack}
 	newComposeNames = append(newComposeNames, composeNames...)
 
-	return executeCompose(sm, true, newComposeNames, []string{"up", "-d"}, env)
+	persistedEnv := state.Recover(stack+"-stack", config.Op.Workspace)
+	for k, v := range env {
+		persistedEnv[k] = v
+	}
+
+	err := executeCompose(sm, true, newComposeNames, []string{"up", "-d"}, persistedEnv)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // RemoveServicesFromCompose removes services from a running docker compose
-func (sm *DockerServiceManager) RemoveServicesFromCompose(stack string, composeNames []string) error {
+func (sm *DockerServiceManager) RemoveServicesFromCompose(stack string, composeNames []string, env map[string]string) error {
 	log.WithFields(log.Fields{
 		"stack":    stack,
 		"services": composeNames,
@@ -49,11 +61,16 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(stack string, composeN
 	newComposeNames := []string{stack}
 	newComposeNames = append(newComposeNames, composeNames...)
 
+	persistedEnv := state.Recover(stack+"-stack", config.Op.Workspace)
+	for k, v := range env {
+		persistedEnv[k] = v
+	}
+
 	for _, composeName := range composeNames {
 		command := []string{"rm", "-fvs"}
 		command = append(command, composeName)
 
-		err := executeCompose(sm, true, newComposeNames, command, map[string]string{})
+		err := executeCompose(sm, true, newComposeNames, command, persistedEnv)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"command":  command,
@@ -88,12 +105,17 @@ func (sm *DockerServiceManager) StopCompose(isStack bool, composeNames []string)
 		composeFilePaths[i] = composeFilePath
 	}
 
-	compose := tc.NewLocalDockerCompose(composeFilePaths, composeNames[0])
-	execError := compose.Down()
-	err := execError.Error
+	ID := composeNames[0] + "-service"
+	if isStack {
+		ID = composeNames[0] + "-stack"
+	}
+	persistedEnv := state.Recover(ID, config.Op.Workspace)
+
+	err := executeCompose(sm, isStack, composeNames, []string{"down"}, persistedEnv)
 	if err != nil {
 		return fmt.Errorf("Could not stop compose file: %v - %v", composeFilePaths, err)
 	}
+	defer state.Destroy(ID, config.Op.Workspace)
 
 	log.WithFields(log.Fields{
 		"composeFilePath": composeFilePaths,
@@ -127,6 +149,13 @@ func executeCompose(sm *DockerServiceManager, isStack bool, composeNames []strin
 	if err != nil {
 		return fmt.Errorf("Could not run compose file: %v - %v", composeFilePaths, err)
 	}
+
+	suffix := "-service"
+	if isStack {
+		suffix = "-stack"
+	}
+	ID := filepath.Base(filepath.Dir(composeFilePaths[0])) + suffix
+	defer state.Update(ID, config.Op.Workspace, composeFilePaths, env)
 
 	log.WithFields(log.Fields{
 		"cmd":              command,
