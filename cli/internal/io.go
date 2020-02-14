@@ -177,6 +177,19 @@ func ReadDir(path string) ([]os.FileInfo, error) {
 	return files, nil
 }
 
+// ReadFile returns the byte array representing a file
+func ReadFile(path string) ([]byte, error) {
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"path": path,
+		}).Warn("Could not read file")
+		return []byte{}, err
+	}
+
+	return bytes, nil
+}
+
 // WriteFile writes bytes into target
 func WriteFile(bytes []byte, target string) error {
 	err := ioutil.WriteFile(target, bytes, 0755)
