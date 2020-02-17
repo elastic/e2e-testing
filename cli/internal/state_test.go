@@ -26,8 +26,8 @@ func TestRecover(t *testing.T) {
 		"foo": "bar",
 	}
 
-	MkdirAll(workspace)
-	
+	_ = MkdirAll(workspace)
+
 	Update(ID, workspace, composeFiles, initialEnv)
 
 	runFile := filepath.Join(workspace, ID+".run")
@@ -56,7 +56,7 @@ func TestUpdateCreatesStateFile(t *testing.T) {
 		filepath.Join(workspace, "compose/services/d/4.yml"),
 	}
 	runFile := filepath.Join(workspace, ID+".run")
-	MkdirAll(runFile)
+	_ = MkdirAll(runFile)
 
 	Update(ID, workspace, composeFiles, map[string]string{})
 

@@ -92,7 +92,10 @@ func CopyFile(src string, dst string, BUFFERSIZE int64) error {
 		return errors.New("File " + dst + " already exists")
 	}
 
-	MkdirAll(dst)
+	err = MkdirAll(dst)
+	if err != nil {
+		return err
+	}
 
 	destination, err := os.Create(dst)
 	if err != nil {

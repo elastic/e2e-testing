@@ -99,7 +99,10 @@ func GetComposeFile(isStack bool, composeName string) (string, error) {
 	}
 
 	// create parent directory for the compose file
-	io.MkdirAll(filepath.Dir(composeFilePath))
+	err = io.MkdirAll(filepath.Dir(composeFilePath))
+	if err != nil {
+		return composeFilePath, err
+	}
 
 	err = io.WriteFile(composeBytes, composeFilePath)
 	if err != nil {
@@ -217,7 +220,7 @@ func checkConfigDirectory(dir string) {
 	if found && err == nil {
 		return
 	}
-	io.MkdirAll(dir)
+	_ = io.MkdirAll(dir)
 }
 
 func checkConfigDirs(workspace string) {
