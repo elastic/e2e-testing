@@ -36,6 +36,7 @@ type MetricbeatTestSuite struct {
 	IndexName         string // the unique name for the index to be used in this test suite
 	ServiceName       string // the service to be monitored by metricbeat
 	ServiceType       string // the type of the service to be monitored by metricbeat
+	ServiceVariant    string // the variant of the service to be monitored by metricbeat
 	ServiceVersion    string // the version of the service to be monitored by metricbeat
 	Version           string // the metricbeat version for the test
 }
@@ -111,7 +112,9 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 	testSuite := MetricbeatTestSuite{}
 
 	s.Step(`^([^"]*) "([^"]*)" is running for metricbeat$`, testSuite.serviceIsRunningForMetricbeat)
+	s.Step(`^"([^"]*)" v([^"]*), variant of "([^"]*)", is running for metricbeat$`, testSuite.serviceVariantIsRunningForMetricbeat)
 	s.Step(`^metricbeat is installed and configured for ([^"]*) module$`, testSuite.installedAndConfiguredForModule)
+	s.Step(`^metricbeat is installed and configured for "([^"]*)", variant of the "([^"]*)" module$`, testSuite.installedAndConfiguredForVariantModule)
 	s.Step(`^metricbeat waits "([^"]*)" seconds for the service$`, testSuite.waitsSeconds)
 	s.Step(`^metricbeat runs for "([^"]*)" seconds$`, testSuite.runsForSeconds)
 	s.Step(`^there are no errors in the index$`, testSuite.thereAreNoErrorsInTheIndex)
@@ -137,6 +140,22 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 	// at this point we have everything to define the index name
 	mts.Version = metricbeatVersion
 	mts.setIndexName()
+	mts.ServiceType = serviceType
+
+	// look up configurations under workspace's configurations directory
+	dir, _ := os.Getwd()
+	mts.configurationFile = path.Join(dir, "configurations", mts.ServiceName+".yml")
+
+	return nil
+}
+
+func (mts *MetricbeatTestSuite) installedAndConfiguredForVariantModule(serviceVariant string, serviceType string) error {
+	serviceType = strings.ToLower(serviceType)
+
+	// at this point we have everything to define the index name
+	mts.Version = metricbeatVersion
+	mts.setIndexName()
+	mts.ServiceVariant = serviceVariant
 	mts.ServiceType = serviceType
 
 	// look up configurations under workspace's configurations directory
@@ -244,6 +263,32 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(serviceType string
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": serviceType,
+			"version": serviceVersion,
+		}).Error("Could not run the service.")
+	}
+
+	mts.ServiceName = serviceType
+	mts.ServiceVersion = serviceVersion
+
+	return err
+}
+
+func (mts *MetricbeatTestSuite) serviceVariantIsRunningForMetricbeat(
+	serviceVariant string, serviceVersion string, serviceType string) error {
+
+	serviceVariant = strings.ToLower(serviceVariant)
+	serviceType = strings.ToLower(serviceType)
+
+	env := map[string]string{
+		"stackVersion": stackVersion,
+	}
+	env = config.PutServiceVariantEnvironment(env, serviceType, serviceVariant, serviceVersion)
+
+	err := serviceManager.AddServicesToCompose("metricbeat", []string{serviceType}, env)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"service": serviceType,
+			"variant": serviceVariant,
 			"version": serviceVersion,
 		}).Error("Could not run the service.")
 	}
