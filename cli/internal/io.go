@@ -130,17 +130,15 @@ func Exists(path string) (bool, error) {
 	return true, err
 }
 
-// MkdirAll creates all directories in a path
-func MkdirAll(file string) error {
-	// check if parent dir for the file exist, otherwise create it
-	parent := filepath.Dir(file)
-	if _, err := os.Stat(parent); os.IsNotExist(err) {
-		err = os.MkdirAll(parent, 0755)
+// MkdirAll creates all directories for a directory path
+func MkdirAll(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err = os.MkdirAll(path, 0755)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
-				"path":  parent,
-			}).Fatal("File cannot be created")
+				"path":  path,
+			}).Fatal("Directory cannot be created")
 
 			return err
 		}

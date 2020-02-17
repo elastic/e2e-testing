@@ -26,10 +26,14 @@ func TestRecover(t *testing.T) {
 		"foo": "bar",
 	}
 
-	runFile := filepath.Join(workspace, ID+".run")
-	MkdirAll(runFile)
-
+	MkdirAll(workspace)
+	
 	Update(ID, workspace, composeFiles, initialEnv)
+
+	runFile := filepath.Join(workspace, ID+".run")
+	e, _ := Exists(runFile)
+	assert.True(t, e)
+
 	env := Recover(ID, workspace)
 
 	value, e := env["foo"]
