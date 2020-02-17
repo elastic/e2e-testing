@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"os/user"
@@ -12,6 +13,8 @@ import (
 
 	packr "github.com/gobuffalo/packr/v2"
 	log "github.com/sirupsen/logrus"
+
+	"gopkg.in/yaml.v2"
 )
 
 // opComposeBox the tool's static files where we will embed default Docker compose
@@ -140,14 +143,14 @@ func InitConfig() {
 
 // PutServiceEnvironment puts the environment variables for the service, replacing "SERVICE_"
 // with service name in uppercase. The variables are:
-//  - SERVICE_VARIANT: where SERVICE is the name of the service (i.e. APACHE_VARIANT)
 //  - SERVICE_VERSION: where it represents the version of the service (i.e. APACHE_VERSION)
 //  - SERVICE_PATH: where it represents the path to its compose file (i.e. APACHE_PATH)
 func PutServiceEnvironment(env map[string]string, service string, serviceVersion string) map[string]string {
 	serviceUpper := strings.ToUpper(service)
 
-	env[serviceUpper+"_VARIANT"] = service
-	env[serviceUpper+"_VERSION"] = serviceVersion
+	if _, exists := env[serviceUpper+"_VERSION"]; !exists {
+		env[serviceUpper+"_VERSION"] = serviceVersion
+	}
 
 	srv, exists := Op.Services[service]
 	if !exists {
@@ -159,6 +162,53 @@ func PutServiceEnvironment(env map[string]string, service string, serviceVersion
 	}
 
 	return env
+}
+
+// PutServiceVariantEnvironment puts the environment variables that comes in the supported-versions.yml
+// file of the service, replacing "SERVICE_ with service name in uppercase. At the end, it also adds
+// the version and the path for the service, calling the PutServiceEnvironment method. An example:
+//  - SERVICE_VARIANT: where SERVICE is the name of the service (i.e. APACHE_VARIANT)
+//  - SERVICE_VERSION: where it represents the version of the service (i.e. APACHE_VERSION)
+func PutServiceVariantEnvironment(env map[string]string, service string, serviceVariant string, serviceVersion string) map[string]string {
+	type EnvVar interface{}
+	type supportedVersions struct {
+		Env []EnvVar `yaml:"variants"`
+	}
+
+	versionsPath := path.Join(
+		Op.Workspace, "compose", "services", service, "_meta", "supported-versions.yml")
+
+	bytes, err := io.ReadFile(versionsPath)
+	if err != nil {
+		return map[string]string{}
+	}
+
+	sv := supportedVersions{}
+	err = yaml.Unmarshal(bytes, &sv)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"supported-versions": versionsPath,
+		}).Error("Could not unmarshal supported versions")
+
+		return map[string]string{}
+	}
+
+	// discover variants and set them only if the variant matches
+	for _, e := range sv.Env {
+		switch i := e.(type) {
+		case map[interface{}]interface{}:
+			for k, v := range i {
+				srvVariant := fmt.Sprint(v)
+				if srvVariant == serviceVariant {
+					env[fmt.Sprint(k)] = srvVariant
+				}
+			}
+		default:
+			// skip
+		}
+	}
+
+	return PutServiceEnvironment(env, service, serviceVersion)
 }
 
 func checkConfigDirectory(dir string) {
