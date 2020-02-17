@@ -24,12 +24,12 @@ type stateService struct {
 }
 
 // Recover recovers the state for a run
-func Recover(ID string, workdir string) map[string]string {
+func Recover(id string, workdir string) map[string]string {
 	run := stateRun{
 		Env: map[string]string{},
 	}
 
-	stateFile := filepath.Join(workdir, ID+".run")
+	stateFile := filepath.Join(workdir, id+".run")
 	bytes, err := ReadFile(stateFile)
 	if err != nil {
 		return run.Env
@@ -46,8 +46,8 @@ func Recover(ID string, workdir string) map[string]string {
 }
 
 // Destroy destroys the state for a run
-func Destroy(ID string, workdir string) {
-	stateFile := filepath.Join(workdir, ID+".run")
+func Destroy(id string, workdir string) {
+	stateFile := filepath.Join(workdir, id+".run")
 	err := os.Remove(stateFile)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -66,14 +66,14 @@ func Destroy(ID string, workdir string) {
 // Update updates the state of en execution, using ID as the file name for the run.
 // The state file will be located under 'workdir', which by default will be the tool's
 // workspace.
-func Update(ID string, workdir string, composeFilePaths []string, env map[string]string) {
+func Update(id string, workdir string, composeFilePaths []string, env map[string]string) {
 	run := stateRun{
-		ID:       ID,
+		ID:       id,
 		Env:      env,
 		Services: []stateService{},
 	}
 
-	if strings.HasSuffix(ID, "-stack") {
+	if strings.HasSuffix(id, "-stack") {
 		run.Stack = stateService{
 			Name: filepath.Base(filepath.Dir(composeFilePaths[0])),
 		}
@@ -91,7 +91,7 @@ func Update(ID string, workdir string, composeFilePaths []string, env map[string
 	}
 	args = append(args, "config")
 
-	stateFile := filepath.Join(workdir, ID+".run")
+	stateFile := filepath.Join(workdir, id+".run")
 
 	bytes, err := yaml.Marshal(&run)
 	if err != nil {

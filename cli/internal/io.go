@@ -71,7 +71,7 @@ func CopyDir(src string, dst string) error {
 // CopyFile copies a file from a source to a destiny
 // Optimising the copy of files in Go:
 // https://opensource.com/article/18/6/copying-files-go
-func CopyFile(src string, dst string, BUFFERSIZE int64) error {
+func CopyFile(src string, dst string, bufferSize int64) error {
 	sourceFileStat, err := os.Stat(src)
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func CopyFile(src string, dst string, BUFFERSIZE int64) error {
 	}
 	defer destination.Close()
 
-	buf := make([]byte, BUFFERSIZE)
+	buf := make([]byte, bufferSize)
 	for {
 		n, err := source.Read(buf)
 		if err != nil && err != io.EOF {
