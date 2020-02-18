@@ -39,7 +39,7 @@ The **default configuration file** is located under `$HOME/.op`, which is the wo
 >Those default services are defined at [config.go](./config/config.go).
 
 ### Updating services from Beats
-The CLI includes a command to fetch Beats integrations from its GitHub repository, making possible to add them to the list of available services. Tu run this command:
+The CLI includes a command to fetch Beats integrations from its GitHub repository, making it possible to add them to the list of available services. To run this command:
 
 ```
 $ ./op sync integrations -h
