@@ -50,8 +50,8 @@ Usage:
 
 Flags:
   -h, --help            help for integrations
+  -d, --delete          Will delete the existing Beats repository before cloning it again (default false)
   -r, --remote string   Sets the remote for Beats, using 'user:branch' as format (i.e. elastic:master) (default "elastic:master")
-  -R, --remove          Will remove the existing Beats repository before cloning it again
 ```
 
 It's possible to update the services from a different remote, using the `--remote` flag, as described above.

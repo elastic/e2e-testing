@@ -14,14 +14,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var deleteRepository = false
 var remote = "elastic:master"
-var remove = false
 
 func init() {
 	config.InitConfig()
 
+	syncIntegrationsCmd.Flags().BoolVarP(&deleteRepository, "delete", "d", false, "Will delete the existing Beats repository before cloning it again (default false)")
 	syncIntegrationsCmd.Flags().StringVarP(&remote, "remote", "r", "elastic:master", "Sets the remote for Beats, using 'user:branch' as format (i.e. elastic:master)")
-	syncIntegrationsCmd.Flags().BoolVarP(&remove, "remove", "R", false, "Will remove the existing Beats repository before cloning it again")
 
 	syncCmd.AddCommand(syncIntegrationsCmd)
 	rootCmd.AddCommand(syncCmd)
@@ -59,7 +59,7 @@ var syncIntegrationsCmd = &cobra.Command{
 			WithRemote(remote).
 			Build()
 
-		if remove {
+		if deleteRepository {
 			repoDir := path.Join(workspace, "git", BeatsRepo.Name)
 
 			log.WithFields(log.Fields{
