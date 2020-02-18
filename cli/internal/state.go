@@ -30,7 +30,7 @@ func Recover(id string, workdir string) map[string]string {
 	}
 
 	stateFile := filepath.Join(workdir, id+".run")
-	bytes, err := ReadFile(stateFile)
+	bytes, err := ReadFile(stateFile) //nolint
 	if err != nil {
 		return run.Env
 	}
@@ -100,7 +100,7 @@ func Update(id string, workdir string, composeFilePaths []string, env map[string
 		}).Error("Could not marshal state")
 	}
 
-	WriteFile(bytes, stateFile)
+	WriteFile(bytes, stateFile) //nolint
 
 	log.WithFields(log.Fields{
 		"dir":       workdir,
