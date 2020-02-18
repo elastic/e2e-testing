@@ -8,7 +8,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Execute execute
+// Execute executes a command in the machine the program is running
+// - workspace: represents the location where to execute the command
+// - command: represents the name of the binary to execute
+// - args: represents the arguments to be passed to the command
 func Execute(workspace string, command string, args ...string) string {
 	cmd := exec.Command(command, args[0:]...)
 
