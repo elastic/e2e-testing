@@ -1,6 +1,0 @@
-version: '3'
-services:
-  mongodb:
-    image: "mongo:${mongodbTag}"
-    ports:
-      - "27017:27017"

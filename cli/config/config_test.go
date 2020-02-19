@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	io "github.com/elastic/metricbeat-tests-poc/cli/internal"
+
 	"github.com/Flaque/filet"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -19,16 +21,16 @@ func TestCheckConfigDirsCreatesWorkspaceAtHome(t *testing.T) {
 
 	workspace := path.Join(tmpDir, ".op")
 
-	e, _ := exists(workspace)
+	e, _ := io.Exists(workspace)
 	assert.False(t, e)
 
 	checkConfigDirs(workspace)
 
-	e, _ = exists(workspace)
+	e, _ = io.Exists(workspace)
 	assert.True(t, e)
-	e, _ = exists(path.Join(workspace, "compose", "services"))
+	e, _ = io.Exists(path.Join(workspace, "compose", "services"))
 	assert.True(t, e)
-	e, _ = exists(path.Join(workspace, "compose", "stacks"))
+	e, _ = io.Exists(path.Join(workspace, "compose", "stacks"))
 	assert.True(t, e)
 }
 
@@ -106,7 +108,6 @@ func checkLoggerWithLogLevel(t *testing.T, level string) {
 }
 
 func cleanUpEnv() {
-	os.Unsetenv("OP_CONFIG_PATH")
 	os.Unsetenv("OP_LOG_LEVEL")
 	os.Unsetenv("OP_LOG_INCLUDE_TIMESTAMP")
 }

@@ -57,9 +57,7 @@ func buildRunServiceCommand(srv string) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
-			env := map[string]string{
-				srv + "Tag": versionToRun,
-			}
+			env := config.PutServiceEnvironment(map[string]string{}, srv, versionToRun)
 
 			err := serviceManager.RunCompose(false, []string{srv}, env)
 			if err != nil {
@@ -91,7 +89,6 @@ func buildRunStackCommand(key string, stack config.Stack) *cobra.Command {
 			}
 
 			composeNames := []string{}
-			env = map[string]string{}
 			if servicesToRun != "" {
 				services := strings.Split(servicesToRun, ",")
 
@@ -100,7 +97,7 @@ func buildRunStackCommand(key string, stack config.Stack) *cobra.Command {
 					image := arr[0]
 					tag := arr[1]
 
-					env[image+"Tag"] = tag
+					env = config.PutServiceEnvironment(env, image, tag)
 					composeNames = append(composeNames, image)
 				}
 

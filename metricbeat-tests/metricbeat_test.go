@@ -8,13 +8,14 @@ import (
 	"strings"
 
 	"github.com/DATA-DOG/godog"
+	"github.com/elastic/metricbeat-tests-poc/cli/config"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
 	log "github.com/sirupsen/logrus"
 )
 
 // metricbeatVersion is the version of the metricbeat to use
 // It can be overriden by OP_METRICBEAT_VERSION env var
-var metricbeatVersion = "7.4.0"
+var metricbeatVersion = "7.6.0"
 
 //nolint:unused
 var query ElasticsearchQuery
@@ -35,6 +36,7 @@ type MetricbeatTestSuite struct {
 	IndexName         string // the unique name for the index to be used in this test suite
 	ServiceName       string // the service to be monitored by metricbeat
 	ServiceType       string // the type of the service to be monitored by metricbeat
+	ServiceVariant    string // the variant of the service to be monitored by metricbeat
 	ServiceVersion    string // the version of the service to be monitored by metricbeat
 	Version           string // the metricbeat version for the test
 }
@@ -72,12 +74,16 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	}
 	defer fn(context.Background())
 
+	env := map[string]string{
+		"stackVersion": stackVersion,
+	}
+
 	services := []string{"metricbeat"}
 	if mts.ServiceName != "" {
 		services = append(services, mts.ServiceName)
 	}
 
-	err := serviceManager.RemoveServicesFromCompose("metricbeat", services)
+	err := serviceManager.RemoveServicesFromCompose("metricbeat", services, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": mts.ServiceName,
@@ -106,7 +112,9 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 	testSuite := MetricbeatTestSuite{}
 
 	s.Step(`^([^"]*) "([^"]*)" is running for metricbeat$`, testSuite.serviceIsRunningForMetricbeat)
+	s.Step(`^"([^"]*)" v([^"]*), variant of "([^"]*)", is running for metricbeat$`, testSuite.serviceVariantIsRunningForMetricbeat)
 	s.Step(`^metricbeat is installed and configured for ([^"]*) module$`, testSuite.installedAndConfiguredForModule)
+	s.Step(`^metricbeat is installed and configured for "([^"]*)", variant of the "([^"]*)" module$`, testSuite.installedAndConfiguredForVariantModule)
 	s.Step(`^metricbeat waits "([^"]*)" seconds for the service$`, testSuite.waitsSeconds)
 	s.Step(`^metricbeat runs for "([^"]*)" seconds$`, testSuite.runsForSeconds)
 	s.Step(`^there are no errors in the index$`, testSuite.thereAreNoErrorsInTheIndex)
@@ -132,6 +140,22 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 	// at this point we have everything to define the index name
 	mts.Version = metricbeatVersion
 	mts.setIndexName()
+	mts.ServiceType = serviceType
+
+	// look up configurations under workspace's configurations directory
+	dir, _ := os.Getwd()
+	mts.configurationFile = path.Join(dir, "configurations", mts.ServiceName+".yml")
+
+	return nil
+}
+
+func (mts *MetricbeatTestSuite) installedAndConfiguredForVariantModule(serviceVariant string, serviceType string) error {
+	serviceType = strings.ToLower(serviceType)
+
+	// at this point we have everything to define the index name
+	mts.Version = metricbeatVersion
+	mts.setIndexName()
+	mts.ServiceVariant = serviceVariant
 	mts.ServiceType = serviceType
 
 	// look up configurations under workspace's configurations directory
@@ -231,14 +255,40 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(serviceType string
 	serviceType = strings.ToLower(serviceType)
 
 	env := map[string]string{
-		serviceType + "Tag": serviceVersion,
-		"stackVersion":      stackVersion,
+		"stackVersion": stackVersion,
 	}
+	env = config.PutServiceEnvironment(env, serviceType, serviceVersion)
 
 	err := serviceManager.AddServicesToCompose("metricbeat", []string{serviceType}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": serviceType,
+			"version": serviceVersion,
+		}).Error("Could not run the service.")
+	}
+
+	mts.ServiceName = serviceType
+	mts.ServiceVersion = serviceVersion
+
+	return err
+}
+
+func (mts *MetricbeatTestSuite) serviceVariantIsRunningForMetricbeat(
+	serviceVariant string, serviceVersion string, serviceType string) error {
+
+	serviceVariant = strings.ToLower(serviceVariant)
+	serviceType = strings.ToLower(serviceType)
+
+	env := map[string]string{
+		"stackVersion": stackVersion,
+	}
+	env = config.PutServiceVariantEnvironment(env, serviceType, serviceVariant, serviceVersion)
+
+	err := serviceManager.AddServicesToCompose("metricbeat", []string{serviceType}, env)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"service": serviceType,
+			"variant": serviceVariant,
 			"version": serviceVersion,
 		}).Error("Could not run the service.")
 	}
