@@ -29,9 +29,7 @@ func CopyDir(src string, dst string) error {
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
-	if err == nil {
-		// always override
-	}
+	// always override
 
 	err = MkdirAll(dst)
 	if err != nil {
@@ -89,9 +87,7 @@ func CopyFile(src string, dst string, bufferSize int64) error {
 	defer source.Close()
 
 	_, err = os.Stat(dst)
-	if err == nil {
-		// always override
-	}
+	// always override
 
 	err = MkdirAll(filepath.Dir(dst))
 	if err != nil {
