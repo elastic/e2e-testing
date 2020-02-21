@@ -86,7 +86,7 @@ func CopyFile(src string, dst string, bufferSize int64) error {
 	}
 	defer source.Close()
 
-	_, err = os.Stat(dst)
+	_, _ = os.Stat(dst)
 	// always override
 
 	err = MkdirAll(filepath.Dir(dst))
