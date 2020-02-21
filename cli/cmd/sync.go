@@ -18,6 +18,7 @@ import (
 )
 
 var deleteRepository = false
+var excludedBlocks = []string{"build"}
 var remote = "elastic:master"
 
 func init() {
@@ -78,6 +79,16 @@ var syncIntegrationsCmd = &cobra.Command{
 
 		copyIntegrationsComposeFiles(BeatsRepo, workspace)
 	},
+}
+
+// tells whether the a array contains the x string.
+func contains(a []string, x string) bool {
+	for _, n := range a {
+		if x == n {
+			return true
+		}
+	}
+	return false
 }
 
 // CopyComposeFiles copies only those services that has a supported-versions.yml
@@ -168,7 +179,7 @@ func sanitizeComposeFile(composeFilePath string) error {
 				strKey := fmt.Sprintf("%v", key)
 
 				// remove the build context element
-				if key == "build" {
+				if contains(excludedBlocks, strKey) {
 					continue
 				}
 
