@@ -93,7 +93,7 @@ func CopyFile(src string, dst string, bufferSize int64) error {
 		// always override
 	}
 
-	err = MkdirAll(dst)
+	err = MkdirAll(filepath.Dir(dst))
 	if err != nil {
 		return err
 	}
