@@ -11,8 +11,8 @@ import (
 )
 
 // CopyDir recursively copies a directory tree, attempting to preserve permissions.
-// Source directory must exist, destination directory must *not* exist.
-// Symlinks are ignored and skipped.
+// Source directory must exist, destination directory will be overridden if it
+// exists. Symlinks are ignored and skipped.
 func CopyDir(src string, dst string) error {
 	src = filepath.Clean(src)
 	dst = filepath.Clean(dst)
@@ -30,7 +30,7 @@ func CopyDir(src string, dst string) error {
 		return err
 	}
 	if err == nil {
-		return errors.New("destination already exists")
+		// always override
 	}
 
 	err = MkdirAll(dst)
@@ -68,7 +68,8 @@ func CopyDir(src string, dst string) error {
 	return nil
 }
 
-// CopyFile copies a file from a source to a destiny
+// CopyFile copies a file from a source to a destiny, always overridding
+// the destination file
 // Optimising the copy of files in Go:
 // https://opensource.com/article/18/6/copying-files-go
 func CopyFile(src string, dst string, bufferSize int64) error {
@@ -89,7 +90,7 @@ func CopyFile(src string, dst string, bufferSize int64) error {
 
 	_, err = os.Stat(dst)
 	if err == nil {
-		return errors.New("File " + dst + " already exists")
+		// always override
 	}
 
 	err = MkdirAll(dst)
