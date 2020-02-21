@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -12,6 +13,8 @@ import (
 	io "github.com/elastic/metricbeat-tests-poc/cli/internal"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"gopkg.in/yaml.v2"
 )
 
 var deleteRepository = false
@@ -81,7 +84,8 @@ var syncIntegrationsCmd = &cobra.Command{
 // file from Beats integrations, and we will need to copy them into a directory
 // named as the original service (i.e. aerospike) under this tool's workspace,
 // alongside the services. Besides that, the method will copy the _meta directory
-// for each service
+// for each service, also sanitising the compose files: it will remove the 'build'
+// blocks from the compose files.
 func copyIntegrationsComposeFiles(beats git.Project, target string) {
 	pattern := path.Join(
 		beats.GetWorkspace(), "metricbeat", "module", "*", "_meta", "supported-versions.yml")
@@ -96,6 +100,9 @@ func copyIntegrationsComposeFiles(beats git.Project, target string) {
 		composeFile := filepath.Join(serviceDir, "docker-compose.yml")
 		targetFile := filepath.Join(
 			target, "compose", "services", service, "docker-compose.yml")
+
+		// discard error in any case
+		_ = io.MkdirAll(filepath.Dir(targetFile))
 
 		err := io.CopyFile(composeFile, targetFile, 10000)
 		if err != nil {
@@ -113,5 +120,72 @@ func copyIntegrationsComposeFiles(beats git.Project, target string) {
 				"_meta": metaDir,
 			}).Warn("Meta dir was not copied")
 		}
+
+		err = sanitizeComposeFile(targetFile)
+		if err != nil {
+			log.Fatalf("error: %v", err)
+		}
 	}
+}
+
+type service interface{}
+type compose struct {
+	Version  string             `yaml:"version"`
+	Services map[string]service `yaml:"services"`
+}
+
+// removes non-needed blocks in the target compose file, such as the build context
+func sanitizeComposeFile(composeFilePath string) error {
+	bytes, err := io.ReadFile(composeFilePath)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"docker-compose": composeFilePath,
+		}).Error("Could not read docker compose file")
+		return err
+	}
+
+	c := compose{}
+	err = yaml.Unmarshal(bytes, &c)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"docker-compose": composeFilePath,
+		}).Error("Could not unmarshal docker compose file")
+		return err
+	}
+
+	// we'll copy all fields but the excluded ones in this struct
+	output := make(map[string]service)
+
+	for k, srv := range c.Services {
+		switch i := srv.(type) {
+		case map[interface{}]interface{}:
+			log.WithFields(log.Fields{
+				"name":         k,
+				"compose-file": composeFilePath,
+			}).Debug("sanitize service in docker-compose file")
+
+			for key, value := range i {
+				strKey := fmt.Sprintf("%v", key)
+
+				// remove the build context element
+				if key == "build" {
+					continue
+				}
+
+				output[strKey] = value
+			}
+		default:
+			// skip
+		}
+
+		c.Services[k] = output
+	}
+
+	d, err := yaml.Marshal(&c)
+	if err != nil {
+		return err
+	}
+	io.WriteFile(d, composeFilePath)
+
+	return nil
 }
