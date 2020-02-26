@@ -67,6 +67,13 @@ func Destroy(id string, workdir string) {
 // The state file will be located under 'workdir', which by default will be the tool's
 // workspace.
 func Update(id string, workdir string, composeFilePaths []string, env map[string]string) {
+	stateFile := filepath.Join(workdir, id+".run")
+
+	log.WithFields(log.Fields{
+		"dir":       workdir,
+		"stateFile": stateFile,
+	}).Debug("Updating state")
+
 	run := stateRun{
 		ID:       id,
 		Env:      env,
@@ -91,8 +98,6 @@ func Update(id string, workdir string, composeFilePaths []string, env map[string
 	}
 	args = append(args, "config")
 
-	stateFile := filepath.Join(workdir, id+".run")
-
 	bytes, err := yaml.Marshal(&run)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -110,5 +115,5 @@ func Update(id string, workdir string, composeFilePaths []string, env map[string
 	log.WithFields(log.Fields{
 		"dir":       workdir,
 		"stateFile": stateFile,
-	}).Debug("Updating state")
+	}).Debug("State updated")
 }
