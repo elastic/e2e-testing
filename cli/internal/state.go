@@ -100,7 +100,12 @@ func Update(id string, workdir string, composeFilePaths []string, env map[string
 		}).Error("Could not marshal state")
 	}
 
-	WriteFile(bytes, stateFile) //nolint
+	err = WriteFile(bytes, stateFile) //nolint
+	if err != nil {
+		log.WithFields(log.Fields{
+			"stateFile": stateFile,
+		}).Error("Could not create state file")
+	}
 
 	log.WithFields(log.Fields{
 		"dir":       workdir,

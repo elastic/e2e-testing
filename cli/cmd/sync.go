@@ -196,7 +196,6 @@ func sanitizeComposeFile(composeFilePath string) error {
 	if err != nil {
 		return err
 	}
-	io.WriteFile(d, composeFilePath)
 
-	return nil
+	return io.WriteFile(d, composeFilePath)
 }
