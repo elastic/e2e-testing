@@ -195,7 +195,7 @@ func WriteFile(bytes []byte, target string) error {
 		log.WithFields(log.Fields{
 			"target": target,
 			"error":  err,
-		}).Error("Cannot write file at workdir.")
+		}).Error("Cannot write file")
 
 		return err
 	}

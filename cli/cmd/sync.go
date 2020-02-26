@@ -112,15 +112,22 @@ func copyIntegrationsComposeFiles(beats git.Project, target string) {
 		targetFile := filepath.Join(
 			target, "compose", "services", service, "docker-compose.yml")
 
-		// discard error in any case
-		_ = io.MkdirAll(filepath.Dir(targetFile))
-
-		err := io.CopyFile(composeFile, targetFile, 10000)
+		err := io.MkdirAll(filepath.Dir(targetFile))
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
 				"file":  file,
 			}).Warn("File was not copied")
+			continue
+		}
+
+		err = io.CopyFile(composeFile, targetFile, 10000)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"file":  file,
+			}).Warn("File was not copied")
+			continue
 		}
 
 		targetMetaDir := filepath.Join(target, "compose", "services", service, "_meta")
@@ -130,11 +137,16 @@ func copyIntegrationsComposeFiles(beats git.Project, target string) {
 				"error": err,
 				"_meta": metaDir,
 			}).Warn("Meta dir was not copied")
+			continue
 		}
 
 		err = sanitizeComposeFile(targetFile)
 		if err != nil {
-			log.Fatalf("error: %v", err)
+			log.WithFields(log.Fields{
+				"error": err,
+				"file":  targetFile,
+			}).Warn("Could not sanitize compose file")
+			continue
 		}
 	}
 }
