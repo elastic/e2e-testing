@@ -124,6 +124,9 @@ def generateStep(Map params = [:]){
       try {
         deleteDir()
         unstash 'build'
+        dir("${BASE_DIR}") {
+          sh script: ".ci/scripts/install-go.sh '${GO_VERSION}' ", label: 'Install Go'
+        }
         dir("${BASE_DIR}/cli") {
           withEnv(["GOOS=${oss}", "GOARCH=${platform}"]) {
             sh script: 'make build', label: 'Create releases'
