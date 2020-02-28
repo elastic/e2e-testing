@@ -4,16 +4,16 @@ set -exo pipefail
 readonly supportedOSS=("darwin" "linux" "windows")
 readonly supportedArchs=("386" "amd64")
 
-arch="${GOARCH}"
+arch="${TARGET_ARCH}"
 extension=""
-goos="${GOOS}"
+goos="${TARGET_OS}"
 separator=""
 
-if [[ "${GOOS}" != "" ]]; then
+if [[ "${TARGET_OS}" != "" ]]; then
     # GO_OS represents the Golang's supported Operative Systems.
     # Possible values: darwin, linux, windows
-    readonly GO_OS="${GOOS:-linux}"
-    if [[ ! " ${supportedOSS[@]} " =~ " ${GOOS} " ]]; then
+    readonly GO_OS="${TARGET_OS:-linux}"
+    if [[ ! " ${supportedOSS[@]} " =~ " ${GO_OS} " ]]; then
         echo "It's not possible to build a binary for ${GO_OS}. Supported values: darwin, linux, windows"
         exit 1
     fi
@@ -24,14 +24,13 @@ if [[ "${GOOS}" != "" ]]; then
         extension=".exe"
     fi
 
-    export GOOS=${GO_OS}
     separator="-"
 fi
 
-if [[ "${GOARCH}" != "" ]]; then
+if [[ "${TARGET_ARCH}" != "" ]]; then
     # GO_ARCH represents the Golang's supported Architectures.
     # Possible values: 386, amd64
-    readonly GO_ARCH="${GOARCH:-amd64}"
+    readonly GO_ARCH="${TARGET_ARCH:-amd64}"
     if [[ ! " ${supportedArchs[@]} " =~ " ${GO_ARCH} " ]]; then
         echo "It's not possible to build a binary for ${GO_ARCH}. Supported values: 386, amd64"
         exit 1
@@ -42,7 +41,6 @@ if [[ "${GOARCH}" != "" ]]; then
         arch="64"
     fi
 
-    export GOARCH=${GO_ARCH}
     separator="-"
 fi
 
@@ -55,7 +53,7 @@ echo ">>> Generating Packr boxes"
 packr2
 
 echo ">>> Building CLI"
-go build -v -o $(pwd)/.github/releases/download/${VERSION}/${goos}${arch}${separator}op${extension}
+GOOS=${GO_OS} GOARCH=${GO_ARCH} go build -v -o $(pwd)/.github/releases/download/${VERSION}/${goos}${arch}${separator}op${extension}
 
 echo ">>> Cleaning up Packr boxes"
 packr2 clean
