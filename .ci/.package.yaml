@@ -2,7 +2,6 @@
 OSS:
   - "darwin"
   - "linux"
-  - "windows"
 
 PLATFORM:
   - "386"
