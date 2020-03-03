@@ -1,3 +1,6 @@
+# Get current directory of a Makefile: https://stackoverflow.com/a/23324703
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
 TEST_TIMEOUT?=5m
 
 GO_IMAGE?='golang'
@@ -9,7 +12,7 @@ GOARCH?='amd64'
 .PHONY: build
 build:
 	docker run --rm \
-		-v $(PWD):/go/src/github.com/elastic/metricbeat-tests-poc/cli \
+		-v $(ROOT_DIR):/go/src/github.com/elastic/metricbeat-tests-poc/cli \
 		-w /go/src/github.com/elastic/metricbeat-tests-poc/cli \
 		-e TARGET_OS=$(GOOS) -e TARGET_ARCH=$(GOARCH) -e GO111MODULE=on \
 		$(GO_IMAGE):$(GO_VERSION)-$(GO_IMAGE_TAG) \
