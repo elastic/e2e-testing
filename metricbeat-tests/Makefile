@@ -12,10 +12,15 @@ ifneq ($(FEATURE),)
 FEATURE_FLAG=--tags
 endif
 
+GO_IMAGE_TAG?='stretch'
+GOOS?='linux'
+GOARCH?='amd64'
+
 .PHONY: fetch-binary
 fetch-binary:
 	@$(MAKE) -C ../cli build
-	cp ../cli/.github/releases/download/$(VERSION_VALUE)/op .
+	cp ../cli/.github/releases/download/$(VERSION_VALUE)/$(GOOS)$(subst amd,,$(GOARCH))-op ./op
+	chmod +x ./op
 
 .PHONY: install
 install:
