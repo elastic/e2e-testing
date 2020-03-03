@@ -13,7 +13,7 @@ GO_VERSION=${1:?GO_VERSION is not set}
 FEATURE=${2:-''}
 STACK_VERSION=${3:-'7.5.0'}
 METRICBEAT_VERSION=${4:-'7.5.0'}
-TARGET_OS=${GOOS}
+TARGET_OS=${GOOS:-linux}
 TARGET_ARCH=${GOARCH:-amd64}
 
 # shellcheck disable=SC1091
