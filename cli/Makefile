@@ -1,5 +1,5 @@
 # Get current directory of a Makefile: https://stackoverflow.com/a/23324703
-ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+ROOT_DIR:=$(CURDIR)
 
 TEST_TIMEOUT?=5m
 
