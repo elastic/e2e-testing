@@ -99,11 +99,11 @@ $ export METRICBEAT_VERSION=7.6.0                  # exports metricbeat version 
 $ # export FEATURE=redis                           # exports which feature to run (default 'all')
 $ # export GOOS=darwin                             # exports your O.S. (default 'linux', valid: [darwin, linux, windows])
 $ # export GOARCH=amd64                            # exports your O.S. (default 'amd64', valid: [amd64, 386])
-$ make -C metricbeat-tests install                 # installs tests dependencies
-$ make -C metricbeat-tests fetch-binary            # generates the binary from the repository
-$ make -C metricbeat-tests run-elastic-stack       # runs the stack for metricbeat
-$ make -C metricbeat-tests functional-test         # runs the test suite for Redis and stack 
-$ make -C metricbeat-tests shutdown-elastic-stack  # stops the stack
+$ make -C metricbeat install                       # installs tests dependencies
+$ make -C metricbeat fetch-binary                  # generates the binary from the repository
+$ make -C metricbeat run-elastic-stack             # runs the stack for metricbeat
+$ make -C metricbeat functional-test               # runs the test suite for Redis and stack 
+$ make -C metricbeat shutdown-elastic-stack        # stops the stack
 ```
 
 or simply run as the CI does:
