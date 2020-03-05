@@ -13,9 +13,9 @@ for file in "$@"; do
         cd -
     fi
 
-    if [[ $(echo $file |grep "^metricbeat") ]]; then
-        parsedFile=$(echo $file |sed "s#metricbeat/##")
-        cd metricbeat
+    if [[ $(echo $file |grep "^e2e/metricbeat") ]]; then
+        parsedFile=$(echo $file |sed "s#e2e/metricbeat/##")
+        cd e2e/metricbeat
         golangci-lint run "${parsedFile}" || error=1
         cd -
     fi 
