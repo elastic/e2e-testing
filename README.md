@@ -11,5 +11,5 @@ $ GO111MODULE=on make -C cli install test
 ## How to run functional tests
 ```sh
 # Run the Functional tests for the module metricbeat
-$ GO111MODULE=on make -C e2e/metricbeat install functional-test
+$ GO111MODULE=on make -C e2e install functional-test
 ```
