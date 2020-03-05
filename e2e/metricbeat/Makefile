@@ -6,7 +6,7 @@ QUERY_MAX_ATTEMPTS?=5
 RETRY_TIMEOUT?=3
 STACK_VERSION?=
 METRICBEAT_VERSION?=
-VERSION_VALUE=`cat ../cli/VERSION.txt`
+VERSION_VALUE=`cat ../../cli/VERSION.txt`
 
 ifneq ($(FEATURE),)
 FEATURE_FLAG=--tags
@@ -18,8 +18,8 @@ GOARCH?='amd64'
 
 .PHONY: fetch-binary
 fetch-binary:
-	@$(MAKE) -C ../cli build
-	cp ../cli/.github/releases/download/$(VERSION_VALUE)/$(GOOS)$(subst amd,,$(GOARCH))-op ./op
+	@$(MAKE) -C ../../cli build
+	cp ../../cli/.github/releases/download/$(VERSION_VALUE)/$(GOOS)$(subst amd,,$(GOARCH))-op ./op
 	chmod +x ./op
 
 .PHONY: install

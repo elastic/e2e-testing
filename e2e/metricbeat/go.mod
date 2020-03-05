@@ -1,4 +1,4 @@
-module github.com/elastic/metricbeat-tests-poc/metricbeat
+module github.com/elastic/metricbeat-tests-poc/e2e/metricbeat
 
 go 1.12
 
@@ -13,4 +13,4 @@ require (
 
 replace github.com/testcontainers/testcontainers-go v0.0.8 => github.com/mdelapenya/testcontainers-go v0.0.9-compose-1
 
-replace github.com/elastic/metricbeat-tests-poc/cli v0.1.0-rc11 => ../cli
+replace github.com/elastic/metricbeat-tests-poc/cli v0.1.0-rc11 => ../../cli
