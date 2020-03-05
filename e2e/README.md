@@ -42,7 +42,7 @@ As metricbeat is a Golang project, we are going to use Golang for writing the fu
 The services supported by Metricbeat integrations will be started in the form of Docker containers. To manage the life cycle of those containers in test time we are going to use [`Testcontainers`](https://testcontainers.org), a set of libraries to simplify the usage of the Docker client, attaching container life cycles to the tests, so whenever the tests finish, the containers will stop in consequence.
 
 ### Runtime dependencies
-We want to store the metrics in Elasticsearch, so at some point we must start up an Elasticsearch instance. Besides that, we want to query the Elasticsearch to perform assertions on the metrics, such as there are no errors, or the field `f.foo` takes the value `bar`. For that reason we need an Elasticsearch in a well-known location. Here it appears the usage of the [Observability Provisioner CLI tool](../../cli/README.md), which is a CLI writen in Go which exposes an API to query the specific runtime resources needed to run the tests. In our case, Metricbeat, we need just an Elasticsearch, but a Kibana could be needed in the case of verifying the dashboards are correct.
+We want to store the metrics in Elasticsearch, so at some point we must start up an Elasticsearch instance. Besides that, we want to query the Elasticsearch to perform assertions on the metrics, such as there are no errors, or the field `f.foo` takes the value `bar`. For that reason we need an Elasticsearch in a well-known location. Here it appears the usage of the [Observability Provisioner CLI tool](../cli/README.md), which is a CLI writen in Go which exposes an API to query the specific runtime resources needed to run the tests. In our case, Metricbeat, we need just an Elasticsearch, but a Kibana could be needed in the case of verifying the dashboards are correct.
 
 ## Adding tests for a new module
 Ok, you want to contribute the tests for a new integration module. Then you have to simply add three files, that's all. Therefore, a test is formed by three elements:
@@ -143,4 +143,4 @@ export FORMAT=${FORMAT:-pretty} # valid formats are: pretty, junit
 godog --format=${FORMAT} -t redis
 ```
 
->For environment variables reference affecting the logs, please check out [CLI's docs](../../cli/README.md#logging)
+>For environment variables reference affecting the logs, please check out [CLI's docs](../cli/README.md#logging)

@@ -1,4 +1,4 @@
-package metricbeat
+package e2e
 
 import (
 	"fmt"

@@ -20,13 +20,13 @@ TARGET_ARCH=${GOARCH:-amd64}
 source .ci/scripts/install-go.sh "${GO_VERSION}"
 
 # Build OP Binary
-GOOS=${TARGET_OS} GOARCH=${TARGET_ARCH} make -C e2e/metricbeat fetch-binary
+GOOS=${TARGET_OS} GOARCH=${TARGET_ARCH} make -C e2e fetch-binary
 
 # Build runtime dependencies
-STACK_VERSION=${STACK_VERSION} make -C e2e/metricbeat run-elastic-stack
+STACK_VERSION=${STACK_VERSION} make -C e2e run-elastic-stack
 
 # Sync integrations
-make -C e2e/metricbeat sync-integrations
+make -C e2e sync-integrations
 
 rm -rf outputs || true
 mkdir -p outputs
@@ -43,7 +43,7 @@ fi
 ## Generate test report even if make failed.
 set +e
 exit_status=0
-if ! FLAG=${FLAG} FEATURE=${FEATURE} FORMAT=junit STACK_VERSION=${STACK_VERSION} METRICBEAT_VERSION=${METRICBEAT_VERSION} make -C e2e/metricbeat functional-test | tee ${REPORT}  ; then
+if ! FLAG=${FLAG} FEATURE=${FEATURE} FORMAT=junit STACK_VERSION=${STACK_VERSION} METRICBEAT_VERSION=${METRICBEAT_VERSION} make -C e2e functional-test | tee ${REPORT}  ; then
   echo 'ERROR: functional-test failed'
   exit_status=1
 fi
