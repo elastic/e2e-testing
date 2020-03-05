@@ -1,4 +1,4 @@
-module github.com/elastic/metricbeat-tests-poc/metricbeat-tests
+module github.com/elastic/metricbeat-tests-poc/e2e
 
 go 1.12
 

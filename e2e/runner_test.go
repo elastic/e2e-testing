@@ -1,4 +1,4 @@
-package main
+package e2e
 
 import (
 	"flag"
@@ -58,7 +58,7 @@ func init() {
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	opt.Paths = flag.Args()
+	opt.Paths = []string{"features/*"}
 
 	status := godog.RunWithOptions("godog", func(s *godog.Suite) {}, opt)
 

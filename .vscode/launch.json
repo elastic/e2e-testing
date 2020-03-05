@@ -102,7 +102,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/metricbeat-tests",
+            "program": "${workspaceFolder}/e2e",
             "env": {
                 "GO111MODULE": "on",
                 "OP_LOG_LEVEL": "DEBUG",

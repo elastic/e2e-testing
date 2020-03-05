@@ -1,4 +1,4 @@
-package main
+package e2e
 
 import (
 	"context"
@@ -144,7 +144,7 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 
 	// look up configurations under workspace's configurations directory
 	dir, _ := os.Getwd()
-	mts.configurationFile = path.Join(dir, "configurations", mts.ServiceName+".yml")
+	mts.configurationFile = path.Join(dir, "configurations", "metricbeat", mts.ServiceName+".yml")
 
 	return nil
 }
@@ -160,7 +160,7 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForVariantModule(serviceVa
 
 	// look up configurations under workspace's configurations directory
 	dir, _ := os.Getwd()
-	mts.configurationFile = path.Join(dir, "configurations", mts.ServiceName+".yml")
+	mts.configurationFile = path.Join(dir, "configurations", "metricbeat", mts.ServiceName+".yml")
 
 	return nil
 }
