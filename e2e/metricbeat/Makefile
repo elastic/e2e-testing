@@ -51,4 +51,4 @@ shutdown-elastic-stack:
 
 .PHONY: sync-integrations
 sync-integrations:
-	OP_LOG_LEVEL=${LOG_LEVEL} ./op sync integrations --remove
+	OP_LOG_LEVEL=${LOG_LEVEL} ./op sync integrations --delete
