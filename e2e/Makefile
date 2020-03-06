@@ -51,5 +51,4 @@ shutdown-elastic-stack:
 
 .PHONY: sync-integrations
 sync-integrations:
-	@eval `ssh-agent`
 	OP_LOG_LEVEL=${LOG_LEVEL} ./op sync integrations --delete
