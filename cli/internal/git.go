@@ -29,7 +29,11 @@ type Project struct {
 
 // GetURL Returns the workspace of a Project
 func (d *Project) GetURL() string {
-	return d.Protocol + d.Domain + ":" + d.User + "/" + d.Name
+	if d.Protocol == GitProtocol {
+		return d.Protocol + d.Domain + ":" + d.User + "/" + d.Name
+	}
+
+	return "https://" + d.Domain + "/" + d.User + "/" + d.Name
 }
 
 // GetWorkspace Returns the workspace of a Project
