@@ -113,8 +113,8 @@ pipeline {
       }
       post {
         always {
-          junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/junit-*.xml")
-          archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/junit-*"
+          junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+          archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
           githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
         }
       }

@@ -80,7 +80,7 @@ pipeline {
               }
               post {
                 always {
-                  junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/junit-*.xml")
+                  junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-unit.xml")
                 }
               }
             }
@@ -175,8 +175,8 @@ def generateFunctionalTestStep(Map params = [:]){
       } catch(e) {
         error(e.toString())
       } finally {
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/junit-*.xml")
-          archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/junit-*"
+        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-${feature}.xml")
+          archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-${feature}.xml"
       }
     }
   }

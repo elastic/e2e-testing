@@ -19,4 +19,4 @@ export OUT_FILE="outputs/test-report.out"
 make -C cli install test | tee ${OUT_FILE}
 
 go get -v -u github.com/jstemmer/go-junit-report
-go-junit-report > outputs/junit-tests.xml < ${OUT_FILE}
+go-junit-report > outputs/TEST-unit.xml < ${OUT_FILE}
