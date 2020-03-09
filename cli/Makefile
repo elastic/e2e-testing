@@ -5,7 +5,7 @@ TEST_TIMEOUT?=5m
 
 GO_IMAGE?='golang'
 GO_VERSION?='1.13'
-GO_IMAGE_TAG?='alpine'
+GO_IMAGE_TAG?='stretch'
 GOOS?='linux'
 GOARCH?='amd64'
 
