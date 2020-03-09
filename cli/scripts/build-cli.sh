@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 set -exo pipefail
 
 readonly supportedOSS=("darwin" "linux" "windows")
