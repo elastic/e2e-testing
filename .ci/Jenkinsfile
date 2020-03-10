@@ -165,7 +165,7 @@ def generateStep(Map params = [:]){
 def generateFunctionalTestStep(Map params = [:]){
   def feature = params.get('feature')
   return {
-    node('docker && linux && immutable') {
+    node('linux && immutable') {
       try {
         deleteDir()
         unstash 'build'
