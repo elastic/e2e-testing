@@ -98,16 +98,18 @@ pipeline {
             GOPROXY = 'https://proxy.golang.org'
           }
           steps {
-            deleteDir()
-            unstash 'source'
-            dir("${BASE_DIR}") {
-              script {
-                def features = readYaml(file: '.ci/.e2e-tests.yaml')
-                def parallelTasks = [:]
-                features['FEATURES'].each { feature ->
-                    parallelTasks["${feature}"] = generateFunctionalTestStep(feature: "${feature}")
+            withGithubNotify(context: 'E2E Tests', tab: 'tests') {
+              deleteDir()
+              unstash 'source'
+              dir("${BASE_DIR}") {
+                script {
+                  def features = readYaml(file: '.ci/.e2e-tests.yaml')
+                  def parallelTasks = [:]
+                  features['FEATURES'].each { feature ->
+                      parallelTasks["${feature}"] = generateFunctionalTestStep(feature: "${feature}")
+                  }
+                  parallel(parallelTasks)
                 }
-                parallel(parallelTasks)
               }
             }
           }
