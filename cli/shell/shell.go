@@ -31,3 +31,19 @@ func Execute(workspace string, command string, args ...string) string {
 
 	return strings.Trim(out.String(), "\n")
 }
+
+// Which checks if software is installed, else it aborts the execution
+func Which(software string) {
+	path, err := exec.LookPath(software)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":    err,
+			"software": software,
+		}).Fatal("Required binary is not present")
+	}
+
+	log.WithFields(log.Fields{
+		"software": software,
+		"path":     path,
+	}).Debug("Binary is present")
+}

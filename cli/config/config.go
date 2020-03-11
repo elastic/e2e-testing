@@ -3,13 +3,13 @@ package config
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"os/user"
 	"path"
 	"path/filepath"
 	"strings"
 
 	io "github.com/elastic/metricbeat-tests-poc/cli/internal"
+	shell "github.com/elastic/metricbeat-tests-poc/cli/shell"
 
 	packr "github.com/gobuffalo/packr/v2"
 	log "github.com/sirupsen/logrus"
@@ -245,7 +245,7 @@ func checkInstalledSoftware() {
 	}
 
 	for _, binary := range binaries {
-		which(binary)
+		shell.Which(binary)
 	}
 }
 
@@ -379,20 +379,4 @@ func readFilesFromFileSystem(serviceType string) {
 			}
 		}
 	}
-}
-
-// which checks if software is installed
-func which(software string) {
-	path, err := exec.LookPath(software)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":    err,
-			"software": software,
-		}).Fatal("Required binary is not present")
-	}
-
-	log.WithFields(log.Fields{
-		"software": software,
-		"path":     path,
-	}).Debug("Binary is present")
 }
