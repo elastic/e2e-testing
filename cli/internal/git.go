@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	shell "github.com/elastic/metricbeat-tests-poc/cli/shell"
+
 	"github.com/lann/builder"
 	log "github.com/sirupsen/logrus"
 
@@ -141,14 +143,14 @@ func Clone(repositories ...Project) {
 func GetBranch(gitRepositoryDir string) string {
 	args := []string{"rev-parse", "--abbrev-ref", "HEAD"}
 
-	return Execute(gitRepositoryDir, "git", args[0:]...)
+	return shell.Execute(gitRepositoryDir, "git", args[0:]...)
 }
 
 // GetRemote returns the remote from a git repository
 func GetRemote(gitRepositoryDir string, gitDomain string) string {
 	args := []string{"remote", "get-url", "origin"}
 
-	remote := Execute(gitRepositoryDir, "git", args[0:]...)
+	remote := shell.Execute(gitRepositoryDir, "git", args[0:]...)
 
 	remote1 := strings.TrimPrefix(remote, GitProtocol+gitDomain+":")
 	remote2 := strings.Split(remote1, "/")
