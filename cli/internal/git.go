@@ -29,7 +29,11 @@ type Project struct {
 
 // GetURL Returns the workspace of a Project
 func (d *Project) GetURL() string {
-	return d.Protocol + d.Domain + ":" + d.User + "/" + d.Name
+	if d.Protocol == GitProtocol {
+		return d.Protocol + d.Domain + ":" + d.User + "/" + d.Name
+	}
+
+	return "https://" + d.Domain + "/" + d.User + "/" + d.Name
 }
 
 // GetWorkspace Returns the workspace of a Project
@@ -174,18 +178,25 @@ func cloneGithubRepository(
 		"directory": gitRepositoryDir,
 	}).Info("Cloning project. This process could take long depending on its size")
 
-	auth, err1 := ssh.NewSSHAgentAuth("git")
-	if err1 != nil {
-		log.Fatal("Cloning using keys from SSH agent failed")
-	}
-
-	_, err := git.PlainClone(gitRepositoryDir, false, &git.CloneOptions{
-		Auth:          auth,
+	cloneOptions := &git.CloneOptions{
 		URL:           githubRepositoryURL,
 		Progress:      os.Stdout,
 		ReferenceName: plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", githubRepo.Branch)),
 		SingleBranch:  true,
-	})
+	}
+
+	if githubRepo.Protocol == GitProtocol {
+		auth, err1 := ssh.NewSSHAgentAuth("git")
+		if err1 != nil {
+			log.WithFields(log.Fields{
+				"error": err1,
+			}).Fatal("Cloning using keys from SSH agent failed")
+		}
+
+		cloneOptions.Auth = auth
+	}
+
+	_, err := git.PlainClone(gitRepositoryDir, false, cloneOptions)
 
 	if err != nil {
 		select {

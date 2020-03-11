@@ -57,7 +57,6 @@ var syncIntegrationsCmd = &cobra.Command{
 		// BeatsRepo default object representing Beats project
 		var BeatsRepo = git.ProjectBuilder.
 			WithBaseWorkspace(path.Join(workspace, "git")).
-			WithGitProtocol().
 			WithDomain("github.com").
 			WithName("beats").
 			WithRemote(remote).

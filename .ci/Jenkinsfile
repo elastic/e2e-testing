@@ -24,6 +24,8 @@ pipeline {
     issueCommentTrigger('(?i).*(?:jenkins\\W+)?run\\W+(?:the\\W+)?tests(?:\\W+please)?.*')
   }
   parameters {
+    string(name: 'STACK_VERSION', defaultValue: '7.6.0', description: 'SemVer version of the stack to be used.')
+    string(name: 'METRICBEAT_VERSION', defaultValue: '7.6.0', description: 'SemVer version of the metricbeat to be used.')
     string(name: 'GO_VERSION', defaultValue: '1.13.4', description: "Go version to use.")
   }
   stages {
@@ -37,6 +39,8 @@ pipeline {
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
         GO111MODULE = 'on'
         GOPROXY = 'https://proxy.golang.org'
+        METRICBEAT_VERSION = "${params.METRICBEAT_VERSION.trim()}"
+        STACK_VERSION = "${params.STACK_VERSION.trim()}"
       }
       stages {
         stage('Checkout') {
@@ -48,7 +52,7 @@ pipeline {
         stage('Tests') {
           parallel {
             stage('Sanity checks') {
-              agent { label 'linux && immutable && docker' }
+              agent { label 'linux && immutable' }
               environment {
                 GOROOT = "${env.WORKSPACE}/.gimme/versions/go${env.GO_VERSION}.linux.amd64"
                 PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.PATH}:${env.GOROOT}/bin"
@@ -80,7 +84,31 @@ pipeline {
               }
               post {
                 always {
-                  junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/junit-*.xml")
+                  junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-unit.xml")
+                }
+              }
+            }
+          }
+        }
+        stage('End-To-End Tests') {
+          options { skipDefaultCheckout() }
+          environment {
+            GO111MODULE = 'on'
+            PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.GOPATH}/bin:${HOME}/go/bin:${env.PATH}"
+            GOPROXY = 'https://proxy.golang.org'
+          }
+          steps {
+            withGithubNotify(context: 'E2E Tests', tab: 'tests') {
+              deleteDir()
+              unstash 'source'
+              dir("${BASE_DIR}") {
+                script {
+                  def features = readYaml(file: '.ci/.e2e-tests.yaml')
+                  def parallelTasks = [:]
+                  features['FEATURES'].each { feature ->
+                      parallelTasks["${feature}"] = generateFunctionalTestStep(feature: "${feature}")
+                  }
+                  parallel(parallelTasks)
                 }
               }
             }
@@ -120,7 +148,7 @@ def generateStep(Map params = [:]){
   def oss = params.get('oss')
   def platform = params.get('platform')
   return {
-    node('docker && linux && immutable') {
+    node('linux && immutable') {
       try {
         deleteDir()
         unstash 'build'
@@ -133,6 +161,26 @@ def generateStep(Map params = [:]){
         error(e.toString())
       } finally {
         archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/cli/.github/releases/download/**"
+      }
+    }
+  }
+}
+
+def generateFunctionalTestStep(Map params = [:]){
+  def feature = params.get('feature')
+  return {
+    node('linux && immutable') {
+      try {
+        deleteDir()
+        unstash 'build'
+        dir("${BASE_DIR}"){
+          sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${feature}" "${STACK_VERSION}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${feature}"
+        }
+      } catch(e) {
+        error(e.toString())
+      } finally {
+        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-${feature}.xml")
+          archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-${feature}.xml"
       }
     }
   }
