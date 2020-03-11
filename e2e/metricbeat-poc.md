@@ -20,7 +20,7 @@ The specification of these smoke tests has been done using the `BDD` (Behaviour-
 
 >BDD aims to narrow the communication gaps between team members, foster better understanding of the customer and promote continuous communication with real world examples.
 
-The implementation of these smoke tests has been done with [Godog](https://github.com/DATA-DOG/godog) + [Cucumber](https://cucumber.io/).
+The implementation of these smoke tests has been done with [Godog](https://github.com/cucumber/godog) + [Cucumber](https://cucumber.io/).
 
 ### Cucumber: BDD at its core
 
