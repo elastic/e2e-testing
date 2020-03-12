@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"errors"
+	"os"
 	"runtime"
 	"strings"
 
@@ -191,7 +192,7 @@ func (ts *HelmChartTestSuite) install(chart string) error {
 
 	// use chart as application name
 	args := []string{
-		"install", ts.Name, elasticChart,
+		"install", ts.Name, elasticChart, "--version", ts.Version,
 	}
 
 	output, err := shell.Execute(".", "helm", args...)
@@ -275,6 +276,10 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 func HelmChartFeatureContext(s *godog.Suite) {
 	testSuite := HelmChartTestSuite{
 		Version: "7.6.1",
+	}
+
+	if value, exists := os.LookupEnv("HELM_CHART_VERSION"); exists {
+		testSuite.Version = value
 	}
 
 	s.Step(`^a cluster is running$`, testSuite.aClusterIsRunning)
