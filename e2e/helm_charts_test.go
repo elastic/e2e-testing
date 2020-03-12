@@ -115,20 +115,21 @@ func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
 		return err
 	}
 	if output != ts.getFullName() {
-		return errors.New("There is no DaemonSet for the chart. Expected:" + ts.getFullName() + ", Actual: " + output)
+		return errors.New("There is no DaemonSet for the " + ts.Name + " chart. Expected:" + ts.getFullName() + ", Actual: " + output)
 	}
 
 	log.WithFields(log.Fields{
 		"output": output,
 		"name":   ts.Name,
-	}).Debug("Pods are managed by a DaemonSet")
+	}).Debug("A pod will be deployed on each node of the cluster by a DaemonSet")
 
 	return nil
 }
 
-func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(pod string) error {
+func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(resource string) error {
+	lowerResource := strings.ToLower(resource)
 	args := []string{
-		"get", "deployments", ts.Name + "-" + ts.Name + "-metrics", "-o", "jsonpath='{.metadata.labels.chart}'",
+		"get", lowerResource + "s", ts.Name + "-" + ts.Name + "-metrics", "-o", "jsonpath='{.metadata.labels.chart}'",
 	}
 
 	output, err := shell.Execute(".", "kubectl", args...)
@@ -136,20 +137,21 @@ func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(pod 
 		return err
 	}
 	if output != ts.getFullName() {
-		return errors.New("There is no Deployment for the chart. Expected:" + ts.getFullName() + ", Actual: " + output)
+		return errors.New("There is no " + resource + " for the " + ts.Name + " chart. Expected:" + ts.getFullName() + ", Actual: " + output)
 	}
 
 	log.WithFields(log.Fields{
 		"output": output,
 		"name":   ts.Name,
-	}).Debug("Pods are managed by a DaemonSet")
+	}).Debug("A " + resource + " will manage additional pods for metricsets querying internal service")
 
 	return nil
 }
 
 func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) error {
+	kubeStateMetrics := "kube-state-metrics"
 	args := []string{
-		"get", "deployments", ts.Name + "-kube-state-metrics", "-o", "jsonpath='{.metadata.name}'",
+		"get", "deployments", ts.Name + "-" + kubeStateMetrics, "-o", "jsonpath='{.metadata.name}'",
 	}
 
 	output, err := shell.Execute(".", "kubectl", args...)
@@ -157,13 +159,13 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 		return err
 	}
 	if output != ts.getKubeStateMetricsName() {
-		return errors.New("There is no kube-state-metrics Deployment for the chart. Expected:" + ts.getKubeStateMetricsName() + ", Actual: " + output)
+		return errors.New("There is no " + kubeStateMetrics + " Deployment for the " + ts.Name + " chart. Expected:" + ts.getKubeStateMetricsName() + ", Actual: " + output)
 	}
 
 	log.WithFields(log.Fields{
 		"output": output,
 		"name":   ts.Name,
-	}).Debug("Pods are managed by a DaemonSet")
+	}).Debug("A " + kubeStateMetrics + " chart will retrieve specific Kubernetes metrics")
 
 	return nil
 }
