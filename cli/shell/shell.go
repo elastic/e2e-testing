@@ -8,6 +8,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// CheckInstalledSoftware checks that the required software is present
+func CheckInstalledSoftware(binaries []string) {
+	log.Debugf("Validating required tools: %v", binaries)
+
+	for _, binary := range binaries {
+		err := which(binary)
+		if err != nil {
+			log.Fatalf("The program cannot be run because %s are not installed. Required: %v", binary, binaries)
+		}
+	}
+}
+
 // Execute executes a command in the machine the program is running
 // - workspace: represents the location where to execute the command
 // - command: represents the name of the binary to execute
@@ -38,8 +50,8 @@ func Execute(workspace string, command string, args ...string) (string, error) {
 	return strings.Trim(out.String(), "\n"), nil
 }
 
-// Which checks if software is installed, else it aborts the execution
-func Which(binary string) error {
+// which checks if software is installed, else it aborts the execution
+func which(binary string) error {
 	path, err := exec.LookPath(binary)
 	if err != nil {
 		log.WithFields(log.Fields{
