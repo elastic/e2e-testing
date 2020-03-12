@@ -23,7 +23,7 @@ func (ts *HelmChartTestSuite) aClusterIsRunning() error {
 	return ts.createCluster()
 }
 
-func (ts *HelmChartTestSuite) addElasticRepo() error {
+func (ts *HelmChartTestSuite) addElasticRepo() {
 	elasticHelmChartsURL := "https://helm.elastic.co"
 
 	// use chart as application name
@@ -33,15 +33,13 @@ func (ts *HelmChartTestSuite) addElasticRepo() error {
 
 	output, err := shell.Execute(".", "helm", args...)
 	if err != nil {
-		return err
+		log.Fatal("Could not add Elastic Helm repo. Aborting")
 	}
 	log.WithFields(log.Fields{
 		"output": output,
 		"name":   "elastic",
 		"url":    elasticHelmChartsURL,
 	}).Debug("Elastic Helm charts added")
-
-	return nil
 }
 
 func (ts *HelmChartTestSuite) aResourceContainsTheContent(resource string, content string) error {
@@ -91,7 +89,7 @@ func (ts *HelmChartTestSuite) aResourceManagesRBAC(resource string) error {
 	return nil
 }
 
-func (ts *HelmChartTestSuite) createCluster() error {
+func (ts *HelmChartTestSuite) createCluster() {
 	flags := ""
 	if runtime.GOOS == "linux" {
 		// Minikube also supports a --vm-driver=none option that runs the Kubernetes components
@@ -104,14 +102,12 @@ func (ts *HelmChartTestSuite) createCluster() error {
 
 	output, err := shell.Execute(".", "minikube", args...)
 	if err != nil {
-		return err
+		log.Fatal("Could not create the cluster. Aborting")
 	}
 	log.WithFields(log.Fields{
 		"output": output,
 		"name":   ts.Name,
 	}).Debug("Cluster created")
-
-	return nil
 }
 
 func (ts *HelmChartTestSuite) deleteChart() error {
@@ -131,19 +127,17 @@ func (ts *HelmChartTestSuite) deleteChart() error {
 	return nil
 }
 
-func (ts *HelmChartTestSuite) destroyCluster() error {
+func (ts *HelmChartTestSuite) destroyCluster() {
 	args := []string{"delete"}
 
 	output, err := shell.Execute(".", "minikube", args...)
 	if err != nil {
-		return err
+		log.Fatal("Could not destroy the cluster. Aborting")
 	}
 	log.WithFields(log.Fields{
 		"output": output,
 		"name":   ts.Name,
 	}).Debug("Cluster destroyed")
-
-	return nil
 }
 
 func (ts *HelmChartTestSuite) elasticsHelmChartIsInstalled(chart string) error {
@@ -263,6 +257,8 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 	return nil
 }
 
+// HelmChartFeatureContext adds steps to the Godog test suite
+//nolint:deadcode,unused
 func HelmChartFeatureContext(s *godog.Suite) {
 	testSuite := HelmChartTestSuite{
 		Version: "7.6.1",
@@ -300,7 +296,7 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	})
 }
 
-func toolsAreInstalled() error {
+func toolsAreInstalled() {
 	binaries := []string{
 		"kubectl",
 		"helm",
@@ -308,5 +304,4 @@ func toolsAreInstalled() error {
 	}
 
 	shell.CheckInstalledSoftware(binaries)
-	return nil
 }
