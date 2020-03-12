@@ -97,9 +97,7 @@ func (ts *HelmChartTestSuite) aClusterIsRunning() error {
 }
 
 func (ts *HelmChartTestSuite) elasticsHelmChartIsInstalled(chart string) error {
-	ts.install(chart)
-
-	return nil
+	return ts.install(chart)
 }
 
 func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
