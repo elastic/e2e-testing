@@ -36,6 +36,21 @@ func (ts *HelmChartTestSuite) getKubeStateMetricsName() string {
 	return strings.ToLower("'" + ts.Name + "-kube-state-metrics'")
 }
 
+// getKubeStateName returns the kube-state-metrics name, in lowercase, enclosed in quotes
+func (ts *HelmChartTestSuite) getResourceName(resource string) string {
+	if resource == "ClusterRole" {
+		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role")
+	} else if resource == "ClusterRoleBinding" {
+		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role-binding")
+	} else if resource == "ConfigMap" {
+		return strings.ToLower(ts.Name + "-" + ts.Name + "-config")
+	} else if resource == "ServiceAccount" {
+		return strings.ToLower(ts.Name + "-" + ts.Name)
+	}
+
+	return ""
+}
+
 func (ts *HelmChartTestSuite) delete() error {
 	args := []string{
 		"delete", ts.Name,
@@ -175,7 +190,7 @@ func (ts *HelmChartTestSuite) aResourceContainsTheContent(resource string, conte
 	escapedContent := strings.ReplaceAll(content, ".", `\.`)
 
 	args := []string{
-		"get", lowerResource + "s", ts.Name + "-" + ts.Name + "-config", "-o", `jsonpath="{.data['` + escapedContent + `']}"`,
+		"get", lowerResource + "s", ts.getResourceName(resource), "-o", `jsonpath="{.data['` + escapedContent + `']}"`,
 	}
 
 	output, err := shell.Execute(".", "kubectl", args...)
@@ -195,7 +210,26 @@ func (ts *HelmChartTestSuite) aResourceContainsTheContent(resource string, conte
 }
 
 func (ts *HelmChartTestSuite) aResourceManagesRBAC(resource string) error {
-	return godog.ErrPending
+	lowerResource := strings.ToLower(resource)
+
+	args := []string{
+		"get", lowerResource + "s", ts.getResourceName(resource), "-o", `jsonpath="'{.metadata.labels.chart}'"`,
+	}
+
+	output, err := shell.Execute(".", "kubectl", args...)
+	if err != nil {
+		return err
+	}
+	if output == "" {
+		return errors.New("There is no " + resource + " for the " + ts.Name + " chart")
+	}
+
+	log.WithFields(log.Fields{
+		"output": output,
+		"name":   ts.Name,
+	}).Debug("A " + resource + " resource manages K8S RBAC")
+
+	return nil
 }
 
 func HelmChartFeatureContext(s *godog.Suite) {
