@@ -143,14 +143,21 @@ func Clone(repositories ...Project) {
 func GetBranch(gitRepositoryDir string) string {
 	args := []string{"rev-parse", "--abbrev-ref", "HEAD"}
 
-	return shell.Execute(gitRepositoryDir, "git", args[0:]...)
+	branch, err := shell.Execute(gitRepositoryDir, "git", args[0:]...)
+	if err != nil {
+		return ""
+	}
+	return branch
 }
 
 // GetRemote returns the remote from a git repository
 func GetRemote(gitRepositoryDir string, gitDomain string) string {
 	args := []string{"remote", "get-url", "origin"}
 
-	remote := shell.Execute(gitRepositoryDir, "git", args[0:]...)
+	remote, err := shell.Execute(gitRepositoryDir, "git", args[0:]...)
+	if err != nil {
+		return ""
+	}
 
 	remote1 := strings.TrimPrefix(remote, GitProtocol+gitDomain+":")
 	remote2 := strings.Split(remote1, "/")

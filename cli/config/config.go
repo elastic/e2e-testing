@@ -127,7 +127,10 @@ func GetServiceConfig(service string) (Service, bool) {
 func Init() {
 	configureLogger()
 
-	checkInstalledSoftware()
+	err := checkInstalledSoftware()
+	if err != nil {
+		log.Fatal("The CLI cannot be run because the runtime dependencies are not installed")
+	}
 
 	InitConfig()
 }
@@ -237,7 +240,7 @@ func checkConfigDirs(workspace string) {
 }
 
 // checkInstalledSoftware checks that the required software is present
-func checkInstalledSoftware() {
+func checkInstalledSoftware() error {
 	log.Debug("Validating required tools...")
 	binaries := []string{
 		"docker",
@@ -245,8 +248,13 @@ func checkInstalledSoftware() {
 	}
 
 	for _, binary := range binaries {
-		shell.Which(binary)
+		err := shell.Which(binary)
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 func configureLogger() {
