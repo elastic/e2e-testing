@@ -53,7 +53,7 @@ func (ts *HelmChartTestSuite) getResourceName(resource string) string {
 	return ""
 }
 
-func (ts *HelmChartTestSuite) delete() error {
+func (ts *HelmChartTestSuite) deleteChart() error {
 	args := []string{
 		"delete", ts.Name,
 	}
@@ -299,6 +299,6 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	})
 	s.AfterScenario(func(interface{}, error) {
 		log.Debug("After Helm scenario...")
-		testSuite.delete()
+		testSuite.deleteChart()
 	})
 }
