@@ -28,46 +28,8 @@ type HelmChartTestSuite struct {
 	Version string // the helm chart version for the test
 }
 
-// getFullName returns the name plus version, in lowercase, enclosed in quotes
-func (ts *HelmChartTestSuite) getFullName() string {
-	return strings.ToLower("'" + ts.Name + "-" + ts.Version + "'")
-}
-
-// getKubeStateName returns the kube-state-metrics name, in lowercase, enclosed in quotes
-func (ts *HelmChartTestSuite) getKubeStateMetricsName() string {
-	return strings.ToLower("'" + ts.Name + "-kube-state-metrics'")
-}
-
-// getKubeStateName returns the kube-state-metrics name, in lowercase, enclosed in quotes
-func (ts *HelmChartTestSuite) getResourceName(resource string) string {
-	if resource == "ClusterRole" {
-		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role")
-	} else if resource == "ClusterRoleBinding" {
-		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role-binding")
-	} else if resource == "ConfigMap" {
-		return strings.ToLower(ts.Name + "-" + ts.Name + "-config")
-	} else if resource == "ServiceAccount" {
-		return strings.ToLower(ts.Name + "-" + ts.Name)
-	}
-
-	return ""
-}
-
-func (ts *HelmChartTestSuite) deleteChart() error {
-	args := []string{
-		"delete", ts.Name,
-	}
-
-	output, err := shell.Execute(".", "helm", args...)
-	if err != nil {
-		return err
-	}
-	log.WithFields(log.Fields{
-		"output": output,
-		"name":   ts.Name,
-	}).Debug("Chart deleted")
-
-	return nil
+func (ts *HelmChartTestSuite) aClusterIsRunning() error {
+	return ts.createCluster()
 }
 
 func (ts *HelmChartTestSuite) addElasticRepo() error {
@@ -87,6 +49,53 @@ func (ts *HelmChartTestSuite) addElasticRepo() error {
 		"name":   "elastic",
 		"url":    elasticHelmChartsURL,
 	}).Debug("Elastic Helm charts added")
+
+	return nil
+}
+
+func (ts *HelmChartTestSuite) aResourceContainsTheContent(resource string, content string) error {
+	lowerResource := strings.ToLower(resource)
+	escapedContent := strings.ReplaceAll(content, ".", `\.`)
+
+	args := []string{
+		"get", lowerResource + "s", ts.getResourceName(resource), "-o", `jsonpath="{.data['` + escapedContent + `']}"`,
+	}
+
+	output, err := shell.Execute(".", "kubectl", args...)
+	if err != nil {
+		return err
+	}
+	if output == "" {
+		return errors.New("There is no " + resource + " for the " + ts.Name + " chart including " + content)
+	}
+
+	log.WithFields(log.Fields{
+		"output": output,
+		"name":   ts.Name,
+	}).Debug("A " + resource + " resource contains the " + content + " content")
+
+	return nil
+}
+
+func (ts *HelmChartTestSuite) aResourceManagesRBAC(resource string) error {
+	lowerResource := strings.ToLower(resource)
+
+	args := []string{
+		"get", lowerResource + "s", ts.getResourceName(resource), "-o", `jsonpath="'{.metadata.labels.chart}'"`,
+	}
+
+	output, err := shell.Execute(".", "kubectl", args...)
+	if err != nil {
+		return err
+	}
+	if output == "" {
+		return errors.New("There is no " + resource + " for the " + ts.Name + " chart")
+	}
+
+	log.WithFields(log.Fields{
+		"output": output,
+		"name":   ts.Name,
+	}).Debug("A " + resource + " resource manages K8S RBAC")
 
 	return nil
 }
@@ -114,6 +123,23 @@ func (ts *HelmChartTestSuite) createCluster() error {
 	return nil
 }
 
+func (ts *HelmChartTestSuite) deleteChart() error {
+	args := []string{
+		"delete", ts.Name,
+	}
+
+	output, err := shell.Execute(".", "helm", args...)
+	if err != nil {
+		return err
+	}
+	log.WithFields(log.Fields{
+		"output": output,
+		"name":   ts.Name,
+	}).Debug("Chart deleted")
+
+	return nil
+}
+
 func (ts *HelmChartTestSuite) destroyCluster() error {
 	args := []string{"delete"}
 
@@ -127,6 +153,35 @@ func (ts *HelmChartTestSuite) destroyCluster() error {
 	}).Debug("Cluster destroyed")
 
 	return nil
+}
+
+func (ts *HelmChartTestSuite) elasticsHelmChartIsInstalled(chart string) error {
+	return ts.install(chart)
+}
+
+// getFullName returns the name plus version, in lowercase, enclosed in quotes
+func (ts *HelmChartTestSuite) getFullName() string {
+	return strings.ToLower("'" + ts.Name + "-" + ts.Version + "'")
+}
+
+// getKubeStateName returns the kube-state-metrics name, in lowercase, enclosed in quotes
+func (ts *HelmChartTestSuite) getKubeStateMetricsName() string {
+	return strings.ToLower("'" + ts.Name + "-kube-state-metrics'")
+}
+
+// getKubeStateName returns the kube-state-metrics name, in lowercase, enclosed in quotes
+func (ts *HelmChartTestSuite) getResourceName(resource string) string {
+	if resource == "ClusterRole" {
+		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role")
+	} else if resource == "ClusterRoleBinding" {
+		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role-binding")
+	} else if resource == "ConfigMap" {
+		return strings.ToLower(ts.Name + "-" + ts.Name + "-config")
+	} else if resource == "ServiceAccount" {
+		return strings.ToLower(ts.Name + "-" + ts.Name)
+	}
+
+	return ""
 }
 
 func (ts *HelmChartTestSuite) install(chart string) error {
@@ -150,14 +205,6 @@ func (ts *HelmChartTestSuite) install(chart string) error {
 	}).Debug("Chart installed")
 
 	return nil
-}
-
-func (ts *HelmChartTestSuite) aClusterIsRunning() error {
-	return ts.createCluster()
-}
-
-func (ts *HelmChartTestSuite) elasticsHelmChartIsInstalled(chart string) error {
-	return ts.install(chart)
 }
 
 func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
@@ -221,53 +268,6 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 		"output": output,
 		"name":   ts.Name,
 	}).Debug("A " + kubeStateMetrics + " chart will retrieve specific Kubernetes metrics")
-
-	return nil
-}
-
-func (ts *HelmChartTestSuite) aResourceContainsTheContent(resource string, content string) error {
-	lowerResource := strings.ToLower(resource)
-	escapedContent := strings.ReplaceAll(content, ".", `\.`)
-
-	args := []string{
-		"get", lowerResource + "s", ts.getResourceName(resource), "-o", `jsonpath="{.data['` + escapedContent + `']}"`,
-	}
-
-	output, err := shell.Execute(".", "kubectl", args...)
-	if err != nil {
-		return err
-	}
-	if output == "" {
-		return errors.New("There is no " + resource + " for the " + ts.Name + " chart including " + content)
-	}
-
-	log.WithFields(log.Fields{
-		"output": output,
-		"name":   ts.Name,
-	}).Debug("A " + resource + " resource contains the " + content + " content")
-
-	return nil
-}
-
-func (ts *HelmChartTestSuite) aResourceManagesRBAC(resource string) error {
-	lowerResource := strings.ToLower(resource)
-
-	args := []string{
-		"get", lowerResource + "s", ts.getResourceName(resource), "-o", `jsonpath="'{.metadata.labels.chart}'"`,
-	}
-
-	output, err := shell.Execute(".", "kubectl", args...)
-	if err != nil {
-		return err
-	}
-	if output == "" {
-		return errors.New("There is no " + resource + " for the " + ts.Name + " chart")
-	}
-
-	log.WithFields(log.Fields{
-		"output": output,
-		"name":   ts.Name,
-	}).Debug("A " + resource + " resource manages K8S RBAC")
 
 	return nil
 }
