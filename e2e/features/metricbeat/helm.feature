@@ -3,9 +3,6 @@
 @metricbeat
 Feature: The Helm chart is following product recommended configuration for Kubernetes
 
-Background:
-  Given tools are installed
-
 Scenario: The Metricbeat chart will create recommended K8S resources
   Given a cluster is running
   When the "metricbeat" Elastic's helm chart is installed

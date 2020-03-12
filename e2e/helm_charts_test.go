@@ -272,7 +272,6 @@ func HelmChartFeatureContext(s *godog.Suite) {
 		testSuite.Version = value
 	}
 
-	s.Step(`^tools are installed$`, toolsAreInstalled)
 	s.Step(`^a cluster is running$`, testSuite.aClusterIsRunning)
 	s.Step(`^the "([^"]*)" Elastic\'s helm chart is installed$`, testSuite.elasticsHelmChartIsInstalled)
 	s.Step(`^a pod will be deployed on each node of the cluster by a DaemonSet$`, testSuite.podsManagedByDaemonSet)
@@ -283,6 +282,8 @@ func HelmChartFeatureContext(s *godog.Suite) {
 
 	s.BeforeSuite(func() {
 		log.Debug("Before Suite...")
+		toolsAreInstalled()
+
 		testSuite.addElasticRepo()
 		testSuite.createCluster()
 	})
