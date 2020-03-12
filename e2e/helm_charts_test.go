@@ -31,6 +31,11 @@ func (ts *HelmChartTestSuite) getFullName() string {
 	return strings.ToLower("'" + ts.Name + "-" + ts.Version + "'")
 }
 
+// getKubeStateName returns the kube-state-metrics name, in lowercase, enclosed in quotes
+func (ts *HelmChartTestSuite) getKubeStateMetricsName() string {
+	return strings.ToLower("'" + ts.Name + "-kube-state-metrics'")
+}
+
 func (ts *HelmChartTestSuite) delete() error {
 	args := []string{
 		"delete", ts.Name,
@@ -143,7 +148,24 @@ func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(pod 
 }
 
 func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) error {
-	return godog.ErrPending
+	args := []string{
+		"get", "deployments", ts.Name + "-kube-state-metrics", "-o", "jsonpath='{.metadata.name}'",
+	}
+
+	output, err := shell.Execute(".", "kubectl", args...)
+	if err != nil {
+		return err
+	}
+	if output != ts.getKubeStateMetricsName() {
+		return errors.New("There is no kube-state-metrics Deployment for the chart. Expected:" + ts.getKubeStateMetricsName() + ", Actual: " + output)
+	}
+
+	log.WithFields(log.Fields{
+		"output": output,
+		"name":   ts.Name,
+	}).Debug("Pods are managed by a DaemonSet")
+
+	return nil
 }
 
 func (ts *HelmChartTestSuite) aResourceContainsTheContent(resource string, content string) error {
