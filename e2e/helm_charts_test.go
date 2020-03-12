@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"errors"
+	"runtime"
 	"strings"
 
 	shell "github.com/elastic/metricbeat-tests-poc/cli/shell"
@@ -14,6 +15,7 @@ func init() {
 	binaries := []string{
 		"kubectl",
 		"helm",
+		"minikube",
 	}
 
 	shell.CheckInstalledSoftware(binaries)
@@ -89,6 +91,44 @@ func (ts *HelmChartTestSuite) addElasticRepo() error {
 	return nil
 }
 
+func (ts *HelmChartTestSuite) createCluster() error {
+	flags := ""
+	if runtime.GOOS == "linux" {
+		// Minikube also supports a --vm-driver=none option that runs the Kubernetes components
+		// on the host and not in a VM. Using this driver requires Docker and a Linux environment
+		// but not a hypervisor.
+		flags = "--vm-driver=none"
+	}
+
+	args := []string{"start", flags}
+
+	output, err := shell.Execute(".", "minikube", args...)
+	if err != nil {
+		return err
+	}
+	log.WithFields(log.Fields{
+		"output": output,
+		"name":   ts.Name,
+	}).Debug("Cluster created")
+
+	return nil
+}
+
+func (ts *HelmChartTestSuite) destroyCluster() error {
+	args := []string{"delete"}
+
+	output, err := shell.Execute(".", "minikube", args...)
+	if err != nil {
+		return err
+	}
+	log.WithFields(log.Fields{
+		"output": output,
+		"name":   ts.Name,
+	}).Debug("Cluster destroyed")
+
+	return nil
+}
+
 func (ts *HelmChartTestSuite) install(chart string) error {
 	ts.Name = chart
 
@@ -113,7 +153,7 @@ func (ts *HelmChartTestSuite) install(chart string) error {
 }
 
 func (ts *HelmChartTestSuite) aClusterIsRunning() error {
-	return nil
+	return ts.createCluster()
 }
 
 func (ts *HelmChartTestSuite) elasticsHelmChartIsInstalled(chart string) error {
@@ -248,9 +288,14 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	s.BeforeSuite(func() {
 		log.Debug("Before Suite...")
 		testSuite.addElasticRepo()
+		testSuite.createCluster()
 	})
 	s.BeforeScenario(func(interface{}) {
 		log.Info("Before Helm scenario...")
+	})
+	s.AfterSuite(func() {
+		log.Debug("After Suite...")
+		testSuite.destroyCluster()
 	})
 	s.AfterScenario(func(interface{}, error) {
 		log.Debug("After Helm scenario...")

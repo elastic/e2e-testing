@@ -10,6 +10,10 @@ chmod +x ./kubectl
 mv ./kubectl /usr/local/bin/kubectl
 kubectl version --client
 
+# install minikube
+curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 \
+  && chmod +x minikube
+mv minikube /usr/local/bin
 
 # install helm
 curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
