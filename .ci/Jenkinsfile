@@ -174,7 +174,6 @@ def generateFunctionalTestStep(Map params = [:]){
         deleteDir()
         unstash 'build'
         dir("${BASE_DIR}"){
-          sh script: '.ci/scripts/install-test-dependencies.sh', label: 'Install dependencies'
           sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${feature}" "${STACK_VERSION}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${feature}"
         }
       } catch(e) {

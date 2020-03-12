@@ -12,16 +12,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func init() {
-	binaries := []string{
-		"kubectl",
-		"helm",
-		"minikube",
-	}
-
-	shell.CheckInstalledSoftware(binaries)
-}
-
 // HelmChartTestSuite represents a test suite for a helm chart
 //nolint:unused
 type HelmChartTestSuite struct {
@@ -282,6 +272,7 @@ func HelmChartFeatureContext(s *godog.Suite) {
 		testSuite.Version = value
 	}
 
+	s.Step(`^tools are installed$`, toolsAreInstalled)
 	s.Step(`^a cluster is running$`, testSuite.aClusterIsRunning)
 	s.Step(`^the "([^"]*)" Elastic\'s helm chart is installed$`, testSuite.elasticsHelmChartIsInstalled)
 	s.Step(`^a pod will be deployed on each node of the cluster by a DaemonSet$`, testSuite.podsManagedByDaemonSet)
@@ -306,4 +297,15 @@ func HelmChartFeatureContext(s *godog.Suite) {
 		log.Debug("After Helm scenario...")
 		testSuite.deleteChart()
 	})
+}
+
+func toolsAreInstalled() error {
+	binaries := []string{
+		"kubectl",
+		"helm",
+		"minikube",
+	}
+
+	shell.CheckInstalledSoftware(binaries)
+	return nil
 }
