@@ -122,7 +122,24 @@ func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
 }
 
 func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(pod string) error {
-	return godog.ErrPending
+	args := []string{
+		"get", "deployments", ts.Name + "-" + ts.Name + "-metrics", "-o", "jsonpath='{.metadata.labels.chart}'",
+	}
+
+	output, err := shell.Execute(".", "kubectl", args...)
+	if err != nil {
+		return err
+	}
+	if output != ts.getFullName() {
+		return errors.New("There is no Deployment for the chart. Expected:" + ts.getFullName() + ", Actual: " + output)
+	}
+
+	log.WithFields(log.Fields{
+		"output": output,
+		"name":   ts.Name,
+	}).Debug("Pods are managed by a DaemonSet")
+
+	return nil
 }
 
 func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) error {
