@@ -171,7 +171,27 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 }
 
 func (ts *HelmChartTestSuite) aResourceContainsTheContent(resource string, content string) error {
-	return godog.ErrPending
+	lowerResource := strings.ToLower(resource)
+	escapedContent := strings.ReplaceAll(content, ".", `\.`)
+
+	args := []string{
+		"get", lowerResource + "s", ts.Name + "-" + ts.Name + "-config", "-o", `jsonpath="{.data['` + escapedContent + `']}"`,
+	}
+
+	output, err := shell.Execute(".", "kubectl", args...)
+	if err != nil {
+		return err
+	}
+	if output == "" {
+		return errors.New("There is no " + resource + " for the " + ts.Name + " chart including " + content)
+	}
+
+	log.WithFields(log.Fields{
+		"output": output,
+		"name":   ts.Name,
+	}).Debug("A " + resource + " resource contains the " + content + " content")
+
+	return nil
 }
 
 func (ts *HelmChartTestSuite) aResourceManagesRBAC(resource string) error {
