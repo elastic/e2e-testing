@@ -20,7 +20,16 @@ type HelmChartTestSuite struct {
 }
 
 func (ts *HelmChartTestSuite) aClusterIsRunning() error {
-	return ts.createCluster()
+	args := []string{"status"}
+
+	output, err := shell.Execute(".", "minikube", args...)
+	if err != nil {
+		log.Fatal("Could not check the status of the cluster. Aborting")
+	}
+	log.WithFields(log.Fields{
+		"output": output,
+	}).Debug("Cluster is running")
+	return nil
 }
 
 func (ts *HelmChartTestSuite) addElasticRepo() {
@@ -100,6 +109,7 @@ func (ts *HelmChartTestSuite) createCluster() {
 
 	args := []string{"start", flags}
 
+	log.Debug("Creating cluster with minikube")
 	output, err := shell.Execute(".", "minikube", args...)
 	if err != nil {
 		log.Fatal("Could not create the cluster. Aborting")
@@ -130,6 +140,7 @@ func (ts *HelmChartTestSuite) deleteChart() error {
 func (ts *HelmChartTestSuite) destroyCluster() {
 	args := []string{"delete"}
 
+	log.Debug("Deleting cluster")
 	output, err := shell.Execute(".", "minikube", args...)
 	if err != nil {
 		log.Fatal("Could not destroy the cluster. Aborting")
