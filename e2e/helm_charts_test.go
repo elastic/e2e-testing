@@ -6,11 +6,22 @@ import (
 	"runtime"
 	"strings"
 
+	services "github.com/elastic/metricbeat-tests-poc/cli/services"
 	shell "github.com/elastic/metricbeat-tests-poc/cli/shell"
 
 	"github.com/cucumber/godog"
 	log "github.com/sirupsen/logrus"
 )
+
+var helm services.HelmManager
+
+func init() {
+	h, err := services.HelmFactory("3.1.1")
+	if err != nil {
+		log.Fatal(err)
+	}
+	helm = h
+}
 
 // HelmChartTestSuite represents a test suite for a helm chart
 //nolint:unused
@@ -33,22 +44,10 @@ func (ts *HelmChartTestSuite) aClusterIsRunning() error {
 }
 
 func (ts *HelmChartTestSuite) addElasticRepo() {
-	elasticHelmChartsURL := "https://helm.elastic.co"
-
-	// use chart as application name
-	args := []string{
-		"repo", "add", "elastic", elasticHelmChartsURL,
-	}
-
-	output, err := shell.Execute(".", "helm", args...)
+	err := helm.AddRepo("elastic", "https://helm.elastic.co")
 	if err != nil {
 		log.Fatal("Could not add Elastic Helm repo. Aborting")
 	}
-	log.WithFields(log.Fields{
-		"output": output,
-		"name":   "elastic",
-		"url":    elasticHelmChartsURL,
-	}).Debug("Elastic Helm charts added")
 }
 
 func (ts *HelmChartTestSuite) aResourceContainsTheContent(resource string, content string) error {
@@ -121,20 +120,7 @@ func (ts *HelmChartTestSuite) createCluster() {
 }
 
 func (ts *HelmChartTestSuite) deleteChart() error {
-	args := []string{
-		"delete", ts.Name,
-	}
-
-	output, err := shell.Execute(".", "helm", args...)
-	if err != nil {
-		return err
-	}
-	log.WithFields(log.Fields{
-		"output": output,
-		"name":   ts.Name,
-	}).Debug("Chart deleted")
-
-	return nil
+	return helm.DeleteChart(ts.Name)
 }
 
 func (ts *HelmChartTestSuite) destroyCluster() {
@@ -185,22 +171,7 @@ func (ts *HelmChartTestSuite) install(chart string) error {
 
 	elasticChart := "elastic/" + ts.Name
 
-	// use chart as application name
-	args := []string{
-		"install", ts.Name, elasticChart, "--version", ts.Version,
-	}
-
-	output, err := shell.Execute(".", "helm", args...)
-	if err != nil {
-		return err
-	}
-	log.WithFields(log.Fields{
-		"output": output,
-		"name":   ts.Name,
-		"chart":  elasticChart,
-	}).Debug("Chart installed")
-
-	return nil
+	return helm.InstallChart(ts.Name, elasticChart, ts.Version)
 }
 
 func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
