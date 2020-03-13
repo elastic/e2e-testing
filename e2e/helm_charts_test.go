@@ -16,7 +16,12 @@ import (
 var helm services.HelmManager
 
 func init() {
-	h, err := services.HelmFactory("3.1.1")
+	helmVersion := "3.1.x"
+	if value, exists := os.LookupEnv("HELM_VERSION"); exists {
+		helmVersion = value
+	}
+
+	h, err := services.HelmFactory(helmVersion)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -117,6 +122,14 @@ func (ts *HelmChartTestSuite) createCluster() {
 		"output": output,
 		"name":   ts.Name,
 	}).Debug("Cluster created")
+
+	// initialise Helm after the cluster is created
+	// For Helm v2.16.x we have to initialise Tiller
+	// right after the k8s cluster
+	err = helm.Init()
+	if err != nil {
+		log.Fatal("Could not initiase Helm. Aborting")
+	}
 }
 
 func (ts *HelmChartTestSuite) deleteChart() error {
