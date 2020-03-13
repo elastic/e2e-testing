@@ -33,7 +33,7 @@ func (h *helm3_1_1) AddRepo(repo string, URL string) error {
 		"repo", "add", repo, URL,
 	}
 
-	output, err := shell.Execute(".", "helm", args...)
+	output, err := helmExecute(args...)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (h *helm3_1_1) DeleteChart(chart string) error {
 		"delete", chart,
 	}
 
-	output, err := shell.Execute(".", "helm", args...)
+	output, err := helmExecute(args...)
 	if err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func (h *helm3_1_1) InstallChart(name string, chart string, version string) erro
 		"install", name, chart, "--version", version,
 	}
 
-	output, err := shell.Execute(".", "helm", args...)
+	output, err := helmExecute(args...)
 	if err != nil {
 		return err
 	}
@@ -80,4 +80,13 @@ func (h *helm3_1_1) InstallChart(name string, chart string, version string) erro
 	}).Debug("Chart installed")
 
 	return nil
+}
+
+func helmExecute(args ...string) (string, error) {
+	output, err := shell.Execute(".", "helm", args...)
+	if err != nil {
+		return "", err
+	}
+
+	return output, nil
 }
