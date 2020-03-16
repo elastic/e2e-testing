@@ -1,5 +1,6 @@
 ---
 FEATURES:
   - "apache"
+  - "helm"
   - "mysql"
   - "redis"
