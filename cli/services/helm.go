@@ -18,12 +18,12 @@ type HelmManager interface {
 
 // HelmFactory returns oone of the Helm supported versions, or an error
 func HelmFactory(version string) (HelmManager, error) {
-	if strings.HasPrefix(version, "3.1.") {
-		helm := &helm3_1{}
+	if strings.HasPrefix(version, "3.") {
+		helm := &helm3X{}
 		helm.Version = version
 		return helm, nil
-	} else if strings.HasPrefix(version, "2.16.") {
-		helm := &helm2_16{}
+	} else if strings.HasPrefix(version, "2.") {
+		helm := &helm2X{}
 		helm.Version = version
 		return helm, nil
 	}
@@ -36,11 +36,11 @@ type helm struct {
 	Version string
 }
 
-type helm3_1 struct {
+type helm3X struct {
 	helm
 }
 
-func (h *helm3_1) AddRepo(repo string, URL string) error {
+func (h *helm3X) AddRepo(repo string, URL string) error {
 	// use chart as application name
 	args := []string{
 		"repo", "add", repo, URL,
@@ -59,7 +59,7 @@ func (h *helm3_1) AddRepo(repo string, URL string) error {
 	return nil
 }
 
-func (h *helm3_1) DeleteChart(chart string) error {
+func (h *helm3X) DeleteChart(chart string) error {
 	args := []string{
 		"delete", chart,
 	}
@@ -76,11 +76,11 @@ func (h *helm3_1) DeleteChart(chart string) error {
 	return nil
 }
 
-func (h *helm3_1) Init() error {
+func (h *helm3X) Init() error {
 	return nil
 }
 
-func (h *helm3_1) InstallChart(name string, chart string, version string) error {
+func (h *helm3X) InstallChart(name string, chart string, version string) error {
 	args := []string{
 		"install", name, chart, "--version", version,
 	}
@@ -99,11 +99,11 @@ func (h *helm3_1) InstallChart(name string, chart string, version string) error 
 	return nil
 }
 
-type helm2_16 struct {
+type helm2X struct {
 	helm
 }
 
-func (h *helm2_16) AddRepo(repo string, URL string) error {
+func (h *helm2X) AddRepo(repo string, URL string) error {
 	// use chart as application name
 	args := []string{
 		"repo", "add", repo, URL,
@@ -122,7 +122,7 @@ func (h *helm2_16) AddRepo(repo string, URL string) error {
 	return nil
 }
 
-func (h *helm2_16) DeleteChart(chart string) error {
+func (h *helm2X) DeleteChart(chart string) error {
 	args := []string{
 		"delete", "--purge", chart,
 	}
@@ -139,12 +139,32 @@ func (h *helm2_16) DeleteChart(chart string) error {
 	return nil
 }
 
-func (h *helm2_16) Init() error {
-	args := []string{
-		"init", "--namespace", "default",
+func (h *helm2X) Init() error {
+	args := []string{"create", "-n", "kube-system", "serviceaccount", "tiller"}
+	output, err := shell.Execute(".", "kubectl", args...)
+	if err != nil {
+		log.Error("Could not create Tiller ServiceAccount")
+		return err
+	}
+	log.WithFields(log.Fields{
+		"output": output,
+	}).Debug("Tiller ServiceAccount created")
+
+	args = []string{"create", "clusterrolebinding", "tiller", "--clusterrole=cluster-admin", "--serviceaccount=kube-system:tiller"}
+	output, err = shell.Execute(".", "kubectl", args...)
+	if err != nil {
+		log.Error("Could not create Tiller ClusterRoleBinding")
+		return err
+	}
+	log.WithFields(log.Fields{
+		"output": output,
+	}).Debug("Tiller ClusterRoleBinding created")
+
+	args = []string{
+		"init", "--wait", "--service-account", "tiller",
 	}
 
-	_, err := helmExecute(args...)
+	_, err = helmExecute(args...)
 	if err != nil {
 		return err
 	}
@@ -152,9 +172,9 @@ func (h *helm2_16) Init() error {
 	return nil
 }
 
-func (h *helm2_16) InstallChart(name string, chart string, version string) error {
+func (h *helm2X) InstallChart(name string, chart string, version string) error {
 	args := []string{
-		"install", name, chart, "--version", version,
+		"install", chart, "--name", name, "--version", version,
 	}
 
 	output, err := helmExecute(args...)
