@@ -3,7 +3,6 @@ package e2e
 import (
 	"errors"
 	"os"
-	"runtime"
 	"strings"
 
 	services "github.com/elastic/metricbeat-tests-poc/cli/services"
@@ -31,17 +30,22 @@ func init() {
 // HelmChartTestSuite represents a test suite for a helm chart
 //nolint:unused
 type HelmChartTestSuite struct {
-	Name    string // the name of the chart
-	Version string // the helm chart version for the test
+	ClusterName string // the name of the cluster
+	Name        string // the name of the chart
+	Version     string // the helm chart version for the test
 }
 
 func (ts *HelmChartTestSuite) aClusterIsRunning() error {
-	args := []string{"status"}
+	args := []string{"get", "clusters"}
 
-	output, err := shell.Execute(".", "minikube", args...)
+	output, err := shell.Execute(".", "kind", args...)
 	if err != nil {
-		log.Fatal("Could not check the status of the cluster. Aborting")
+		log.Fatalf("Could not check the status of the cluster. Aborting: %v", err)
 	}
+	if output != ts.ClusterName {
+		return errors.New("The cluster is not running")
+	}
+
 	log.WithFields(log.Fields{
 		"output": output,
 	}).Debug("Cluster is running")
@@ -51,7 +55,7 @@ func (ts *HelmChartTestSuite) aClusterIsRunning() error {
 func (ts *HelmChartTestSuite) addElasticRepo() {
 	err := helm.AddRepo("elastic", "https://helm.elastic.co")
 	if err != nil {
-		log.Fatal("Could not add Elastic Helm repo. Aborting")
+		log.Fatalf("Could not add Elastic Helm repo. Aborting: %v", err)
 	}
 }
 
@@ -102,33 +106,26 @@ func (ts *HelmChartTestSuite) aResourceManagesRBAC(resource string) error {
 	return nil
 }
 
-func (ts *HelmChartTestSuite) createCluster() {
-	flags := ""
-	if runtime.GOOS == "linux" {
-		// Minikube also supports a --vm-driver=none option that runs the Kubernetes components
-		// on the host and not in a VM. Using this driver requires Docker and a Linux environment
-		// but not a hypervisor.
-		flags = "--vm-driver=none"
-	}
+func (ts *HelmChartTestSuite) createCluster(k8sVersion string) {
+	args := []string{"create", "cluster", "--name", ts.ClusterName, "--image", "kindest/node:v" + k8sVersion}
 
-	args := []string{"start", flags}
-
-	log.Debug("Creating cluster with minikube")
-	output, err := shell.Execute(".", "minikube", args...)
+	log.Debug("Creating cluster with kind")
+	output, err := shell.Execute(".", "kind", args...)
 	if err != nil {
-		log.Fatal("Could not create the cluster. Aborting")
+		log.Fatalf("Could not create the cluster. Aborting: %v", err)
 	}
 	log.WithFields(log.Fields{
-		"output": output,
-		"name":   ts.Name,
+		"cluster":    ts.ClusterName,
+		"k8sVersion": k8sVersion,
+		"output":     output,
 	}).Debug("Cluster created")
 
 	// initialise Helm after the cluster is created
-	// For Helm v2.16.x we have to initialise Tiller
+	// For Helm v2.x.x we have to initialise Tiller
 	// right after the k8s cluster
 	err = helm.Init()
 	if err != nil {
-		log.Fatal("Could not initiase Helm. Aborting")
+		log.Fatalf("Could not initiase Helm. Aborting: %v", err)
 	}
 }
 
@@ -137,16 +134,16 @@ func (ts *HelmChartTestSuite) deleteChart() error {
 }
 
 func (ts *HelmChartTestSuite) destroyCluster() {
-	args := []string{"delete"}
+	args := []string{"delete", "cluster", "--name", ts.ClusterName}
 
 	log.Debug("Deleting cluster")
-	output, err := shell.Execute(".", "minikube", args...)
+	output, err := shell.Execute(".", "kind", args...)
 	if err != nil {
-		log.Fatal("Could not destroy the cluster. Aborting")
+		log.Fatalf("Could not destroy the cluster. Aborting: %v", err)
 	}
 	log.WithFields(log.Fields{
-		"output": output,
-		"name":   ts.Name,
+		"output":  output,
+		"cluster": ts.ClusterName,
 	}).Debug("Cluster destroyed")
 }
 
@@ -256,7 +253,8 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 //nolint:deadcode,unused
 func HelmChartFeatureContext(s *godog.Suite) {
 	testSuite := HelmChartTestSuite{
-		Version: "7.6.1",
+		ClusterName: "helm-charts-test-suite",
+		Version:     "7.6.1",
 	}
 
 	if value, exists := os.LookupEnv("HELM_CHART_VERSION"); exists {
@@ -276,7 +274,7 @@ func HelmChartFeatureContext(s *godog.Suite) {
 		toolsAreInstalled()
 
 		testSuite.addElasticRepo()
-		testSuite.createCluster()
+		testSuite.createCluster("1.15.3")
 	})
 	s.BeforeScenario(func(interface{}) {
 		log.Info("Before Helm scenario...")
@@ -293,9 +291,9 @@ func HelmChartFeatureContext(s *godog.Suite) {
 
 func toolsAreInstalled() {
 	binaries := []string{
+		"kind",
 		"kubectl",
 		"helm",
-		"minikube",
 	}
 
 	shell.CheckInstalledSoftware(binaries)
