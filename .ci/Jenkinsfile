@@ -94,7 +94,7 @@ pipeline {
           options { skipDefaultCheckout() }
           environment {
             GO111MODULE = 'on'
-            PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.GOPATH}/bin:${HOME}/go/bin:${env.PATH}"
+            PATH = "${env.HOME}/bin:${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.GOPATH}/bin:${HOME}/go/bin:${env.PATH}"
             GOPROXY = 'https://proxy.golang.org'
           }
           steps {
