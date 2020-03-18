@@ -13,7 +13,7 @@ type HelmManager interface {
 	AddRepo(repo string, URL string) error
 	DeleteChart(chart string) error
 	Init() error
-	InstallChart(name string, chart string, version string) error
+	InstallChart(name string, chart string, version string, flags []string) error
 }
 
 // HelmFactory returns oone of the Helm supported versions, or an error
@@ -80,10 +80,11 @@ func (h *helm3X) Init() error {
 	return nil
 }
 
-func (h *helm3X) InstallChart(name string, chart string, version string) error {
+func (h *helm3X) InstallChart(name string, chart string, version string, flags []string) error {
 	args := []string{
 		"install", name, chart, "--version", version,
 	}
+	args = append(args, flags...)
 
 	output, err := helmExecute(args...)
 	if err != nil {
@@ -172,10 +173,11 @@ func (h *helm2X) Init() error {
 	return nil
 }
 
-func (h *helm2X) InstallChart(name string, chart string, version string) error {
+func (h *helm2X) InstallChart(name string, chart string, version string, flags []string) error {
 	args := []string{
 		"install", chart, "--name", name, "--version", version,
 	}
+	args = append(args, flags...)
 
 	output, err := helmExecute(args...)
 	if err != nil {

@@ -187,7 +187,37 @@ func (ts *HelmChartTestSuite) install(chart string) error {
 
 	elasticChart := "elastic/" + ts.Name
 
-	return helm.InstallChart(ts.Name, elasticChart, ts.Version)
+	flags := []string{}
+	if chart == "elasticsearch" {
+		// Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes
+		args := []string{
+			"apply", "-f", "https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml",
+		}
+
+		_, err := shell.Execute(".", "kubectl", args...)
+		if err != nil {
+			log.Errorf("Could not apply Rancher Local Path Provisioner: %v", err)
+			return err
+		}
+		log.WithFields(log.Fields{
+			"name": ts.Name,
+		}).Debug("Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes installed")
+
+		// workaround to use Rancher's local-path storage class for Elasticsearch volumes
+		flags = []string{"--wait", "--timeout=900", "--values", "https://raw.githubusercontent.com/elastic/helm-charts/master/elasticsearch/examples/kubernetes-kind/values.yaml"}
+	}
+
+	return helm.InstallChart(ts.Name, elasticChart, ts.Version, flags)
+}
+
+func (ts *HelmChartTestSuite) installRuntimeDependencies(dependencies ...string) {
+	for _, dependency := range dependencies {
+		// Install Elasticsearch
+		err := ts.install(dependency)
+		if err != nil {
+			log.Fatalf("Could not install %s as runtime dependency. Aborting: %v", dependency, err)
+		}
+	}
 }
 
 func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
@@ -285,6 +315,7 @@ func HelmChartFeatureContext(s *godog.Suite) {
 
 		testSuite.createCluster(testSuite.KubernetesVersion)
 		testSuite.addElasticRepo()
+		testSuite.installRuntimeDependencies("elasticsearch")
 	})
 	s.BeforeScenario(func(interface{}) {
 		log.Info("Before Helm scenario...")
