@@ -15,7 +15,7 @@ import (
 var helm services.HelmManager
 
 func init() {
-	helmVersion := "3.1.x"
+	helmVersion := "2.x"
 	if value, exists := os.LookupEnv("HELM_VERSION"); exists {
 		helmVersion = value
 	}
@@ -278,8 +278,8 @@ func HelmChartFeatureContext(s *godog.Suite) {
 		log.Debug("Before Suite...")
 		toolsAreInstalled()
 
-		testSuite.addElasticRepo()
 		testSuite.createCluster(testSuite.KubernetesVersion)
+		testSuite.addElasticRepo()
 	})
 	s.BeforeScenario(func(interface{}) {
 		log.Info("Before Helm scenario...")
