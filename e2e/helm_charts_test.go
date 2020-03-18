@@ -299,6 +299,7 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	})
 }
 
+//nolint:unused
 func toolsAreInstalled() {
 	binaries := []string{
 		"kind",
