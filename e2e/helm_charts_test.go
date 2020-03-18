@@ -130,8 +130,13 @@ func (ts *HelmChartTestSuite) createCluster(k8sVersion string) {
 	}
 }
 
-func (ts *HelmChartTestSuite) deleteChart() error {
-	return helm.DeleteChart(ts.Name)
+func (ts *HelmChartTestSuite) deleteChart() {
+	err := helm.DeleteChart(ts.Name)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"chart": ts.Name,
+		}).Error("Could not delete chart")
+	}
 }
 
 func (ts *HelmChartTestSuite) destroyCluster() {
