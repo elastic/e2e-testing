@@ -29,12 +29,12 @@ touch "${HOME}/.kube/config"
 # Install kubectl
 curl -sSLo "${KBC_CMD}" "https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl"
 chmod +x "${KBC_CMD}"
-${KBC_CMD} version || true
+${KBC_CMD} version --client
 
 # Install Helm
 curl -o ${HELM_TAR_GZ_FILE} "https://get.helm.sh/${HELM_TAR_GZ_FILE}"
 tar -xvf ${HELM_TAR_GZ_FILE}
 mv linux-amd64/helm ${HELM_CMD}
 chmod +x "${HELM_CMD}"
-${HELM_CMD} version || true
+${HELM_CMD} version --client
 rm -fr linux-amd64 ${HELM_TAR_GZ_FILE}
