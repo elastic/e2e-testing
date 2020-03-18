@@ -30,9 +30,10 @@ func init() {
 // HelmChartTestSuite represents a test suite for a helm chart
 //nolint:unused
 type HelmChartTestSuite struct {
-	ClusterName string // the name of the cluster
-	Name        string // the name of the chart
-	Version     string // the helm chart version for the test
+	ClusterName       string // the name of the cluster
+	KubernetesVersion string // the Kubernetes version for the test
+	Name              string // the name of the chart
+	Version           string // the helm chart version for the test
 }
 
 func (ts *HelmChartTestSuite) aClusterIsRunning() error {
@@ -253,12 +254,16 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 //nolint:deadcode,unused
 func HelmChartFeatureContext(s *godog.Suite) {
 	testSuite := HelmChartTestSuite{
-		ClusterName: "helm-charts-test-suite",
-		Version:     "7.6.1",
+		ClusterName:       "helm-charts-test-suite",
+		KubernetesVersion: "1.15.3",
+		Version:           "7.6.1",
 	}
 
 	if value, exists := os.LookupEnv("HELM_CHART_VERSION"); exists {
 		testSuite.Version = value
+	}
+	if value, exists := os.LookupEnv("KUBERNETES_VERSION"); exists {
+		testSuite.KubernetesVersion = value
 	}
 
 	s.Step(`^a cluster is running$`, testSuite.aClusterIsRunning)
@@ -274,7 +279,7 @@ func HelmChartFeatureContext(s *godog.Suite) {
 		toolsAreInstalled()
 
 		testSuite.addElasticRepo()
-		testSuite.createCluster("1.15.3")
+		testSuite.createCluster(testSuite.KubernetesVersion)
 	})
 	s.BeforeScenario(func(interface{}) {
 		log.Info("Before Helm scenario...")
