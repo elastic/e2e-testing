@@ -60,12 +60,12 @@ func (ts *HelmChartTestSuite) addElasticRepo() {
 	}
 }
 
-func (ts *HelmChartTestSuite) aResourceContainsTheContent(resource string, content string) error {
+func (ts *HelmChartTestSuite) aResourceContainsTheKey(resource string, key string) error {
 	lowerResource := strings.ToLower(resource)
-	escapedContent := strings.ReplaceAll(content, ".", `\.`)
+	escapedKey := strings.ReplaceAll(key, ".", `\.`)
 
 	args := []string{
-		"get", lowerResource + "s", ts.getResourceName(resource), "-o", `jsonpath="{.data['` + escapedContent + `']}"`,
+		"get", lowerResource + "s", ts.getResourceName(resource), "-o", `jsonpath="{.data['` + escapedKey + `']}"`,
 	}
 
 	output, err := shell.Execute(".", "kubectl", args...)
@@ -73,13 +73,13 @@ func (ts *HelmChartTestSuite) aResourceContainsTheContent(resource string, conte
 		return err
 	}
 	if output == "" {
-		return errors.New("There is no " + resource + " for the " + ts.Name + " chart including " + content)
+		return errors.New("There is no " + resource + " for the " + ts.Name + " chart including " + key)
 	}
 
 	log.WithFields(log.Fields{
 		"output": output,
 		"name":   ts.Name,
-	}).Debug("A " + resource + " resource contains the " + content + " content")
+	}).Debug("A " + resource + " resource contains the " + key + " key")
 
 	return nil
 }
@@ -276,7 +276,7 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	s.Step(`^a pod will be deployed on each node of the cluster by a DaemonSet$`, testSuite.podsManagedByDaemonSet)
 	s.Step(`^a "([^"]*)" will manage additional pods for metricsets querying internal services$`, testSuite.resourceWillManageAdditionalPodsForMetricsets)
 	s.Step(`^a "([^"]*)" chart will retrieve specific Kubernetes metrics$`, testSuite.willRetrieveSpecificMetrics)
-	s.Step(`^a "([^"]*)" resource contains the "([^"]*)" content$`, testSuite.aResourceContainsTheContent)
+	s.Step(`^a "([^"]*)" resource contains the "([^"]*)" key$`, testSuite.aResourceContainsTheKey)
 	s.Step(`^a "([^"]*)" resource manages RBAC$`, testSuite.aResourceManagesRBAC)
 
 	s.BeforeSuite(func() {
