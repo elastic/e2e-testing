@@ -1,11 +1,9 @@
 package e2e
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
-	"strconv"
 
 	services "github.com/elastic/metricbeat-tests-poc/cli/services"
 	shell "github.com/elastic/metricbeat-tests-poc/cli/shell"
@@ -47,7 +45,7 @@ func (ts *HelmChartTestSuite) aClusterIsRunning() error {
 		log.Fatalf("Could not check the status of the cluster. Aborting: %v", err)
 	}
 	if output != ts.ClusterName {
-		return errors.New("The cluster is not running")
+		return fmt.Errorf("The cluster is not running")
 	}
 
 	log.WithFields(log.Fields{
@@ -67,12 +65,12 @@ func (ts *HelmChartTestSuite) aResourceContainsTheKey(resource string, key strin
 	lowerResource := strings.ToLower(resource)
 	escapedKey := strings.ReplaceAll(key, ".", `\.`)
 
-	output, err := kubectl.Run("get", lowerResource, ts.getResourceName(resource), "-o", `jsonpath="{.data['` + escapedKey + `']}"`)
+	output, err := kubectl.Run("get", lowerResource, ts.getResourceName(resource), "-o", `jsonpath="{.data['`+escapedKey+`']}"`)
 	if err != nil {
 		return err
 	}
 	if output == "" {
-		return errors.New("There is no " + resource + " for the " + ts.Name + " chart including " + key)
+		return fmt.Errorf("There is no %s for the %s chart including %s", resource, ts.Name, key)
 	}
 
 	log.WithFields(log.Fields{
@@ -91,7 +89,7 @@ func (ts *HelmChartTestSuite) aResourceManagesRBAC(resource string) error {
 		return err
 	}
 	if output == "" {
-		return errors.New("There is no " + resource + " for the " + ts.Name + " chart")
+		return fmt.Errorf("There is no %s for the %s chart", resource, ts.Name)
 	}
 
 	log.WithFields(log.Fields{
@@ -103,7 +101,7 @@ func (ts *HelmChartTestSuite) aResourceManagesRBAC(resource string) error {
 }
 
 func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error {
-	selector, err := kubectl.GetResourceSelector("deployment", ts.Name + "-" + ts.Name)
+	selector, err := kubectl.GetResourceSelector("deployment", ts.Name+"-"+ts.Name)
 	if err != nil {
 		return err
 	}
@@ -115,20 +113,19 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 
 	endpoints := strings.SplitN(describe["Endpoints"].(string), ",", -1)
 	if len(endpoints) == 0 {
-		return errors.New("Error there are not Enpoints for the " + resourceType + " with the selector " + selector)
+		return fmt.Errorf("Error there are not Enpoints for the %s with the selector %s", resourceType, selector)
 	}
 
 	log.WithFields(log.Fields{
-		"name":   ts.Name,
+		"name":     ts.Name,
 		"describe": describe,
 	}).Debug("Checking the configmap")
 
 	return nil
 }
 
-
 func (ts *HelmChartTestSuite) aResourceWillManagePods(resourceType string) error {
-	selector, err := kubectl.GetResourceSelector("deployment", ts.Name + "-" + ts.Name)
+	selector, err := kubectl.GetResourceSelector("deployment", ts.Name+"-"+ts.Name)
 	if err != nil {
 		return err
 	}
@@ -139,9 +136,9 @@ func (ts *HelmChartTestSuite) aResourceWillManagePods(resourceType string) error
 	}
 
 	log.WithFields(log.Fields{
-		"name":   ts.Name,
+		"name":      ts.Name,
 		"resources": resources,
-	}).Debug("Checking the " + resourceType + " pods")
+	}).Debugf("Checking the %s pods", resourceType)
 
 	return nil
 }
@@ -154,14 +151,13 @@ func (ts *HelmChartTestSuite) checkResources(resourceType, selector string, min 
 
 	items := resources["items"].([]interface{})
 	if len(items) < min {
-		return nil, errors.New("Error there are not " + strconv.Itoa(min) + " " + resourceType + " for resource " +
-			resourceType + "/" + ts.Name + "-" + ts.Name + " with the selector " + selector)
+		return nil, fmt.Errorf("Error there are not %d %s for resource %s/%s-%s with the selector %s", min, resourceType, resourceType, ts.Name, ts.Name, selector)
 	}
 
 	log.WithFields(log.Fields{
-		"name":   ts.Name,
+		"name":  ts.Name,
 		"items": items,
-	}).Debug("Checking for " + strconv.Itoa(min) + " " + resourceType + " with selector " + selector)
+	}).Debugf("Checking for %d %s with selector %s", min, resourceType, selector)
 
 	return items, nil
 }
@@ -280,12 +276,12 @@ func (ts *HelmChartTestSuite) installRuntimeDependencies(dependencies ...string)
 }
 
 func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
-	output, err := kubectl.Run("get", "daemonset", "--namespace=default", "-l", "app=" + ts.Name + "-" + ts.Name, "-o", "jsonpath='{.items[0].metadata.labels.chart}'")
+	output, err := kubectl.Run("get", "daemonset", "--namespace=default", "-l", "app="+ts.Name+"-"+ts.Name, "-o", "jsonpath='{.items[0].metadata.labels.chart}'")
 	if err != nil {
 		return err
 	}
 	if output != ts.getFullName() {
-		return errors.New("There is no DaemonSet for the " + ts.Name + " chart. Expected:" + ts.getFullName() + ", Actual: " + output)
+		return fmt.Errorf("There is no DaemonSet for the %s chart. Expected: %s, Actual: %s", ts.Name, ts.getFullName(), output)
 	}
 
 	log.WithFields(log.Fields{
@@ -299,12 +295,12 @@ func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
 func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(resource string) error {
 	lowerResource := strings.ToLower(resource)
 
-	output, err := kubectl.Run("get", lowerResource, ts.Name + "-" + ts.Name + "-metrics", "-o", "jsonpath='{.metadata.labels.chart}'")
+	output, err := kubectl.Run("get", lowerResource, ts.Name+"-"+ts.Name+"-metrics", "-o", "jsonpath='{.metadata.labels.chart}'")
 	if err != nil {
 		return err
 	}
 	if output != ts.getFullName() {
-		return errors.New("There is no " + resource + " for the " + ts.Name + " chart. Expected:" + ts.getFullName() + ", Actual: " + output)
+		return fmt.Errorf("There is no %s for the %s chart. Expected: %s, Actual: %s", resource, ts.Name, ts.getFullName(), output)
 	}
 
 	log.WithFields(log.Fields{
@@ -391,12 +387,12 @@ func (ts *HelmChartTestSuite) volumeMountedWithSubpath(name string, mountPath st
 func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) error {
 	kubeStateMetrics := "kube-state-metrics"
 
-	output, err := kubectl.Run("get", "deployment", ts.Name + "-" + kubeStateMetrics, "-o", "jsonpath='{.metadata.name}'")
+	output, err := kubectl.Run("get", "deployment", ts.Name+"-"+kubeStateMetrics, "-o", "jsonpath='{.metadata.name}'")
 	if err != nil {
 		return err
 	}
 	if output != ts.getKubeStateMetricsName() {
-		return errors.New("There is no " + kubeStateMetrics + " Deployment for the " + ts.Name + " chart. Expected:" + ts.getKubeStateMetricsName() + ", Actual: " + output)
+		return fmt.Errorf("There is no %s Deployment for the %s chart. Expected: %s, Actual: %s", kubeStateMetrics, ts.Name, ts.getKubeStateMetricsName(), output)
 	}
 
 	log.WithFields(log.Fields{
