@@ -377,6 +377,3 @@ func toolsAreInstalled() {
 
 	shell.CheckInstalledSoftware(binaries)
 }
-
-
-
