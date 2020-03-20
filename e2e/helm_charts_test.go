@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -263,6 +264,79 @@ func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(reso
 	return nil
 }
 
+func (ts *HelmChartTestSuite) volumeMountedWithNoSubpath(name string, mountPath string) error {
+	return ts.volumeMountedWithSubpath(name, mountPath, "")
+}
+
+func (ts *HelmChartTestSuite) volumeMountedWithSubpath(name string, mountPath string, subPath string) error {
+
+	getMountValues := func(key string) ([]string, error) {
+		// build the arguments for capturing the volume mounts
+		args := []string{
+			"get", "pods", "-l", "app=" + ts.Name + "-" + ts.Name, "-o", `jsonpath="{.items[0].spec.containers[0].volumeMounts[*]['` + key + `']}"`,
+		}
+		output, err := shell.Execute(".", "kubectl", args...)
+		if err != nil {
+			return []string{}, err
+		}
+		output = strings.Trim(output, "\"") // remove enclosing double quotes
+
+		return strings.Split(output, " "), nil
+	}
+
+	// get volumeMounts names
+	names, err := getMountValues("name")
+	if err != nil {
+		return err
+	}
+
+	// Find returns the smallest index i at which x == a[i],
+	// or len(a) if there is no such index.
+	find := func(a []string, x string) int {
+		for i, n := range a {
+			if x == n {
+				return i
+			}
+		}
+		return len(a)
+	}
+
+	index := find(names, name)
+	if index == len(names) {
+		return fmt.Errorf("The mounted volume '%s' could not be found: %v", name, names)
+	}
+
+	// get mounts paths
+	mountPaths, err := getMountValues("mountPath")
+	if err != nil {
+		return err
+	}
+
+	if mountPath != mountPaths[index] {
+		return fmt.Errorf("The mounted volume for '%s' is not %s. Actual: %s", name, mountPath, mountPaths[index])
+	}
+
+	if subPath != "" {
+		// get subpaths
+		subPaths, err := getMountValues("subPath")
+		if err != nil {
+			return err
+		}
+
+		if subPath != subPaths[index] {
+			return fmt.Errorf("The subPath for '%s' is not %s. Actual: %s", name, subPath, subPaths[index])
+		}
+	}
+
+	log.WithFields(log.Fields{
+		"name":      name,
+		"mountPath": mountPath,
+		"subPath":   subPath,
+	}).Debug("The volumePath was found")
+
+	return nil
+}
+
 func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) error {
 	kubeStateMetrics := "kube-state-metrics"
 	args := []string{
@@ -308,6 +382,8 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	s.Step(`^a "([^"]*)" chart will retrieve specific Kubernetes metrics$`, testSuite.willRetrieveSpecificMetrics)
 	s.Step(`^a "([^"]*)" resource contains the "([^"]*)" key$`, testSuite.aResourceContainsTheKey)
 	s.Step(`^a "([^"]*)" resource manages RBAC$`, testSuite.aResourceManagesRBAC)
+	s.Step(`^the "([^"]*)" volume is mounted at "([^"]*)" with subpath "([^"]*)"$`, testSuite.volumeMountedWithSubpath)
+	s.Step(`^the "([^"]*)" volume is mounted at "([^"]*)" with no subpath$`, testSuite.volumeMountedWithNoSubpath)
 
 	s.BeforeSuite(func() {
 		log.Debug("Before Suite...")

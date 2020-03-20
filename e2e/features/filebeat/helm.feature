@@ -11,3 +11,5 @@ Scenario: The Filebeat chart will create recommended K8S resources
     And a "ServiceAccount" resource manages RBAC
     And a "ClusterRole" resource manages RBAC
     And a "ClusterRoleBinding" resource manages RBAC
+    And the "filebeat-config" volume is mounted at "/usr/share/filebeat/filebeat.yml" with subpath "filebeat.yml"
+    And the "data" volume is mounted at "/usr/share/filebeat/data" with no subpath
