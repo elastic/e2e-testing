@@ -363,7 +363,7 @@ func (ts *HelmChartTestSuite) checkResources(resourceType, selector string, min 
 	return items, nil
 }
 
-func (ts *HelmChartTestSuite) aResourcePods(resourceType string) error {
+func (ts *HelmChartTestSuite) aResourceWillManagePods(resourceType string) error {
 	selector, err := kubectl.GetResourceSelector("deployment", ts.Name + "-" + ts.Name)
 	if err != nil {
 		return err
@@ -382,7 +382,7 @@ func (ts *HelmChartTestSuite) aResourcePods(resourceType string) error {
 	return nil
 }
 
-func (ts *HelmChartTestSuite) aServiceEndpoints(resourceType string) error {
+func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error {
 	selector, err := kubectl.GetResourceSelector("deployment", ts.Name + "-" + ts.Name)
 	if err != nil {
 		return err
@@ -432,8 +432,8 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	s.Step(`^the "([^"]*)" volume is mounted at "([^"]*)" with subpath "([^"]*)"$`, testSuite.volumeMountedWithSubpath)
 	s.Step(`^the "([^"]*)" volume is mounted at "([^"]*)" with no subpath$`, testSuite.volumeMountedWithNoSubpath)
 
-	s.Step(`^a "([^"]*)" which will manage the pods$`, testSuite.aResourcePods)
-	s.Step(`^a "([^"]*)" which will expose the pods as network services internal to the k8s cluster$`, testSuite.aServiceEndpoints)
+	s.Step(`^a "([^"]*)" which will manage the pods$`, testSuite.aResourceWillManagePods)
+	s.Step(`^a "([^"]*)" which will expose the pods as network services internal to the k8s cluster$`, testSuite.aResourceWillExposePods)
 
 	s.BeforeSuite(func() {
 		log.Debug("Before Suite...")
