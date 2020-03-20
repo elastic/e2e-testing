@@ -66,11 +66,7 @@ func (ts *HelmChartTestSuite) aResourceContainsTheKey(resource string, key strin
 	lowerResource := strings.ToLower(resource)
 	escapedKey := strings.ReplaceAll(key, ".", `\.`)
 
-	args := []string{
-		"get", lowerResource + "s", ts.getResourceName(resource), "-o", `jsonpath="{.data['` + escapedKey + `']}"`,
-	}
-
-	output, err := shell.Execute(".", "kubectl", args...)
+	output, err := kubectl.Run("get", lowerResource, ts.getResourceName(resource), "-o", `jsonpath="{.data['` + escapedKey + `']}"`)
 	if err != nil {
 		return err
 	}
@@ -89,11 +85,7 @@ func (ts *HelmChartTestSuite) aResourceContainsTheKey(resource string, key strin
 func (ts *HelmChartTestSuite) aResourceManagesRBAC(resource string) error {
 	lowerResource := strings.ToLower(resource)
 
-	args := []string{
-		"get", lowerResource + "s", ts.getResourceName(resource), "-o", `jsonpath="'{.metadata.labels.chart}'"`,
-	}
-
-	output, err := shell.Execute(".", "kubectl", args...)
+	output, err := kubectl.Run("get", lowerResource, ts.getResourceName(resource), "-o", `jsonpath="'{.metadata.labels.chart}'"`)
 	if err != nil {
 		return err
 	}
@@ -193,11 +185,7 @@ func (ts *HelmChartTestSuite) install(chart string) error {
 }
 
 func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
-	args := []string{
-		"get", "daemonsets", "--namespace=default", "-l", "app=" + ts.Name + "-" + ts.Name, "-o", "jsonpath='{.items[0].metadata.labels.chart}'",
-	}
-
-	output, err := shell.Execute(".", "kubectl", args...)
+	output, err := kubectl.Run("get", "daemonset", "--namespace=default", "-l", "app=" + ts.Name + "-" + ts.Name, "-o", "jsonpath='{.items[0].metadata.labels.chart}'")
 	if err != nil {
 		return err
 	}
@@ -215,11 +203,8 @@ func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
 
 func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(resource string) error {
 	lowerResource := strings.ToLower(resource)
-	args := []string{
-		"get", lowerResource + "s", ts.Name + "-" + ts.Name + "-metrics", "-o", "jsonpath='{.metadata.labels.chart}'",
-	}
 
-	output, err := shell.Execute(".", "kubectl", args...)
+	output, err := kubectl.Run("get", lowerResource, ts.Name + "-" + ts.Name + "-metrics", "-o", "jsonpath='{.metadata.labels.chart}'")
 	if err != nil {
 		return err
 	}
@@ -237,11 +222,8 @@ func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(reso
 
 func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) error {
 	kubeStateMetrics := "kube-state-metrics"
-	args := []string{
-		"get", "deployments", ts.Name + "-" + kubeStateMetrics, "-o", "jsonpath='{.metadata.name}'",
-	}
 
-	output, err := shell.Execute(".", "kubectl", args...)
+	output, err := kubectl.Run("get", "deployment", ts.Name + "-" + kubeStateMetrics, "-o", "jsonpath='{.metadata.name}'")
 	if err != nil {
 		return err
 	}
