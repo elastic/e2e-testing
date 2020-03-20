@@ -77,3 +77,13 @@ func (k *Kubectl) GetResourcesBySelector(resourceType, selector string) (map[str
 
 	return k.JsonToObj(output)
 }
+
+// Use kubecontrol describe command to get the description of a resource identified by a selector, return the resource in a map[string]interface{}.
+func (k *Kubectl) Describe(resourceType, selector string)  (map[string]interface{}, error) {
+	output, err := k.Run("describe", resourceType, "--selector", selector)
+	if err != nil {
+		return nil, err
+	}
+
+	return k.YamlToObj(output)
+}

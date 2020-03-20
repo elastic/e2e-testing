@@ -360,12 +360,7 @@ func (ts *HelmChartTestSuite) aServiceEndpoints(resourceType string) error {
 		return err
 	}
 
-	output, err := kubectl.Run("describe", resourceType, "--selector", selector)
-	if err != nil {
-		return err
-	}
-
-	describe, err := kubectl.YamlToObj(output)
+	describe, err := kubectl.Describe(resourceType, selector)
 	if err != nil {
 		return err
 	}
@@ -376,7 +371,6 @@ func (ts *HelmChartTestSuite) aServiceEndpoints(resourceType string) error {
 	}
 	
 	log.WithFields(log.Fields{
-		"output": output,
 		"name":   ts.Name,
 		"describe": describe,
 	}).Debug("Checking the configmap")
