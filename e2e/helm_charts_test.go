@@ -1,9 +1,7 @@
 package e2e
 
 import (
-	"encoding/json"
 	"errors"
-	"gopkg.in/yaml.v2"
 	"os"
 	"strings"
 	"strconv"
@@ -16,6 +14,7 @@ import (
 )
 
 var helm services.HelmManager
+var kubectl services.Kubectl
 
 func init() {
 	helmVersion := "2.x"
@@ -282,10 +281,8 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	s.Step(`^a "([^"]*)" resource contains the "([^"]*)" key$`, testSuite.aResourceContainsTheKey)
 	s.Step(`^a "([^"]*)" resource manages RBAC$`, testSuite.aResourceManagesRBAC)
 
-	s.Step(`^a "([^"]*)" which will manage the pods$`, testSuite.checkResourcePods)
-	s.Step(`^a "([^"]*)" which will expose the pods as network services internal to the k8s cluster$`, testSuite.checkServiceEndpoints)
-	s.Step(`^a "([^"]*)" which manage external access to the service$`, testSuite.checkIngress)
-	s.Step(`^a "([^"]*)" to manage dynamic scaling of pods$`, testSuite.aToManageDynamicScalingOfPods)
+	s.Step(`^a "([^"]*)" which will manage the pods$`, testSuite.aResourcePods)
+	s.Step(`^a "([^"]*)" which will expose the pods as network services internal to the k8s cluster$`, testSuite.aServiceEndpoints)
 
 	s.BeforeSuite(func() {
 		log.Debug("Before Suite...")
@@ -318,77 +315,13 @@ func toolsAreInstalled() {
 	shell.CheckInstalledSoftware(binaries)
 }
 
-
-func (ts *HelmChartTestSuite) kubectl(args ...string) (string, error) {
-	return shell.Execute(".", "kubectl", args...)
-}
-
-func (ts *HelmChartTestSuite) jsonToObj(jsonValue string) (map[string]interface{}, error) {
-	var obj map[string]interface{}
-	err := json.Unmarshal([]byte(jsonValue), &obj)
-	if err != nil {
-		return nil, err
-	}
-	
-	return obj, nil
-}
-
-func (ts *HelmChartTestSuite) yamlToObj(yamlValue string) (map[string]interface{}, error) {
-	var obj map[string]interface{}
-	err := yaml.Unmarshal([]byte(yamlValue), &obj)
-	if err != nil {
-		return nil, err
-	}
-	
-	return obj, nil
-}
-
-func (ts *HelmChartTestSuite) getResourceJSONPath(resourceType, resource, jsonPath string, otherparams ...string) (string, error) {
-	output, err := ts.kubectl("get", resourceType, resource, "-o", "jsonpath='" + jsonPath + "'")
-	if err != nil {
-		return "{}", err
-	}
-	return output, nil
-}
-
-func (ts *HelmChartTestSuite) getResourceSelector(resourceType, resource string) (string, error) {
-	output, err := ts.getResourceJSONPath(resourceType, ts.Name + "-" + ts.Name, "{.metadata.selfLink}")
-	if err != nil {
-		return "", err
-	}
-
-	output, err = ts.kubectl("get", "--raw", strings.Replace(output, "'", "", -1) + "/scale")
-	if err != nil {
-		return "", err
-	}
-	
-	jsonObj, err := ts.jsonToObj(output)
-	if err != nil {
-		return "", err
-	}
-	
-	status := jsonObj["status"].(map[string]interface {})
-	return status["targetSelector"].(string), nil
-}
-
-func (ts *HelmChartTestSuite) getResourcesBySelector(resourceType, selector string) (map[string]interface{}, error) {
-	output, err := ts.kubectl("get", resourceType, "--selector", selector, "-o", "json")
-	if err != nil {
-		return nil, err
-	}
-	
-	return ts.jsonToObj(output)
-}
-
 func (ts *HelmChartTestSuite) checkResources(resourceType, selector string, min int) ([]interface{}, error) {
-	resources, err := ts.getResourcesBySelector(resourceType, selector)
+	resources, err := kubectl.GetResourcesBySelector(resourceType, selector)
 	if err != nil {
 		return nil, err
 	}
 
 	items := resources["items"].([]interface{})
-	log.Debug("LEN :", len(items), ">=", min)
-
 	if len(items) < min {
 		return nil, errors.New("Error there are not " + strconv.Itoa(min) + " " + resourceType + " for resource " +
 			resourceType + "/" + ts.Name + "-" + ts.Name + " with the selector " + selector)
@@ -402,8 +335,8 @@ func (ts *HelmChartTestSuite) checkResources(resourceType, selector string, min 
 	return items, nil
 }
 
-func (ts *HelmChartTestSuite) checkResourcePods(resourceType string) error {
-	selector, err := ts.getResourceSelector("deployment", ts.Name + "-" + ts.Name)
+func (ts *HelmChartTestSuite) aResourcePods(resourceType string) error {
+	selector, err := kubectl.GetResourceSelector("deployment", ts.Name + "-" + ts.Name)
 	if err != nil {
 		return err
 	}
@@ -421,18 +354,18 @@ func (ts *HelmChartTestSuite) checkResourcePods(resourceType string) error {
 	return nil
 }
 
-func (ts *HelmChartTestSuite) checkServiceEndpoints(resourceType string) error {
-	selector, err := ts.getResourceSelector("deployment", ts.Name + "-" + ts.Name)
+func (ts *HelmChartTestSuite) aServiceEndpoints(resourceType string) error {
+	selector, err := kubectl.GetResourceSelector("deployment", ts.Name + "-" + ts.Name)
 	if err != nil {
 		return err
 	}
 
-	output, err := ts.kubectl("describe", resourceType, "--selector", selector)
+	output, err := kubectl.Run("describe", resourceType, "--selector", selector)
 	if err != nil {
 		return err
 	}
 
-	describe, err := ts.yamlToObj(output)
+	describe, err := kubectl.YamlToObj(output)
 	if err != nil {
 		return err
 	}
@@ -451,27 +384,4 @@ func (ts *HelmChartTestSuite) checkServiceEndpoints(resourceType string) error {
 	return nil
 }
 
-func (ts *HelmChartTestSuite) checkIngress(resourceType string) error {
-	selector, err := ts.getResourceSelector("deployment", ts.Name + "-" + ts.Name)
-	if err != nil {
-		return err
-	}
 
-	resources, err := ts.checkResources(resourceType, selector, 1)
-	if err != nil {
-		return err
-	}
-	
-	log.WithFields(log.Fields{
-		"name":   ts.Name,
-		"resources": resources,
-	}).Debug("Checking the configmap")
-	
-	return nil
-}
-
-func (ts *HelmChartTestSuite) aToManageDynamicScalingOfPods(resourceType string) error {
-	// NO supported yet
-	//k get hpa --show-labels -A --selector app=apm-apm-server,release=apm
-	return nil
-}
