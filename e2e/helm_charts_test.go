@@ -257,6 +257,69 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 	return nil
 }
 
+func (ts *HelmChartTestSuite) checkResources(resourceType, selector string, min int) ([]interface{}, error) {
+	resources, err := kubectl.GetResourcesBySelector(resourceType, selector)
+	if err != nil {
+		return nil, err
+	}
+
+	items := resources["items"].([]interface{})
+	if len(items) < min {
+		return nil, errors.New("Error there are not " + strconv.Itoa(min) + " " + resourceType + " for resource " +
+			resourceType + "/" + ts.Name + "-" + ts.Name + " with the selector " + selector)
+	}
+
+	log.WithFields(log.Fields{
+		"name":   ts.Name,
+		"items": items,
+	}).Debug("Checking for " + strconv.Itoa(min) + " " + resourceType + " with selector " + selector)
+
+	return items, nil
+}
+
+func (ts *HelmChartTestSuite) aResourcePods(resourceType string) error {
+	selector, err := kubectl.GetResourceSelector("deployment", ts.Name + "-" + ts.Name)
+	if err != nil {
+		return err
+	}
+
+	resources, err := ts.checkResources(resourceType, selector, 1)
+	if err != nil {
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"name":   ts.Name,
+		"resources": resources,
+	}).Debug("Checking the " + resourceType + " pods")
+
+	return nil
+}
+
+func (ts *HelmChartTestSuite) aServiceEndpoints(resourceType string) error {
+	selector, err := kubectl.GetResourceSelector("deployment", ts.Name + "-" + ts.Name)
+	if err != nil {
+		return err
+	}
+
+	describe, err := kubectl.Describe(resourceType, selector)
+	if err != nil {
+		return err
+	}
+
+	endpoints := strings.SplitN(describe["Endpoints"].(string), ",", -1)
+	if len(endpoints) == 0 {
+		return errors.New("Error there are not Enpoints for the " + resourceType + " with the selector " + selector)
+	}
+
+	log.WithFields(log.Fields{
+		"name":   ts.Name,
+		"describe": describe,
+	}).Debug("Checking the configmap")
+
+	return nil
+}
+
 // HelmChartFeatureContext adds steps to the Godog test suite
 //nolint:deadcode,unused
 func HelmChartFeatureContext(s *godog.Suite) {
@@ -315,67 +378,5 @@ func toolsAreInstalled() {
 	shell.CheckInstalledSoftware(binaries)
 }
 
-func (ts *HelmChartTestSuite) checkResources(resourceType, selector string, min int) ([]interface{}, error) {
-	resources, err := kubectl.GetResourcesBySelector(resourceType, selector)
-	if err != nil {
-		return nil, err
-	}
-
-	items := resources["items"].([]interface{})
-	if len(items) < min {
-		return nil, errors.New("Error there are not " + strconv.Itoa(min) + " " + resourceType + " for resource " +
-			resourceType + "/" + ts.Name + "-" + ts.Name + " with the selector " + selector)
-	}
-	
-	log.WithFields(log.Fields{
-		"name":   ts.Name,
-		"items": items,
-	}).Debug("Checking for " + strconv.Itoa(min) + " " + resourceType + " with selector " + selector)
-
-	return items, nil
-}
-
-func (ts *HelmChartTestSuite) aResourcePods(resourceType string) error {
-	selector, err := kubectl.GetResourceSelector("deployment", ts.Name + "-" + ts.Name)
-	if err != nil {
-		return err
-	}
-	
-	resources, err := ts.checkResources(resourceType, selector, 1)
-	if err != nil {
-		return err
-	}
-	
-	log.WithFields(log.Fields{
-		"name":   ts.Name,
-		"resources": resources,
-	}).Debug("Checking the " + resourceType + " pods")
-
-	return nil
-}
-
-func (ts *HelmChartTestSuite) aServiceEndpoints(resourceType string) error {
-	selector, err := kubectl.GetResourceSelector("deployment", ts.Name + "-" + ts.Name)
-	if err != nil {
-		return err
-	}
-
-	describe, err := kubectl.Describe(resourceType, selector)
-	if err != nil {
-		return err
-	}
-
-	endpoints := strings.SplitN(describe["Endpoints"].(string), ",", -1)
-	if len(endpoints) == 0 {
-		return errors.New("Error there are not Enpoints for the " + resourceType + " with the selector " + selector)
-	}
-	
-	log.WithFields(log.Fields{
-		"name":   ts.Name,
-		"describe": describe,
-	}).Debug("Checking the configmap")
-	
-	return nil
-}
 
 
