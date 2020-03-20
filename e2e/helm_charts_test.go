@@ -287,7 +287,7 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	s.BeforeSuite(func() {
 		log.Debug("Before Suite...")
 		toolsAreInstalled()
-		testSuite.destroyCluster()
+
 		testSuite.createCluster(testSuite.KubernetesVersion)
 		testSuite.addElasticRepo()
 	})
