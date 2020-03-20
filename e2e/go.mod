@@ -9,6 +9,7 @@ require (
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/sirupsen/logrus v1.4.2
+	gopkg.in/yaml.v2 v2.2.4
 )
 
 replace github.com/testcontainers/testcontainers-go v0.0.8 => github.com/mdelapenya/testcontainers-go v0.0.9-compose-1
