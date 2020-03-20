@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"strconv"
 
 	services "github.com/elastic/metricbeat-tests-poc/cli/services"
 	shell "github.com/elastic/metricbeat-tests-poc/cli/shell"
@@ -14,6 +15,7 @@ import (
 )
 
 var helm services.HelmManager
+var kubectl services.Kubectl
 
 func init() {
 	helmVersion := "2.x"
@@ -65,11 +67,7 @@ func (ts *HelmChartTestSuite) aResourceContainsTheKey(resource string, key strin
 	lowerResource := strings.ToLower(resource)
 	escapedKey := strings.ReplaceAll(key, ".", `\.`)
 
-	args := []string{
-		"get", lowerResource + "s", ts.getResourceName(resource), "-o", `jsonpath="{.data['` + escapedKey + `']}"`,
-	}
-
-	output, err := shell.Execute(".", "kubectl", args...)
+	output, err := kubectl.Run("get", lowerResource, ts.getResourceName(resource), "-o", `jsonpath="{.data['` + escapedKey + `']}"`)
 	if err != nil {
 		return err
 	}
@@ -88,11 +86,7 @@ func (ts *HelmChartTestSuite) aResourceContainsTheKey(resource string, key strin
 func (ts *HelmChartTestSuite) aResourceManagesRBAC(resource string) error {
 	lowerResource := strings.ToLower(resource)
 
-	args := []string{
-		"get", lowerResource + "s", ts.getResourceName(resource), "-o", `jsonpath="'{.metadata.labels.chart}'"`,
-	}
-
-	output, err := shell.Execute(".", "kubectl", args...)
+	output, err := kubectl.Run("get", lowerResource, ts.getResourceName(resource), "-o", `jsonpath="'{.metadata.labels.chart}'"`)
 	if err != nil {
 		return err
 	}
@@ -222,11 +216,7 @@ func (ts *HelmChartTestSuite) installRuntimeDependencies(dependencies ...string)
 }
 
 func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
-	args := []string{
-		"get", "daemonsets", "--namespace=default", "-l", "app=" + ts.Name + "-" + ts.Name, "-o", "jsonpath='{.items[0].metadata.labels.chart}'",
-	}
-
-	output, err := shell.Execute(".", "kubectl", args...)
+	output, err := kubectl.Run("get", "daemonset", "--namespace=default", "-l", "app=" + ts.Name + "-" + ts.Name, "-o", "jsonpath='{.items[0].metadata.labels.chart}'")
 	if err != nil {
 		return err
 	}
@@ -244,11 +234,8 @@ func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
 
 func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(resource string) error {
 	lowerResource := strings.ToLower(resource)
-	args := []string{
-		"get", lowerResource + "s", ts.Name + "-" + ts.Name + "-metrics", "-o", "jsonpath='{.metadata.labels.chart}'",
-	}
 
-	output, err := shell.Execute(".", "kubectl", args...)
+	output, err := kubectl.Run("get", lowerResource, ts.Name + "-" + ts.Name + "-metrics", "-o", "jsonpath='{.metadata.labels.chart}'")
 	if err != nil {
 		return err
 	}
@@ -339,11 +326,8 @@ func (ts *HelmChartTestSuite) volumeMountedWithSubpath(name string, mountPath st
 
 func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) error {
 	kubeStateMetrics := "kube-state-metrics"
-	args := []string{
-		"get", "deployments", ts.Name + "-" + kubeStateMetrics, "-o", "jsonpath='{.metadata.name}'",
-	}
 
-	output, err := shell.Execute(".", "kubectl", args...)
+	output, err := kubectl.Run("get", "deployment", ts.Name + "-" + kubeStateMetrics, "-o", "jsonpath='{.metadata.name}'")
 	if err != nil {
 		return err
 	}
@@ -355,6 +339,69 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 		"output": output,
 		"name":   ts.Name,
 	}).Debug("A " + kubeStateMetrics + " chart will retrieve specific Kubernetes metrics")
+
+	return nil
+}
+
+func (ts *HelmChartTestSuite) checkResources(resourceType, selector string, min int) ([]interface{}, error) {
+	resources, err := kubectl.GetResourcesBySelector(resourceType, selector)
+	if err != nil {
+		return nil, err
+	}
+
+	items := resources["items"].([]interface{})
+	if len(items) < min {
+		return nil, errors.New("Error there are not " + strconv.Itoa(min) + " " + resourceType + " for resource " +
+			resourceType + "/" + ts.Name + "-" + ts.Name + " with the selector " + selector)
+	}
+
+	log.WithFields(log.Fields{
+		"name":   ts.Name,
+		"items": items,
+	}).Debug("Checking for " + strconv.Itoa(min) + " " + resourceType + " with selector " + selector)
+
+	return items, nil
+}
+
+func (ts *HelmChartTestSuite) aResourcePods(resourceType string) error {
+	selector, err := kubectl.GetResourceSelector("deployment", ts.Name + "-" + ts.Name)
+	if err != nil {
+		return err
+	}
+
+	resources, err := ts.checkResources(resourceType, selector, 1)
+	if err != nil {
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"name":   ts.Name,
+		"resources": resources,
+	}).Debug("Checking the " + resourceType + " pods")
+
+	return nil
+}
+
+func (ts *HelmChartTestSuite) aServiceEndpoints(resourceType string) error {
+	selector, err := kubectl.GetResourceSelector("deployment", ts.Name + "-" + ts.Name)
+	if err != nil {
+		return err
+	}
+
+	describe, err := kubectl.Describe(resourceType, selector)
+	if err != nil {
+		return err
+	}
+
+	endpoints := strings.SplitN(describe["Endpoints"].(string), ",", -1)
+	if len(endpoints) == 0 {
+		return errors.New("Error there are not Enpoints for the " + resourceType + " with the selector " + selector)
+	}
+
+	log.WithFields(log.Fields{
+		"name":   ts.Name,
+		"describe": describe,
+	}).Debug("Checking the configmap")
 
 	return nil
 }
@@ -384,6 +431,9 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	s.Step(`^a "([^"]*)" resource manages RBAC$`, testSuite.aResourceManagesRBAC)
 	s.Step(`^the "([^"]*)" volume is mounted at "([^"]*)" with subpath "([^"]*)"$`, testSuite.volumeMountedWithSubpath)
 	s.Step(`^the "([^"]*)" volume is mounted at "([^"]*)" with no subpath$`, testSuite.volumeMountedWithNoSubpath)
+
+	s.Step(`^a "([^"]*)" which will manage the pods$`, testSuite.aResourcePods)
+	s.Step(`^a "([^"]*)" which will expose the pods as network services internal to the k8s cluster$`, testSuite.aServiceEndpoints)
 
 	s.BeforeSuite(func() {
 		log.Debug("Before Suite...")
