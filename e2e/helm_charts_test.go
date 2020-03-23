@@ -222,7 +222,7 @@ func (ts *HelmChartTestSuite) getKubeStateMetricsName() string {
 	return strings.ToLower("'" + ts.Name + "-kube-state-metrics'")
 }
 
-// getKubeStateName returns the kube-state-metrics name, in lowercase, enclosed in quotes
+// getResourceName returns the name of the service, in lowercase, based on the k8s resource
 func (ts *HelmChartTestSuite) getResourceName(resource string) string {
 	if resource == "ClusterRole" {
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role")
@@ -230,6 +230,13 @@ func (ts *HelmChartTestSuite) getResourceName(resource string) string {
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role-binding")
 	} else if resource == "ConfigMap" {
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-config")
+	} else if resource == "Daemonset" {
+		return strings.ToLower(ts.Name + "-" + ts.Name)
+	} else if resource == "Deployment" {
+		if ts.Name == "metricbeat" {
+			return strings.ToLower(ts.Name + "-" + ts.Name + "-metrics")
+		}
+		return strings.ToLower(ts.Name + "-" + ts.Name)
 	} else if resource == "ServiceAccount" {
 		return strings.ToLower(ts.Name + "-" + ts.Name)
 	}
@@ -295,7 +302,7 @@ func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
 func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(resource string) error {
 	lowerResource := strings.ToLower(resource)
 
-	output, err := kubectl.Run("get", lowerResource, ts.Name+"-"+ts.Name+"-metrics", "-o", "jsonpath='{.metadata.labels.chart}'")
+	output, err := kubectl.Run("get", lowerResource, ts.getResourceName(resource), "-o", "jsonpath='{.metadata.labels.chart}'")
 	if err != nil {
 		return err
 	}
@@ -333,11 +340,10 @@ func (ts *HelmChartTestSuite) strategyCanBeUsedDuringUpdates(strategy string) er
 func (ts *HelmChartTestSuite) strategyCanBeUsedForResourceDuringUpdates(strategy string, resource string) error {
 	lowerResource := strings.ToLower(resource)
 	strategyKey := "strategy"
-	name := ts.Name + "-" + ts.Name + "-metrics"
+	name := ts.getResourceName(resource)
 
 	if lowerResource == "daemonset" {
 		strategyKey = "updateStrategy"
-		name = ts.Name + "-" + ts.Name
 	}
 
 	output, err := kubectl.Run("get", lowerResource, name, "-o", `go-template='{{.spec.`+strategyKey+`.type}}'`)
