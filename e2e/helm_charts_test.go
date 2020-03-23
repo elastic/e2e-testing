@@ -224,6 +224,15 @@ func (ts *HelmChartTestSuite) getKubeStateMetricsName() string {
 	return strings.ToLower("'" + ts.Name + "-kube-state-metrics'")
 }
 
+// getPodName returns the name used in the app selector, in lowercase
+func (ts *HelmChartTestSuite) getPodName() string {
+	if ts.Name == "apm-server" {
+		return strings.ToLower(ts.Name)
+	}
+
+	return strings.ToLower(ts.Name + "-" + ts.Name)
+}
+
 // getResourceName returns the name of the service, in lowercase, based on the k8s resource
 func (ts *HelmChartTestSuite) getResourceName(resource string) string {
 	if resource == k8s.ResourceTypes.ClusterRole {
@@ -302,7 +311,7 @@ func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
 }
 
 func (ts *HelmChartTestSuite) resourceConstraintsAreApplied(constraint string) error {
-	output, err := kubectl.Run("get", "pods", "-l", "app="+ts.Name+"-"+ts.Name, "-o", "jsonpath='{.items[0].spec.containers[0].resources."+constraint+"}'")
+	output, err := kubectl.Run("get", "pods", "-l", "app="+ts.getPodName(), "-o", "jsonpath='{.items[0].spec.containers[0].resources."+constraint+"}'")
 	if err != nil {
 		return err
 	}
@@ -377,7 +386,7 @@ func (ts *HelmChartTestSuite) volumeMountedWithSubpath(name string, mountPath st
 	getMountValues := func(key string) ([]string, error) {
 		// build the arguments for capturing the volume mounts
 		args := []string{
-			"get", "pods", "-l", "app=" + ts.Name + "-" + ts.Name, "-o", `jsonpath="{.items[0].spec.containers[0].volumeMounts[*]['` + key + `']}"`,
+			"get", "pods", "-l", "app=" + ts.getPodName(), "-o", `jsonpath="{.items[0].spec.containers[0].volumeMounts[*]['` + key + `']}"`,
 		}
 		output, err := shell.Execute(".", "kubectl", args...)
 		if err != nil {
