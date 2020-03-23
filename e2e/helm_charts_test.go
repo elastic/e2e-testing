@@ -301,6 +301,24 @@ func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
 	return nil
 }
 
+func (ts *HelmChartTestSuite) resourceConstraintsAreApplied(constraint string) error {
+	output, err := kubectl.Run("get", "pods", "-l", "app="+ts.Name+"-"+ts.Name, "-o", "jsonpath='{.items[0].spec.containers[0].resources."+constraint+"}'")
+	if err != nil {
+		return err
+	}
+	if output == "" {
+		return fmt.Errorf("Resource %s constraint for the %s chart is not applied. Actual: %s", constraint, ts.getFullName(), output)
+	}
+
+	log.WithFields(log.Fields{
+		"constraint": constraint,
+		"name":       ts.Name,
+		"output":     output,
+	}).Debug("Resource" + constraint + " is applied")
+
+	return nil
+}
+
 func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(resource string) error {
 	lowerResource := strings.ToLower(resource)
 
@@ -469,6 +487,7 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	s.Step(`^the "([^"]*)" volume is mounted at "([^"]*)" with no subpath$`, testSuite.volumeMountedWithNoSubpath)
 	s.Step(`^the "([^"]*)" strategy can be used during updates$`, testSuite.strategyCanBeUsedDuringUpdates)
 	s.Step(`^the "([^"]*)" strategy can be used for "([^"]*)" during updates$`, testSuite.strategyCanBeUsedForResourceDuringUpdates)
+	s.Step(`^resource "([^"]*)" are applied$`, testSuite.resourceConstraintsAreApplied)
 
 	s.Step(`^a "([^"]*)" which will manage the pods$`, testSuite.aResourceWillManagePods)
 	s.Step(`^a "([^"]*)" which will expose the pods as network services internal to the k8s cluster$`, testSuite.aResourceWillExposePods)

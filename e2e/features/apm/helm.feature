@@ -12,4 +12,6 @@ Scenario: The APM Server chart will create recommended K8S resources
     And a "ServiceAccount" resource manages RBAC
     And a "ClusterRole" resource manages RBAC
     And a "ClusterRoleBinding" resource manages RBAC
+    And resource "limits" are applied
+    And resource "requests" are applied
     And the "RollingUpdate" strategy can be used for "Deployment" during updates
