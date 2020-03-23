@@ -5,17 +5,17 @@ import (
 	"os"
 	"strings"
 
-	services "github.com/elastic/metricbeat-tests-poc/cli/services"
+	k8s "github.com/elastic/metricbeat-tests-poc/cli/services"
 	shell "github.com/elastic/metricbeat-tests-poc/cli/shell"
 
 	"github.com/cucumber/godog"
 	log "github.com/sirupsen/logrus"
 )
 
-var helm services.HelmManager
+var helm k8s.HelmManager
 
 //nolint:unused
-var kubectl services.Kubectl
+var kubectl k8s.Kubectl
 
 func init() {
 	helmVersion := "2.x"
@@ -23,7 +23,7 @@ func init() {
 		helmVersion = value
 	}
 
-	h, err := services.HelmFactory(helmVersion)
+	h, err := k8s.HelmFactory(helmVersion)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -226,20 +226,20 @@ func (ts *HelmChartTestSuite) getKubeStateMetricsName() string {
 
 // getResourceName returns the name of the service, in lowercase, based on the k8s resource
 func (ts *HelmChartTestSuite) getResourceName(resource string) string {
-	if resource == services.ResourceTypes.ClusterRole {
+	if resource == k8s.ResourceTypes.ClusterRole {
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role")
-	} else if resource == services.ResourceTypes.ClusterRoleBinding {
+	} else if resource == k8s.ResourceTypes.ClusterRoleBinding {
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role-binding")
-	} else if resource == services.ResourceTypes.ConfigMap {
+	} else if resource == k8s.ResourceTypes.ConfigMap {
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-config")
-	} else if resource == services.ResourceTypes.Daemonset {
+	} else if resource == k8s.ResourceTypes.Daemonset {
 		return strings.ToLower(ts.Name + "-" + ts.Name)
-	} else if resource == services.ResourceTypes.Deployment {
+	} else if resource == k8s.ResourceTypes.Deployment {
 		if ts.Name == "metricbeat" {
 			return strings.ToLower(ts.Name + "-" + ts.Name + "-metrics")
 		}
 		return strings.ToLower(ts.Name + "-" + ts.Name)
-	} else if resource == services.ResourceTypes.ServiceAccount {
+	} else if resource == k8s.ResourceTypes.ServiceAccount {
 		return strings.ToLower(ts.Name + "-" + ts.Name)
 	}
 
@@ -321,7 +321,7 @@ func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(reso
 }
 
 func (ts *HelmChartTestSuite) strategyCanBeUsedDuringUpdates(strategy string) error {
-	return ts.strategyCanBeUsedForResourceDuringUpdates(strategy, services.ResourceTypes.Daemonset)
+	return ts.strategyCanBeUsedForResourceDuringUpdates(strategy, k8s.ResourceTypes.Daemonset)
 }
 
 func (ts *HelmChartTestSuite) strategyCanBeUsedForResourceDuringUpdates(strategy string, resource string) error {
@@ -329,7 +329,7 @@ func (ts *HelmChartTestSuite) strategyCanBeUsedForResourceDuringUpdates(strategy
 	strategyKey := "strategy"
 	name := ts.getResourceName(resource)
 
-	if resource == services.ResourceTypes.Daemonset {
+	if resource == k8s.ResourceTypes.Daemonset {
 		strategyKey = "updateStrategy"
 	}
 
