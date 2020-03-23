@@ -321,22 +321,7 @@ func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(reso
 }
 
 func (ts *HelmChartTestSuite) strategyCanBeUsedDuringUpdates(strategy string) error {
-	output, err := kubectl.Run("get", "ds/"+ts.Name+"-"+ts.Name, "-o", `go-template='{{.spec.updateStrategy.type}}'`)
-	if err != nil {
-		return err
-	}
-
-	output = strings.ReplaceAll(output, "'", "")
-	if output != strategy {
-		return fmt.Errorf("There is no %s strategy to be used on updates. Actual: %s", strategy, output)
-	}
-
-	log.WithFields(log.Fields{
-		"strategy": strategy,
-		"chart":    ts.Name,
-	}).Debug("The strategy can be used during updates")
-
-	return nil
+	return ts.strategyCanBeUsedForResourceDuringUpdates(strategy, "daemonset")
 }
 
 func (ts *HelmChartTestSuite) strategyCanBeUsedForResourceDuringUpdates(strategy string, resource string) error {
