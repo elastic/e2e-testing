@@ -226,20 +226,20 @@ func (ts *HelmChartTestSuite) getKubeStateMetricsName() string {
 
 // getResourceName returns the name of the service, in lowercase, based on the k8s resource
 func (ts *HelmChartTestSuite) getResourceName(resource string) string {
-	if resource == "ClusterRole" {
+	if resource == services.ResourceTypes.ClusterRole {
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role")
-	} else if resource == "ClusterRoleBinding" {
+	} else if resource == services.ResourceTypes.ClusterRoleBinding {
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role-binding")
-	} else if resource == "ConfigMap" {
+	} else if resource == services.ResourceTypes.ConfigMap {
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-config")
-	} else if resource == "Daemonset" {
+	} else if resource == services.ResourceTypes.Daemonset {
 		return strings.ToLower(ts.Name + "-" + ts.Name)
-	} else if resource == "Deployment" {
+	} else if resource == services.ResourceTypes.Deployment {
 		if ts.Name == "metricbeat" {
 			return strings.ToLower(ts.Name + "-" + ts.Name + "-metrics")
 		}
 		return strings.ToLower(ts.Name + "-" + ts.Name)
-	} else if resource == "ServiceAccount" {
+	} else if resource == services.ResourceTypes.ServiceAccount {
 		return strings.ToLower(ts.Name + "-" + ts.Name)
 	}
 
@@ -321,7 +321,7 @@ func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(reso
 }
 
 func (ts *HelmChartTestSuite) strategyCanBeUsedDuringUpdates(strategy string) error {
-	return ts.strategyCanBeUsedForResourceDuringUpdates(strategy, "daemonset")
+	return ts.strategyCanBeUsedForResourceDuringUpdates(strategy, services.ResourceTypes.Daemonset)
 }
 
 func (ts *HelmChartTestSuite) strategyCanBeUsedForResourceDuringUpdates(strategy string, resource string) error {
@@ -329,7 +329,7 @@ func (ts *HelmChartTestSuite) strategyCanBeUsedForResourceDuringUpdates(strategy
 	strategyKey := "strategy"
 	name := ts.getResourceName(resource)
 
-	if lowerResource == "daemonset" {
+	if resource == services.ResourceTypes.Daemonset {
 		strategyKey = "updateStrategy"
 	}
 

@@ -7,6 +7,29 @@ import (
 	"strings"
 )
 
+// Resource hide the real type of the enum
+// and users can use it to define the var for accepting enum
+type Resource = string
+
+type resourceList struct {
+	ClusterRole        Resource
+	ClusterRoleBinding Resource
+	ConfigMap          Resource
+	Daemonset          Resource
+	Deployment         Resource
+	ServiceAccount     Resource
+}
+
+// ResourceTypes for public use
+var ResourceTypes = &resourceList{
+	ClusterRole:        "ClusterRole",
+	ClusterRoleBinding: "ClusterRoleBinding",
+	ConfigMap:          "ConfigMap",
+	Daemonset:          "Daemonset",
+	Deployment:         "Deployment",
+	ServiceAccount:     "ServiceAccount",
+}
+
 // Kubectl define some operation using kubectl CLI.
 type Kubectl struct {
 }
@@ -40,7 +63,7 @@ func (k *Kubectl) YamlToObj(yamlValue string) (map[string]interface{}, error) {
 
 // use kubectl to get a resource by type and name, and a jsonpath, and return the definition of the resource in JSON.
 func (k *Kubectl) GetResourceJSONPath(resourceType, resource, jsonPath string) (string, error) {
-	output, err := k.Run("get", resourceType, resource, "-o", "jsonpath='" + jsonPath + "'")
+	output, err := k.Run("get", resourceType, resource, "-o", "jsonpath='"+jsonPath+"'")
 	if err != nil {
 		return "{}", err
 	}
@@ -54,7 +77,7 @@ func (k *Kubectl) GetResourceSelector(resourceType, resource string) (string, er
 		return "", err
 	}
 
-	output, err = k.Run("get", "--raw", strings.Replace(output, "'", "", -1) + "/scale")
+	output, err = k.Run("get", "--raw", strings.Replace(output, "'", "", -1)+"/scale")
 	if err != nil {
 		return "", err
 	}
@@ -64,7 +87,7 @@ func (k *Kubectl) GetResourceSelector(resourceType, resource string) (string, er
 		return "", err
 	}
 
-	status := jsonObj["status"].(map[string]interface {})
+	status := jsonObj["status"].(map[string]interface{})
 	return status["targetSelector"].(string), nil
 }
 
@@ -79,7 +102,7 @@ func (k *Kubectl) GetResourcesBySelector(resourceType, selector string) (map[str
 }
 
 // Use kubecontrol describe command to get the description of a resource identified by a selector, return the resource in a map[string]interface{}.
-func (k *Kubectl) Describe(resourceType, selector string)  (map[string]interface{}, error) {
+func (k *Kubectl) Describe(resourceType, selector string) (map[string]interface{}, error) {
 	output, err := k.Run("describe", resourceType, "--selector", selector)
 	if err != nil {
 		return nil, err
