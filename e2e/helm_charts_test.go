@@ -13,6 +13,7 @@ import (
 )
 
 var helm services.HelmManager
+
 //nolint:unused
 var kubectl services.Kubectl
 
