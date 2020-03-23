@@ -174,6 +174,12 @@ func (h *helm2X) Init() error {
 }
 
 func (h *helm2X) InstallChart(name string, chart string, version string, flags []string) error {
+	log.WithFields(log.Fields{
+		"chart":   chart,
+		"name":    name,
+		"version": version,
+	}).Debug("Installing chart")
+
 	args := []string{
 		"install", chart, "--name", name, "--version", version,
 	}
