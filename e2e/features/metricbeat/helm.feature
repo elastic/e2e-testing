@@ -14,6 +14,8 @@ Scenario: The Metricbeat chart will create recommended K8S resources
     And a "ServiceAccount" resource manages RBAC
     And a "ClusterRole" resource manages RBAC
     And a "ClusterRoleBinding" resource manages RBAC
+    And the "RollingUpdate" strategy can be used for "Deployment" during updates
+    And the "RollingUpdate" strategy can be used for "Daemonset" during updates
     And the "data" volume is mounted at "/usr/share/metricbeat/data" with no subpath
     And the "varlibdockercontainers" volume is mounted at "/var/lib/docker/containers" with no subpath
     And the "varrundockersock" volume is mounted at "/var/run/docker.sock" with no subpath

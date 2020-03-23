@@ -311,6 +311,53 @@ func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(reso
 	return nil
 }
 
+func (ts *HelmChartTestSuite) strategyCanBeUsedDuringUpdates(strategy string) error {
+	output, err := kubectl.Run("get", "ds/"+ts.Name+"-"+ts.Name, "-o", `go-template='{{.spec.updateStrategy.type}}'`)
+	if err != nil {
+		return err
+	}
+
+	output = strings.ReplaceAll(output, "'", "")
+	if output != strategy {
+		return fmt.Errorf("There is no %s strategy to be used on updates. Actual: %s", strategy, output)
+	}
+
+	log.WithFields(log.Fields{
+		"strategy": strategy,
+		"chart":    ts.Name,
+	}).Debug("The strategy can be used during updates")
+
+	return nil
+}
+
+func (ts *HelmChartTestSuite) strategyCanBeUsedForResourceDuringUpdates(strategy string, resource string) error {
+	lowerResource := strings.ToLower(resource)
+	strategyKey := "strategy"
+	name := ts.Name + "-" + ts.Name + "-metrics"
+
+	if lowerResource == "daemonset" {
+		strategyKey = "updateStrategy"
+		name = ts.Name + "-" + ts.Name
+	}
+
+	output, err := kubectl.Run("get", lowerResource, name, "-o", `go-template='{{.spec.`+strategyKey+`.type}}'`)
+	output = strings.ReplaceAll(output, "'", "")
+	if err != nil {
+		return err
+	}
+	if output != strategy {
+		return fmt.Errorf("There is no %s strategy to be used for %s on updates. Actual: %s", strategy, resource, output)
+	}
+
+	log.WithFields(log.Fields{
+		"strategy": strategy,
+		"resource": resource,
+		"name":     name,
+	}).Debug("The strategy can be used for resource during updates")
+
+	return nil
+}
+
 func (ts *HelmChartTestSuite) volumeMountedWithNoSubpath(name string, mountPath string) error {
 	return ts.volumeMountedWithSubpath(name, mountPath, "")
 }
@@ -428,6 +475,8 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	s.Step(`^a "([^"]*)" resource manages RBAC$`, testSuite.aResourceManagesRBAC)
 	s.Step(`^the "([^"]*)" volume is mounted at "([^"]*)" with subpath "([^"]*)"$`, testSuite.volumeMountedWithSubpath)
 	s.Step(`^the "([^"]*)" volume is mounted at "([^"]*)" with no subpath$`, testSuite.volumeMountedWithNoSubpath)
+	s.Step(`^the "([^"]*)" strategy can be used during updates$`, testSuite.strategyCanBeUsedDuringUpdates)
+	s.Step(`^the "([^"]*)" strategy can be used for "([^"]*)" during updates$`, testSuite.strategyCanBeUsedForResourceDuringUpdates)
 
 	s.Step(`^a "([^"]*)" which will manage the pods$`, testSuite.aResourceWillManagePods)
 	s.Step(`^a "([^"]*)" which will expose the pods as network services internal to the k8s cluster$`, testSuite.aResourceWillExposePods)
