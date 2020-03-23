@@ -333,8 +333,7 @@ func (ts *HelmChartTestSuite) strategyCanBeUsedForResourceDuringUpdates(strategy
 		strategyKey = "updateStrategy"
 	}
 
-	output, err := kubectl.Run("get", lowerResource, name, "-o", `go-template='{{.spec.`+strategyKey+`.type}}'`)
-	output = strings.ReplaceAll(output, "'", "")
+	output, err := kubectl.Run("get", lowerResource, name, "-o", `go-template={{.spec.`+strategyKey+`.type}}`)
 	if err != nil {
 		return err
 	}
