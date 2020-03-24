@@ -76,6 +76,11 @@ func (b projectBuilder) WithName(name string) projectBuilder {
 
 func (b projectBuilder) WithRemote(remote string) projectBuilder {
 	coordinates := strings.Split(remote, ":")
+	if len(coordinates) == 1 {
+		return b.withUser(coordinates[0]).withBranch("master")
+	} else if len(coordinates) != 2 {
+		return b
+	}
 
 	return b.withUser(coordinates[0]).withBranch(coordinates[1])
 }
