@@ -3,13 +3,13 @@ package config
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"os/user"
 	"path"
 	"path/filepath"
 	"strings"
 
 	io "github.com/elastic/metricbeat-tests-poc/cli/internal"
+	shell "github.com/elastic/metricbeat-tests-poc/cli/shell"
 
 	packr "github.com/gobuffalo/packr/v2"
 	log "github.com/sirupsen/logrus"
@@ -127,7 +127,11 @@ func GetServiceConfig(service string) (Service, bool) {
 func Init() {
 	configureLogger()
 
-	checkInstalledSoftware()
+	binaries := []string{
+		"docker",
+		"docker-compose",
+	}
+	shell.CheckInstalledSoftware(binaries)
 
 	InitConfig()
 }
@@ -234,19 +238,6 @@ func checkConfigDirs(workspace string) {
 		"servicesPath": servicesPath,
 		"stacksPath":   stacksPath,
 	}).Debug("'op' workdirs created.")
-}
-
-// checkInstalledSoftware checks that the required software is present
-func checkInstalledSoftware() {
-	log.Debug("Validating required tools...")
-	binaries := []string{
-		"docker",
-		"docker-compose",
-	}
-
-	for _, binary := range binaries {
-		which(binary)
-	}
 }
 
 func configureLogger() {
@@ -379,20 +370,4 @@ func readFilesFromFileSystem(serviceType string) {
 			}
 		}
 	}
-}
-
-// which checks if software is installed
-func which(software string) {
-	path, err := exec.LookPath(software)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":    err,
-			"software": software,
-		}).Fatal("Required binary is not present")
-	}
-
-	log.WithFields(log.Fields{
-		"software": software,
-		"path":     path,
-	}).Debug("Binary is present")
 }

@@ -24,8 +24,13 @@ pipeline {
     issueCommentTrigger('(?i).*(?:jenkins\\W+)?run\\W+(?:the\\W+)?tests(?:\\W+please)?.*')
   }
   parameters {
+    choice(name: 'LOG_LEVEL', choices: ['INFO', 'DEBUG'], description: 'Log level to be used')
     string(name: 'STACK_VERSION', defaultValue: '7.6.0', description: 'SemVer version of the stack to be used.')
     string(name: 'METRICBEAT_VERSION', defaultValue: '7.6.0', description: 'SemVer version of the metricbeat to be used.')
+    string(name: 'HELM_CHART_VERSION', defaultValue: '7.6.1', description: 'SemVer version of Helm chart to be used.')
+    string(name: 'HELM_VERSION', defaultValue: '2.16.3', description: 'SemVer version of Helm to be used.')
+    string(name: 'KIND_VERSION', defaultValue: '0.7.0', description: 'SemVer version of Kind to be used.')
+    string(name: 'KUBERNETES_VERSION', defaultValue: '1.15.3', description: 'SemVer version of Kubernetes to be used.')
     string(name: 'GO_VERSION', defaultValue: '1.13.4', description: "Go version to use.")
   }
   stages {
@@ -41,6 +46,11 @@ pipeline {
         GOPROXY = 'https://proxy.golang.org'
         METRICBEAT_VERSION = "${params.METRICBEAT_VERSION.trim()}"
         STACK_VERSION = "${params.STACK_VERSION.trim()}"
+        HELM_CHART_VERSION = "${params.HELM_CHART_VERSION.trim()}"
+        HELM_VERSION = "${params.HELM_VERSION.trim()}"
+        KIND_VERSION = "${params.KIND_VERSION.trim()}"
+        KUBERNETES_VERSION = "${params.KUBERNETES_VERSION.trim()}"
+        LOG_LEVEL = "${params.LOG_LEVEL.trim()}"
       }
       stages {
         stage('Checkout') {
@@ -94,7 +104,7 @@ pipeline {
           options { skipDefaultCheckout() }
           environment {
             GO111MODULE = 'on'
-            PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.GOPATH}/bin:${HOME}/go/bin:${env.PATH}"
+            PATH = "${env.HOME}/bin:${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.GOPATH}/bin:${HOME}/go/bin:${env.PATH}"
             GOPROXY = 'https://proxy.golang.org'
           }
           steps {

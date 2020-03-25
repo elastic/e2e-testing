@@ -47,15 +47,6 @@ func (b projectBuilder) Build() Project {
 	return builder.GetStruct(b).(Project)
 }
 
-func (b projectBuilder) CheckRemoteAndBranch() projectBuilder {
-	workspace := filepath.Join(b.getField("BaseWorkspace"), b.getField("Name"))
-
-	branch := GetBranch(workspace)
-	remote := GetRemote(workspace, b.getField("Domain"))
-
-	return b.withBranch(branch).withUser(remote)
-}
-
 func (b projectBuilder) WithBaseWorkspace(baseWorkspace string) projectBuilder {
 	return builder.Set(b, "BaseWorkspace", baseWorkspace).(projectBuilder)
 }
@@ -74,6 +65,11 @@ func (b projectBuilder) WithName(name string) projectBuilder {
 
 func (b projectBuilder) WithRemote(remote string) projectBuilder {
 	coordinates := strings.Split(remote, ":")
+	if len(coordinates) == 1 {
+		return b.withUser(coordinates[0]).withBranch("master")
+	} else if len(coordinates) != 2 {
+		return b
+	}
 
 	return b.withUser(coordinates[0]).withBranch(coordinates[1])
 }
@@ -84,12 +80,6 @@ func (b projectBuilder) withBranch(branch string) projectBuilder {
 
 func (b projectBuilder) withUser(user string) projectBuilder {
 	return builder.Set(b, "User", user).(projectBuilder)
-}
-
-func (b projectBuilder) getField(fieldName string) string {
-	value, _ := builder.Get(b, fieldName)
-
-	return value.(string)
 }
 
 // ProjectBuilder builder for git projects
@@ -135,25 +125,6 @@ func Clone(repositories ...Project) {
 			}
 		}
 	}
-}
-
-// GetBranch returns the current branch from a git repository
-func GetBranch(gitRepositoryDir string) string {
-	args := []string{"rev-parse", "--abbrev-ref", "HEAD"}
-
-	return Execute(gitRepositoryDir, "git", args[0:]...)
-}
-
-// GetRemote returns the remote from a git repository
-func GetRemote(gitRepositoryDir string, gitDomain string) string {
-	args := []string{"remote", "get-url", "origin"}
-
-	remote := Execute(gitRepositoryDir, "git", args[0:]...)
-
-	remote1 := strings.TrimPrefix(remote, GitProtocol+gitDomain+":")
-	remote2 := strings.Split(remote1, "/")
-
-	return remote2[0]
 }
 
 func cloneGithubRepository(

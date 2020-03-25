@@ -8,7 +8,7 @@ So for that reason we are adding [smoke tests](http://softwaretestingfundamental
 
 ## Running the tests
 
-The tests are located under the [./](root) directory. Place your terminal there and execute `godog`, which is a Golang tool developed by DATA-DOG folks supporting Cucumber:
+The tests are located under the [./](root) directory. Place your terminal there and execute `godog`, which is the official Golang implementation for Cucumber:
 
 ```shell
 $ GO111MODULE=on godog
