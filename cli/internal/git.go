@@ -82,12 +82,6 @@ func (b projectBuilder) withUser(user string) projectBuilder {
 	return builder.Set(b, "User", user).(projectBuilder)
 }
 
-func (b projectBuilder) getField(fieldName string) string {
-	value, _ := builder.Get(b, fieldName)
-
-	return value.(string)
-}
-
 // ProjectBuilder builder for git projects
 var ProjectBuilder = builder.Register(projectBuilder{}, Project{}).(projectBuilder)
 
