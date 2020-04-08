@@ -9,6 +9,7 @@ import (
 	shell "github.com/elastic/metricbeat-tests-poc/cli/shell"
 
 	"github.com/cucumber/godog"
+	messages "github.com/cucumber/messages-go/v10"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -509,14 +510,14 @@ func HelmChartFeatureContext(s *godog.Suite) {
 		testSuite.addElasticRepo()
 		testSuite.installRuntimeDependencies("elasticsearch")
 	})
-	s.BeforeScenario(func(interface{}) {
+	s.BeforeScenario(func(*messages.Pickle) {
 		log.Info("Before Helm scenario...")
 	})
 	s.AfterSuite(func() {
 		log.Debug("After Suite...")
 		testSuite.destroyCluster()
 	})
-	s.AfterScenario(func(interface{}, error) {
+	s.AfterScenario(func(*messages.Pickle, error) {
 		log.Debug("After Helm scenario...")
 		testSuite.deleteChart()
 	})

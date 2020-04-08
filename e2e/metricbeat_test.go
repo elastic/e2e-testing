@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/cucumber/godog"
+	messages "github.com/cucumber/messages-go/v10"
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
 	log "github.com/sirupsen/logrus"
@@ -122,10 +123,10 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 
 	s.Step(`^metricbeat is installed using "([^"]*)" configuration$`, testSuite.installedUsingConfiguration)
 
-	s.BeforeScenario(func(interface{}) {
+	s.BeforeScenario(func(*messages.Pickle) {
 		log.Debug("Before scenario...")
 	})
-	s.AfterScenario(func(interface{}, error) {
+	s.AfterScenario(func(*messages.Pickle, error) {
 		log.Debug("After scenario...")
 		err := testSuite.CleanUp()
 		if err != nil {
