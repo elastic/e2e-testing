@@ -142,7 +142,7 @@ export OP_QUERY_MAX_ATTEMPTS=${OP_QUERY_MAX_ATTEMPTS:-5}
 export OP_RETRY_TIMEOUT=${OP_RETRY_TIMEOUT:-3}
 export FORMAT=${FORMAT:-pretty} # valid formats are: pretty, junit
 # If you do not pass a '-t moduleName' argument, then all tests will be run
-godog --format=${FORMAT} -t redis
+go test -v --godog.format=${FORMAT} redis
 ```
 
 >For environment variables reference affecting the logs, please check out [CLI's docs](../cli/README.md#logging)

@@ -1,4 +1,3 @@
-@metricbeat
 Feature: As a Metricbeat developer I want to check that default configuration works as expected
 
 Scenario Outline: Check <configuration> configuration is sending metrics to Elasticsearch without errors
