@@ -121,19 +121,34 @@ func init() {
 func TestMain(m *testing.M) {
 	flag.Parse()
 
-	feature := flag.Arg(0)
-	metadata := findSupportedContext(feature)
+	metadatas := []*contextMetadata{}
+	features := flag.Args()
+	featurePaths := []string{}
 
-	if metadata == nil {
-		log.Errorf("Sorry but we don't support tests for %s at this moment :(", feature)
+	for _, feature := range features {
+		metadata := findSupportedContext(feature)
+
+		if metadata == nil {
+			log.Warnf("Sorry but we don't support tests for %s at this moment. Skipping it :(", feature)
+			continue
+		}
+
+		metadatas = append(metadatas, metadata)
+		featurePaths = append(featurePaths, metadata.getFeaturePaths()...)
+	}
+
+	if len(metadatas) == 0 {
+		log.Error("We did not find anything to execute. Exiting")
 		os.Exit(1)
 	}
 
-	opt.Paths = metadata.getFeaturePaths()
+	opt.Paths = featurePaths
 
 	status := godog.RunWithOptions("godog", func(s *godog.Suite) {
-		for _, f := range metadata.contextFuncs {
-			f(s)
+		for _, metadata := range metadatas {
+			for _, f := range metadata.contextFuncs {
+				f(s)
+			}
 		}
 	}, opt)
 
