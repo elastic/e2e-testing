@@ -52,7 +52,7 @@ Ok, you want to contribute the tests for a new integration module. Then you have
 - A `configuration file`, in YAML format, with any Metricbeat configuration that is specific to the module.
 
 ### Feature files
-We will create use cases for the module in a separate `.feature` file, ideally named after module's name (i.e. _apache.feature_). This feature file is a Cucumber requirement, that will be parsed by the test runner and matched against the Golang code implementing the tests.
+We will create use cases for the module in a separate `.feature` file, ideally named after module's name (i.e. _apache.feature_), and located under the `metricbeat` features directory. This feature file is a Cucumber requirement, that will be parsed by the test runner and matched against the Golang code implementing the tests.
 
 ```cucumber
 @apache
@@ -61,15 +61,17 @@ Feature: As a Metricbeat developer I want to check that the Apache module works 
 Scenario Outline: Check module is sending metrics to Elasticsearch without errors
   Given Apache "<apache_version>" is running for metricbeat
     And metricbeat is installed and configured for Apache module
+    And metricbeat waits "20" seconds for the service
+  When metricbeat runs for "20" seconds 
   Then there are "Apache" events in the index
     And there are no errors in the index
 Examples:
 | apache_version |
-| 2.2            |
-| 2.4            |
+| 2.4.12         |
+| 2.4.20         |
 ```
 
->You should write as many scenarios as you considering, covering different use cases in each scenario, taking care of duplicated steps that could be reused by other module.
+>You should write as many scenarios as you consider, covering different use cases in each scenario, taking care of duplicated steps that could be reused by other module.
 
 The anatomy of a feature file is:
 
@@ -110,8 +112,8 @@ or simply run as the CI does:
 
 ```shell
 $ export GO_VERSION=1.12.7                         # exports which GIMME version to use
-$ export STACK_VERSION=7.5.0                       # exports stack version as runtime
-$ export METRICBEAT_VERSION=7.5.0                  # exports metricbeat version
+$ export STACK_VERSION=7.6.0                       # exports stack version as runtime
+$ export METRICBEAT_VERSION=7.6.0                  # exports metricbeat version
 $ #export FEATURE=redis                            # exports which feature to run (default 'all')
 $ ./.ci/scripts/functional-test.sh ${GO_VERSION} ${FEATURE}
 ```
