@@ -121,21 +121,7 @@ func init() {
 func TestMain(m *testing.M) {
 	flag.Parse()
 
-	metadatas := []*contextMetadata{}
-	features := flag.Args()
-	featurePaths := []string{}
-
-	for _, feature := range features {
-		metadata := findSupportedContext(feature)
-
-		if metadata == nil {
-			log.Warnf("Sorry but we don't support tests for %s at this moment. Skipping it :(", feature)
-			continue
-		}
-
-		metadatas = append(metadatas, metadata)
-		featurePaths = append(featurePaths, metadata.getFeaturePaths()...)
-	}
+	featurePaths, metadatas := parseFeatureFlags(flag.Args())
 
 	if len(metadatas) == 0 {
 		log.Error("We did not find anything to execute. Exiting")
@@ -171,4 +157,30 @@ func findSupportedContext(feature string) *contextMetadata {
 	}
 
 	return nil
+}
+
+func parseFeatureFlags(flags []string) ([]string, []*contextMetadata) {
+	metadatas := []*contextMetadata{}
+	featurePaths := []string{}
+
+	if len(flags) == 1 && flags[0] == "all" {
+		for k, metadata := range supportedProducts {
+			metadata.name = k // match key with context name
+			metadatas = append(metadatas, metadata)
+		}
+	} else {
+		for _, feature := range flags {
+			metadata := findSupportedContext(feature)
+
+			if metadata == nil {
+				log.Warnf("Sorry but we don't support tests for %s at this moment. Skipping it :(", feature)
+				continue
+			}
+
+			metadatas = append(metadatas, metadata)
+			featurePaths = append(featurePaths, metadata.getFeaturePaths()...)
+		}
+	}
+
+	return featurePaths, metadatas
 }
