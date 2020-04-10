@@ -43,6 +43,7 @@ type MetricbeatTestSuite struct {
 }
 
 // As we are using an index per scenario outline, with an index name formed by metricbeat-version1-module-version2,
+// or metricbeat-version1-module-variant-version2,
 // and because of the ILM is configured on metricbeat side, then we can use an asterisk for the index name:
 // each scenario outline will be namespaced, so no collitions between different test cases should appear
 func (mts *MetricbeatTestSuite) setIndexName() {
@@ -50,14 +51,18 @@ func (mts *MetricbeatTestSuite) setIndexName() {
 
 	var index string
 	if mts.ServiceName != "" {
-		index = fmt.Sprintf("metricbeat-%s-%s-%s", mVersion, mts.ServiceName, mts.ServiceVersion)
+		if mts.ServiceVariant == "" {
+			index = fmt.Sprintf("metricbeat-%s-%s-%s", mVersion, mts.ServiceName, mts.ServiceVersion)
+		} else {
+			index = fmt.Sprintf("metricbeat-%s-%s-%s-%s", mVersion, mts.ServiceName, mts.ServiceVariant, mts.ServiceVersion)
+		}
 	} else {
 		index = fmt.Sprintf("metricbeat-%s", mVersion)
 	}
 
-	index += "-" + strings.ToLower(randomString(8))
+	index += "-" + randomString(8)
 
-	mts.IndexName = index
+	mts.IndexName = strings.ToLower(index)
 }
 
 // CleanUp cleans up services in the test suite
@@ -155,8 +160,8 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForVariantModule(serviceVa
 
 	// at this point we have everything to define the index name
 	mts.Version = metricbeatVersion
-	mts.setIndexName()
 	mts.ServiceVariant = serviceVariant
+	mts.setIndexName()
 	mts.ServiceType = serviceType
 
 	// look up configurations under workspace's configurations directory
@@ -321,6 +326,8 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 	if err != nil {
 		return err
 	}
+
+	query.IndexName = mts.IndexName
 
 	return assertHitsArePresent(result, query)
 }
