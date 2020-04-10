@@ -245,11 +245,17 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	}
 
 	if mts.ServiceName != "" && mts.ServiceVersion != "" {
-		log.WithFields(log.Fields{
+		fields := log.Fields{
 			"metricbeatVersion": mts.Version,
 			"service":           mts.ServiceName,
 			"serviceVersion":    mts.ServiceVersion,
-		}).Info("Metricbeat is running configured for the service")
+		}
+
+		if mts.ServiceVariant != "" {
+			fields["variant"] = mts.ServiceVariant
+		}
+
+		log.WithFields(fields).Info("Metricbeat is running configured for the service")
 	} else {
 		log.WithFields(log.Fields{
 			"metricbeatVersion": mts.Version,
