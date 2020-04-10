@@ -18,9 +18,6 @@ import (
 // It can be overriden by OP_METRICBEAT_VERSION env var
 var metricbeatVersion = "7.6.0"
 
-//nolint:unused
-var query ElasticsearchQuery
-
 var serviceManager services.ServiceManager
 
 func init() {
@@ -32,14 +29,19 @@ func init() {
 // the service to be monitored
 //nolint:unused
 type MetricbeatTestSuite struct {
-	cleanUpTmpFiles   bool   // if it's needed to clean up temporary files
-	configurationFile string // the  name of the configuration file to be used in this test suite
-	IndexName         string // the unique name for the index to be used in this test suite
-	ServiceName       string // the service to be monitored by metricbeat
-	ServiceType       string // the type of the service to be monitored by metricbeat
-	ServiceVariant    string // the variant of the service to be monitored by metricbeat
-	ServiceVersion    string // the version of the service to be monitored by metricbeat
-	Version           string // the metricbeat version for the test
+	cleanUpTmpFiles   bool               // if it's needed to clean up temporary files
+	configurationFile string             // the  name of the configuration file to be used in this test suite
+	ServiceName       string             // the service to be monitored by metricbeat
+	ServiceType       string             // the type of the service to be monitored by metricbeat
+	ServiceVariant    string             // the variant of the service to be monitored by metricbeat
+	ServiceVersion    string             // the version of the service to be monitored by metricbeat
+	Query             ElasticsearchQuery // the specs for the ES query
+	Version           string             // the metricbeat version for the test
+}
+
+// getIndexName returns the index to be used when querying Elasticsearch
+func (mts *MetricbeatTestSuite) getIndexName() string {
+	return mts.Query.IndexName
 }
 
 // As we are using an index per scenario outline, with an index name formed by metricbeat-version1-module-version2,
@@ -62,7 +64,7 @@ func (mts *MetricbeatTestSuite) setIndexName() {
 
 	index += "-" + randomString(8)
 
-	mts.IndexName = strings.ToLower(index)
+	mts.Query.IndexName = strings.ToLower(index)
 }
 
 // CleanUp cleans up services in the test suite
@@ -70,11 +72,11 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	serviceManager := services.NewServiceManager()
 
 	fn := func(ctx context.Context) {
-		err := deleteIndex(ctx, "metricbeat", mts.IndexName)
+		err := deleteIndex(ctx, "metricbeat", mts.getIndexName())
 		if err != nil {
 			log.WithFields(log.Fields{
 				"stack": "metricbeat",
-				"index": mts.IndexName,
+				"index": mts.getIndexName(),
 			}).Warn("The index was not deleted, but we are not failing the test case")
 		}
 	}
@@ -115,7 +117,9 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 // MetricbeatFeatureContext adds steps to the Godog test suite
 //nolint:deadcode,unused
 func MetricbeatFeatureContext(s *godog.Suite) {
-	testSuite := MetricbeatTestSuite{}
+	testSuite := MetricbeatTestSuite{
+		Query: ElasticsearchQuery{},
+	}
 
 	s.Step(`^([^"]*) "([^"]*)" is running for metricbeat$`, testSuite.serviceIsRunningForMetricbeat)
 	s.Step(`^"([^"]*)" v([^"]*), variant of "([^"]*)", is running for metricbeat$`, testSuite.serviceVariantIsRunningForMetricbeat)
@@ -196,10 +200,8 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 		return err
 	}
 
-	query = ElasticsearchQuery{
-		EventModule:    "system",
-		ServiceVersion: mts.Version,
-	}
+	mts.Query.EventModule = "system"
+	mts.Query.ServiceVersion = mts.Version
 
 	return nil
 }
@@ -212,10 +214,8 @@ func (mts *MetricbeatTestSuite) runsForSeconds(seconds string) error {
 		return err
 	}
 
-	query = ElasticsearchQuery{
-		EventModule:    mts.ServiceType,
-		ServiceVersion: mts.ServiceVersion,
-	}
+	mts.Query.EventModule = mts.ServiceType
+	mts.Query.ServiceVersion = mts.ServiceVersion
 
 	return sleep(seconds)
 }
@@ -226,7 +226,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 
 	env := map[string]string{
 		"BEAT_STRICT_PERMS":     "false",
-		"indexName":             mts.IndexName,
+		"indexName":             mts.getIndexName(),
 		"metricbeatConfigFile":  mts.configurationFile,
 		"metricbeatTag":         mts.Version,
 		"stackVersion":          stackVersion,
@@ -248,11 +248,17 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		return err
 	}
 
-	log.WithFields(log.Fields{
-		"metricbeatVersion": mts.Version,
-		"service":           mts.ServiceName,
-		"serviceVersion":    mts.ServiceVersion,
-	}).Info("Metricbeat is running configured for the service")
+	if mts.ServiceName != "" && mts.ServiceVersion != "" {
+		log.WithFields(log.Fields{
+			"metricbeatVersion": mts.Version,
+			"service":           mts.ServiceName,
+			"serviceVersion":    mts.ServiceVersion,
+		}).Info("Metricbeat is running configured for the service")
+	} else {
+		log.WithFields(log.Fields{
+			"metricbeatVersion": mts.Version,
+		}).Info("Metricbeat is running")
+	}
 
 	return nil
 }
@@ -312,7 +318,7 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 				"must": []map[string]interface{}{
 					{
 						"match": map[string]interface{}{
-							"event.module": query.EventModule,
+							"event.module": mts.Query.EventModule,
 						},
 					},
 				},
@@ -322,14 +328,12 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 
 	stackName := "metricbeat"
 
-	result, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts, queryRetryTimeout)
+	result, err := retrySearch(stackName, mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
 	if err != nil {
 		return err
 	}
 
-	query.IndexName = mts.IndexName
-
-	return assertHitsArePresent(result, query)
+	return assertHitsArePresent(result, mts.Query)
 }
 
 func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
@@ -339,7 +343,7 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 				"must": []map[string]interface{}{
 					{
 						"match": map[string]interface{}{
-							"event.module": query.EventModule,
+							"event.module": mts.Query.EventModule,
 						},
 					},
 				},
@@ -349,12 +353,12 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 
 	stackName := "metricbeat"
 
-	result, err := retrySearch(stackName, mts.IndexName, esQuery, queryMaxAttempts, queryRetryTimeout)
+	result, err := retrySearch(stackName, mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
 	if err != nil {
 		return err
 	}
 
-	return assertHitsDoNotContainErrors(result, query)
+	return assertHitsDoNotContainErrors(result, mts.Query)
 }
 
 // waitsSeconds waits for a number of seconds before the next step
