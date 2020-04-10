@@ -44,6 +44,10 @@ func (mts *MetricbeatTestSuite) getIndexName() string {
 	return mts.Query.IndexName
 }
 
+func (mts *MetricbeatTestSuite) setEventModule(eventModule string) {
+	mts.Query.EventModule = eventModule
+}
+
 // As we are using an index per scenario outline, with an index name formed by metricbeat-version1-module-version2,
 // or metricbeat-version1-module-variant-version2,
 // and because of the ILM is configured on metricbeat side, then we can use an asterisk for the index name:
@@ -65,6 +69,10 @@ func (mts *MetricbeatTestSuite) setIndexName() {
 	index += "-" + randomString(8)
 
 	mts.Query.IndexName = strings.ToLower(index)
+}
+
+func (mts *MetricbeatTestSuite) setServiceVersion(version string) {
+	mts.Query.ServiceVersion = version
 }
 
 // CleanUp cleans up services in the test suite
@@ -156,6 +164,9 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 	dir, _ := os.Getwd()
 	mts.configurationFile = path.Join(dir, "configurations", "metricbeat", mts.ServiceName+".yml")
 
+	mts.setEventModule(mts.ServiceType)
+	mts.setServiceVersion(mts.Version)
+
 	return nil
 }
 
@@ -191,13 +202,8 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 	mts.configurationFile = configurationFilePath
 	mts.cleanUpTmpFiles = true
 
-	err = mts.runMetricbeatService()
-	if err != nil {
-		return err
-	}
-
-	mts.Query.EventModule = "system"
-	mts.Query.ServiceVersion = mts.Version
+	mts.setEventModule("system")
+	mts.setServiceVersion(mts.Version)
 
 	return nil
 }
@@ -209,9 +215,6 @@ func (mts *MetricbeatTestSuite) runsForSeconds(seconds string) error {
 	if err != nil {
 		return err
 	}
-
-	mts.Query.EventModule = mts.ServiceType
-	mts.Query.ServiceVersion = mts.ServiceVersion
 
 	return sleep(seconds)
 }
