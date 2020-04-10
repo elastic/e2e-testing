@@ -160,17 +160,13 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 }
 
 func (mts *MetricbeatTestSuite) installedAndConfiguredForVariantModule(serviceVariant string, serviceType string) error {
-	serviceType = strings.ToLower(serviceType)
-
-	// at this point we have everything to define the index name
-	mts.Version = metricbeatVersion
 	mts.ServiceVariant = serviceVariant
-	mts.setIndexName()
-	mts.ServiceType = serviceType
 
-	// look up configurations under workspace's configurations directory
-	dir, _ := os.Getwd()
-	mts.configurationFile = path.Join(dir, "configurations", "metricbeat", mts.ServiceName+".yml")
+	err := mts.installedAndConfiguredForModule(serviceType)
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
