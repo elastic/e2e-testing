@@ -18,6 +18,7 @@ import (
 //nolint:unused
 type ElasticsearchQuery struct {
 	EventModule    string
+	IndexName      string
 	ServiceVersion string
 }
 
@@ -144,6 +145,7 @@ func search(stackName string, indexName string, query map[string]interface{}) (s
 	}
 
 	log.WithFields(log.Fields{
+		"index": indexName,
 		"query": fmt.Sprintf("%s", query),
 	}).Debug("Elasticsearch query")
 

@@ -12,8 +12,8 @@ func assertHitsArePresent(hits map[string]interface{}, q ElasticsearchQuery) err
 	hitsCount := len(hits["hits"].(map[string]interface{})["hits"].([]interface{}))
 	if hitsCount == 0 {
 		return fmt.Errorf(
-			"There aren't documents for %s-%s on Metricbeat index",
-			q.EventModule, q.ServiceVersion)
+			"There aren't documents for %s-%s on Metricbeat index %s",
+			q.EventModule, q.ServiceVersion, q.IndexName)
 	}
 
 	return nil
@@ -33,8 +33,8 @@ func assertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQu
 				}).Error("Error Hit found")
 
 				return fmt.Errorf(
-					"There are errors for %s-%s on Metricbeat index",
-					q.EventModule, q.ServiceVersion)
+					"There are errors for %s-%s on Metricbeat index %s",
+					q.EventModule, q.ServiceVersion, q.IndexName)
 			}
 		}
 	}
