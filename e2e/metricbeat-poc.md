@@ -49,7 +49,6 @@ All the Gherkin (Cucumber) specifications are written in `.feature` files.
 A good example could be [this one](./features/metricbeat/mysql.feature):
 
 ```cucumber
-@mysql
 Feature: As a Metricbeat developer I want to check that the MySQL module works as expected
 
 Scenario Outline: Check module is sending metrics to Elasticsearch without errors
