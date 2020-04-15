@@ -235,14 +235,12 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 
 	err := serviceManager.AddServicesToCompose("metricbeat", []string{"metricbeat"}, env)
 	if err != nil {
-		msg := fmt.Sprintf("Could not run Metricbeat %s for %s %v", mts.Version, mts.ServiceName, err)
-
 		log.WithFields(log.Fields{
 			"error":             err,
 			"metricbeatVersion": mts.Version,
 			"service":           mts.ServiceName,
 			"serviceVersion":    mts.ServiceVersion,
-		}).Error(msg)
+		}).Error("Could not run Metricbeat for the service")
 
 		return err
 	}
