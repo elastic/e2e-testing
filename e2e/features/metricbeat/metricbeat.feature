@@ -10,4 +10,3 @@ Examples:
 | configuration        |
 | metricbeat           |
 | metricbeat.docker    |
-| metricbeat.reference |
