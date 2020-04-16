@@ -52,6 +52,6 @@ if ! FEATURE=${FEATURE} FORMAT=junit STACK_VERSION=${STACK_VERSION} METRICBEAT_V
 fi
 
 ## Transform report to Junit by parsing the stdout generated previously
-sed -i -E "s/testing: warning: no tests to run//" ${REPORT}
+sed -i "s/testing: warning: no tests to run//" ${REPORT}
 sed -e 's/^[ \t]*//; s#>.*failed$#>#g' ${REPORT} | grep -E '^<.*>$' > ${REPORT}.xml
 exit $exit_status
