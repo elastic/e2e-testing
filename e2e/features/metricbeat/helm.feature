@@ -1,6 +1,3 @@
-@helm
-@k8s
-@metricbeat
 Feature: The Helm chart is following product recommended configuration for Kubernetes
 
 Scenario: The Metricbeat chart will create recommended K8S resources

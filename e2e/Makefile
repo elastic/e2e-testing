@@ -8,10 +8,6 @@ STACK_VERSION?=
 METRICBEAT_VERSION?=
 VERSION_VALUE=`cat ../cli/VERSION.txt`
 
-ifneq ($(FEATURE),)
-FEATURE_FLAG=--tags
-endif
-
 GO_IMAGE_TAG?='stretch'
 GOOS?='linux'
 GOARCH?='amd64'
@@ -26,20 +22,15 @@ fetch-binary:
 install:
 	go get -v -t ./...
 
-.PHONY: install-godog
-install-godog: export GO111MODULE := on
-install-godog:
-	go get -v github.com/cucumber/godog/cmd/godog@v0.9.0
-
 .PHONY: functional-test
-functional-test: install-godog
+functional-test:
 	OP_LOG_LEVEL=${LOG_LEVEL} \
 	OP_LOG_INCLUDE_TIMESTAMP=${LOG_INCLUDE_TIMESTAMP} \
 	OP_QUERY_MAX_ATTEMPTS=${QUERY_MAX_ATTEMPTS} \
 	OP_RETRY_TIMEOUT=${RETRY_TIMEOUT} \
 	OP_METRICBEAT_VERSION=${METRICBEAT_VERSION} \
 	OP_STACK_VERSION=${STACK_VERSION} \
-	godog --format=${FORMAT} ${FEATURE_FLAG} ${FEATURE}
+	go test -v --godog.format=${FORMAT} ${FEATURE}
 
 .PHONY: run-elastic-stack
 run-elastic-stack:

@@ -35,10 +35,8 @@ rm -rf outputs || true
 mkdir -p outputs
 
 ## Parse FEATURE if not ALL then enable the flags to be passed to the functional-test wrapper
-FLAG=''
 REPORT=''
 if [ "${FEATURE}" != "" ] && [ "${FEATURE}" != "all" ] ; then
-  FLAG='-t'
   REPORT=outputs/TEST-${FEATURE}
 else
   FEATURE=''
@@ -48,11 +46,12 @@ fi
 ## Generate test report even if make failed.
 set +e
 exit_status=0
-if ! FLAG=${FLAG} FEATURE=${FEATURE} FORMAT=junit STACK_VERSION=${STACK_VERSION} METRICBEAT_VERSION=${METRICBEAT_VERSION} make --no-print-directory -C e2e functional-test | tee ${REPORT}  ; then
+if ! FEATURE=${FEATURE} FORMAT=junit STACK_VERSION=${STACK_VERSION} METRICBEAT_VERSION=${METRICBEAT_VERSION} make --no-print-directory -C e2e functional-test | tee ${REPORT}  ; then
   echo 'ERROR: functional-test failed'
   exit_status=1
 fi
 
 ## Transform report to Junit by parsing the stdout generated previously
+sed -i "s/testing: warning: no tests to run//" ${REPORT}
 sed -e 's/^[ \t]*//; s#>.*failed$#>#g' ${REPORT} | grep -E '^<.*>$' > ${REPORT}.xml
 exit $exit_status
