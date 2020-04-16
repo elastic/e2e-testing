@@ -8,10 +8,10 @@ So for that reason we are adding [smoke tests](http://softwaretestingfundamental
 
 ## Running the tests
 
-The tests are located under the [./](root) directory. Place your terminal there and execute `godog`, which is the official Golang implementation for Cucumber:
+The tests are located under the [root](./) directory. Place your terminal there and execute the Godog tests, which is the official Golang implementation for Cucumber:
 
 ```shell
-$ GO111MODULE=on godog
+$ GO111MODULE=on go test -v --godog.format pretty [apache|filebeat|helm|metricbeat|mysql|redis|vsphere]
 ```
 
 ## Tooling
@@ -46,28 +46,34 @@ For this POC, we have chosen Godog over any other test framework because the tea
 
 All the Gherkin (Cucumber) specifications are written in `.feature` files.
 
-A good example could be [this one](./features/mysql.feature):
+A good example could be [this one](./features/metricbeat/mysql.feature):
 
 ```cucumber
-@mysql
 Feature: As a Metricbeat developer I want to check that the MySQL module works as expected
 
-Scenario Outline: Check module is sending metrics to a file
-  Given MySQL "<mysql_version>" is running on port "3306"
-    And metricbeat "7.2.0" is installed and configured for MySQL module
-  Then metricbeat outputs metrics to the file "mysql-<mysql_version>.metrics"
+Scenario Outline: Check module is sending metrics to Elasticsearch without errors
+  Given "<variant>" v<version>, variant of "MySQL", is running for metricbeat
+    And metricbeat is installed and configured for "<variant>", variant of the "MySQL" module
+    And metricbeat waits "20" seconds for the service
+  When metricbeat runs for "20" seconds
+  Then there are "<variant>" events in the index
+    And there are no errors in the index
 Examples:
-| mysql_version |
-| 5.6  |
-| 5.7  |
-| 8.0  |
+| variant | version    |
+| MariaDB | 10.2.23    |
+| MariaDB | 10.3.14    |
+| MariaDB | 10.4.4     |
+| MySQL   | 5.7.12     |
+| MySQL   | 8.0.13     |
+| Percona | 5.7.24     |
+| Percona | 8.0.13-4   |
 ```
 
 ## Test Implementation
 
 We are using Godog + Cucumber to implement the tests, where we create connections to the `Given`, `When`, `Then`, `And`, etc. in a well-known file structure.
 
-As an example, the Golang implementation of the `features/mysql.feature` is located under the [./mysql_test.go](./mysql_test.go) file.
+As an example, the Golang implementation of the `features/metricbeat/mysql.feature` is located under the [./metricbeat_test.go](./metricbeat_test.go) file.
 
 Each module will define its own file for specificacions, adding specific tags that will allow filtering the execution, if needed. These tags would be named after the module, so it will simplify the execution of just a module.
 
