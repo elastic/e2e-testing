@@ -107,6 +107,11 @@ pipeline {
       steps {
         deleteDir()
         unstash 'source'
+        retry(3){
+          dir("${BASE_DIR}"){
+            sh script: """.ci/scripts/install-test-dependencies.sh "${GO_VERSION}" """, label: "Install test dependencies for ${params.FEATURE}"
+          }
+        }
         dir(BASE_DIR){
           sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${params.FEATURE}" """, label: 'Run functional tests'
         }
