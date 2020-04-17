@@ -146,3 +146,12 @@ go test -v --godog.format=${FORMAT} redis
 ```
 
 >For environment variables reference affecting the logs, please check out [CLI's docs](../cli/README.md#logging)
+
+## Debugging the tests
+
+### VSCode
+When using VSCode as editor, it's possible to debug the project using the existing VSCode configurations for debug.
+
+In order to debug the `godog` tests, 1) you must have the `runner_test.go` file opened as the current file in the IDE, 2) Use the Run/Debug module of VSCode, and 3) select the `Godog Tests` debug configuration to be executed.
+
+![](./debug.png)
