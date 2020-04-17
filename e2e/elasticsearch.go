@@ -158,7 +158,7 @@ func search(stackName string, indexName string, query map[string]interface{}) (s
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
-		}).Error("Error getting response from Elasticsearch")
+		}).Error("Error performing search on Elasticsearch")
 
 		return result, err
 	}
@@ -174,17 +174,11 @@ func search(stackName string, indexName string, query map[string]interface{}) (s
 			return result, err
 		}
 
-		log.WithFields(log.Fields{
-			"status": res.Status(),
-			"type":   e["error"].(map[string]interface{})["type"],
-			"reason": e["error"].(map[string]interface{})["reason"],
-		}).Error("Error getting response from Elasticsearch")
+		err := fmt.Errorf(
+			"Error getting response from Elasticsearch. Status: %s, ResponseError: %v",
+			res.Status(), e)
 
-		return result, fmt.Errorf(
-			"Error getting response from Elasticsearch. Status: %s, Type: %s, Reason: %s",
-			res.Status(),
-			e["error"].(map[string]interface{})["type"],
-			e["error"].(map[string]interface{})["reason"])
+		return result, err
 	}
 
 	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
