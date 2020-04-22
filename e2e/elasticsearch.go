@@ -46,7 +46,7 @@ func deleteIndex(ctx context.Context, stackName string, index string) error {
 	}
 	log.WithFields(log.Fields{
 		"indexName": index,
-		"status":    res.Status,
+		"status":    res.Status(),
 	}).Debug("Index deleted using Elasticsearch Go client")
 
 	res, err = esClient.Indices.DeleteAlias([]string{index}, []string{index})
@@ -60,7 +60,7 @@ func deleteIndex(ctx context.Context, stackName string, index string) error {
 	}
 	log.WithFields(log.Fields{
 		"indexAlias": index,
-		"status":     res.Status,
+		"status":     res.Status(),
 	}).Debug("Index Alias deleted using Elasticsearch Go client")
 
 	return nil
