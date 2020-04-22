@@ -103,9 +103,7 @@ $ # export GOOS=darwin                             # exports your O.S. (default 
 $ # export GOARCH=amd64                            # exports your O.S. (default 'amd64', valid: [amd64, 386])
 $ make -C e2e install                              # installs tests dependencies
 $ make -C e2e fetch-binary                         # generates the binary from the repository
-$ make -C e2e run-elastic-stack                    # runs the stack for metricbeat
 $ make -C e2e functional-test                      # runs the test suite for Redis and stack 
-$ make -C e2e shutdown-elastic-stack               # stops the stack
 ```
 
 or simply run as the CI does:

@@ -32,14 +32,6 @@ functional-test:
 	OP_STACK_VERSION=${STACK_VERSION} \
 	go test -v --godog.format=${FORMAT} ${FEATURE}
 
-.PHONY: run-elastic-stack
-run-elastic-stack:
-	OP_LOG_LEVEL=${LOG_LEVEL} ./op run stack metricbeat -v ${STACK_VERSION}
-
-.PHONY: shutdown-elastic-stack
-shutdown-elastic-stack:
-	OP_LOG_LEVEL=${LOG_LEVEL} ./op stop stack metricbeat
-
 .PHONY: sync-integrations
 sync-integrations:
 	OP_LOG_LEVEL=${LOG_LEVEL} ./op sync integrations --delete

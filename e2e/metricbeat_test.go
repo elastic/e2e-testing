@@ -140,8 +140,32 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 
 	s.Step(`^metricbeat is installed using "([^"]*)" configuration$`, testSuite.installedUsingConfiguration)
 
+	s.BeforeSuite(func() {
+		log.Debug("Before Metricbeat Suite...")
+		serviceManager := services.NewServiceManager()
+
+		env := map[string]string{
+			"stackVersion": stackVersion,
+		}
+
+		err := serviceManager.RunCompose(true, []string{"metricbeat"}, env)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"stack": "metricbeat",
+			}).Error("Could not run the stack.")
+		}
+	})
 	s.BeforeScenario(func(*messages.Pickle) {
 		log.Debug("Before scenario...")
+	})
+	s.AfterSuite(func() {
+		serviceManager := services.NewServiceManager()
+		err := serviceManager.StopCompose(true, []string{"metricbeat"})
+		if err != nil {
+			log.WithFields(log.Fields{
+				"stack": "metricbeat",
+			}).Error("Could not stop the stack.")
+		}
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {
 		log.Debug("After scenario...")
