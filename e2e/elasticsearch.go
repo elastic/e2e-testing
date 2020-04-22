@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	backoff "github.com/cenkalti/backoff/v4"
 	es "github.com/elastic/go-elasticsearch/v8"
 	log "github.com/sirupsen/logrus"
 
@@ -196,4 +197,63 @@ func search(stackName string, indexName string, query map[string]interface{}) (s
 	}).Debug("Response information")
 
 	return result, nil
+}
+
+// waitForElasticsearchHealthy waits for elasticsearch to be healthy, returning false
+// if elasticsearch does not get healthy status in a defined number of minutes.
+//nolint:unused
+func waitForElasticsearch(maxTimeoutMinutes time.Duration, stackName string) (bool, error) {
+	var (
+		initialInterval     = 500 * time.Millisecond
+		randomizationFactor = 0.5
+		multiplier          = 2.0
+		maxInterval         = 5 * time.Second
+		maxElapsedTime      = maxTimeoutMinutes * time.Minute
+	)
+
+	exp := backoff.NewExponentialBackOff()
+	exp.InitialInterval = initialInterval
+	exp.RandomizationFactor = randomizationFactor
+	exp.Multiplier = multiplier
+	exp.MaxInterval = maxInterval
+	exp.MaxElapsedTime = maxElapsedTime
+
+	retryCount := 1
+
+	clusterStatus := func() error {
+		esClient, err := getElasticsearchClient(stackName)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Warn("Could not obtain an Elasticsearch client")
+
+			return err
+		}
+
+		if _, err := esClient.Cluster.Health(); err != nil {
+			log.WithFields(log.Fields{
+				"error":       err,
+				"retry":       retryCount,
+				"elapsedTime": exp.GetElapsedTime(),
+			}).Warn("The Elasticsearch cluster is not healthy yet")
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"retries":     retryCount,
+			"elapsedTime": exp.GetElapsedTime(),
+		}).Info("The Elasticsearch cluster is healthy")
+
+		return nil
+	}
+
+	err := backoff.Retry(clusterStatus, exp)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/cucumber/godog"
 	messages "github.com/cucumber/messages-go/v10"
@@ -153,6 +154,15 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 			log.WithFields(log.Fields{
 				"stack": "metricbeat",
 			}).Error("Could not run the stack.")
+		}
+
+		minutesToBeHealthy := 3 * time.Minute
+		healthy, err := waitForElasticsearch(minutesToBeHealthy, "metricbeat")
+		if !healthy {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"minutes": minutesToBeHealthy,
+			}).Error("The Elasticsearch cluster could not get the healthy status")
 		}
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
