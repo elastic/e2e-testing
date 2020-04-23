@@ -114,6 +114,8 @@ func downloadFile(url string) (string, error) {
 		return filepath, err
 	}
 
+	os.Chmod(tempFile.Name(), 0666)
+
 	return filepath, nil
 }
 
