@@ -260,6 +260,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	env := map[string]string{
 		"BEAT_STRICT_PERMS":     "false",
 		"indexName":             mts.getIndexName(),
+		"logLevel":              log.GetLevel().String(),
 		"metricbeatConfigFile":  mts.configurationFile,
 		"metricbeatTag":         mts.Version,
 		"stackVersion":          stackVersion,
