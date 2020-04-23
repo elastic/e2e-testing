@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,6 +15,7 @@ func TestDownloadFile(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
+	defer os.Remove(configurationFilePath)
 
 	info, err := os.Stat(configurationFilePath)
 	if os.IsNotExist(err) {
@@ -21,5 +23,5 @@ func TestDownloadFile(t *testing.T) {
 	}
 
 	assert.False(t, info.IsDir())
-	assert.Equal(t, "metricbeat.yml", info.Name())
+	assert.True(t, strings.HasPrefix(info.Name(), "metricbeat.yml"))
 }
