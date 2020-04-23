@@ -15,6 +15,7 @@ import (
 type ServiceManager interface {
 	AddServicesToCompose(stack string, composeNames []string, env map[string]string) error
 	RemoveServicesFromCompose(stack string, composeNames []string, env map[string]string) error
+	RunCommand(stack string, composeNames []string, composeArgs []string, env map[string]string) error
 	RunCompose(isStack bool, composeNames []string, env map[string]string) error
 	StopCompose(isStack bool, composeNames []string) error
 }
@@ -82,6 +83,11 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(stack string, composeN
 	}
 
 	return nil
+}
+
+// RunCommand executes a docker-compose command in a running a docker compose
+func (sm *DockerServiceManager) RunCommand(stack string, composeNames []string, composeArgs []string, env map[string]string) error {
+	return executeCompose(sm, true, composeNames, composeArgs, env)
 }
 
 // RunCompose runs a docker compose by its name

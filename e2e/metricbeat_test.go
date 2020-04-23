@@ -297,6 +297,25 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		}).Info("Metricbeat is running")
 	}
 
+	if log.IsLevelEnabled(log.DebugLevel) {
+		composes := []string{
+			"metricbeat", // stack name
+			"metricbeat", // metricbeat service
+		}
+
+		err = serviceManager.RunCommand("metricbeat", composes, []string{"logs", "metricbeat"}, env)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":             err,
+				"metricbeatVersion": mts.Version,
+				"service":           mts.ServiceName,
+				"serviceVersion":    mts.ServiceVersion,
+			}).Error("Could not retrieve Metricbeat logs")
+
+			return err
+		}
+	}
+
 	return nil
 }
 
