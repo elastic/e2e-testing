@@ -21,6 +21,27 @@ const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 var seededRand *rand.Rand = rand.New(
 	rand.NewSource(time.Now().UnixNano()))
 
+// getExponentialBackOff returns a preconfigured exponential backoff instance
+//nolint:unused
+func getExponentialBackOff(elapsedMinutes time.Duration) *backoff.ExponentialBackOff {
+	var (
+		initialInterval     = 500 * time.Millisecond
+		randomizationFactor = 0.5
+		multiplier          = 2.0
+		maxInterval         = 5 * time.Second
+		maxElapsedTime      = elapsedMinutes * time.Minute
+	)
+
+	exp := backoff.NewExponentialBackOff()
+	exp.InitialInterval = initialInterval
+	exp.RandomizationFactor = randomizationFactor
+	exp.Multiplier = multiplier
+	exp.MaxInterval = maxInterval
+	exp.MaxElapsedTime = maxElapsedTime
+
+	return exp
+}
+
 // downloadFile will download a url and store it in a temporary path.
 // It writes to the destination file as it downloads it, without
 // loading the entire file into memory.
@@ -38,20 +59,7 @@ func downloadFile(url string) (string, error) {
 
 	filepath := tempFile.Name()
 
-	var (
-		initialInterval     = 500 * time.Millisecond
-		randomizationFactor = 0.5
-		multiplier          = 2.0
-		maxInterval         = 5 * time.Second
-		maxElapsedTime      = 3 * time.Minute
-	)
-
-	exp := backoff.NewExponentialBackOff()
-	exp.InitialInterval = initialInterval
-	exp.RandomizationFactor = randomizationFactor
-	exp.Multiplier = multiplier
-	exp.MaxInterval = maxInterval
-	exp.MaxElapsedTime = maxElapsedTime
+	exp := getExponentialBackOff(3)
 
 	retryCount := 1
 	var fileReader io.ReadCloser

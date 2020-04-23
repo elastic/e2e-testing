@@ -203,20 +203,7 @@ func search(stackName string, indexName string, query map[string]interface{}) (s
 // if elasticsearch does not get healthy status in a defined number of minutes.
 //nolint:unused
 func waitForElasticsearch(maxTimeoutMinutes time.Duration, stackName string) (bool, error) {
-	var (
-		initialInterval     = 500 * time.Millisecond
-		randomizationFactor = 0.5
-		multiplier          = 2.0
-		maxInterval         = 5 * time.Second
-		maxElapsedTime      = maxTimeoutMinutes * time.Minute
-	)
-
-	exp := backoff.NewExponentialBackOff()
-	exp.InitialInterval = initialInterval
-	exp.RandomizationFactor = randomizationFactor
-	exp.Multiplier = multiplier
-	exp.MaxInterval = maxInterval
-	exp.MaxElapsedTime = maxElapsedTime
+	exp := getExponentialBackOff(maxTimeoutMinutes)
 
 	retryCount := 1
 
