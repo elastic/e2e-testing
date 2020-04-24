@@ -6,12 +6,14 @@ import (
 	"path"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
+	"github.com/elastic/metricbeat-tests-poc/cli/services"
 )
 
 type contextMetadata struct {
@@ -189,4 +191,40 @@ func parseFeatureFlags(flags []string) ([]string, []*contextMetadata) {
 	}
 
 	return featurePaths, metadatas
+}
+
+// startRuntimeDependencies spins up the runtime dependencies for a stack, represented
+// by a docker-compose file, It will panic if they cannot be satisfied
+func startRuntimeDependencies(stackName string, env map[string]string, minutesToBeHealthy time.Duration) {
+	serviceManager := services.NewServiceManager()
+
+	err := serviceManager.RunCompose(true, []string{stackName}, env)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"stack": stackName,
+		}).Error("Could not run the stack.")
+		panic("Could not run the stack.")
+	}
+
+	healthy, err := waitForElasticsearch((minutesToBeHealthy * time.Minute), stackName)
+	if !healthy {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"minutes": minutesToBeHealthy,
+			"stack":   stackName,
+		}).Error("The Elasticsearch cluster could not get the healthy status")
+		panic("The Elasticsearch cluster could not get the healthy status")
+	}
+}
+
+// tearDownRuntimeDependencies destroys the runtime dependencies for a stack,
+// not failing the execution in the case it's not possible to destroy them
+func tearDownRuntimeDependencies(stackName string) {
+	err := serviceManager.StopCompose(true, []string{stackName})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"stack": stackName,
+		}).Warn("Could not stop the stack.")
+	}
 }

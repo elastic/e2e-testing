@@ -1,11 +1,8 @@
 package e2e
 
 import (
-	"time"
-
 	"github.com/cucumber/godog"
 	messages "github.com/cucumber/messages-go/v10"
-	"github.com/elastic/metricbeat-tests-poc/cli/services"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -74,21 +71,7 @@ func StackMonitoringFeatureContext(s *godog.Suite) {
 		}
 
 		log.Debug("Installing elasticsearch monitoring instance")
-		err := serviceManager.RunCompose(true, []string{"stack-monitoring"}, env)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"stack": "stack-monitoring",
-			}).Error("Could not run the stack.")
-		}
-
-		minutesToBeHealthy := 3 * time.Minute
-		healthy, err := waitForElasticsearch(minutesToBeHealthy, "metricbeat")
-		if !healthy {
-			log.WithFields(log.Fields{
-				"error":   err,
-				"minutes": minutesToBeHealthy,
-			}).Error("The Elasticsearch cluster could not get the healthy status")
-		}
+		startRuntimeDependencies("stack-monitoring", env, 3)
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
 		log.Debug("Before StackMonitoring Scenario...")
@@ -96,14 +79,7 @@ func StackMonitoringFeatureContext(s *godog.Suite) {
 	s.AfterSuite(func() {
 		log.Debug("After StackMonitoring Suite...")
 		log.Debug("Destroying elasticsearch monitoring instance, including attached services")
-		serviceManager := services.NewServiceManager()
-
-		err := serviceManager.StopCompose(true, []string{"stack-monitoring"})
-		if err != nil {
-			log.WithFields(log.Fields{
-				"stack": "stack-monitoring",
-			}).Error("Could not stop the stack.")
-		}
+		tearDownRuntimeDependencies("stack-monitoring")
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {
 		log.Debug("After StackMonitoring Scenario...")
