@@ -3,6 +3,7 @@ services:
   metricbeat:
     command: [
       "metricbeat", "-e",
+      "-E", "logging.level=${logLevel}",
       "-E", "setup.ilm.rollover_alias=${indexName}",
       "-E", "output.elasticsearch.hosts=http://elasticsearch:9200",
       "-E", "output.elasticsearch.password=p4ssw0rd",

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	backoff "github.com/cenkalti/backoff/v4"
 	es "github.com/elastic/go-elasticsearch/v8"
 	log "github.com/sirupsen/logrus"
 
@@ -18,6 +19,7 @@ import (
 //nolint:unused
 type ElasticsearchQuery struct {
 	EventModule    string
+	IndexName      string
 	ServiceVersion string
 }
 
@@ -44,7 +46,7 @@ func deleteIndex(ctx context.Context, stackName string, index string) error {
 	}
 	log.WithFields(log.Fields{
 		"indexName": index,
-		"status":    res.Status,
+		"status":    res.Status(),
 	}).Debug("Index deleted using Elasticsearch Go client")
 
 	res, err = esClient.Indices.DeleteAlias([]string{index}, []string{index})
@@ -58,7 +60,7 @@ func deleteIndex(ctx context.Context, stackName string, index string) error {
 	}
 	log.WithFields(log.Fields{
 		"indexAlias": index,
-		"status":     res.Status,
+		"status":     res.Status(),
 	}).Debug("Index Alias deleted using Elasticsearch Go client")
 
 	return nil
@@ -144,6 +146,7 @@ func search(stackName string, indexName string, query map[string]interface{}) (s
 	}
 
 	log.WithFields(log.Fields{
+		"index": indexName,
 		"query": fmt.Sprintf("%s", query),
 	}).Debug("Elasticsearch query")
 
@@ -156,7 +159,7 @@ func search(stackName string, indexName string, query map[string]interface{}) (s
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
-		}).Error("Error getting response from Elasticsearch")
+		}).Error("Error performing search on Elasticsearch")
 
 		return result, err
 	}
@@ -172,17 +175,11 @@ func search(stackName string, indexName string, query map[string]interface{}) (s
 			return result, err
 		}
 
-		log.WithFields(log.Fields{
-			"status": res.Status(),
-			"type":   e["error"].(map[string]interface{})["type"],
-			"reason": e["error"].(map[string]interface{})["reason"],
-		}).Error("Error getting response from Elasticsearch")
+		err := fmt.Errorf(
+			"Error getting response from Elasticsearch. Status: %s, ResponseError: %v",
+			res.Status(), e)
 
-		return result, fmt.Errorf(
-			"Error getting response from Elasticsearch. Status: %s, Type: %s, Reason: %s",
-			res.Status(),
-			e["error"].(map[string]interface{})["type"],
-			e["error"].(map[string]interface{})["reason"])
+		return result, err
 	}
 
 	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
@@ -200,4 +197,50 @@ func search(stackName string, indexName string, query map[string]interface{}) (s
 	}).Debug("Response information")
 
 	return result, nil
+}
+
+// waitForElasticsearchHealthy waits for elasticsearch to be healthy, returning false
+// if elasticsearch does not get healthy status in a defined number of minutes.
+//nolint:unused
+func waitForElasticsearch(maxTimeoutMinutes time.Duration, stackName string) (bool, error) {
+	exp := getExponentialBackOff(maxTimeoutMinutes)
+
+	retryCount := 1
+
+	clusterStatus := func() error {
+		esClient, err := getElasticsearchClient(stackName)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Warn("Could not obtain an Elasticsearch client")
+
+			return err
+		}
+
+		if _, err := esClient.Cluster.Health(); err != nil {
+			log.WithFields(log.Fields{
+				"error":       err,
+				"retry":       retryCount,
+				"elapsedTime": exp.GetElapsedTime(),
+			}).Warn("The Elasticsearch cluster is not healthy yet")
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"retries":     retryCount,
+			"elapsedTime": exp.GetElapsedTime(),
+		}).Info("The Elasticsearch cluster is healthy")
+
+		return nil
+	}
+
+	err := backoff.Retry(clusterStatus, exp)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

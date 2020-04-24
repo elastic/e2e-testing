@@ -25,6 +25,8 @@ pipeline {
   }
   parameters {
     choice(name: 'LOG_LEVEL', choices: ['INFO', 'DEBUG'], description: 'Log level to be used')
+    choice(name: 'QUERY_MAX_ATTEMPTS', choices: ['5', '10', '20'], description: 'Number of attempts to create the connection to Elasticsearch')
+    choice(name: 'RETRY_TIMEOUT', choices: ['3', '5', '7', '11'], description: 'Number of seconds between retry')
     string(name: 'STACK_VERSION', defaultValue: '7.6.0', description: 'SemVer version of the stack to be used.')
     string(name: 'METRICBEAT_VERSION', defaultValue: '7.6.0', description: 'SemVer version of the metricbeat to be used.')
     string(name: 'HELM_CHART_VERSION', defaultValue: '7.6.1', description: 'SemVer version of Helm chart to be used.')
@@ -51,6 +53,8 @@ pipeline {
         KIND_VERSION = "${params.KIND_VERSION.trim()}"
         KUBERNETES_VERSION = "${params.KUBERNETES_VERSION.trim()}"
         LOG_LEVEL = "${params.LOG_LEVEL.trim()}"
+        QUERY_MAX_ATTEMPTS = "${params.QUERY_MAX_ATTEMPTS.trim()}"
+        RETRY_TIMEOUT = "${params.RETRY_TIMEOUT.trim()}"
       }
       stages {
         stage('Checkout') {
@@ -183,6 +187,11 @@ def generateFunctionalTestStep(Map params = [:]){
       try {
         deleteDir()
         unstash 'build'
+        retry(3){
+          dir("${BASE_DIR}"){
+            sh script: """.ci/scripts/install-test-dependencies.sh "${GO_VERSION}" """, label: "Install test dependencies for ${feature}"
+          }
+        }
         dir("${BASE_DIR}"){
           sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${feature}" "${STACK_VERSION}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${feature}"
         }

@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	backoff "github.com/cenkalti/backoff/v4"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,6 +20,27 @@ const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 //nolint:unused
 var seededRand *rand.Rand = rand.New(
 	rand.NewSource(time.Now().UnixNano()))
+
+// getExponentialBackOff returns a preconfigured exponential backoff instance
+//nolint:unused
+func getExponentialBackOff(elapsedMinutes time.Duration) *backoff.ExponentialBackOff {
+	var (
+		initialInterval     = 500 * time.Millisecond
+		randomizationFactor = 0.5
+		multiplier          = 2.0
+		maxInterval         = 5 * time.Second
+		maxElapsedTime      = elapsedMinutes * time.Minute
+	)
+
+	exp := backoff.NewExponentialBackOff()
+	exp.InitialInterval = initialInterval
+	exp.RandomizationFactor = randomizationFactor
+	exp.Multiplier = multiplier
+	exp.MaxInterval = maxInterval
+	exp.MaxElapsedTime = maxElapsedTime
+
+	return exp
+}
 
 // downloadFile will download a url and store it in a temporary path.
 // It writes to the destination file as it downloads it, without
@@ -37,37 +59,62 @@ func downloadFile(url string) (string, error) {
 
 	filepath := tempFile.Name()
 
+	exp := getExponentialBackOff(3)
+
+	retryCount := 1
+	var fileReader io.ReadCloser
+
+	download := func() error {
+		resp, err := http.Get(url)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"error":       err,
+				"path":        filepath,
+				"retry":       retryCount,
+				"url":         url,
+			}).Warn("Could not download the file")
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"elapsedTime": exp.GetElapsedTime(),
+			"retries":     retryCount,
+			"path":        filepath,
+			"url":         url,
+		}).Debug("File downloaded")
+
+		fileReader = resp.Body
+
+		return nil
+	}
+
 	log.WithFields(log.Fields{
 		"url":  url,
 		"path": filepath,
 	}).Debug("Downloading file")
 
-	resp, err := http.Get(url)
+	err = backoff.Retry(download, exp)
+	if err != nil {
+		return "", err
+	}
+	defer fileReader.Close()
+
+	_, err = io.Copy(tempFile, fileReader)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
 			"url":   url,
 			"path":  filepath,
-		}).Error("Error downloading file")
-		return filepath, err
-	}
-	defer resp.Body.Close()
-
-	_, err = io.Copy(tempFile, resp.Body)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"url":   url,
-			"path":  filepath,
-		}).Error("Error writing file")
+		}).Error("Could not write file")
 
 		return filepath, err
 	}
 
-	log.WithFields(log.Fields{
-		"url":  url,
-		"path": filepath,
-	}).Debug("File downloaded")
+	os.Chmod(tempFile.Name(), 0666)
 
 	return filepath, nil
 }

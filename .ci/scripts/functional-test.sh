@@ -19,14 +19,8 @@ TARGET_ARCH=${GOARCH:-amd64}
 # shellcheck disable=SC1091
 source .ci/scripts/install-go.sh "${GO_VERSION}"
 
-# shellcheck disable=SC1091
-source .ci/scripts/install-test-dependencies.sh
-
 # Build OP Binary
 GOOS=${TARGET_OS} GOARCH=${TARGET_ARCH} make -C e2e fetch-binary
-
-# Build runtime dependencies
-STACK_VERSION=${STACK_VERSION} make -C e2e run-elastic-stack
 
 # Sync integrations
 make -C e2e sync-integrations

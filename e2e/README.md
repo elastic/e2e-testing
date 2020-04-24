@@ -103,9 +103,7 @@ $ # export GOOS=darwin                             # exports your O.S. (default 
 $ # export GOARCH=amd64                            # exports your O.S. (default 'amd64', valid: [amd64, 386])
 $ make -C e2e install                              # installs tests dependencies
 $ make -C e2e fetch-binary                         # generates the binary from the repository
-$ make -C e2e run-elastic-stack                    # runs the stack for metricbeat
 $ make -C e2e functional-test                      # runs the test suite for Redis and stack 
-$ make -C e2e shutdown-elastic-stack               # stops the stack
 ```
 
 or simply run as the CI does:
@@ -146,3 +144,12 @@ go test -v --godog.format=${FORMAT} redis
 ```
 
 >For environment variables reference affecting the logs, please check out [CLI's docs](../cli/README.md#logging)
+
+## Debugging the tests
+
+### VSCode
+When using VSCode as editor, it's possible to debug the project using the existing VSCode configurations for debug.
+
+In order to debug the `godog` tests, 1) you must have the `runner_test.go` file opened as the current file in the IDE, 2) Use the Run/Debug module of VSCode, and 3) select the `Godog Tests` debug configuration to be executed.
+
+![](./debug.png)

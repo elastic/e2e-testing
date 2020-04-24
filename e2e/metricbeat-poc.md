@@ -75,9 +75,9 @@ We are using Godog + Cucumber to implement the tests, where we create connection
 
 As an example, the Golang implementation of the `features/metricbeat/mysql.feature` is located under the [./metricbeat_test.go](./metricbeat_test.go) file.
 
-Each module will define its own file for specificacions, adding specific tags that will allow filtering the execution, if needed. These tags would be named after the module, so it will simplify the execution of just a module.
+Each module will define its own file for specificacions, adding specific feature context functions that will allow filtering the execution, if needed. These functions would be managed by a map in the test runner. We see this as a workaround to be improved in a future refactor, but we had to continue the development of the PoC while Godog solves the coupling of the life cycle hooks for each test suite, as demonstrated [here](https://github.com/mdelapenya/sample-godog). 
 
 ```shell
-# Will run all scenarios tagged with @mysql
-$ GO111MODULE=on godog -t mysql
+# Will run all scenarios for mysql
+$ GO111MODULE=on go test --godog.format pretty mysql
 ```
