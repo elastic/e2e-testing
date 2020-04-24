@@ -5,3 +5,4 @@ FEATURES:
   - "metricbeat"
   - "mysql"
   - "redis"
+  - "vsphere"
