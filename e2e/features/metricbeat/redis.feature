@@ -1,7 +1,7 @@
 @redis
 Feature: As a Metricbeat developer I want to check that the Redis module works as expected
 
-Scenario Outline: Check module is sending metrics to Elasticsearch without errors
+Scenario Outline: Check Redis-<redis_version> is sending metrics to Elasticsearch without errors
   Given Redis "<redis_version>" is running for metricbeat
     And metricbeat is installed and configured for Redis module
     And metricbeat waits "20" seconds for the service
