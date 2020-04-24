@@ -1,7 +1,7 @@
 version: '2.3'
 services:
   vsphere:
-    image: "nimmis/vcsim:${vsphereTag}"
+    image: "nimmis/vcsim:${VSPHERE_VERSION}"
     container_name: vsphere
     healthcheck:
       test: ["CMD", "curl", "--write-out", "'HTTP %{http_code}'", "--silent", "--output", "/dev/null", "http://vsphere:443/"]
