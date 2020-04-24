@@ -1,6 +1,6 @@
 Feature: As a Metricbeat developer I want to check that the MySQL module works as expected
 
-Scenario Outline: Check module is sending metrics to Elasticsearch without errors
+Scenario Outline: Check <variant>-<version> is sending metrics to Elasticsearch without errors
   Given "<variant>" v<version>, variant of "MySQL", is running for metricbeat
     And metricbeat is installed and configured for "<variant>", variant of the "MySQL" module
     And metricbeat waits "20" seconds for the service
