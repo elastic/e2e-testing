@@ -66,6 +66,12 @@ var supportedProducts = map[string]*contextMetadata{
 		},
 		modules: []string{"metricbeat"},
 	},
+	"parity-tests": &contextMetadata{
+		contextFuncs: []func(s *godog.Suite){
+			StackMonitoringFeatureContext,
+		},
+		modules: []string{"stack-monitoring"},
+	},
 	"vsphere": &contextMetadata{
 		contextFuncs: []func(s *godog.Suite){
 			MetricbeatFeatureContext,

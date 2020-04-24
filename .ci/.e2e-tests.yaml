@@ -4,5 +4,6 @@ FEATURES:
   - "helm"
   - "metricbeat"
   - "mysql"
+  - "parity-tests"
   - "redis"
   - "vsphere"
