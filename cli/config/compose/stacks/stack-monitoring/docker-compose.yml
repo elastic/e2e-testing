@@ -1,14 +1,14 @@
 version: '2.3'
 services:
-  elasticsearch:
+  monitoringEs:
     environment:
       - bootstrap.memory_lock=true
       - discovery.type=single-node
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - xpack.security.enabled=false
-      - xpack.monitoring.collection.enabled=${xpackMonitoringCollection:-true}
+      - xpack.monitoring.collection.enabled=false
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=p4ssw0rd
     image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion}"
     ports:
-      - "${elasticsearchPort:-9200}:9200"
+      - "${monitoringEsPort:-9200}:9200"
