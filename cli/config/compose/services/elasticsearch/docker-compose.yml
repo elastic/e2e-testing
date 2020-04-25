@@ -11,5 +11,4 @@ services:
       - ELASTIC_PASSWORD=p4ssw0rd
     image: "docker.elastic.co/elasticsearch/elasticsearch:${elasticsearchTag}"
     ports:
-      - "9200:9200"
-      - "9300:9300"
+      - "${elasticsearchPort:-9200}:9200"
