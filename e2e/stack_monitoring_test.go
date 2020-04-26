@@ -20,6 +20,16 @@ type StackMonitoringTestSuite struct {
 	Product           string
 }
 
+// @collectionMethod1 the collection method to be used. Valid values: legacy, metricbeat
+// @collectionMethod2 the collection method to be used. Valid values: legacy, metricbeat
+func (sm *StackMonitoringTestSuite) checkDocumentsStructure(
+	collectionMethod1 string, collectionMethod2 string) error {
+
+	log.Debugf("Compare the structure of the %s documents with the structure of the %s documents", collectionMethod1, collectionMethod2)
+
+	return godog.ErrPending
+}
+
 // checkProduct sets product name, in lowercase, setting the product port based on a validation:
 // if the product is not supported, then an error is thrown
 func (sm *StackMonitoringTestSuite) checkProduct(product string) error {
@@ -161,16 +171,6 @@ func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 	log.Debugf("Stopping %s", product)
 	log.Debugf("Downloading sample documents from %s's monitoring index to a test directory", product)
 	log.Debugf("Disable %s", collectionMethod)
-
-	return godog.ErrPending
-}
-
-// @collectionMethod1 the collection method to be used. Valid values: legacy, metricbeat
-// @collectionMethod2 the collection method to be used. Valid values: legacy, metricbeat
-func (sm *StackMonitoringTestSuite) checkDocumentsStructure(
-	collectionMethod1 string, collectionMethod2 string) error {
-
-	log.Debugf("Compare the structure of the %s documents with the structure of the %s documents", collectionMethod1, collectionMethod2)
 
 	return godog.ErrPending
 }
