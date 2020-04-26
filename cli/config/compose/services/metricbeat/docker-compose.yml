@@ -5,7 +5,7 @@ services:
       "metricbeat", "-e",
       "-E", "logging.level=${logLevel}",
       "-E", "setup.ilm.rollover_alias=${indexName}",
-      "-E", "output.elasticsearch.hosts=http://elasticsearch:9200",
+      "-E", "output.elasticsearch.hosts=http://${monitoringEsHost:-elasticsearch}:9200",
       "-E", "output.elasticsearch.password=p4ssw0rd",
       "-E", "output.elasticsearch.username=elastic",
     ]
