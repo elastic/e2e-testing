@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -13,8 +14,10 @@ import (
 
 // StackMonitoringTestSuite represents a test suite for the stack monitoring parity tests
 type StackMonitoringTestSuite struct {
-	Port    string
-	Product string
+	configurationFile string // the  name of the configuration file to be used in this test suite
+	Env               map[string]string
+	Port              string
+	Product           string
 }
 
 // checkProduct sets product name, in lowercase, setting the product port based on a validation:
@@ -22,18 +25,58 @@ type StackMonitoringTestSuite struct {
 func (sm *StackMonitoringTestSuite) checkProduct(product string) error {
 	sm.Product = strings.ToLower(product)
 
-	switch sm.Product {
-	case "elasticsearch":
+	env := map[string]string{}
+
+	switch {
+	case sm.Product == "elasticsearch":
 		sm.Port = strconv.Itoa(9201)
-	case "kibana":
+	case sm.Product == "kibana":
 		sm.Port = strconv.Itoa(5602)
-	case "logstash":
+	case sm.Product == "logstash":
 		sm.Port = strconv.Itoa(9601)
+	case strings.HasSuffix(sm.Product, "beat"):
+		sm.Port = strconv.Itoa(5066)
+
+		// get latest configuration file
+		configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/v" + stackVersion + "/" + sm.Product + "/" + sm.Product + ".yml"
+
+		configurationFilePath, err := downloadFile(configurationFileURL)
+		if err != nil {
+			return err
+		}
+		sm.configurationFile = configurationFilePath
+
+		env[product+"ConfigFile"] = sm.configurationFile
+		env["serviceName"] = sm.Product
+		env["monitoringEsHost"] = "monitoringEs" // monitoring elasticsearch service name
 	default:
 		return fmt.Errorf("Product %s not supported", product)
 	}
 
+	sm.Env = env
+
 	return nil
+}
+
+// cleanUp removes created resources
+func (sm *StackMonitoringTestSuite) cleanUp() {
+	if _, err := os.Stat(sm.configurationFile); err == nil {
+		err = os.Remove(sm.configurationFile)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"product": sm.Product,
+				"path":    sm.configurationFile,
+			}).Warn("Configuration file was not removed.")
+
+			return
+		}
+
+		log.WithFields(log.Fields{
+			"product": sm.Product,
+			"path":    sm.configurationFile,
+		}).Debug("Configuration file removed.")
+	}
 }
 
 func (sm *StackMonitoringTestSuite) removeProduct() {
@@ -48,6 +91,8 @@ func (sm *StackMonitoringTestSuite) removeProduct() {
 			"service": sm.Product,
 		}).Error("Could not stop the service.")
 	}
+
+	sm.cleanUp()
 }
 
 func (sm *StackMonitoringTestSuite) runProduct(product string) error {
@@ -56,6 +101,10 @@ func (sm *StackMonitoringTestSuite) runProduct(product string) error {
 		product + "Port": sm.Port,      // we could run the service in another port
 	}
 	env = config.PutServiceEnvironment(env, product, stackVersion)
+
+	for k, v := range sm.Env {
+		env[k] = v
+	}
 
 	log.Debugf("Installing %s", sm.Product)
 	err := serviceManager.AddServicesToCompose("stack-monitoring", []string{product}, env)
@@ -128,7 +177,9 @@ func (sm *StackMonitoringTestSuite) checkDocumentsStructure(
 
 // StackMonitoringFeatureContext adds steps to the Godog test suite
 func StackMonitoringFeatureContext(s *godog.Suite) {
-	testSuite := StackMonitoringTestSuite{}
+	testSuite := StackMonitoringTestSuite{
+		Env: map[string]string{},
+	}
 
 	s.Step(`^"([^"]*)" sends metrics to Elasticsearch using the "([^"]*)" collection monitoring method$`, testSuite.sendsMetricsToElasticsearch)
 	s.Step(`^the structure of the documents for the "([^"]*)" and "([^"]*)" collection are identical$`, testSuite.checkDocumentsStructure)

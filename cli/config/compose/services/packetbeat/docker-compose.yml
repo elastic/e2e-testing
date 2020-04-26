@@ -1,0 +1,18 @@
+version: '2.3'
+services:
+  packetbeat:
+    command: [
+      "packetbeat", "-e",
+      "-E", "logging.level=${logLevel}",
+      "-E", "setup.ilm.rollover_alias=${indexName}",
+      "-E", "output.elasticsearch.hosts=http://${monitoringEsHost:-elasticsearch}:9200",
+      "-E", "output.elasticsearch.password=p4ssw0rd",
+      "-E", "output.elasticsearch.username=elastic",
+    ]
+    environment:
+      - BEAT_STRICT_PERMS=${beatStricPerms:-false}
+    image: "docker.elastic.co/beats/packetbeat:${packetbeatTag}"
+    labels:
+      co.elastic.logs/module: "${serviceName}"
+    volumes:
+      - "${packetbeatConfigFile}:/usr/share/packetbeat/packetbeat.yml"
