@@ -1,13 +1,74 @@
 package e2e
 
 import (
+	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/cucumber/godog"
 	messages "github.com/cucumber/messages-go/v10"
+	"github.com/elastic/metricbeat-tests-poc/cli/config"
 	log "github.com/sirupsen/logrus"
 )
 
 // StackMonitoringTestSuite represents a test suite for the stack monitoring parity tests
 type StackMonitoringTestSuite struct {
+	Port    string
+	Product string
+}
+
+// checkProduct sets product name, in lowercase, setting the product port based on a validation:
+// if the product is not supported, then an error is thrown
+func (sm *StackMonitoringTestSuite) checkProduct(product string) error {
+	sm.Product = strings.ToLower(product)
+
+	switch sm.Product {
+	case "elasticsearch":
+		sm.Port = strconv.Itoa(9201)
+	case "kibana":
+		sm.Port = strconv.Itoa(5602)
+	case "logstash":
+		sm.Port = strconv.Itoa(9601)
+	default:
+		return fmt.Errorf("Product %s not supported", product)
+	}
+
+	return nil
+}
+
+func (sm *StackMonitoringTestSuite) removeProduct() {
+	env := map[string]string{
+		"stackVersion": stackVersion,
+	}
+
+	log.Debugf("Removing %s", sm.Product)
+	err := serviceManager.RemoveServicesFromCompose("stack-monitoring", []string{sm.Product}, env)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"service": sm.Product,
+		}).Error("Could not stop the service.")
+	}
+}
+
+func (sm *StackMonitoringTestSuite) runProduct(product string) error {
+	env := map[string]string{
+		product + "Tag":  stackVersion, // all products follow stack version
+		product + "Port": sm.Port,      // we could run the service in another port
+	}
+	env = config.PutServiceEnvironment(env, product, stackVersion)
+
+	log.Debugf("Installing %s", sm.Product)
+	err := serviceManager.AddServicesToCompose("stack-monitoring", []string{product}, env)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"port":    sm.Port,
+			"service": product,
+			"version": stackVersion,
+		}).Error("Could not run the service.")
+		return err
+	}
+
+	return nil
 }
 
 // @product the product to be installed. Valid values: elasticsearch, kibana, beats, logstash
@@ -15,7 +76,17 @@ type StackMonitoringTestSuite struct {
 func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 	product string, collectionMethod string) error {
 
-	log.Debugf("Installing %s", product)
+	// validate product
+	err := sm.checkProduct(product)
+	if err != nil {
+		return err
+	}
+
+	err = sm.runProduct(product)
+	if err != nil {
+		return err
+	}
+
 	envVars := map[string]string{}
 	if collectionMethod == "metricbeat" {
 		log.Debugf("Installing metricbeat configured for %s to send metrics to the elasticsearch monitoring instance", product)
@@ -83,5 +154,6 @@ func StackMonitoringFeatureContext(s *godog.Suite) {
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {
 		log.Debug("After StackMonitoring Scenario...")
+		testSuite.removeProduct()
 	})
 }
