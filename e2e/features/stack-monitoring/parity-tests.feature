@@ -8,5 +8,4 @@ Examples:
 | product       |
 | elasticsearch |
 | kibana        |
-| beats         |
 | logstash      |
