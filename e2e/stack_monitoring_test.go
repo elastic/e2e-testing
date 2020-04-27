@@ -9,6 +9,7 @@ import (
 	"github.com/cucumber/godog"
 	messages "github.com/cucumber/messages-go/v10"
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
+	"github.com/elastic/metricbeat-tests-poc/cli/services"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -95,7 +96,9 @@ func (sm *StackMonitoringTestSuite) removeProduct() {
 	}
 
 	log.Debugf("Removing %s", sm.Product)
-	err := serviceManager.RemoveServicesFromCompose("stack-monitoring", []string{sm.Product}, env)
+	srvManager := services.NewServiceManager()
+
+	err := srvManager.RemoveServicesFromCompose("stack-monitoring", []string{sm.Product}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": sm.Product,
@@ -117,7 +120,9 @@ func (sm *StackMonitoringTestSuite) runProduct(product string) error {
 	}
 
 	log.Debugf("Installing %s", sm.Product)
-	err := serviceManager.AddServicesToCompose("stack-monitoring", []string{product}, env)
+	srvManager := services.NewServiceManager()
+
+	err := srvManager.AddServicesToCompose("stack-monitoring", []string{product}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"port":    sm.Port,
