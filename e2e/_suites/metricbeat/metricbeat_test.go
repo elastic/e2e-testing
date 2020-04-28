@@ -100,11 +100,11 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	serviceManager := services.NewServiceManager()
 
 	fn := func(ctx context.Context) {
-		err := e2e.DeleteIndex(ctx, "metricbeat", mts.getIndexName())
+		err := e2e.DeleteIndex(ctx, mts.getIndexName())
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": "metricbeat",
-				"index": mts.getIndexName(),
+				"index":   mts.getIndexName(),
 			}).Warn("The index was not deleted, but we are not failing the test case")
 		}
 	}
@@ -176,7 +176,7 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 		}
 
 		minutesToBeHealthy := 3 * time.Minute
-		healthy, err := e2e.WaitForElasticsearch(minutesToBeHealthy, "metricbeat")
+		healthy, err := e2e.WaitForElasticsearch(minutesToBeHealthy)
 		if !healthy {
 			log.WithFields(log.Fields{
 				"error":   err,
@@ -403,9 +403,7 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 		},
 	}
 
-	profileName := "metricbeat"
-
-	result, err := e2e.RetrySearch(profileName, mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
+	result, err := e2e.RetrySearch(mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
 	if err != nil {
 		return err
 	}
@@ -428,9 +426,7 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 		},
 	}
 
-	profileName := "metricbeat"
-
-	result, err := e2e.RetrySearch(profileName, mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
+	result, err := e2e.RetrySearch(mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
 	if err != nil {
 		return err
 	}
