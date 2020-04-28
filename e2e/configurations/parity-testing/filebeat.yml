@@ -10,7 +10,5 @@ xpack.monitoring:
   enabled: ${xpackMonitoring:-true}
 
 filebeat.inputs:
-- type: log
+- type: stdin
   enabled: true
-  paths:
-    - /var/log/*.log
