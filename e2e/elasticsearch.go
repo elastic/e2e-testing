@@ -119,6 +119,7 @@ func retrySearch(stackName string, indexName string, esQuery map[string]interfac
 
 	log.WithFields(log.Fields{
 		"error":         err,
+		"index":         indexName,
 		"query":         esQuery,
 		"retryAttempts": maxAttempts,
 		"retryTimeout":  retryTimeout,
