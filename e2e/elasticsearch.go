@@ -118,6 +118,7 @@ func RetrySearch(profileName string, indexName string, esQuery map[string]interf
 
 	log.WithFields(log.Fields{
 		"error":         err,
+		"index":         indexName,
 		"query":         esQuery,
 		"retryAttempts": maxAttempts,
 		"retryTimeout":  retryTimeout,
