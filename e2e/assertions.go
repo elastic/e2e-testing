@@ -41,3 +41,17 @@ func assertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQu
 
 	return nil
 }
+
+// assertHitsEqualStructure returns an error if hits don't share structure
+//nolint:unused
+func assertHitsEqualStructure(legacyHits map[string]interface{}, metricbeatHits map[string]interface{}) error {
+	legacyCount := len(legacyHits["hits"].(map[string]interface{})["hits"].([]interface{}))
+	metricbeatCount := len(metricbeatHits["hits"].(map[string]interface{})["hits"].([]interface{}))
+	if legacyCount != metricbeatCount {
+		return fmt.Errorf(
+			"There is a different number of documents for legacy (%d) and metricbeat (%d) monitoring",
+			legacyCount, metricbeatCount)
+	}
+
+	return nil
+}

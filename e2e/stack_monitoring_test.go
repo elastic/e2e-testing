@@ -31,7 +31,8 @@ func (sm *StackMonitoringTestSuite) checkDocumentsStructure(
 
 	log.Debugf("Compare the structure of the %s documents with the structure of the %s documents", collectionMethod1, collectionMethod2)
 
-	return godog.ErrPending
+	return assertHitsEqualStructure(
+		sm.collectionHits[collectionMethod1], sm.collectionHits[collectionMethod2])
 }
 
 // checkProduct sets product name, in lowercase, setting the product port based on a validation:
