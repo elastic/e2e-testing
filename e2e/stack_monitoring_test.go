@@ -20,6 +20,8 @@ type StackMonitoringTestSuite struct {
 	IndexName string
 	Port      string
 	Product   string
+	// collection method hits
+	collectionHits map[string]map[string]interface{}
 }
 
 // @collectionMethod1 the collection method to be used. Valid values: legacy, metricbeat
@@ -94,6 +96,19 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 
 // cleanUp removes created resources
 func (sm *StackMonitoringTestSuite) cleanUp() {
+}
+
+func (sm *StackMonitoringTestSuite) getCollectionMethodHits() (map[string]interface{}, error) {
+	esQuery := map[string]interface{}{
+		"collapse": map[string]interface{}{
+			"field": "type",
+		},
+		"sort": map[string]interface{}{
+			"timestamp": "asc",
+		},
+	}
+
+	return retrySearch(sm.IndexName, esQuery, queryMaxAttempts, queryRetryTimeout)
 }
 
 func (sm *StackMonitoringTestSuite) removeProduct() {
@@ -181,6 +196,14 @@ func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 	}
 
 	log.Debugf("Downloading sample documents from %s's monitoring index to a test directory", product)
+	hits, err := sm.getCollectionMethodHits()
+	if err != nil {
+		return err
+	}
+
+	sm.collectionHits[collectionMethod] = hits
+
+	log.Debugf("Hits: %v", hits)
 
 	return nil
 }
@@ -188,7 +211,8 @@ func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 // StackMonitoringFeatureContext adds steps to the Godog test suite
 func StackMonitoringFeatureContext(s *godog.Suite) {
 	testSuite := StackMonitoringTestSuite{
-		Env: map[string]string{},
+		Env:            map[string]string{},
+		collectionHits: map[string]map[string]interface{}{},
 	}
 
 	s.Step(`^"([^"]*)" sends metrics to Elasticsearch using the "([^"]*)" collection monitoring method$`, testSuite.sendsMetricsToElasticsearch)
