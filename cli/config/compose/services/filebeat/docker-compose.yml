@@ -4,8 +4,11 @@ services:
     environment:
       - BEAT_STRICT_PERMS=${beatStricPerms:-false}
       - logLevel=${logLevel:-info}
+      - httpEnabled=${httpEnabled:-false}
+      - httpPort=${httpPort:-5066}
       - monitoringEsHost=${monitoringEsHost:-elasticsearch}
       - monitoringEsPort=${monitoringEsPort:-9200}
+      - serviceName=${serviceName:-localhost}
       - xpackMonitoring=${xpackMonitoring:-true}
     image: "docker.elastic.co/beats/filebeat:${filebeatTag}"
     labels:

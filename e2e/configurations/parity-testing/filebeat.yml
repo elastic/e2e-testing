@@ -1,4 +1,8 @@
 logging.level: ${logLevel}
+http:
+  enabled: ${httpEnabled:-false}
+  host: ${serviceName:-localhost}
+  port: ${httpPort:-5066}
 
 output:
   elasticsearch:
