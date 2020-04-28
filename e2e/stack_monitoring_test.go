@@ -40,33 +40,25 @@ func (sm *StackMonitoringTestSuite) checkDocumentsStructure(
 func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMethod string) error {
 	sm.Product = strings.ToLower(product)
 
-	env := map[string]string{}
+	env := map[string]string{
+		"monitoringEsHost": "monitoringEs", // monitoring elasticsearch service name
+		"monitoringEsPort": "9200",         // monitoring elasticsearch port
+	}
 
 	log.Debugf("Enabling %s collection, sending %s metrics to the monitoring instance", collectionMethod, sm.Product)
 
 	if collectionMethod != "metricbeat" {
-		sm.IndexName = ".monitoring-beats-7*" // stack monitoring index name for legacy collection
-		/*
-			method: PUT
-				url: "https://{{ current_host_ip }}:{{ elasticsearch_port }}/_cluster/settings"
-				body: '{ "transient": { "xpack.monitoring.collection.enabled": true } }'
-				body_format: json
-				validate_certs: no
-				user: "{{ elasticsearch_username }}"
-				password: "{{ elasticsearch_password }}"
-				status_code: 200
-		*/
+		sm.IndexName = ".monitoring-beats-7-2*" // stack monitoring index name for legacy collection in year 2k
 
 		if product == "elasticsearch" {
 			env["xpackMonitoringCollection"] = "true"
 		} else {
 			env["xpackMonitoring"] = "true"
-			env["xpackMonitoringInterval"] = "5s"
-			env["monitoringEsHost"] = "monitoringEs" // monitoring elasticsearch service name
-			env["monitoringEsPort"] = "9200"         // monitoring elasticsearch port
 		}
 	} else {
-		sm.IndexName = ".monitoring-beats-7-mb*" // stack monitoring index name for metricbeat collection
+		sm.IndexName = ".monitoring-beats-7-mb-2*" // stack monitoring index name for metricbeat collection in the year 2k
+		env["httpEnabled"] = "true"
+		env["httpPort"] = "5066"
 		env["xpackMonitoringCollection"] = "true"
 		env["xpackMonitoring"] = "false"
 	}
@@ -120,7 +112,7 @@ func (sm *StackMonitoringTestSuite) removeProduct() {
 	log.Debugf("Removing %s", sm.Product)
 	srvManager := services.NewServiceManager()
 
-	err := srvManager.RemoveServicesFromCompose("stack-monitoring", []string{sm.Product}, env)
+	err := srvManager.RemoveServicesFromCompose("stack-monitoring", []string{sm.Product, "metricbeat"}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": sm.Product,
@@ -130,7 +122,70 @@ func (sm *StackMonitoringTestSuite) removeProduct() {
 	sm.cleanUp()
 }
 
-func (sm *StackMonitoringTestSuite) runProduct(product string) error {
+// runMetricbeat runs a metricbeat service for monitoring a product
+func (sm *StackMonitoringTestSuite) runMetricbeat() error {
+	serviceManager := services.NewServiceManager()
+
+	env := map[string]string{
+		"BEAT_STRICT_PERMS": "false",
+		"logLevel":          log.GetLevel().String(),
+		"metricbeatTag":     stackVersion,
+		"stackVersion":      stackVersion,
+		sm.Product + "Tag":  stackVersion,
+		"serviceName":       sm.Product,
+	}
+
+	if strings.HasSuffix(sm.Product, "beat") {
+		// look up configurations under workspace's configurations directory
+		dir, _ := os.Getwd()
+		env["metricbeatConfigFile"] = path.Join(dir, "configurations", "metricbeat", "beat-xpack.yml")
+	}
+
+	for k, v := range env {
+		sm.Env[k] = v
+	}
+
+	err := serviceManager.AddServicesToCompose("stack-monitoring", []string{"metricbeat"}, sm.Env)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":             err,
+			"metricbeatVersion": stackVersion,
+			"product":           sm.Product,
+			"productVersion":    stackVersion,
+		}).Error("Could not run Metricbeat for the service")
+
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"metricbeatVersion": stackVersion,
+		"product":           sm.Product,
+		"serviceVersion":    stackVersion,
+	}).Info("Metricbeat is running configured for the product")
+
+	if log.IsLevelEnabled(log.DebugLevel) {
+		composes := []string{
+			"stack-monitoring", // stack name
+			"metricbeat",       // metricbeat service
+		}
+
+		err = serviceManager.RunCommand("stack-monitoring", composes, []string{"logs", "metricbeat"}, env)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":             err,
+				"metricbeatVersion": stackVersion,
+				"product":           sm.Product,
+				"serviceVersion":    stackVersion,
+			}).Error("Could not retrieve Metricbeat logs")
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (sm *StackMonitoringTestSuite) runProduct(product string, collectionMethod string) error {
 	env := map[string]string{
 		"logLevel":       log.GetLevel().String(),
 		product + "Tag":  stackVersion, // all products follow stack version
@@ -156,6 +211,13 @@ func (sm *StackMonitoringTestSuite) runProduct(product string) error {
 		return err
 	}
 
+	if collectionMethod == "metricbeat" {
+		err = sm.runMetricbeat()
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -170,7 +232,7 @@ func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 		return err
 	}
 
-	err = sm.runProduct(product)
+	err = sm.runProduct(product, collectionMethod)
 	if err != nil {
 		return err
 	}
@@ -178,15 +240,18 @@ func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 	log.Debugf("Running %[1]s for X seconds (default: 30) to collect monitoring data internally and index it into the Monitoring index for %[1]s", product)
 	sleep("30")
 
+	composes := []string{
+		sm.Product, // product service
+	}
+
+	if collectionMethod == "metricbeat" {
+		composes = append(composes, "metricbeat")
+	}
+
 	log.Debugf("Stopping %s", product)
 	srvManager := services.NewServiceManager()
 
-	composes := []string{
-		"stack-monitoring", // stack name
-		sm.Product,         // product service
-	}
-
-	err = srvManager.RunCommand("stack-monitoring", composes, []string{"stop", sm.Product}, sm.Env)
+	err = srvManager.RemoveServicesFromCompose("stack-monitoring", composes, sm.Env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,

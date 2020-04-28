@@ -5,12 +5,14 @@ services:
       "metricbeat", "-e",
       "-E", "logging.level=${logLevel}",
       "-E", "setup.ilm.rollover_alias=${indexName}",
-      "-E", "output.elasticsearch.hosts=http://${monitoringEsHost:-elasticsearch}:9200",
+      "-E", "output.elasticsearch.hosts=http://${monitoringEsHost:-elasticsearch}:${monitoringEsPort:-9200}",
       "-E", "output.elasticsearch.password=p4ssw0rd",
       "-E", "output.elasticsearch.username=elastic",
     ]
     environment:
       - BEAT_STRICT_PERMS=${beatStricPerms:-false}
+      - serviceName=${serviceName:-localhost}
+      - httpPort=${httpPort:-5066}
     image: "docker.elastic.co/beats/metricbeat:${metricbeatTag}"
     labels:
       co.elastic.logs/module: "${serviceName}"

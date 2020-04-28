@@ -1,0 +1,8 @@
+metricbeat.modules:
+- module: beat
+  metricsets:
+    - stats
+    - state
+  period: 10s
+  hosts: ["http://${serviceName}:${httpPort}"]
+  xpack.enabled: true
