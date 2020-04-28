@@ -80,7 +80,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	serviceManager := services.NewServiceManager()
 
 	fn := func(ctx context.Context) {
-		err := deleteIndex(ctx, "metricbeat", mts.getIndexName())
+		err := deleteIndex(ctx, mts.getIndexName())
 		if err != nil {
 			log.WithFields(log.Fields{
 				"stack": "metricbeat",
@@ -361,9 +361,7 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 		},
 	}
 
-	stackName := "metricbeat"
-
-	result, err := retrySearch(stackName, mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
+	result, err := retrySearch(mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
 	if err != nil {
 		return err
 	}
@@ -386,9 +384,7 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 		},
 	}
 
-	stackName := "metricbeat"
-
-	result, err := retrySearch(stackName, mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
+	result, err := retrySearch(mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
 	if err != nil {
 		return err
 	}

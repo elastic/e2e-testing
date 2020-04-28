@@ -206,7 +206,7 @@ func startRuntimeDependencies(stackName string, env map[string]string, minutesTo
 		panic("Could not run the stack.")
 	}
 
-	healthy, err := waitForElasticsearch((minutesToBeHealthy * time.Minute), stackName)
+	healthy, err := waitForElasticsearch((minutesToBeHealthy * time.Minute))
 	if !healthy {
 		log.WithFields(log.Fields{
 			"error":   err,
