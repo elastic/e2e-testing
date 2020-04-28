@@ -3,6 +3,7 @@ package e2e
 import (
 	"fmt"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 
@@ -15,10 +16,10 @@ import (
 
 // StackMonitoringTestSuite represents a test suite for the stack monitoring parity tests
 type StackMonitoringTestSuite struct {
-	configurationFile string // the  name of the configuration file to be used in this test suite
-	Env               map[string]string
-	Port              string
-	Product           string
+	Env       map[string]string
+	IndexName string
+	Port      string
+	Product   string
 }
 
 // @collectionMethod1 the collection method to be used. Valid values: legacy, metricbeat
@@ -33,10 +34,39 @@ func (sm *StackMonitoringTestSuite) checkDocumentsStructure(
 
 // checkProduct sets product name, in lowercase, setting the product port based on a validation:
 // if the product is not supported, then an error is thrown
-func (sm *StackMonitoringTestSuite) checkProduct(product string) error {
+func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMethod string) error {
 	sm.Product = strings.ToLower(product)
 
 	env := map[string]string{}
+
+	log.Debugf("Enabling %s collection, sending %s metrics to the monitoring instance", collectionMethod, sm.Product)
+
+	if collectionMethod != "metricbeat" {
+		sm.IndexName = ".monitoring-beats-7*" // stack monitoring index name for legacy collection
+		/*
+			method: PUT
+				url: "https://{{ current_host_ip }}:{{ elasticsearch_port }}/_cluster/settings"
+				body: '{ "transient": { "xpack.monitoring.collection.enabled": true } }'
+				body_format: json
+				validate_certs: no
+				user: "{{ elasticsearch_username }}"
+				password: "{{ elasticsearch_password }}"
+				status_code: 200
+		*/
+
+		if product == "elasticsearch" {
+			env["xpackMonitoringCollection"] = "true"
+		} else {
+			env["xpackMonitoring"] = "true"
+			env["xpackMonitoringInterval"] = "5s"
+			env["monitoringEsHost"] = "monitoringEs" // monitoring elasticsearch service name
+			env["monitoringEsPort"] = "9200"         // monitoring elasticsearch port
+		}
+	} else {
+		sm.IndexName = ".monitoring-beats-7-mb*" // stack monitoring index name for metricbeat collection
+		env["xpackMonitoringCollection"] = "true"
+		env["xpackMonitoring"] = "false"
+	}
 
 	switch {
 	case sm.Product == "elasticsearch":
@@ -48,18 +78,11 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string) error {
 	case strings.HasSuffix(sm.Product, "beat"):
 		sm.Port = strconv.Itoa(5066)
 
-		// get latest configuration file
-		configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/v" + stackVersion + "/" + sm.Product + "/" + sm.Product + ".yml"
+		// look up configurations under workspace's configurations directory
+		dir, _ := os.Getwd()
+		env[sm.Product+"ConfigFile"] = path.Join(dir, "configurations", "parity-testing", sm.Product+".yml")
 
-		configurationFilePath, err := downloadFile(configurationFileURL)
-		if err != nil {
-			return err
-		}
-		sm.configurationFile = configurationFilePath
-
-		env[product+"ConfigFile"] = sm.configurationFile
 		env["serviceName"] = sm.Product
-		env["monitoringEsHost"] = "monitoringEs" // monitoring elasticsearch service name
 	default:
 		return fmt.Errorf("Product %s not supported", product)
 	}
@@ -71,23 +94,6 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string) error {
 
 // cleanUp removes created resources
 func (sm *StackMonitoringTestSuite) cleanUp() {
-	if _, err := os.Stat(sm.configurationFile); err == nil {
-		err = os.Remove(sm.configurationFile)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error":   err,
-				"product": sm.Product,
-				"path":    sm.configurationFile,
-			}).Warn("Configuration file was not removed.")
-
-			return
-		}
-
-		log.WithFields(log.Fields{
-			"product": sm.Product,
-			"path":    sm.configurationFile,
-		}).Debug("Configuration file removed.")
-	}
 }
 
 func (sm *StackMonitoringTestSuite) removeProduct() {
@@ -110,8 +116,10 @@ func (sm *StackMonitoringTestSuite) removeProduct() {
 
 func (sm *StackMonitoringTestSuite) runProduct(product string) error {
 	env := map[string]string{
+		"logLevel":       log.GetLevel().String(),
 		product + "Tag":  stackVersion, // all products follow stack version
 		product + "Port": sm.Port,      // we could run the service in another port
+		"stackVersion":   stackVersion,
 	}
 	env = config.PutServiceEnvironment(env, product, stackVersion)
 
@@ -141,7 +149,7 @@ func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 	product string, collectionMethod string) error {
 
 	// validate product
-	err := sm.checkProduct(product)
+	err := sm.checkProduct(product, collectionMethod)
 	if err != nil {
 		return err
 	}
@@ -151,33 +159,30 @@ func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 		return err
 	}
 
-	envVars := map[string]string{}
-	if collectionMethod == "metricbeat" {
-		log.Debugf("Installing metricbeat configured for %s to send metrics to the elasticsearch monitoring instance", product)
-	} else {
-		log.Debugf("Enabling %s collection, sending metrics to the monitoring instance", collectionMethod)
-
-		/*
-			method: PUT
-				url: "https://{{ current_host_ip }}:{{ elasticsearch_port }}/_cluster/settings"
-				body: '{ "transient": { "xpack.monitoring.collection.enabled": true } }'
-				body_format: json
-				validate_certs: no
-				user: "{{ elasticsearch_username }}"
-				password: "{{ elasticsearch_password }}"
-				status_code: 200
-		*/
-
-		if product == "elasticsearch" {
-			envVars["xpack.monitoring.collection.enabled"] = "true"
-		}
-	}
 	log.Debugf("Running %[1]s for X seconds (default: 30) to collect monitoring data internally and index it into the Monitoring index for %[1]s", product)
-	log.Debugf("Stopping %s", product)
-	log.Debugf("Downloading sample documents from %s's monitoring index to a test directory", product)
-	log.Debugf("Disable %s", collectionMethod)
+	sleep("30")
 
-	return godog.ErrPending
+	log.Debugf("Stopping %s", product)
+	srvManager := services.NewServiceManager()
+
+	composes := []string{
+		"stack-monitoring", // stack name
+		sm.Product,         // product service
+	}
+
+	err = srvManager.RunCommand("stack-monitoring", composes, []string{"stop", sm.Product}, sm.Env)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"service": product,
+			"version": stackVersion,
+		}).Error("Could not stop the service.")
+		return err
+	}
+
+	log.Debugf("Downloading sample documents from %s's monitoring index to a test directory", product)
+
+	return nil
 }
 
 // StackMonitoringFeatureContext adds steps to the Godog test suite

@@ -1,0 +1,16 @@
+logging.level: ${logLevel}
+
+output:
+  elasticsearch:
+    hosts: http://${monitoringEsHost:-elasticsearch}:${monitoringEsPort:-9200}
+    password: p4ssw0rd
+    username: elastic
+
+xpack.monitoring:
+  enabled: ${xpackMonitoring:-true}
+
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /var/log/*.log
