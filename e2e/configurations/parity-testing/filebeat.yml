@@ -14,5 +14,7 @@ xpack.monitoring:
   enabled: ${xpackMonitoring:-true}
 
 filebeat.inputs:
-- type: stdin
+- type: log
   enabled: true
+  paths:
+    - /var/log/grubby_prune_debug
