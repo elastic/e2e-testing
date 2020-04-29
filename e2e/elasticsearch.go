@@ -56,10 +56,12 @@ func deleteIndex(ctx context.Context, index string) error {
 
 		return err
 	}
-	log.WithFields(log.Fields{
-		"indexAlias": index,
-		"status":     res.Status(),
-	}).Debug("Index Alias deleted using Elasticsearch Go client")
+	if res.StatusCode == 200 {
+		log.WithFields(log.Fields{
+			"indexAlias": index,
+			"status":     res.Status(),
+		}).Debug("Index Alias deleted using Elasticsearch Go client")
+	}
 
 	return nil
 }
