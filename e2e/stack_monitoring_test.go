@@ -1,11 +1,13 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cucumber/godog"
 	messages "github.com/cucumber/messages-go/v10"
@@ -47,21 +49,12 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 
 	log.Debugf("Enabling %s collection, sending %s metrics to the monitoring instance", collectionMethod, sm.Product)
 
-	if collectionMethod != "metricbeat" {
-		sm.IndexName = ".monitoring-beats-7-2*" // stack monitoring index name for legacy collection in year 2k
-
-		if product == "elasticsearch" {
-			env["xpackMonitoringCollection"] = "true"
-		} else {
-			env["xpackMonitoring"] = "true"
-		}
-	} else {
-		sm.IndexName = ".monitoring-beats-7-mb-2*" // stack monitoring index name for metricbeat collection in the year 2k
-		env["httpEnabled"] = "true"
-		env["httpPort"] = "5066"
-		env["xpackMonitoringCollection"] = "true"
-		env["xpackMonitoring"] = "false"
+	sm.IndexName = ".monitoring-beats-7"
+	if collectionMethod == "metricbeat" {
+		sm.IndexName += "-mb"
 	}
+	t := time.Now()
+	sm.IndexName += "-" + t.Format("2006.01.02") // match monitoring index name format
 
 	switch {
 	case sm.Product == "elasticsearch":
@@ -78,6 +71,14 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 		env[sm.Product+"ConfigFile"] = path.Join(dir, "configurations", "parity-testing", sm.Product+".yml")
 
 		env["serviceName"] = sm.Product
+
+		if collectionMethod == "metricbeat" {
+			env["httpEnabled"] = "true"
+			env["httpPort"] = "5066"
+			env["xpackMonitoring"] = "false"
+		} else {
+			env["xpackMonitoring"] = "true"
+		}
 	default:
 		return fmt.Errorf("Product %s not supported", product)
 	}
@@ -268,8 +269,18 @@ func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 	}
 
 	sm.collectionHits[collectionMethod] = hits
-
 	log.Debugf("Hits: %v", hits)
+
+	log.Debugf("Deleting monitoring index %s", sm.IndexName)
+	fn := func(ctx context.Context) {
+		err := deleteIndex(ctx, sm.IndexName)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"index": sm.IndexName,
+			}).Warn("The monitoring index was not deleted, but we are not failing the test case")
+		}
+	}
+	defer fn(context.Background())
 
 	return nil
 }
