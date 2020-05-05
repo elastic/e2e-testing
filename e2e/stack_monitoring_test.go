@@ -54,12 +54,7 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 
 	log.Debugf("Enabling %s collection, sending %s metrics to the monitoring instance", collectionMethod, sm.Product)
 
-	sm.IndexName = ".monitoring-beats-7"
-	if collectionMethod == "metricbeat" {
-		sm.IndexName += "-mb"
-	}
-	t := time.Now()
-	sm.IndexName += "-" + t.Format("2006.01.02") // match monitoring index name format
+	productIndexID := sm.Product
 
 	switch {
 	case sm.Product == "elasticsearch":
@@ -72,7 +67,30 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 		}
 	case sm.Product == "logstash":
 		sm.Port = strconv.Itoa(9601)
+
+		sm.handleSpecialCases = func(docType string, legacy *gabs.Container, metricbeat *gabs.Container) error {
+			pipelinesPath := "logstash_stats.pipelines"
+
+			if docType == "logstash_stats" {
+				legacyPipelines := legacy.Path(pipelinesPath)
+				metricbeatPipelines := metricbeat.Path(pipelinesPath)
+
+				legacyPipeline := legacyPipelines.Children()[0]
+				metricbeatPipeline := metricbeatPipelines.Children()[0]
+
+				legacyVertices := legacyPipeline.Path("vertices")
+				metricbeatVertices := metricbeatPipeline.Path("vertices")
+
+				// sort by vertex ID
+				log.Debug(legacyVertices)
+				log.Debug(metricbeatVertices)
+			}
+
+			return nil
+		}
 	case strings.HasSuffix(sm.Product, "beat"):
+		productIndexID = "beats"
+
 		// When Metricbeat monitors Filebeat, it encounters a different set of file IDs in
 		// `type:beats_stats` documents than when internal collection monitors Filebeat. However,
 		// we expect the _number_ of files being harvested by Filebeat in either case to match.
@@ -116,6 +134,13 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 	default:
 		return fmt.Errorf("Product %s not supported", product)
 	}
+
+	sm.IndexName = ".monitoring-" + productIndexID + "-7"
+	if collectionMethod == "metricbeat" {
+		sm.IndexName += "-mb"
+	}
+	t := time.Now()
+	sm.IndexName += "-" + t.Format("2006.01.02") // match monitoring index name format
 
 	sm.Env = env
 
