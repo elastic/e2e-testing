@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Jeffail/gabs/v2"
 	"github.com/cucumber/godog"
 	messages "github.com/cucumber/messages-go/v10"
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
@@ -24,6 +25,10 @@ type StackMonitoringTestSuite struct {
 	Product   string
 	// collection method hits
 	collectionHits map[string]map[string]interface{}
+	// extra fields used during assertions
+	allowedDeletionsExtra  []string
+	allowedInsertionsExtra []string
+	handleSpecialCases     func(docType string, legacy *gabs.Container, metricbeat *gabs.Container) error
 }
 
 // @collectionMethod1 the collection method to be used. Valid values: legacy, metricbeat
@@ -33,8 +38,7 @@ func (sm *StackMonitoringTestSuite) checkDocumentsStructure(
 
 	log.Debugf("Compare the structure of the %s documents with the structure of the %s documents", collectionMethod1, collectionMethod2)
 
-	return assertHitsEqualStructure(
-		sm.collectionHits[collectionMethod1], sm.collectionHits[collectionMethod2])
+	return assertHitsEqualStructure(sm, collectionMethod1, collectionMethod2)
 }
 
 // checkProduct sets product name, in lowercase, setting the product port based on a validation:
@@ -61,9 +65,38 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 		sm.Port = strconv.Itoa(9201)
 	case sm.Product == "kibana":
 		sm.Port = strconv.Itoa(5602)
+		sm.allowedDeletionsExtra = []string{
+			"kibana_stats.response_times.max",
+			"kibana_stats.response_times.average",
+		}
 	case sm.Product == "logstash":
 		sm.Port = strconv.Itoa(9601)
 	case strings.HasSuffix(sm.Product, "beat"):
+		// When Metricbeat monitors Filebeat, it encounters a different set of file IDs in
+		// `type:beats_stats` documents than when internal collection monitors Filebeat. However,
+		// we expect the _number_ of files being harvested by Filebeat in either case to match.
+		// If the numbers match we normalize the file lists in `type:beats_stats` docs collected
+		// by both methods so their parity comparison succeeds.
+		sm.handleSpecialCases = func(docType string, legacy *gabs.Container, metricbeat *gabs.Container) error {
+			filesPath := "beats_stats.metrics.filebeat.harvester.files"
+
+			if docType == "beats_stats" {
+				legacyFiles := legacy.Path(filesPath)
+				metricbeatFiles := metricbeat.Path(filesPath)
+
+				legacyFilesCount := len(legacyFiles.Children())
+				metricbeatFilesCount := len(metricbeatFiles.Children())
+
+				if legacyFilesCount != metricbeatFilesCount {
+					return fmt.Errorf("The number of harvested files in legacy (%d) and metricbeat (%d) collection is different", legacyFilesCount, metricbeatFilesCount)
+				}
+
+				log.Debugf("The number of harvested files in legacy and metricbeat collection is the same: %d", legacyFilesCount)
+			}
+
+			return nil
+		}
+
 		sm.Port = strconv.Itoa(5066)
 
 		// look up configurations under workspace's configurations directory
@@ -318,4 +351,102 @@ func StackMonitoringFeatureContext(s *godog.Suite) {
 		log.Debug("After StackMonitoring Scenario...")
 		testSuite.removeProduct()
 	})
+}
+
+// assertHitsEqualStructure returns an error if hits don't share structure
+func assertHitsEqualStructure(sm *StackMonitoringTestSuite, collectionMethod1 string, collectionMethod2 string) error {
+	collectionMethod1Hits := sm.collectionHits[collectionMethod1]
+	collectionMethod2Hits := sm.collectionHits[collectionMethod2]
+
+	collectionMethod1HitsJSON := gabs.Wrap(collectionMethod1Hits)
+	collectionMethod2HitsJSON := gabs.Wrap(collectionMethod2Hits)
+
+	err := checkParity(sm, collectionMethod1HitsJSON, collectionMethod2HitsJSON)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, metricbeatContainer *gabs.Container) error {
+	allowedInsertionsInMetricbeatDocs := []string{
+		"service",
+		"@timestamp",
+		"agent",
+		"event",
+		"host",
+		"ecs",
+		"metricset",
+	}
+	allowedInsertionsInMetricbeatDocs = append(allowedInsertionsInMetricbeatDocs, sm.allowedInsertionsExtra...)
+
+	allowedDeletionsFromMetricbeatDocs := []string{
+		"source_node",
+	}
+	allowedDeletionsFromMetricbeatDocs = append(allowedDeletionsFromMetricbeatDocs, sm.allowedDeletionsExtra...)
+
+	hitsPath := "hits.hits"
+	legacyHits := legacyContainer.Path(hitsPath)
+	metricbeatHits := metricbeatContainer.Path(hitsPath)
+
+	legacyTypes, legacySources := checkSourceTypes(legacyHits)
+	metricbeatTypes, metricbeatSources := checkSourceTypes(metricbeatHits)
+
+	if len(legacyTypes) > len(metricbeatTypes) {
+		// returns an array as the result of removing all elements in 'b' from the 'a' array
+		// only used here
+		arrayDiff := func(a []string, b []string) []string {
+			target := map[string]bool{}
+			for _, x := range b {
+				target[x] = true
+			}
+
+			result := []string{}
+			for _, x := range a {
+				if _, ok := target[x]; !ok {
+					result = append(result, x)
+				}
+			}
+
+			return result
+		}
+
+		diff := arrayDiff(legacyTypes, metricbeatTypes)
+
+		return fmt.Errorf("Found more legacy-indexed document types than metricbeat-indexed document types. Document types indexed by internal collection but not by Metricbeat collection: %v", diff)
+	}
+
+	errors := []error{}
+	for docType, sourceValue := range legacySources {
+		legacyDoc := gabs.Wrap(sourceValue)
+		metricbeatDoc := gabs.Wrap(metricbeatSources[docType])
+
+		err := sm.handleSpecialCases(docType, legacyDoc, metricbeatDoc)
+		if err != nil {
+			errors = append(errors, err)
+		}
+	}
+	log.Debugf("Found %v errors", errors)
+
+	return nil
+}
+
+// checkSourceTypes returns an array of types present in the document, plus a map with _source documents,
+// indexed by document type
+func checkSourceTypes(container *gabs.Container) ([]string, map[string]interface{}) {
+	types := []string{}
+	sources := map[string]interface{}{}
+
+	for _, containerChild := range container.Children() {
+		t, _ := gabs.New().Set(containerChild.Path("_source.type").Data())
+		data := t.Data().(string)
+
+		types = append(types, data)
+
+		source, _ := gabs.New().Set(containerChild.Path("_source").Data())
+		sources[data] = source.Data()
+	}
+
+	return types, sources
 }
