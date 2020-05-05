@@ -14,6 +14,7 @@ import (
 	messages "github.com/cucumber/messages-go/v10"
 	"github.com/elastic/metricbeat-tests-poc/cli/config"
 	"github.com/elastic/metricbeat-tests-poc/cli/services"
+	"github.com/nsf/jsondiff"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -426,10 +427,95 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 		if err != nil {
 			errors = append(errors, err)
 		}
+
+		unexpectedInsertions := []string{}
+		unexpectedDeletions := []string{}
+
+		differences := jsonDiff(legacyDoc, metricbeatDoc)
+
+		lines := strings.Split(differences, "\n")
+		for _, line := range lines {
+			trimmedLine := strings.TrimSpace(line)
+
+			if !strings.HasPrefix(trimmedLine, `"ADDED":`) && !strings.HasPrefix(trimmedLine, `"REMOVED":`) {
+				continue
+			}
+
+			if strings.HasPrefix(trimmedLine, `"ADDED": `) {
+				if !strings.HasSuffix(trimmedLine, ",") {
+					continue
+				} else if checkAllowedField(trimmedLine, allowedInsertionsInMetricbeatDocs) {
+					continue
+				} else if strings.HasSuffix(trimmedLine, "{} (object)},") {
+					continue
+				}
+
+				unexpectedInsertions = append(unexpectedInsertions, trimmedLine)
+				continue
+			}
+
+			if strings.HasPrefix(trimmedLine, `"REMOVED": `) {
+				if !strings.HasSuffix(trimmedLine, ",") {
+					continue
+				} else if checkAllowedField(trimmedLine, allowedDeletionsFromMetricbeatDocs) {
+					continue
+				} else if strings.HasSuffix(trimmedLine, "{} (object)},") {
+					continue
+				}
+
+				unexpectedDeletions = append(unexpectedDeletions, trimmedLine)
+				continue
+			}
+		}
+
+		if len(unexpectedInsertions) == 0 && len(unexpectedDeletions) == 0 {
+			log.WithFields(log.Fields{
+				"docType": docType,
+			}).Debugf("Expected parity between Metricbeat-indexed doc and legacy-indexed doc found.")
+			continue
+		}
+
+		if len(unexpectedInsertions) > 0 {
+			for _, insertion := range unexpectedInsertions {
+				err := fmt.Errorf("Metricbeat-indexed doc for type='%s' has unexpected insertion", docType)
+				log.WithFields(log.Fields{
+					"docType":   docType,
+					"insertion": insertion,
+					"product":   sm.Product,
+				}).Warn(err.Error())
+				errors = append(errors, err)
+			}
+		}
+
+		if len(unexpectedDeletions) > 0 {
+			for _, deletion := range unexpectedDeletions {
+				err := fmt.Errorf("Metricbeat-indexed doc for type='%s' has unexpected deletion", docType)
+				log.WithFields(log.Fields{
+					"docType":  docType,
+					"deletion": deletion,
+					"product":  sm.Product,
+				}).Warn(err.Error())
+				errors = append(errors, err)
+			}
+		}
 	}
-	log.Debugf("Found %v errors", errors)
+	log.Debugf("Found %d errors", len(errors))
+
+	if len(errors) > 0 {
+		return fmt.Errorf("")
+	}
 
 	return nil
+}
+
+func checkAllowedField(line string, allowedFields []string) bool {
+	for _, field := range allowedFields {
+		if strings.Contains(line, `{"`+field+`": `) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // checkSourceTypes returns an array of types present in the document, plus a map with _source documents,
@@ -449,4 +535,38 @@ func checkSourceTypes(container *gabs.Container) ([]string, map[string]interface
 	}
 
 	return types, sources
+}
+
+func jsonDiff(a *gabs.Container, b *gabs.Container) string {
+	opt := jsondiff.Options{
+		Added: jsondiff.Tag{
+			Begin: `"ADDED": {`,
+			End:   `}`,
+		},
+		Removed: jsondiff.Tag{
+			Begin: `"REMOVED": {`,
+			End:   `}`,
+		},
+		Changed: jsondiff.Tag{
+			Begin: `"CHANGED": {`,
+			End:   `}`,
+		},
+		//Indent:     "\t",
+		PrintTypes: true,
+	}
+
+	diffJSON, differences := jsondiff.Compare(a.Bytes(), b.Bytes(), &opt)
+	if diffJSON != jsondiff.FullMatch {
+		log.WithFields(log.Fields{
+			"diff":     differences,
+			"dest":     a.String(),
+			"diffType": diffJSON,
+			"source":   b.String(),
+		}).Debug("There are differences in the json")
+
+		fmt.Println(differences)
+		return differences
+	}
+
+	return ""
 }

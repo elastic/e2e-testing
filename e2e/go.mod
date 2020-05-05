@@ -9,6 +9,7 @@ require (
 	github.com/cucumber/messages-go/v10 v10.0.3
 	github.com/elastic/go-elasticsearch/v8 v8.0.0-20190731061900-ea052088db25
 	github.com/elastic/metricbeat-tests-poc/cli v1.0.0-rc1
+	github.com/nsf/jsondiff v0.0.0-20190712045011-8443391ee9b6
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/sirupsen/logrus v1.4.2
