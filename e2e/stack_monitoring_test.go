@@ -59,6 +59,9 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 	switch {
 	case sm.Product == "elasticsearch":
 		sm.Port = strconv.Itoa(9201)
+		sm.handleSpecialCases = func(docType string, legacy *gabs.Container, metricbeat *gabs.Container) error {
+			return fmt.Errorf("Not supported yet")
+		}
 	case sm.Product == "kibana":
 		sm.Port = strconv.Itoa(5602)
 		sm.allowedDeletionsExtra = []string{
