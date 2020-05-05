@@ -65,6 +65,20 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 			"kibana_stats.response_times.max",
 			"kibana_stats.response_times.average",
 		}
+
+		sm.handleSpecialCases = func(docType string, legacy *gabs.Container, metricbeat *gabs.Container) error {
+			// Internal collection will index kibana_settings.xpack.default_admin_email as null
+			// whereas Metricbeat collection simply won't index it. So if we find kibana_settings.xpack.default_admin_email
+			// is null, we simply remove it
+			if docType == "kibana_settings" {
+				err := legacy.DeleteP("xpack.default_admin_email")
+				if err != nil {
+					return fmt.Errorf("Could not remove default_admin_email field")
+				}
+			}
+
+			return nil
+		}
 	case sm.Product == "logstash":
 		sm.Port = strconv.Itoa(9601)
 
