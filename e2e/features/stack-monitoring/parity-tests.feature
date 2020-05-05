@@ -9,8 +9,4 @@ Examples:
 | elasticsearch |
 | kibana        |
 | logstash      |
-| auditbeat     |
 | filebeat      |
-| heartbeat     |
-| metricbeat    |
-| packetbeat    |
