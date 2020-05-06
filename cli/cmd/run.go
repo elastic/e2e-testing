@@ -3,8 +3,8 @@ package cmd
 import (
 	"strings"
 
-	"github.com/elastic/metricbeat-tests-poc/cli/config"
-	"github.com/elastic/metricbeat-tests-poc/cli/services"
+	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/cli/services"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"

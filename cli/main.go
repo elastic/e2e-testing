@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/elastic/metricbeat-tests-poc/cli/cmd"
-	"github.com/elastic/metricbeat-tests-poc/cli/config"
+	"github.com/elastic/e2e-testing/cli/cmd"
+	"github.com/elastic/e2e-testing/cli/config"
 )
 
 func init() {

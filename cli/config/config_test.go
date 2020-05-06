@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	io "github.com/elastic/metricbeat-tests-poc/cli/internal"
+	io "github.com/elastic/e2e-testing/cli/internal"
 
 	"github.com/Flaque/filet"
 	"github.com/sirupsen/logrus"

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/elastic/metricbeat-tests-poc/cli/config"
-	state "github.com/elastic/metricbeat-tests-poc/cli/internal"
+	"github.com/elastic/e2e-testing/cli/config"
+	state "github.com/elastic/e2e-testing/cli/internal"
 
 	log "github.com/sirupsen/logrus"
 	tc "github.com/testcontainers/testcontainers-go"

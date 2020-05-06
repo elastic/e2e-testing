@@ -9,7 +9,7 @@ pipeline {
   */
   agent { label 'linux && immutable' }
   environment {
-    REPO = 'metricbeat-tests-poc'
+    REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
     GOPATH = "${env.WORKSPACE}"
     GO_VERSION = "1.12.7"

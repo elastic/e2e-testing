@@ -2,7 +2,7 @@ package services
 
 import (
 	"encoding/json"
-	"github.com/elastic/metricbeat-tests-poc/cli/shell"
+	"github.com/elastic/e2e-testing/cli/shell"
 	"gopkg.in/yaml.v2"
 	"strings"
 )

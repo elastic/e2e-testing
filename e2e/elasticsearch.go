@@ -11,7 +11,7 @@ import (
 	es "github.com/elastic/go-elasticsearch/v8"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/elastic/metricbeat-tests-poc/cli/config"
+	"github.com/elastic/e2e-testing/cli/config"
 )
 
 // ElasticsearchQuery a very reduced representation of an elasticsearch query, where

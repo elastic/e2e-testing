@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/elastic/metricbeat-tests-poc/cli/shell"
+	"github.com/elastic/e2e-testing/cli/shell"
 	log "github.com/sirupsen/logrus"
 )
 
