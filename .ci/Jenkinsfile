@@ -5,7 +5,7 @@
 pipeline {
   agent any
   environment {
-    REPO = 'metricbeat-tests-poc'
+    REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
     NOTIFY_TO = credentials('notify-to')
     JOB_GCS_BUCKET = credentials('gcs-bucket')

@@ -12,8 +12,8 @@ GOARCH?='amd64'
 .PHONY: build
 build:
 	docker run --rm \
-		-v $(ROOT_DIR):/go/src/github.com/elastic/metricbeat-tests-poc/cli \
-		-w /go/src/github.com/elastic/metricbeat-tests-poc/cli \
+		-v $(ROOT_DIR):/go/src/github.com/elastic/e2e-testing/cli \
+		-w /go/src/github.com/elastic/e2e-testing/cli \
 		-e TARGET_OS=$(GOOS) -e TARGET_ARCH=$(GOARCH) -e GO111MODULE=on \
 		$(GO_IMAGE):$(GO_VERSION)-$(GO_IMAGE_TAG) \
 		scripts/build-cli.sh

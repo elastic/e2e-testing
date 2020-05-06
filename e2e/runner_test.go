@@ -12,8 +12,8 @@ import (
 	"github.com/cucumber/godog/colors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/elastic/metricbeat-tests-poc/cli/config"
-	"github.com/elastic/metricbeat-tests-poc/cli/services"
+	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/cli/services"
 )
 
 type contextMetadata struct {

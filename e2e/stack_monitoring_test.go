@@ -12,8 +12,8 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	"github.com/cucumber/godog"
 	messages "github.com/cucumber/messages-go/v10"
-	"github.com/elastic/metricbeat-tests-poc/cli/config"
-	"github.com/elastic/metricbeat-tests-poc/cli/services"
+	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/nsf/jsondiff"
 	log "github.com/sirupsen/logrus"
 )

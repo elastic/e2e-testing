@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/elastic/metricbeat-tests-poc/cli/config"
-	git "github.com/elastic/metricbeat-tests-poc/cli/internal"
-	io "github.com/elastic/metricbeat-tests-poc/cli/internal"
+	"github.com/elastic/e2e-testing/cli/config"
+	git "github.com/elastic/e2e-testing/cli/internal"
+	io "github.com/elastic/e2e-testing/cli/internal"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 

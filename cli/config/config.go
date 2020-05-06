@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	io "github.com/elastic/metricbeat-tests-poc/cli/internal"
-	shell "github.com/elastic/metricbeat-tests-poc/cli/shell"
+	io "github.com/elastic/e2e-testing/cli/internal"
+	shell "github.com/elastic/e2e-testing/cli/shell"
 
 	packr "github.com/gobuffalo/packr/v2"
 	log "github.com/sirupsen/logrus"

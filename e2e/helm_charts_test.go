@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	k8s "github.com/elastic/metricbeat-tests-poc/cli/services"
-	shell "github.com/elastic/metricbeat-tests-poc/cli/shell"
+	k8s "github.com/elastic/e2e-testing/cli/services"
+	shell "github.com/elastic/e2e-testing/cli/shell"
 
 	"github.com/cucumber/godog"
 	messages "github.com/cucumber/messages-go/v10"
