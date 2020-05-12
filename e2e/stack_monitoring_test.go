@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -17,6 +18,41 @@ import (
 	"github.com/nsf/jsondiff"
 	log "github.com/sirupsen/logrus"
 )
+
+// StackMonitoringFeatureContext adds steps to the Godog test suite
+func StackMonitoringFeatureContext(s *godog.Suite) {
+	testSuite := StackMonitoringTestSuite{
+		Env:            map[string]string{},
+		collectionHits: map[string]map[string]interface{}{},
+	}
+
+	s.Step(`^"([^"]*)" sends metrics to Elasticsearch using the "([^"]*)" collection monitoring method$`, testSuite.sendsMetricsToElasticsearch)
+	s.Step(`^the structure of the documents for the "([^"]*)" and "([^"]*)" collection are identical$`, testSuite.checkDocumentsStructure)
+
+	s.BeforeSuite(func() {
+		log.Debug("Before StackMonitoring Suite...")
+
+		env := map[string]string{
+			"stackVersion":              stackVersion,
+			"xpackMonitoringCollection": "false",
+		}
+
+		log.Debug("Installing elasticsearch monitoring instance")
+		startRuntimeDependencies("stack-monitoring", env, 3)
+	})
+	s.BeforeScenario(func(*messages.Pickle) {
+		log.Debug("Before StackMonitoring Scenario...")
+	})
+	s.AfterSuite(func() {
+		log.Debug("After StackMonitoring Suite...")
+		log.Debug("Destroying elasticsearch monitoring instance, including attached services")
+		tearDownRuntimeDependencies("stack-monitoring")
+	})
+	s.AfterScenario(func(*messages.Pickle, error) {
+		log.Debug("After StackMonitoring Scenario...")
+		testSuite.removeProduct()
+	})
+}
 
 // StackMonitoringTestSuite represents a test suite for the stack monitoring parity tests
 type StackMonitoringTestSuite struct {
@@ -63,7 +99,6 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 			return fmt.Errorf("Not supported yet")
 		}
 	case sm.Product == "kibana":
-		sm.Port = strconv.Itoa(5602)
 		sm.allowedDeletionsExtra = []string{
 			"kibana_stats.response_times.max",
 			"kibana_stats.response_times.average",
@@ -83,8 +118,6 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 			return nil
 		}
 	case sm.Product == "logstash":
-		sm.Port = strconv.Itoa(9601)
-
 		sm.handleSpecialCases = func(docType string, legacy *gabs.Container, metricbeat *gabs.Container) error {
 			pipelinesPath := "logstash_stats.pipelines"
 
@@ -132,8 +165,6 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 
 			return nil
 		}
-
-		sm.Port = strconv.Itoa(5066)
 
 		// look up configurations under workspace's configurations directory
 		dir, _ := os.Getwd()
@@ -303,6 +334,16 @@ func (sm *StackMonitoringTestSuite) runProduct(product string, collectionMethod 
 func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 	product string, collectionMethod string) error {
 
+	defer func(ctx context.Context) {
+		log.Debugf("Deleting monitoring index %s", sm.IndexName)
+		if err := deleteIndex(ctx, sm.IndexName); err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"index": sm.IndexName,
+			}).Warn("The monitoring index was not deleted, but we are not failing the test case")
+		}
+	}(context.Background())
+
 	// validate product
 	err := sm.checkProduct(product, collectionMethod)
 	if err != nil {
@@ -338,7 +379,7 @@ func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 		return err
 	}
 
-	log.Debugf("Downloading sample documents from %s's monitoring index to a test directory", product)
+	log.Debugf("Fetching sample documents from %s's monitoring index", product)
 	hits, err := sm.getCollectionMethodHits()
 	if err != nil {
 		return err
@@ -347,53 +388,23 @@ func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 	sm.collectionHits[collectionMethod] = hits
 	log.Debugf("Hits: %v", hits)
 
-	log.Debugf("Deleting monitoring index %s", sm.IndexName)
-	fn := func(ctx context.Context) {
-		err := deleteIndex(ctx, sm.IndexName)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"index": sm.IndexName,
-			}).Warn("The monitoring index was not deleted, but we are not failing the test case")
-		}
-	}
-	defer fn(context.Background())
-
 	return nil
 }
 
-// StackMonitoringFeatureContext adds steps to the Godog test suite
-func StackMonitoringFeatureContext(s *godog.Suite) {
-	testSuite := StackMonitoringTestSuite{
-		Env:            map[string]string{},
-		collectionHits: map[string]map[string]interface{}{},
+func arrayDiff(a []string, b []string) []string {
+	target := map[string]bool{}
+	for _, x := range b {
+		target[x] = true
 	}
 
-	s.Step(`^"([^"]*)" sends metrics to Elasticsearch using the "([^"]*)" collection monitoring method$`, testSuite.sendsMetricsToElasticsearch)
-	s.Step(`^the structure of the documents for the "([^"]*)" and "([^"]*)" collection are identical$`, testSuite.checkDocumentsStructure)
-
-	s.BeforeSuite(func() {
-		log.Debug("Before StackMonitoring Suite...")
-
-		env := map[string]string{
-			"stackVersion":              stackVersion,
-			"xpackMonitoringCollection": "false",
+	result := []string{}
+	for _, x := range a {
+		if _, ok := target[x]; !ok {
+			result = append(result, x)
 		}
+	}
 
-		log.Debug("Installing elasticsearch monitoring instance")
-		startRuntimeDependencies("stack-monitoring", env, 3)
-	})
-	s.BeforeScenario(func(*messages.Pickle) {
-		log.Debug("Before StackMonitoring Scenario...")
-	})
-	s.AfterSuite(func() {
-		log.Debug("After StackMonitoring Suite...")
-		log.Debug("Destroying elasticsearch monitoring instance, including attached services")
-		tearDownRuntimeDependencies("stack-monitoring")
-	})
-	s.AfterScenario(func(*messages.Pickle, error) {
-		log.Debug("After StackMonitoring Scenario...")
-		testSuite.removeProduct()
-	})
+	return result
 }
 
 // assertHitsEqualStructure returns an error if hits don't share structure
@@ -439,35 +450,19 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 	if len(legacyTypes) > len(metricbeatTypes) {
 		// returns an array as the result of removing all elements in 'b' from the 'a' array
 		// only used here
-		arrayDiff := func(a []string, b []string) []string {
-			target := map[string]bool{}
-			for _, x := range b {
-				target[x] = true
-			}
-
-			result := []string{}
-			for _, x := range a {
-				if _, ok := target[x]; !ok {
-					result = append(result, x)
-				}
-			}
-
-			return result
-		}
-
 		diff := arrayDiff(legacyTypes, metricbeatTypes)
 
 		return fmt.Errorf("Found more legacy-indexed document types than metricbeat-indexed document types. Document types indexed by internal collection but not by Metricbeat collection: %v", diff)
 	}
 
-	errors := []error{}
+	foundErrors := []error{}
 	for docType, sourceValue := range legacySources {
 		legacyDoc := gabs.Wrap(sourceValue)
 		metricbeatDoc := gabs.Wrap(metricbeatSources[docType])
 
 		err := sm.handleSpecialCases(docType, legacyDoc, metricbeatDoc)
 		if err != nil {
-			errors = append(errors, err)
+			foundErrors = append(foundErrors, err)
 		}
 
 		unexpectedInsertions := []string{}
@@ -513,7 +508,8 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 		if len(unexpectedInsertions) == 0 && len(unexpectedDeletions) == 0 {
 			log.WithFields(log.Fields{
 				"docType": docType,
-			}).Debugf("Expected parity between Metricbeat-indexed doc and legacy-indexed doc found.")
+				"product": sm.Product,
+			}).Info("Expected parity between Metricbeat-indexed doc and legacy-indexed doc found.")
 			continue
 		}
 
@@ -525,7 +521,7 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 					"insertion": insertion,
 					"product":   sm.Product,
 				}).Warn(err.Error())
-				errors = append(errors, err)
+				foundErrors = append(foundErrors, err)
 			}
 		}
 
@@ -537,14 +533,19 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 					"deletion": deletion,
 					"product":  sm.Product,
 				}).Warn(err.Error())
-				errors = append(errors, err)
+				foundErrors = append(foundErrors, err)
 			}
 		}
 	}
-	log.Debugf("Found %d errors", len(errors))
+	log.Debugf("Found %d errors", len(foundErrors))
 
-	if len(errors) > 0 {
-		return fmt.Errorf("")
+	if len(foundErrors) > 0 {
+		// wrap all errors into one
+		err := errors.New("Original error")
+		for _, e := range foundErrors {
+			err = fmt.Errorf("%w", e)
+		}
+		return err
 	}
 
 	return nil
@@ -606,7 +607,6 @@ func jsonDiff(a *gabs.Container, b *gabs.Container) string {
 			"source":   b.String(),
 		}).Debug("There are differences in the json")
 
-		fmt.Println(differences)
 		return differences
 	}
 
