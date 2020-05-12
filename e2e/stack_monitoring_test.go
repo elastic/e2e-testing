@@ -475,32 +475,47 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 			trimmedLine := strings.TrimSpace(line)
 
 			if !strings.HasPrefix(trimmedLine, `"ADDED":`) && !strings.HasPrefix(trimmedLine, `"REMOVED":`) {
+				log.Debugf("%s does not start with ADDED not REMOVED", trimmedLine)
 				continue
 			}
 
 			if strings.HasPrefix(trimmedLine, `"ADDED": `) {
 				if !strings.HasSuffix(trimmedLine, ",") {
+					log.Debugf("%s starts with ADDED but does not end with comma", trimmedLine)
 					continue
 				} else if checkAllowedField(trimmedLine, allowedInsertionsInMetricbeatDocs) {
+					log.Debugf("%s starts with ADDED and has allowed insertions: %v", trimmedLine, allowedInsertionsInMetricbeatDocs)
 					continue
 				} else if strings.HasSuffix(trimmedLine, "{} (object)},") {
+					log.Debugf("%s starts with ADDED and ends with {} (object)}", trimmedLine)
 					continue
 				}
 
 				unexpectedInsertions = append(unexpectedInsertions, trimmedLine)
+				log.WithFields(log.Fields{
+					"line":       trimmedLine,
+					"insertions": unexpectedInsertions,
+				}).Debug("Unexpected insertion found")
 				continue
 			}
 
 			if strings.HasPrefix(trimmedLine, `"REMOVED": `) {
 				if !strings.HasSuffix(trimmedLine, ",") {
+					log.Debugf("%s starts with REMOVED but does not end with comma", trimmedLine)
 					continue
 				} else if checkAllowedField(trimmedLine, allowedDeletionsFromMetricbeatDocs) {
+					log.Debugf("%s starts with REMOVED and has allowed deletions: %v", trimmedLine, allowedDeletionsFromMetricbeatDocs)
 					continue
 				} else if strings.HasSuffix(trimmedLine, "{} (object)},") {
+					log.Debugf("%s starts with REMOVED and ends with {} (object)}", trimmedLine)
 					continue
 				}
 
 				unexpectedDeletions = append(unexpectedDeletions, trimmedLine)
+				log.WithFields(log.Fields{
+					"line":      trimmedLine,
+					"deletions": unexpectedDeletions,
+				}).Debug("Unexpected deletion found")
 				continue
 			}
 		}
