@@ -15,7 +15,6 @@ import (
 	messages "github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/cli/services"
-	"github.com/nsf/jsondiff"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -389,6 +388,18 @@ func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 	return nil
 }
 
+// arrayContains checks that the array contains the field, or
+// the fiels starts with any of the values from the array
+func arrayContainsField(arr []string, field string) bool {
+	for _, a := range arr {
+		if a == field || strings.HasPrefix(field, a+".") {
+			return true
+		}
+	}
+
+	return false
+}
+
 func arrayDiff(a []string, b []string) []string {
 	target := map[string]bool{}
 	for _, x := range b {
@@ -466,54 +477,47 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 		unexpectedInsertions := []string{}
 		unexpectedDeletions := []string{}
 
-		differences := jsonDiff(legacyDoc, metricbeatDoc)
+		// Flatten a JSON array or object into an object of key/value pairs for each
+		// field, where the key is the full path of the structured field in dot path
+		// notation matching the spec for the method Path.
+		flatLegacy, err := legacyDoc.Flatten()
+		if err != nil {
+			return fmt.Errorf("Error flattening legacy doc: %v", err)
+		}
 
-		lines := strings.Split(differences, "\n")
-		for _, line := range lines {
-			trimmedLine := strings.TrimSpace(line)
+		flatMetricbeat, err := metricbeatDoc.Flatten()
+		if err != nil {
+			return fmt.Errorf("Error flattening metricbeat doc: %v", err)
+		}
 
-			if !strings.HasPrefix(trimmedLine, `"ADDED":`) && !strings.HasPrefix(trimmedLine, `"REMOVED":`) {
-				log.Debugf("%s does not start with ADDED not REMOVED", trimmedLine)
-				continue
-			}
-
-			if strings.HasPrefix(trimmedLine, `"ADDED": `) {
-				if !strings.HasSuffix(trimmedLine, ",") {
-					log.Debugf("%s starts with ADDED but does not end with comma", trimmedLine)
-					continue
-				} else if checkAllowedField(trimmedLine, allowedInsertionsInMetricbeatDocs) {
-					log.Debugf("%s starts with ADDED and has allowed insertions: %v", trimmedLine, allowedInsertionsInMetricbeatDocs)
-					continue
-				} else if strings.HasSuffix(trimmedLine, "{} (object)},") {
-					log.Debugf("%s starts with ADDED and ends with {} (object)}", trimmedLine)
-					continue
+		for k := range flatMetricbeat {
+			if _, ok := flatLegacy[k]; !ok {
+				if arrayContainsField(allowedInsertionsInMetricbeatDocs, k) {
+					log.Debugf("Allowed insertion found: %s - %v", k, allowedInsertionsInMetricbeatDocs)
+				} else {
+					unexpectedInsertions = append(unexpectedInsertions, k)
+					log.WithFields(log.Fields{
+						"field":      k,
+						"insertions": unexpectedInsertions,
+					}).Warn("Unexpected insertion found")
 				}
 
-				unexpectedInsertions = append(unexpectedInsertions, trimmedLine)
-				log.WithFields(log.Fields{
-					"line":       trimmedLine,
-					"insertions": unexpectedInsertions,
-				}).Warn("Unexpected insertion found")
 				continue
 			}
+		}
 
-			if strings.HasPrefix(trimmedLine, `"REMOVED": `) {
-				if !strings.HasSuffix(trimmedLine, ",") {
-					log.Debugf("%s starts with REMOVED but does not end with comma", trimmedLine)
-					continue
-				} else if checkAllowedField(trimmedLine, allowedDeletionsFromMetricbeatDocs) {
-					log.Debugf("%s starts with REMOVED and has allowed deletions: %v", trimmedLine, allowedDeletionsFromMetricbeatDocs)
-					continue
-				} else if strings.HasSuffix(trimmedLine, "{} (object)},") {
-					log.Debugf("%s starts with REMOVED and ends with {} (object)}", trimmedLine)
-					continue
+		for k := range flatLegacy {
+			if _, ok := flatMetricbeat[k]; !ok {
+				if arrayContainsField(allowedDeletionsFromMetricbeatDocs, k) {
+					log.Debugf("Allowed deletion found: %s - %v", k, allowedDeletionsFromMetricbeatDocs)
+				} else {
+					unexpectedDeletions = append(unexpectedDeletions, k)
+					log.WithFields(log.Fields{
+						"field":     k,
+						"deletions": unexpectedDeletions,
+					}).Warn("Unexpected deletion found")
 				}
 
-				unexpectedDeletions = append(unexpectedDeletions, trimmedLine)
-				log.WithFields(log.Fields{
-					"line":      trimmedLine,
-					"deletions": unexpectedDeletions,
-				}).Warn("Unexpected deletion found")
 				continue
 			}
 		}
@@ -564,16 +568,6 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 	return nil
 }
 
-func checkAllowedField(line string, allowedFields []string) bool {
-	for _, field := range allowedFields {
-		if strings.Contains(line, `{"`+field+`": `) {
-			return true
-		}
-	}
-
-	return false
-}
-
 // checkSourceTypes returns an array of types present in the document, plus a map with _source documents,
 // indexed by document type
 func checkSourceTypes(container *gabs.Container) ([]string, map[string]interface{}) {
@@ -591,37 +585,4 @@ func checkSourceTypes(container *gabs.Container) ([]string, map[string]interface
 	}
 
 	return types, sources
-}
-
-func jsonDiff(a *gabs.Container, b *gabs.Container) string {
-	opt := jsondiff.Options{
-		Added: jsondiff.Tag{
-			Begin: `"ADDED": {`,
-			End:   `}`,
-		},
-		Removed: jsondiff.Tag{
-			Begin: `"REMOVED": {`,
-			End:   `}`,
-		},
-		Changed: jsondiff.Tag{
-			Begin: `"CHANGED": {`,
-			End:   `}`,
-		},
-		//Indent:     "\t",
-		PrintTypes: true,
-	}
-
-	diffJSON, differences := jsondiff.Compare(a.Bytes(), b.Bytes(), &opt)
-	if diffJSON != jsondiff.FullMatch {
-		log.WithFields(log.Fields{
-			"diff":     differences,
-			"dest":     a.String(),
-			"diffType": diffJSON,
-			"source":   b.String(),
-		}).Debug("There are differences in the json")
-
-		return differences
-	}
-
-	return ""
 }
