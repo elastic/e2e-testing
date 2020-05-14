@@ -353,8 +353,8 @@ func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 		return err
 	}
 
-	log.Debugf("Running %[1]s for X seconds (default: 30) to collect monitoring data internally and index it into the Monitoring index for %[1]s", product)
-	sleep("30")
+	log.Debugf("Running %[1]s for X seconds (default: 60) to collect monitoring data internally and index it into the Monitoring index for %[1]s", product)
+	sleep("60")
 
 	composes := []string{
 		sm.Product, // product service
