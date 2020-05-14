@@ -2,9 +2,15 @@ version: '2.3'
 services:
   kibana:
     environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_HOSTS=http://${monitoringEsHost:-elasticsearch}:${monitoringEsPort:-9200}
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=p4ssw0rd
+      - monitoring.enabled=${xpackMonitoring:-true}
+      - monitoring.kibana.collection.enabled=${xpackMonitoring:-true}
+      - xpack.monitoring.collection.enabled=${xpackMonitoring:-true}
+      - xpack.monitoring.elasticsearch.hosts=${monitoringEsHost:-elasticsearch}:${monitoringEsPort:-9200}
+      - xpack.monitoring.elasticsearch.password=p4ssw0rd
+      - xpack.monitoring.elasticsearch.username=elastic
     image: "docker.elastic.co/kibana/kibana:${kibanaTag}"
     ports:
       - "5601:5601"

@@ -1,0 +1,10 @@
+metricbeat.modules:
+- module: kibana
+  metricsets:
+    - stats
+  period: 10s
+  hosts: ["http://${serviceName}:5601"]
+  #basepath: ""
+  username: "elastic"
+  password: "p4ssw0rd"
+  xpack.enabled: true

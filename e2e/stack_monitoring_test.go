@@ -109,9 +109,9 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 			// whereas Metricbeat collection simply won't index it. So if we find kibana_settings.xpack.default_admin_email
 			// is null, we simply remove it
 			if docType == "kibana_settings" {
-				err := legacy.DeleteP("xpack.default_admin_email")
+				err := legacy.DeleteP("kibana_settings.xpack.default_admin_email")
 				if err != nil {
-					return fmt.Errorf("Could not remove default_admin_email field")
+					return fmt.Errorf("Could not remove default_admin_email field: %v", err)
 				}
 			}
 
@@ -243,11 +243,9 @@ func (sm *StackMonitoringTestSuite) runMetricbeat() error {
 		"serviceName":       sm.Product,
 	}
 
-	if strings.HasSuffix(sm.Product, "beat") {
-		// look up configurations under workspace's configurations directory
-		dir, _ := os.Getwd()
-		env["metricbeatConfigFile"] = path.Join(dir, "configurations", "metricbeat", "beat-xpack.yml")
-	}
+	// look up configurations under workspace's configurations directory
+	dir, _ := os.Getwd()
+	env["metricbeatConfigFile"] = path.Join(dir, "configurations", "metricbeat", "monitoring-"+sm.Product+".yml")
 
 	for k, v := range env {
 		sm.Env[k] = v
