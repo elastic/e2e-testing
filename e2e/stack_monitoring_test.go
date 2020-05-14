@@ -493,7 +493,7 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 				log.WithFields(log.Fields{
 					"line":       trimmedLine,
 					"insertions": unexpectedInsertions,
-				}).Debug("Unexpected insertion found")
+				}).Warn("Unexpected insertion found")
 				continue
 			}
 
@@ -513,7 +513,7 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 				log.WithFields(log.Fields{
 					"line":      trimmedLine,
 					"deletions": unexpectedDeletions,
-				}).Debug("Unexpected deletion found")
+				}).Warn("Unexpected deletion found")
 				continue
 			}
 		}
