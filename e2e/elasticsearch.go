@@ -72,8 +72,21 @@ func deleteIndex(ctx context.Context, index string) error {
 // random port at localhost, we will build the URL with the bound port at localhost.
 //nolint:unused
 func getElasticsearchClient() (*es.Client, error) {
+	return getElasticsearchClientFromHostPort("localhost", 9200)
+}
+
+// getElasticsearchClientFromHostPort returns a client connected to a running elasticseach, defined
+// at configuration level. Then we will inspect the running container to get its port bindings
+// and from them, get the one related to the Elasticsearch port (9200). As it is bound to a
+// random port at localhost, we will build the URL with the bound port at localhost.
+//nolint:unused
+func getElasticsearchClientFromHostPort(host string, port int) (*es.Client, error) {
+	if host == "" {
+		host = "localhost"
+	}
+
 	cfg := es.Config{
-		Addresses: []string{"http://localhost:9200"},
+		Addresses: []string{fmt.Sprintf("http://%s:%d", host, port)},
 	}
 	esClient, err := es.NewClient(cfg)
 	if err != nil {
@@ -197,16 +210,23 @@ func search(indexName string, query map[string]interface{}) (searchResult, error
 	return result, nil
 }
 
-// waitForElasticsearchHealthy waits for elasticsearch to be healthy, returning false
+// waitForElasticsearch waits for elasticsearch running in localhost:9200 to be healthy, returning false
 // if elasticsearch does not get healthy status in a defined number of minutes.
 //nolint:unused
 func waitForElasticsearch(maxTimeoutMinutes time.Duration) (bool, error) {
+	return waitForElasticsearchFromHostPort("localhost", 9200, maxTimeoutMinutes)
+}
+
+// waitForElasticsearchFromHostPort waits for an elasticsearch running in a host:port to be healthy, returning false
+// if elasticsearch does not get healthy status in a defined number of minutes.
+//nolint:unused
+func waitForElasticsearchFromHostPort(host string, port int, maxTimeoutMinutes time.Duration) (bool, error) {
 	exp := getExponentialBackOff(maxTimeoutMinutes)
 
 	retryCount := 1
 
 	clusterStatus := func() error {
-		esClient, err := getElasticsearchClient()
+		esClient, err := getElasticsearchClientFromHostPort(host, port)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
