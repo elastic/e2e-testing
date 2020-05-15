@@ -105,8 +105,8 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 				legacyShards := legacy.Path(shardsPath)
 				metricbeatShards := metricbeat.Path(shardsPath)
 
-				legacyShards = legacyShards.Children()[0]
-				metricbeatShards = metricbeatShards.Children()[0]
+				legacyShards = legacyShards.Index(0)
+				metricbeatShards = metricbeatShards.Index(0)
 
 				return nil
 			}
@@ -138,7 +138,8 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 
 				// The Metricbeat ILM policy is the one with exactly one phase: hot
 				newPolicyStats := []*gabs.Container{}
-				for _, policyStat := range metricbeatPolicyStats.Children() {
+				for i := 0; i < len(metricbeatPolicyStats.Children()); i++ {
+					policyStat := metricbeatPolicyStats.Index(i)
 					policyPhasesContainer := policyStat.Path("phases")
 					policyPhases := policyPhasesContainer.Data().(map[string]interface{})
 					numPhases := len(policyPhases)
@@ -146,7 +147,7 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 						newPolicyStats = append(newPolicyStats, policyStat)
 						continue
 					}
-					if policyPhasesContainer.Children()[0].Data() != "hot" {
+					if policyPhasesContainer.Index(0).Data() != "hot" {
 						newPolicyStats = append(newPolicyStats, policyStat)
 						continue
 					}
@@ -224,8 +225,8 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 				legacyPipelines := legacy.Path(pipelinesPath)
 				metricbeatPipelines := metricbeat.Path(pipelinesPath)
 
-				legacyPipeline := legacyPipelines.Children()[0]
-				metricbeatPipeline := metricbeatPipelines.Children()[0]
+				legacyPipeline := legacyPipelines.Index(0)
+				metricbeatPipeline := metricbeatPipelines.Index(0)
 
 				legacyVertices := legacyPipeline.Path("vertices")
 				metricbeatVertices := metricbeatPipeline.Path("vertices")
