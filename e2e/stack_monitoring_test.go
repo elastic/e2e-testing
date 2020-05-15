@@ -306,6 +306,9 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 				}
 
 				log.Debugf("The number of harvested files in legacy and metricbeat collection is the same: %d", legacyFilesCount)
+
+				legacy.DeleteP(filesPath)
+				metricbeat.DeleteP(filesPath)
 			}
 
 			return nil
