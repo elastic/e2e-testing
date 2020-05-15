@@ -56,7 +56,7 @@ func StackMonitoringFeatureContext(s *godog.Suite) {
 type StackMonitoringTestSuite struct {
 	Env       map[string]string
 	IndexName string
-	Port      string
+	Port      int
 	Product   string
 	// collection method hits
 	collectionHits map[string]map[string]interface{}
@@ -92,7 +92,7 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 
 	switch {
 	case sm.Product == "elasticsearch":
-		sm.Port = strconv.Itoa(9201)
+		sm.Port = 9201
 
 		productIndexID = "es"
 
@@ -439,8 +439,8 @@ func (sm *StackMonitoringTestSuite) runMetricbeat() error {
 func (sm *StackMonitoringTestSuite) runProduct(product string, collectionMethod string) error {
 	env := map[string]string{
 		"logLevel":       log.GetLevel().String(),
-		product + "Tag":  stackVersion, // all products follow stack version
-		product + "Port": sm.Port,      // we could run the service in another port
+		product + "Tag":  stackVersion,          // all products follow stack version
+		product + "Port": strconv.Itoa(sm.Port), // we could run the service in another port
 		"stackVersion":   stackVersion,
 	}
 	env = config.PutServiceEnvironment(env, product, stackVersion)
@@ -462,8 +462,15 @@ func (sm *StackMonitoringTestSuite) runProduct(product string, collectionMethod 
 		return err
 	}
 
+	if sm.Product == "elasticsearch" {
+		// the production instance of elasticsearch binds its port in localhost
+		_, err = waitForElasticsearchFromHostPort("localhost", sm.Port, (3 * time.Minute))
+		if err != nil {
+			return err
+		}
+	}
+
 	if collectionMethod == "metricbeat" {
-		sleep("30")
 		err = sm.runMetricbeat()
 		if err != nil {
 			return err
