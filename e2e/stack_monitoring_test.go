@@ -582,12 +582,14 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 		// notation matching the spec for the method Path.
 		flatLegacy, err := legacyDoc.Flatten()
 		if err != nil {
-			return fmt.Errorf("Error flattening legacy doc for %s: %v - %v", docType, legacyDoc, err)
+			foundErrors = append(foundErrors, fmt.Errorf("Error flattening legacy doc for %s: %v - %v", docType, legacyDoc, err))
+			flatLegacy = map[string]interface{}{}
 		}
 
 		flatMetricbeat, err := metricbeatDoc.Flatten()
 		if err != nil {
-			return fmt.Errorf("Error flattening metricbeat doc for %s: %v - %v", docType, metricbeatDoc, err)
+			foundErrors = append(foundErrors, fmt.Errorf("Error flattening metricbeat doc for %s: %v - %v", docType, metricbeatDoc, err))
+			flatMetricbeat = map[string]interface{}{}
 		}
 
 		for k := range flatMetricbeat {
