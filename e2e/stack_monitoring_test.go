@@ -166,9 +166,10 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 				// doc.
 				sourceNode := legacy.Path("source_node")
 				newSourceNode := gabs.New()
-				newSourceNode.SetP(sourceNode.Path("uuid"), "source_node.uuid")
-				newSourceNode.SetP(sourceNode.Path("name"), "source_node.name")
-				newSourceNode.SetP(sourceNode.Path("transport_address"), "source_node.transport_address")
+				newSourceNode.SetP(sourceNode.Path("uuid"), "uuid")
+				newSourceNode.SetP(sourceNode.Path("name"), "name")
+				newSourceNode.SetP(sourceNode.Path("transport_address"), "transport_address")
+				legacy.SetP(newSourceNode, "source_node")
 
 				return nil
 			}
@@ -180,8 +181,9 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 				// but those two fields from the internally-indexed doc.
 				sourceNode := legacy.Path("source_node")
 				newSourceNode := gabs.New()
-				newSourceNode.SetP(sourceNode.Path("uuid"), "source_node.uuid")
-				newSourceNode.SetP(sourceNode.Path("name"), "source_node.name")
+				newSourceNode.SetP(sourceNode.Path("uuid"), "uuid")
+				newSourceNode.SetP(sourceNode.Path("name"), "name")
+				legacy.SetP(newSourceNode, "source_node")
 
 				// Internally-indexed docs of `type:shard` will set `shard.relocating_node` to `null`, if
 				// the shard is not relocating. However, Metricbeat-indexed docs of `type:shard` will simply
