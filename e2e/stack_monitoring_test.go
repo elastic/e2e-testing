@@ -530,7 +530,6 @@ func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 	}
 
 	sm.collectionHits[collectionMethod] = hits
-	log.Debugf("Hits: %v", hits)
 
 	return nil
 }
@@ -703,7 +702,7 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 			}
 		}
 	}
-	log.Debugf("Found %d errors", len(foundErrors))
+	log.Infof("Found %d errors", len(foundErrors))
 
 	if len(foundErrors) > 0 {
 		// wrap all errors into one
