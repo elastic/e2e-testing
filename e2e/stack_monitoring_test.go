@@ -646,9 +646,8 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 				} else {
 					unexpectedInsertions = append(unexpectedInsertions, k)
 					log.WithFields(log.Fields{
-						"docType":    docType,
-						"field":      k,
-						"insertions": unexpectedInsertions,
+						"docType": docType,
+						"field":   k,
 					}).Warn("Unexpected insertion found")
 				}
 
@@ -663,9 +662,8 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 				} else {
 					unexpectedDeletions = append(unexpectedDeletions, k)
 					log.WithFields(log.Fields{
-						"docType":   docType,
-						"field":     k,
-						"deletions": unexpectedDeletions,
+						"docType": docType,
+						"field":   k,
 					}).Warn("Unexpected deletion found")
 				}
 
