@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -660,10 +659,6 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 					log.Debugf("Allowed deletion found: %s - %v", k, allowedDeletionsFromMetricbeatDocs)
 				} else {
 					unexpectedDeletions = append(unexpectedDeletions, k)
-					log.WithFields(log.Fields{
-						"docType": docType,
-						"field":   k,
-					}).Warn("Unexpected deletion found")
 				}
 
 				continue
@@ -702,16 +697,12 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 			}
 		}
 	}
-	log.Infof("Found %d errors", len(foundErrors))
 
 	if len(foundErrors) > 0 {
-		// wrap all errors into one
-		err := errors.New("Original error")
-		for _, e := range foundErrors {
-			err = fmt.Errorf("%w", e)
-		}
-		return err
+		return fmt.Errorf("Found %d errors while checking parity", len(foundErrors))
 	}
+
+	log.Info("No parity errors found!")
 
 	return nil
 }
