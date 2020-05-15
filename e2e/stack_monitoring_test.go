@@ -657,14 +657,8 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 
 		for k := range flatMetricbeat {
 			if _, ok := flatLegacy[k]; !ok {
-				if arrayContainsField(allowedInsertionsInMetricbeatDocs, k) {
-					log.Debugf("Allowed insertion found: %s - %v", k, allowedInsertionsInMetricbeatDocs)
-				} else {
+				if !arrayContainsField(allowedInsertionsInMetricbeatDocs, k) {
 					unexpectedInsertions = append(unexpectedInsertions, k)
-					log.WithFields(log.Fields{
-						"docType": docType,
-						"field":   k,
-					}).Warn("Unexpected insertion found")
 				}
 
 				continue
@@ -673,9 +667,7 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 
 		for k := range flatLegacy {
 			if _, ok := flatMetricbeat[k]; !ok {
-				if arrayContainsField(allowedDeletionsFromMetricbeatDocs, k) {
-					log.Debugf("Allowed deletion found: %s - %v", k, allowedDeletionsFromMetricbeatDocs)
-				} else {
+				if !arrayContainsField(allowedDeletionsFromMetricbeatDocs, k) {
 					unexpectedDeletions = append(unexpectedDeletions, k)
 				}
 
