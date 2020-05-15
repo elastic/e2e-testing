@@ -112,8 +112,22 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 			}
 
 			if docType == "cluster_stats" {
-				// because the tests spin up just one fresh 1-node cluster, there is no need to
-				// normalise master_node name
+				// We expect the node ID to be different in the internally-collected vs. metricbeat-collected
+				// docs because the tests spin up a fresh 1-node cluster prior to each type of collection.
+				// So we normalize the node names.
+				masterNodePath := "cluster_state.master_node"
+				nodesPath := "cluster_state.nodes"
+				newNodeName := "__normalized__"
+
+				origNodeName := legacy.Path(masterNodePath).String()
+				legacy.SetP(newNodeName, masterNodePath)
+				metricbeat.SetP(newNodeName, masterNodePath)
+
+				legacy.SetP(legacy.Path(nodesPath+"."+origNodeName), masterNodePath+"."+newNodeName)
+				metricbeat.SetP(metricbeat.Path(nodesPath+"."+origNodeName), masterNodePath+"."+newNodeName)
+
+				legacy.DeleteP(nodesPath + "." + origNodeName)
+				metricbeat.DeleteP(nodesPath + "." + origNodeName)
 
 				// When Metricbeat-based monitoring is used, Metricbeat will setup an ILM policy for
 				// metricbeat-* indices. Obviously this policy is not present when internal monitoring is
@@ -174,7 +188,7 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 				// not send the `shard.relocating_node` field if the shard is not relocating. So we normalize
 				// by deleting the `shard.relocating_node` field from the internally-indexed doc if the shard
 				// is not relocating.
-				legacy.DeleteP("shardd.relocating_node")
+				legacy.DeleteP("shards.relocating_node")
 
 				return nil
 			}
