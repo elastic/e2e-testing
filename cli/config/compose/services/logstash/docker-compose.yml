@@ -2,6 +2,13 @@ version: '2.3'
 services:
   logstash:
     image: docker.elastic.co/logstash/logstash:${logstashTag}
+    environment:
+      - monitoring.enabled=${xpackMonitoring:-true}
+      - monitoring.logstash.collection.enabled=${xpackMonitoring:-true}
+      - xpack.monitoring.enabled=${xpackMonitoring:-true}
+      - xpack.monitoring.elasticsearch.hosts=${monitoringEsHost:-elasticsearch}:${monitoringEsPort:-9200}
+      - xpack.monitoring.elasticsearch.password=p4ssw0rd
+      - xpack.monitoring.elasticsearch.username=elastic
     healthcheck:
       test: bin/logstash -t
       interval: 60s

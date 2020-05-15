@@ -94,8 +94,92 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 	switch {
 	case sm.Product == "elasticsearch":
 		sm.Port = strconv.Itoa(9201)
+
+		productIndexID = "es"
+
 		sm.handleSpecialCases = func(docType string, legacy *gabs.Container, metricbeat *gabs.Container) error {
-			return fmt.Errorf("Not supported yet")
+			if docType == "index_recovery" {
+				// Normalize `index_recovery.shards` array field to have only one object in it.
+				shardsPath := "index_recovery.shards"
+
+				legacyShards := legacy.Path(shardsPath)
+				metricbeatShards := metricbeat.Path(shardsPath)
+
+				legacyShards = legacyShards.Children()[0]
+				metricbeatShards = metricbeatShards.Children()[0]
+
+				return nil
+			}
+
+			if docType == "cluster_stats" {
+				// because the tests spin up just one fresh 1-node cluster, there is no need to
+				// normalise master_node name
+
+				// When Metricbeat-based monitoring is used, Metricbeat will setup an ILM policy for
+				// metricbeat-* indices. Obviously this policy is not present when internal monitoring is
+				// used, since Metricbeat is not running in that case. So we normalize by removing the
+				// usage stats associated with the Metricbeat-created ILM policy.
+				policyStatsPath := "stack_stats.xpack.ilm.policy_stats"
+				metricbeatPolicyStats := metricbeat.Path(policyStatsPath)
+
+				// The Metricbeat ILM policy is the one with exactly one phase: hot
+				newPolicyStats := []*gabs.Container{}
+				for _, policyStat := range metricbeatPolicyStats.Children() {
+					policyPhasesContainer := policyStat.Path("phases")
+					policyPhases := policyPhasesContainer.Data().(map[string]interface{})
+					numPhases := len(policyPhases)
+					if numPhases != 1 {
+						newPolicyStats = append(newPolicyStats, policyStat)
+						continue
+					}
+					if policyPhasesContainer.Children()[0].Data() != "hot" {
+						newPolicyStats = append(newPolicyStats, policyStat)
+						continue
+					}
+				}
+
+				metricbeat.SetP(newPolicyStats, "stack_stats.xpack.ilm.policy_stats")
+				metricbeat.SetP(len(newPolicyStats), "stack_stats.xpack.ilm.policy_count")
+
+				return nil
+			}
+
+			if docType == "node_stats" {
+				// Metricbeat-indexed docs of `type:node_stats` fake the `source_node` field since its required
+				// by the UI. However, it only fakes the `source_node.uuid`, `source_node.name`, and
+				// `source_node.transport_address` fields since those are the only ones actually used by
+				// the UI. So we normalize by removing all but those three fields from the internally-indexed
+				// doc.
+				sourceNode := legacy.Path("source_node")
+				newSourceNode := gabs.New()
+				newSourceNode.SetP(sourceNode.Path("uuid"), "source_node.uuid")
+				newSourceNode.SetP(sourceNode.Path("name"), "source_node.name")
+				newSourceNode.SetP(sourceNode.Path("transport_address"), "source_node.transport_address")
+
+				return nil
+			}
+
+			if docType == "shards" {
+				// Metricbeat-indexed docs of `type:shard` fake the `source_node` field since its required
+				// by the UI. However, it only fakes the `source_node.uuid` and `source_node.name` fields
+				// since those are the only ones actually used by the UI. So we normalize by removing all
+				// but those two fields from the internally-indexed doc.
+				sourceNode := legacy.Path("source_node")
+				newSourceNode := gabs.New()
+				newSourceNode.SetP(sourceNode.Path("uuid"), "source_node.uuid")
+				newSourceNode.SetP(sourceNode.Path("name"), "source_node.name")
+
+				// Internally-indexed docs of `type:shard` will set `shard.relocating_node` to `null`, if
+				// the shard is not relocating. However, Metricbeat-indexed docs of `type:shard` will simply
+				// not send the `shard.relocating_node` field if the shard is not relocating. So we normalize
+				// by deleting the `shard.relocating_node` field from the internally-indexed doc if the shard
+				// is not relocating.
+				legacy.DeleteP("shardd.relocating_node")
+
+				return nil
+			}
+
+			return nil
 		}
 	case sm.Product == "kibana":
 		sm.allowedDeletionsExtra = []string{

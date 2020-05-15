@@ -1,0 +1,10 @@
+metricbeat.modules:
+- module: logstash
+  metricsets:
+    - node
+    - node_stats
+  period: 10s
+  hosts: ["${serviceName}:9600"]
+  username: "elastic"
+  password: "p4ssw0rd"
+  xpack.enabled: true
