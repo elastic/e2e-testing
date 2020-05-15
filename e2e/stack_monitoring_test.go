@@ -482,6 +482,7 @@ func (sm *StackMonitoringTestSuite) runProduct(product string, collectionMethod 
 	}
 
 	if collectionMethod == "metricbeat" {
+		sleep("30")
 		err = sm.runMetricbeat()
 		if err != nil {
 			return err
