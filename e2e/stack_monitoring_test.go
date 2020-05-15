@@ -142,14 +142,13 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 					policyStat := metricbeatPolicyStats.Index(i)
 					policyPhasesContainer := policyStat.Path("phases")
 					policyPhases := policyPhasesContainer.Data().(map[string]interface{})
-					numPhases := len(policyPhases)
-					if numPhases != 1 {
-						newPolicyStats = append(newPolicyStats, policyStat)
+					if len(policyPhases) == 1 &&
+						policyPhasesContainer.Index(0).Data() == "hot" &&
+						policyStat.Path("indices_managed").Data() == 1 {
+
 						continue
-					}
-					if policyPhasesContainer.Index(0).Data() != "hot" {
+					} else {
 						newPolicyStats = append(newPolicyStats, policyStat)
-						continue
 					}
 				}
 
