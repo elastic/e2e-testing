@@ -276,9 +276,24 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 				legacyVertices := legacyPipeline.Path("vertices")
 				metricbeatVertices := metricbeatPipeline.Path("vertices")
 
-				// sort by vertex ID
-				log.Debug(legacyVertices)
-				log.Debug(metricbeatVertices)
+				// no need to sort, as the comparison will be made key by key
+
+				foundError := false
+				if legacyVertices == nil {
+					foundError = true
+					log.WithFields(log.Fields{
+						"product": sm.Product,
+					}).Warn(pipelinesPath + ".0.vertices is null for legacy collection")
+				}
+				if metricbeatVertices == nil {
+					foundError = true
+					log.WithFields(log.Fields{
+						"product": sm.Product,
+					}).Warn(pipelinesPath + ".0.vertices is null for metricbeat collection")
+				}
+				if foundError {
+					return fmt.Errorf("%s.0.vertices for legacy or metricbeat collection is null", pipelinesPath)
+				}
 			}
 
 			return nil
