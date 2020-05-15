@@ -155,6 +155,53 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 				metricbeat.SetP(newPolicyStats, "stack_stats.xpack.ilm.policy_stats")
 				metricbeat.SetP(len(newPolicyStats), "stack_stats.xpack.ilm.policy_count")
 
+				// Metricbeat modules will automatically strip out keys that contain a null value
+				// and `license.max_resource_units` is only available on certain license levels.
+				// The `_cluster/stats` api will return a `null` entry for this key if the license level
+				// does not have a `max_resouce_units` which causes Metricbeat to strip it out
+				// If that happens, just assume parity between the two
+				maxResourceUnitsPath := "license.max_resource_units"
+				if legacy.ExistsP(maxResourceUnitsPath) {
+					legacy.DeleteP(maxResourceUnitsPath)
+				}
+
+				// The `field_types` field returns a list of what field types exist in all existing mappings
+				// When running the parity tests, it is likely that the indices change between when we query
+				// internally collected documents versus when we query Metricbeat collected documents. These
+				// two may or may not match as a result.
+				// To get around this, we know that the parity tests query internally collected documents first
+				// so we will ensure that all `field_types` that exist from that source also exist in the
+				// Metricbeat `field_types` (It is very likely the Metricbeat `field_types` will contain more)
+				internalContainsAllInMetricbeat := false
+				fieldTypesPath := "cluster_stats.indices.mappings.field_types"
+				if legacy.ExistsP(fieldTypesPath) {
+					legacyFieldTypes := legacy.Path(fieldTypesPath)
+					metricbeatFieldTypes := metricbeat.Path(fieldTypesPath)
+					for i := 0; i < len(legacyFieldTypes.Children()); i++ {
+						legacyFieldType := legacyFieldTypes.Index(i)
+						legacyFieldTypeName := legacyFieldType.Path("name")
+						found := false
+						for j := 0; j < len(metricbeatFieldTypes.Children()); j++ {
+							metricbeatFieldType := metricbeatFieldTypes.Index(j)
+
+							metricbeatFieldTypeName := metricbeatFieldType.Path("name")
+							if metricbeatFieldTypeName.Data() == legacyFieldTypeName.Data() {
+								found = true
+							}
+						}
+
+						if !found {
+							break
+						}
+
+						internalContainsAllInMetricbeat = true
+					}
+
+					if internalContainsAllInMetricbeat {
+						legacy.SetP(metricbeat.Path(fieldTypesPath), fieldTypesPath)
+					}
+				}
+
 				return nil
 			}
 
