@@ -119,11 +119,11 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 				newNodeName := "__normalized__"
 
 				origNodeName := legacy.Path(masterNodePath).String()
-				legacy.SetP(newNodeName, masterNodePath)
-				metricbeat.SetP(newNodeName, masterNodePath)
+				legacy, _ = legacy.SetP(newNodeName, masterNodePath)
+				metricbeat, _ = metricbeat.SetP(newNodeName, masterNodePath)
 
-				legacy.SetP(legacy.Path(nodesPath+"."+origNodeName), nodesPath+"."+newNodeName)
-				metricbeat.SetP(metricbeat.Path(nodesPath+"."+origNodeName), nodesPath+"."+newNodeName)
+				legacy, _ = legacy.SetP(legacy.Path(nodesPath+"."+origNodeName), nodesPath+"."+newNodeName)
+				metricbeat, _ = metricbeat.SetP(metricbeat.Path(nodesPath+"."+origNodeName), nodesPath+"."+newNodeName)
 
 				legacy.DeleteP(nodesPath + "." + origNodeName)
 				metricbeat.DeleteP(nodesPath + "." + origNodeName)
@@ -151,8 +151,8 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 					}
 				}
 
-				metricbeat.SetP(newPolicyStats, "stack_stats.xpack.ilm.policy_stats")
-				metricbeat.SetP(len(newPolicyStats), "stack_stats.xpack.ilm.policy_count")
+				metricbeat, _ = metricbeat.SetP(newPolicyStats, "stack_stats.xpack.ilm.policy_stats")
+				metricbeat, _ = metricbeat.SetP(len(newPolicyStats), "stack_stats.xpack.ilm.policy_count")
 
 				// Metricbeat modules will automatically strip out keys that contain a null value
 				// and `license.max_resource_units` is only available on certain license levels.
@@ -197,7 +197,7 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 					}
 
 					if internalContainsAllInMetricbeat {
-						legacy.SetP(metricbeat.Path(fieldTypesPath), fieldTypesPath)
+						legacy, _ = legacy.SetP(metricbeat.Path(fieldTypesPath), fieldTypesPath)
 					}
 				}
 
@@ -212,10 +212,10 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 				// doc.
 				sourceNode := legacy.Path("source_node")
 				newSourceNode := gabs.New()
-				newSourceNode.SetP(sourceNode.Path("uuid"), "uuid")
-				newSourceNode.SetP(sourceNode.Path("name"), "name")
-				newSourceNode.SetP(sourceNode.Path("transport_address"), "transport_address")
-				legacy.SetP(newSourceNode, "source_node")
+				newSourceNode, _ = newSourceNode.SetP(sourceNode.Path("uuid"), "uuid")
+				newSourceNode, _ = newSourceNode.SetP(sourceNode.Path("name"), "name")
+				newSourceNode, _ = newSourceNode.SetP(sourceNode.Path("transport_address"), "transport_address")
+				legacy, _ = legacy.SetP(newSourceNode, "source_node")
 
 				return nil
 			}
@@ -227,9 +227,9 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 				// but those two fields from the internally-indexed doc.
 				sourceNode := legacy.Path("source_node")
 				newSourceNode := gabs.New()
-				newSourceNode.SetP(sourceNode.Path("uuid"), "uuid")
-				newSourceNode.SetP(sourceNode.Path("name"), "name")
-				legacy.SetP(newSourceNode, "source_node")
+				newSourceNode, _ = newSourceNode.SetP(sourceNode.Path("uuid"), "uuid")
+				newSourceNode, _ = newSourceNode.SetP(sourceNode.Path("name"), "name")
+				legacy, _ = legacy.SetP(newSourceNode, "source_node")
 
 				// Internally-indexed docs of `type:shard` will set `shard.relocating_node` to `null`, if
 				// the shard is not relocating. However, Metricbeat-indexed docs of `type:shard` will simply
