@@ -433,25 +433,6 @@ func (sm *StackMonitoringTestSuite) runMetricbeat() error {
 		"serviceVersion":    stackVersion,
 	}).Info("Metricbeat is running configured for the product")
 
-	if log.IsLevelEnabled(log.DebugLevel) {
-		composes := []string{
-			"stack-monitoring", // stack name
-			"metricbeat",       // metricbeat service
-		}
-
-		err = serviceManager.RunCommand("stack-monitoring", composes, []string{"logs", "metricbeat"}, env)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error":             err,
-				"metricbeatVersion": stackVersion,
-				"product":           sm.Product,
-				"serviceVersion":    stackVersion,
-			}).Error("Could not retrieve Metricbeat logs")
-
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -527,6 +508,23 @@ func (sm *StackMonitoringTestSuite) sendsMetricsToElasticsearch(
 
 	if collectionMethod == "metricbeat" {
 		composes = append(composes, "metricbeat")
+
+		if log.IsLevelEnabled(log.DebugLevel) {
+			composes := []string{
+				"stack-monitoring", // stack name
+				"metricbeat",       // metricbeat service
+			}
+
+			err = serviceManager.RunCommand("stack-monitoring", composes, []string{"logs", "metricbeat"}, map[string]string{})
+			if err != nil {
+				log.WithFields(log.Fields{
+					"error":             err,
+					"metricbeatVersion": stackVersion,
+					"product":           sm.Product,
+					"serviceVersion":    stackVersion,
+				}).Error("Could not retrieve Metricbeat logs")
+			}
+		}
 	}
 
 	log.Debugf("Stopping %s", product)
@@ -725,7 +723,9 @@ func checkSourceTypes(container *gabs.Container) ([]string, map[string]interface
 	types := []string{}
 	sources := map[string]interface{}{}
 
-	for _, containerChild := range container.Children() {
+	for i := 0; i < len(container.Children()); i++ {
+		containerChild := container.Index(i)
+
 		t, _ := gabs.New().Set(containerChild.Path("_source.type").Data())
 		data := t.Data().(string)
 
