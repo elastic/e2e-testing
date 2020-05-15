@@ -254,9 +254,10 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 			// whereas Metricbeat collection simply won't index it. So if we find kibana_settings.xpack.default_admin_email
 			// is null, we simply remove it
 			if docType == "kibana_settings" {
-				err := legacy.DeleteP("kibana_settings.xpack.default_admin_email")
-				if err != nil {
-					return fmt.Errorf("Could not remove default_admin_email field: %v", err)
+				defaultAdminEmailPath := "kibana_settings.xpack.default_admin_email"
+
+				if legacy.ExistsP(defaultAdminEmailPath) {
+					legacy.DeleteP(defaultAdminEmailPath)
 				}
 			}
 
