@@ -5,6 +5,8 @@ services:
     environment:
       - monitoring.enabled=${xpackMonitoring:-true}
       - monitoring.logstash.collection.enabled=${xpackMonitoring:-true}
+      - monitoringEsHost=${monitoringEsHost:-elasticsearch}
+      - monitoringEsPort=${monitoringEsPort:-9200}
       - xpack.monitoring.enabled=${xpackMonitoring:-true}
       - xpack.monitoring.elasticsearch.hosts=${monitoringEsHost:-elasticsearch}:${monitoringEsPort:-9200}
       - xpack.monitoring.elasticsearch.password=p4ssw0rd
@@ -14,3 +16,5 @@ services:
       interval: 60s
       timeout: 50s
       retries: 5
+    volumes:
+      - "${logstashPipelinesPath}/:/usr/share/logstash/pipeline/"

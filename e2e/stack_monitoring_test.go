@@ -90,6 +90,9 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 
 	productIndexID := sm.Product
 
+	// look up configurations under workspace's configurations directory
+	workingDir, _ := os.Getwd()
+
 	switch {
 	case sm.Product == "elasticsearch":
 		sm.Port = 9201
@@ -136,6 +139,8 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 
 			return nil
 		}
+
+		env[sm.Product+"PipelinesPath"] = path.Join(workingDir, "configurations", "parity-testing", "pipelines")
 	case strings.HasSuffix(sm.Product, "beat"):
 		productIndexID = "beats"
 
@@ -147,9 +152,7 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 			return nil
 		}
 
-		// look up configurations under workspace's configurations directory
-		dir, _ := os.Getwd()
-		env[sm.Product+"ConfigFile"] = path.Join(dir, "configurations", "parity-testing", sm.Product+".yml")
+		env[sm.Product+"ConfigFile"] = path.Join(workingDir, "configurations", "parity-testing", sm.Product+".yml")
 
 		env["serviceName"] = sm.Product
 
