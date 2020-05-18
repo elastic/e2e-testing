@@ -448,7 +448,7 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 		// only used here
 		diff := arrayDiff(legacyTypes, metricbeatTypes)
 
-		return fmt.Errorf("Found more legacy-indexed document types than metricbeat-indexed document types. Document types indexed by internal collection but not by Metricbeat collection: %v", diff)
+		return fmt.Errorf("Found more legacy-indexed document types than metricbeat-indexed document types. Document types indexed by legacy collection but not by Metricbeat collection: %v", diff)
 	}
 
 	foundErrors := []error{}
