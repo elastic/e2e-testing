@@ -84,7 +84,7 @@ var supportedProducts = map[string]*contextMetadata{
 
 // stackVersion is the version of the stack to use
 // It can be overriden by OP_STACK_VERSION env var
-var stackVersion = "7.6.0"
+var stackVersion = "7.7.0"
 
 var opt = godog.Options{Output: colors.Colored(os.Stdout)}
 

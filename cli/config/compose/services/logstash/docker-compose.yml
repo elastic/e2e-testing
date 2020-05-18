@@ -3,7 +3,6 @@ services:
   logstash:
     image: docker.elastic.co/logstash/logstash:${logstashTag}
     environment:
-      - monitoring.enabled=${xpackMonitoring:-true}
       - monitoring.logstash.collection.enabled=${xpackMonitoring:-true}
       - monitoringEsHost=${monitoringEsHost:-elasticsearch}
       - monitoringEsPort=${monitoringEsPort:-9200}

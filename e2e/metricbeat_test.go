@@ -16,7 +16,7 @@ import (
 
 // metricbeatVersion is the version of the metricbeat to use
 // It can be overriden by OP_METRICBEAT_VERSION env var
-var metricbeatVersion = "7.6.0"
+var metricbeatVersion = "7.7.0"
 
 var serviceManager services.ServiceManager
 

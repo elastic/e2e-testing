@@ -11,8 +11,8 @@ set -euxo pipefail
 
 GO_VERSION=${1:?GO_VERSION is not set}
 FEATURE=${2:-''}
-STACK_VERSION=${3:-'7.6.0'}
-METRICBEAT_VERSION=${4:-'7.6.0'}
+STACK_VERSION=${3:-'7.7.0'}
+METRICBEAT_VERSION=${4:-'7.7.0'}
 TARGET_OS=${GOOS:-linux}
 TARGET_ARCH=${GOARCH:-amd64}
 
