@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
@@ -205,8 +206,6 @@ func handleLogstashStats(product string, legacy *gabs.Container, metricbeat *gab
 	legacyVertices := legacyPipeline.Path("vertices")
 	metricbeatVertices := metricbeatPipeline.Path("vertices")
 
-	// no need to sort, as the comparison will be made key by key
-
 	foundError := false
 	if legacyVertices == nil {
 		foundError = true
@@ -221,9 +220,23 @@ func handleLogstashStats(product string, legacy *gabs.Container, metricbeat *gab
 		}).Warn(pipelinesPath + ".0.vertices is null for metricbeat collection")
 	}
 
+	// sort vertices by vertices[index].id, so that the field comparison is made properly
+
+	legacyPipeline.SetP(sortByVerticesID(legacyVertices), "vertices")
+	metricbeatPipeline.SetP(sortByVerticesID(metricbeatVertices), "vertices")
+
 	if foundError {
 		return fmt.Errorf("%s.0.vertices for legacy or metricbeat collection is null", pipelinesPath)
 	}
 
 	return nil
+}
+
+func sortByVerticesID(vertices *gabs.Container) []*gabs.Container {
+	array := vertices.Children()
+	sort.SliceStable(array, func(i, j int) bool {
+		return array[i].Path("id").Data().(string) < array[j].Path("id").Data().(string)
+	})
+
+	return array
 }
