@@ -148,7 +148,7 @@ func handleElasticsearchIndexRecovery(legacy *gabs.Container, metricbeat *gabs.C
 // by the UI. However, it only fakes the `source_node.uuid`, `source_node.name`, and
 // `source_node.transport_address` fields since those are the only ones actually used by
 // the UI. So we normalize by removing all but those three fields from the internally-indexed doc.
-func handleElasticsearchNodeStats(legacy *gabs.Container, metricbeat *gabs.Container) error {
+func handleElasticsearchNodeStats(legacy *gabs.Container) error {
 	sourceNode := legacy.Path("source_node")
 	newSourceNode := gabs.New()
 	newSourceNode, _ = newSourceNode.SetP(sourceNode.Path("uuid"), "uuid")
@@ -164,7 +164,7 @@ func handleElasticsearchNodeStats(legacy *gabs.Container, metricbeat *gabs.Conta
 // by the UI. However, it only fakes the `source_node.uuid` and `source_node.name` fields
 // since those are the only ones actually used by the UI. So we normalize by removing all
 // but those two fields from the internally-indexed doc.
-func handleElasticsearchShards(legacy *gabs.Container, metricbeat *gabs.Container) error {
+func handleElasticsearchShards(legacy *gabs.Container) error {
 	sourceNode := legacy.Path("source_node")
 	newSourceNode := gabs.New()
 	newSourceNode, _ = newSourceNode.SetP(sourceNode.Path("uuid"), "uuid")

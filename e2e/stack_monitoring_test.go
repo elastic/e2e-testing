@@ -109,11 +109,11 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 			}
 
 			if docType == "node_stats" {
-				return handleElasticsearchNodeStats(legacy, metricbeat)
+				return handleElasticsearchNodeStats(legacy)
 			}
 
 			if docType == "shards" {
-				return handleElasticsearchShards(legacy, metricbeat)
+				return handleElasticsearchShards(legacy)
 			}
 
 			return nil
