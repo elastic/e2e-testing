@@ -1,0 +1,1344 @@
+{
+    "hits": {
+        "hits": [
+            {
+                "_id": "3FA6NnIB90znSaogekeE",
+                "_index": ".monitoring-es-7-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "cluster_uuid": "oph73WYYS0S3AQINzTEkwQ",
+                    "enrich_coordinator_stats": {
+                        "executed_searches_total": 0,
+                        "node_id": "0X3c41KQSr2wEoJC-NkyDA",
+                        "queue_size": 0,
+                        "remote_requests_current": 0,
+                        "remote_requests_total": 0
+                    },
+                    "interval_ms": 10000,
+                    "source_node": {
+                        "host": "10.0.2.15",
+                        "ip": "10.0.2.15",
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "timestamp": "2020-05-21T07:55:00.858Z",
+                        "transport_address": "10.0.2.15:9300",
+                        "uuid": "0X3c41KQSr2wEoJC-NkyDA"
+                    },
+                    "timestamp": "2020-05-21T07:55:01.076Z",
+                    "type": "enrich_coordinator_stats"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "enrich_coordinator_stats"
+                    ]
+                },
+                "sort": [
+                    1590047701076
+                ]
+            },
+            {
+                "_id": "21A6NnIB90znSaogekeE",
+                "_index": ".monitoring-es-7-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "cluster_name": "elasticsearch",
+                    "cluster_state": {
+                        "cluster_uuid": "oph73WYYS0S3AQINzTEkwQ",
+                        "master_node": "0X3c41KQSr2wEoJC-NkyDA",
+                        "nodes": {
+                            "0X3c41KQSr2wEoJC-NkyDA": {
+                                "attributes": {
+                                    "ml.machine_memory": "4143366144",
+                                    "ml.max_open_jobs": "20",
+                                    "transform.node": "true",
+                                    "xpack.installed": "true"
+                                },
+                                "ephemeral_id": "Z3Snw7kASimPpTIPLThweQ",
+                                "name": "packer-virtualbox-iso-1584284895",
+                                "transport_address": "10.0.2.15:9300"
+                            }
+                        },
+                        "nodes_hash": 606612497,
+                        "state_uuid": "B0fW232RTA68Vw1vGGBRdg",
+                        "status": "green",
+                        "version": 30
+                    },
+                    "cluster_stats": {
+                        "cluster_uuid": "oph73WYYS0S3AQINzTEkwQ",
+                        "indices": {
+                            "analysis": {
+                                "analyzer_types": [
+                                    {
+                                        "count": 1,
+                                        "index_count": 1,
+                                        "name": "custom"
+                                    }
+                                ],
+                                "built_in_analyzers": [],
+                                "built_in_char_filters": [],
+                                "built_in_filters": [
+                                    {
+                                        "count": 1,
+                                        "index_count": 1,
+                                        "name": "lowercase"
+                                    },
+                                    {
+                                        "count": 1,
+                                        "index_count": 1,
+                                        "name": "unique"
+                                    }
+                                ],
+                                "built_in_tokenizers": [
+                                    {
+                                        "count": 1,
+                                        "index_count": 1,
+                                        "name": "uax_url_email"
+                                    }
+                                ],
+                                "char_filter_types": [],
+                                "filter_types": [
+                                    {
+                                        "count": 1,
+                                        "index_count": 1,
+                                        "name": "pattern_capture"
+                                    }
+                                ],
+                                "tokenizer_types": []
+                            },
+                            "completion": {
+                                "size_in_bytes": 0
+                            },
+                            "count": 1,
+                            "docs": {
+                                "count": 6,
+                                "deleted": 3
+                            },
+                            "fielddata": {
+                                "evictions": 0,
+                                "memory_size_in_bytes": 0
+                            },
+                            "mappings": {
+                                "field_types": [
+                                    {
+                                        "count": 4,
+                                        "index_count": 1,
+                                        "name": "binary"
+                                    },
+                                    {
+                                        "count": 6,
+                                        "index_count": 1,
+                                        "name": "boolean"
+                                    },
+                                    {
+                                        "count": 4,
+                                        "index_count": 1,
+                                        "name": "date"
+                                    },
+                                    {
+                                        "count": 2,
+                                        "index_count": 1,
+                                        "name": "integer"
+                                    },
+                                    {
+                                        "count": 30,
+                                        "index_count": 1,
+                                        "name": "keyword"
+                                    },
+                                    {
+                                        "count": 19,
+                                        "index_count": 1,
+                                        "name": "object"
+                                    },
+                                    {
+                                        "count": 3,
+                                        "index_count": 1,
+                                        "name": "text"
+                                    }
+                                ]
+                            },
+                            "query_cache": {
+                                "cache_count": 0,
+                                "cache_size": 0,
+                                "evictions": 0,
+                                "hit_count": 0,
+                                "memory_size_in_bytes": 0,
+                                "miss_count": 0,
+                                "total_count": 0
+                            },
+                            "segments": {
+                                "count": 9,
+                                "doc_values_memory_in_bytes": 1308,
+                                "file_sizes": {},
+                                "fixed_bit_set_memory_in_bytes": 0,
+                                "index_writer_memory_in_bytes": 0,
+                                "max_unsafe_auto_id_timestamp": -1,
+                                "memory_in_bytes": 12756,
+                                "norms_memory_in_bytes": 0,
+                                "points_memory_in_bytes": 0,
+                                "stored_fields_memory_in_bytes": 4392,
+                                "term_vectors_memory_in_bytes": 0,
+                                "terms_memory_in_bytes": 7056,
+                                "version_map_memory_in_bytes": 0
+                            },
+                            "shards": {
+                                "index": {
+                                    "primaries": {
+                                        "avg": 1.0,
+                                        "max": 1,
+                                        "min": 1
+                                    },
+                                    "replication": {
+                                        "avg": 0.0,
+                                        "max": 0.0,
+                                        "min": 0.0
+                                    },
+                                    "shards": {
+                                        "avg": 1.0,
+                                        "max": 1,
+                                        "min": 1
+                                    }
+                                },
+                                "primaries": 1,
+                                "replication": 0.0,
+                                "total": 1
+                            },
+                            "store": {
+                                "size_in_bytes": 33923
+                            }
+                        },
+                        "nodes": {
+                            "count": {
+                                "coordinating_only": 0,
+                                "data": 1,
+                                "ingest": 1,
+                                "master": 1,
+                                "ml": 1,
+                                "remote_cluster_client": 1,
+                                "total": 1,
+                                "transform": 1,
+                                "voting_only": 0
+                            },
+                            "discovery_types": {
+                                "single-node": 1
+                            },
+                            "fs": {
+                                "available_in_bytes": 13953392640,
+                                "free_in_bytes": 14915878912,
+                                "total_in_bytes": 18483007488
+                            },
+                            "ingest": {
+                                "number_of_pipelines": 1,
+                                "processor_stats": {
+                                    "gsub": {
+                                        "count": 0,
+                                        "current": 0,
+                                        "failed": 0,
+                                        "time_in_millis": 0
+                                    },
+                                    "script": {
+                                        "count": 0,
+                                        "current": 0,
+                                        "failed": 0,
+                                        "time_in_millis": 0
+                                    }
+                                }
+                            },
+                            "jvm": {
+                                "max_uptime_in_millis": 24609,
+                                "mem": {
+                                    "heap_max_in_bytes": 1073741824,
+                                    "heap_used_in_bytes": 254164480
+                                },
+                                "threads": 42,
+                                "versions": [
+                                    {
+                                        "bundled_jdk": true,
+                                        "count": 1,
+                                        "using_bundled_jdk": true,
+                                        "version": "14",
+                                        "vm_name": "OpenJDK 64-Bit Server VM",
+                                        "vm_vendor": "AdoptOpenJDK",
+                                        "vm_version": "14+36"
+                                    }
+                                ]
+                            },
+                            "network_types": {
+                                "http_types": {
+                                    "security4": 1
+                                },
+                                "transport_types": {
+                                    "security4": 1
+                                }
+                            },
+                            "os": {
+                                "allocated_processors": 2,
+                                "available_processors": 2,
+                                "mem": {
+                                    "free_in_bytes": 1491083264,
+                                    "free_percent": 36,
+                                    "total_in_bytes": 4143366144,
+                                    "used_in_bytes": 2652282880,
+                                    "used_percent": 64
+                                },
+                                "names": [
+                                    {
+                                        "count": 1,
+                                        "name": "Linux"
+                                    }
+                                ],
+                                "pretty_names": [
+                                    {
+                                        "count": 1,
+                                        "pretty_name": "Ubuntu 16.04.6 LTS"
+                                    }
+                                ]
+                            },
+                            "packaging_types": [
+                                {
+                                    "count": 1,
+                                    "flavor": "default",
+                                    "type": "tar"
+                                }
+                            ],
+                            "plugins": [],
+                            "process": {
+                                "cpu": {
+                                    "percent": 31
+                                },
+                                "open_file_descriptors": {
+                                    "avg": 256,
+                                    "max": 256,
+                                    "min": 256
+                                }
+                            },
+                            "versions": [
+                                "7.7.1"
+                            ]
+                        },
+                        "status": "green",
+                        "timestamp": 1590047700893
+                    },
+                    "cluster_uuid": "oph73WYYS0S3AQINzTEkwQ",
+                    "interval_ms": 10000,
+                    "license": {
+                        "cluster_needs_tls": true,
+                        "expiry_date": "2020-06-20T07:54:45.512Z",
+                        "expiry_date_in_millis": 1592639685512,
+                        "issue_date": "2020-05-21T07:54:45.512Z",
+                        "issue_date_in_millis": 1590047685512,
+                        "issued_to": "elasticsearch",
+                        "issuer": "elasticsearch",
+                        "max_nodes": 1000,
+                        "max_resource_units": null,
+                        "start_date_in_millis": -1,
+                        "status": "active",
+                        "type": "trial",
+                        "uid": "825b39ed-c04b-492b-b737-0037055a8608"
+                    },
+                    "source_node": {
+                        "host": "10.0.2.15",
+                        "ip": "10.0.2.15",
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "timestamp": "2020-05-21T07:55:00.858Z",
+                        "transport_address": "10.0.2.15:9300",
+                        "uuid": "0X3c41KQSr2wEoJC-NkyDA"
+                    },
+                    "stack_stats": {
+                        "apm": {
+                            "found": false
+                        },
+                        "xpack": {
+                            "analytics": {
+                                "available": true,
+                                "enabled": true,
+                                "stats": [
+                                    {
+                                        "boxplot_usage": 0,
+                                        "cumulative_cardinality_usage": 0,
+                                        "string_stats_usage": 0,
+                                        "top_metrics_usage": 0
+                                    }
+                                ]
+                            },
+                            "ccr": {
+                                "auto_follow_patterns_count": 0,
+                                "available": true,
+                                "enabled": true,
+                                "follower_indices_count": 0
+                            },
+                            "enrich": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "eql": {
+                                "available": true,
+                                "enabled": false
+                            },
+                            "flattened": {
+                                "available": true,
+                                "enabled": true,
+                                "field_count": 0
+                            },
+                            "frozen_indices": {
+                                "available": true,
+                                "enabled": true,
+                                "indices_count": 0
+                            },
+                            "graph": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "ilm": {
+                                "policy_count": 4,
+                                "policy_stats": [
+                                    {
+                                        "indices_managed": 0,
+                                        "phases": {
+                                            "delete": {
+                                                "actions": [
+                                                    "delete"
+                                                ],
+                                                "min_age": 7776000000
+                                            },
+                                            "hot": {
+                                                "actions": [
+                                                    "rollover"
+                                                ],
+                                                "min_age": 0
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "indices_managed": 0,
+                                        "phases": {
+                                            "delete": {
+                                                "actions": [
+                                                    "delete"
+                                                ],
+                                                "min_age": 604800000
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "indices_managed": 0,
+                                        "phases": {
+                                            "hot": {
+                                                "actions": [
+                                                    "rollover"
+                                                ],
+                                                "min_age": 0
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "indices_managed": 0,
+                                        "phases": {
+                                            "delete": {
+                                                "actions": [
+                                                    "delete"
+                                                ],
+                                                "min_age": 7776000000
+                                            },
+                                            "hot": {
+                                                "actions": [
+                                                    "rollover"
+                                                ],
+                                                "min_age": 0
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            "logstash": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "ml": {
+                                "available": true,
+                                "data_frame_analytics_jobs": {
+                                    "_all": {
+                                        "count": 0
+                                    }
+                                },
+                                "datafeeds": {
+                                    "_all": {
+                                        "count": 0
+                                    }
+                                },
+                                "enabled": true,
+                                "inference": {
+                                    "ingest_processors": {
+                                        "_all": {
+                                            "num_docs_processed": {
+                                                "max": 0,
+                                                "min": 0,
+                                                "sum": 0
+                                            },
+                                            "num_failures": {
+                                                "max": 0,
+                                                "min": 0,
+                                                "sum": 0
+                                            },
+                                            "pipelines": {
+                                                "count": 0
+                                            },
+                                            "time_ms": {
+                                                "max": 0,
+                                                "min": 0,
+                                                "sum": 0
+                                            }
+                                        }
+                                    },
+                                    "trained_models": {
+                                        "_all": {
+                                            "count": 0
+                                        }
+                                    }
+                                },
+                                "jobs": {
+                                    "_all": {
+                                        "count": 0,
+                                        "created_by": {},
+                                        "detectors": {
+                                            "avg": 0.0,
+                                            "max": 0.0,
+                                            "min": 0.0,
+                                            "total": 0.0
+                                        },
+                                        "forecasts": {
+                                            "forecasted_jobs": 0,
+                                            "total": 0
+                                        },
+                                        "model_size": {
+                                            "avg": 0.0,
+                                            "max": 0.0,
+                                            "min": 0.0,
+                                            "total": 0.0
+                                        }
+                                    }
+                                },
+                                "node_count": 1
+                            },
+                            "monitoring": {
+                                "available": true,
+                                "collection_enabled": true,
+                                "enabled": true,
+                                "enabled_exporters": {
+                                    "local": 1
+                                }
+                            },
+                            "rollup": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "security": {
+                                "anonymous": {
+                                    "enabled": false
+                                },
+                                "api_key_service": {
+                                    "enabled": true
+                                },
+                                "audit": {
+                                    "enabled": false
+                                },
+                                "available": true,
+                                "enabled": true,
+                                "fips_140": {
+                                    "enabled": false
+                                },
+                                "ipfilter": {
+                                    "http": false,
+                                    "transport": false
+                                },
+                                "realms": {
+                                    "active_directory": {
+                                        "available": true,
+                                        "enabled": false
+                                    },
+                                    "file": {
+                                        "available": true,
+                                        "cache": [
+                                            {
+                                                "size": 0
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": [
+                                            "default_file"
+                                        ],
+                                        "order": [
+                                            2147483647
+                                        ],
+                                        "size": [
+                                            0
+                                        ]
+                                    },
+                                    "kerberos": {
+                                        "available": true,
+                                        "enabled": false
+                                    },
+                                    "ldap": {
+                                        "available": true,
+                                        "enabled": false
+                                    },
+                                    "native": {
+                                        "available": true,
+                                        "cache": [
+                                            {
+                                                "size": 0
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": [
+                                            "default_native"
+                                        ],
+                                        "order": [
+                                            2147483647
+                                        ],
+                                        "size": [
+                                            0
+                                        ]
+                                    },
+                                    "oidc": {
+                                        "available": true,
+                                        "enabled": false
+                                    },
+                                    "pki": {
+                                        "available": true,
+                                        "enabled": false
+                                    },
+                                    "saml": {
+                                        "available": true,
+                                        "enabled": false
+                                    }
+                                },
+                                "role_mapping": {
+                                    "native": {
+                                        "enabled": 0,
+                                        "size": 0
+                                    }
+                                },
+                                "roles": {
+                                    "dls": {
+                                        "bit_set_cache": {
+                                            "count": 0,
+                                            "memory": "0b",
+                                            "memory_in_bytes": 0
+                                        }
+                                    },
+                                    "file": {
+                                        "dls": false,
+                                        "fls": false,
+                                        "size": 0
+                                    },
+                                    "native": {
+                                        "dls": false,
+                                        "fls": false,
+                                        "size": 0
+                                    }
+                                },
+                                "ssl": {
+                                    "http": {
+                                        "enabled": true
+                                    },
+                                    "transport": {
+                                        "enabled": false
+                                    }
+                                },
+                                "token_service": {
+                                    "enabled": false
+                                }
+                            },
+                            "slm": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "spatial": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "sql": {
+                                "available": true,
+                                "enabled": true,
+                                "features": {
+                                    "command": 0,
+                                    "groupby": 0,
+                                    "having": 0,
+                                    "join": 0,
+                                    "limit": 0,
+                                    "local": 0,
+                                    "orderby": 0,
+                                    "subselect": 0,
+                                    "where": 0
+                                },
+                                "queries": {
+                                    "_all": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "canvas": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "cli": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "jdbc": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "odbc": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "odbc32": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "odbc64": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "rest": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "translate": {
+                                        "count": 0
+                                    }
+                                }
+                            },
+                            "transform": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "vectors": {
+                                "available": true,
+                                "dense_vector_dims_avg_count": 0,
+                                "dense_vector_fields_count": 0,
+                                "enabled": true,
+                                "sparse_vector_fields_count": 0
+                            },
+                            "voting_only": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "watcher": {
+                                "available": true,
+                                "count": {
+                                    "active": 0,
+                                    "total": 0
+                                },
+                                "enabled": true,
+                                "execution": {
+                                    "actions": {
+                                        "_all": {
+                                            "total": 0,
+                                            "total_time_in_ms": 0
+                                        }
+                                    }
+                                },
+                                "watch": {
+                                    "input": {
+                                        "_all": {
+                                            "active": 0,
+                                            "total": 0
+                                        }
+                                    },
+                                    "trigger": {
+                                        "_all": {
+                                            "active": 0,
+                                            "total": 0
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "timestamp": "2020-05-21T07:55:01.074Z",
+                    "type": "cluster_stats",
+                    "version": "7.7.1"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "cluster_stats"
+                    ]
+                },
+                "sort": [
+                    1590047701074
+                ]
+            },
+            {
+                "_id": "2lA6NnIB90znSaogekeE",
+                "_index": ".monitoring-es-7-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "cluster_uuid": "oph73WYYS0S3AQINzTEkwQ",
+                    "interval_ms": 10000,
+                    "node_stats": {
+                        "fs": {
+                            "io_stats": {
+                                "total": {
+                                    "operations": 780,
+                                    "read_kilobytes": 1880,
+                                    "read_operations": 17,
+                                    "write_kilobytes": 20992,
+                                    "write_operations": 763
+                                }
+                            },
+                            "total": {
+                                "available_in_bytes": 13953392640,
+                                "free_in_bytes": 14915878912,
+                                "total_in_bytes": 18483007488
+                            }
+                        },
+                        "indices": {
+                            "docs": {
+                                "count": 6
+                            },
+                            "fielddata": {
+                                "evictions": 0,
+                                "memory_size_in_bytes": 0
+                            },
+                            "indexing": {
+                                "index_time_in_millis": 23,
+                                "index_total": 9,
+                                "throttle_time_in_millis": 0
+                            },
+                            "query_cache": {
+                                "evictions": 0,
+                                "hit_count": 0,
+                                "memory_size_in_bytes": 0,
+                                "miss_count": 0
+                            },
+                            "request_cache": {
+                                "evictions": 0,
+                                "hit_count": 0,
+                                "memory_size_in_bytes": 0,
+                                "miss_count": 0
+                            },
+                            "search": {
+                                "query_time_in_millis": 0,
+                                "query_total": 0
+                            },
+                            "segments": {
+                                "count": 9,
+                                "doc_values_memory_in_bytes": 1308,
+                                "fixed_bit_set_memory_in_bytes": 0,
+                                "index_writer_memory_in_bytes": 0,
+                                "memory_in_bytes": 12756,
+                                "norms_memory_in_bytes": 0,
+                                "points_memory_in_bytes": 0,
+                                "stored_fields_memory_in_bytes": 4392,
+                                "term_vectors_memory_in_bytes": 0,
+                                "terms_memory_in_bytes": 7056,
+                                "version_map_memory_in_bytes": 0
+                            },
+                            "store": {
+                                "size_in_bytes": 33923
+                            }
+                        },
+                        "jvm": {
+                            "gc": {
+                                "collectors": {
+                                    "old": {
+                                        "collection_count": 0,
+                                        "collection_time_in_millis": 0
+                                    },
+                                    "young": {
+                                        "collection_count": 9,
+                                        "collection_time_in_millis": 121
+                                    }
+                                }
+                            },
+                            "mem": {
+                                "heap_max_in_bytes": 1073741824,
+                                "heap_used_in_bytes": 254164480,
+                                "heap_used_percent": 23
+                            }
+                        },
+                        "mlockall": false,
+                        "node_id": "0X3c41KQSr2wEoJC-NkyDA",
+                        "node_master": true,
+                        "os": {
+                            "cgroup": {
+                                "cpu": {
+                                    "cfs_period_micros": 100000,
+                                    "cfs_quota_micros": -1,
+                                    "control_group": "/",
+                                    "stat": {
+                                        "number_of_elapsed_periods": 0,
+                                        "number_of_times_throttled": 0,
+                                        "time_throttled_nanos": 0
+                                    }
+                                },
+                                "cpuacct": {
+                                    "control_group": "/",
+                                    "usage_nanos": 51107163895
+                                },
+                                "memory": {
+                                    "control_group": "/",
+                                    "limit_in_bytes": "9223372036854771712",
+                                    "usage_in_bytes": "2563502080"
+                                }
+                            },
+                            "cpu": {
+                                "load_average": {
+                                    "15m": 0.07,
+                                    "1m": 0.78,
+                                    "5m": 0.22
+                                }
+                            }
+                        },
+                        "process": {
+                            "cpu": {
+                                "percent": 31
+                            },
+                            "max_file_descriptors": 65536,
+                            "open_file_descriptors": 256
+                        },
+                        "thread_pool": {
+                            "generic": {
+                                "queue": 0,
+                                "rejected": 0,
+                                "threads": 4
+                            },
+                            "get": {
+                                "queue": 0,
+                                "rejected": 0,
+                                "threads": 2
+                            },
+                            "management": {
+                                "queue": 0,
+                                "rejected": 0,
+                                "threads": 2
+                            },
+                            "search": {
+                                "queue": 0,
+                                "rejected": 0,
+                                "threads": 0
+                            },
+                            "watcher": {
+                                "queue": 0,
+                                "rejected": 0,
+                                "threads": 0
+                            },
+                            "write": {
+                                "queue": 0,
+                                "rejected": 0,
+                                "threads": 2
+                            }
+                        }
+                    },
+                    "source_node": {
+                        "host": "10.0.2.15",
+                        "ip": "10.0.2.15",
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "timestamp": "2020-05-21T07:55:00.858Z",
+                        "transport_address": "10.0.2.15:9300",
+                        "uuid": "0X3c41KQSr2wEoJC-NkyDA"
+                    },
+                    "timestamp": "2020-05-21T07:55:00.883Z",
+                    "type": "node_stats"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "node_stats"
+                    ]
+                },
+                "sort": [
+                    1590047700883
+                ]
+            },
+            {
+                "_id": "2VA6NnIB90znSaogekeE",
+                "_index": ".monitoring-es-7-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "cluster_uuid": "oph73WYYS0S3AQINzTEkwQ",
+                    "index_recovery": {
+                        "shards": [
+                            {
+                                "id": 0,
+                                "index": {
+                                    "files": {
+                                        "percent": "0.0%",
+                                        "recovered": 0,
+                                        "reused": 0,
+                                        "total": 0
+                                    },
+                                    "size": {
+                                        "percent": "0.0%",
+                                        "recovered_in_bytes": 0,
+                                        "reused_in_bytes": 0,
+                                        "total_in_bytes": 0
+                                    },
+                                    "source_throttle_time_in_millis": 0,
+                                    "target_throttle_time_in_millis": 0,
+                                    "total_time_in_millis": 19
+                                },
+                                "index_name": ".security-7",
+                                "primary": true,
+                                "source": {},
+                                "stage": "DONE",
+                                "start_time_in_millis": 1590047688049,
+                                "stop_time_in_millis": 1590047688149,
+                                "target": {
+                                    "host": "10.0.2.15",
+                                    "id": "0X3c41KQSr2wEoJC-NkyDA",
+                                    "ip": "10.0.2.15",
+                                    "name": "packer-virtualbox-iso-1584284895",
+                                    "transport_address": "10.0.2.15:9300"
+                                },
+                                "total_time_in_millis": 99,
+                                "translog": {
+                                    "percent": "100.0%",
+                                    "recovered": 0,
+                                    "total": 0,
+                                    "total_on_start": 0,
+                                    "total_time_in_millis": 42
+                                },
+                                "type": "EMPTY_STORE",
+                                "verify_index": {
+                                    "check_index_time_in_millis": 0,
+                                    "total_time_in_millis": 0
+                                }
+                            }
+                        ]
+                    },
+                    "interval_ms": 10000,
+                    "source_node": {
+                        "host": "10.0.2.15",
+                        "ip": "10.0.2.15",
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "timestamp": "2020-05-21T07:55:00.858Z",
+                        "transport_address": "10.0.2.15:9300",
+                        "uuid": "0X3c41KQSr2wEoJC-NkyDA"
+                    },
+                    "timestamp": "2020-05-21T07:55:00.881Z",
+                    "type": "index_recovery"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "index_recovery"
+                    ]
+                },
+                "sort": [
+                    1590047700881
+                ]
+            },
+            {
+                "_id": "B0fW232RTA68Vw1vGGBRdg:0X3c41KQSr2wEoJC-NkyDA:.security-7:0:p",
+                "_index": ".monitoring-es-7-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "cluster_uuid": "oph73WYYS0S3AQINzTEkwQ",
+                    "interval_ms": 10000,
+                    "shard": {
+                        "index": ".security-7",
+                        "node": "0X3c41KQSr2wEoJC-NkyDA",
+                        "primary": true,
+                        "relocating_node": null,
+                        "shard": 0,
+                        "state": "STARTED"
+                    },
+                    "source_node": {
+                        "host": "10.0.2.15",
+                        "ip": "10.0.2.15",
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "timestamp": "2020-05-21T07:55:00.858Z",
+                        "transport_address": "10.0.2.15:9300",
+                        "uuid": "0X3c41KQSr2wEoJC-NkyDA"
+                    },
+                    "state_uuid": "B0fW232RTA68Vw1vGGBRdg",
+                    "timestamp": "2020-05-21T07:55:00.881Z",
+                    "type": "shards"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "shards"
+                    ]
+                },
+                "sort": [
+                    1590047700881
+                ]
+            },
+            {
+                "_id": "11A6NnIB90znSaogekeE",
+                "_index": ".monitoring-es-7-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "cluster_uuid": "oph73WYYS0S3AQINzTEkwQ",
+                    "index_stats": {
+                        "created": 1590047687964,
+                        "index": ".security-7",
+                        "primaries": {
+                            "docs": {
+                                "count": 6
+                            },
+                            "fielddata": {
+                                "evictions": 0,
+                                "memory_size_in_bytes": 0
+                            },
+                            "indexing": {
+                                "index_time_in_millis": 23,
+                                "index_total": 9,
+                                "throttle_time_in_millis": 0
+                            },
+                            "merges": {
+                                "total_size_in_bytes": 0
+                            },
+                            "query_cache": {
+                                "evictions": 0,
+                                "hit_count": 0,
+                                "memory_size_in_bytes": 0,
+                                "miss_count": 0
+                            },
+                            "refresh": {
+                                "external_total_time_in_millis": 136,
+                                "total_time_in_millis": 133
+                            },
+                            "request_cache": {
+                                "evictions": 0,
+                                "hit_count": 0,
+                                "memory_size_in_bytes": 0,
+                                "miss_count": 0
+                            },
+                            "search": {
+                                "query_time_in_millis": 0,
+                                "query_total": 0
+                            },
+                            "segments": {
+                                "count": 9,
+                                "doc_values_memory_in_bytes": 1308,
+                                "fixed_bit_set_memory_in_bytes": 0,
+                                "index_writer_memory_in_bytes": 0,
+                                "memory_in_bytes": 12756,
+                                "norms_memory_in_bytes": 0,
+                                "points_memory_in_bytes": 0,
+                                "stored_fields_memory_in_bytes": 4392,
+                                "term_vectors_memory_in_bytes": 0,
+                                "terms_memory_in_bytes": 7056,
+                                "version_map_memory_in_bytes": 0
+                            },
+                            "store": {
+                                "size_in_bytes": 33923
+                            }
+                        },
+                        "shards": {
+                            "active_primaries": 1,
+                            "active_replicas": 0,
+                            "active_total": 1,
+                            "initializing": 0,
+                            "primaries": 1,
+                            "relocating": 0,
+                            "replicas": 0,
+                            "total": 1,
+                            "unassigned_primaries": 0,
+                            "unassigned_replicas": 0,
+                            "unassigned_total": 0
+                        },
+                        "status": "green",
+                        "total": {
+                            "docs": {
+                                "count": 6
+                            },
+                            "fielddata": {
+                                "evictions": 0,
+                                "memory_size_in_bytes": 0
+                            },
+                            "indexing": {
+                                "index_time_in_millis": 23,
+                                "index_total": 9,
+                                "throttle_time_in_millis": 0
+                            },
+                            "merges": {
+                                "total_size_in_bytes": 0
+                            },
+                            "query_cache": {
+                                "evictions": 0,
+                                "hit_count": 0,
+                                "memory_size_in_bytes": 0,
+                                "miss_count": 0
+                            },
+                            "refresh": {
+                                "external_total_time_in_millis": 136,
+                                "total_time_in_millis": 133
+                            },
+                            "request_cache": {
+                                "evictions": 0,
+                                "hit_count": 0,
+                                "memory_size_in_bytes": 0,
+                                "miss_count": 0
+                            },
+                            "search": {
+                                "query_time_in_millis": 0,
+                                "query_total": 0
+                            },
+                            "segments": {
+                                "count": 9,
+                                "doc_values_memory_in_bytes": 1308,
+                                "fixed_bit_set_memory_in_bytes": 0,
+                                "index_writer_memory_in_bytes": 0,
+                                "memory_in_bytes": 12756,
+                                "norms_memory_in_bytes": 0,
+                                "points_memory_in_bytes": 0,
+                                "stored_fields_memory_in_bytes": 4392,
+                                "term_vectors_memory_in_bytes": 0,
+                                "terms_memory_in_bytes": 7056,
+                                "version_map_memory_in_bytes": 0
+                            },
+                            "store": {
+                                "size_in_bytes": 33923
+                            }
+                        },
+                        "uuid": "8Pr7shZmSFKG4ThS9TeRYw"
+                    },
+                    "interval_ms": 10000,
+                    "source_node": {
+                        "host": "10.0.2.15",
+                        "ip": "10.0.2.15",
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "timestamp": "2020-05-21T07:55:00.858Z",
+                        "transport_address": "10.0.2.15:9300",
+                        "uuid": "0X3c41KQSr2wEoJC-NkyDA"
+                    },
+                    "timestamp": "2020-05-21T07:55:00.877Z",
+                    "type": "index_stats"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "index_stats"
+                    ]
+                },
+                "sort": [
+                    1590047700877
+                ]
+            },
+            {
+                "_id": "2FA6NnIB90znSaogekeE",
+                "_index": ".monitoring-es-7-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "cluster_uuid": "oph73WYYS0S3AQINzTEkwQ",
+                    "indices_stats": {
+                        "_all": {
+                            "primaries": {
+                                "docs": {
+                                    "count": 6
+                                },
+                                "indexing": {
+                                    "index_time_in_millis": 23,
+                                    "index_total": 9,
+                                    "is_throttled": false,
+                                    "throttle_time_in_millis": 0
+                                },
+                                "search": {
+                                    "query_time_in_millis": 0,
+                                    "query_total": 0
+                                },
+                                "store": {
+                                    "size_in_bytes": 33923
+                                }
+                            },
+                            "total": {
+                                "docs": {
+                                    "count": 6
+                                },
+                                "indexing": {
+                                    "index_time_in_millis": 23,
+                                    "index_total": 9,
+                                    "is_throttled": false,
+                                    "throttle_time_in_millis": 0
+                                },
+                                "search": {
+                                    "query_time_in_millis": 0,
+                                    "query_total": 0
+                                },
+                                "store": {
+                                    "size_in_bytes": 33923
+                                }
+                            }
+                        }
+                    },
+                    "interval_ms": 10000,
+                    "source_node": {
+                        "host": "10.0.2.15",
+                        "ip": "10.0.2.15",
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "timestamp": "2020-05-21T07:55:00.858Z",
+                        "transport_address": "10.0.2.15:9300",
+                        "uuid": "0X3c41KQSr2wEoJC-NkyDA"
+                    },
+                    "timestamp": "2020-05-21T07:55:00.877Z",
+                    "type": "indices_stats"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "indices_stats"
+                    ]
+                },
+                "sort": [
+                    1590047700877
+                ]
+            },
+            {
+                "_id": "1lA6NnIB90znSaogekeE",
+                "_index": ".monitoring-es-7-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "ccr_auto_follow_stats": {
+                        "auto_followed_clusters": [],
+                        "number_of_failed_follow_indices": 0,
+                        "number_of_failed_remote_cluster_state_requests": 0,
+                        "number_of_successful_follow_indices": 0,
+                        "recent_auto_follow_errors": []
+                    },
+                    "cluster_uuid": "oph73WYYS0S3AQINzTEkwQ",
+                    "interval_ms": 10000,
+                    "source_node": {
+                        "host": "10.0.2.15",
+                        "ip": "10.0.2.15",
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "timestamp": "2020-05-21T07:55:00.858Z",
+                        "transport_address": "10.0.2.15:9300",
+                        "uuid": "0X3c41KQSr2wEoJC-NkyDA"
+                    },
+                    "timestamp": "2020-05-21T07:55:00.860Z",
+                    "type": "ccr_auto_follow_stats"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "ccr_auto_follow_stats"
+                    ]
+                },
+                "sort": [
+                    1590047700860
+                ]
+            }
+        ],
+        "max_score": null,
+        "total": {
+            "relation": "eq",
+            "value": 8
+        }
+    },
+    "timed_out": false,
+    "took": 29
+}

@@ -1,0 +1,361 @@
+{
+    "hits": {
+        "hits": [
+            {
+                "_id": "CAA-NnIB9WmSvcfn2C7o",
+                "_index": ".monitoring-beats-7-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "beats_stats": {
+                        "beat": {
+                            "host": "packer-virtualbox-iso-1584284895",
+                            "name": "packer-virtualbox-iso-1584284895",
+                            "type": "filebeat",
+                            "uuid": "48174190-3071-4ed4-b5fd-4db133d7e703",
+                            "version": "7.7.1"
+                        },
+                        "metrics": {
+                            "beat": {
+                                "cpu": {
+                                    "system": {
+                                        "ticks": 340,
+                                        "time": {
+                                            "ms": 348
+                                        }
+                                    },
+                                    "total": {
+                                        "ticks": 1040,
+                                        "time": {
+                                            "ms": 1052
+                                        },
+                                        "value": 1040
+                                    },
+                                    "user": {
+                                        "ticks": 700,
+                                        "time": {
+                                            "ms": 704
+                                        }
+                                    }
+                                },
+                                "handles": {
+                                    "limit": {
+                                        "hard": 65536,
+                                        "soft": 65536
+                                    },
+                                    "open": 21
+                                },
+                                "info": {
+                                    "ephemeral_id": "cca24341-0d2e-474e-ab6e-bfe7bd2df61b",
+                                    "uptime": {
+                                        "ms": 10179
+                                    }
+                                },
+                                "memstats": {
+                                    "gc_next": 15181952,
+                                    "memory_alloc": 8113352,
+                                    "memory_total": 161438928,
+                                    "rss": 87613440
+                                },
+                                "runtime": {
+                                    "goroutines": 78
+                                }
+                            },
+                            "filebeat": {
+                                "events": {
+                                    "active": 0,
+                                    "added": 12689,
+                                    "done": 12689
+                                },
+                                "harvester": {
+                                    "closed": 0,
+                                    "files": {
+                                        "3019788a-a9fc-4aaf-8415-b3dbc6e9d0c9": {
+                                            "last_event_published_time": "2020-05-21T07:59:40.661Z",
+                                            "last_event_timestamp": "2020-05-21T07:59:40.661Z",
+                                            "name": "/var/log/vboxadd-install.log",
+                                            "read_offset": 660,
+                                            "size": 660,
+                                            "start_time": "2020-05-21T07:59:37.688Z"
+                                        },
+                                        "4295cdf1-1729-4461-8176-7e48a33fcdfc": {
+                                            "last_event_published_time": "2020-05-21T07:59:41.795Z",
+                                            "last_event_timestamp": "2020-05-21T07:59:41.795Z",
+                                            "name": "/var/log/auth.log",
+                                            "read_offset": 33447,
+                                            "size": 32389,
+                                            "start_time": "2020-05-21T07:59:37.690Z"
+                                        },
+                                        "63d48c32-3dcc-4e5c-a56c-64145c6bda87": {
+                                            "last_event_published_time": "2020-05-21T07:59:40.766Z",
+                                            "last_event_timestamp": "2020-05-21T07:59:40.766Z",
+                                            "name": "/var/log/kern.log",
+                                            "read_offset": 165005,
+                                            "size": 165005,
+                                            "start_time": "2020-05-21T07:59:37.687Z"
+                                        },
+                                        "c309c318-9121-40a2-91e5-26a299cb232b": {
+                                            "last_event_published_time": "2020-05-21T07:59:40.695Z",
+                                            "last_event_timestamp": "2020-05-21T07:59:40.695Z",
+                                            "name": "/var/log/alternatives.log",
+                                            "read_offset": 50504,
+                                            "size": 50504,
+                                            "start_time": "2020-05-21T07:59:37.687Z"
+                                        },
+                                        "c396ec10-70a3-4684-8fbc-f9f6e95dc2a9": {
+                                            "last_event_published_time": "2020-05-21T07:59:40.662Z",
+                                            "last_event_timestamp": "2020-05-21T07:59:40.662Z",
+                                            "name": "/var/log/fontconfig.log",
+                                            "read_offset": 511,
+                                            "size": 511,
+                                            "start_time": "2020-05-21T07:59:37.687Z"
+                                        },
+                                        "e9f3b4f8-25c7-4c30-8048-64f1ea977eaa": {
+                                            "last_event_published_time": "2020-05-21T07:59:41.568Z",
+                                            "last_event_timestamp": "2020-05-21T07:59:41.568Z",
+                                            "name": "/var/log/bootstrap.log",
+                                            "read_offset": 57457,
+                                            "size": 57457,
+                                            "start_time": "2020-05-21T07:59:40.658Z"
+                                        },
+                                        "efc609d2-4e61-4cdd-862c-1b1cbea0b222": {
+                                            "last_event_published_time": "2020-05-21T07:59:40.664Z",
+                                            "last_event_timestamp": "2020-05-21T07:59:40.663Z",
+                                            "name": "/var/log/boot.log",
+                                            "read_offset": 3853,
+                                            "size": 3853,
+                                            "start_time": "2020-05-21T07:59:37.691Z"
+                                        },
+                                        "f34880a6-b198-4562-b23a-5aee886edd6b": {
+                                            "last_event_published_time": "2020-05-21T07:59:40.658Z",
+                                            "last_event_timestamp": "2020-05-21T07:59:37.690Z",
+                                            "name": "/var/log/vboxadd-setup.log",
+                                            "read_offset": 61,
+                                            "size": 61,
+                                            "start_time": "2020-05-21T07:59:37.688Z"
+                                        },
+                                        "f9e2d091-6664-4bf7-a887-08bb0e942022": {
+                                            "last_event_published_time": "2020-05-21T07:59:43.989Z",
+                                            "last_event_timestamp": "2020-05-21T07:59:43.989Z",
+                                            "name": "/var/log/dpkg.log",
+                                            "read_offset": 687989,
+                                            "size": 687989,
+                                            "start_time": "2020-05-21T07:59:40.660Z"
+                                        }
+                                    },
+                                    "open_files": 9,
+                                    "running": 9,
+                                    "skipped": 0,
+                                    "started": 9
+                                },
+                                "input": {
+                                    "log": {
+                                        "files": {
+                                            "renamed": 0,
+                                            "truncated": 0
+                                        }
+                                    },
+                                    "netflow": {
+                                        "flows": 0,
+                                        "packets": {
+                                            "dropped": 0,
+                                            "received": 0
+                                        }
+                                    }
+                                }
+                            },
+                            "libbeat": {
+                                "config": {
+                                    "module": {
+                                        "running": 0,
+                                        "starts": 0,
+                                        "stops": 0
+                                    },
+                                    "reloads": 1,
+                                    "scans": 1
+                                },
+                                "output": {
+                                    "events": {
+                                        "acked": 12602,
+                                        "active": 0,
+                                        "batches": 253,
+                                        "dropped": 0,
+                                        "duplicates": 0,
+                                        "failed": 0,
+                                        "toomany": 0,
+                                        "total": 12602
+                                    },
+                                    "read": {
+                                        "bytes": 0,
+                                        "errors": 0
+                                    },
+                                    "type": "elasticsearch",
+                                    "write": {
+                                        "bytes": 0,
+                                        "errors": 0
+                                    }
+                                },
+                                "pipeline": {
+                                    "clients": 1,
+                                    "events": {
+                                        "active": 0,
+                                        "dropped": 0,
+                                        "failed": 0,
+                                        "filtered": 87,
+                                        "published": 12602,
+                                        "retry": 50,
+                                        "total": 12689
+                                    },
+                                    "queue": {
+                                        "acked": 12602
+                                    }
+                                }
+                            },
+                            "registrar": {
+                                "states": {
+                                    "cleanup": 0,
+                                    "current": 9,
+                                    "update": 12689
+                                },
+                                "writes": {
+                                    "fail": 0,
+                                    "success": 260,
+                                    "total": 260
+                                }
+                            },
+                            "system": {
+                                "cpu": {
+                                    "cores": 2
+                                },
+                                "load": {
+                                    "1": 0.73,
+                                    "15": 0.07,
+                                    "5": 0.21,
+                                    "norm": {
+                                        "1": 0.365,
+                                        "15": 0.035,
+                                        "5": 0.105
+                                    }
+                                }
+                            }
+                        },
+                        "timestamp": "2020-05-21T07:59:47.809Z"
+                    },
+                    "cluster_uuid": "N_TCL8ovTruedGR1WtWZ9A",
+                    "interval_ms": 10000,
+                    "source_node": {
+                        "host": "10.0.2.15",
+                        "ip": "10.0.2.15",
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "timestamp": "2020-05-21T07:59:47.858Z",
+                        "transport_address": "10.0.2.15:9300",
+                        "uuid": "_BvO00quRkCAgvlz_BHZNA"
+                    },
+                    "timestamp": "2020-05-21T07:59:47.855Z",
+                    "type": "beats_stats"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "beats_stats"
+                    ]
+                },
+                "sort": [
+                    1590047987855
+                ]
+            },
+            {
+                "_id": "ZAA_NnIB9WmSvcfnmy64",
+                "_index": ".monitoring-beats-7-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "beats_state": {
+                        "beat": {
+                            "host": "packer-virtualbox-iso-1584284895",
+                            "name": "packer-virtualbox-iso-1584284895",
+                            "type": "filebeat",
+                            "uuid": "48174190-3071-4ed4-b5fd-4db133d7e703",
+                            "version": "7.7.1"
+                        },
+                        "state": {
+                            "beat": {
+                                "name": "packer-virtualbox-iso-1584284895"
+                            },
+                            "host": {
+                                "architecture": "x86_64",
+                                "containerized": "containerized",
+                                "hostname": "packer-virtualbox-iso-1584284895",
+                                "id": "e4484af3bb7677512f703e115e6e459c",
+                                "os": {
+                                    "codename": "xenial",
+                                    "family": "debian",
+                                    "kernel": "4.4.0-174-generic",
+                                    "name": "Ubuntu",
+                                    "platform": "ubuntu",
+                                    "version": "16.04.6 LTS (Xenial Xerus)"
+                                }
+                            },
+                            "input": {
+                                "count": 1,
+                                "names": [
+                                    "log"
+                                ]
+                            },
+                            "management": {
+                                "enabled": false
+                            },
+                            "module": {
+                                "count": 0,
+                                "names": []
+                            },
+                            "output": {
+                                "name": "elasticsearch"
+                            },
+                            "outputs": {
+                                "elasticsearch": {
+                                    "cluster_uuid": "N_TCL8ovTruedGR1WtWZ9A"
+                                }
+                            },
+                            "queue": {
+                                "name": "mem"
+                            },
+                            "service": {
+                                "id": "48174190-3071-4ed4-b5fd-4db133d7e703",
+                                "name": "filebeat",
+                                "version": "7.7.1"
+                            }
+                        },
+                        "timestamp": "2020-05-21T08:00:37.809Z"
+                    },
+                    "cluster_uuid": "N_TCL8ovTruedGR1WtWZ9A",
+                    "interval_ms": 60000,
+                    "source_node": {
+                        "host": "10.0.2.15",
+                        "ip": "10.0.2.15",
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "timestamp": "2020-05-21T08:00:37.813Z",
+                        "transport_address": "10.0.2.15:9300",
+                        "uuid": "_BvO00quRkCAgvlz_BHZNA"
+                    },
+                    "timestamp": "2020-05-21T08:00:37.812Z",
+                    "type": "beats_state"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "beats_state"
+                    ]
+                },
+                "sort": [
+                    1590048037812
+                ]
+            }
+        ],
+        "max_score": null,
+        "total": {
+            "relation": "eq",
+            "value": 7
+        }
+    },
+    "timed_out": false,
+    "took": 843
+}

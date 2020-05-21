@@ -1,0 +1,1808 @@
+{
+    "hits": {
+        "hits": [
+            {
+                "_id": "SqI7NnIBGKizfs9YXci-",
+                "_index": ".monitoring-es-7-mb-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "@timestamp": "2020-05-21T07:55:59.302Z",
+                    "agent": {
+                        "ephemeral_id": "b0b29e05-9e86-4bc6-831a-f7c51b7a3797",
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "2877f917-ad87-45e6-b1c4-e05c26fa25c7",
+                        "type": "metricbeat",
+                        "version": "7.7.1"
+                    },
+                    "cluster_name": "elasticsearch",
+                    "cluster_state": {
+                        "cluster_uuid": "N_BVyi3lS1yRMHvqA5dFyQ",
+                        "master_node": "zJohUl2FRPiUkBjpeZzaPw",
+                        "nodes": {
+                            "zJohUl2FRPiUkBjpeZzaPw": {
+                                "attributes": {
+                                    "ml.machine_memory": "4143366144",
+                                    "ml.max_open_jobs": "20",
+                                    "transform.node": "true",
+                                    "xpack.installed": "true"
+                                },
+                                "ephemeral_id": "1U6T0TTpR86RSg8QI-RkUQ",
+                                "name": "packer-virtualbox-iso-1584284895",
+                                "transport_address": "10.0.2.15:9300"
+                            }
+                        },
+                        "nodes_hash": -946035315,
+                        "state_uuid": "r72mmKr1R76CgnXqx45rUQ",
+                        "status": "yellow",
+                        "version": 43
+                    },
+                    "cluster_stats": {
+                        "cluster_uuid": "N_BVyi3lS1yRMHvqA5dFyQ",
+                        "indices": {
+                            "analysis": {
+                                "analyzer_types": [
+                                    {
+                                        "count": 1,
+                                        "index_count": 1,
+                                        "name": "custom"
+                                    }
+                                ],
+                                "built_in_analyzers": [],
+                                "built_in_char_filters": [],
+                                "built_in_filters": [
+                                    {
+                                        "count": 1,
+                                        "index_count": 1,
+                                        "name": "lowercase"
+                                    },
+                                    {
+                                        "count": 1,
+                                        "index_count": 1,
+                                        "name": "unique"
+                                    }
+                                ],
+                                "built_in_tokenizers": [
+                                    {
+                                        "count": 1,
+                                        "index_count": 1,
+                                        "name": "uax_url_email"
+                                    }
+                                ],
+                                "char_filter_types": [],
+                                "filter_types": [
+                                    {
+                                        "count": 1,
+                                        "index_count": 1,
+                                        "name": "pattern_capture"
+                                    }
+                                ],
+                                "tokenizer_types": []
+                            },
+                            "completion": {
+                                "size_in_bytes": 0
+                            },
+                            "count": 4,
+                            "docs": {
+                                "count": 38,
+                                "deleted": 3
+                            },
+                            "fielddata": {
+                                "evictions": 0,
+                                "memory_size_in_bytes": 0
+                            },
+                            "mappings": {
+                                "field_types": [
+                                    {
+                                        "count": 3,
+                                        "index_count": 1,
+                                        "name": "alias"
+                                    },
+                                    {
+                                        "count": 4,
+                                        "index_count": 1,
+                                        "name": "binary"
+                                    },
+                                    {
+                                        "count": 71,
+                                        "index_count": 4,
+                                        "name": "boolean"
+                                    },
+                                    {
+                                        "count": 1,
+                                        "index_count": 1,
+                                        "name": "byte"
+                                    },
+                                    {
+                                        "count": 60,
+                                        "index_count": 4,
+                                        "name": "date"
+                                    },
+                                    {
+                                        "count": 54,
+                                        "index_count": 1,
+                                        "name": "double"
+                                    },
+                                    {
+                                        "count": 104,
+                                        "index_count": 1,
+                                        "name": "float"
+                                    },
+                                    {
+                                        "count": 7,
+                                        "index_count": 1,
+                                        "name": "geo_point"
+                                    },
+                                    {
+                                        "count": 5,
+                                        "index_count": 1,
+                                        "name": "half_float"
+                                    },
+                                    {
+                                        "count": 24,
+                                        "index_count": 2,
+                                        "name": "integer"
+                                    },
+                                    {
+                                        "count": 22,
+                                        "index_count": 1,
+                                        "name": "ip"
+                                    },
+                                    {
+                                        "count": 956,
+                                        "index_count": 4,
+                                        "name": "keyword"
+                                    },
+                                    {
+                                        "count": 2171,
+                                        "index_count": 3,
+                                        "name": "long"
+                                    },
+                                    {
+                                        "count": 3,
+                                        "index_count": 1,
+                                        "name": "nested"
+                                    },
+                                    {
+                                        "count": 2143,
+                                        "index_count": 4,
+                                        "name": "object"
+                                    },
+                                    {
+                                        "count": 112,
+                                        "index_count": 1,
+                                        "name": "scaled_float"
+                                    },
+                                    {
+                                        "count": 61,
+                                        "index_count": 4,
+                                        "name": "text"
+                                    }
+                                ]
+                            },
+                            "query_cache": {
+                                "cache_count": 0,
+                                "cache_size": 0,
+                                "evictions": 0,
+                                "hit_count": 0,
+                                "memory_size_in_bytes": 0,
+                                "miss_count": 0,
+                                "total_count": 0
+                            },
+                            "segments": {
+                                "count": 12,
+                                "doc_values_memory_in_bytes": 2960,
+                                "file_sizes": {},
+                                "fixed_bit_set_memory_in_bytes": 48,
+                                "index_writer_memory_in_bytes": 0,
+                                "max_unsafe_auto_id_timestamp": -1,
+                                "memory_in_bytes": 33408,
+                                "norms_memory_in_bytes": 64,
+                                "points_memory_in_bytes": 0,
+                                "stored_fields_memory_in_bytes": 5856,
+                                "term_vectors_memory_in_bytes": 0,
+                                "terms_memory_in_bytes": 24528,
+                                "version_map_memory_in_bytes": 0
+                            },
+                            "shards": {
+                                "index": {
+                                    "primaries": {
+                                        "avg": 1,
+                                        "max": 1,
+                                        "min": 1
+                                    },
+                                    "replication": {
+                                        "avg": 0,
+                                        "max": 0,
+                                        "min": 0
+                                    },
+                                    "shards": {
+                                        "avg": 1,
+                                        "max": 1,
+                                        "min": 1
+                                    }
+                                },
+                                "primaries": 4,
+                                "replication": 0,
+                                "total": 4
+                            },
+                            "store": {
+                                "size_in_bytes": 169351
+                            }
+                        },
+                        "nodes": {
+                            "count": {
+                                "coordinating_only": 0,
+                                "data": 1,
+                                "ingest": 1,
+                                "master": 1,
+                                "ml": 1,
+                                "remote_cluster_client": 1,
+                                "total": 1,
+                                "transform": 1,
+                                "voting_only": 0
+                            },
+                            "discovery_types": {
+                                "single-node": 1
+                            },
+                            "fs": {
+                                "available_in_bytes": 13788508160.0,
+                                "free_in_bytes": 14750994432.0,
+                                "total_in_bytes": 18483007488.0
+                            },
+                            "ingest": {
+                                "number_of_pipelines": 1,
+                                "processor_stats": {
+                                    "gsub": {
+                                        "count": 0,
+                                        "current": 0,
+                                        "failed": 0,
+                                        "time_in_millis": 0
+                                    },
+                                    "script": {
+                                        "count": 0,
+                                        "current": 0,
+                                        "failed": 0,
+                                        "time_in_millis": 0
+                                    }
+                                }
+                            },
+                            "jvm": {
+                                "max_uptime_in_millis": 33741,
+                                "mem": {
+                                    "heap_max_in_bytes": 1073741824.0,
+                                    "heap_used_in_bytes": 240517120.0
+                                },
+                                "threads": 50,
+                                "versions": [
+                                    {
+                                        "bundled_jdk": true,
+                                        "count": 1,
+                                        "using_bundled_jdk": true,
+                                        "version": "14",
+                                        "vm_name": "OpenJDK 64-Bit Server VM",
+                                        "vm_vendor": "AdoptOpenJDK",
+                                        "vm_version": "14+36"
+                                    }
+                                ]
+                            },
+                            "network_types": {
+                                "http_types": {
+                                    "security4": 1
+                                },
+                                "transport_types": {
+                                    "security4": 1
+                                }
+                            },
+                            "os": {
+                                "allocated_processors": 2,
+                                "available_processors": 2,
+                                "mem": {
+                                    "free_in_bytes": 1261776896.0,
+                                    "free_percent": 30,
+                                    "total_in_bytes": 4143366144.0,
+                                    "used_in_bytes": 2881589248.0,
+                                    "used_percent": 70
+                                },
+                                "names": [
+                                    {
+                                        "count": 1,
+                                        "name": "Linux"
+                                    }
+                                ],
+                                "pretty_names": [
+                                    {
+                                        "count": 1,
+                                        "pretty_name": "Ubuntu 16.04.6 LTS"
+                                    }
+                                ]
+                            },
+                            "packaging_types": [
+                                {
+                                    "count": 1,
+                                    "flavor": "default",
+                                    "type": "tar"
+                                }
+                            ],
+                            "plugins": [],
+                            "process": {
+                                "cpu": {
+                                    "percent": 13
+                                },
+                                "open_file_descriptors": {
+                                    "avg": 275,
+                                    "max": 275,
+                                    "min": 275
+                                }
+                            },
+                            "versions": [
+                                "7.7.1"
+                            ]
+                        },
+                        "status": "yellow",
+                        "timestamp": 1590047759312.0
+                    },
+                    "cluster_uuid": "N_BVyi3lS1yRMHvqA5dFyQ",
+                    "ecs": {
+                        "version": "1.5.0"
+                    },
+                    "event": {
+                        "dataset": "elasticsearch.cluster.stats",
+                        "duration": 56901560,
+                        "module": "elasticsearch"
+                    },
+                    "host": {
+                        "architecture": "x86_64",
+                        "containerized": false,
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "e4484af3bb7677512f703e115e6e459c",
+                        "ip": [
+                            "10.0.2.15",
+                            "fe80::a00:27ff:fe56:46ac"
+                        ],
+                        "mac": [
+                            "08:00:27:56:46:ac"
+                        ],
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "os": {
+                            "codename": "xenial",
+                            "family": "debian",
+                            "kernel": "4.4.0-174-generic",
+                            "name": "Ubuntu",
+                            "platform": "ubuntu",
+                            "version": "16.04.6 LTS (Xenial Xerus)"
+                        }
+                    },
+                    "interval_ms": 10000,
+                    "license": {
+                        "cluster_needs_tls": true,
+                        "expiry_date": "2020-06-20T07:55:34.088Z",
+                        "expiry_date_in_millis": 1592639734088,
+                        "issue_date": "2020-05-21T07:55:34.088Z",
+                        "issue_date_in_millis": 1590047734088,
+                        "issued_to": "elasticsearch",
+                        "issuer": "elasticsearch",
+                        "max_nodes": 1000,
+                        "start_date_in_millis": -1,
+                        "status": "active",
+                        "type": "trial",
+                        "uid": "f35f5029-c366-48cb-a4d0-f223574d9b41"
+                    },
+                    "metricset": {
+                        "name": "cluster_stats",
+                        "period": 10000
+                    },
+                    "service": {
+                        "address": "10.0.2.15:9200",
+                        "type": "elasticsearch"
+                    },
+                    "stack_stats": {
+                        "apm": {
+                            "found": false
+                        },
+                        "xpack": {
+                            "analytics": {
+                                "available": true,
+                                "enabled": true,
+                                "stats": [
+                                    {
+                                        "boxplot_usage": 0,
+                                        "cumulative_cardinality_usage": 0,
+                                        "string_stats_usage": 0,
+                                        "top_metrics_usage": 0
+                                    }
+                                ]
+                            },
+                            "ccr": {
+                                "auto_follow_patterns_count": 0,
+                                "available": true,
+                                "enabled": true,
+                                "follower_indices_count": 0
+                            },
+                            "enrich": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "eql": {
+                                "available": true,
+                                "enabled": false
+                            },
+                            "flattened": {
+                                "available": true,
+                                "enabled": true,
+                                "field_count": 0
+                            },
+                            "frozen_indices": {
+                                "available": true,
+                                "enabled": true,
+                                "indices_count": 0
+                            },
+                            "graph": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "ilm": {
+                                "policy_count": 5,
+                                "policy_stats": [
+                                    {
+                                        "indices_managed": 1,
+                                        "phases": {
+                                            "delete": {
+                                                "actions": [
+                                                    "delete"
+                                                ],
+                                                "min_age": 7776000000.0
+                                            },
+                                            "hot": {
+                                                "actions": [
+                                                    "rollover"
+                                                ],
+                                                "min_age": 0
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "indices_managed": 1,
+                                        "phases": {
+                                            "hot": {
+                                                "actions": [
+                                                    "rollover"
+                                                ],
+                                                "min_age": 0
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "indices_managed": 0,
+                                        "phases": {
+                                            "delete": {
+                                                "actions": [
+                                                    "delete"
+                                                ],
+                                                "min_age": 604800000.0
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "indices_managed": 0,
+                                        "phases": {
+                                            "hot": {
+                                                "actions": [
+                                                    "rollover"
+                                                ],
+                                                "min_age": 0
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "indices_managed": 0,
+                                        "phases": {
+                                            "delete": {
+                                                "actions": [
+                                                    "delete"
+                                                ],
+                                                "min_age": 7776000000.0
+                                            },
+                                            "hot": {
+                                                "actions": [
+                                                    "rollover"
+                                                ],
+                                                "min_age": 0
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            "logstash": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "ml": {
+                                "available": true,
+                                "data_frame_analytics_jobs": {
+                                    "_all": {
+                                        "count": 0
+                                    }
+                                },
+                                "datafeeds": {
+                                    "_all": {
+                                        "count": 0
+                                    }
+                                },
+                                "enabled": true,
+                                "inference": {
+                                    "ingest_processors": {
+                                        "_all": {
+                                            "num_docs_processed": {
+                                                "max": 0,
+                                                "min": 0,
+                                                "sum": 0
+                                            },
+                                            "num_failures": {
+                                                "max": 0,
+                                                "min": 0,
+                                                "sum": 0
+                                            },
+                                            "pipelines": {
+                                                "count": 0
+                                            },
+                                            "time_ms": {
+                                                "max": 0,
+                                                "min": 0,
+                                                "sum": 0
+                                            }
+                                        }
+                                    },
+                                    "trained_models": {
+                                        "_all": {
+                                            "count": 0
+                                        }
+                                    }
+                                },
+                                "jobs": {
+                                    "_all": {
+                                        "count": 0,
+                                        "created_by": {},
+                                        "detectors": {
+                                            "avg": 0,
+                                            "max": 0,
+                                            "min": 0,
+                                            "total": 0
+                                        },
+                                        "forecasts": {
+                                            "forecasted_jobs": 0,
+                                            "total": 0
+                                        },
+                                        "model_size": {
+                                            "avg": 0,
+                                            "max": 0,
+                                            "min": 0,
+                                            "total": 0
+                                        }
+                                    }
+                                },
+                                "node_count": 1
+                            },
+                            "monitoring": {
+                                "available": true,
+                                "collection_enabled": false,
+                                "enabled": true,
+                                "enabled_exporters": {
+                                    "local": 1
+                                }
+                            },
+                            "rollup": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "security": {
+                                "anonymous": {
+                                    "enabled": false
+                                },
+                                "api_key_service": {
+                                    "enabled": true
+                                },
+                                "audit": {
+                                    "enabled": false
+                                },
+                                "available": true,
+                                "enabled": true,
+                                "fips_140": {
+                                    "enabled": false
+                                },
+                                "ipfilter": {
+                                    "http": false,
+                                    "transport": false
+                                },
+                                "realms": {
+                                    "active_directory": {
+                                        "available": true,
+                                        "enabled": false
+                                    },
+                                    "file": {
+                                        "available": true,
+                                        "cache": [
+                                            {
+                                                "size": 0
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": [
+                                            "default_file"
+                                        ],
+                                        "order": [
+                                            2147483647.0
+                                        ],
+                                        "size": [
+                                            0
+                                        ]
+                                    },
+                                    "kerberos": {
+                                        "available": true,
+                                        "enabled": false
+                                    },
+                                    "ldap": {
+                                        "available": true,
+                                        "enabled": false
+                                    },
+                                    "native": {
+                                        "available": true,
+                                        "cache": [
+                                            {
+                                                "size": 0
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": [
+                                            "default_native"
+                                        ],
+                                        "order": [
+                                            2147483647.0
+                                        ],
+                                        "size": [
+                                            0
+                                        ]
+                                    },
+                                    "oidc": {
+                                        "available": true,
+                                        "enabled": false
+                                    },
+                                    "pki": {
+                                        "available": true,
+                                        "enabled": false
+                                    },
+                                    "saml": {
+                                        "available": true,
+                                        "enabled": false
+                                    }
+                                },
+                                "role_mapping": {
+                                    "native": {
+                                        "enabled": 0,
+                                        "size": 0
+                                    }
+                                },
+                                "roles": {
+                                    "dls": {
+                                        "bit_set_cache": {
+                                            "count": 0,
+                                            "memory": "0b",
+                                            "memory_in_bytes": 0
+                                        }
+                                    },
+                                    "file": {
+                                        "dls": false,
+                                        "fls": false,
+                                        "size": 0
+                                    },
+                                    "native": {
+                                        "dls": false,
+                                        "fls": false,
+                                        "size": 0
+                                    }
+                                },
+                                "ssl": {
+                                    "http": {
+                                        "enabled": true
+                                    },
+                                    "transport": {
+                                        "enabled": false
+                                    }
+                                },
+                                "token_service": {
+                                    "enabled": false
+                                }
+                            },
+                            "slm": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "spatial": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "sql": {
+                                "available": true,
+                                "enabled": true,
+                                "features": {
+                                    "command": 0,
+                                    "groupby": 0,
+                                    "having": 0,
+                                    "join": 0,
+                                    "limit": 0,
+                                    "local": 0,
+                                    "orderby": 0,
+                                    "subselect": 0,
+                                    "where": 0
+                                },
+                                "queries": {
+                                    "_all": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "canvas": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "cli": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "jdbc": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "odbc": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "odbc32": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "odbc64": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "rest": {
+                                        "failed": 0,
+                                        "paging": 0,
+                                        "total": 0
+                                    },
+                                    "translate": {
+                                        "count": 0
+                                    }
+                                }
+                            },
+                            "transform": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "vectors": {
+                                "available": true,
+                                "dense_vector_dims_avg_count": 0,
+                                "dense_vector_fields_count": 0,
+                                "enabled": true,
+                                "sparse_vector_fields_count": 0
+                            },
+                            "voting_only": {
+                                "available": true,
+                                "enabled": true
+                            },
+                            "watcher": {
+                                "available": true,
+                                "count": {
+                                    "active": 0,
+                                    "total": 0
+                                },
+                                "enabled": true,
+                                "execution": {
+                                    "actions": {
+                                        "_all": {
+                                            "total": 0,
+                                            "total_time_in_ms": 0
+                                        }
+                                    }
+                                },
+                                "watch": {
+                                    "input": {
+                                        "_all": {
+                                            "active": 0,
+                                            "total": 0
+                                        }
+                                    },
+                                    "trigger": {
+                                        "_all": {
+                                            "active": 0,
+                                            "total": 0
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "timestamp": "2020-05-21T07:55:59.344Z",
+                    "type": "cluster_stats",
+                    "version": "7.7.1-SNAPSHOT"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "cluster_stats"
+                    ]
+                },
+                "sort": [
+                    1590047759344
+                ]
+            },
+            {
+                "_id": "SaI7NnIBGKizfs9YXci-",
+                "_index": ".monitoring-es-7-mb-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "@timestamp": "2020-05-21T07:55:59.242Z",
+                    "agent": {
+                        "ephemeral_id": "b0b29e05-9e86-4bc6-831a-f7c51b7a3797",
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "2877f917-ad87-45e6-b1c4-e05c26fa25c7",
+                        "type": "metricbeat",
+                        "version": "7.7.1"
+                    },
+                    "ccr_auto_follow_stats": {
+                        "auto_followed_clusters": [],
+                        "number_of_failed_follow_indices": 0,
+                        "number_of_failed_remote_cluster_state_requests": 0,
+                        "number_of_successful_follow_indices": 0,
+                        "recent_auto_follow_errors": []
+                    },
+                    "cluster_uuid": "N_BVyi3lS1yRMHvqA5dFyQ",
+                    "ecs": {
+                        "version": "1.5.0"
+                    },
+                    "event": {
+                        "dataset": "elasticsearch.ccr",
+                        "duration": 39714270,
+                        "module": "elasticsearch"
+                    },
+                    "host": {
+                        "architecture": "x86_64",
+                        "containerized": false,
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "e4484af3bb7677512f703e115e6e459c",
+                        "ip": [
+                            "10.0.2.15",
+                            "fe80::a00:27ff:fe56:46ac"
+                        ],
+                        "mac": [
+                            "08:00:27:56:46:ac"
+                        ],
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "os": {
+                            "codename": "xenial",
+                            "family": "debian",
+                            "kernel": "4.4.0-174-generic",
+                            "name": "Ubuntu",
+                            "platform": "ubuntu",
+                            "version": "16.04.6 LTS (Xenial Xerus)"
+                        }
+                    },
+                    "interval_ms": 10000,
+                    "metricset": {
+                        "name": "ccr",
+                        "period": 10000
+                    },
+                    "service": {
+                        "address": "10.0.2.15:9200",
+                        "type": "elasticsearch"
+                    },
+                    "timestamp": "2020-05-21T07:55:59.282Z",
+                    "type": "ccr_auto_follow_stats"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "ccr_auto_follow_stats"
+                    ]
+                },
+                "sort": [
+                    1590047759282
+                ]
+            },
+            {
+                "_id": "RqI7NnIBGKizfs9YXci-",
+                "_index": ".monitoring-es-7-mb-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "@timestamp": "2020-05-21T07:55:59.191Z",
+                    "agent": {
+                        "ephemeral_id": "b0b29e05-9e86-4bc6-831a-f7c51b7a3797",
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "2877f917-ad87-45e6-b1c4-e05c26fa25c7",
+                        "type": "metricbeat",
+                        "version": "7.7.1"
+                    },
+                    "cluster_uuid": "N_BVyi3lS1yRMHvqA5dFyQ",
+                    "ecs": {
+                        "version": "1.5.0"
+                    },
+                    "event": {
+                        "dataset": "elasticsearch.index",
+                        "duration": 64565844,
+                        "module": "elasticsearch"
+                    },
+                    "host": {
+                        "architecture": "x86_64",
+                        "containerized": false,
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "e4484af3bb7677512f703e115e6e459c",
+                        "ip": [
+                            "10.0.2.15",
+                            "fe80::a00:27ff:fe56:46ac"
+                        ],
+                        "mac": [
+                            "08:00:27:56:46:ac"
+                        ],
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "os": {
+                            "codename": "xenial",
+                            "family": "debian",
+                            "kernel": "4.4.0-174-generic",
+                            "name": "Ubuntu",
+                            "platform": "ubuntu",
+                            "version": "16.04.6 LTS (Xenial Xerus)"
+                        }
+                    },
+                    "index_stats": {
+                        "created": 1590047736880.0,
+                        "index": ".security-7",
+                        "primaries": {
+                            "docs": {
+                                "count": 6
+                            },
+                            "fielddata": {
+                                "evictions": 0,
+                                "memory_size_in_bytes": 0
+                            },
+                            "indexing": {
+                                "index_time_in_millis": 21,
+                                "index_total": 9,
+                                "throttle_time_in_millis": 0
+                            },
+                            "merges": {
+                                "total_size_in_bytes": 0
+                            },
+                            "query_cache": {
+                                "evictions": 0,
+                                "hit_count": 0,
+                                "memory_size_in_bytes": 0,
+                                "miss_count": 0
+                            },
+                            "refresh": {
+                                "external_total_time_in_millis": 130,
+                                "total_time_in_millis": 127
+                            },
+                            "request_cache": {
+                                "evictions": 0,
+                                "hit_count": 0,
+                                "memory_size_in_bytes": 3040,
+                                "miss_count": 4
+                            },
+                            "search": {
+                                "query_time_in_millis": 103,
+                                "query_total": 5
+                            },
+                            "segments": {
+                                "count": 9,
+                                "doc_values_memory_in_bytes": 1308,
+                                "fixed_bit_set_memory_in_bytes": 0,
+                                "index_writer_memory_in_bytes": 0,
+                                "memory_in_bytes": 12756,
+                                "norms_memory_in_bytes": 0,
+                                "points_memory_in_bytes": 0,
+                                "stored_fields_memory_in_bytes": 4392,
+                                "term_vectors_memory_in_bytes": 0,
+                                "terms_memory_in_bytes": 7056,
+                                "version_map_memory_in_bytes": 0
+                            },
+                            "store": {
+                                "size_in_bytes": 33923
+                            }
+                        },
+                        "shards": {
+                            "active_primaries": 1,
+                            "active_replicas": 0,
+                            "active_total": 1,
+                            "initializing": 0,
+                            "primaries": 1,
+                            "relocating": 0,
+                            "replicas": 0,
+                            "total": 1,
+                            "unassigned_primaries": 0,
+                            "unassigned_replicas": 0,
+                            "unassigned_total": 0
+                        },
+                        "status": "green",
+                        "total": {
+                            "docs": {
+                                "count": 6
+                            },
+                            "fielddata": {
+                                "evictions": 0,
+                                "memory_size_in_bytes": 0
+                            },
+                            "indexing": {
+                                "index_time_in_millis": 21,
+                                "index_total": 9,
+                                "throttle_time_in_millis": 0
+                            },
+                            "merges": {
+                                "total_size_in_bytes": 0
+                            },
+                            "query_cache": {
+                                "evictions": 0,
+                                "hit_count": 0,
+                                "memory_size_in_bytes": 0,
+                                "miss_count": 0
+                            },
+                            "refresh": {
+                                "external_total_time_in_millis": 130,
+                                "total_time_in_millis": 127
+                            },
+                            "request_cache": {
+                                "evictions": 0,
+                                "hit_count": 0,
+                                "memory_size_in_bytes": 3040,
+                                "miss_count": 4
+                            },
+                            "search": {
+                                "query_time_in_millis": 103,
+                                "query_total": 5
+                            },
+                            "segments": {
+                                "count": 9,
+                                "doc_values_memory_in_bytes": 1308,
+                                "fixed_bit_set_memory_in_bytes": 0,
+                                "index_writer_memory_in_bytes": 0,
+                                "memory_in_bytes": 12756,
+                                "norms_memory_in_bytes": 0,
+                                "points_memory_in_bytes": 0,
+                                "stored_fields_memory_in_bytes": 4392,
+                                "term_vectors_memory_in_bytes": 0,
+                                "terms_memory_in_bytes": 7056,
+                                "version_map_memory_in_bytes": 0
+                            },
+                            "store": {
+                                "size_in_bytes": 33923
+                            }
+                        },
+                        "uuid": "WBLQIsuzRxqwxtt6cPSppQ"
+                    },
+                    "interval_ms": 10000,
+                    "metricset": {
+                        "name": "index",
+                        "period": 10000
+                    },
+                    "service": {
+                        "address": "10.0.2.15:9200",
+                        "type": "elasticsearch"
+                    },
+                    "timestamp": "2020-05-21T07:55:59.255Z",
+                    "type": "index_stats"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "index_stats"
+                    ]
+                },
+                "sort": [
+                    1590047759255
+                ]
+            },
+            {
+                "_id": "RaI7NnIBGKizfs9YXci-",
+                "_index": ".monitoring-es-7-mb-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "@timestamp": "2020-05-21T07:55:59.135Z",
+                    "agent": {
+                        "ephemeral_id": "b0b29e05-9e86-4bc6-831a-f7c51b7a3797",
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "2877f917-ad87-45e6-b1c4-e05c26fa25c7",
+                        "type": "metricbeat",
+                        "version": "7.7.1"
+                    },
+                    "cluster_uuid": "N_BVyi3lS1yRMHvqA5dFyQ",
+                    "ecs": {
+                        "version": "1.5.0"
+                    },
+                    "event": {
+                        "dataset": "elasticsearch.index.recovery",
+                        "duration": 56296576,
+                        "module": "elasticsearch"
+                    },
+                    "host": {
+                        "architecture": "x86_64",
+                        "containerized": false,
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "e4484af3bb7677512f703e115e6e459c",
+                        "ip": [
+                            "10.0.2.15",
+                            "fe80::a00:27ff:fe56:46ac"
+                        ],
+                        "mac": [
+                            "08:00:27:56:46:ac"
+                        ],
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "os": {
+                            "codename": "xenial",
+                            "family": "debian",
+                            "kernel": "4.4.0-174-generic",
+                            "name": "Ubuntu",
+                            "platform": "ubuntu",
+                            "version": "16.04.6 LTS (Xenial Xerus)"
+                        }
+                    },
+                    "index_recovery": {
+                        "shards": [
+                            {
+                                "id": 0,
+                                "index": {
+                                    "files": {
+                                        "percent": "0.0%",
+                                        "recovered": 0,
+                                        "reused": 0,
+                                        "total": 0
+                                    },
+                                    "size": {
+                                        "percent": "0.0%",
+                                        "recovered_in_bytes": 0,
+                                        "reused_in_bytes": 0,
+                                        "total_in_bytes": 0
+                                    },
+                                    "source_throttle_time_in_millis": 0,
+                                    "target_throttle_time_in_millis": 0,
+                                    "total_time_in_millis": 35
+                                },
+                                "index_name": ".security-7",
+                                "primary": true,
+                                "source": {},
+                                "stage": "DONE",
+                                "start_time_in_millis": 1590047736965.0,
+                                "stop_time_in_millis": 1590047737078.0,
+                                "target": {
+                                    "host": "10.0.2.15",
+                                    "id": "zJohUl2FRPiUkBjpeZzaPw",
+                                    "ip": "10.0.2.15",
+                                    "name": "packer-virtualbox-iso-1584284895",
+                                    "transport_address": "10.0.2.15:9300"
+                                },
+                                "total_time_in_millis": 112,
+                                "translog": {
+                                    "percent": "100.0%",
+                                    "recovered": 0,
+                                    "total": 0,
+                                    "total_on_start": 0,
+                                    "total_time_in_millis": 36
+                                },
+                                "type": "EMPTY_STORE",
+                                "verify_index": {
+                                    "check_index_time_in_millis": 0,
+                                    "total_time_in_millis": 0
+                                }
+                            },
+                            {
+                                "id": 0,
+                                "index": {
+                                    "files": {
+                                        "percent": "0.0%",
+                                        "recovered": 0,
+                                        "reused": 0,
+                                        "total": 0
+                                    },
+                                    "size": {
+                                        "percent": "0.0%",
+                                        "recovered_in_bytes": 0,
+                                        "reused_in_bytes": 0,
+                                        "total_in_bytes": 0
+                                    },
+                                    "source_throttle_time_in_millis": 0,
+                                    "target_throttle_time_in_millis": 0,
+                                    "total_time_in_millis": 8
+                                },
+                                "index_name": "metricbeat-7.7.1-2020.05.21-000001",
+                                "primary": true,
+                                "source": {},
+                                "stage": "DONE",
+                                "start_time_in_millis": 1590047753469.0,
+                                "stop_time_in_millis": 1590047753500.0,
+                                "target": {
+                                    "host": "10.0.2.15",
+                                    "id": "zJohUl2FRPiUkBjpeZzaPw",
+                                    "ip": "10.0.2.15",
+                                    "name": "packer-virtualbox-iso-1584284895",
+                                    "transport_address": "10.0.2.15:9300"
+                                },
+                                "total_time_in_millis": 31,
+                                "translog": {
+                                    "percent": "100.0%",
+                                    "recovered": 0,
+                                    "total": 0,
+                                    "total_on_start": 0,
+                                    "total_time_in_millis": 14
+                                },
+                                "type": "EMPTY_STORE",
+                                "verify_index": {
+                                    "check_index_time_in_millis": 0,
+                                    "total_time_in_millis": 0
+                                }
+                            },
+                            {
+                                "id": 0,
+                                "index": {
+                                    "files": {
+                                        "percent": "0.0%",
+                                        "recovered": 0,
+                                        "reused": 0,
+                                        "total": 0
+                                    },
+                                    "size": {
+                                        "percent": "0.0%",
+                                        "recovered_in_bytes": 0,
+                                        "reused_in_bytes": 0,
+                                        "total_in_bytes": 0
+                                    },
+                                    "source_throttle_time_in_millis": 0,
+                                    "target_throttle_time_in_millis": 0,
+                                    "total_time_in_millis": 21
+                                },
+                                "index_name": ".monitoring-es-7-mb-2020.05.21",
+                                "primary": true,
+                                "source": {},
+                                "stage": "DONE",
+                                "start_time_in_millis": 1590047753623.0,
+                                "stop_time_in_millis": 1590047753664.0,
+                                "target": {
+                                    "host": "10.0.2.15",
+                                    "id": "zJohUl2FRPiUkBjpeZzaPw",
+                                    "ip": "10.0.2.15",
+                                    "name": "packer-virtualbox-iso-1584284895",
+                                    "transport_address": "10.0.2.15:9300"
+                                },
+                                "total_time_in_millis": 41,
+                                "translog": {
+                                    "percent": "100.0%",
+                                    "recovered": 0,
+                                    "total": 0,
+                                    "total_on_start": 0,
+                                    "total_time_in_millis": 15
+                                },
+                                "type": "EMPTY_STORE",
+                                "verify_index": {
+                                    "check_index_time_in_millis": 0,
+                                    "total_time_in_millis": 0
+                                }
+                            }
+                        ]
+                    },
+                    "interval_ms": 10000,
+                    "metricset": {
+                        "name": "index_recovery",
+                        "period": 10000
+                    },
+                    "service": {
+                        "address": "10.0.2.15:9200",
+                        "type": "elasticsearch"
+                    },
+                    "timestamp": "2020-05-21T07:55:59.191Z",
+                    "type": "index_recovery"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "index_recovery"
+                    ]
+                },
+                "sort": [
+                    1590047759191
+                ]
+            },
+            {
+                "_id": "RKI7NnIBGKizfs9YXci-",
+                "_index": ".monitoring-es-7-mb-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "@timestamp": "2020-05-21T07:55:59.135Z",
+                    "agent": {
+                        "ephemeral_id": "b0b29e05-9e86-4bc6-831a-f7c51b7a3797",
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "2877f917-ad87-45e6-b1c4-e05c26fa25c7",
+                        "type": "metricbeat",
+                        "version": "7.7.1"
+                    },
+                    "cluster_uuid": "N_BVyi3lS1yRMHvqA5dFyQ",
+                    "ecs": {
+                        "version": "1.5.0"
+                    },
+                    "event": {
+                        "dataset": "elasticsearch.index.summary",
+                        "duration": 51785106,
+                        "module": "elasticsearch"
+                    },
+                    "host": {
+                        "architecture": "x86_64",
+                        "containerized": false,
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "e4484af3bb7677512f703e115e6e459c",
+                        "ip": [
+                            "10.0.2.15",
+                            "fe80::a00:27ff:fe56:46ac"
+                        ],
+                        "mac": [
+                            "08:00:27:56:46:ac"
+                        ],
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "os": {
+                            "codename": "xenial",
+                            "family": "debian",
+                            "kernel": "4.4.0-174-generic",
+                            "name": "Ubuntu",
+                            "platform": "ubuntu",
+                            "version": "16.04.6 LTS (Xenial Xerus)"
+                        }
+                    },
+                    "indices_stats": {
+                        "_all": {
+                            "primaries": {
+                                "docs": {
+                                    "count": 35
+                                },
+                                "indexing": {
+                                    "index_time_in_millis": 89,
+                                    "index_total": 38,
+                                    "is_throttled": false,
+                                    "throttle_time_in_millis": 0
+                                },
+                                "search": {
+                                    "query_time_in_millis": 103,
+                                    "query_total": 5
+                                },
+                                "store": {
+                                    "size_in_bytes": 161131
+                                }
+                            },
+                            "total": {
+                                "docs": {
+                                    "count": 35
+                                },
+                                "indexing": {
+                                    "index_time_in_millis": 89,
+                                    "index_total": 38,
+                                    "is_throttled": false,
+                                    "throttle_time_in_millis": 0
+                                },
+                                "search": {
+                                    "query_time_in_millis": 103,
+                                    "query_total": 5
+                                },
+                                "store": {
+                                    "size_in_bytes": 161131
+                                }
+                            }
+                        }
+                    },
+                    "interval_ms": 10000,
+                    "metricset": {
+                        "name": "index_summary",
+                        "period": 10000
+                    },
+                    "service": {
+                        "address": "10.0.2.15:9200",
+                        "type": "elasticsearch"
+                    },
+                    "timestamp": "2020-05-21T07:55:59.187Z",
+                    "type": "indices_stats"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "indices_stats"
+                    ]
+                },
+                "sort": [
+                    1590047759187
+                ]
+            },
+            {
+                "_id": "Q6I7NnIBGKizfs9YXci-",
+                "_index": ".monitoring-es-7-mb-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "@timestamp": "2020-05-21T07:55:59.135Z",
+                    "agent": {
+                        "ephemeral_id": "b0b29e05-9e86-4bc6-831a-f7c51b7a3797",
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "2877f917-ad87-45e6-b1c4-e05c26fa25c7",
+                        "type": "metricbeat",
+                        "version": "7.7.1"
+                    },
+                    "cluster_uuid": "N_BVyi3lS1yRMHvqA5dFyQ",
+                    "ecs": {
+                        "version": "1.5.0"
+                    },
+                    "event": {
+                        "dataset": "elasticsearch.node.stats",
+                        "duration": 49545781,
+                        "module": "elasticsearch"
+                    },
+                    "host": {
+                        "architecture": "x86_64",
+                        "containerized": false,
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "e4484af3bb7677512f703e115e6e459c",
+                        "ip": [
+                            "10.0.2.15",
+                            "fe80::a00:27ff:fe56:46ac"
+                        ],
+                        "mac": [
+                            "08:00:27:56:46:ac"
+                        ],
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "os": {
+                            "codename": "xenial",
+                            "family": "debian",
+                            "kernel": "4.4.0-174-generic",
+                            "name": "Ubuntu",
+                            "platform": "ubuntu",
+                            "version": "16.04.6 LTS (Xenial Xerus)"
+                        }
+                    },
+                    "interval_ms": 10000,
+                    "metricset": {
+                        "name": "node_stats",
+                        "period": 10000
+                    },
+                    "node_stats": {
+                        "fs": {
+                            "io_stats": {
+                                "total": {
+                                    "operations": 3501,
+                                    "read_kilobytes": 4,
+                                    "read_operations": 1,
+                                    "write_kilobytes": 306868,
+                                    "write_operations": 3500
+                                }
+                            },
+                            "total": {
+                                "available_in_bytes": 13788508160,
+                                "free_in_bytes": 14750994432,
+                                "total_in_bytes": 18483007488
+                            }
+                        },
+                        "indices": {
+                            "docs": {
+                                "count": 38
+                            },
+                            "fielddata": {
+                                "evictions": 0,
+                                "memory_size_in_bytes": 0
+                            },
+                            "indexing": {
+                                "index_time_in_millis": 92,
+                                "index_total": 41,
+                                "throttle_time_in_millis": 0
+                            },
+                            "query_cache": {
+                                "evictions": 0,
+                                "hit_count": 0,
+                                "memory_size_in_bytes": 0,
+                                "miss_count": 0
+                            },
+                            "request_cache": {
+                                "evictions": 0,
+                                "hit_count": 0,
+                                "memory_size_in_bytes": 3040,
+                                "miss_count": 4
+                            },
+                            "search": {
+                                "query_time_in_millis": 103,
+                                "query_total": 5
+                            },
+                            "segments": {
+                                "count": 12,
+                                "doc_values_memory_in_bytes": 2960,
+                                "fixed_bit_set_memory_in_bytes": 48,
+                                "index_writer_memory_in_bytes": 0,
+                                "memory_in_bytes": 33408,
+                                "norms_memory_in_bytes": 64,
+                                "points_memory_in_bytes": 0,
+                                "stored_fields_memory_in_bytes": 5856,
+                                "term_vectors_memory_in_bytes": 0,
+                                "terms_memory_in_bytes": 24528,
+                                "version_map_memory_in_bytes": 0
+                            },
+                            "store": {
+                                "size_in_bytes": 169351
+                            }
+                        },
+                        "jvm": {
+                            "gc": {
+                                "collectors": {
+                                    "old": {
+                                        "collection_count": 10,
+                                        "collection_time_in_millis": 157
+                                    },
+                                    "young": {
+                                        "collection_count": 10,
+                                        "collection_time_in_millis": 157
+                                    }
+                                }
+                            },
+                            "mem": {
+                                "heap_max_in_bytes": 1073741824,
+                                "heap_used_in_bytes": 240517120,
+                                "heap_used_percent": 22
+                            }
+                        },
+                        "mlockall": false,
+                        "node_id": "zJohUl2FRPiUkBjpeZzaPw",
+                        "node_master": true,
+                        "os": {
+                            "cgroup": {
+                                "cpu": {
+                                    "cfs_period_micros": 100000,
+                                    "cfs_quota_micros": -1,
+                                    "control_group": "/",
+                                    "stat": {
+                                        "number_of_elapsed_periods": 0,
+                                        "number_of_times_throttled": 0,
+                                        "time_throttled_nanos": 0
+                                    }
+                                },
+                                "cpuacct": {
+                                    "control_group": "/",
+                                    "usage_nanos": 103512403382
+                                },
+                                "memory": {
+                                    "control_group": "/",
+                                    "limit_in_bytes": "9223372036854771712",
+                                    "usage_in_bytes": "2784989184"
+                                }
+                            },
+                            "cpu": {
+                                "load_average": {
+                                    "15m": 0.13,
+                                    "1m": 0.88,
+                                    "5m": 0.35
+                                }
+                            }
+                        },
+                        "process": {
+                            "cpu": {
+                                "percent": 13
+                            },
+                            "max_file_descriptors": 65536,
+                            "open_file_descriptors": 275
+                        },
+                        "thread_pool": {
+                            "generic": {
+                                "queue": 0,
+                                "rejected": 0,
+                                "threads": 4
+                            },
+                            "get": {
+                                "queue": 0,
+                                "rejected": 0,
+                                "threads": 2
+                            },
+                            "management": {
+                                "queue": 0,
+                                "rejected": 0,
+                                "threads": 5
+                            },
+                            "search": {
+                                "queue": 0,
+                                "rejected": 0,
+                                "threads": 4
+                            },
+                            "watcher": {
+                                "queue": 0,
+                                "rejected": 0,
+                                "threads": 0
+                            },
+                            "write": {
+                                "queue": 0,
+                                "rejected": 0,
+                                "threads": 2
+                            }
+                        }
+                    },
+                    "service": {
+                        "address": "10.0.2.15:9200",
+                        "type": "elasticsearch"
+                    },
+                    "source_node": {
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "transport_address": "10.0.2.15:9300",
+                        "uuid": "zJohUl2FRPiUkBjpeZzaPw"
+                    },
+                    "timestamp": "2020-05-21T07:55:59.185Z",
+                    "type": "node_stats"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "node_stats"
+                    ]
+                },
+                "sort": [
+                    1590047759185
+                ]
+            },
+            {
+                "_id": "QqI7NnIBGKizfs9YXci-",
+                "_index": ".monitoring-es-7-mb-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "@timestamp": "2020-05-21T07:55:59.135Z",
+                    "agent": {
+                        "ephemeral_id": "b0b29e05-9e86-4bc6-831a-f7c51b7a3797",
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "2877f917-ad87-45e6-b1c4-e05c26fa25c7",
+                        "type": "metricbeat",
+                        "version": "7.7.1"
+                    },
+                    "cluster_uuid": "N_BVyi3lS1yRMHvqA5dFyQ",
+                    "ecs": {
+                        "version": "1.5.0"
+                    },
+                    "enrich_coordinator_stats": {
+                        "executed_searches_total": 0,
+                        "node_id": "zJohUl2FRPiUkBjpeZzaPw",
+                        "queue_size": 0,
+                        "remote_requests_current": 0,
+                        "remote_requests_total": 0
+                    },
+                    "event": {
+                        "dataset": "elasticsearch.enrich",
+                        "duration": 35686882,
+                        "module": "elasticsearch"
+                    },
+                    "host": {
+                        "architecture": "x86_64",
+                        "containerized": false,
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "e4484af3bb7677512f703e115e6e459c",
+                        "ip": [
+                            "10.0.2.15",
+                            "fe80::a00:27ff:fe56:46ac"
+                        ],
+                        "mac": [
+                            "08:00:27:56:46:ac"
+                        ],
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "os": {
+                            "codename": "xenial",
+                            "family": "debian",
+                            "kernel": "4.4.0-174-generic",
+                            "name": "Ubuntu",
+                            "platform": "ubuntu",
+                            "version": "16.04.6 LTS (Xenial Xerus)"
+                        }
+                    },
+                    "interval_ms": 10000,
+                    "metricset": {
+                        "name": "enrich",
+                        "period": 10000
+                    },
+                    "service": {
+                        "address": "10.0.2.15:9200",
+                        "type": "elasticsearch"
+                    },
+                    "timestamp": "2020-05-21T07:55:59.171Z",
+                    "type": "enrich_coordinator_stats"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "enrich_coordinator_stats"
+                    ]
+                },
+                "sort": [
+                    1590047759171
+                ]
+            },
+            {
+                "_id": "r72mmKr1R76CgnXqx45rUQ:zJohUl2FRPiUkBjpeZzaPw:ilm-history-2-000001:0:p",
+                "_index": ".monitoring-es-7-mb-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "@timestamp": "2020-05-21T07:55:58.970Z",
+                    "agent": {
+                        "ephemeral_id": "b0b29e05-9e86-4bc6-831a-f7c51b7a3797",
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "2877f917-ad87-45e6-b1c4-e05c26fa25c7",
+                        "type": "metricbeat",
+                        "version": "7.7.1"
+                    },
+                    "cluster_uuid": "N_BVyi3lS1yRMHvqA5dFyQ",
+                    "ecs": {
+                        "version": "1.5.0"
+                    },
+                    "event": {
+                        "dataset": "elasticsearch.shard",
+                        "duration": 15254034,
+                        "module": "elasticsearch"
+                    },
+                    "host": {
+                        "architecture": "x86_64",
+                        "containerized": false,
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "e4484af3bb7677512f703e115e6e459c",
+                        "ip": [
+                            "10.0.2.15",
+                            "fe80::a00:27ff:fe56:46ac"
+                        ],
+                        "mac": [
+                            "08:00:27:56:46:ac"
+                        ],
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "os": {
+                            "codename": "xenial",
+                            "family": "debian",
+                            "kernel": "4.4.0-174-generic",
+                            "name": "Ubuntu",
+                            "platform": "ubuntu",
+                            "version": "16.04.6 LTS (Xenial Xerus)"
+                        }
+                    },
+                    "interval_ms": 10000,
+                    "metricset": {
+                        "name": "shard",
+                        "period": 10000
+                    },
+                    "service": {
+                        "address": "10.0.2.15:9200",
+                        "type": "elasticsearch"
+                    },
+                    "shard": {
+                        "index": "ilm-history-2-000001",
+                        "node": "zJohUl2FRPiUkBjpeZzaPw",
+                        "primary": true,
+                        "shard": 0,
+                        "state": "STARTED"
+                    },
+                    "source_node": {
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "uuid": "zJohUl2FRPiUkBjpeZzaPw"
+                    },
+                    "state_uuid": "r72mmKr1R76CgnXqx45rUQ",
+                    "timestamp": "2020-05-21T07:55:58.986Z",
+                    "type": "shards"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "shards"
+                    ]
+                },
+                "sort": [
+                    1590047758986
+                ]
+            }
+        ],
+        "max_score": null,
+        "total": {
+            "relation": "eq",
+            "value": 21
+        }
+    },
+    "timed_out": false,
+    "took": 27
+}

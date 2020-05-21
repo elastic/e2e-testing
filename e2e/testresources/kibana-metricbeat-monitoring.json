@@ -1,0 +1,640 @@
+{
+    "hits": {
+        "hits": [
+            {
+                "_id": "E_A_NnIBLHhfMFfAEoTV",
+                "_index": ".monitoring-kibana-7-mb-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "@timestamp": "2020-05-21T07:59:58.020Z",
+                    "agent": {
+                        "ephemeral_id": "4c665c00-0b7d-440d-8d64-df4ca08e7f29",
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "e3215a00-dcc6-45cd-913a-6bc315e7feaf",
+                        "type": "metricbeat",
+                        "version": "7.7.1"
+                    },
+                    "cluster_uuid": "RFqV_TQrR_C-tnjv-RA6yw",
+                    "ecs": {
+                        "version": "1.5.0"
+                    },
+                    "event": {
+                        "dataset": "kibana.stats",
+                        "duration": 1090847924,
+                        "module": "kibana"
+                    },
+                    "host": {
+                        "architecture": "x86_64",
+                        "containerized": false,
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "e4484af3bb7677512f703e115e6e459c",
+                        "ip": [
+                            "10.0.2.15",
+                            "fe80::a00:27ff:fe56:46ac"
+                        ],
+                        "mac": [
+                            "08:00:27:56:46:ac"
+                        ],
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "os": {
+                            "codename": "xenial",
+                            "family": "debian",
+                            "kernel": "4.4.0-174-generic",
+                            "name": "Ubuntu",
+                            "platform": "ubuntu",
+                            "version": "16.04.6 LTS (Xenial Xerus)"
+                        }
+                    },
+                    "interval_ms": 10000,
+                    "kibana_stats": {
+                        "concurrent_connections": 1,
+                        "kibana": {
+                            "host": "10.0.2.15",
+                            "index": ".kibana",
+                            "name": "packer-virtualbox-iso-1584284895",
+                            "snapshot": true,
+                            "status": "green",
+                            "transport_address": "10.0.2.15:5601",
+                            "uuid": "82e3cb18-da5d-41a4-ab76-0364f87df527",
+                            "version": "7.7.1"
+                        },
+                        "os": {
+                            "distro": "Ubuntu Linux",
+                            "distroRelease": "Ubuntu Linux-16.04",
+                            "load": {
+                                "15m": 0.234375,
+                                "1m": 1.27978515625,
+                                "5m": 0.60791015625
+                            },
+                            "memory": {
+                                "free_in_bytes": 494481408,
+                                "total_in_bytes": 4143366144,
+                                "used_in_bytes": 3648884736
+                            },
+                            "platform": "linux",
+                            "platformRelease": "linux-4.4.0-174-generic",
+                            "uptime_in_millis": 187000
+                        },
+                        "process": {
+                            "event_loop_delay": 5.709908999997424,
+                            "memory": {
+                                "heap": {
+                                    "size_limit": 1526909922,
+                                    "total_in_bytes": 395485184,
+                                    "used_in_bytes": 266288776
+                                },
+                                "resident_set_size_in_bytes": 502050816
+                            },
+                            "uptime_in_millis": 20827
+                        },
+                        "requests": {
+                            "disconnects": 0,
+                            "total": 1
+                        },
+                        "response_times": {
+                            "average": 0,
+                            "max": 0
+                        },
+                        "timestamp": "2020-05-21T07:59:58.218Z",
+                        "usage": {
+                            "actions": {
+                                "count_active_total": 0,
+                                "count_by_type": {},
+                                "count_total": 0,
+                                "runs": 1
+                            },
+                            "alerts": {
+                                "connectors_per_alert": {
+                                    "avg": 0,
+                                    "max": 0,
+                                    "min": 0
+                                },
+                                "count_active_by_type": {},
+                                "count_active_total": 0,
+                                "count_by_type": {},
+                                "count_disabled_total": 0,
+                                "count_total": 0,
+                                "runs": 1,
+                                "schedule_time": {
+                                    "avg": "0s",
+                                    "max": "0s",
+                                    "min": "0s"
+                                },
+                                "throttle_time": {
+                                    "avg": "0s",
+                                    "max": "0s",
+                                    "min": "0s"
+                                }
+                            },
+                            "apm": {
+                                "agents": {},
+                                "cardinality": {
+                                    "transaction": {
+                                        "name": {
+                                            "all_agents": {
+                                                "1d": 0
+                                            },
+                                            "rum": {
+                                                "1d": 0
+                                            }
+                                        }
+                                    },
+                                    "user_agent": {
+                                        "original": {
+                                            "all_agents": {
+                                                "1d": 0
+                                            },
+                                            "rum": {
+                                                "1d": 0
+                                            }
+                                        }
+                                    }
+                                },
+                                "counts": {
+                                    "agent_configuration": {
+                                        "all": 0
+                                    },
+                                    "error": {
+                                        "1d": 0,
+                                        "all": 0
+                                    },
+                                    "max_error_groups_per_service": {
+                                        "1d": 0
+                                    },
+                                    "max_transaction_groups_per_service": {
+                                        "1d": 0
+                                    },
+                                    "metric": {
+                                        "1d": 0,
+                                        "all": 0
+                                    },
+                                    "onboarding": {
+                                        "1d": 0,
+                                        "all": 0
+                                    },
+                                    "services": {
+                                        "1d": 0
+                                    },
+                                    "sourcemap": {
+                                        "1d": 0,
+                                        "all": 0
+                                    },
+                                    "span": {
+                                        "1d": 0,
+                                        "all": 0
+                                    },
+                                    "traces": {
+                                        "1d": 0
+                                    },
+                                    "transaction": {
+                                        "1d": 0,
+                                        "all": 0
+                                    }
+                                },
+                                "has_any_services": false,
+                                "indices": {
+                                    "all": {
+                                        "total": {
+                                            "docs": {
+                                                "count": 0
+                                            },
+                                            "store": {
+                                                "size_in_bytes": 208
+                                            }
+                                        }
+                                    },
+                                    "shards": {
+                                        "total": 1
+                                    }
+                                },
+                                "integrations": {
+                                    "ml": {
+                                        "all_jobs_count": 0
+                                    }
+                                },
+                                "services_per_agent": {
+                                    "dotnet": 0,
+                                    "go": 0,
+                                    "java": 0,
+                                    "js-base": 0,
+                                    "nodejs": 0,
+                                    "python": 0,
+                                    "ruby": 0,
+                                    "rum-js": 0
+                                },
+                                "tasks": {
+                                    "agent_configuration": {
+                                        "took": {
+                                            "ms": 23
+                                        }
+                                    },
+                                    "agents": {
+                                        "took": {
+                                            "ms": 41
+                                        }
+                                    },
+                                    "cardinality": {
+                                        "took": {
+                                            "ms": 22
+                                        }
+                                    },
+                                    "groupings": {
+                                        "took": {
+                                            "ms": 39
+                                        }
+                                    },
+                                    "indices_stats": {
+                                        "took": {
+                                            "ms": 11
+                                        }
+                                    },
+                                    "integrations": {
+                                        "took": {
+                                            "ms": 5
+                                        }
+                                    },
+                                    "processor_events": {
+                                        "took": {
+                                            "ms": 122
+                                        }
+                                    },
+                                    "services": {
+                                        "took": {
+                                            "ms": 41
+                                        }
+                                    },
+                                    "versions": {
+                                        "took": {
+                                            "ms": 9
+                                        }
+                                    }
+                                }
+                            },
+                            "application_usage": {},
+                            "canvas": {},
+                            "cloud": {
+                                "isCloudEnabled": false
+                            },
+                            "csp": {
+                                "rulesChangedFromDefault": false,
+                                "strict": false,
+                                "warnLegacyBrowsers": true
+                            },
+                            "dashboard": {
+                                "total": 0
+                            },
+                            "fileUploadTelemetry": {
+                                "filesUploadedTotalCount": 0
+                            },
+                            "graph_workspace": {
+                                "total": 0
+                            },
+                            "index": ".kibana",
+                            "index_pattern": {
+                                "total": 0
+                            },
+                            "infraops": {
+                                "last_24_hours": {
+                                    "hits": {
+                                        "infraops_docker": 0,
+                                        "infraops_hosts": 0,
+                                        "infraops_kubernetes": 0,
+                                        "logs": 0
+                                    }
+                                }
+                            },
+                            "kql": {
+                                "defaultQueryLanguage": "default-kuery",
+                                "optInCount": 0,
+                                "optOutCount": 0
+                            },
+                            "lens": {
+                                "events_30_days": {},
+                                "events_90_days": {},
+                                "suggestion_events_30_days": {},
+                                "suggestion_events_90_days": {}
+                            },
+                            "localization": {
+                                "integrities": {},
+                                "labelsCount": 0,
+                                "locale": "en"
+                            },
+                            "maps-telemetry": {
+                                "attributes": {
+                                    "attributesPerMap": {
+                                        "dataSourcesCount": {
+                                            "avg": 0,
+                                            "max": 0,
+                                            "min": 0
+                                        },
+                                        "emsVectorLayersCount": {},
+                                        "layerTypesCount": {},
+                                        "layersCount": {
+                                            "avg": 0,
+                                            "max": 0,
+                                            "min": 0
+                                        }
+                                    },
+                                    "indexPatternsWithGeoFieldCount": 0,
+                                    "mapsTotalCount": 0,
+                                    "settings": {
+                                        "showMapVisualizationTypes": false
+                                    },
+                                    "timeCaptured": "2020-05-21T07:59:58.397Z"
+                                },
+                                "id": "maps-telemetry",
+                                "references": [],
+                                "type": "maps-telemetry",
+                                "updated_at": "2020-05-21T07:59:58.397Z",
+                                "version": "WzQsMV0="
+                            },
+                            "mlTelemetry": {
+                                "file_data_visualizer": {
+                                    "index_creation_count": 0
+                                }
+                            },
+                            "rollups": {
+                                "index_patterns": {
+                                    "total": 0
+                                },
+                                "saved_searches": {
+                                    "total": 0
+                                },
+                                "visualizations": {
+                                    "saved_searches": {
+                                        "total": 0
+                                    },
+                                    "total": 0
+                                }
+                            },
+                            "search": {
+                                "total": 0
+                            },
+                            "spaces": {
+                                "available": true,
+                                "count": 1,
+                                "disabledFeatures": {
+                                    "advancedSettings": 0,
+                                    "apm": 0,
+                                    "canvas": 0,
+                                    "dashboard": 0,
+                                    "dev_tools": 0,
+                                    "discover": 0,
+                                    "graph": 0,
+                                    "indexPatterns": 0,
+                                    "infrastructure": 0,
+                                    "logs": 0,
+                                    "maps": 0,
+                                    "ml": 0,
+                                    "monitoring": 0,
+                                    "savedObjectsManagement": 0,
+                                    "siem": 0,
+                                    "uptime": 0,
+                                    "visualize": 0
+                                },
+                                "enabled": true,
+                                "usesFeatureControls": false
+                            },
+                            "stack_management": {},
+                            "telemetry": {
+                                "opt_in_status": true,
+                                "usage_fetcher": "browser"
+                            },
+                            "timelion_sheet": {
+                                "total": 0
+                            },
+                            "tsvb-validation": {
+                                "failed_validations": 0
+                            },
+                            "ui_metric": {},
+                            "upgrade-assistant-telemetry": {
+                                "features": {
+                                    "deprecation_logging": {
+                                        "enabled": true
+                                    }
+                                },
+                                "ui_open": {
+                                    "cluster": 0,
+                                    "indices": 0,
+                                    "overview": 0
+                                },
+                                "ui_reindex": {
+                                    "close": 0,
+                                    "open": 0,
+                                    "start": 0,
+                                    "stop": 0
+                                }
+                            },
+                            "uptime": {
+                                "last_24_hours": {
+                                    "hits": {
+                                        "monitor_page": 0,
+                                        "overview_page": 0,
+                                        "settings_page": 0
+                                    }
+                                }
+                            },
+                            "visualization": {
+                                "total": 0
+                            },
+                            "visualization_types": {},
+                            "xpack": {
+                                "reporting": {
+                                    "PNG": {
+                                        "available": true,
+                                        "total": 0
+                                    },
+                                    "_all": 0,
+                                    "available": true,
+                                    "browser_type": "chromium",
+                                    "csv": {
+                                        "available": true,
+                                        "total": 0
+                                    },
+                                    "enabled": true,
+                                    "last7Days": {
+                                        "PNG": {
+                                            "available": true,
+                                            "total": 0
+                                        },
+                                        "_all": 0,
+                                        "csv": {
+                                            "available": true,
+                                            "total": 0
+                                        },
+                                        "printable_pdf": {
+                                            "app": {
+                                                "dashboard": 0,
+                                                "visualization": 0
+                                            },
+                                            "available": true,
+                                            "layout": {
+                                                "preserve_layout": 0,
+                                                "print": 0
+                                            },
+                                            "total": 0
+                                        },
+                                        "status": {
+                                            "completed": 0,
+                                            "failed": 0
+                                        }
+                                    },
+                                    "lastDay": {
+                                        "PNG": {
+                                            "available": true,
+                                            "total": 0
+                                        },
+                                        "_all": 0,
+                                        "csv": {
+                                            "available": true,
+                                            "total": 0
+                                        },
+                                        "printable_pdf": {
+                                            "app": {
+                                                "dashboard": 0,
+                                                "visualization": 0
+                                            },
+                                            "available": true,
+                                            "layout": {
+                                                "preserve_layout": 0,
+                                                "print": 0
+                                            },
+                                            "total": 0
+                                        },
+                                        "status": {
+                                            "completed": 0,
+                                            "failed": 0
+                                        }
+                                    },
+                                    "printable_pdf": {
+                                        "app": {
+                                            "dashboard": 0,
+                                            "visualization": 0
+                                        },
+                                        "available": true,
+                                        "layout": {
+                                            "preserve_layout": 0,
+                                            "print": 0
+                                        },
+                                        "total": 0
+                                    },
+                                    "status": {
+                                        "completed": 0,
+                                        "failed": 0
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "metricset": {
+                        "name": "stats",
+                        "period": 10000
+                    },
+                    "service": {
+                        "address": "10.0.2.15:5601",
+                        "type": "kibana"
+                    },
+                    "timestamp": "2020-05-21T07:59:58.218Z",
+                    "type": "kibana_stats"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "kibana_stats"
+                    ]
+                },
+                "sort": [
+                    1590047998218
+                ]
+            },
+            {
+                "_id": "FPA_NnIBLHhfMFfAEoTV",
+                "_index": ".monitoring-kibana-7-mb-2020.05.21",
+                "_score": null,
+                "_source": {
+                    "@timestamp": "2020-05-21T07:59:58.020Z",
+                    "agent": {
+                        "ephemeral_id": "4c665c00-0b7d-440d-8d64-df4ca08e7f29",
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "e3215a00-dcc6-45cd-913a-6bc315e7feaf",
+                        "type": "metricbeat",
+                        "version": "7.7.1"
+                    },
+                    "cluster_uuid": "RFqV_TQrR_C-tnjv-RA6yw",
+                    "ecs": {
+                        "version": "1.5.0"
+                    },
+                    "event": {
+                        "dataset": "kibana.stats",
+                        "duration": 1154305356,
+                        "module": "kibana"
+                    },
+                    "host": {
+                        "architecture": "x86_64",
+                        "containerized": false,
+                        "hostname": "packer-virtualbox-iso-1584284895",
+                        "id": "e4484af3bb7677512f703e115e6e459c",
+                        "ip": [
+                            "10.0.2.15",
+                            "fe80::a00:27ff:fe56:46ac"
+                        ],
+                        "mac": [
+                            "08:00:27:56:46:ac"
+                        ],
+                        "name": "packer-virtualbox-iso-1584284895",
+                        "os": {
+                            "codename": "xenial",
+                            "family": "debian",
+                            "kernel": "4.4.0-174-generic",
+                            "name": "Ubuntu",
+                            "platform": "ubuntu",
+                            "version": "16.04.6 LTS (Xenial Xerus)"
+                        }
+                    },
+                    "interval_ms": 10000,
+                    "kibana_settings": {
+                        "kibana": {
+                            "host": "10.0.2.15",
+                            "index": ".kibana",
+                            "locale": "en",
+                            "name": "packer-virtualbox-iso-1584284895",
+                            "port": 5601,
+                            "snapshot": true,
+                            "status": "green",
+                            "transport_address": "10.0.2.15:5601",
+                            "uuid": "82e3cb18-da5d-41a4-ab76-0364f87df527",
+                            "version": "7.7.1"
+                        },
+                        "xpack": {}
+                    },
+                    "metricset": {
+                        "name": "stats",
+                        "period": 10000
+                    },
+                    "service": {
+                        "address": "10.0.2.15:5601",
+                        "type": "kibana"
+                    },
+                    "timestamp": "2020-05-21T07:59:58.218Z",
+                    "type": "kibana_settings"
+                },
+                "_type": "_doc",
+                "fields": {
+                    "type": [
+                        "kibana_settings"
+                    ]
+                },
+                "sort": [
+                    1590047998218
+                ]
+            }
+        ],
+        "max_score": null,
+        "total": {
+            "relation": "eq",
+            "value": 4
+        }
+    },
+    "timed_out": false,
+    "took": 1
+}
