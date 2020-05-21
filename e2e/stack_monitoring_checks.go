@@ -72,8 +72,8 @@ func handleElasticsearchClusterStats(legacy *gabs.Container, metricbeat *gabs.Co
 	legacy.SetP(newNodeName, masterNodePath)
 	metricbeat.SetP(newNodeName, masterNodePath)
 
-	legacy.SetP(legacy.Path(nodesPath+"."+origNodeName), nodesPath+"."+newNodeName)
-	metricbeat.SetP(metricbeat.Path(nodesPath+"."+origNodeName), nodesPath+"."+newNodeName)
+	legacy.SetP(legacy.Path(nodesPath+"."+origNodeName).Data(), nodesPath+"."+newNodeName)
+	metricbeat.SetP(metricbeat.Path(nodesPath+"."+origNodeName).Data(), nodesPath+"."+newNodeName)
 
 	legacy.DeleteP(nodesPath + "." + origNodeName)
 	metricbeat.DeleteP(nodesPath + "." + origNodeName)
