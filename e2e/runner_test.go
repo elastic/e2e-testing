@@ -131,20 +131,20 @@ func TestMain(m *testing.M) {
 
 	featurePaths, metadatas := parseFeatureFlags(flag.Args())
 
+	status := 0
 	if len(metadatas) == 0 {
-		log.Error("We did not find anything to execute. Exiting")
-		os.Exit(1)
-	}
+		log.Warn("We did not find anything feature file to execute. Continuing")
+	} else {
+		opt.Paths = featurePaths
 
-	opt.Paths = featurePaths
-
-	status := godog.RunWithOptions("godog", func(s *godog.Suite) {
-		for _, metadata := range metadatas {
-			for _, f := range metadata.contextFuncs {
-				f(s)
+		status = godog.RunWithOptions("godog", func(s *godog.Suite) {
+			for _, metadata := range metadatas {
+				for _, f := range metadata.contextFuncs {
+					f(s)
+				}
 			}
-		}
-	}, opt)
+		}, opt)
+	}
 
 	if st := m.Run(); st > status {
 		status = st
