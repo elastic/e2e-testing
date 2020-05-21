@@ -68,7 +68,7 @@ func handleElasticsearchClusterStats(legacy *gabs.Container, metricbeat *gabs.Co
 	nodesPath := "cluster_state.nodes"
 	newNodeName := "__normalized__"
 
-	origNodeName := legacy.Path(masterNodePath).String()
+	origNodeName := legacy.Path(masterNodePath).Data().(string)
 	legacy.SetP(newNodeName, masterNodePath)
 	metricbeat.SetP(newNodeName, masterNodePath)
 
@@ -90,10 +90,10 @@ func handleElasticsearchClusterStats(legacy *gabs.Container, metricbeat *gabs.Co
 	for i := 0; i < len(metricbeatPolicyStats.Children()); i++ {
 		policyStat := metricbeatPolicyStats.Index(i)
 		policyPhasesContainer := policyStat.Path("phases")
-		policyPhases := policyPhasesContainer.Data().(map[string]interface{})
+		policyPhases := policyPhasesContainer.ChildrenMap()
 		if len(policyPhases) == 1 &&
-			policyPhasesContainer.Index(0).Data() == "hot" &&
-			policyStat.Path("indices_managed").Data() == 1 {
+			policyPhasesContainer.ExistsP("hot") &&
+			policyStat.Path("indices_managed").Data().(float64) == 1.0 {
 
 			continue
 		} else {
@@ -101,7 +101,12 @@ func handleElasticsearchClusterStats(legacy *gabs.Container, metricbeat *gabs.Co
 		}
 	}
 
-	metricbeat.SetP(newPolicyStats, "stack_stats.xpack.ilm.policy_stats")
+	metricbeat.DeleteP(policyStatsPath)
+	metricbeat.ArrayP(policyStatsPath)
+	for _, p := range newPolicyStats {
+		metricbeat.ArrayAppendP(p, policyStatsPath)
+	}
+
 	metricbeat.SetP(len(newPolicyStats), "stack_stats.xpack.ilm.policy_count")
 
 	// Metricbeat modules will automatically strip out keys that contain a null value
