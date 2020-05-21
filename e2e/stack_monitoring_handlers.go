@@ -44,11 +44,11 @@ func handleElasticsearchClusterStats(legacy *gabs.Container, metricbeat *gabs.Co
 	newNodeName := "__normalized__"
 
 	origNodeName := legacy.Path(masterNodePath).String()
-	legacy, _ = legacy.SetP(newNodeName, masterNodePath)
-	metricbeat, _ = metricbeat.SetP(newNodeName, masterNodePath)
+	legacy.SetP(newNodeName, masterNodePath)
+	metricbeat.SetP(newNodeName, masterNodePath)
 
-	legacy, _ = legacy.SetP(legacy.Path(nodesPath+"."+origNodeName), nodesPath+"."+newNodeName)
-	metricbeat, _ = metricbeat.SetP(metricbeat.Path(nodesPath+"."+origNodeName), nodesPath+"."+newNodeName)
+	legacy.SetP(legacy.Path(nodesPath+"."+origNodeName), nodesPath+"."+newNodeName)
+	metricbeat.SetP(metricbeat.Path(nodesPath+"."+origNodeName), nodesPath+"."+newNodeName)
 
 	legacy.DeleteP(nodesPath + "." + origNodeName)
 	metricbeat.DeleteP(nodesPath + "." + origNodeName)
@@ -76,8 +76,8 @@ func handleElasticsearchClusterStats(legacy *gabs.Container, metricbeat *gabs.Co
 		}
 	}
 
-	metricbeat, _ = metricbeat.SetP(newPolicyStats, "stack_stats.xpack.ilm.policy_stats")
-	metricbeat, _ = metricbeat.SetP(len(newPolicyStats), "stack_stats.xpack.ilm.policy_count")
+	metricbeat.SetP(newPolicyStats, "stack_stats.xpack.ilm.policy_stats")
+	metricbeat.SetP(len(newPolicyStats), "stack_stats.xpack.ilm.policy_count")
 
 	// Metricbeat modules will automatically strip out keys that contain a null value
 	// and `license.max_resource_units` is only available on certain license levels.
@@ -123,7 +123,7 @@ func handleElasticsearchClusterStats(legacy *gabs.Container, metricbeat *gabs.Co
 		}
 
 		if internalContainsAllInMetricbeat {
-			legacy, _ = legacy.SetP(metricbeat.Path(fieldTypesPath), fieldTypesPath)
+			legacy.SetP(metricbeat.Path(fieldTypesPath), fieldTypesPath)
 		}
 	}
 
@@ -137,8 +137,15 @@ func handleElasticsearchIndexRecovery(legacy *gabs.Container, metricbeat *gabs.C
 	legacyShards := legacy.Path(shardsPath)
 	metricbeatShards := metricbeat.Path(shardsPath)
 
-	legacyShards = legacyShards.Index(0)
-	metricbeatShards = metricbeatShards.Index(0)
+	firstLegacyShard := legacyShards.Index(0)
+	legacy.DeleteP(shardsPath)
+	legacy.ArrayP(shardsPath)
+	legacy.ArrayAppendP(firstLegacyShard.Data(), shardsPath)
+
+	firstMetricbeatShard := metricbeatShards.Index(0)
+	metricbeat.DeleteP(shardsPath)
+	metricbeat.ArrayP(shardsPath)
+	metricbeat.ArrayAppendP(firstMetricbeatShard.Data(), shardsPath)
 
 	return nil
 }
@@ -150,11 +157,15 @@ func handleElasticsearchIndexRecovery(legacy *gabs.Container, metricbeat *gabs.C
 // the UI. So we normalize by removing all but those three fields from the internally-indexed doc.
 func handleElasticsearchNodeStats(legacy *gabs.Container) error {
 	sourceNode := legacy.Path("source_node")
-	newSourceNode := gabs.New()
-	newSourceNode, _ = newSourceNode.SetP(sourceNode.Path("uuid"), "uuid")
-	newSourceNode, _ = newSourceNode.SetP(sourceNode.Path("name"), "name")
-	newSourceNode, _ = newSourceNode.SetP(sourceNode.Path("transport_address"), "transport_address")
-	legacy, _ = legacy.SetP(newSourceNode, "source_node")
+
+	uuid := sourceNode.Path("uuid").Data().(string)
+	name := sourceNode.Path("name").Data().(string)
+	transportAddress := sourceNode.Path("transport_address").Data().(string)
+
+	legacy.DeleteP("source_node")
+	legacy.SetP(uuid, "source_node.uuid")
+	legacy.SetP(name, "source_node.name")
+	legacy.SetP(transportAddress, "source_node.transport_address")
 
 	return nil
 }
@@ -166,17 +177,23 @@ func handleElasticsearchNodeStats(legacy *gabs.Container) error {
 // but those two fields from the internally-indexed doc.
 func handleElasticsearchShards(legacy *gabs.Container) error {
 	sourceNode := legacy.Path("source_node")
-	newSourceNode := gabs.New()
-	newSourceNode, _ = newSourceNode.SetP(sourceNode.Path("uuid"), "uuid")
-	newSourceNode, _ = newSourceNode.SetP(sourceNode.Path("name"), "name")
-	legacy, _ = legacy.SetP(newSourceNode, "source_node")
+
+	uuid := sourceNode.Path("uuid").Data().(string)
+	name := sourceNode.Path("name").Data().(string)
+
+	legacy.DeleteP("source_node")
+	legacy.SetP(uuid, "source_node.uuid")
+	legacy.SetP(name, "source_node.name")
 
 	// Internally-indexed docs of `type:shard` will set `shard.relocating_node` to `null`, if
 	// the shard is not relocating. However, Metricbeat-indexed docs of `type:shard` will simply
 	// not send the `shard.relocating_node` field if the shard is not relocating. So we normalize
 	// by deleting the `shard.relocating_node` field from the internally-indexed doc if the shard
 	// is not relocating.
-	legacy.DeleteP("shards.relocating_node")
+	relocatingNodePath := "shards.relocating_node"
+	if legacy.ExistsP(relocatingNodePath) {
+		legacy.DeleteP(relocatingNodePath)
+	}
 
 	return nil
 }
@@ -222,8 +239,20 @@ func handleLogstashStats(product string, legacy *gabs.Container, metricbeat *gab
 
 	// sort vertices by vertices[index].id, so that the field comparison is made properly
 
-	legacyPipeline.SetP(sortByVerticesID(legacyVertices), "vertices")
-	metricbeatPipeline.SetP(sortByVerticesID(metricbeatVertices), "vertices")
+	sortedLegacyVertices := sortByVerticesID(legacyVertices)
+	sortedMetricbeatVertices := sortByVerticesID(metricbeatVertices)
+
+	legacyPipeline.DeleteP("vertices")
+	legacyPipeline.ArrayP("vertices")
+	for _, v := range sortedLegacyVertices {
+		legacyPipeline.ArrayAppendP(v.Data(), "vertices")
+	}
+
+	metricbeatPipeline.DeleteP("vertices")
+	metricbeatPipeline.ArrayP("vertices")
+	for _, v := range sortedMetricbeatVertices {
+		metricbeatPipeline.ArrayAppendP(v.Data(), "vertices")
+	}
 
 	if foundError {
 		return fmt.Errorf("%s.0.vertices for legacy or metricbeat collection is null", pipelinesPath)
