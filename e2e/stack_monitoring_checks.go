@@ -153,7 +153,12 @@ func handleElasticsearchClusterStats(legacy *gabs.Container, metricbeat *gabs.Co
 		}
 
 		if legacyContainsAllInMetricbeat {
-			legacy.SetP(metricbeat.Path(fieldTypesPath), fieldTypesPath)
+			legacy.DeleteP(fieldTypesPath)
+			legacy.ArrayP(fieldTypesPath)
+			for i := 0; i < len(metricbeatFieldTypes.Children()); i++ {
+				metricbeatFieldType := metricbeatFieldTypes.Index(i)
+				legacy.ArrayAppendP(metricbeatFieldType.Data(), fieldTypesPath)
+			}
 		}
 	}
 
