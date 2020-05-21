@@ -126,7 +126,7 @@ func handleElasticsearchClusterStats(legacy *gabs.Container, metricbeat *gabs.Co
 	// To get around this, we know that the parity tests query internally collected documents first
 	// so we will ensure that all `field_types` that exist from that source also exist in the
 	// Metricbeat `field_types` (It is very likely the Metricbeat `field_types` will contain more)
-	internalContainsAllInMetricbeat := false
+	legacyContainsAllInMetricbeat := false
 	fieldTypesPath := "cluster_stats.indices.mappings.field_types"
 	if legacy.ExistsP(fieldTypesPath) {
 		legacyFieldTypes := legacy.Path(fieldTypesPath)
@@ -149,10 +149,10 @@ func handleElasticsearchClusterStats(legacy *gabs.Container, metricbeat *gabs.Co
 				break
 			}
 
-			internalContainsAllInMetricbeat = true
+			legacyContainsAllInMetricbeat = true
 		}
 
-		if internalContainsAllInMetricbeat {
+		if legacyContainsAllInMetricbeat {
 			legacy.SetP(metricbeat.Path(fieldTypesPath), fieldTypesPath)
 		}
 	}
