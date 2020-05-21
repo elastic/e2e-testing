@@ -35,3 +35,7 @@ functional-test:
 .PHONY: sync-integrations
 sync-integrations:
 	OP_LOG_LEVEL=${LOG_LEVEL} ./op sync integrations --delete
+
+.PHONY: test
+test:
+	go test -v ./...
