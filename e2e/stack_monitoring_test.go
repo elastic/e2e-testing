@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -543,29 +542,4 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 	log.Info("No parity errors found!")
 
 	return nil
-}
-
-// checkSourceTypes returns an array of types present in the document, alphabetically sorted,
-// plus a map with _source documents, indexed by document type
-func checkSourceTypes(container *gabs.Container) ([]string, map[string]interface{}) {
-	types := []string{}
-	sources := map[string]interface{}{}
-
-	for i := 0; i < len(container.Children()); i++ {
-		containerChild := container.Index(i)
-
-		t, _ := gabs.New().Set(containerChild.Path("_source.type").Data())
-		data := t.Data().(string)
-
-		types = append(types, data)
-
-		source, _ := gabs.New().Set(containerChild.Path("_source").Data())
-		sources[data] = source.Data()
-	}
-
-	sort.SliceStable(types, func(i, j int) bool {
-		return types[i] < types[j]
-	})
-
-	return types, sources
 }

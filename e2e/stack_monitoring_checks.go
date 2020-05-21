@@ -8,6 +8,31 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// checkSourceTypes returns an array of types present in the document, alphabetically sorted,
+// plus a map with _source documents, indexed by document type
+func checkSourceTypes(container *gabs.Container) ([]string, map[string]interface{}) {
+	types := []string{}
+	sources := map[string]interface{}{}
+
+	for i := 0; i < len(container.Children()); i++ {
+		containerChild := container.Index(i)
+
+		t, _ := gabs.New().Set(containerChild.Path("_source.type").Data())
+		data := t.Data().(string)
+
+		types = append(types, data)
+
+		source, _ := gabs.New().Set(containerChild.Path("_source").Data())
+		sources[data] = source.Data()
+	}
+
+	sort.SliceStable(types, func(i, j int) bool {
+		return types[i] < types[j]
+	})
+
+	return types, sources
+}
+
 // handleBeatsStats When Metricbeat monitors Filebeat, it encounters a different set of file IDs in
 // `type:beats_stats` documents than when internal collection monitors Filebeat. However,
 // we expect the _number_ of files being harvested by Filebeat in either case to match.
