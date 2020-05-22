@@ -2,12 +2,25 @@ package e2e
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
 )
 
+// checkMapKeysWithoutArrayIndices remove all keys producued by array indices
+// i.e. 'stack_stats.xpack.ilm.policy_stats.3.phases.hot.actions.0'
+func checkMapKeysWithoutArrayIndices(keysMap map[string]interface{}) map[string]bool {
+	keysWithoutArrayIndices := map[string]bool{}
+	for k := range keysMap {
+		validKey := regexp.MustCompile(`\b.\d+?\b`)
+		keyWithoutArrayIndices := validKey.ReplaceAllLiteralString(k, "")
+		keysWithoutArrayIndices[keyWithoutArrayIndices] = true
+	}
+
+	return keysWithoutArrayIndices
+}
 // checkSourceTypes returns an array of types present in the document, alphabetically sorted,
 // plus a map with _source documents, indexed by document type
 func checkSourceTypes(container *gabs.Container) ([]string, map[string]interface{}) {

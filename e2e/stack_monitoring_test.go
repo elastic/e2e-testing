@@ -475,15 +475,17 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 			foundErrors = append(foundErrors, fmt.Errorf("Error flattening legacy doc for %s: %v - %v", docType, legacyDoc, err))
 			flatLegacy = map[string]interface{}{}
 		}
+		legacyKeys := checkMapKeysWithoutArrayIndices(flatLegacy)
 
 		flatMetricbeat, err := metricbeatDoc.Flatten()
 		if err != nil {
 			foundErrors = append(foundErrors, fmt.Errorf("Error flattening metricbeat doc for %s: %v - %v", docType, metricbeatDoc, err))
 			flatMetricbeat = map[string]interface{}{}
 		}
+		metricbeatKeys := checkMapKeysWithoutArrayIndices(flatMetricbeat)
 
-		for k := range flatMetricbeat {
-			if _, ok := flatLegacy[k]; !ok {
+		for k := range metricbeatKeys {
+			if _, ok := legacyKeys[k]; !ok {
 				if !arrayContainsField(allowedInsertionsInMetricbeatDocs, k) {
 					unexpectedInsertions = append(unexpectedInsertions, k)
 				}
@@ -492,8 +494,8 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 			}
 		}
 
-		for k := range flatLegacy {
-			if _, ok := flatMetricbeat[k]; !ok {
+		for k := range legacyKeys {
+			if _, ok := metricbeatKeys[k]; !ok {
 				if !arrayContainsField(allowedDeletionsFromMetricbeatDocs, k) {
 					unexpectedDeletions = append(unexpectedDeletions, k)
 				}
