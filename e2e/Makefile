@@ -38,4 +38,4 @@ sync-integrations:
 
 .PHONY: test
 test:
-	go test -v ./...
+	go test -v --tags=unit
