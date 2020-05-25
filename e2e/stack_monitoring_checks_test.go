@@ -13,6 +13,46 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestCheckKibanaParity(t *testing.T) {
+	productTests := []struct {
+		product              string
+		monitoringCollection string
+	}{
+		{
+			product: "elasticsearch",
+		},
+	}
+
+	for _, pt := range productTests {
+		sm := &StackMonitoringTestSuite{
+			Env:            map[string]string{},
+			collectionHits: map[string]map[string]interface{}{},
+		}
+
+		sm.checkProduct(pt.product, "legacy")
+		legacy := readCollectionSample(pt.product, "legacy")
+
+		sm.checkProduct(pt.product, "metricbeat")
+		metricbeat := readCollectionSample(pt.product, "metricbeat")
+
+		t.Run("Types length is equal for legacy and metricbeat collections", func(t *testing.T) {
+			hitsPath := "hits.hits"
+			legacyHits := legacy.Path(hitsPath)
+			metricbeatHits := metricbeat.Path(hitsPath)
+
+			legacyTypes, _ := checkSourceTypes(legacyHits)
+			metricbeatTypes, _ := checkSourceTypes(metricbeatHits)
+
+			assert.Equal(t, len(legacyTypes), len(metricbeatTypes))
+		})
+
+		t.Run("There are no parity errors in the test resources", func(t *testing.T) {
+			err := checkParity(sm, legacy, metricbeat)
+			assert.Nil(t, err)
+		})
+	}
+}
+
 func TestCheckSourceTypes(t *testing.T) {
 	productTests := []struct {
 		product               string
