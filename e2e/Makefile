@@ -6,6 +6,7 @@ QUERY_MAX_ATTEMPTS?=5
 RETRY_TIMEOUT?=3
 STACK_VERSION?=
 METRICBEAT_VERSION?=
+TEST_TIMEOUT?=20m
 VERSION_VALUE=`cat ../cli/VERSION.txt`
 
 GO_IMAGE_TAG?='stretch'
@@ -30,7 +31,7 @@ functional-test:
 	OP_RETRY_TIMEOUT=${RETRY_TIMEOUT} \
 	OP_METRICBEAT_VERSION=${METRICBEAT_VERSION} \
 	OP_STACK_VERSION=${STACK_VERSION} \
-	go test -v --godog.format=${FORMAT} ${FEATURE}
+	go test -timeout=$(TEST_TIMEOUT) -v --godog.format=${FORMAT} ${FEATURE}
 
 .PHONY: sync-integrations
 sync-integrations:
