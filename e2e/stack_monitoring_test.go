@@ -64,6 +64,7 @@ type StackMonitoringTestSuite struct {
 	allowedDeletionsExtra  []string
 	allowedInsertionsExtra []string
 	handleSpecialCases     func(docType string, legacy *gabs.Container, metricbeat *gabs.Container) error
+	esQuery                map[string]interface{}
 }
 
 // @collectionMethod1 the collection method to be used. Valid values: legacy, metricbeat
@@ -90,11 +91,50 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 
 	productIndexID := sm.Product
 
+	sm.esQuery = map[string]interface{}{
+		"collapse": map[string]interface{}{
+			"field": "type",
+		},
+		"sort": map[string]interface{}{
+			"timestamp": "asc",
+		},
+	}
+
 	// look up configurations under workspace's configurations directory
 	workingDir, _ := os.Getwd()
 
 	switch {
 	case sm.Product == "elasticsearch":
+		sm.esQuery = map[string]interface{}{
+			"query": map[string]interface{}{
+				"bool": map[string]interface{}{
+					"should": []map[string]interface{}{
+						{
+							"bool": map[string]interface{}{
+								"must_not": []map[string]interface{}{
+									{"term": map[string]interface{}{"type": "shards"}},
+								},
+							},
+						},
+						{
+							"bool": map[string]interface{}{
+								"must": []map[string]interface{}{
+									{"term": map[string]interface{}{"type": "shards"}},
+									{"term": map[string]interface{}{"shard.state": "STARTED"}},
+								},
+							},
+						},
+					},
+				},
+			},
+			"collapse": map[string]interface{}{
+				"field": "type",
+			},
+			"sort": map[string]interface{}{
+				"timestamp": "desc",
+			},
+		}
+
 		sm.Port = 9201
 
 		productIndexID = "es"
@@ -184,16 +224,7 @@ func (sm *StackMonitoringTestSuite) cleanUp() {
 }
 
 func (sm *StackMonitoringTestSuite) getCollectionMethodHits() (map[string]interface{}, error) {
-	esQuery := map[string]interface{}{
-		"collapse": map[string]interface{}{
-			"field": "type",
-		},
-		"sort": map[string]interface{}{
-			"timestamp": "asc",
-		},
-	}
-
-	return retrySearch(sm.IndexName, esQuery, queryMaxAttempts, queryRetryTimeout)
+	return retrySearch(sm.IndexName, sm.esQuery, queryMaxAttempts, queryRetryTimeout)
 }
 
 func (sm *StackMonitoringTestSuite) removeProduct() {
