@@ -541,7 +541,7 @@ func checkParity(sm *StackMonitoringTestSuite, legacyContainer *gabs.Container, 
 		return fmt.Errorf("Found %d errors while checking parity", len(foundErrors))
 	}
 
-	log.Info("No parity errors found!")
+	log.WithField("product", sm.Product).Info("No parity errors found!")
 
 	return nil
 }
