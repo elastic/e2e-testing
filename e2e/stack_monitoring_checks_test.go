@@ -233,7 +233,7 @@ func TestHandleElasticsearchShards_KeepsSourceNodeFields(t *testing.T) {
 			"name": "` + expectedName + `",
 			"remove_me": "foo"
 		},
-		"shards": {
+		"shard": {
 			"relocating_node": "relocating_node"
 		}
 	}`))
@@ -241,7 +241,7 @@ func TestHandleElasticsearchShards_KeepsSourceNodeFields(t *testing.T) {
 	err := handleElasticsearchShards(legacy)
 	assert.Nil(t, err)
 
-	assert.False(t, legacy.ExistsP("shards.relocating_node"))
+	assert.False(t, legacy.ExistsP("shard.relocating_node"))
 
 	assert.Equal(t, expectedUUID, legacy.Path("source_node.uuid").Data().(string))
 	assert.Equal(t, expectedName, legacy.Path("source_node.name").Data().(string))

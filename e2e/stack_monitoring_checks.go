@@ -239,7 +239,7 @@ func handleElasticsearchShards(legacy *gabs.Container) error {
 	// not send the `shard.relocating_node` field if the shard is not relocating. So we normalize
 	// by deleting the `shard.relocating_node` field from the internally-indexed doc if the shard
 	// is not relocating.
-	relocatingNodePath := "shards.relocating_node"
+	relocatingNodePath := "shard.relocating_node"
 	if legacy.ExistsP(relocatingNodePath) {
 		legacy.DeleteP(relocatingNodePath)
 	}
