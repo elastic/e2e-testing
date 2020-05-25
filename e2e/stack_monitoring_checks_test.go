@@ -112,7 +112,7 @@ func TestHandleElasticsearchClusterStats_NormalisesClusterMasterNode(t *testing.
 	assert.Equal(t, expectedLegacyNode.Path("ephemeral_id").Data().(string), actualNode.Path("ephemeral_id").Data().(string))
 	assert.Equal(t, expectedLegacyNode.Path("name").Data().(string), actualNode.Path("name").Data().(string))
 	assert.Equal(t, expectedLegacyNode.Path("transport_address").Data().(string), actualNode.Path("transport_address").Data().(string))
-	
+
 	// check normalized node replaced the existing one in metricbeat collection
 	actualNode = metricbeatDoc.Path(nodesPath + "." + expectedNodeName)
 	assert.Equal(t, expectedMetricbeatNode.Path("ephemeral_id").Data().(string), actualNode.Path("ephemeral_id").Data().(string))
@@ -132,11 +132,21 @@ func TestHandleElasticsearchClusterStats_NormalisesXpackPolicies(t *testing.T) {
 	err := handleElasticsearchClusterStats(legacyDoc, metricbeatDoc)
 	assert.Nil(t, err)
 
-	policyStatsPath := "stack_stats.xpack.ilm.policy_stats"
 	policyCountPath := "stack_stats.xpack.ilm.policy_count"
-
-	assert.Equal(t, 4, len(metricbeatDoc.Path(policyStatsPath).Children()))
 	assert.Equal(t, 4, metricbeatDoc.Path(policyCountPath).Data().(int))
+
+	policyStatsPath := "stack_stats.xpack.ilm.policy_stats"
+	actualPolicyStats := metricbeatDoc.Path(policyStatsPath)
+
+	assert.Equal(t, 4, len(actualPolicyStats.Children()))
+
+	for i := 0; i < len(actualPolicyStats.Children()); i++ {
+		policyStat := actualPolicyStats.Index(i)
+		phases := policyStat.Path("phases")
+		if len(phases.Children()) == 1 && phases.ExistsP("hot") {
+			assert.NotEqual(t, 1.0, policyStat.Path("indices_managed").Data().(float64))
+		}
+	}
 }
 
 func TestHandleElasticsearchClusterStats_RemovesLicenseMaxResourceUnits(t *testing.T) {

@@ -118,7 +118,7 @@ func handleElasticsearchClusterStats(legacy *gabs.Container, metricbeat *gabs.Co
 	metricbeat.DeleteP(policyStatsPath)
 	metricbeat.ArrayP(policyStatsPath)
 	for _, p := range newPolicyStats {
-		metricbeat.ArrayAppendP(p, policyStatsPath)
+		metricbeat.ArrayAppendP(p.Data(), policyStatsPath)
 	}
 
 	metricbeat.SetP(len(newPolicyStats), "stack_stats.xpack.ilm.policy_count")
