@@ -98,13 +98,29 @@ func TestHandleElasticsearchClusterStats_NormalisesClusterMasterNode(t *testing.
 	nodesPath := "cluster_state.nodes"
 	expectedNodeName := "__normalized__"
 
-	originalClusterMasterNode := legacyDoc.Path(masterNodePath).Data().(string)
+	originalLegacyClusterMasterNode := legacyDoc.Path(masterNodePath).Data().(string)
+	expectedLegacyNode := legacyDoc.Path(nodesPath + "." + originalLegacyClusterMasterNode)
+
+	originalMetricbeatClusterMasterNode := metricbeatDoc.Path(masterNodePath).Data().(string)
+	expectedMetricbeatNode := metricbeatDoc.Path(nodesPath + "." + originalMetricbeatClusterMasterNode)
 
 	err := handleElasticsearchClusterStats(legacyDoc, metricbeatDoc)
 	assert.Nil(t, err)
 
-	assert.False(t, legacyDoc.ExistsP(nodesPath+"."+originalClusterMasterNode))
-	assert.False(t, metricbeatDoc.ExistsP(nodesPath+"."+originalClusterMasterNode))
+	// check normalized node replaced the existing one in legacy collection
+	actualNode := legacyDoc.Path(nodesPath + "." + expectedNodeName)
+	assert.Equal(t, expectedLegacyNode.Path("ephemeral_id").Data().(string), actualNode.Path("ephemeral_id").Data().(string))
+	assert.Equal(t, expectedLegacyNode.Path("name").Data().(string), actualNode.Path("name").Data().(string))
+	assert.Equal(t, expectedLegacyNode.Path("transport_address").Data().(string), actualNode.Path("transport_address").Data().(string))
+	
+	// check normalized node replaced the existing one in metricbeat collection
+	actualNode = metricbeatDoc.Path(nodesPath + "." + expectedNodeName)
+	assert.Equal(t, expectedMetricbeatNode.Path("ephemeral_id").Data().(string), actualNode.Path("ephemeral_id").Data().(string))
+	assert.Equal(t, expectedMetricbeatNode.Path("name").Data().(string), actualNode.Path("name").Data().(string))
+	assert.Equal(t, expectedMetricbeatNode.Path("transport_address").Data().(string), actualNode.Path("transport_address").Data().(string))
+
+	assert.False(t, legacyDoc.ExistsP(nodesPath+"."+originalLegacyClusterMasterNode))
+	assert.False(t, metricbeatDoc.ExistsP(nodesPath+"."+originalLegacyClusterMasterNode))
 
 	assert.Equal(t, expectedNodeName, legacyDoc.Path(masterNodePath).Data().(string))
 	assert.Equal(t, expectedNodeName, metricbeatDoc.Path(masterNodePath).Data().(string))

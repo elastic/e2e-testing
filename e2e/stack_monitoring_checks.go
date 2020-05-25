@@ -21,6 +21,7 @@ func checkMapKeysWithoutArrayIndices(keysMap map[string]interface{}) map[string]
 
 	return keysWithoutArrayIndices
 }
+
 // checkSourceTypes returns an array of types present in the document, alphabetically sorted,
 // plus a map with _source documents, indexed by document type
 func checkSourceTypes(container *gabs.Container) ([]string, map[string]interface{}) {
@@ -83,12 +84,12 @@ func handleElasticsearchClusterStats(legacy *gabs.Container, metricbeat *gabs.Co
 
 	origNodeName := legacy.Path(masterNodePath).Data().(string)
 	legacy.SetP(newNodeName, masterNodePath)
-	metricbeat.SetP(newNodeName, masterNodePath)
-
 	legacy.SetP(legacy.Path(nodesPath+"."+origNodeName).Data(), nodesPath+"."+newNodeName)
-	metricbeat.SetP(metricbeat.Path(nodesPath+"."+origNodeName).Data(), nodesPath+"."+newNodeName)
-
 	legacy.DeleteP(nodesPath + "." + origNodeName)
+	
+	origNodeName = metricbeat.Path(masterNodePath).Data().(string)
+	metricbeat.SetP(newNodeName, masterNodePath)
+	metricbeat.SetP(metricbeat.Path(nodesPath+"."+origNodeName).Data(), nodesPath+"."+newNodeName)
 	metricbeat.DeleteP(nodesPath + "." + origNodeName)
 
 	// When Metricbeat-based monitoring is used, Metricbeat will setup an ILM policy for
