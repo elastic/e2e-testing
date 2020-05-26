@@ -102,6 +102,18 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 
 	switch {
 	case sm.Product == "elasticsearch":
+		sm.allowedInsertionsExtra = []string{
+			"cluster_stats.nodes.network_types.http_types.security4",
+			"cluster_stats.nodes.network_types.transport_types.security4",
+			"stack_stats.xpack.security.ssl.http.enabled",
+			"stack_stats.xpack.security.ssl.transport.enabled",
+			"license.cluster_needs_tls",
+		}
+		sm.allowedDeletionsExtra = []string{
+			"cluster_stats.nodes.network_types.http_types.netty4",
+			"cluster_stats.nodes.network_types.transport_types.netty4",
+		}
+
 		sm.esQuery = map[string]interface{}{
 			"query": map[string]interface{}{
 				"bool": map[string]interface{}{
