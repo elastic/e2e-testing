@@ -132,6 +132,8 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 			},
 		}
 
+		env["xpackMonitoringCollection"] = "true"
+
 		sm.Port = 9201
 
 		productIndexID = "es"
