@@ -7,6 +7,4 @@ Scenario Outline: The <product> documents indexed by the legacy collection metho
 Examples:
 | product       |
 | elasticsearch |
-| kibana        |
-| logstash      |
-| filebeat      |
+

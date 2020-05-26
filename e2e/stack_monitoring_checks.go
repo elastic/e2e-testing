@@ -1,12 +1,10 @@
 package e2e
 
 import (
-	"fmt"
 	"regexp"
 	"sort"
 
 	"github.com/Jeffail/gabs/v2"
-	log "github.com/sirupsen/logrus"
 )
 
 // checkMapKeysWithoutArrayIndices remove all keys producued by array indices
@@ -47,32 +45,6 @@ func checkSourceTypes(container *gabs.Container) ([]string, map[string]interface
 	return types, sources
 }
 
-// handleBeatsStats When Metricbeat monitors Filebeat, it encounters a different set of file IDs in
-// `type:beats_stats` documents than when internal collection monitors Filebeat. However,
-// we expect the _number_ of files being harvested by Filebeat in either case to match.
-// If the numbers match we normalize the file lists in `type:beats_stats` docs collected
-// by both methods so their parity comparison succeeds.
-func handleBeatsStats(legacy *gabs.Container, metricbeat *gabs.Container) error {
-	filesPath := "beats_stats.metrics.filebeat.harvester.files"
-
-	legacyFiles := legacy.Path(filesPath)
-	metricbeatFiles := metricbeat.Path(filesPath)
-
-	legacyFilesCount := len(legacyFiles.Children())
-	metricbeatFilesCount := len(metricbeatFiles.Children())
-
-	if legacyFilesCount != metricbeatFilesCount {
-		return fmt.Errorf("The number of harvested files in legacy (%d) and metricbeat (%d) collection is different", legacyFilesCount, metricbeatFilesCount)
-	}
-
-	log.Debugf("The number of harvested files in legacy and metricbeat collection is the same: %d", legacyFilesCount)
-
-	legacy.DeleteP(filesPath)
-	metricbeat.DeleteP(filesPath)
-
-	return nil
-}
-
 // handleElasticsearchClusterStats
 func handleElasticsearchClusterStats(legacy *gabs.Container, metricbeat *gabs.Container) error {
 	// We expect the node ID to be different in the internally-collected vs. metricbeat-collected
@@ -86,7 +58,7 @@ func handleElasticsearchClusterStats(legacy *gabs.Container, metricbeat *gabs.Co
 	legacy.SetP(newNodeName, masterNodePath)
 	legacy.SetP(legacy.Path(nodesPath+"."+origNodeName).Data(), nodesPath+"."+newNodeName)
 	legacy.DeleteP(nodesPath + "." + origNodeName)
-	
+
 	origNodeName = metricbeat.Path(masterNodePath).Data().(string)
 	metricbeat.SetP(newNodeName, masterNodePath)
 	metricbeat.SetP(metricbeat.Path(nodesPath+"."+origNodeName).Data(), nodesPath+"."+newNodeName)
@@ -245,76 +217,4 @@ func handleElasticsearchShards(legacy *gabs.Container) error {
 	}
 
 	return nil
-}
-
-// handleKibanaLegacySettings Internal collection will index kibana_settings.xpack.default_admin_email as null
-// whereas Metricbeat collection simply won't index it. So if we find kibana_settings.xpack.default_admin_email
-// is null, we simply remove it
-func handleKibanaLegacySettings(legacy *gabs.Container) error {
-	defaultAdminEmailPath := "kibana_settings.xpack.default_admin_email"
-
-	if legacy.ExistsP(defaultAdminEmailPath) {
-		legacy.DeleteP(defaultAdminEmailPath)
-	}
-
-	return nil
-}
-
-func handleLogstashStats(product string, legacy *gabs.Container, metricbeat *gabs.Container) error {
-	pipelinesPath := "logstash_stats.pipelines"
-
-	legacyPipelines := legacy.Path(pipelinesPath)
-	metricbeatPipelines := metricbeat.Path(pipelinesPath)
-
-	legacyPipeline := legacyPipelines.Index(0)
-	metricbeatPipeline := metricbeatPipelines.Index(0)
-
-	legacyVertices := legacyPipeline.Path("vertices")
-	metricbeatVertices := metricbeatPipeline.Path("vertices")
-
-	foundError := false
-	if legacyVertices == nil {
-		foundError = true
-		log.WithFields(log.Fields{
-			"product": product,
-		}).Warn(pipelinesPath + ".0.vertices is null for legacy collection")
-	}
-	if metricbeatVertices == nil {
-		foundError = true
-		log.WithFields(log.Fields{
-			"product": product,
-		}).Warn(pipelinesPath + ".0.vertices is null for metricbeat collection")
-	}
-
-	// sort vertices by vertices[index].id, so that the field comparison is made properly
-
-	sortedLegacyVertices := sortByVerticesID(legacyVertices)
-	sortedMetricbeatVertices := sortByVerticesID(metricbeatVertices)
-
-	legacyPipeline.DeleteP("vertices")
-	legacyPipeline.ArrayP("vertices")
-	for _, v := range sortedLegacyVertices {
-		legacyPipeline.ArrayAppendP(v.Data(), "vertices")
-	}
-
-	metricbeatPipeline.DeleteP("vertices")
-	metricbeatPipeline.ArrayP("vertices")
-	for _, v := range sortedMetricbeatVertices {
-		metricbeatPipeline.ArrayAppendP(v.Data(), "vertices")
-	}
-
-	if foundError {
-		return fmt.Errorf("%s.0.vertices for legacy or metricbeat collection is null", pipelinesPath)
-	}
-
-	return nil
-}
-
-func sortByVerticesID(vertices *gabs.Container) []*gabs.Container {
-	array := vertices.Children()
-	sort.SliceStable(array, func(i, j int) bool {
-		return array[i].Path("id").Data().(string) < array[j].Path("id").Data().(string)
-	})
-
-	return array
 }

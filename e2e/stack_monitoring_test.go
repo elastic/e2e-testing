@@ -100,9 +100,6 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 		},
 	}
 
-	// look up configurations under workspace's configurations directory
-	workingDir, _ := os.Getwd()
-
 	switch {
 	case sm.Product == "elasticsearch":
 		sm.esQuery = map[string]interface{}{
@@ -157,51 +154,6 @@ func (sm *StackMonitoringTestSuite) checkProduct(product string, collectionMetho
 			}
 
 			return nil
-		}
-	case sm.Product == "kibana":
-		sm.allowedDeletionsExtra = []string{
-			"kibana_stats.response_times.max",
-			"kibana_stats.response_times.average",
-		}
-
-		sm.handleSpecialCases = func(docType string, legacy *gabs.Container, metricbeat *gabs.Container) error {
-			if docType == "kibana_settings" {
-				return handleKibanaLegacySettings(legacy)
-			}
-
-			return nil
-		}
-	case sm.Product == "logstash":
-		sm.handleSpecialCases = func(docType string, legacy *gabs.Container, metricbeat *gabs.Container) error {
-			if docType == "logstash_stats" {
-				return handleLogstashStats(sm.Product, legacy, metricbeat)
-			}
-
-			return nil
-		}
-
-		env[sm.Product+"PipelinesPath"] = path.Join(workingDir, "configurations", "parity-testing", "pipelines")
-	case strings.HasSuffix(sm.Product, "beat"):
-		productIndexID = "beats"
-
-		sm.handleSpecialCases = func(docType string, legacy *gabs.Container, metricbeat *gabs.Container) error {
-			if docType == "beats_stats" {
-				return handleBeatsStats(legacy, metricbeat)
-			}
-
-			return nil
-		}
-
-		env[sm.Product+"ConfigFile"] = path.Join(workingDir, "configurations", "parity-testing", sm.Product+".yml")
-
-		env["serviceName"] = sm.Product
-
-		if collectionMethod == "metricbeat" {
-			env["httpEnabled"] = "true"
-			env["httpPort"] = "5066"
-			env["xpackMonitoring"] = "false"
-		} else {
-			env["xpackMonitoring"] = "true"
 		}
 	default:
 		return fmt.Errorf("Product %s not supported", product)
