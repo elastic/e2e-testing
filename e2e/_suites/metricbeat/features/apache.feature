@@ -1,3 +1,4 @@
+@apache
 Feature: As a Metricbeat developer I want to check that the Apache module works as expected
 
 Scenario Outline: Check Apache-<apache_version> is sending metrics to Elasticsearch without errors

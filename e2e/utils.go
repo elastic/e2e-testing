@@ -21,6 +21,27 @@ const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 var seededRand *rand.Rand = rand.New(
 	rand.NewSource(time.Now().UnixNano()))
 
+// GetEnv returns an environment variable as string
+func GetEnv(envVar string, defaultValue string) string {
+	if value, exists := os.LookupEnv(envVar); exists {
+		return value
+	}
+
+	return defaultValue
+}
+
+// GetIntegerFromEnv returns an environment variable as integer, including a default value
+func GetIntegerFromEnv(envVar string, defaultValue int) int {
+	if value, exists := os.LookupEnv(envVar); exists {
+		v, err := strconv.Atoi(value)
+		if err == nil {
+			return v
+		}
+	}
+
+	return defaultValue
+}
+
 // getExponentialBackOff returns a preconfigured exponential backoff instance
 //nolint:unused
 func getExponentialBackOff(elapsedMinutes time.Duration) *backoff.ExponentialBackOff {
@@ -42,11 +63,10 @@ func getExponentialBackOff(elapsedMinutes time.Duration) *backoff.ExponentialBac
 	return exp
 }
 
-// downloadFile will download a url and store it in a temporary path.
+// DownloadFile will download a url and store it in a temporary path.
 // It writes to the destination file as it downloads it, without
 // loading the entire file into memory.
-//nolint:unused
-func downloadFile(url string) (string, error) {
+func DownloadFile(url string) (string, error) {
 	tempFile, err := ioutil.TempFile(os.TempDir(), path.Base(url))
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -128,13 +148,13 @@ func randomStringWithCharset(length int, charset string) string {
 	return string(b)
 }
 
-//nolint:unused
-func randomString(length int) string {
+// RandomString generates a random string with certain length
+func RandomString(length int) string {
 	return randomStringWithCharset(length, charset)
 }
 
-//nolint:unused
-func sleep(seconds string) error {
+// Sleep sleeps a number of seconds, including logs
+func Sleep(seconds string) error {
 	fields := log.Fields{
 		"seconds": seconds,
 	}

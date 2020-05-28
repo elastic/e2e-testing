@@ -1,4 +1,4 @@
-package e2e
+package main
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	messages "github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/cli/services"
+	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,10 +20,28 @@ import (
 // It can be overriden by OP_METRICBEAT_VERSION env var
 var metricbeatVersion = "7.6.0"
 
+// queryMaxAttempts is the number of attempts to query elasticsearch before aborting
+// It can be overriden by OP_QUERY_MAX_ATTEMPTS env var
+var queryMaxAttempts = 5
+
+// queryRetryTimeout is the number of seconds between elasticsearch retry queries.
+// It can be overriden by OP_RETRY_TIMEOUT env var
+var queryRetryTimeout = 3
+
 var serviceManager services.ServiceManager
 
+// stackVersion is the version of the stack to use
+// It can be overriden by OP_STACK_VERSION env var
+var stackVersion = "7.6.0"
+
 func init() {
-	metricbeatVersion = getEnv("OP_METRICBEAT_VERSION", metricbeatVersion)
+	config.Init()
+
+	metricbeatVersion = e2e.GetEnv("OP_METRICBEAT_VERSION", metricbeatVersion)
+	queryMaxAttempts = e2e.GetIntegerFromEnv("OP_QUERY_MAX_ATTEMPTS", queryMaxAttempts)
+	queryRetryTimeout = e2e.GetIntegerFromEnv("OP_RETRY_TIMEOUT", queryRetryTimeout)
+	stackVersion = e2e.GetEnv("OP_STACK_VERSION", stackVersion)
+
 	serviceManager = services.NewServiceManager()
 }
 
@@ -30,14 +49,14 @@ func init() {
 // the service to be monitored
 //nolint:unused
 type MetricbeatTestSuite struct {
-	cleanUpTmpFiles   bool               // if it's needed to clean up temporary files
-	configurationFile string             // the  name of the configuration file to be used in this test suite
-	ServiceName       string             // the service to be monitored by metricbeat
-	ServiceType       string             // the type of the service to be monitored by metricbeat
-	ServiceVariant    string             // the variant of the service to be monitored by metricbeat
-	ServiceVersion    string             // the version of the service to be monitored by metricbeat
-	Query             ElasticsearchQuery // the specs for the ES query
-	Version           string             // the metricbeat version for the test
+	cleanUpTmpFiles   bool                   // if it's needed to clean up temporary files
+	configurationFile string                 // the  name of the configuration file to be used in this test suite
+	ServiceName       string                 // the service to be monitored by metricbeat
+	ServiceType       string                 // the type of the service to be monitored by metricbeat
+	ServiceVariant    string                 // the variant of the service to be monitored by metricbeat
+	ServiceVersion    string                 // the version of the service to be monitored by metricbeat
+	Query             e2e.ElasticsearchQuery // the specs for the ES query
+	Version           string                 // the metricbeat version for the test
 }
 
 // getIndexName returns the index to be used when querying Elasticsearch
@@ -67,7 +86,7 @@ func (mts *MetricbeatTestSuite) setIndexName() {
 		index = fmt.Sprintf("metricbeat-%s", mVersion)
 	}
 
-	index += "-" + randomString(8)
+	index += "-" + e2e.RandomString(8)
 
 	mts.Query.IndexName = strings.ToLower(index)
 }
@@ -81,7 +100,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	serviceManager := services.NewServiceManager()
 
 	fn := func(ctx context.Context) {
-		err := deleteIndex(ctx, "metricbeat", mts.getIndexName())
+		err := e2e.DeleteIndex(ctx, "metricbeat", mts.getIndexName())
 		if err != nil {
 			log.WithFields(log.Fields{
 				"stack": "metricbeat",
@@ -127,7 +146,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 //nolint:deadcode,unused
 func MetricbeatFeatureContext(s *godog.Suite) {
 	testSuite := MetricbeatTestSuite{
-		Query: ElasticsearchQuery{},
+		Query: e2e.ElasticsearchQuery{},
 	}
 
 	s.Step(`^([^"]*) "([^"]*)" is running for metricbeat$`, testSuite.serviceIsRunningForMetricbeat)
@@ -157,7 +176,7 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 		}
 
 		minutesToBeHealthy := 3 * time.Minute
-		healthy, err := waitForElasticsearch(minutesToBeHealthy, "metricbeat")
+		healthy, err := e2e.WaitForElasticsearch(minutesToBeHealthy, "metricbeat")
 		if !healthy {
 			log.WithFields(log.Fields{
 				"error":   err,
@@ -196,7 +215,7 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 
 	// look up configurations under workspace's configurations directory
 	dir, _ := os.Getwd()
-	mts.configurationFile = path.Join(dir, "configurations", "metricbeat", mts.ServiceName+".yml")
+	mts.configurationFile = path.Join(dir, "configurations", mts.ServiceName+".yml")
 
 	mts.setEventModule(mts.ServiceType)
 	mts.setServiceVersion(mts.Version)
@@ -229,7 +248,7 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 
 	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + tag + "/metricbeat/" + configuration + ".yml"
 
-	configurationFilePath, err := downloadFile(configurationFileURL)
+	configurationFilePath, err := e2e.DownloadFile(configurationFileURL)
 	if err != nil {
 		return err
 	}
@@ -250,7 +269,7 @@ func (mts *MetricbeatTestSuite) runsForSeconds(seconds string) error {
 		return err
 	}
 
-	return sleep(seconds)
+	return e2e.Sleep(seconds)
 }
 
 // runMetricbeatService runs a metricbeat service entity for a service to monitor it
@@ -385,12 +404,12 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 
 	stackName := "metricbeat"
 
-	result, err := retrySearch(stackName, mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
+	result, err := e2e.RetrySearch(stackName, mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
 	if err != nil {
 		return err
 	}
 
-	return assertHitsArePresent(result, mts.Query)
+	return e2e.AssertHitsArePresent(result, mts.Query)
 }
 
 func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
@@ -410,15 +429,15 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 
 	stackName := "metricbeat"
 
-	result, err := retrySearch(stackName, mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
+	result, err := e2e.RetrySearch(stackName, mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
 	if err != nil {
 		return err
 	}
 
-	return assertHitsDoNotContainErrors(result, mts.Query)
+	return e2e.AssertHitsDoNotContainErrors(result, mts.Query)
 }
 
 // waitsSeconds waits for a number of seconds before the next step
 func (mts *MetricbeatTestSuite) waitsSeconds(seconds string) error {
-	return sleep(seconds)
+	return e2e.Sleep(seconds)
 }
