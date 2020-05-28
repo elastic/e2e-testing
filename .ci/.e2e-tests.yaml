@@ -1,8 +1,4 @@
 ---
-FEATURES:
-  - "apache"
+SUITES:
   - "helm"
   - "metricbeat"
-  - "mysql"
-  - "redis"
-  - "vsphere"
