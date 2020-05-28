@@ -28,20 +28,7 @@ func (c *contextMetadata) getFeaturePaths() []string {
 	return paths
 }
 
-var supportedProducts = map[string]*contextMetadata{
-	"helm": &contextMetadata{
-		contextFuncs: []func(s *godog.Suite){
-			HelmChartFeatureContext,
-		},
-		modules: []string{"apm", "filebeat", "metricbeat"},
-	},
-	"filebeat": &contextMetadata{
-		contextFuncs: []func(s *godog.Suite){
-			HelmChartFeatureContext,
-		},
-		modules: []string{"filebeat"},
-	},
-}
+var supportedProducts = map[string]*contextMetadata{}
 
 var opt = godog.Options{Output: colors.Colored(os.Stdout)}
 

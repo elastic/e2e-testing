@@ -1,3 +1,4 @@
+@apm-server
 Feature: The Helm chart is following product recommended configuration for Kubernetes
 
 Scenario: The APM Server chart will create recommended K8S resources
