@@ -216,6 +216,7 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 	// look up configurations under workspace's configurations directory
 	dir, _ := os.Getwd()
 	mts.configurationFile = path.Join(dir, "configurations", mts.ServiceName+".yml")
+	os.Chmod(mts.configurationFile, 0666)
 
 	mts.setEventModule(mts.ServiceType)
 	mts.setServiceVersion(mts.Version)
