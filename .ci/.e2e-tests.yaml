@@ -1,12 +1,18 @@
 ---
 SUITES:
-  - "helm":
-    - "apm-server"
-    - "filebeat"
-    - "metricbeat"
-  - "metricbeat":
-    - "apache"
-    - "metricbeat"
-    - "mysql"
-    - "redis"
-    - "vsphere"
+  - suite: "helm"
+    feature: "apm-server"
+  - suite: "helm"
+    feature: "filebeat"
+  - suite: "helm"
+    feature: "metricbeat"
+  - suite: "metricbeat"
+    feature: "apache"
+  - suite: "metricbeat"
+    feature: "metricbeat"
+  - suite: "metricbeat"
+    feature: "mysql"
+  - suite: "metricbeat"
+    feature: "redis"
+  - suite: "metricbeat"
+    feature: "vsphere"

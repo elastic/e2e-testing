@@ -119,10 +119,10 @@ pipeline {
                 script {
                   def suites = readYaml(file: '.ci/.e2e-tests.yaml')
                   def parallelTasks = [:]
-                  suites['SUITES'].each { suite, features ->
-                    features.each { feature ->
-                      parallelTasks["${suite}"] = generateFunctionalTestStep(suite: "${suite}", feature: "${feature}")
-                    }
+                  suites['SUITES'].each { item ->
+                    def suite = item.suite
+                    def feature = item.feature
+                    parallelTasks["${suite}_${feature}"] = generateFunctionalTestStep(suite: "${suite}", feature: "${feature}")
                   }
                   parallel(parallelTasks)
                 }
