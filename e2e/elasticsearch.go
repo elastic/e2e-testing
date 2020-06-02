@@ -27,9 +27,8 @@ type ElasticsearchQuery struct {
 //nolint:unused
 type searchResult map[string]interface{}
 
-// deleteIndex deletes an index from the elasticsearch of the stack
-//nolint:unused
-func deleteIndex(ctx context.Context, stackName string, index string) error {
+// DeleteIndex deletes an index from the elasticsearch of the stack
+func DeleteIndex(ctx context.Context, stackName string, index string) error {
 	esClient, err := getElasticsearchClient(stackName)
 	if err != nil {
 		return err
@@ -91,9 +90,9 @@ func getElasticsearchClient(stackName string) (*es.Client, error) {
 	return esClient, nil
 }
 
+// RetrySearch executes a query over an inddex, with retry options
 // maxAttempts could be redefined in the OP_QUERY_MAX_ATTEMPTS environment variable
-//nolint:unused
-func retrySearch(stackName string, indexName string, esQuery map[string]interface{}, maxAttempts int, retryTimeout int) (searchResult, error) {
+func RetrySearch(stackName string, indexName string, esQuery map[string]interface{}, maxAttempts int, retryTimeout int) (searchResult, error) {
 	totalRetryTime := maxAttempts * retryTimeout
 
 	for attempt := maxAttempts; attempt > 0; attempt-- {
@@ -199,10 +198,9 @@ func search(stackName string, indexName string, query map[string]interface{}) (s
 	return result, nil
 }
 
-// waitForElasticsearchHealthy waits for elasticsearch to be healthy, returning false
+// WaitForElasticsearch waits for elasticsearch to be healthy, returning false
 // if elasticsearch does not get healthy status in a defined number of minutes.
-//nolint:unused
-func waitForElasticsearch(maxTimeoutMinutes time.Duration, stackName string) (bool, error) {
+func WaitForElasticsearch(maxTimeoutMinutes time.Duration, stackName string) (bool, error) {
 	exp := getExponentialBackOff(maxTimeoutMinutes)
 
 	retryCount := 1

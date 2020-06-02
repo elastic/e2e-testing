@@ -117,10 +117,12 @@ pipeline {
               unstash 'source'
               dir("${BASE_DIR}") {
                 script {
-                  def features = readYaml(file: '.ci/.e2e-tests.yaml')
+                  def suites = readYaml(file: '.ci/.e2e-tests.yaml')
                   def parallelTasks = [:]
-                  features['FEATURES'].each { feature ->
-                      parallelTasks["${feature}"] = generateFunctionalTestStep(feature: "${feature}")
+                  suites['SUITES'].each { item ->
+                    def suite = item.suite
+                    def feature = item.feature
+                    parallelTasks["${suite}_${feature}"] = generateFunctionalTestStep(suite: "${suite}", feature: "${feature}")
                   }
                   parallel(parallelTasks)
                 }
@@ -181,6 +183,7 @@ def generateStep(Map params = [:]){
 }
 
 def generateFunctionalTestStep(Map params = [:]){
+  def suite = params.get('suite')
   def feature = params.get('feature')
   return {
     node('linux && immutable') {
@@ -189,17 +192,17 @@ def generateFunctionalTestStep(Map params = [:]){
         unstash 'build'
         retry(3){
           dir("${BASE_DIR}"){
-            sh script: """.ci/scripts/install-test-dependencies.sh "${GO_VERSION}" """, label: "Install test dependencies for ${feature}"
+            sh script: """.ci/scripts/install-test-dependencies.sh "${GO_VERSION}" """, label: "Install test dependencies for ${suite}:${feature}"
           }
         }
         dir("${BASE_DIR}"){
-          sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${feature}" "${STACK_VERSION}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${feature}"
+          sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${suite}" "${feature}" "${STACK_VERSION}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${feature}"
         }
       } catch(e) {
         error(e.toString())
       } finally {
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-${feature}.xml")
-          archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-${feature}.xml"
+        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+          archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
       }
     }
   }

@@ -1,10 +1,11 @@
-package e2e
+package main
 
 import (
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/elastic/e2e-testing/cli/config"
 	k8s "github.com/elastic/e2e-testing/cli/services"
 	shell "github.com/elastic/e2e-testing/cli/shell"
 
@@ -19,6 +20,8 @@ var helm k8s.HelmManager
 var kubectl k8s.Kubectl
 
 func init() {
+	config.Init()
+
 	helmVersion := "2.x"
 	if value, exists := os.LookupEnv("HELM_VERSION"); exists {
 		helmVersion = value

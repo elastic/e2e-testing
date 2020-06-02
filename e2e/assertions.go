@@ -6,9 +6,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// assertHitsArePresent returns an error if no hits are present
-//nolint:unused
-func assertHitsArePresent(hits map[string]interface{}, q ElasticsearchQuery) error {
+// AssertHitsArePresent returns an error if no hits are present
+func AssertHitsArePresent(hits map[string]interface{}, q ElasticsearchQuery) error {
 	hitsCount := len(hits["hits"].(map[string]interface{})["hits"].([]interface{}))
 	if hitsCount == 0 {
 		return fmt.Errorf(
@@ -19,10 +18,9 @@ func assertHitsArePresent(hits map[string]interface{}, q ElasticsearchQuery) err
 	return nil
 }
 
-// assertHitsDoNotContainErrors returns an error if any of the returned entries contains
+// AssertHitsDoNotContainErrors returns an error if any of the returned entries contains
 // an "error.message" field in the "_source" document
-//nolint:unused
-func assertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQuery) error {
+func AssertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQuery) error {
 	for _, hit := range hits["hits"].(map[string]interface{})["hits"].([]interface{}) {
 		source := hit.(map[string]interface{})["_source"]
 		if val, ok := source.(map[string]interface{})["error"]; ok {
