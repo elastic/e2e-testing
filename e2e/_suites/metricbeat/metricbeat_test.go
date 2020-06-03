@@ -103,7 +103,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 		err := e2e.DeleteIndex(ctx, "metricbeat", mts.getIndexName())
 		if err != nil {
 			log.WithFields(log.Fields{
-				"stack": "metricbeat",
+				"profile": "metricbeat",
 				"index": mts.getIndexName(),
 			}).Warn("The index was not deleted, but we are not failing the test case")
 		}
@@ -171,8 +171,8 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 		err := serviceManager.RunCompose(true, []string{"metricbeat"}, env)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"stack": "metricbeat",
-			}).Error("Could not run the stack.")
+				"profile": "metricbeat",
+			}).Error("Could not run the profile.")
 		}
 
 		minutesToBeHealthy := 3 * time.Minute
@@ -192,8 +192,8 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 		err := serviceManager.StopCompose(true, []string{"metricbeat"})
 		if err != nil {
 			log.WithFields(log.Fields{
-				"stack": "metricbeat",
-			}).Error("Could not stop the stack.")
+				"profile": "metricbeat",
+			}).Error("Could not stop the profile.")
 		}
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {
@@ -320,7 +320,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 
 	if log.IsLevelEnabled(log.DebugLevel) {
 		composes := []string{
-			"metricbeat", // stack name
+			"metricbeat", // profile name
 			"metricbeat", // metricbeat service
 		}
 
@@ -403,9 +403,9 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 		},
 	}
 
-	stackName := "metricbeat"
+	profileName := "metricbeat"
 
-	result, err := e2e.RetrySearch(stackName, mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
+	result, err := e2e.RetrySearch(profileName, mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
 	if err != nil {
 		return err
 	}
@@ -428,9 +428,9 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 		},
 	}
 
-	stackName := "metricbeat"
+	profileName := "metricbeat"
 
-	result, err := e2e.RetrySearch(stackName, mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
+	result, err := e2e.RetrySearch(profileName, mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
 	if err != nil {
 		return err
 	}

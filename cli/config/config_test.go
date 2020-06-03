@@ -84,7 +84,7 @@ func TestNewConfigPopulatesConfiguration(t *testing.T) {
 	initTestConfig(t)
 
 	assert.True(t, (Op.Services != nil))
-	assert.True(t, (Op.Stacks != nil))
+	assert.True(t, (Op.Profiles != nil))
 }
 
 func checkLoggerWithLogLevel(t *testing.T, level string) {

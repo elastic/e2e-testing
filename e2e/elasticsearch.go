@@ -27,9 +27,9 @@ type ElasticsearchQuery struct {
 //nolint:unused
 type searchResult map[string]interface{}
 
-// DeleteIndex deletes an index from the elasticsearch of the stack
-func DeleteIndex(ctx context.Context, stackName string, index string) error {
-	esClient, err := getElasticsearchClient(stackName)
+// DeleteIndex deletes an index from the elasticsearch of the profile
+func DeleteIndex(ctx context.Context, profileName string, index string) error {
+	esClient, err := getElasticsearchClient(profileName)
 	if err != nil {
 		return err
 	}
@@ -70,9 +70,9 @@ func DeleteIndex(ctx context.Context, stackName string, index string) error {
 // and from them, get the one related to the Elasticsearch port (9200). As it is bound to a
 // random port at localhost, we will build the URL with the bound port at localhost.
 //nolint:unused
-func getElasticsearchClient(stackName string) (*es.Client, error) {
+func getElasticsearchClient(profileName string) (*es.Client, error) {
 	elasticsearchCfg, _ := config.GetServiceConfig("elasticsearch")
-	elasticsearchCfg.Name = elasticsearchCfg.Name + "-" + stackName
+	elasticsearchCfg.Name = elasticsearchCfg.Name + "-" + profileName
 
 	cfg := es.Config{
 		Addresses: []string{"http://localhost:9200"},
@@ -92,11 +92,11 @@ func getElasticsearchClient(stackName string) (*es.Client, error) {
 
 // RetrySearch executes a query over an inddex, with retry options
 // maxAttempts could be redefined in the OP_QUERY_MAX_ATTEMPTS environment variable
-func RetrySearch(stackName string, indexName string, esQuery map[string]interface{}, maxAttempts int, retryTimeout int) (searchResult, error) {
+func RetrySearch(profileName string, indexName string, esQuery map[string]interface{}, maxAttempts int, retryTimeout int) (searchResult, error) {
 	totalRetryTime := maxAttempts * retryTimeout
 
 	for attempt := maxAttempts; attempt > 0; attempt-- {
-		result, err := search(stackName, indexName, esQuery)
+		result, err := search(profileName, indexName, esQuery)
 		if err == nil {
 			return result, nil
 		}
@@ -127,10 +127,10 @@ func RetrySearch(stackName string, indexName string, esQuery map[string]interfac
 }
 
 //nolint:unused
-func search(stackName string, indexName string, query map[string]interface{}) (searchResult, error) {
+func search(profileName string, indexName string, query map[string]interface{}) (searchResult, error) {
 	result := searchResult{}
 
-	esClient, err := getElasticsearchClient(stackName)
+	esClient, err := getElasticsearchClient(profileName)
 	if err != nil {
 		return result, err
 	}
@@ -200,13 +200,13 @@ func search(stackName string, indexName string, query map[string]interface{}) (s
 
 // WaitForElasticsearch waits for elasticsearch to be healthy, returning false
 // if elasticsearch does not get healthy status in a defined number of minutes.
-func WaitForElasticsearch(maxTimeoutMinutes time.Duration, stackName string) (bool, error) {
+func WaitForElasticsearch(maxTimeoutMinutes time.Duration, profileName string) (bool, error) {
 	exp := getExponentialBackOff(maxTimeoutMinutes)
 
 	retryCount := 1
 
 	clusterStatus := func() error {
-		esClient, err := getElasticsearchClient(stackName)
+		esClient, err := getElasticsearchClient(profileName)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,

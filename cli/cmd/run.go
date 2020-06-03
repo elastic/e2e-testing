@@ -28,22 +28,22 @@ func init() {
 
 	runCmd.AddCommand(runServiceCmd)
 
-	for k, stack := range config.AvailableStacks() {
-		stackSubcommand := buildRunStackCommand(k, stack)
+	for k, profile := range config.AvailableProfiles() {
+		profileSubcommand := buildRunProfileCommand(k, profile)
 
-		stackSubcommand.Flags().StringVarP(&versionToRun, "stackVersion", "v", "latest", "Sets the stack version to run")
-		stackSubcommand.Flags().StringVarP(&servicesToRun, "withServices", "s", "", "Sets a list of comma-separated services to be depoyed alongside the stack")
+		profileSubcommand.Flags().StringVarP(&versionToRun, "profileVersion", "v", "latest", "Sets the profile version to run")
+		profileSubcommand.Flags().StringVarP(&servicesToRun, "withServices", "s", "", "Sets a list of comma-separated services to be depoyed alongside the profile")
 
-		runStackCmd.AddCommand(stackSubcommand)
+		runProfileCmd.AddCommand(profileSubcommand)
 	}
 
-	runCmd.AddCommand(runStackCmd)
+	runCmd.AddCommand(runProfileCmd)
 }
 
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "Runs a Service or Stack",
-	Long:  "Runs a Service or Stack, spinning up Docker containers exposing its internal configuration so that you are able to connect to it in an easy manner",
+	Short: "Runs a Service or Profile",
+	Long:  "Runs a Service or Profile, spinning up Docker containers exposing its internal configuration so that you are able to connect to it in an easy manner",
 	Run: func(cmd *cobra.Command, args []string) {
 		// NOOP
 	},
@@ -69,23 +69,23 @@ func buildRunServiceCommand(srv string) *cobra.Command {
 	}
 }
 
-func buildRunStackCommand(key string, stack config.Stack) *cobra.Command {
+func buildRunProfileCommand(key string, profile config.Profile) *cobra.Command {
 	return &cobra.Command{
 		Use:   key,
-		Short: `Runs the ` + stack.Name + ` stack`,
-		Long:  `Runs the ` + stack.Name + ` stack, spinning up the Services that compound it`,
+		Short: `Runs the ` + profile.Name + ` profile`,
+		Long:  `Runs the ` + profile.Name + ` profile, spinning up the Services that compound it`,
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
 			env := map[string]string{
-				"stackVersion": versionToRun,
+				"profileVersion": versionToRun,
 			}
 
 			err := serviceManager.RunCompose(true, []string{key}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
-					"stack": key,
-				}).Error("Could not run the stack.")
+					"profile": key,
+				}).Error("Could not run the profile.")
 			}
 
 			composeNames := []string{}
@@ -104,9 +104,9 @@ func buildRunStackCommand(key string, stack config.Stack) *cobra.Command {
 				err = serviceManager.AddServicesToCompose(key, composeNames, env)
 				if err != nil {
 					log.WithFields(log.Fields{
-						"stack":    key,
+						"profile":  key,
 						"services": servicesToRun,
-					}).Error("Could not add services to the stack.")
+					}).Error("Could not add services to the profile.")
 				}
 			}
 		},
@@ -122,10 +122,10 @@ var runServiceCmd = &cobra.Command{
 	},
 }
 
-var runStackCmd = &cobra.Command{
-	Use:   "stack",
-	Short: "Allows to run a Stack, defined as subcommands",
-	Long:  `Allows to run a Stack, defined as subcommands, and compounded by different services that cooperate between them`,
+var runProfileCmd = &cobra.Command{
+	Use:   "profile",
+	Short: "Allows to run a Profile, defined as subcommands",
+	Long:  `Allows to run a Profile, defined as subcommands, and compounded by different services that cooperate between them`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// NOOP
 	},
