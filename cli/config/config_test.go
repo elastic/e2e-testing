@@ -30,7 +30,7 @@ func TestCheckConfigDirsCreatesWorkspaceAtHome(t *testing.T) {
 	assert.True(t, e)
 	e, _ = io.Exists(path.Join(workspace, "compose", "services"))
 	assert.True(t, e)
-	e, _ = io.Exists(path.Join(workspace, "compose", "stacks"))
+	e, _ = io.Exists(path.Join(workspace, "compose", "profiles"))
 	assert.True(t, e)
 }
 
