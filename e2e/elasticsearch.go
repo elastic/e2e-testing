@@ -21,9 +21,8 @@ type ElasticsearchQuery struct {
 	ServiceVersion string
 }
 
-// searchResult wraps a search result
-//nolint:unused
-type searchResult map[string]interface{}
+// SearchResult wraps a search result
+type SearchResult map[string]interface{}
 
 // DeleteIndex deletes an index from the elasticsearch running in the host
 func DeleteIndex(ctx context.Context, index string) error {
@@ -100,7 +99,7 @@ func getElasticsearchClientFromHostPort(host string, port int) (*es.Client, erro
 
 // RetrySearch executes a query over an inddex, with retry options
 // maxAttempts could be redefined in the OP_QUERY_MAX_ATTEMPTS environment variable
-func RetrySearch(indexName string, esQuery map[string]interface{}, maxAttempts int, retryTimeout int) (searchResult, error) {
+func RetrySearch(indexName string, esQuery map[string]interface{}, maxAttempts int, retryTimeout int) (SearchResult, error) {
 	totalRetryTime := maxAttempts * retryTimeout
 
 	for attempt := maxAttempts; attempt > 0; attempt-- {
@@ -132,12 +131,12 @@ func RetrySearch(indexName string, esQuery map[string]interface{}, maxAttempts i
 		"retryTimeout":  retryTimeout,
 	}).Error(err.Error())
 
-	return searchResult{}, err
+	return SearchResult{}, err
 }
 
 //nolint:unused
-func search(indexName string, query map[string]interface{}) (searchResult, error) {
-	result := searchResult{}
+func search(indexName string, query map[string]interface{}) (SearchResult, error) {
+	result := SearchResult{}
 
 	esClient, err := getElasticsearchClient()
 	if err != nil {
