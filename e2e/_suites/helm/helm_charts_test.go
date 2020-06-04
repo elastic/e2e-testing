@@ -22,7 +22,7 @@ var kubectl k8s.Kubectl
 func init() {
 	config.Init()
 
-	helmVersion := "2.x"
+	helmVersion := "3.x"
 	if value, exists := os.LookupEnv("HELM_VERSION"); exists {
 		helmVersion = value
 	}

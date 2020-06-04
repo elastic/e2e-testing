@@ -18,7 +18,7 @@ source .ci/scripts/install-go.sh "${GO_VERSION}"
 MSG="parameter missing."
 HOME=${HOME:?$MSG}
 
-HELM_VERSION="${HELM_VERSION:-"2.16.3"}"
+HELM_VERSION="${HELM_VERSION:-"3.2.1"}"
 HELM_TAR_GZ_FILE="helm-v${HELM_VERSION}-linux-amd64.tar.gz"
 KIND_VERSION="v${KIND_VERSION:-"0.7.0"}"
 KUBERNETES_VERSION="${KUBERNETES_VERSION:-"1.15.3"}"
