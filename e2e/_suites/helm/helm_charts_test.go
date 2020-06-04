@@ -502,8 +502,8 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	s.Step(`^the "([^"]*)" strategy can be used for "([^"]*)" during updates$`, testSuite.strategyCanBeUsedForResourceDuringUpdates)
 	s.Step(`^resource "([^"]*)" are applied$`, testSuite.resourceConstraintsAreApplied)
 
-	s.Step(`^a "([^"]*)" which will manage the pods$`, testSuite.aResourceWillManagePods)
-	s.Step(`^a "([^"]*)" which will expose the pods as network services internal to the k8s cluster$`, testSuite.aResourceWillExposePods)
+	s.Step(`^a "([^"]*)" will manage the pods$`, testSuite.aResourceWillManagePods)
+	s.Step(`^a "([^"]*)" will expose the pods as network services internal to the k8s cluster$`, testSuite.aResourceWillExposePods)
 
 	s.BeforeSuite(func() {
 		log.Debug("Before Suite...")
