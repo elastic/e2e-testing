@@ -9,25 +9,19 @@ Scenario: Enrolling an agent
     And the agent shows up in Kibana
 
 Scenario: Un-enrolling an agent
-  Given there is a "Fleet" user in Kibana
-    And the "Fleet" Kibana setup has been created
-    And the agent binary is installed in the target host
+  Given an agent is enrolled
   When the agent is un-enrolled from Kibana
   Then no new data shows up in Elasticsearc locations using the enrollment token
 
 Scenario: Enrolling, un-enrolling and re-enrolling an agent
-  Given there is a "Fleet" user in Kibana
-    And the "Fleet" Kibana setup has been created
-    And the agent binary is installed in the target host
+  Given an agent is enrolled
     And the agent is un-enrolled from Kibana
   When the agent is re-enrolled from the host
     And the agent runs from the host
   Then the agent shows up in Kibana
 
 Scenario: Revoking the enrollment token for an agent
-  Given there is a "Fleet" user in Kibana
-    And the "Fleet" Kibana setup has been created
-    And the agent binary is installed in the target host
+  Given an agent is enrolled
   When the enrollment token is revoked
   Then it's not possible to use the token to enroll more agents
     And the enrolled agent continues to work
