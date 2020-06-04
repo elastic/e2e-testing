@@ -18,7 +18,7 @@ import (
 )
 
 // opComposeBox the tool's static files where we will embed default Docker compose
-// files representing the services and the stacks
+// files representing the services and the profiles
 var opComposeBox *packr.Box
 
 // Op the tool's configuration, read from tool's workspace
@@ -26,8 +26,8 @@ var Op *OpConfig
 
 // OpConfig tool configuration
 type OpConfig struct {
+	Profiles  map[string]Profile `mapstructure:"profiles"`
 	Services  map[string]Service `mapstructure:"services"`
-	Stacks    map[string]Stack   `mapstructure:"stacks"`
 	Workspace string             `mapstructure:"workspace"`
 }
 
@@ -44,9 +44,9 @@ type Service struct {
 	Path string `mapstructure:"Path"`
 }
 
-// Stack represents the configuration for a stack, which is an aggregation of services
+// Profile represents the configuration for an aggregation of services
 // represented by a Docker Compose
-type Stack struct {
+type Profile struct {
 	Name string `mapstructure:"Name"`
 	Path string `mapstructure:"Path"`
 }
@@ -56,18 +56,18 @@ func AvailableServices() map[string]Service {
 	return Op.Services
 }
 
-// AvailableStacks return the stacks in the configuration file
-func AvailableStacks() map[string]Stack {
-	return Op.Stacks
+// AvailableProfiles return the profiles in the configuration file
+func AvailableProfiles() map[string]Profile {
+	return Op.Profiles
 }
 
 // GetComposeFile returns the path of the compose file, looking up the
 // tool's workdir or in the static resources already packaged in the binary
-func GetComposeFile(isStack bool, composeName string) (string, error) {
+func GetComposeFile(isProfile bool, composeName string) (string, error) {
 	composeFileName := "docker-compose.yml"
 	serviceType := "services"
-	if isStack {
-		serviceType = "stacks"
+	if isProfile {
+		serviceType = "profiles"
 	}
 
 	composeFilePath := path.Join(Op.Workspace, "compose", serviceType, composeName, composeFileName)
@@ -91,7 +91,7 @@ func GetComposeFile(isStack bool, composeName string) (string, error) {
 		log.WithFields(log.Fields{
 			"composeFileName": composeFileName,
 			"error":           err,
-			"isStack":         isStack,
+			"isProfile":       isProfile,
 			"type":            serviceType,
 		}).Error("Could not find compose file.")
 
@@ -111,7 +111,7 @@ func GetComposeFile(isStack bool, composeName string) (string, error) {
 
 	log.WithFields(log.Fields{
 		"composeFilePath": composeFilePath,
-		"isStack":         isStack,
+		"isProfile":       isProfile,
 		"type":            serviceType,
 	}).Debug("Compose file generated at workdir.")
 
@@ -229,14 +229,14 @@ func checkConfigDirectory(dir string) {
 
 func checkConfigDirs(workspace string) {
 	servicesPath := path.Join(workspace, "compose", "services")
-	stacksPath := path.Join(workspace, "compose", "stacks")
+	profilesPath := path.Join(workspace, "compose", "profiles")
 
 	checkConfigDirectory(servicesPath)
-	checkConfigDirectory(stacksPath)
+	checkConfigDirectory(profilesPath)
 
 	log.WithFields(log.Fields{
 		"servicesPath": servicesPath,
-		"stacksPath":   stacksPath,
+		"profilesPath": profilesPath,
 	}).Debug("'op' workdirs created.")
 }
 
@@ -276,7 +276,7 @@ func newConfig(workspace string) {
 
 	opConfig := OpConfig{
 		Services:  map[string]Service{},
-		Stacks:    map[string]Stack{},
+		Profiles:  map[string]Profile{},
 		Workspace: workspace,
 	}
 	Op = &opConfig
@@ -289,9 +289,9 @@ func newConfig(workspace string) {
 		return
 	}
 
-	// add file system services and stacks
+	// add file system services and profiles
 	readFilesFromFileSystem("services")
-	readFilesFromFileSystem("stacks")
+	readFilesFromFileSystem("profiles")
 
 	opComposeBox = box
 }
@@ -310,8 +310,8 @@ func packComposeFiles(op *OpConfig) *packr.Box {
 			"path":    boxedPath,
 		}).Debug("Boxed file")
 
-		if composeType == "stacks" {
-			op.Stacks[composeName] = Stack{
+		if composeType == "profiles" {
+			op.Profiles[composeName] = Profile{
 				Name: composeName,
 				Path: boxedPath,
 			}
@@ -356,13 +356,13 @@ func readFilesFromFileSystem(serviceType string) {
 				}).Debug("Workspace file")
 
 				if serviceType == "services" {
-					// add a service or a stack
+					// add a service or a profile
 					Op.Services[name] = Service{
 						Name: f.Name(),
 						Path: composeFilePath,
 					}
-				} else if serviceType == "stacks" {
-					Op.Stacks[name] = Stack{
+				} else if serviceType == "profiles" {
+					Op.Profiles[name] = Profile{
 						Name: f.Name(),
 						Path: composeFilePath,
 					}

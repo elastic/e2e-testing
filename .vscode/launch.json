@@ -59,7 +59,7 @@
                 "GO111MODULE": "on",
                 "OP_LOG_LEVEL": "DEBUG",
             },
-            "args": ["deploy", "redis", "--version", "4.0.11", "--stack", "metricbeat"]
+            "args": ["deploy", "redis", "--version", "4.0.11", "--profile", "metricbeat"]
         },
         {
             "name": "Debug Undeploying a Service",
@@ -71,10 +71,10 @@
                 "GO111MODULE": "on",
                 "OP_LOG_LEVEL": "DEBUG",
             },
-            "args": ["undeploy", "redis", "--stack", "metricbeat"]
+            "args": ["undeploy", "redis", "--profile", "metricbeat"]
         },
         {
-            "name": "Debug Running Stacks",
+            "name": "Debug Running Profiles",
             "type": "go",
             "request": "launch",
             "mode": "auto",
@@ -83,10 +83,10 @@
                 "GO111MODULE": "on",
                 "OP_LOG_LEVEL": "DEBUG",
             },
-            "args": ["run", "stack", "metricbeat", "-v", "7.5.0", "--withServices", "apache:2.2,redis:3.2.12"]
+            "args": ["run", "profile", "metricbeat", "-v", "7.5.0", "--withServices", "apache:2.2,redis:3.2.12"]
         },
         {
-            "name": "Debug Stopping Stacks",
+            "name": "Debug Stopping Profiles",
             "type": "go",
             "request": "launch",
             "mode": "auto",
@@ -95,7 +95,7 @@
                 "GO111MODULE": "on",
                 "OP_LOG_LEVEL": "DEBUG",
             },
-            "args": ["stop", "stack", "metricbeat"]
+            "args": ["stop", "profile", "metricbeat"]
         },
         {
             "name": "Godog Tests",

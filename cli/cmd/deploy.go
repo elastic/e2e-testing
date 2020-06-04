@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var deployToStack string
+var deployToProfile string
 
 func init() {
 	config.InitConfig()
@@ -17,14 +17,14 @@ func init() {
 		// deploy command
 		deployServiceSubcommand := buildDeployServiceCommand(k)
 
-		deployServiceSubcommand.Flags().StringVarP(&deployToStack, "stack", "s", "", "Sets the stack where to deploy the service. (Required)")
+		deployServiceSubcommand.Flags().StringVarP(&deployToProfile, "profile", "s", "", "Sets the profile where to deploy the service. (Required)")
 		deployServiceSubcommand.Flags().StringVarP(&versionToRun, "version", "v", "latest", "Sets the image version to run")
 
 		deployCmd.AddCommand(deployServiceSubcommand)
 
 		// undeploy command
 		undeployServiceSubcommand := buildUndeployServiceCommand(k)
-		undeployServiceSubcommand.Flags().StringVarP(&deployToStack, "stack", "s", "", "Sets the stack where to undeploy the service. (Required)")
+		undeployServiceSubcommand.Flags().StringVarP(&deployToProfile, "profile", "s", "", "Sets the profile where to undeploy the service. (Required)")
 
 		undeployCmd.AddCommand(undeployServiceSubcommand)
 	}
@@ -35,8 +35,8 @@ func init() {
 
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
-	Short: "Deploys a Service to a Stack",
-	Long:  "Deploys a Service to a Stack",
+	Short: "Deploys a Service to a Profile",
+	Long:  "Deploys a Service to a Profile",
 	Run: func(cmd *cobra.Command, args []string) {
 		// NOOP
 	},
@@ -44,8 +44,8 @@ var deployCmd = &cobra.Command{
 
 var undeployCmd = &cobra.Command{
 	Use:   "undeploy",
-	Short: "Undeploys a Service from a Stack",
-	Long:  "Undeploys a Service from a Stack",
+	Short: "Undeploys a Service from a Profile",
+	Long:  "Undeploys a Service from a Profile",
 	Run: func(cmd *cobra.Command, args []string) {
 		// NOOP
 	},
@@ -55,19 +55,19 @@ func buildDeployServiceCommand(srv string) *cobra.Command {
 	return &cobra.Command{
 		Use:   srv,
 		Short: `Deploys a ` + srv + ` service`,
-		Long:  `Deploys a ` + srv + ` service, adding it to a running stack, identified by its name`,
+		Long:  `Deploys a ` + srv + ` service, adding it to a running profile, identified by its name`,
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
 			env := map[string]string{}
 			env = config.PutServiceEnvironment(env, srv, versionToRun)
 
-			err := serviceManager.AddServicesToCompose(deployToStack, []string{srv}, env)
+			err := serviceManager.AddServicesToCompose(deployToProfile, []string{srv}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
-					"stack":    deployToStack,
+					"profile":  deployToProfile,
 					"services": servicesToRun,
-				}).Error("Could not add services to the stack.")
+				}).Error("Could not add services to the profile.")
 			}
 		},
 	}
@@ -77,19 +77,19 @@ func buildUndeployServiceCommand(srv string) *cobra.Command {
 	return &cobra.Command{
 		Use:   srv,
 		Short: `Undeploys a ` + srv + ` service`,
-		Long:  `Undeploys a ` + srv + ` service, removing it from a running stack, identified by its name`,
+		Long:  `Undeploys a ` + srv + ` service, removing it from a running profile, identified by its name`,
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
 			env := map[string]string{}
 			env = config.PutServiceEnvironment(env, srv, versionToRun)
 
-			err := serviceManager.RemoveServicesFromCompose(deployToStack, []string{srv}, env)
+			err := serviceManager.RemoveServicesFromCompose(deployToProfile, []string{srv}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
-					"stack":    deployToStack,
+					"profile":  deployToProfile,
 					"services": servicesToRun,
-				}).Error("Could not remove services from the stack.")
+				}).Error("Could not remove services from the profile.")
 			}
 		},
 	}

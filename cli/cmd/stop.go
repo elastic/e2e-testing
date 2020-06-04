@@ -25,19 +25,19 @@ func init() {
 
 	stopCmd.AddCommand(stopServiceCmd)
 
-	for k, stack := range config.AvailableStacks() {
-		stackSubcommand := buildStopStackCommand(k, stack)
+	for k, profile := range config.AvailableProfiles() {
+		profileSubcommand := buildStopProfileCommand(k, profile)
 
-		stopStackCmd.AddCommand(stackSubcommand)
+		stopProfileCmd.AddCommand(profileSubcommand)
 	}
 
-	stopCmd.AddCommand(stopStackCmd)
+	stopCmd.AddCommand(stopProfileCmd)
 }
 
 var stopCmd = &cobra.Command{
 	Use:   "stop",
-	Short: "Stops a Service or Stack",
-	Long:  "Stops a Service or Stack, stoppping the Docker containers that expose their internal configuration",
+	Short: "Stops a Service or Profile",
+	Long:  "Stops a Service or Profile, stoppping the Docker containers that expose their internal configuration",
 	Run: func(cmd *cobra.Command, args []string) {
 		// NOOP
 	},
@@ -61,19 +61,19 @@ func buildStopServiceCommand(srv string) *cobra.Command {
 	}
 }
 
-func buildStopStackCommand(key string, stack config.Stack) *cobra.Command {
+func buildStopProfileCommand(key string, profile config.Profile) *cobra.Command {
 	return &cobra.Command{
 		Use:   key,
-		Short: `Stops the ` + stack.Name + ` stack`,
-		Long:  `Stops the ` + stack.Name + ` stack, stopping the Services that compound it`,
+		Short: `Stops the ` + profile.Name + ` profile`,
+		Long:  `Stops the ` + profile.Name + ` profile, stopping the Services that compound it`,
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
 			err := serviceManager.StopCompose(true, []string{key})
 			if err != nil {
 				log.WithFields(log.Fields{
-					"stack": key,
-				}).Error("Could not stop the stack.")
+					"profile": key,
+				}).Error("Could not stop the profile.")
 			}
 		},
 	}
@@ -88,10 +88,10 @@ var stopServiceCmd = &cobra.Command{
 	},
 }
 
-var stopStackCmd = &cobra.Command{
-	Use:   "stack",
-	Short: "Allows to stop a Stack, defined as subcommands",
-	Long:  `Allows to stop a Stack, defined as subcommands, stopping all different services that compound the stack`,
+var stopProfileCmd = &cobra.Command{
+	Use:   "profile",
+	Short: "Allows to stop a Profile, defined as subcommands",
+	Long:  `Allows to stop a Profile, defined as subcommands, stopping all different services that compound the profile`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// NOOP
 	},
