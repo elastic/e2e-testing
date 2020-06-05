@@ -1,46 +1,47 @@
 @ingest
-Feature: Enable Fleet user and create initial Kibana setup
+Feature: Enable Fleet and Deploy Agent basic end to end tests
 
 @enroll
-Scenario: Enrolling an agent
-  Given there is a "Fleet" user in Kibana
-    And the "Fleet" Kibana setup has been created
-  When the agent binary is installed in the target host
-  Then the dashboards for the agent are present in Elasticsearch
-    And the agent shows up in Kibana
+Scenario: Deploying an agent
+  Given the "Fleet" Kibana setup has been executed
+    And an agent is deployed to Fleet
+  Then the agent is listed in Fleet as online
+    And system package dashboards are listed in Fleet
+    And new documents are inserted into Elasticsearch
+
+@start-agent
+Scenario: Starting the agent starts backend processes
+  Given an agent is deployed to Fleet
+  Then filebeat is started
+    And metricbeat is started
+
+@stop-agent
+Scenario: Stopping the agent stops backend processes
+  Given an agent is deployed to Fleet
+  When the agent is stopped on the host
+  Then filebeat is stopped
+    And metricbeat is stopped
 
 @unenroll
 Scenario: Un-enrolling an agent
-  Given an agent is enrolled
-  When the agent is un-enrolled from Kibana
-  Then no new data shows up in Elasticsearc locations using the enrollment token
+  Given an agent is deployed to Fleet
+  When the agent is un-enrolled
+  Then the agent is not listed as online in Fleet
+    And no new documents are inserted into Elasticsearch
 
 @reenroll
-Scenario: Enrolling, un-enrolling and re-enrolling an agent
+Scenario: Re-enrolling an agent
   Given an agent is enrolled
-    And the agent is un-enrolled from Kibana
-  When the agent is re-enrolled from the host
-    And the agent runs from the host
-  Then the agent shows up in Kibana
+    And the agent is un-enrolled and stopped on the host
+  When the agent is re-enrolled on the host
+    And the agent is run on the host
+  Then the agent is listed in Fleet as online
+    And new documents are inserted into Elasticsearch
 
 @revoke-token
 Scenario: Revoking the enrollment token for an agent
   Given an agent is enrolled
   When the enrollment token is revoked
-  Then it's not possible to use the token to enroll more agents
-    And the enrolled agent continues to work
-
-@start-agent
-Scenario: Starting the agent starts backend processes
-  When the agent is started in the host
-  Then filebeat is started
-    And metricbeat is started
-    And endpoint is started
-
-@stop-agent
-Scenario: Stopping the agent stops backend processes
-  Given an agent is started in the host
-  When the agent is stopped in the host
-  Then filebeat is stopped
-    And metricbeat is stopped
-    And endpoint is stopped
+    Then new documents are inserted into Elasticsearch
+  And the agent is un-enrolled and stopped on the host
+  Then the agent cannot be re-enrolled with the same command
