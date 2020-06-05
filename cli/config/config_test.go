@@ -30,7 +30,7 @@ func TestCheckConfigDirsCreatesWorkspaceAtHome(t *testing.T) {
 	assert.True(t, e)
 	e, _ = io.Exists(path.Join(workspace, "compose", "services"))
 	assert.True(t, e)
-	e, _ = io.Exists(path.Join(workspace, "compose", "stacks"))
+	e, _ = io.Exists(path.Join(workspace, "compose", "profiles"))
 	assert.True(t, e)
 }
 
@@ -84,7 +84,7 @@ func TestNewConfigPopulatesConfiguration(t *testing.T) {
 	initTestConfig(t)
 
 	assert.True(t, (Op.Services != nil))
-	assert.True(t, (Op.Stacks != nil))
+	assert.True(t, (Op.Profiles != nil))
 }
 
 func checkLoggerWithLogLevel(t *testing.T, level string) {

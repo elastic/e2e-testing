@@ -15,7 +15,7 @@ $ GO111MODULE=on go run main.go run service mysql -v 5.6
 $ GO111MODULE=on go build -i -o op
 $ ./op run service apache -v 2.4
 $ ./op run service mysql -v 5.6
-$ ./op run stack observability
+$ ./op run profile observability
 ```
 
 The tool also provides a way to stop those running services:
@@ -28,7 +28,7 @@ $ GO111MODULE=on go run main.go stop service mysql -v 5.6
 $ GO111MODULE=on go build -i -o op
 $ ./op stop service apache -v 2.4
 $ ./op stop service mysql -v 5.6
-$ ./op stop stack observability
+$ ./op stop profile observability
 ```
 
 >By the way, `op` comes from `Observability Provisioner`.

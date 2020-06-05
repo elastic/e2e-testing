@@ -13,7 +13,7 @@ import (
 // stateRun represents a Run
 type stateRun struct {
 	ID       string            // ID of the run
-	Stack    stateService      // stack of the run (Optional)
+	Profile    stateService      // profile of the run (Optional)
 	Env      map[string]string // environment for the run
 	Services []stateService    // services in the run
 }
@@ -80,8 +80,8 @@ func Update(id string, workdir string, composeFilePaths []string, env map[string
 		Services: []stateService{},
 	}
 
-	if strings.HasSuffix(id, "-stack") {
-		run.Stack = stateService{
+	if strings.HasSuffix(id, "-profile") {
+		run.Profile = stateService{
 			Name: filepath.Base(filepath.Dir(composeFilePaths[0])),
 		}
 	}

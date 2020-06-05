@@ -13,11 +13,11 @@ import (
 
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
-	AddServicesToCompose(stack string, composeNames []string, env map[string]string) error
-	RemoveServicesFromCompose(stack string, composeNames []string, env map[string]string) error
-	RunCommand(stack string, composeNames []string, composeArgs []string, env map[string]string) error
-	RunCompose(isStack bool, composeNames []string, env map[string]string) error
-	StopCompose(isStack bool, composeNames []string) error
+	AddServicesToCompose(profile string, composeNames []string, env map[string]string) error
+	RemoveServicesFromCompose(profile string, composeNames []string, env map[string]string) error
+	RunCommand(profile string, composeNames []string, composeArgs []string, env map[string]string) error
+	RunCompose(isProfile bool, composeNames []string, env map[string]string) error
+	StopCompose(isProfile bool, composeNames []string) error
 }
 
 // DockerServiceManager implementation of the service manager interface
@@ -30,16 +30,16 @@ func NewServiceManager() ServiceManager {
 }
 
 // AddServicesToCompose adds services to a running docker compose
-func (sm *DockerServiceManager) AddServicesToCompose(stack string, composeNames []string, env map[string]string) error {
+func (sm *DockerServiceManager) AddServicesToCompose(profile string, composeNames []string, env map[string]string) error {
 	log.WithFields(log.Fields{
-		"stack":    stack,
+		"profile":  profile,
 		"services": composeNames,
 	}).Debug("Adding services to compose")
 
-	newComposeNames := []string{stack}
+	newComposeNames := []string{profile}
 	newComposeNames = append(newComposeNames, composeNames...)
 
-	persistedEnv := state.Recover(stack+"-stack", config.Op.Workspace)
+	persistedEnv := state.Recover(profile+"-profile", config.Op.Workspace)
 	for k, v := range env {
 		persistedEnv[k] = v
 	}
@@ -53,16 +53,16 @@ func (sm *DockerServiceManager) AddServicesToCompose(stack string, composeNames 
 }
 
 // RemoveServicesFromCompose removes services from a running docker compose
-func (sm *DockerServiceManager) RemoveServicesFromCompose(stack string, composeNames []string, env map[string]string) error {
+func (sm *DockerServiceManager) RemoveServicesFromCompose(profile string, composeNames []string, env map[string]string) error {
 	log.WithFields(log.Fields{
-		"stack":    stack,
+		"profile":  profile,
 		"services": composeNames,
 	}).Debug("Removing services to compose")
 
-	newComposeNames := []string{stack}
+	newComposeNames := []string{profile}
 	newComposeNames = append(newComposeNames, composeNames...)
 
-	persistedEnv := state.Recover(stack+"-stack", config.Op.Workspace)
+	persistedEnv := state.Recover(profile+"-profile", config.Op.Workspace)
 	for k, v := range env {
 		persistedEnv[k] = v
 	}
@@ -76,7 +76,7 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(stack string, composeN
 			log.WithFields(log.Fields{
 				"command":  command,
 				"services": composeNames,
-				"stack":    stack,
+				"profile":  profile,
 			}).Error("Could not remove services")
 			return err
 		}
@@ -86,21 +86,21 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(stack string, composeN
 }
 
 // RunCommand executes a docker-compose command in a running a docker compose
-func (sm *DockerServiceManager) RunCommand(stack string, composeNames []string, composeArgs []string, env map[string]string) error {
+func (sm *DockerServiceManager) RunCommand(profile string, composeNames []string, composeArgs []string, env map[string]string) error {
 	return executeCompose(sm, true, composeNames, composeArgs, env)
 }
 
 // RunCompose runs a docker compose by its name
-func (sm *DockerServiceManager) RunCompose(isStack bool, composeNames []string, env map[string]string) error {
-	return executeCompose(sm, isStack, composeNames, []string{"up", "-d"}, env)
+func (sm *DockerServiceManager) RunCompose(isProfile bool, composeNames []string, env map[string]string) error {
+	return executeCompose(sm, isProfile, composeNames, []string{"up", "-d"}, env)
 }
 
 // StopCompose stops a docker compose by its name
-func (sm *DockerServiceManager) StopCompose(isStack bool, composeNames []string) error {
+func (sm *DockerServiceManager) StopCompose(isProfile bool, composeNames []string) error {
 	composeFilePaths := make([]string, len(composeNames))
 	for i, composeName := range composeNames {
-		b := isStack
-		if i == 0 && !isStack && (len(composeName) == 1) {
+		b := isProfile
+		if i == 0 && !isProfile && (len(composeName) == 1) {
 			b = true
 		}
 
@@ -112,12 +112,12 @@ func (sm *DockerServiceManager) StopCompose(isStack bool, composeNames []string)
 	}
 
 	ID := composeNames[0] + "-service"
-	if isStack {
-		ID = composeNames[0] + "-stack"
+	if isProfile {
+		ID = composeNames[0] + "-profile"
 	}
 	persistedEnv := state.Recover(ID, config.Op.Workspace)
 
-	err := executeCompose(sm, isStack, composeNames, []string{"down"}, persistedEnv)
+	err := executeCompose(sm, isProfile, composeNames, []string{"down"}, persistedEnv)
 	if err != nil {
 		return fmt.Errorf("Could not stop compose file: %v - %v", composeFilePaths, err)
 	}
@@ -125,17 +125,17 @@ func (sm *DockerServiceManager) StopCompose(isStack bool, composeNames []string)
 
 	log.WithFields(log.Fields{
 		"composeFilePath": composeFilePaths,
-		"stack":           composeNames[0],
+		"profile":         composeNames[0],
 	}).Debug("Docker compose down.")
 
 	return nil
 }
 
-func executeCompose(sm *DockerServiceManager, isStack bool, composeNames []string, command []string, env map[string]string) error {
+func executeCompose(sm *DockerServiceManager, isProfile bool, composeNames []string, command []string, env map[string]string) error {
 	composeFilePaths := make([]string, len(composeNames))
 	for i, composeName := range composeNames {
 		b := false
-		if i == 0 && isStack {
+		if i == 0 && isProfile {
 			b = true
 		}
 
@@ -157,8 +157,8 @@ func executeCompose(sm *DockerServiceManager, isStack bool, composeNames []strin
 	}
 
 	suffix := "-service"
-	if isStack {
-		suffix = "-stack"
+	if isProfile {
+		suffix = "-profile"
 	}
 	ID := filepath.Base(filepath.Dir(composeFilePaths[0])) + suffix
 	defer state.Update(ID, config.Op.Workspace, composeFilePaths, env)
@@ -167,7 +167,7 @@ func executeCompose(sm *DockerServiceManager, isStack bool, composeNames []strin
 		"cmd":              command,
 		"composeFilePaths": composeFilePaths,
 		"env":              env,
-		"stack":            composeNames[0],
+		"profile":          composeNames[0],
 	}).Debug("Docker compose executed.")
 
 	return nil

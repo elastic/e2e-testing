@@ -15,7 +15,7 @@ func TestRecover(t *testing.T) {
 
 	workspace := filepath.Join(tmpDir, ".op")
 
-	ID := "mystack-stack"
+	ID := "myprofile-profile"
 	composeFiles := []string{
 		filepath.Join(workspace, "compose/services/a/1.yml"),
 		filepath.Join(workspace, "compose/services/b/2.yml"),
@@ -48,7 +48,7 @@ func TestUpdateCreatesStateFile(t *testing.T) {
 
 	workspace := filepath.Join(tmpDir, ".op")
 
-	ID := "mystack-stack"
+	ID := "myprofile-profile"
 	composeFiles := []string{
 		filepath.Join(workspace, "compose/services/a/1.yml"),
 		filepath.Join(workspace, "compose/services/b/2.yml"),
