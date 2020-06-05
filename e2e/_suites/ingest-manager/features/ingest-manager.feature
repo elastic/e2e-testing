@@ -33,7 +33,7 @@ Scenario: Starting the agent starts backend processes
     And endpoint is started
 
 Scenario: Stopping the agent stops backend processes
-  Given an agent is running in a host
+  Given an agent is started in the host
   When the agent is stopped in the host
   Then filebeat is stopped
     And metricbeat is stopped
