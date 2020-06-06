@@ -1,12 +1,12 @@
 @ingest
-Feature: Enable Fleet and Deploy Agent basic end to end tests
+Feature: Enable Fleet and Deploy Agent
 
 @enroll
 Scenario: Deploying an agent
   Given the "Fleet" Kibana setup has been executed
     And an agent is deployed to Fleet
-  Then the agent is listed in Fleet as online
-    And system package dashboards are listed in Fleet
+  When the agent is listed in Fleet as online
+    Then system package dashboards are listed in Fleet
     And new documents are inserted into Elasticsearch
 
 @start-agent
@@ -32,7 +32,8 @@ Scenario: Un-enrolling an agent
 @reenroll
 Scenario: Re-enrolling an agent
   Given an agent is enrolled
-    And the agent is un-enrolled and stopped on the host
+    And the agent is un-enrolled
+    And the Agent is stopped on the host
   When the agent is re-enrolled on the host
     And the agent is run on the host
   Then the agent is listed in Fleet as online
@@ -42,6 +43,6 @@ Scenario: Re-enrolling an agent
 Scenario: Revoking the enrollment token for an agent
   Given an agent is enrolled
   When the enrollment token is revoked
-    Then new documents are inserted into Elasticsearch
+    And new documents are inserted into Elasticsearch
   And the agent is un-enrolled and stopped on the host
   Then the agent cannot be re-enrolled with the same command
