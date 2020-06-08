@@ -90,57 +90,92 @@ type IngestManagerTestSuite struct {
 }
 
 func (imts *IngestManagerTestSuite) kibanaSetupHasBeenExecuted(setup string) error {
+	log.WithFields(log.Fields{
+		"setup": setup,
+	}).Debug("Creating Kibana setup")
+
 	return godog.ErrPending
 }
 
 func (imts *IngestManagerTestSuite) anAgentIsDeployedToFleet() error {
+	log.Debug("Deploying an agent to Fleet")
+
 	return godog.ErrPending
 }
 
 func (imts *IngestManagerTestSuite) theAgentIsListedInFleetAsOnline() error {
+	log.Debug("Checking agent is listed in Fleet as online")
+
 	return godog.ErrPending
 }
 
 func (imts *IngestManagerTestSuite) systemPackageDashboardsAreListedInFleet() error {
+	log.Debug("Checking system Package dashboards in Fleet")
+
 	return godog.ErrPending
 }
 
 func (imts *IngestManagerTestSuite) thereIsDataInTheIndex() error {
+	log.Debug("Querying Elasticsearch index for agent data")
+
 	return godog.ErrPending
 }
 
 func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
+	log.WithFields(log.Fields{
+		"process": process,
+		"state":   state,
+	}).Debug("Checking process state on the host")
+
 	return godog.ErrPending
 }
 
 func (imts *IngestManagerTestSuite) agentStateOnTheHost(state string) error {
+	log.WithFields(log.Fields{
+		"state": state,
+	}).Debug("Checking agent state on the host")
+
 	return godog.ErrPending
 }
 
 func (imts *IngestManagerTestSuite) theAgentIsUnenrolled() error {
+	log.Debug("Un-enrolling agent in Fleet")
+
 	return godog.ErrPending
 }
 
 func (imts *IngestManagerTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
+	log.Debug("Checking if the agent is not listed as online in Fleet")
+
 	return godog.ErrPending
 }
 
 func (imts *IngestManagerTestSuite) thereIsNoDataInTheIndex() error {
+	log.Debug("Querying Elasticsearch index for agent data")
+
 	return godog.ErrPending
 }
 
 func (imts *IngestManagerTestSuite) anAgentIsEnrolled() error {
+	log.Debug("Enrolling an agent")
+
 	return godog.ErrPending
 }
 
 func (imts *IngestManagerTestSuite) theAgentIsReenrolledOnTheHost() error {
+	log.Debug("Re-enrolling the agent on the host")
+
 	return godog.ErrPending
 }
 
 func (imts *IngestManagerTestSuite) theEnrollmentTokenIsRevoked() error {
+	log.Debug("Revoking enrollment token")
+
 	return godog.ErrPending
 }
 
 func (imts *IngestManagerTestSuite) anAttemptToEnrollANewAgentFails() error {
+	log.Debug("Enrolling a new agent with an revoked token")
+
 	return godog.ErrPending
 }
