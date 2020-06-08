@@ -1,6 +1,25 @@
 package main
 
-import "github.com/cucumber/godog"
+import (
+	"time"
+
+	"github.com/cucumber/godog"
+	"github.com/cucumber/messages-go/v10"
+	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/cli/services"
+	"github.com/elastic/e2e-testing/e2e"
+	log "github.com/sirupsen/logrus"
+)
+
+// stackVersion is the version of the stack to use
+// It can be overriden by OP_STACK_VERSION env var
+var stackVersion = "7.7.0"
+
+func init() {
+	config.Init()
+
+	stackVersion = e2e.GetEnv("OP_STACK_VERSION", stackVersion)
+}
 
 func IngestManagerFeatureContext(s *godog.Suite) {
 	s.Step(`^the "([^"]*)" Kibana setup has been executed$`, theKibanaSetupHasBeenExecuted)
@@ -18,6 +37,55 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	s.Step(`^"([^"]*)" is listed in Fleet as online$`, isListedInFleetAsOnline)
 	s.Step(`^the enrollment token is revoked$`, theEnrollmentTokenIsRevoked)
 	s.Step(`^an attempt to enroll a new agent fails$`, anAttemptToEnrollANewAgentFails)
+
+	s.BeforeSuite(func() {
+		log.Debug("Installing ingest-manager runtime dependencies")
+		serviceManager := services.NewServiceManager()
+
+		env := map[string]string{
+			"stackVersion": stackVersion,
+		}
+
+		profile := "ingest-manager"
+		err := serviceManager.RunCompose(true, []string{profile}, env)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"profile": profile,
+			}).Error("Could not run the runtime dependencies for the profile.")
+		}
+
+		minutesToBeHealthy := 3 * time.Minute
+		healthy, err := e2e.WaitForElasticsearch(minutesToBeHealthy)
+		if !healthy {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"minutes": minutesToBeHealthy,
+			}).Error("The Elasticsearch cluster could not get the healthy status")
+		}
+	})
+	s.BeforeScenario(func(*messages.Pickle) {
+		log.Debug("Before Ingest Manager scenario")
+	})
+	s.AfterSuite(func() {
+		log.Debug("Destroying ingest-manager runtime dependencies")
+		serviceManager := services.NewServiceManager()
+		profile := "ingest-manager"
+
+		err := serviceManager.StopCompose(true, []string{profile})
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"profile": profile,
+			}).Warn("Could not destroy the runtime dependencies for the profile.")
+		}
+	})
+	s.AfterScenario(func(*messages.Pickle, error) {
+		log.Debug("After Ingest Manager scenario")
+	})
+}
+
+// IngestManagerTestSuite represents a test suite, holding references to the pieces needed to run the tests
+type IngestManagerTestSuite struct {
 }
 
 func theKibanaSetupHasBeenExecuted(arg1 string) error {
