@@ -1,12 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/cli/services"
+	curl "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
@@ -62,6 +64,14 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 				"minutes": minutesToBeHealthy,
 			}).Error("The Elasticsearch cluster could not get the healthy status")
 		}
+
+		healthyKibana, err := e2e.WaitForKibana(minutesToBeHealthy)
+		if !healthyKibana {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"minutes": minutesToBeHealthy,
+			}).Error("The Kibana instance could not get the healthy status")
+		}
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
 		log.Debug("Before Ingest Manager scenario")
@@ -92,6 +102,32 @@ func (imts *IngestManagerTestSuite) kibanaSetupHasBeenExecuted(setup string) err
 	log.WithFields(log.Fields{
 		"setup": setup,
 	}).Debug("Creating Kibana setup")
+
+	type payload struct {
+		ForceRecreate bool `json:"forceRecreate"`
+	}
+
+	data := payload{
+		ForceRecreate: true,
+	}
+	payloadBytes, err := json.Marshal(data)
+	if err != nil {
+		log.Error("Could not serialise payload")
+		return err
+	}
+
+	// running on localhost as Kibana is expected to be exposed there
+	fleetSetupURL := "http://localhost:5601/api/ingest_manager/fleet/setup"
+	err = curl.Post(fleetSetupURL, payloadBytes)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"url":   fleetSetupURL,
+		}).Error("Could not initialise Fleet")
+		return err
+	}
+
+	log.Debug("Ensuring Fleet was initialised")
 
 	return godog.ErrPending
 }
