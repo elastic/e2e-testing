@@ -37,7 +37,7 @@ Scenario: Re-enrolling an agent
     And "the agent" is "stopped" on the host
   When the agent is re-enrolled on the host
     And "the agent" is "started" on the host
-  Then "the agent" is listed in Fleet as online
+  Then the agent is listed in Fleet as online
     And there is data in the index
 
 @revoke-token

@@ -36,7 +36,6 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	s.Step(`^there is no data in the index$`, imts.thereIsNoDataInTheIndex)
 	s.Step(`^an agent is enrolled$`, imts.anAgentIsEnrolled)
 	s.Step(`^the agent is re-enrolled on the host$`, imts.theAgentIsReenrolledOnTheHost)
-	s.Step(`^"([^"]*)" is listed in Fleet as online$`, imts.isListedInFleetAsOnline)
 	s.Step(`^the enrollment token is revoked$`, imts.theEnrollmentTokenIsRevoked)
 	s.Step(`^an attempt to enroll a new agent fails$`, imts.anAttemptToEnrollANewAgentFails)
 
@@ -135,10 +134,6 @@ func (imts *IngestManagerTestSuite) anAgentIsEnrolled() error {
 }
 
 func (imts *IngestManagerTestSuite) theAgentIsReenrolledOnTheHost() error {
-	return godog.ErrPending
-}
-
-func (imts *IngestManagerTestSuite) isListedInFleetAsOnline(arg1 string) error {
 	return godog.ErrPending
 }
 
