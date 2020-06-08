@@ -7,7 +7,7 @@ Scenario: Deploying an agent
   When an agent is deployed to Fleet
   Then the agent is listed in Fleet as online
     And system package dashboards are listed in Fleet
-    And new documents are inserted into Elasticsearch
+    And there is data in the index
 
 @start-agent
 Scenario: Starting the agent starts backend processes
@@ -27,7 +27,7 @@ Scenario: Un-enrolling an agent
   Given an agent is deployed to Fleet
   When the agent is un-enrolled
   Then the agent is not listed as online in Fleet
-    And no new documents are inserted into Elasticsearch
+    And there is no data in the index
 
 @reenroll
 Scenario: Re-enrolling an agent
@@ -37,13 +37,13 @@ Scenario: Re-enrolling an agent
   When the agent is re-enrolled on the host
     And the agent is run on the host
   Then the agent is listed in Fleet as online
-    And new documents are inserted into Elasticsearch
+    And there is data in the index
 
 @revoke-token
 Scenario: Revoking the enrollment token for an agent
   Given an agent is enrolled
   When the enrollment token is revoked
-    And new documents are inserted into Elasticsearch
+    And there is data in the index
   Then the agent is un-enrolled
     And the agent is stopped on the host
     And the agent cannot be re-enrolled with the same command
