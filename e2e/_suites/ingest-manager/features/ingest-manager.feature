@@ -4,14 +4,14 @@ Feature: Enable Fleet and Deploy Agent
 @enroll
 Scenario: Deploying an agent
   Given the "Fleet" Kibana setup has been executed
-    And an agent is deployed to Fleet
-  When the agent is listed in Fleet as online
-    Then system package dashboards are listed in Fleet
+  When an agent is deployed to Fleet
+  Then the agent is listed in Fleet as online
+    And system package dashboards are listed in Fleet
     And new documents are inserted into Elasticsearch
 
 @start-agent
 Scenario: Starting the agent starts backend processes
-  Given an agent is deployed to Fleet
+  When an agent is deployed to Fleet
   Then filebeat is started
     And metricbeat is started
 
@@ -44,5 +44,6 @@ Scenario: Revoking the enrollment token for an agent
   Given an agent is enrolled
   When the enrollment token is revoked
     And new documents are inserted into Elasticsearch
-  And the agent is un-enrolled and stopped on the host
-  Then the agent cannot be re-enrolled with the same command
+  Then the agent is un-enrolled
+    And the agent is stopped on the host
+    And the agent cannot be re-enrolled with the same command
