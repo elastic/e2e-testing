@@ -33,7 +33,7 @@ Scenario: Un-enrolling an agent
 Scenario: Re-enrolling an agent
   Given an agent is enrolled
     And the agent is un-enrolled
-    And the Agent is "stopped" on the host
+    And the agent is "stopped" on the host
   When the agent is re-enrolled on the host
     And the agent is "started" on the host
   Then the agent is listed in Fleet as online
