@@ -22,21 +22,23 @@ func init() {
 }
 
 func IngestManagerFeatureContext(s *godog.Suite) {
-	s.Step(`^the "([^"]*)" Kibana setup has been executed$`, theKibanaSetupHasBeenExecuted)
-	s.Step(`^an agent is deployed to Fleet$`, anAgentIsDeployedToFleet)
-	s.Step(`^the agent is listed in Fleet as online$`, theAgentIsListedInFleetAsOnline)
-	s.Step(`^system package dashboards are listed in Fleet$`, systemPackageDashboardsAreListedInFleet)
-	s.Step(`^there is data in the index$`, thereIsDataInTheIndex)
-	s.Step(`^"([^"]*)" is "([^"]*)" on the host$`, isOnTheHost)
-	s.Step(`^the agent is "([^"]*)" on the host$`, theAgentIsOnTheHost)
-	s.Step(`^the agent is un-enrolled$`, theAgentIsUnenrolled)
-	s.Step(`^the agent is not listed as online in Fleet$`, theAgentIsNotListedAsOnlineInFleet)
-	s.Step(`^there is no data in the index$`, thereIsNoDataInTheIndex)
-	s.Step(`^an agent is enrolled$`, anAgentIsEnrolled)
-	s.Step(`^the agent is re-enrolled on the host$`, theAgentIsReenrolledOnTheHost)
-	s.Step(`^"([^"]*)" is listed in Fleet as online$`, isListedInFleetAsOnline)
-	s.Step(`^the enrollment token is revoked$`, theEnrollmentTokenIsRevoked)
-	s.Step(`^an attempt to enroll a new agent fails$`, anAttemptToEnrollANewAgentFails)
+	imts := IngestManagerTestSuite{}
+
+	s.Step(`^the "([^"]*)" Kibana setup has been executed$`, imts.kibanaSetupHasBeenExecuted)
+	s.Step(`^an agent is deployed to Fleet$`, imts.anAgentIsDeployedToFleet)
+	s.Step(`^the agent is listed in Fleet as online$`, imts.theAgentIsListedInFleetAsOnline)
+	s.Step(`^system package dashboards are listed in Fleet$`, imts.systemPackageDashboardsAreListedInFleet)
+	s.Step(`^there is data in the index$`, imts.thereIsDataInTheIndex)
+	s.Step(`^"([^"]*)" is "([^"]*)" on the host$`, imts.processStateOnTheHost)
+	s.Step(`^the agent is "([^"]*)" on the host$`, imts.agentStateOnTheHost)
+	s.Step(`^the agent is un-enrolled$`, imts.theAgentIsUnenrolled)
+	s.Step(`^the agent is not listed as online in Fleet$`, imts.theAgentIsNotListedAsOnlineInFleet)
+	s.Step(`^there is no data in the index$`, imts.thereIsNoDataInTheIndex)
+	s.Step(`^an agent is enrolled$`, imts.anAgentIsEnrolled)
+	s.Step(`^the agent is re-enrolled on the host$`, imts.theAgentIsReenrolledOnTheHost)
+	s.Step(`^"([^"]*)" is listed in Fleet as online$`, imts.isListedInFleetAsOnline)
+	s.Step(`^the enrollment token is revoked$`, imts.theEnrollmentTokenIsRevoked)
+	s.Step(`^an attempt to enroll a new agent fails$`, imts.anAttemptToEnrollANewAgentFails)
 
 	s.BeforeSuite(func() {
 		log.Debug("Installing ingest-manager runtime dependencies")
@@ -88,62 +90,62 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 type IngestManagerTestSuite struct {
 }
 
-func theKibanaSetupHasBeenExecuted(arg1 string) error {
+func (imts *IngestManagerTestSuite) kibanaSetupHasBeenExecuted(setup string) error {
 	return godog.ErrPending
 }
 
-func anAgentIsDeployedToFleet() error {
+func (imts *IngestManagerTestSuite) anAgentIsDeployedToFleet() error {
 	return godog.ErrPending
 }
 
-func theAgentIsListedInFleetAsOnline() error {
+func (imts *IngestManagerTestSuite) theAgentIsListedInFleetAsOnline() error {
 	return godog.ErrPending
 }
 
-func systemPackageDashboardsAreListedInFleet() error {
+func (imts *IngestManagerTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	return godog.ErrPending
 }
 
-func thereIsDataInTheIndex() error {
+func (imts *IngestManagerTestSuite) thereIsDataInTheIndex() error {
 	return godog.ErrPending
 }
 
-func isOnTheHost(arg1, arg2 string) error {
+func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
 	return godog.ErrPending
 }
 
-func theAgentIsOnTheHost(arg1 string) error {
+func (imts *IngestManagerTestSuite) agentStateOnTheHost(state string) error {
 	return godog.ErrPending
 }
 
-func theAgentIsUnenrolled() error {
+func (imts *IngestManagerTestSuite) theAgentIsUnenrolled() error {
 	return godog.ErrPending
 }
 
-func theAgentIsNotListedAsOnlineInFleet() error {
+func (imts *IngestManagerTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
 	return godog.ErrPending
 }
 
-func thereIsNoDataInTheIndex() error {
+func (imts *IngestManagerTestSuite) thereIsNoDataInTheIndex() error {
 	return godog.ErrPending
 }
 
-func anAgentIsEnrolled() error {
+func (imts *IngestManagerTestSuite) anAgentIsEnrolled() error {
 	return godog.ErrPending
 }
 
-func theAgentIsReenrolledOnTheHost() error {
+func (imts *IngestManagerTestSuite) theAgentIsReenrolledOnTheHost() error {
 	return godog.ErrPending
 }
 
-func isListedInFleetAsOnline(arg1 string) error {
+func (imts *IngestManagerTestSuite) isListedInFleetAsOnline(arg1 string) error {
 	return godog.ErrPending
 }
 
-func theEnrollmentTokenIsRevoked() error {
+func (imts *IngestManagerTestSuite) theEnrollmentTokenIsRevoked() error {
 	return godog.ErrPending
 }
 
-func anAttemptToEnrollANewAgentFails() error {
+func (imts *IngestManagerTestSuite) anAttemptToEnrollANewAgentFails() error {
 	return godog.ErrPending
 }
