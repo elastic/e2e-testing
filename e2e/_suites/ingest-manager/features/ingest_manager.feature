@@ -44,7 +44,4 @@ Scenario: Re-enrolling an agent
 Scenario: Revoking the enrollment token for an agent
   Given an agent is enrolled
   When the enrollment token is revoked
-    And there is data in the index
-  Then the agent is un-enrolled
-    And "the agent" is "stopped" on the host
-    And the agent cannot be re-enrolled with the same command
+  Then an attempt to enroll a new agent fails
