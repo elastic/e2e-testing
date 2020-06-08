@@ -29,8 +29,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	s.Step(`^the agent is listed in Fleet as online$`, imts.theAgentIsListedInFleetAsOnline)
 	s.Step(`^system package dashboards are listed in Fleet$`, imts.systemPackageDashboardsAreListedInFleet)
 	s.Step(`^there is data in the index$`, imts.thereIsDataInTheIndex)
-	s.Step(`^"([^"]*)" is "([^"]*)" on the host$`, imts.processStateOnTheHost)
-	s.Step(`^the agent is "([^"]*)" on the host$`, imts.agentStateOnTheHost)
+	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, imts.processStateOnTheHost)
 	s.Step(`^the agent is un-enrolled$`, imts.theAgentIsUnenrolled)
 	s.Step(`^the agent is not listed as online in Fleet$`, imts.theAgentIsNotListedAsOnlineInFleet)
 	s.Step(`^there is no data in the index$`, imts.thereIsNoDataInTheIndex)
@@ -126,14 +125,6 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 		"process": process,
 		"state":   state,
 	}).Debug("Checking process state on the host")
-
-	return godog.ErrPending
-}
-
-func (imts *IngestManagerTestSuite) agentStateOnTheHost(state string) error {
-	log.WithFields(log.Fields{
-		"state": state,
-	}).Debug("Checking agent state on the host")
 
 	return godog.ErrPending
 }

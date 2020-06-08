@@ -13,15 +13,15 @@ Scenario: Deploying an agent
 @start-agent
 Scenario: Starting the agent starts backend processes
   When an agent is deployed to Fleet
-  Then "filebeat" is "started" on the host
-    And "metricbeat" is "started" on the host
+  Then the "filebeat" process is "started" on the host
+    And the "metricbeat" process is "started" on the host
 
 @stop-agent
 Scenario: Stopping the agent stops backend processes
   Given an agent is deployed to Fleet
-  When the agent is "stopped" on the host
-  Then "filebeat" is "stopped" on the host
-    And "metricbeat" is "stopped" on the host
+  When the "agent" process is "stopped" on the host
+  Then the "filebeat" process is "stopped" on the host
+    And the "metricbeat" process is "stopped" on the host
 
 @unenroll
 Scenario: Un-enrolling an agent
@@ -34,9 +34,9 @@ Scenario: Un-enrolling an agent
 Scenario: Re-enrolling an agent
   Given an agent is enrolled
     And the agent is un-enrolled
-    And "the agent" is "stopped" on the host
+    And the "agent" process is "stopped" on the host
   When the agent is re-enrolled on the host
-    And "the agent" is "started" on the host
+    And the "agent" process is "started" on the host
   Then the agent is listed in Fleet as online
     And there is data in the index
 
