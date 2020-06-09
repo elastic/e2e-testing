@@ -2,6 +2,8 @@ package shell
 
 import (
 	"bytes"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -50,5 +52,18 @@ func Post(url string, payload []byte) error {
 	}
 	defer resp.Body.Close()
 
-	return nil
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Error("Could not read response body")
+		return err
+	}
+	bodyString := string(bodyBytes)
+
+	// http.Status == 2xx
+	if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
+		log.Debug(bodyString)
+		return nil
+	}
+
+	return fmt.Errorf("POST request failed: %s", bodyString)
 }
