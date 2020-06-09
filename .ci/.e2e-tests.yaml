@@ -6,6 +6,8 @@ SUITES:
     feature: "filebeat"
   - suite: "helm"
     feature: "metricbeat"
+  - suite: "ingest-manager"
+    feature: "all"
   - suite: "metricbeat"
     feature: "apache"
   - suite: "metricbeat"
