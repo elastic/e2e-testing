@@ -2,6 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
@@ -128,8 +132,32 @@ func (imts *IngestManagerTestSuite) kibanaSetupHasBeenExecuted(setup string) err
 	}
 
 	log.Debug("Ensuring Fleet was initialised")
+	resp, err := http.Get(fleetSetupURL)
+	if err != nil {
+		log.Error("Could not check Kibana setup for Fleet")
+		return err
+	}
+	defer resp.Body.Close()
 
-	return godog.ErrPending
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Error("Could not unmarshall response for Kibana setup")
+		return err
+	}
+
+	bodyString := string(bodyBytes)
+	if !strings.Contains(bodyString, `"isReady": true`) {
+		err = fmt.Errorf("Kibana has not been initialised")
+		log.Error(err.Error())
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"response":   bodyString,
+		"statusCode": resp.StatusCode,
+	}).Info("Kibana setup initialised")
+
+	return nil
 }
 
 func (imts *IngestManagerTestSuite) anAgentIsDeployedToFleet() error {
