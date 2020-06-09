@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -48,8 +50,10 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		log.Debug("Installing ingest-manager runtime dependencies")
 		serviceManager := services.NewServiceManager()
 
+		workDir, _ := os.Getwd()
 		env := map[string]string{
-			"stackVersion": stackVersion,
+			"stackVersion":     stackVersion,
+			"kibanaConfigPath": path.Join(workDir, "configurations", "kibana.config.yml"),
 		}
 
 		profile := "ingest-manager"
