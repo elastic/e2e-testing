@@ -8,18 +8,18 @@ import (
 )
 
 // Get executes a GET request on a URL
-func Get(url string) (int, error) {
+func Get(url string) (*http.Response, error) {
 	log.WithFields(log.Fields{
 		"url": url,
 	}).Debug("Executing GET request")
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return http.StatusServiceUnavailable, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	return resp.StatusCode, nil
+	return resp, nil
 }
 
 // Post executes a POST on a URL with a JSON payload as bytes
