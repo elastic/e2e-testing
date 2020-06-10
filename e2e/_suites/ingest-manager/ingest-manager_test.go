@@ -3,8 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"path"
 	"strings"
@@ -111,57 +109,15 @@ func (imts *IngestManagerTestSuite) kibanaSetupHasBeenExecuted(setup string) err
 		"setup": setup,
 	}).Debug("Creating Kibana setup")
 
-	type payload struct {
-		ForceRecreate bool `json:"forceRecreate"`
-	}
-
-	data := payload{
-		ForceRecreate: true,
-	}
-	payloadBytes, err := json.Marshal(data)
-	if err != nil {
-		log.Error("Could not serialise payload")
-		return err
-	}
-
 	// running on localhost as Kibana is expected to be exposed there
 	fleetSetupURL := "http://localhost:5601/api/ingest_manager/fleet/setup"
-	err = curl.Post(fleetSetupURL, payloadBytes)
+
+	err := createFleetConfiguration(fleetSetupURL)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"url":   fleetSetupURL,
-		}).Error("Could not initialise Fleet")
 		return err
 	}
 
-	log.Debug("Ensuring Fleet was initialised")
-	resp, err := http.Get(fleetSetupURL)
-	if err != nil {
-		log.Error("Could not check Kibana setup for Fleet")
-		return err
-	}
-	defer resp.Body.Close()
-
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Error("Could not unmarshall response for Kibana setup")
-		return err
-	}
-
-	bodyString := string(bodyBytes)
-	if !strings.Contains(bodyString, `"isReady": true`) {
-		err = fmt.Errorf("Kibana has not been initialised")
-		log.Error(err.Error())
-		return err
-	}
-
-	log.WithFields(log.Fields{
-		"response":   bodyString,
-		"statusCode": resp.StatusCode,
-	}).Info("Kibana setup initialised")
-
-	return nil
+	return checkFleetConfiguration(fleetSetupURL)
 }
 
 func (imts *IngestManagerTestSuite) anAgentIsDeployedToFleet() error {
@@ -237,4 +193,83 @@ func (imts *IngestManagerTestSuite) anAttemptToEnrollANewAgentFails() error {
 	log.Debug("Enrolling a new agent with an revoked token")
 
 	return godog.ErrPending
+}
+
+// checkFleetConfiguration checks that Fleet configuration is not missing
+// any requirements and is read. To achieve it, a GET request is executed
+func checkFleetConfiguration(fleetSetupURL string) error {
+	getReq := curl.HTTPRequest{
+		BasicAuthUser:     "elastic",
+		BasicAuthPassword: "p4ssw0rd",
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+			"kbn-xsrf":     "e2e-tests",
+		},
+		URL: fleetSetupURL,
+	}
+
+	log.Debug("Ensuring Fleet setup was initialised")
+	responseBody, err := curl.Get(getReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"responseBody": responseBody,
+		}).Error("Could not check Kibana setup for Fleet")
+		return err
+	}
+
+	if !strings.Contains(responseBody, `"isReady":true,"missing_requirements":[]`) {
+		err = fmt.Errorf("Kibana has not been initialised: %s", responseBody)
+		log.Error(err.Error())
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"responseBody": responseBody,
+	}).Info("Kibana setup initialised")
+
+	return nil
+}
+
+// createFleetConfiguration sends a POST request to Fleet forcing the
+// recreation of the configuration
+func createFleetConfiguration(fleetSetupURL string) error {
+	type payload struct {
+		ForceRecreate bool `json:"forceRecreate"`
+	}
+
+	data := payload{
+		ForceRecreate: true,
+	}
+	payloadBytes, err := json.Marshal(data)
+	if err != nil {
+		log.Error("Could not serialise payload")
+		return err
+	}
+
+	postReq := curl.HTTPRequest{
+		BasicAuthUser:     "elastic",
+		BasicAuthPassword: "p4ssw0rd",
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+			"kbn-xsrf":     "e2e-tests",
+		},
+		Payload: payloadBytes,
+		URL:     fleetSetupURL,
+	}
+
+	body, err := curl.Post(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   fleetSetupURL,
+		}).Error("Could not initialise Fleet setup")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"responseBody": body,
+	}).Debug("Fleet setup done")
+
+	return nil
 }

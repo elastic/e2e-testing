@@ -3,67 +3,97 @@ package shell
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
 )
 
-// Get executes a GET request on a URL
-func Get(url string) (*http.Response, error) {
-	log.WithFields(log.Fields{
-		"url": url,
-	}).Debug("Executing GET request")
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	return resp, nil
+// HTTPRequest configures an HTTP request
+type HTTPRequest struct {
+	BasicAuthUser     string
+	BasicAuthPassword string
+	Headers           map[string]string
+	method            string
+	Payload           []byte
+	URL               string
 }
 
-// Post executes a POST on a URL with a JSON payload as bytes
-func Post(url string, payload []byte) error {
+// Get executes a GET request
+func Get(r HTTPRequest) (string, error) {
+	r.method = "GET"
+
+	return request(r)
+}
+
+// Post executes a POST request
+func Post(r HTTPRequest) (string, error) {
+	r.method = "POST"
+
+	return request(r)
+}
+
+// Post executes a request
+func request(r HTTPRequest) (string, error) {
 	log.WithFields(log.Fields{
-		"url": url,
-	}).Debug("Executing POST request")
+		"method": r.method,
+		"url":    r.URL,
+	}).Debug("Executing request")
 
-	body := bytes.NewReader(payload)
+	var body io.Reader
+	if r.Payload != nil {
+		body = bytes.NewReader(r.Payload)
+	} else {
+		body = nil
+	}
 
-	req, err := http.NewRequest("POST", url, body)
+	req, err := http.NewRequest(r.method, r.URL, body)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"error": err,
-			"url":   url,
-		}).Error("Error creating POST request")
-		return err
+			"error":  err,
+			"method": r.method,
+			"url":    r.URL,
+		}).Warn("Error creating request")
+		return "", err
 	}
-	req.Header.Set("Content-Type", "application/json")
+
+	if r.Headers != nil {
+		for k, v := range r.Headers {
+			req.Header.Set(k, v)
+		}
+	}
+
+	if r.BasicAuthUser != "" {
+		req.SetBasicAuth(r.BasicAuthUser, r.BasicAuthPassword)
+	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"error": err,
-			"url":   url,
-		}).Error("Error executing POST request")
-		return err
+			"error":  err,
+			"method": r.method,
+			"url":    r.URL,
+		}).Warn("Error executing request")
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Error("Could not read response body")
-		return err
+		log.WithFields(log.Fields{
+			"error":  err,
+			"method": r.method,
+			"url":    r.URL,
+		}.Warn("Could not read response body")
+		return "", err
 	}
 	bodyString := string(bodyBytes)
 
-	// http.Status == 2xx
-	if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
-		log.Debug(bodyString)
-		return nil
+	// http.Status ==> [2xx, 4xx)
+	if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusBadRequest {
+		return bodyString, nil
 	}
 
-	return fmt.Errorf("POST request failed: %s", bodyString)
+	return bodyString, fmt.Errorf("%s request failed with %d", r.method, resp.StatusCode)
 }

@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v4"
@@ -24,28 +23,20 @@ func WaitForKibanaFromHostPort(host string, port int, maxTimeoutMinutes time.Dur
 	retryCount := 1
 
 	kibanaStatus := func() error {
-		kibanaEndpoint := fmt.Sprintf("http://%s:%d/status", host, port)
-		resp, err := curl.Get(kibanaEndpoint)
+		r := curl.HTTPRequest{
+			BasicAuthUser:     "elastic",
+			BasicAuthPassword: "p4ssw0rd",
+			URL:               fmt.Sprintf("http://%s:%d/status", host, port),
+		}
+
+		_, err := curl.Get(r)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":          err,
 				"retry":          retryCount,
-				"statusEndpoint": kibanaEndpoint,
+				"statusEndpoint": r.URL,
 				"elapsedTime":    exp.GetElapsedTime(),
 			}).Warn("The Kibana instance is not healthy yet")
-
-			retryCount++
-
-			return err
-		} else if resp.StatusCode >= http.StatusBadRequest {
-			err = fmt.Errorf("The Kibana instance is not healthy yet")
-
-			log.WithFields(log.Fields{
-				"statusCode":  resp.StatusCode,
-				"retry":       retryCount,
-				"endpoint":    kibanaEndpoint,
-				"elapsedTime": exp.GetElapsedTime(),
-			}).Warn(err.Error())
 
 			retryCount++
 
@@ -54,8 +45,7 @@ func WaitForKibanaFromHostPort(host string, port int, maxTimeoutMinutes time.Dur
 
 		log.WithFields(log.Fields{
 			"retries":        retryCount,
-			"statusCode":     resp.StatusCode,
-			"statusEndpoint": kibanaEndpoint,
+			"statusEndpoint": r.URL,
 			"elapsedTime":    exp.GetElapsedTime(),
 		}).Info("The Kibana instance is healthy")
 
