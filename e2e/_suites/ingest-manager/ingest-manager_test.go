@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Jeffail/gabs/v2"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
@@ -29,6 +30,7 @@ func init() {
 
 func IngestManagerFeatureContext(s *godog.Suite) {
 	imts := IngestManagerTestSuite{}
+	serviceManager := services.NewServiceManager()
 
 	s.Step(`^the "([^"]*)" Kibana setup has been executed$`, imts.kibanaSetupHasBeenExecuted)
 	s.Step(`^an agent is deployed to Fleet$`, imts.anAgentIsDeployedToFleet)
@@ -46,7 +48,6 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 
 	s.BeforeSuite(func() {
 		log.Debug("Installing ingest-manager runtime dependencies")
-		serviceManager := services.NewServiceManager()
 
 		workDir, _ := os.Getwd()
 		env := map[string]string{
@@ -81,10 +82,11 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
 		log.Debug("Before Ingest Manager scenario")
+
+		imts.CleanupAgent = false
 	})
 	s.AfterSuite(func() {
 		log.Debug("Destroying ingest-manager runtime dependencies")
-		serviceManager := services.NewServiceManager()
 		profile := "ingest-manager"
 
 		err := serviceManager.StopCompose(true, []string{profile})
@@ -97,11 +99,31 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {
 		log.Debug("After Ingest Manager scenario")
+
+		if imts.CleanupAgent {
+			serviceName := "elastic-agent"
+			env := map[string]string{}
+
+			services := []string{serviceName}
+
+			err := serviceManager.RemoveServicesFromCompose("ingest-manager", services, env)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"service": serviceName,
+				}).Error("Could not stop the service.")
+			}
+
+			log.WithFields(log.Fields{
+				"service": serviceName,
+			}).Debug("Service removed from compose.")
+		}
 	})
 }
 
 // IngestManagerTestSuite represents a test suite, holding references to the pieces needed to run the tests
 type IngestManagerTestSuite struct {
+	CleanupAgent    bool
+	EnrollmentToken string
 }
 
 func (imts *IngestManagerTestSuite) kibanaSetupHasBeenExecuted(setup string) error {
@@ -117,13 +139,62 @@ func (imts *IngestManagerTestSuite) kibanaSetupHasBeenExecuted(setup string) err
 		return err
 	}
 
-	return checkFleetConfiguration(fleetSetupURL)
+	err = checkFleetConfiguration(fleetSetupURL)
+	if err != nil {
+		return err
+	}
+
+	fleetEnrollmentTokenURL := "http://localhost:5601/api/ingest_manager/fleet/enrollment-api-keys"
+
+	token, err := getDefaultFleetEnrollmentToken(fleetEnrollmentTokenURL)
+	if err != nil {
+		return err
+	}
+
+	imts.EnrollmentToken = token
+
+	return nil
 }
 
 func (imts *IngestManagerTestSuite) anAgentIsDeployedToFleet() error {
 	log.Debug("Deploying an agent to Fleet")
 
-	return godog.ErrPending
+	serviceManager := services.NewServiceManager()
+
+	profile := "ingest-manager"
+	serviceName := "elastic-agent"
+
+	env := map[string]string{}
+
+	err := serviceManager.AddServicesToCompose(profile, []string{serviceName}, env)
+	if err != nil {
+		log.Error("Could not deploy the elastic-agent")
+		return err
+	}
+
+	imts.CleanupAgent = true
+
+	// enroll an agent
+	composes := []string{
+		profile,     // profile name
+		serviceName, // agent service
+	}
+	composeArgs := []string{"exec", "-d", "-T", serviceName}
+	cmd := []string{"elastic-agent", "enroll", "http://localhost:5601", imts.EnrollmentToken, "-f"}
+	composeArgs = append(composeArgs, cmd...)
+
+	err = serviceManager.RunCommand(profile, composes, composeArgs, env)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command":     cmd,
+			"error":       err,
+			"serviceName": serviceName,
+		}).Error("Could not execute command in agent")
+
+		return err
+	}
+
+	return nil
 }
 
 func (imts *IngestManagerTestSuite) theAgentIsListedInFleetAsOnline() error {
@@ -246,16 +317,9 @@ func createFleetConfiguration(fleetSetupURL string) error {
 		return err
 	}
 
-	postReq := curl.HTTPRequest{
-		BasicAuthUser:     "elastic",
-		BasicAuthPassword: "p4ssw0rd",
-		Headers: map[string]string{
-			"Content-Type": "application/json",
-			"kbn-xsrf":     "e2e-tests",
-		},
-		Payload: payloadBytes,
-		URL:     fleetSetupURL,
-	}
+	postReq := createDefaultHTTPRequest(fleetSetupURL)
+
+	postReq.Payload = payloadBytes
 
 	body, err := curl.Post(postReq)
 	if err != nil {
@@ -272,4 +336,71 @@ func createFleetConfiguration(fleetSetupURL string) error {
 	}).Debug("Fleet setup done")
 
 	return nil
+}
+
+// createDefaultHTTPRequest Creates a default HTTP request, including the basic auth,
+// JSON content type header, and a specific header that is required by Kibana
+func createDefaultHTTPRequest(url string) curl.HTTPRequest {
+	return curl.HTTPRequest{
+		BasicAuthUser:     "elastic",
+		BasicAuthPassword: "p4ssw0rd",
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+			"kbn-xsrf":     "e2e-tests",
+		},
+		URL: url,
+	}
+}
+
+// getDefaultFleetEnrollmentToken sends a POST request to Fleet creating a new token
+func getDefaultFleetEnrollmentToken(fleetEnrollmentTokenURL string) (string, error) {
+	r := createDefaultHTTPRequest(fleetEnrollmentTokenURL)
+	body, err := curl.Get(r)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   fleetEnrollmentTokenURL,
+		}).Error("Could not get Fleet's default enrollment token")
+		return "", err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return body, err
+	}
+
+	defaultTokenID := jsonParsed.Path("list").Index(0).Path("id").Data().(string)
+
+	r = createDefaultHTTPRequest(fleetEnrollmentTokenURL + "/" + defaultTokenID)
+	body, err = curl.Get(r)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   fleetEnrollmentTokenURL,
+		}).Error("Could not get Fleet's default enrollment token")
+		return "", err
+	}
+
+	jsonParsed, err = gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return body, err
+	}
+
+	defaultToken := jsonParsed.Path("item.api_key").Data().(string)
+
+	log.WithFields(log.Fields{
+		"token": defaultToken,
+	}).Debug("Fleet default enrollment token listed")
+
+	return defaultToken, nil
 }
