@@ -195,6 +195,18 @@ func (imts *IngestManagerTestSuite) anAgentIsDeployedToFleet() error {
 		return err
 	}
 
+	if log.IsLevelEnabled(log.DebugLevel) {
+		err = serviceManager.RunCommand(profile, composes, []string{"logs", serviceName}, profileEnv)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"service": serviceName,
+			}).Error("Could not retrieve Elastic Agent logs")
+
+			return err
+		}
+	}
+
 	return nil
 }
 
