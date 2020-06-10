@@ -85,7 +85,7 @@ func request(r HTTPRequest) (string, error) {
 			"error":  err,
 			"method": r.method,
 			"url":    r.URL,
-		}.Warn("Could not read response body")
+		}).Warn("Could not read response body")
 		return "", err
 	}
 	bodyString := string(bodyBytes)
