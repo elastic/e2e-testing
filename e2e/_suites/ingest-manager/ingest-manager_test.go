@@ -232,7 +232,20 @@ func (imts *IngestManagerTestSuite) theAgentIsListedInFleetAsOnline() error {
 func (imts *IngestManagerTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	log.Debug("Checking system Package dashboards in Fleet")
 
-	return godog.ErrPending
+	ingestManagerDataStreamsURL := "http://localhost:5601/api/ingest_manager/data_streams"
+
+	dataStreams, err := getDataStreams(ingestManagerDataStreamsURL)
+	if err != nil {
+		return err
+	}
+
+	if len(dataStreams.Children()) == 0 {
+		err = fmt.Errorf("There are no datastreams. We expected to have more than one")
+		log.Error(err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (imts *IngestManagerTestSuite) thereIsDataInTheIndex() error {
@@ -410,6 +423,41 @@ func createDefaultHTTPRequest(url string) curl.HTTPRequest {
 		},
 		URL: url,
 	}
+}
+
+// getDataStreams sends a GET request to Fleet for the existing data-streams
+// if called prior to any Agent being deployed it should return a list of
+// zero data streams as: { "data_streams": [] }. If called after the Agent
+// is running, it will return a list of (currently in 7.8) 20 streams
+func getDataStreams(ingestManagerDataStreamsURL string) (*gabs.Container, error) {
+	r := createDefaultHTTPRequest(ingestManagerDataStreamsURL)
+	body, err := curl.Get(r)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   ingestManagerDataStreamsURL,
+		}).Error("Could not get Fleet's default enrollment token")
+		return nil, err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return nil, err
+	}
+
+	// data streams should contain array of elements
+	dataStreams := jsonParsed.Path("data_streams")
+
+	log.WithFields(log.Fields{
+		"count": len(dataStreams.Children()),
+	}).Debug("Data Streams retrieved")
+
+	return dataStreams, nil
 }
 
 // getDefaultFleetEnrollmentToken sends a POST request to Fleet creating a new token
