@@ -22,6 +22,10 @@ import (
 // It can be overriden by OP_STACK_VERSION env var
 var stackVersion = "7.7.0"
 
+// profileEnv is the environment to be applied to any execution
+// affecting the runtime dependencies (or profile)
+var profileEnv map[string]string
+
 func init() {
 	config.Init()
 
@@ -50,13 +54,13 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		log.Debug("Installing ingest-manager runtime dependencies")
 
 		workDir, _ := os.Getwd()
-		env := map[string]string{
+		profileEnv = map[string]string{
 			"stackVersion":     stackVersion,
 			"kibanaConfigPath": path.Join(workDir, "configurations", "kibana.config.yml"),
 		}
 
 		profile := "ingest-manager"
-		err := serviceManager.RunCompose(true, []string{profile}, env)
+		err := serviceManager.RunCompose(true, []string{profile}, profileEnv)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": profile,
@@ -102,11 +106,10 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 
 		if imts.CleanupAgent {
 			serviceName := "elastic-agent"
-			env := map[string]string{}
 
 			services := []string{serviceName}
 
-			err := serviceManager.RemoveServicesFromCompose("ingest-manager", services, env)
+			err := serviceManager.RemoveServicesFromCompose("ingest-manager", services, profileEnv)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"service": serviceName,
@@ -164,9 +167,7 @@ func (imts *IngestManagerTestSuite) anAgentIsDeployedToFleet() error {
 	profile := "ingest-manager"
 	serviceName := "elastic-agent"
 
-	env := map[string]string{}
-
-	err := serviceManager.AddServicesToCompose(profile, []string{serviceName}, env)
+	err := serviceManager.AddServicesToCompose(profile, []string{serviceName}, profileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err
@@ -183,7 +184,7 @@ func (imts *IngestManagerTestSuite) anAgentIsDeployedToFleet() error {
 	cmd := []string{"elastic-agent", "enroll", "http://localhost:5601", imts.EnrollmentToken, "-f"}
 	composeArgs = append(composeArgs, cmd...)
 
-	err = serviceManager.RunCommand(profile, composes, composeArgs, env)
+	err = serviceManager.RunCommand(profile, composes, composeArgs, profileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command":     cmd,
