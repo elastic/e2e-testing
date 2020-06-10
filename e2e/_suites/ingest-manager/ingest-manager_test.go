@@ -213,7 +213,20 @@ func (imts *IngestManagerTestSuite) anAgentIsDeployedToFleet() error {
 func (imts *IngestManagerTestSuite) theAgentIsListedInFleetAsOnline() error {
 	log.Debug("Checking agent is listed in Fleet as online")
 
-	return godog.ErrPending
+	fleetAgentsURL := "http://localhost:5601/api/ingest_manager/fleet/agents?page=1&showInactive=%t"
+
+	agentsCount, err := countAgentsByStatus(fleetAgentsURL, true)
+	if err != nil {
+		return err
+	}
+
+	if agentsCount != 1 {
+		err = fmt.Errorf("There are %.0f online agents. We expected to have exactly one", agentsCount)
+		log.Error(err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (imts *IngestManagerTestSuite) systemPackageDashboardsAreListedInFleet() error {
@@ -312,6 +325,40 @@ func checkFleetConfiguration(fleetSetupURL string) error {
 	}).Info("Kibana setup initialised")
 
 	return nil
+}
+
+// countAgentsByStatus sends a GET request to Fleet for the existing agents
+// allowing to filter by agent status: online, offline
+func countAgentsByStatus(fleetAgentsURL string, online bool) (float64, error) {
+	r := createDefaultHTTPRequest(fmt.Sprintf(fleetAgentsURL, online))
+	body, err := curl.Get(r)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":   body,
+			"online": online,
+			"error":  err,
+			"url":    fleetAgentsURL,
+		}).Error("Could not get Fleet's agents by status")
+		return 0, err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return 0, err
+	}
+
+	agentsCount := jsonParsed.Path("total").Data().(float64)
+
+	log.WithFields(log.Fields{
+		"count":  agentsCount,
+		"online": online,
+	}).Debug("Agents by status retrieved")
+
+	return agentsCount, nil
 }
 
 // createFleetConfiguration sends a POST request to Fleet forcing the
