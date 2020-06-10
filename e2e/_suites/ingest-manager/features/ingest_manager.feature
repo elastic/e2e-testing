@@ -1,47 +1,31 @@
 @ingest
 Feature: Ingest Manager
-  Scenarios for the ingest manager application, considering the deployment, start, stop, enrollment, un-enrollment and enrollment of an agent.
-
-@enroll
-Scenario: Deploying an agent
-  Given the "Fleet" Kibana setup has been executed
-  When an agent is deployed to Fleet
-  Then the agent is listed in Fleet as online
-    And system package dashboards are listed in Fleet
-    And there is data in the index
+  Scenarios for Ingest Manager, considering start and stop of a stand-alone mode Elastic Agent.
 
 @start-agent
 Scenario: Starting the agent starts backend processes
-  When an agent is deployed to Fleet
+  Given a stand-alone agent is deployed
   Then the "filebeat" process is "started" on the host
     And the "metricbeat" process is "started" on the host
 
+@deploy-stand-alone
+Scenario: Deploying a stand-alone agent
+  Given Kibana and Elasticsearch are available
+  When a stand-alone agent is deployed
+  Then there is new data in the index from agent
+
 @stop-agent
-Scenario: Stopping the agent stops backend processes
-  Given an agent is deployed to Fleet
-  When the "agent" process is "stopped" on the host
-  Then the "filebeat" process is "stopped" on the host
-    And the "metricbeat" process is "stopped" on the host
+Scenario: Stopping the agent container stops data going into ES
+  Given Kibana and Elasticsearch are available
+    And a stand-alone agent is deployed
+  When the "agent" docker container is stopped
+  Then there is no new data in the index after agent shuts down
 
-@unenroll
-Scenario: Un-enrolling an agent
-  Given an agent is deployed to Fleet
-  When the agent is un-enrolled
-  Then the agent is not listed as online in Fleet
-    And there is no data in the index
-
-@reenroll
-Scenario: Re-enrolling an agent
-  Given an agent is deployed to Fleet
-    And the agent is un-enrolled
-    And the "agent" process is "stopped" on the host
-  When the agent is re-enrolled on the host
-    And the "agent" process is "started" on the host
-  Then the agent is listed in Fleet as online
-    And there is data in the index
-
-@revoke-token
-Scenario: Revoking the enrollment token for an agent
-  Given an agent is deployed to Fleet
-  When the enrollment token is revoked
-  Then an attempt to enroll a new agent fails
+@restart-agent
+Scenario: Starting a stand-alone agent after stopping it resumes data going into ES
+  Given Kibana and Elasticsearch are available
+    And a stand-alone agent is deployed
+  When the "agent" docker container is stopped
+  Then there is no new data in the index after agent shuts down
+    And the "agent" docker container is started
+    Then there is new data in the index from agent
