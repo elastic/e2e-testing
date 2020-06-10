@@ -32,7 +32,7 @@ Scenario: Un-enrolling an agent
 
 @reenroll
 Scenario: Re-enrolling an agent
-  Given an agent is enrolled
+  Given an agent is deployed to Fleet
     And the agent is un-enrolled
     And the "agent" process is "stopped" on the host
   When the agent is re-enrolled on the host
@@ -42,6 +42,6 @@ Scenario: Re-enrolling an agent
 
 @revoke-token
 Scenario: Revoking the enrollment token for an agent
-  Given an agent is enrolled
+  Given an agent is deployed to Fleet
   When the enrollment token is revoked
   Then an attempt to enroll a new agent fails
