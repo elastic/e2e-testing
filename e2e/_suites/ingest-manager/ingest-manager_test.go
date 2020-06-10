@@ -26,6 +26,13 @@ var stackVersion = "7.7.0"
 // affecting the runtime dependencies (or profile)
 var profileEnv map[string]string
 
+// All URLs running on localhost as Kibana is expected to be exposed there
+const kibanaBaseURL = "http://localhost:5601"
+const fleetAgentsURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents?page=1&showInactive=%t"
+const fleetEnrollmentTokenURL = kibanaBaseURL + "/api/ingest_manager/fleet/enrollment-api-keys"
+const fleetSetupURL = kibanaBaseURL + "/api/ingest_manager/fleet/setup"
+const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/ingest_manager/data_streams"
+
 func init() {
 	config.Init()
 
@@ -134,22 +141,17 @@ func (imts *IngestManagerTestSuite) kibanaSetupHasBeenExecuted(setup string) err
 		"setup": setup,
 	}).Debug("Creating Kibana setup")
 
-	// running on localhost as Kibana is expected to be exposed there
-	fleetSetupURL := "http://localhost:5601/api/ingest_manager/fleet/setup"
-
-	err := createFleetConfiguration(fleetSetupURL)
+	err := createFleetConfiguration()
 	if err != nil {
 		return err
 	}
 
-	err = checkFleetConfiguration(fleetSetupURL)
+	err = checkFleetConfiguration()
 	if err != nil {
 		return err
 	}
 
-	fleetEnrollmentTokenURL := "http://localhost:5601/api/ingest_manager/fleet/enrollment-api-keys"
-
-	token, err := getDefaultFleetEnrollmentToken(fleetEnrollmentTokenURL)
+	token, err := getDefaultFleetEnrollmentToken()
 	if err != nil {
 		return err
 	}
@@ -213,9 +215,7 @@ func (imts *IngestManagerTestSuite) anAgentIsDeployedToFleet() error {
 func (imts *IngestManagerTestSuite) theAgentIsListedInFleetAsOnline() error {
 	log.Debug("Checking agent is listed in Fleet as online")
 
-	fleetAgentsURL := "http://localhost:5601/api/ingest_manager/fleet/agents?page=1&showInactive=%t"
-
-	agentsCount, err := countAgentsByStatus(fleetAgentsURL, true)
+	agentsCount, err := countAgentsByStatus(true)
 	if err != nil {
 		return err
 	}
@@ -232,9 +232,7 @@ func (imts *IngestManagerTestSuite) theAgentIsListedInFleetAsOnline() error {
 func (imts *IngestManagerTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	log.Debug("Checking system Package dashboards in Fleet")
 
-	ingestManagerDataStreamsURL := "http://localhost:5601/api/ingest_manager/data_streams"
-
-	dataStreams, err := getDataStreams(ingestManagerDataStreamsURL)
+	dataStreams, err := getDataStreams()
 	if err != nil {
 		return err
 	}
@@ -307,7 +305,7 @@ func (imts *IngestManagerTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 // checkFleetConfiguration checks that Fleet configuration is not missing
 // any requirements and is read. To achieve it, a GET request is executed
-func checkFleetConfiguration(fleetSetupURL string) error {
+func checkFleetConfiguration() error {
 	getReq := curl.HTTPRequest{
 		BasicAuthUser:     "elastic",
 		BasicAuthPassword: "p4ssw0rd",
@@ -342,7 +340,7 @@ func checkFleetConfiguration(fleetSetupURL string) error {
 
 // countAgentsByStatus sends a GET request to Fleet for the existing agents
 // allowing to filter by agent status: online, offline
-func countAgentsByStatus(fleetAgentsURL string, online bool) (float64, error) {
+func countAgentsByStatus(online bool) (float64, error) {
 	r := createDefaultHTTPRequest(fmt.Sprintf(fleetAgentsURL, online))
 	body, err := curl.Get(r)
 	if err != nil {
@@ -376,7 +374,7 @@ func countAgentsByStatus(fleetAgentsURL string, online bool) (float64, error) {
 
 // createFleetConfiguration sends a POST request to Fleet forcing the
 // recreation of the configuration
-func createFleetConfiguration(fleetSetupURL string) error {
+func createFleetConfiguration() error {
 	type payload struct {
 		ForceRecreate bool `json:"forceRecreate"`
 	}
@@ -429,7 +427,7 @@ func createDefaultHTTPRequest(url string) curl.HTTPRequest {
 // if called prior to any Agent being deployed it should return a list of
 // zero data streams as: { "data_streams": [] }. If called after the Agent
 // is running, it will return a list of (currently in 7.8) 20 streams
-func getDataStreams(ingestManagerDataStreamsURL string) (*gabs.Container, error) {
+func getDataStreams() (*gabs.Container, error) {
 	r := createDefaultHTTPRequest(ingestManagerDataStreamsURL)
 	body, err := curl.Get(r)
 	if err != nil {
@@ -461,7 +459,7 @@ func getDataStreams(ingestManagerDataStreamsURL string) (*gabs.Container, error)
 }
 
 // getDefaultFleetEnrollmentToken sends a POST request to Fleet creating a new token
-func getDefaultFleetEnrollmentToken(fleetEnrollmentTokenURL string) (string, error) {
+func getDefaultFleetEnrollmentToken() (string, error) {
 	r := createDefaultHTTPRequest(fleetEnrollmentTokenURL)
 	body, err := curl.Get(r)
 	if err != nil {
