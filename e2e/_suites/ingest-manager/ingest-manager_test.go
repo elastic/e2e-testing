@@ -32,22 +32,11 @@ func init() {
 
 func IngestManagerFeatureContext(s *godog.Suite) {
 	imts := IngestManagerTestSuite{
-		Fleet: FleetTestSuite{},
+		Fleet: &FleetTestSuite{},
 	}
 	serviceManager := services.NewServiceManager()
 
-	s.Step(`^the "([^"]*)" Kibana setup has been executed$`, imts.Fleet.kibanaSetupHasBeenExecuted)
-	s.Step(`^an agent is deployed to Fleet$`, imts.Fleet.anAgentIsDeployedToFleet)
-	s.Step(`^the agent is listed in Fleet as online$`, imts.Fleet.theAgentIsListedInFleetAsOnline)
-	s.Step(`^system package dashboards are listed in Fleet$`, imts.Fleet.systemPackageDashboardsAreListedInFleet)
-	s.Step(`^there is data in the index$`, imts.Fleet.thereIsDataInTheIndex)
-	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, imts.Fleet.processStateOnTheHost)
-	s.Step(`^the agent is un-enrolled$`, imts.Fleet.theAgentIsUnenrolled)
-	s.Step(`^the agent is not listed as online in Fleet$`, imts.Fleet.theAgentIsNotListedAsOnlineInFleet)
-	s.Step(`^there is no data in the index$`, imts.Fleet.thereIsNoDataInTheIndex)
-	s.Step(`^the agent is re-enrolled on the host$`, imts.Fleet.theAgentIsReenrolledOnTheHost)
-	s.Step(`^the enrollment token is revoked$`, imts.Fleet.theEnrollmentTokenIsRevoked)
-	s.Step(`^an attempt to enroll a new agent fails$`, imts.Fleet.anAttemptToEnrollANewAgentFails)
+	imts.Fleet.contributeSteps(s)
 
 	s.BeforeSuite(func() {
 		log.Debug("Installing ingest-manager runtime dependencies")
@@ -124,5 +113,5 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 
 // IngestManagerTestSuite represents a test suite, holding references to the pieces needed to run the tests
 type IngestManagerTestSuite struct {
-	Fleet FleetTestSuite
+	Fleet *FleetTestSuite
 }
