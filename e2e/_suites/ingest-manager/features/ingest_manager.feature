@@ -1,6 +1,6 @@
-@ingest
-Feature: Ingest Manager
-  Scenarios for Ingest Manager, considering start and stop of a stand-alone mode Elastic Agent.
+@stand_alone_mode
+Feature: Stand-alone Agent Mode
+  Scenarios for a standalone mode Elastic Agent in Ingest Manager
 
 @start-agent
 Scenario: Starting the agent starts backend processes
@@ -20,12 +20,3 @@ Scenario: Stopping the agent container stops data going into ES
     And a stand-alone agent is deployed
   When the "agent" docker container is stopped
   Then there is no new data in the index after agent shuts down
-
-@restart-agent
-Scenario: Starting a stand-alone agent after stopping it resumes data going into ES
-  Given Kibana and Elasticsearch are available
-    And a stand-alone agent is deployed
-  When the "agent" docker container is stopped
-  Then there is no new data in the index after agent shuts down
-    And the "agent" docker container is started
-    Then there is new data in the index from agent
