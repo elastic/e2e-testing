@@ -79,7 +79,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	s.BeforeScenario(func(*messages.Pickle) {
 		log.Debug("Before Ingest Manager scenario")
 
-		imts.Fleet.CleanupAgent = false
+		imts.StandAlone.Cleanup = false
 	})
 	s.AfterSuite(func() {
 		log.Debug("Destroying ingest-manager runtime dependencies")
@@ -96,7 +96,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	s.AfterScenario(func(*messages.Pickle, error) {
 		log.Debug("After Ingest Manager scenario")
 
-		if imts.Fleet.CleanupAgent {
+		if imts.StandAlone.Cleanup {
 			serviceName := "elastic-agent"
 
 			services := []string{serviceName}
