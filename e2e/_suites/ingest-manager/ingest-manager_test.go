@@ -32,11 +32,13 @@ func init() {
 
 func IngestManagerFeatureContext(s *godog.Suite) {
 	imts := IngestManagerTestSuite{
-		Fleet: &FleetTestSuite{},
+		Fleet:      &FleetTestSuite{},
+		StandAlone: &StandAloneTestSuite{},
 	}
 	serviceManager := services.NewServiceManager()
 
 	imts.Fleet.contributeSteps(s)
+	imts.StandAlone.contributeSteps(s)
 
 	s.BeforeSuite(func() {
 		log.Debug("Installing ingest-manager runtime dependencies")
@@ -113,5 +115,6 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 
 // IngestManagerTestSuite represents a test suite, holding references to the pieces needed to run the tests
 type IngestManagerTestSuite struct {
-	Fleet *FleetTestSuite
+	Fleet      *FleetTestSuite
+	StandAlone *StandAloneTestSuite
 }
