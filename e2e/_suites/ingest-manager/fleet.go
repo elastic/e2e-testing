@@ -29,7 +29,6 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the agent is listed in Fleet as online$`, fts.theAgentIsListedInFleetAsOnline)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
 	s.Step(`^there is data in the index$`, fts.thereIsDataInTheIndex)
-	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateOnTheHost)
 	s.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)
 	s.Step(`^the agent is not listed as online in Fleet$`, fts.theAgentIsNotListedAsOnlineInFleet)
 	s.Step(`^there is no data in the index$`, fts.thereIsNoDataInTheIndex)
@@ -150,15 +149,6 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 
 func (fts *FleetTestSuite) thereIsDataInTheIndex() error {
 	log.Debug("Querying Elasticsearch index for agent data")
-
-	return godog.ErrPending
-}
-
-func (fts *FleetTestSuite) processStateOnTheHost(process string, state string) error {
-	log.WithFields(log.Fields{
-		"process": process,
-		"state":   state,
-	}).Debug("Checking process state on the host")
 
 	return godog.ErrPending
 }

@@ -37,6 +37,8 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	}
 	serviceManager := services.NewServiceManager()
 
+	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, imts.processStateOnTheHost)
+
 	imts.Fleet.contributeSteps(s)
 	imts.StandAlone.contributeSteps(s)
 
@@ -117,4 +119,13 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 type IngestManagerTestSuite struct {
 	Fleet      *FleetTestSuite
 	StandAlone *StandAloneTestSuite
+}
+
+func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
+	log.WithFields(log.Fields{
+		"process": process,
+		"state":   state,
+	}).Debug("Checking process state on the host")
+
+	return godog.ErrPending
 }
