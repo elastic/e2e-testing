@@ -1,6 +1,6 @@
-@ingest
-Feature: Ingest Manager
-  Scenarios for the ingest manager application, considering the deployment, start, stop, enrollment, un-enrollment and enrollment of an agent.
+@fleet_mode
+Feature: Fleet Mode Agent
+  Scenarios for the Agent in Fleet mode connecting to Ingest Manager application.
 
 @enroll
 Scenario: Deploying an agent
