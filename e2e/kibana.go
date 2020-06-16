@@ -25,7 +25,7 @@ func WaitForKibanaFromHostPort(host string, port int, maxTimeoutMinutes time.Dur
 	kibanaStatus := func() error {
 		r := curl.HTTPRequest{
 			BasicAuthUser:     "elastic",
-			BasicAuthPassword: "p4ssw0rd",
+			BasicAuthPassword: "changeme",
 			URL:               fmt.Sprintf("http://%s:%d/status", host, port),
 		}
 

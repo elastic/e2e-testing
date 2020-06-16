@@ -194,7 +194,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 func checkFleetConfiguration() error {
 	getReq := curl.HTTPRequest{
 		BasicAuthUser:     "elastic",
-		BasicAuthPassword: "p4ssw0rd",
+		BasicAuthPassword: "changeme",
 		Headers: map[string]string{
 			"Content-Type": "application/json",
 			"kbn-xsrf":     "e2e-tests",
@@ -300,7 +300,7 @@ func createFleetConfiguration() error {
 func createDefaultHTTPRequest(url string) curl.HTTPRequest {
 	return curl.HTTPRequest{
 		BasicAuthUser:     "elastic",
-		BasicAuthPassword: "p4ssw0rd",
+		BasicAuthPassword: "changeme",
 		Headers: map[string]string{
 			"Content-Type": "application/json",
 			"kbn-xsrf":     "e2e-tests",

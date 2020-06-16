@@ -6,7 +6,7 @@ outputs:
     type: elasticsearch
     hosts: '${ELASTICSEARCH_HOSTS:http://elasticsearch:9200}'
     username: '${ELASTICSEARCH_USERNAME:elastic}'
-    password: '${ELASTICSEARCH_PASSWORD:p4ssw0rd}'
+    password: '${ELASTICSEARCH_PASSWORD:changeme}'
 
 datasources:
   - namespace: default
