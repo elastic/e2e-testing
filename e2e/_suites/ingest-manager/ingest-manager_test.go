@@ -111,6 +111,13 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			log.WithFields(log.Fields{
 				"service": serviceName,
 			}).Debug("Service removed from compose.")
+
+			if _, err := os.Stat(imts.StandAlone.AgentConfigFilePath); err == nil {
+				os.Remove(imts.StandAlone.AgentConfigFilePath)
+				log.WithFields(log.Fields{
+					"path": imts.StandAlone.AgentConfigFilePath,
+				}).Debug("Elastic Agent configuration file removed.")
+			}
 		}
 	})
 }

@@ -1,17 +1,16 @@
 package main
 
 import (
-	"os"
-	"path"
-
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/cli/services"
+	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
 
 // StandAloneTestSuite represents the scenarios for Stand-alone-mode
 type StandAloneTestSuite struct {
-	Cleanup bool
+	AgentConfigFilePath string
+	Cleanup             bool
 }
 
 func (sats *StandAloneTestSuite) contributeSteps(s *godog.Suite) {
@@ -30,10 +29,17 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 	profile := "ingest-manager"
 	serviceName := "elastic-agent"
 
-	workDir, _ := os.Getwd()
-	profileEnv["elasticAgentConfigFile"] = path.Join(workDir, "configurations", "stand-alone-agent.yml")
+	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/master/x-pack/elastic-agent/elastic-agent.docker.yml"
 
-	err := serviceManager.AddServicesToCompose(profile, []string{serviceName}, profileEnv)
+	configurationFilePath, err := e2e.DownloadFile(configurationFileURL)
+	if err != nil {
+		return err
+	}
+	sats.AgentConfigFilePath = configurationFilePath
+
+	profileEnv["elasticAgentConfigFile"] = sats.AgentConfigFilePath
+
+	err = serviceManager.AddServicesToCompose(profile, []string{serviceName}, profileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err
