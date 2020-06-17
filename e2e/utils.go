@@ -1,6 +1,8 @@
 package e2e
 
 import (
+	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -8,9 +10,11 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v4"
+	"github.com/elastic/e2e-testing/cli/docker"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -167,6 +171,89 @@ func Sleep(seconds string) error {
 
 	log.WithFields(fields).Debugf("Waiting %s seconds", seconds)
 	time.Sleep(time.Duration(s) * time.Second)
+
+	return nil
+}
+
+// WaitForProcess polls a container executing "ps" command until the process is in the desired state (present or not),
+// or a timeout happens
+func WaitForProcess(host string, process string, desiredState string, maxTimeout time.Duration) error {
+	exp := getExponentialBackOff(maxTimeout)
+
+	mustBePresent := false
+	if desiredState == "started" {
+		mustBePresent = true
+	}
+	retryCount := 1
+
+	processStatus := func() error {
+		log.WithFields(log.Fields{
+			"desiredState": desiredState,
+			"process":      process,
+		}).Debug("Checking process desired state on the host")
+
+		output, err := docker.ExecCommandIntoContainer(context.Background(), host, "root", []string{"ps"})
+		if err != nil {
+			log.WithFields(log.Fields{
+				"desiredState": desiredState,
+				"error":        err,
+				"host":         host,
+				"process":      process,
+			}).Warn("Could not execute process in the host")
+
+			retryCount++
+
+			return err
+		}
+
+		log.Debugf("Output: %s", output)
+
+		outputContainsProcess := strings.Contains(output, process)
+
+		// both true or both false
+		if mustBePresent == outputContainsProcess {
+			log.WithFields(log.Fields{
+				"desiredState":  desiredState,
+				"host":          host,
+				"mustBePresent": outputContainsProcess,
+				"process":       process,
+				"ps":            output,
+			}).Infof("Process desired state checked")
+
+			return nil
+		}
+
+		if mustBePresent {
+			err = fmt.Errorf("Process is not running in the host yet")
+			log.WithFields(log.Fields{
+				"desiredState": desiredState,
+				"host":         host,
+				"process":      process,
+				"ps":           output,
+			}).Warn(err.Error())
+
+			retryCount++
+
+			return err
+		}
+
+		err = fmt.Errorf("Process is still running in the host")
+		log.WithFields(log.Fields{
+			"host":    host,
+			"process": process,
+			"ps":      output,
+			"state":   desiredState,
+		}).Warn(err.Error())
+
+		retryCount++
+
+		return err
+	}
+
+	err := backoff.Retry(processStatus, exp)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

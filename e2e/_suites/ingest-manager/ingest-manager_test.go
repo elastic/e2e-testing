@@ -129,10 +129,29 @@ type IngestManagerTestSuite struct {
 }
 
 func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
-	log.WithFields(log.Fields{
-		"process": process,
-		"state":   state,
-	}).Debug("Checking process state on the host")
+	// name of the container for the service:
+	// we are using the Docker client instead of docker-compose
+	// because it does not support returning the output of a
+	// command: it simply returns error level
+	serviceName := "ingest-manager_elastic-agent_1"
+	timeout := 3 * time.Minute
 
-	return godog.ErrPending
+	err := e2e.WaitForProcess(serviceName, process, state, timeout)
+	if err != nil {
+		if state == "started" {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"timeout": timeout,
+			}).Error("The process was not found but should be present")
+		} else {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"timeout": timeout,
+			}).Error("The process was found but shouldn't be present")
+		}
+
+		return err
+	}
+
+	return nil
 }
