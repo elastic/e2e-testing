@@ -408,7 +408,7 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 		return err
 	}
 
-	err := e2e.AssertHitsArePresent(result)
+	err = e2e.AssertHitsArePresent(result)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"eventModule":    mts.Query.EventModule,
@@ -417,6 +417,8 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 		}).Error(err.Error())
 		return err
 	}
+
+	return nil
 }
 
 func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
