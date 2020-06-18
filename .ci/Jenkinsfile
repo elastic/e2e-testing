@@ -128,10 +128,10 @@ pipeline {
                     if (suiteParam == "all" || suiteParam == suite) {
                       def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
                       if (isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
-                        log(level: 'INFO', text: "Adding ${suite} test suite to the build execution")
+                        log(level: 'INFO', text: "Adding ${suite}:${feature} test suite to the build execution")
                         parallelTasks["${suite}_${feature}"] = generateFunctionalTestStep(suite: "${suite}", feature: "${feature}")
                       } else {
-                        log(level: 'WARN', text: "The ${suite} test suite won't be executed because there are no modified files")
+                        log(level: 'WARN', text: "The ${suite}:${feature} test suite won't be executed because there are no modified files")
                       }
                     }
                   }
