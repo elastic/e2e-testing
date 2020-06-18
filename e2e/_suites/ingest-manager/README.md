@@ -47,7 +47,13 @@ The first step in determining the exact failure is to try and reproduce the test
 
     >TBD: There is an initiative to automate this process to build the Docker image for a PR (or the local workspace) before running the tests, so the image is ready.
 
-4. Run the tests.
+4. Install dependencies.
+
+   - Install Go with Gimme: `.ci/scripts/install-go.sh 1.13.4`
+   - Configure Go Path: `export GOROOT=${HOME}/.gimme/versions/go1.13.4.darwin.amd64`
+   - Install godog: `make -C e2e install-godog`
+
+5. Run the tests.
 
    ```shell
    OP_LOG_LEVEL=DEBUG godog
