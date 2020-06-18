@@ -38,7 +38,7 @@ The first step in determining the exact failure is to try and reproduce the test
 
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch, kibana, package registry)
-   export OP_STACK_VERSION=7.7.0
+   export OP_STACK_VERSION=8.0.0-SNAPSHOT
    ```
 
 3. Define the proper Docker images to be used in tests.
