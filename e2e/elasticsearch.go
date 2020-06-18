@@ -83,6 +83,8 @@ func getElasticsearchClientFromHostPort(host string, port int) (*es.Client, erro
 
 	cfg := es.Config{
 		Addresses: []string{fmt.Sprintf("http://%s:%d", host, port)},
+		Username:  "elastic",
+		Password:  "changeme",
 	}
 	esClient, err := es.NewClient(cfg)
 	if err != nil {
