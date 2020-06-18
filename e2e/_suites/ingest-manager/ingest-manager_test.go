@@ -15,7 +15,7 @@ import (
 
 // stackVersion is the version of the stack to use
 // It can be overriden by OP_STACK_VERSION env var
-var stackVersion = "7.7.0"
+var stackVersion = "8.0.0-SNAPSHOT"
 
 // profileEnv is the environment to be applied to any execution
 // affecting the runtime dependencies (or profile)
