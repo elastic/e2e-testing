@@ -71,6 +71,12 @@ Check if the scenario has an annotation/tag supporting the test runner to filter
    OP_LOG_LEVEL=DEBUG godog -t '@annotation'
    ```
 
+Example:
+
+   ```shell
+   OP_LOG_LEVEL=DEBUG godog -t '@stand_alone_mode'
+   ```
+
 ### Setup failures
 
 Sometimes the tests coulf fail to configure or start a product such as Metricbeat, Elasticsearch, etc. To determine why 
