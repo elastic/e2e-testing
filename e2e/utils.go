@@ -48,13 +48,13 @@ func GetIntegerFromEnv(envVar string, defaultValue int) int {
 
 // getExponentialBackOff returns a preconfigured exponential backoff instance
 //nolint:unused
-func getExponentialBackOff(elapsedMinutes time.Duration) *backoff.ExponentialBackOff {
+func getExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOff {
 	var (
 		initialInterval     = 500 * time.Millisecond
 		randomizationFactor = 0.5
 		multiplier          = 2.0
 		maxInterval         = 5 * time.Second
-		maxElapsedTime      = elapsedMinutes * time.Minute
+		maxElapsedTime      = elapsedTime
 	)
 
 	exp := backoff.NewExponentialBackOff()
@@ -196,9 +196,11 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 		if err != nil {
 			log.WithFields(log.Fields{
 				"desiredState": desiredState,
+				"elapsedTime":  exp.GetElapsedTime(),
 				"error":        err,
 				"host":         host,
 				"process":      process,
+				"retry":        retryCount,
 			}).Warn("Could not execute process in the host")
 
 			retryCount++
@@ -227,9 +229,11 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 			err = fmt.Errorf("Process is not running in the host yet")
 			log.WithFields(log.Fields{
 				"desiredState": desiredState,
+				"elapsedTime":  exp.GetElapsedTime(),
+				"error":        err,
 				"host":         host,
 				"process":      process,
-				"ps":           output,
+				"retry":        retryCount,
 			}).Warn(err.Error())
 
 			retryCount++
@@ -239,10 +243,12 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 
 		err = fmt.Errorf("Process is still running in the host")
 		log.WithFields(log.Fields{
-			"host":    host,
-			"process": process,
-			"ps":      output,
-			"state":   desiredState,
+			"elapsedTime": exp.GetElapsedTime(),
+			"error":       err,
+			"host":        host,
+			"process":     process,
+			"state":       desiredState,
+			"retry":       retryCount,
 		}).Warn(err.Error())
 
 		retryCount++
