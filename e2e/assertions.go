@@ -7,12 +7,10 @@ import (
 )
 
 // AssertHitsArePresent returns an error if no hits are present
-func AssertHitsArePresent(hits map[string]interface{}, q ElasticsearchQuery) error {
+func AssertHitsArePresent(hits map[string]interface{}) error {
 	hitsCount := len(hits["hits"].(map[string]interface{})["hits"].([]interface{}))
 	if hitsCount == 0 {
-		return fmt.Errorf(
-			"There aren't documents for %s-%s on Metricbeat index %s",
-			q.EventModule, q.ServiceVersion, q.IndexName)
+		return fmt.Errorf("There aren't documents in the index")
 	}
 
 	return nil

@@ -408,7 +408,15 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 		return err
 	}
 
-	return e2e.AssertHitsArePresent(result, mts.Query)
+	err := e2e.AssertHitsArePresent(result)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"eventModule":    mts.Query.EventModule,
+			"index":          mts.Query.IndexName,
+			"serviceVersion": mts.Query.ServiceVersion,
+		}).Error(err.Error())
+		return err
+	}
 }
 
 func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
