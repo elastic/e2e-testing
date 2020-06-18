@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"bytes"
 	"context"
 
 	"github.com/docker/docker/api/types"
@@ -14,24 +15,27 @@ var instance *client.Client
 // OPNetworkName name of the network used by the tool
 const OPNetworkName = "elastic-dev-network"
 
-// ExecCommandIntoContainer executes a command, as a user, into a container, in a detach state
-func ExecCommandIntoContainer(ctx context.Context, containerName string, user string, cmd []string, detach bool) error {
+// ExecCommandIntoContainer executes a command, as a user, into a container
+func ExecCommandIntoContainer(ctx context.Context, containerName string, user string, cmd []string) (string, error) {
 	dockerClient := getDockerClient()
+
+	detach := false
+	tty := false
 
 	log.WithFields(log.Fields{
 		"container": containerName,
 		"command":   cmd,
 		"detach":    detach,
-		"tty":       false,
+		"tty":       tty,
 	}).Debug("Creating command to be executed in container")
 
 	response, err := dockerClient.ContainerExecCreate(
 		ctx, containerName, types.ExecConfig{
 			User:         user,
-			Tty:          false,
+			Tty:          tty,
 			AttachStdin:  false,
-			AttachStderr: false,
-			AttachStdout: false,
+			AttachStderr: true,
+			AttachStdout: true,
 			Detach:       detach,
 			Cmd:          cmd,
 		})
@@ -42,31 +46,57 @@ func ExecCommandIntoContainer(ctx context.Context, containerName string, user st
 			"command":   cmd,
 			"error":     err,
 			"detach":    detach,
-			"tty":       false,
+			"tty":       tty,
 		}).Warn("Could not create command in container")
-		return err
+		return "", err
 	}
 
 	log.WithFields(log.Fields{
 		"container": containerName,
 		"command":   cmd,
 		"detach":    detach,
-		"tty":       false,
+		"tty":       tty,
 	}).Debug("Command to be executed in container created")
 
-	err = dockerClient.ContainerExecStart(ctx, response.ID, types.ExecStartCheck{
+	resp, err := dockerClient.ContainerExecAttach(ctx, response.ID, types.ExecStartCheck{
 		Detach: detach,
-		Tty:    false,
+		Tty:    tty,
 	})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"container": containerName,
+			"command":   cmd,
+			"detach":    detach,
+			"error":     err,
+			"tty":       tty,
+		}).Error("Could not execute command in container")
+		return "", err
+	}
+	defer resp.Close()
+
+	buf := new(bytes.Buffer)
+	_, err = buf.ReadFrom(resp.Reader)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"container": containerName,
+			"command":   cmd,
+			"detach":    detach,
+			"error":     err,
+			"tty":       tty,
+		}).Error("Could not parse command output from container")
+		return "", err
+	}
+	output := buf.String()
 
 	log.WithFields(log.Fields{
 		"container": containerName,
 		"command":   cmd,
 		"detach":    detach,
-		"tty":       false,
+		"output":    output,
+		"tty":       tty,
 	}).Debug("Command sucessfully executed in container")
 
-	return err
+	return output, nil
 }
 
 // InspectContainer returns the JSON representation of the inspection of a
