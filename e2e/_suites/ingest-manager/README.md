@@ -38,7 +38,7 @@ The first step in determining the exact failure is to try and reproduce the test
 
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch, kibana, package registry)
-   export OP_STACK_VERSION=7.7.0
+   export OP_STACK_VERSION=8.0.0-SNAPSHOT
    ```
 
 3. Define the proper Docker images to be used in tests.
@@ -47,7 +47,15 @@ The first step in determining the exact failure is to try and reproduce the test
 
     >TBD: There is an initiative to automate this process to build the Docker image for a PR (or the local workspace) before running the tests, so the image is ready.
 
-4. Run the tests.
+4. Install dependencies.
+
+   - Install Go with Gimme: `.ci/scripts/install-go.sh 1.13.4`
+   - Configure Go Path:
+      - Mac: `export GOROOT=${HOME}/.gimme/versions/go1.13.4.darwin.amd64`
+      - Linux: `export GOROOT=${HOME}/.gimme/versions/go1.13.4.linux.amd64`
+   - Install godog: `make -C e2e install-godog`
+
+5. Run the tests.
 
    ```shell
    OP_LOG_LEVEL=DEBUG godog
@@ -69,6 +77,12 @@ Check if the scenario has an annotation/tag supporting the test runner to filter
 
    ```shell
    OP_LOG_LEVEL=DEBUG godog -t '@annotation'
+   ```
+
+Example:
+
+   ```shell
+   OP_LOG_LEVEL=DEBUG godog -t '@stand_alone_mode'
    ```
 
 ### Setup failures
