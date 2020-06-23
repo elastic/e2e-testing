@@ -20,10 +20,6 @@ import (
 // It can be overriden by OP_METRICBEAT_VERSION env var
 var metricbeatVersion = "7.7.0"
 
-// queryMaxAttempts is the number of attempts to query elasticsearch before aborting
-// It can be overriden by OP_QUERY_MAX_ATTEMPTS env var
-var queryMaxAttempts = 5
-
 // queryRetryTimeout is the number of seconds between elasticsearch retry queries.
 // It can be overriden by OP_RETRY_TIMEOUT env var
 var queryRetryTimeout = 3
@@ -38,7 +34,6 @@ func init() {
 	config.Init()
 
 	metricbeatVersion = e2e.GetEnv("OP_METRICBEAT_VERSION", metricbeatVersion)
-	queryMaxAttempts = e2e.GetIntegerFromEnv("OP_QUERY_MAX_ATTEMPTS", queryMaxAttempts)
 	queryRetryTimeout = e2e.GetIntegerFromEnv("OP_RETRY_TIMEOUT", queryRetryTimeout)
 	stackVersion = e2e.GetEnv("OP_STACK_VERSION", stackVersion)
 
@@ -403,7 +398,10 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 		},
 	}
 
-	result, err := e2e.RetrySearch(mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
+	minimumHitsCount := 5
+	maxTimeout := time.Duration(queryRetryTimeout) * time.Minute
+
+	result, err := e2e.WaitForNumberOfHits(mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
 	}
@@ -436,7 +434,10 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 		},
 	}
 
-	result, err := e2e.RetrySearch(mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
+	minimumHitsCount := 5
+	maxTimeout := time.Duration(queryRetryTimeout) * time.Minute
+
+	result, err := e2e.WaitForNumberOfHits(mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
 	}
