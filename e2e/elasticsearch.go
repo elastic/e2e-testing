@@ -258,3 +258,48 @@ func WaitForElasticsearchFromHostPort(host string, port int, maxTimeoutMinutes t
 
 	return true, nil
 }
+
+// WaitForNumberOfHits waits for an elasticsearch query to return more than a number of hits,
+// returning false if the query does not reach that number in a defined number of time.
+func WaitForNumberOfHits(indexName string, query map[string]interface{}, desiredHits int, maxTimeout time.Duration) (SearchResult, error) {
+	exp := getExponentialBackOff(maxTimeout)
+
+	retryCount := 1
+	result := SearchResult{}
+
+	numberOfHits := func() error {
+		hits, err := search(indexName, query)
+		if err != nil {
+			return err
+		}
+
+		hitsCount := len(hits["hits"].(map[string]interface{})["hits"].([]interface{}))
+		if hitsCount < desiredHits {
+			log.WithFields(log.Fields{
+				"currentHits": hitsCount,
+				"desiredHits": desiredHits,
+				"elapsedTime": exp.GetElapsedTime(),
+				"index":       indexName,
+				"retry":       retryCount,
+			}).Warn("Waiting for more hits in the index")
+
+			retryCount++
+
+			return fmt.Errorf("Not enough hits in the index yet")
+		}
+
+		result = hits
+
+		log.WithFields(log.Fields{
+			"currentHits": hitsCount,
+			"desiredHits": desiredHits,
+			"retries":     retryCount,
+			"elapsedTime": exp.GetElapsedTime(),
+		}).Info("Hits number satisfied")
+
+		return nil
+	}
+
+	err := backoff.Retry(numberOfHits, exp)
+	return result, err
+}

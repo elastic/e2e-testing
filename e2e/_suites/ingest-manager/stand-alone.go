@@ -156,12 +156,11 @@ func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 		},
 	}
 
-	// wait an amount of time for documents
-	e2e.Sleep("5")
-
 	indexName := "logs-agent-default"
+	maxTimeout := time.Duration(queryRetryTimeout) * time.Minute
+	minimumHitsCount := 100
 
-	result, err := e2e.RetrySearch(indexName, esQuery, queryMaxAttempts, queryRetryTimeout)
+	result, err := e2e.WaitForNumberOfHits(indexName, esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
 	}

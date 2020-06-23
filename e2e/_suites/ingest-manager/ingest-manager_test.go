@@ -21,10 +21,6 @@ var stackVersion = "8.0.0-SNAPSHOT"
 // affecting the runtime dependencies (or profile)
 var profileEnv map[string]string
 
-// queryMaxAttempts is the number of attempts to query elasticsearch before aborting
-// It can be overriden by OP_QUERY_MAX_ATTEMPTS env var
-var queryMaxAttempts = 5
-
 // queryRetryTimeout is the number of seconds between elasticsearch retry queries.
 // It can be overriden by OP_RETRY_TIMEOUT env var
 var queryRetryTimeout = 3
@@ -35,7 +31,6 @@ const kibanaBaseURL = "http://localhost:5601"
 func init() {
 	config.Init()
 
-	queryMaxAttempts = e2e.GetIntegerFromEnv("OP_QUERY_MAX_ATTEMPTS", queryMaxAttempts)
 	queryRetryTimeout = e2e.GetIntegerFromEnv("OP_RETRY_TIMEOUT", queryRetryTimeout)
 	stackVersion = e2e.GetEnv("OP_STACK_VERSION", stackVersion)
 }
