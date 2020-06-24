@@ -130,13 +130,11 @@ where:
 There are some environment variables you can use to improve the experience running the tests with `Make`.
 
 - **METRICBEAT_FETCH_TIMEOUT** (default: 20). This is the time in seconds we leave metricbeat grabbing metrics from the monitored integration module.
-- **QUERY_MAX_ATTEMPTS** (default: 5). It's possible that the Elasticsearch is not ready for writes, so we can define a retry strategy to wait for our index to be ready. This variable defines the number of attempts the retry process will happen.
-- **RETRY_TIMEOUT** (default: 3). For same reason as above, this variable defines the delay between attempts, before a successful connection to Elasticsearch is made.
+- **RETRY_TIMEOUT** (default: 3 minutes). It's possible that the Elasticsearch is not ready for writes, so we can define a retry strategy to wait for our index to be ready. This variable defines the number of minutes the retry process will use as max timeout, where the implementation code will try using a backoff strategy until a condition is met.
 
 >Interested in running the tests directly using Godog? Please check out [the Makefile](./Makefile#L19).
 
 ```shell
-export OP_QUERY_MAX_ATTEMPTS=${OP_QUERY_MAX_ATTEMPTS:-5}
 export OP_RETRY_TIMEOUT=${OP_RETRY_TIMEOUT:-3}
 export FORMAT=${FORMAT:-pretty} # valid formats are: pretty, junit
 # If you do not pass a '-t moduleName' argument, then all tests will be run

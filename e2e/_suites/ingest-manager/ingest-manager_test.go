@@ -21,12 +21,17 @@ var stackVersion = "8.0.0-SNAPSHOT"
 // affecting the runtime dependencies (or profile)
 var profileEnv map[string]string
 
+// queryRetryTimeout is the number of seconds between elasticsearch retry queries.
+// It can be overriden by OP_RETRY_TIMEOUT env var
+var queryRetryTimeout = 3
+
 // All URLs running on localhost as Kibana is expected to be exposed there
 const kibanaBaseURL = "http://localhost:5601"
 
 func init() {
 	config.Init()
 
+	queryRetryTimeout = e2e.GetIntegerFromEnv("OP_RETRY_TIMEOUT", queryRetryTimeout)
 	stackVersion = e2e.GetEnv("OP_STACK_VERSION", stackVersion)
 }
 
@@ -75,6 +80,8 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 				"minutes": minutesToBeHealthy,
 			}).Error("The Kibana instance could not get the healthy status")
 		}
+
+		imts.StandAlone.RuntimeDependenciesStartDate = time.Now()
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
 		log.Debug("Before Ingest Manager scenario")

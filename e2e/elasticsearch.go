@@ -83,6 +83,8 @@ func getElasticsearchClientFromHostPort(host string, port int) (*es.Client, erro
 
 	cfg := es.Config{
 		Addresses: []string{fmt.Sprintf("http://%s:%d", host, port)},
+		Username:  "elastic",
+		Password:  "changeme",
 	}
 	esClient, err := es.NewClient(cfg)
 	if err != nil {
@@ -98,7 +100,6 @@ func getElasticsearchClientFromHostPort(host string, port int) (*es.Client, erro
 }
 
 // RetrySearch executes a query over an inddex, with retry options
-// maxAttempts could be redefined in the OP_QUERY_MAX_ATTEMPTS environment variable
 func RetrySearch(indexName string, esQuery map[string]interface{}, maxAttempts int, retryTimeout int) (SearchResult, error) {
 	totalRetryTime := maxAttempts * retryTimeout
 
@@ -255,4 +256,49 @@ func WaitForElasticsearchFromHostPort(host string, port int, maxTimeoutMinutes t
 	}
 
 	return true, nil
+}
+
+// WaitForNumberOfHits waits for an elasticsearch query to return more than a number of hits,
+// returning false if the query does not reach that number in a defined number of time.
+func WaitForNumberOfHits(indexName string, query map[string]interface{}, desiredHits int, maxTimeout time.Duration) (SearchResult, error) {
+	exp := getExponentialBackOff(maxTimeout)
+
+	retryCount := 1
+	result := SearchResult{}
+
+	numberOfHits := func() error {
+		hits, err := search(indexName, query)
+		if err != nil {
+			return err
+		}
+
+		hitsCount := len(hits["hits"].(map[string]interface{})["hits"].([]interface{}))
+		if hitsCount < desiredHits {
+			log.WithFields(log.Fields{
+				"currentHits": hitsCount,
+				"desiredHits": desiredHits,
+				"elapsedTime": exp.GetElapsedTime(),
+				"index":       indexName,
+				"retry":       retryCount,
+			}).Warn("Waiting for more hits in the index")
+
+			retryCount++
+
+			return fmt.Errorf("Not enough hits in the index yet")
+		}
+
+		result = hits
+
+		log.WithFields(log.Fields{
+			"currentHits": hitsCount,
+			"desiredHits": desiredHits,
+			"retries":     retryCount,
+			"elapsedTime": exp.GetElapsedTime(),
+		}).Info("Hits number satisfied")
+
+		return nil
+	}
+
+	err := backoff.Retry(numberOfHits, exp)
+	return result, err
 }
