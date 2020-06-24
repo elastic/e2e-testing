@@ -197,7 +197,96 @@ func (sats *StandAloneTestSuite) theDockerContainerIsStopped(serviceName string)
 }
 
 func (sats *StandAloneTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error {
-	return godog.ErrPending
+	timezone := "America/New_York"
+	now := time.Now()
+	startDate := sats.AgentStoppedDate
+
+	esQuery := map[string]interface{}{
+		"version": true,
+		"size":    500,
+		"docvalue_fields": []map[string]interface{}{
+			{
+				"field":  "@timestamp",
+				"format": "date_time",
+			},
+			{
+				"field":  "system.process.cpu.start_time",
+				"format": "date_time",
+			},
+			{
+				"field":  "system.service.state_since",
+				"format": "date_time",
+			},
+		},
+		"_source": map[string]interface{}{
+			"excludes": []map[string]interface{}{},
+		},
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must": []map[string]interface{}{},
+				"filter": []map[string]interface{}{
+					{
+						"bool": map[string]interface{}{
+							"filter": []map[string]interface{}{
+								{
+									"bool": map[string]interface{}{
+										"should": []map[string]interface{}{
+											{
+												"match_phrase": map[string]interface{}{
+													"host.name": sats.Hostname,
+												},
+											},
+										},
+										"minimum_should_match": 1,
+									},
+								},
+								{
+									"bool": map[string]interface{}{
+										"should": []map[string]interface{}{
+											{
+												"range": map[string]interface{}{
+													"@timestamp": map[string]interface{}{
+														"gte":       now,
+														"time_zone": timezone,
+													},
+												},
+											},
+										},
+										"minimum_should_match": 1,
+									},
+								},
+							},
+						},
+					},
+					{
+						"range": map[string]interface{}{
+							"@timestamp": map[string]interface{}{
+								"gte":    startDate,
+								"format": "strict_date_optional_time",
+							},
+						},
+					},
+				},
+				"should":   []map[string]interface{}{},
+				"must_not": []map[string]interface{}{},
+			},
+		},
+	}
+
+	indexName := "logs-agent-default"
+	maxTimeout := time.Duration(30) * time.Second
+	minimumHitsCount := 1
+
+	result, err := e2e.WaitForNumberOfHits(indexName, esQuery, minimumHitsCount, maxTimeout)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"index": indexName,
+		}).Info("No documents were found for the Agent in the index after it stopped")
+		return nil
+	}
+
+	return e2e.AssertHitsAreNotPresent(result)
 }
 
 // we need the container name because we use the Docker Client instead of Docker Compose
