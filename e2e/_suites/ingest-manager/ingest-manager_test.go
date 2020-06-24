@@ -80,6 +80,8 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 				"minutes": minutesToBeHealthy,
 			}).Error("The Kibana instance could not get the healthy status")
 		}
+
+		imts.StandAlone.RuntimeDependenciesStartDate = time.Now()
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
 		log.Debug("Before Ingest Manager scenario")

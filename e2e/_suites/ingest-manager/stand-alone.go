@@ -16,6 +16,9 @@ type StandAloneTestSuite struct {
 	AgentConfigFilePath string
 	Cleanup             bool
 	Hostname            string
+	// date controls for queries
+	AgentStoppedDate             time.Time
+	RuntimeDependenciesStartDate time.Time
 }
 
 func (sats *StandAloneTestSuite) contributeSteps(s *godog.Suite) {
@@ -80,7 +83,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 	timezone := "America/New_York"
 	now := time.Now()
-	startDate := now.Add(-15 * time.Minute)
+	startDate := sats.RuntimeDependenciesStartDate
 
 	esQuery := map[string]interface{}{
 		"version": true,
@@ -176,8 +179,21 @@ func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 	return nil
 }
 
-func (sats *StandAloneTestSuite) theDockerContainerIsStopped(arg1 string) error {
-	return godog.ErrPending
+func (sats *StandAloneTestSuite) theDockerContainerIsStopped(serviceName string) error {
+	serviceManager := services.NewServiceManager()
+
+	err := serviceManager.RemoveServicesFromCompose("ingest-manager", []string{serviceName}, profileEnv)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"service": serviceName,
+		}).Error("Could not stop the service.")
+
+		return err
+	}
+	sats.AgentStoppedDate = time.Now()
+
+	return nil
 }
 
 func (sats *StandAloneTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error {
