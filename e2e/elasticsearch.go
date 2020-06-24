@@ -100,7 +100,6 @@ func getElasticsearchClientFromHostPort(host string, port int) (*es.Client, erro
 }
 
 // RetrySearch executes a query over an inddex, with retry options
-// maxAttempts could be redefined in the OP_QUERY_MAX_ATTEMPTS environment variable
 func RetrySearch(indexName string, esQuery map[string]interface{}, maxAttempts int, retryTimeout int) (SearchResult, error) {
 	totalRetryTime := maxAttempts * retryTimeout
 
