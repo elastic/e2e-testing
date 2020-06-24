@@ -15,6 +15,7 @@ import (
 type StandAloneTestSuite struct {
 	AgentConfigFilePath string
 	Cleanup             bool
+	Hostname            string
 }
 
 func (sats *StandAloneTestSuite) contributeSteps(s *godog.Suite) {
@@ -48,6 +49,13 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 		return err
 	}
 
+	// get container hostname once
+	hostname, err := getContainerHostname(serviceName)
+	if err != nil {
+		return err
+	}
+
+	sats.Hostname = hostname
 	sats.Cleanup = true
 
 	if log.IsLevelEnabled(log.DebugLevel) {
@@ -73,16 +81,6 @@ func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 	timezone := "America/New_York"
 	now := time.Now()
 	startDate := now.Add(-15 * time.Minute)
-
-	serviceName := "ingest-manager_elastic-agent_1"
-	hostname, err := getContainerName(serviceName)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"service": serviceName,
-		}).Error("Could not retrieve container name from the Docker client")
-		return err
-	}
 
 	esQuery := map[string]interface{}{
 		"version": true,
@@ -116,7 +114,7 @@ func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 										"should": []map[string]interface{}{
 											{
 												"match_phrase": map[string]interface{}{
-													"host.name": hostname,
+													"host.name": sats.Hostname,
 												},
 											},
 										},
@@ -186,20 +184,30 @@ func (sats *StandAloneTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown()
 	return godog.ErrPending
 }
 
-func getContainerName(serviceName string) (string, error) {
+// we need the container name because we use the Docker Client instead of Docker Compose
+func getContainerHostname(serviceName string) (string, error) {
+	containerName := "ingest-manager_" + serviceName + "_1"
+
 	log.WithFields(log.Fields{
-		"service": serviceName,
+		"service":       serviceName,
+		"containerName": containerName,
 	}).Debug("Retrieving container name from the Docker client")
 
-	containerName, err := docker.ExecCommandIntoContainer(context.Background(), serviceName, "root", []string{"hostname"})
+	hostname, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"hostname"})
 	if err != nil {
+		log.WithFields(log.Fields{
+			"containerName": containerName,
+			"error":         err,
+			"service":       serviceName,
+		}).Error("Could not retrieve container name from the Docker client")
 		return "", err
 	}
 
 	log.WithFields(log.Fields{
 		"containerName": containerName,
+		"hostname":      hostname,
 		"service":       serviceName,
-	}).Debug("Container name retrieved from the Docker client")
+	}).Info("Hostname retrieved from the Docker client")
 
-	return containerName, nil
+	return hostname, nil
 }
