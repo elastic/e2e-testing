@@ -18,5 +18,5 @@ Scenario: Deploying a stand-alone agent
 @stop-agent
 Scenario: Stopping the agent container stops data going into ES
   Given a stand-alone agent is deployed
-  When the "agent" docker container is stopped
+  When the "elastic-agent" docker container is stopped
   Then there is no new data in the index after agent shuts down
