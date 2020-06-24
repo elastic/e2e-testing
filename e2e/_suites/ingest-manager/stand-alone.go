@@ -81,102 +81,17 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 }
 
 func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
-	timezone := "America/New_York"
-	now := time.Now()
-	startDate := sats.RuntimeDependenciesStartDate
-
-	esQuery := map[string]interface{}{
-		"version": true,
-		"size":    500,
-		"docvalue_fields": []map[string]interface{}{
-			{
-				"field":  "@timestamp",
-				"format": "date_time",
-			},
-			{
-				"field":  "system.process.cpu.start_time",
-				"format": "date_time",
-			},
-			{
-				"field":  "system.service.state_since",
-				"format": "date_time",
-			},
-		},
-		"_source": map[string]interface{}{
-			"excludes": []map[string]interface{}{},
-		},
-		"query": map[string]interface{}{
-			"bool": map[string]interface{}{
-				"must": []map[string]interface{}{},
-				"filter": []map[string]interface{}{
-					{
-						"bool": map[string]interface{}{
-							"filter": []map[string]interface{}{
-								{
-									"bool": map[string]interface{}{
-										"should": []map[string]interface{}{
-											{
-												"match_phrase": map[string]interface{}{
-													"host.name": sats.Hostname,
-												},
-											},
-										},
-										"minimum_should_match": 1,
-									},
-								},
-								{
-									"bool": map[string]interface{}{
-										"should": []map[string]interface{}{
-											{
-												"range": map[string]interface{}{
-													"@timestamp": map[string]interface{}{
-														"gte":       now,
-														"time_zone": timezone,
-													},
-												},
-											},
-										},
-										"minimum_should_match": 1,
-									},
-								},
-							},
-						},
-					},
-					{
-						"range": map[string]interface{}{
-							"@timestamp": map[string]interface{}{
-								"gte":    startDate,
-								"format": "strict_date_optional_time",
-							},
-						},
-					},
-				},
-				"should":   []map[string]interface{}{},
-				"must_not": []map[string]interface{}{},
-			},
-		},
-	}
-
-	indexName := "logs-agent-default"
 	maxTimeout := time.Duration(queryRetryTimeout) * time.Minute
 	minimumHitsCount := 100
 
-	result, err := e2e.WaitForNumberOfHits(indexName, esQuery, minimumHitsCount, maxTimeout)
+	result, err := searchAgentData(sats.Hostname, sats.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
 	}
 
 	log.Debugf("Search result: %v", result)
 
-	err = e2e.AssertHitsArePresent(result)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"index": indexName,
-		}).Error(err.Error())
-		return err
-	}
-
-	return nil
+	return e2e.AssertHitsArePresent(result)
 }
 
 func (sats *StandAloneTestSuite) theDockerContainerIsStopped(serviceName string) error {
@@ -197,91 +112,13 @@ func (sats *StandAloneTestSuite) theDockerContainerIsStopped(serviceName string)
 }
 
 func (sats *StandAloneTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error {
-	timezone := "America/New_York"
-	now := time.Now()
-	startDate := sats.AgentStoppedDate
-
-	esQuery := map[string]interface{}{
-		"version": true,
-		"size":    500,
-		"docvalue_fields": []map[string]interface{}{
-			{
-				"field":  "@timestamp",
-				"format": "date_time",
-			},
-			{
-				"field":  "system.process.cpu.start_time",
-				"format": "date_time",
-			},
-			{
-				"field":  "system.service.state_since",
-				"format": "date_time",
-			},
-		},
-		"_source": map[string]interface{}{
-			"excludes": []map[string]interface{}{},
-		},
-		"query": map[string]interface{}{
-			"bool": map[string]interface{}{
-				"must": []map[string]interface{}{},
-				"filter": []map[string]interface{}{
-					{
-						"bool": map[string]interface{}{
-							"filter": []map[string]interface{}{
-								{
-									"bool": map[string]interface{}{
-										"should": []map[string]interface{}{
-											{
-												"match_phrase": map[string]interface{}{
-													"host.name": sats.Hostname,
-												},
-											},
-										},
-										"minimum_should_match": 1,
-									},
-								},
-								{
-									"bool": map[string]interface{}{
-										"should": []map[string]interface{}{
-											{
-												"range": map[string]interface{}{
-													"@timestamp": map[string]interface{}{
-														"gte":       now,
-														"time_zone": timezone,
-													},
-												},
-											},
-										},
-										"minimum_should_match": 1,
-									},
-								},
-							},
-						},
-					},
-					{
-						"range": map[string]interface{}{
-							"@timestamp": map[string]interface{}{
-								"gte":    startDate,
-								"format": "strict_date_optional_time",
-							},
-						},
-					},
-				},
-				"should":   []map[string]interface{}{},
-				"must_not": []map[string]interface{}{},
-			},
-		},
-	}
-
-	indexName := "logs-agent-default"
 	maxTimeout := time.Duration(30) * time.Second
 	minimumHitsCount := 1
 
-	result, err := e2e.WaitForNumberOfHits(indexName, esQuery, minimumHitsCount, maxTimeout)
+	result, err := searchAgentData(sats.Hostname, sats.AgentStoppedDate, minimumHitsCount, maxTimeout)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
-			"index": indexName,
 		}).Info("No documents were found for the Agent in the index after it stopped")
 		return nil
 	}
@@ -315,4 +152,85 @@ func getContainerHostname(serviceName string) (string, error) {
 	}).Info("Hostname retrieved from the Docker client")
 
 	return hostname, nil
+}
+
+func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int, maxTimeout time.Duration) (e2e.SearchResult, error) {
+	timezone := "America/New_York"
+	now := time.Now()
+
+	esQuery := map[string]interface{}{
+		"version": true,
+		"size":    500,
+		"docvalue_fields": []map[string]interface{}{
+			{
+				"field":  "@timestamp",
+				"format": "date_time",
+			},
+			{
+				"field":  "system.process.cpu.start_time",
+				"format": "date_time",
+			},
+			{
+				"field":  "system.service.state_since",
+				"format": "date_time",
+			},
+		},
+		"_source": map[string]interface{}{
+			"excludes": []map[string]interface{}{},
+		},
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must": []map[string]interface{}{},
+				"filter": []map[string]interface{}{
+					{
+						"bool": map[string]interface{}{
+							"filter": []map[string]interface{}{
+								{
+									"bool": map[string]interface{}{
+										"should": []map[string]interface{}{
+											{
+												"match_phrase": map[string]interface{}{
+													"host.name": hostname,
+												},
+											},
+										},
+										"minimum_should_match": 1,
+									},
+								},
+								{
+									"bool": map[string]interface{}{
+										"should": []map[string]interface{}{
+											{
+												"range": map[string]interface{}{
+													"@timestamp": map[string]interface{}{
+														"gte":       now,
+														"time_zone": timezone,
+													},
+												},
+											},
+										},
+										"minimum_should_match": 1,
+									},
+								},
+							},
+						},
+					},
+					{
+						"range": map[string]interface{}{
+							"@timestamp": map[string]interface{}{
+								"gte":    startDate,
+								"format": "strict_date_optional_time",
+							},
+						},
+					},
+				},
+				"should":   []map[string]interface{}{},
+				"must_not": []map[string]interface{}{},
+			},
+		},
+	}
+
+	indexName := "logs-agent-default"
+
+	return e2e.WaitForNumberOfHits(indexName, esQuery, minimumHitsCount, maxTimeout)
 }
