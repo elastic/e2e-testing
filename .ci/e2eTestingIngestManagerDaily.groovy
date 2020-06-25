@@ -25,7 +25,6 @@ pipeline {
     GOPATH = "${env.WORKSPACE}"
     HOME = "${env.WORKSPACE}"
     JOB_GCS_BUCKET = credentials('gcs-bucket')
-    JOB_GIT_CREDENTIALS = "f6c7695a-671e-4f4f-a331-acdce44ff9ba"
     NOTIFY_TO = credentials('notify-to')
     PATH = "${env.GOPATH}/bin:${env.PATH}"
     PIPELINE_LOG_LEVEL='INFO'
@@ -52,11 +51,11 @@ pipeline {
   stages {
     stage('Run Tests') {
       steps {
-        build(job: 'stack/e2e-testing-mbp',
+        build(job: 'stack/e2e-testing-mbp/master',
           parameters: [
             string(name: 'runTestsSuite', value: 'ingest-manager'),
             string(name: 'LOG_LEVEL', value: "${params.LOG_LEVEL.trim()}"),
-            string(name: 'RETRY_TIMEOUTRETRY_TIMEOUT', value: "${params.RETRY_TIMEOUT.trim()}"),
+            string(name: 'RETRY_TIMEOUT', value: "${params.RETRY_TIMEOUT.trim()}"),
             string(name: 'STACK_VERSION', value: "${params.STACK_VERSION.trim()}"),
             string(name: 'GO_VERSION', value: "${params.GO_VERSION.trim()}")
           ],
