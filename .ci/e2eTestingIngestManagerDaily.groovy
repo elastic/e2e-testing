@@ -40,7 +40,7 @@ pipeline {
     quietPeriod(10)
   }
   triggers {
-    cron '@daily'
+    cron('H H(4-5) * * 1-5')
   }
   parameters {
     choice(name: 'LOG_LEVEL', choices: ['INFO', 'DEBUG'], description: 'Log level to be used')
