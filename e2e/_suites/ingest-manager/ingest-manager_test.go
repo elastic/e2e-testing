@@ -61,7 +61,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": profile,
-			}).Error("Could not run the runtime dependencies for the profile.")
+			}).Fatal("Could not run the runtime dependencies for the profile.")
 		}
 
 		minutesToBeHealthy := 3 * time.Minute
@@ -70,7 +70,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			log.WithFields(log.Fields{
 				"error":   err,
 				"minutes": minutesToBeHealthy,
-			}).Error("The Elasticsearch cluster could not get the healthy status")
+			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
 
 		healthyKibana, err := e2e.WaitForKibana(minutesToBeHealthy)
@@ -78,7 +78,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			log.WithFields(log.Fields{
 				"error":   err,
 				"minutes": minutesToBeHealthy,
-			}).Error("The Kibana instance could not get the healthy status")
+			}).Fatal("The Kibana instance could not get the healthy status")
 		}
 
 		imts.StandAlone.RuntimeDependenciesStartDate = time.Now()
