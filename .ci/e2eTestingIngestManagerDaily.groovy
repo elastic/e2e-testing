@@ -57,7 +57,7 @@ pipeline {
             string(name: 'runTestsSuite', value: 'ingest-manager'),
             string(name: 'LOG_LEVEL', value: "${params.LOG_LEVEL.trim()}"),
             string(name: 'RETRY_TIMEOUT', value: "${params.RETRY_TIMEOUT.trim()}"),
-            string(name: 'SKIP_GIT_CHECKS', value: "${params.SKIP_GIT_CHECKS}")
+            string(name: 'SKIP_GIT_CHECKS', value: "${params.SKIP_GIT_CHECKS}"),
             string(name: 'STACK_VERSION', value: "${params.STACK_VERSION.trim()}"),
             string(name: 'GO_VERSION', value: "${params.GO_VERSION.trim()}")
           ],
