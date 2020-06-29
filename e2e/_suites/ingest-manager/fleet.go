@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/cli/services"
 	curl "github.com/elastic/e2e-testing/cli/shell"
+	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,7 +21,8 @@ const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/ingest_manager/data_st
 
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
-	CleanupAgent    bool
+	BoxType         string // we currently support Linux
+	Cleanup         bool
 	EnrollmentToken string
 }
 
@@ -68,43 +71,98 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	serviceManager := services.NewServiceManager()
 
 	profile := "ingest-manager"
-	serviceName := "elastic-agent"
+	fts.BoxType = "centos"
+	serviceTag := "7"
 
-	err := serviceManager.AddServicesToCompose(profile, []string{serviceName}, profileEnv)
+	// let's start with Centos 7
+	profileEnv[fts.BoxType+"Tag"] = serviceTag
+	// we are setting the container name because Centos service could be reused by any other test suite
+	profileEnv[fts.BoxType+"ContainerName"] = "ingest-manager_elastic-agent_1"
+
+	err := serviceManager.AddServicesToCompose(profile, []string{fts.BoxType}, profileEnv)
 	if err != nil {
-		log.Error("Could not deploy the elastic-agent")
+		log.WithFields(log.Fields{
+			"service": fts.BoxType,
+			"tag":     serviceTag,
+		}).Error("Could not run the target box")
 		return err
 	}
 
-	fts.CleanupAgent = true
+	fts.Cleanup = true
 
-	// enroll an agent
-	composes := []string{
-		profile,     // profile name
-		serviceName, // agent service
-	}
-	composeArgs := []string{"exec", "-d", "-T", serviceName}
-	cmd := []string{"elastic-agent", "enroll", "http://localhost:5601", fts.EnrollmentToken, "-f"}
-	composeArgs = append(composeArgs, cmd...)
-
-	err = serviceManager.RunCommand(profile, composes, composeArgs, profileEnv)
+	// install the agent in the box
+	cmd := []string{"curl", "-L", "-O", "https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-7.8.0-linux-x86_64.tar.gz"}
+	err = waitForExecCommandInService(profile, fts.BoxType, cmd, true)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"command":     cmd,
-			"error":       err,
-			"serviceName": serviceName,
-		}).Error("Could not execute command in agent")
+			"command": cmd,
+			"error":   err,
+			"service": fts.BoxType,
+		}).Error("Could not download agent in box")
+
+		return err
+	}
+
+	cmd = []string{"tar", "xzvf", "elastic-agent-7.8.0-linux-x86_64.tar.gz"}
+	err = waitForExecCommandInService(profile, fts.BoxType, cmd, true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmd,
+			"error":   err,
+			"service": fts.BoxType,
+		}).Error("Could not extract the agent in the box")
+
+		return err
+	}
+
+	// enable elastic-agent in PATH, because we know the location of the binary
+	cmd = []string{"ln", "-s", "/elastic-agent-7.8.0-linux-x86_64/elastic-agent", "/usr/local/bin/elastic-agent"}
+	err = execCommandInService(profile, fts.BoxType, cmd)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmd,
+			"error":   err,
+			"service": fts.BoxType,
+		}).Error("Could not extract the agent in the box")
+
+		return err
+	}
+
+	// enroll the agent
+	cmd = []string{"elastic-agent", "enroll", "http://localhost:5601", fts.EnrollmentToken, "-f"}
+	err = waitForExecCommandInService(profile, fts.BoxType, cmd, true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmd,
+			"error":   err,
+			"service": fts.BoxType,
+			"tag":     serviceTag,
+		}).Error("Could not enroll the agent")
+
+		return err
+	}
+
+	// run the agent
+	err = execCommandInService(profile, fts.BoxType, []string{"elastic-agent", "run"})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmd,
+			"error":   err,
+			"service": fts.BoxType,
+			"tag":     serviceTag,
+		}).Error("Could not run the agent")
 
 		return err
 	}
 
 	if log.IsLevelEnabled(log.DebugLevel) {
-		err = serviceManager.RunCommand(profile, composes, []string{"logs", serviceName}, profileEnv)
+		err = execCommandInService(profile, fts.BoxType, []string{"logs"})
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":   err,
-				"service": serviceName,
-			}).Error("Could not retrieve Elastic Agent logs")
+				"service": fts.BoxType,
+				"tag":     serviceTag,
+			}).Error("Could not retrieve box logs")
 
 			return err
 		}
@@ -307,6 +365,51 @@ func createDefaultHTTPRequest(url string) curl.HTTPRequest {
 		},
 		URL: url,
 	}
+}
+
+func execCommandInService(profile string, serviceName string, cmds []string) error {
+	return waitForExecCommandInService(profile, serviceName, cmds, false)
+}
+
+func waitForExecCommandInService(profile string, serviceName string, cmds []string, waitFor bool) error {
+	serviceManager := services.NewServiceManager()
+
+	composes := []string{
+		profile,     // profile name
+		serviceName, // service
+	}
+	composeArgs := []string{"exec", "-d", "-T", serviceName}
+	composeArgs = append(composeArgs, cmds...)
+
+	err := serviceManager.RunCommand(profile, composes, composeArgs, profileEnv)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmds,
+			"error":   err,
+			"service": serviceName,
+		}).Error("Could not execute command in container")
+
+		return err
+	}
+
+	if waitFor {
+		serviceName := "ingest-manager_elastic-agent_1"
+		maxTimeout := 3 * time.Minute
+
+		err = e2e.WaitForProcess(serviceName, cmds[0], "absent", maxTimeout)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"command":    cmds[0],
+				"error":      err,
+				"maxTimeout": maxTimeout,
+				"service":    serviceName,
+			}).Error("The command did not finish")
+
+			return err
+		}
+	}
+
+	return nil
 }
 
 // getDataStreams sends a GET request to Fleet for the existing data-streams

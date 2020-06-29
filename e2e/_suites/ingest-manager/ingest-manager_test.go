@@ -126,6 +126,23 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 				}).Debug("Elastic Agent configuration file removed.")
 			}
 		}
+
+		if imts.Fleet.Cleanup {
+			serviceName := imts.Fleet.BoxType
+
+			services := []string{serviceName}
+
+			err := serviceManager.RemoveServicesFromCompose("ingest-manager", services, profileEnv)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"service": serviceName,
+				}).Error("Could not stop the service.")
+			}
+
+			log.WithFields(log.Fields{
+				"service": serviceName,
+			}).Debug("Service removed from compose.")
+		}
 	})
 }
 
