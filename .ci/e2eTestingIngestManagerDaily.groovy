@@ -59,7 +59,7 @@ pipeline {
             string(name: 'STACK_VERSION', value: "${params.STACK_VERSION.trim()}"),
             string(name: 'GO_VERSION', value: "${params.GO_VERSION.trim()}")
           ],
-          propagate: true,
+          propagate: false,
           wait: false
         )
       }
