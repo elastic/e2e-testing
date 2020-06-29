@@ -49,7 +49,7 @@ pipeline {
         GOPROXY = 'https://proxy.golang.org'
         METRICBEAT_VERSION = "${params.METRICBEAT_VERSION.trim()}"
         STACK_VERSION = "${params.STACK_VERSION.trim()}"
-        SKIP_GIT_CHECKS = "${params.SKIP_GIT_CHECKS.trim()}"
+        SKIP_GIT_CHECKS = "${params.SKIP_GIT_CHECKS}"
         HELM_CHART_VERSION = "${params.HELM_CHART_VERSION.trim()}"
         HELM_VERSION = "${params.HELM_VERSION.trim()}"
         KIND_VERSION = "${params.KIND_VERSION.trim()}"

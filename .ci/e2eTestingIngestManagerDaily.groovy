@@ -45,7 +45,7 @@ pipeline {
   parameters {
     choice(name: 'LOG_LEVEL', choices: ['INFO', 'DEBUG'], description: 'Log level to be used')
     choice(name: 'RETRY_TIMEOUT', choices: ['3', '5', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
-    booleanParam(name: "SKIP_GIT_CHECKS", defaultValue: "true", description: "If it's needed to check for Git changes to filter by modified sources")
+    booleanParam(name: "SKIP_GIT_CHECKS", defaultValue: true, description: "If it's needed to check for Git changes to filter by modified sources")
     string(name: 'STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used.')
     string(name: 'GO_VERSION', defaultValue: '1.13.4', description: "Go version to use.")
   }
@@ -57,7 +57,7 @@ pipeline {
             string(name: 'runTestsSuite', value: 'ingest-manager'),
             string(name: 'LOG_LEVEL', value: "${params.LOG_LEVEL.trim()}"),
             string(name: 'RETRY_TIMEOUT', value: "${params.RETRY_TIMEOUT.trim()}"),
-            string(name: 'SKIP_GIT_CHECKS', value: "${params.SKIP_GIT_CHECKS.trim()}")
+            string(name: 'SKIP_GIT_CHECKS', value: "${params.SKIP_GIT_CHECKS}")
             string(name: 'STACK_VERSION', value: "${params.STACK_VERSION.trim()}"),
             string(name: 'GO_VERSION', value: "${params.GO_VERSION.trim()}")
           ],
