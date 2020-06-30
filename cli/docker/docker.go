@@ -92,7 +92,6 @@ func ExecCommandIntoContainer(ctx context.Context, containerName string, user st
 		"container": containerName,
 		"command":   cmd,
 		"detach":    detach,
-		"output":    output,
 		"tty":       tty,
 	}).Debug("Command sucessfully executed in container")
 

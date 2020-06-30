@@ -219,7 +219,6 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 				"host":          host,
 				"mustBePresent": outputContainsProcess,
 				"process":       process,
-				"ps":            output,
 			}).Infof("Process desired state checked")
 
 			return nil
