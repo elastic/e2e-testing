@@ -70,14 +70,16 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 
 	serviceManager := services.NewServiceManager()
 
-	profile := "ingest-manager"
-	fts.BoxType = "centos"
-	serviceTag := "7"
+	profile := "ingest-manager"                         // name of the runtime dependencies compose file
+	fts.BoxType = "centos"                              // name of the service type
+	serviceName := "elastic-agent"                      // name of the service
+	containerName := profile + "_" + serviceName + "_1" // name of the container
+	serviceTag := "7"                                   // docker tag of the service
 
 	// let's start with Centos 7
 	profileEnv[fts.BoxType+"Tag"] = serviceTag
 	// we are setting the container name because Centos service could be reused by any other test suite
-	profileEnv[fts.BoxType+"ContainerName"] = "ingest-manager_elastic-agent_1"
+	profileEnv[fts.BoxType+"ContainerName"] = containerName
 
 	err := serviceManager.AddServicesToCompose(profile, []string{fts.BoxType}, profileEnv)
 	if err != nil {
@@ -143,7 +145,8 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	}
 
 	// run the agent
-	err = execCommandInService(profile, fts.BoxType, []string{"elastic-agent", "run"})
+	cmd = []string{"elastic-agent", "run"}
+	err = execCommandInService(profile, fts.BoxType, cmd)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd,
@@ -393,16 +396,16 @@ func waitForExecCommandInService(profile string, serviceName string, cmds []stri
 	}
 
 	if waitFor {
-		serviceName := "ingest-manager_elastic-agent_1"
+		containerName := profile + "_elastic-agent_1"
 		maxTimeout := 3 * time.Minute
 
-		err = e2e.WaitForProcess(serviceName, cmds[0], "absent", maxTimeout)
+		err = e2e.WaitForProcess(containerName, cmds[0], "absent", maxTimeout)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"command":    cmds[0],
-				"error":      err,
-				"maxTimeout": maxTimeout,
-				"service":    serviceName,
+				"command":       cmds[0],
+				"error":         err,
+				"maxTimeout":    maxTimeout,
+				"containerName": containerName,
 			}).Error("The command did not finish")
 
 			return err
