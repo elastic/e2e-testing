@@ -159,7 +159,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	}
 
 	if log.IsLevelEnabled(log.DebugLevel) {
-		err = execCommandInService(profile, fts.BoxType, []string{"logs"})
+		err = execCommandInService(profile, fts.BoxType, []string{"logs"}, false)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":   err,
