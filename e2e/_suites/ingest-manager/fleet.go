@@ -229,12 +229,55 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	log.Debug("Checking system Package dashboards in Fleet")
 
-	dataStreams, err := getDataStreams()
+	dataStreamsCount := 0
+	maxTimeout := 1 * time.Minute
+	retryCount := 1
+
+	exp := e2e.GetExponentialBackOff(maxTimeout)
+
+	countDataStreamsFn := func() error {
+		dataStreams, err := getDataStreams()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"retry":       retryCount,
+				"elapsedTime": exp.GetElapsedTime(),
+			}).Warn(err.Error())
+
+			retryCount++
+
+			return err
+		}
+
+		count := len(dataStreams.Children())
+		if count == 0 {
+			err = fmt.Errorf("There are no datastreams yet")
+
+			log.WithFields(log.Fields{
+				"retry":       retryCount,
+				"dataStreams": count,
+				"elapsedTime": exp.GetElapsedTime(),
+			}).Warn(err.Error())
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"elapsedTime": exp.GetElapsedTime(),
+			"datastreams": count,
+			"retries":     retryCount,
+		}).Info("Datastreams are present")
+		dataStreamsCount = count
+		return nil
+	}
+
+	err := backoff.Retry(countDataStreamsFn, exp)
 	if err != nil {
 		return err
 	}
 
-	if len(dataStreams.Children()) == 0 {
+	if dataStreamsCount == 0 {
 		err = fmt.Errorf("There are no datastreams. We expected to have more than one")
 		log.Error(err.Error())
 		return err
