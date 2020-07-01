@@ -18,13 +18,14 @@ import (
 const fleetAgentsURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents?page=1&showInactive=%t"
 const fleetEnrollmentTokenURL = kibanaBaseURL + "/api/ingest_manager/fleet/enrollment-api-keys"
 const fleetSetupURL = kibanaBaseURL + "/api/ingest_manager/fleet/setup"
+const ingestManagerAgentConfigsURL = kibanaBaseURL + "/api/ingest_manager/agent_configs"
 const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/ingest_manager/data_streams"
 
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
-	BoxType         string // we currently support Linux
-	Cleanup         bool
-	EnrollmentToken string
+	BoxType  string // we currently support Linux
+	Cleanup  bool
+	ConfigID string // will be used to manage tokens
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
@@ -56,12 +57,10 @@ func (fts *FleetTestSuite) kibanaSetupHasBeenExecuted(setup string) error {
 		return err
 	}
 
-	token, err := getDefaultFleetEnrollmentToken()
+	fts.ConfigID, err = getAgentDefaultConfig()
 	if err != nil {
 		return err
 	}
-
-	fts.EnrollmentToken = token
 
 	return nil
 }
@@ -145,8 +144,10 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 		return err
 	}
 
-	// enroll the agent
-	cmd = []string{"elastic-agent", "enroll", "http://kibana:5601", fts.EnrollmentToken, "-f"}
+	// enroll the agent with a new token
+	token, err := createFleetToken("name", fts.ConfigID)
+
+	cmd = []string{"elastic-agent", "enroll", "http://kibana:5601", token, "-f"}
 	err = execCommandInService(profile, fts.BoxType, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -154,7 +155,8 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 			"error":   err,
 			"service": fts.BoxType,
 			"tag":     serviceTag,
-		}).Error("Could not enroll the agent")
+			"token":   token,
+		}).Error("Could not enroll the agent with the new token")
 
 		return err
 	}
@@ -448,6 +450,58 @@ func createDefaultHTTPRequest(url string) curl.HTTPRequest {
 	}
 }
 
+// createFleetToken sends a POST request to Fleet creating a new token with a name
+func createFleetToken(name string, configID string) (string, error) {
+	type payload struct {
+		ConfigID string `json:"config_id"`
+		Name     string `json:"name"`
+	}
+
+	data := payload{
+		ConfigID: configID,
+		Name:     name,
+	}
+	payloadBytes, err := json.Marshal(data)
+	if err != nil {
+		log.Error("Could not serialise payload")
+		return "", err
+	}
+
+	postReq := createDefaultHTTPRequest(fleetEnrollmentTokenURL)
+
+	postReq.Payload = payloadBytes
+
+	body, err := curl.Post(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   fleetSetupURL,
+		}).Error("Could not create Fleet token")
+		return "", err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return "", err
+	}
+
+	// data streams should contain array of elements
+	tokenItem := jsonParsed.Path("item")
+
+	log.WithFields(log.Fields{
+		"apiKeyId": tokenItem.Path("id").Data().(string),
+		"tokenId":  tokenItem.Path("api_key_id").Data().(string),
+	}).Debug("Fleet token created")
+
+	token := tokenItem.Path("api_key").Data().(string)
+	return token, nil
+}
+
 func execCommandInService(profile string, serviceName string, cmds []string, detach bool) error {
 	serviceManager := services.NewServiceManager()
 
@@ -474,6 +528,39 @@ func execCommandInService(profile string, serviceName string, cmds []string, det
 	}
 
 	return nil
+}
+
+// getAgentDefaultConfig sends a GET request to Fleet for the existing default configuration
+func getAgentDefaultConfig() (string, error) {
+	r := createDefaultHTTPRequest(ingestManagerAgentConfigsURL)
+	body, err := curl.Get(r)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   ingestManagerAgentConfigsURL,
+		}).Error("Could not get Fleet's configs")
+		return "", err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return "", err
+	}
+
+	// data streams should contain array of elements
+	configs := jsonParsed.Path("items")
+
+	log.WithFields(log.Fields{
+		"count": len(configs.Children()),
+	}).Debug("Fleet configs retrieved")
+
+	configID := configs.Index(0).Path("id").Data().(string)
+	return configID, nil
 }
 
 // getDataStreams sends a GET request to Fleet for the existing data-streams
@@ -509,57 +596,4 @@ func getDataStreams() (*gabs.Container, error) {
 	}).Debug("Data Streams retrieved")
 
 	return dataStreams, nil
-}
-
-// getDefaultFleetEnrollmentToken sends a POST request to Fleet creating a new token
-func getDefaultFleetEnrollmentToken() (string, error) {
-	r := createDefaultHTTPRequest(fleetEnrollmentTokenURL)
-	body, err := curl.Get(r)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"body":  body,
-			"error": err,
-			"url":   fleetEnrollmentTokenURL,
-		}).Error("Could not get Fleet's default enrollment token")
-		return "", err
-	}
-
-	jsonParsed, err := gabs.ParseJSON([]byte(body))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":        err,
-			"responseBody": body,
-		}).Error("Could not parse response into JSON")
-		return body, err
-	}
-
-	defaultTokenID := jsonParsed.Path("list").Index(0).Path("id").Data().(string)
-
-	r = createDefaultHTTPRequest(fleetEnrollmentTokenURL + "/" + defaultTokenID)
-	body, err = curl.Get(r)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"body":  body,
-			"error": err,
-			"url":   fleetEnrollmentTokenURL,
-		}).Error("Could not get Fleet's default enrollment token")
-		return "", err
-	}
-
-	jsonParsed, err = gabs.ParseJSON([]byte(body))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":        err,
-			"responseBody": body,
-		}).Error("Could not parse response into JSON")
-		return body, err
-	}
-
-	defaultToken := jsonParsed.Path("item.api_key").Data().(string)
-
-	log.WithFields(log.Fields{
-		"token": defaultToken,
-	}).Debug("Fleet default enrollment token listed")
-
-	return defaultToken, nil
 }
