@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
+	"github.com/cenkalti/backoff"
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/cli/services"
 	curl "github.com/elastic/e2e-testing/cli/shell"
@@ -177,7 +178,40 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 	log.Debug("Checking agent is listed in Fleet as online")
 
-	agentsCount, err := countAgentsByStatus(true)
+	agentsCount := 0.0
+	maxTimeout := 10 * time.Second
+	retryCount := 1
+
+	exp := e2e.GetExponentialBackOff(maxTimeout)
+
+	countAgentsFn := func() error {
+		count, err := countAgentsByStatus(true)
+		if err != nil || count == 0 {
+			if err == nil {
+				err = fmt.Errorf("The Agent is not online yet")
+			}
+
+			log.WithFields(log.Fields{
+				"retry":        retryCount,
+				"onlineAgents": count,
+				"elapsedTime":  exp.GetElapsedTime(),
+			}).Warn(err.Error())
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"elapsedTime":  exp.GetElapsedTime(),
+			"onlineAgents": count,
+			"retries":      retryCount,
+		}).Info("The Agent is online")
+		agentsCount = count
+		return nil
+	}
+
+	err := backoff.Retry(countAgentsFn, exp)
 	if err != nil {
 		return err
 	}
