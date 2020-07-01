@@ -13,8 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Jeffail/gabs/v2"
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/docker"
+	curl "github.com/elastic/e2e-testing/cli/shell"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -64,6 +66,77 @@ func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOf
 	exp.MaxElapsedTime = maxElapsedTime
 
 	return exp
+}
+
+// GetElasticArtifactURL returns the URL of a released artifact from
+// Elastic's artifact repository, bbuilding the JSON path query based
+// on the desired OS, architecture and file extension
+// i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "linux", "x86_64", "tar.gz")
+func GetElasticArtifactURL(artifact string, version string, os string, arch string, extension string) (string, error) {
+	exp := GetExponentialBackOff(1 * time.Minute)
+
+	retryCount := 1
+
+	body := ""
+
+	apiStatus := func() error {
+		r := curl.HTTPRequest{
+			URL: fmt.Sprintf("https://artifacts-api.elastic.co/v1/search/%s/%s", version, artifact),
+		}
+
+		response, err := curl.Get(r)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"artifact":       artifact,
+				"version":        version,
+				"os":             os,
+				"arch":           arch,
+				"extension":      extension,
+				"error":          err,
+				"retry":          retryCount,
+				"statusEndpoint": r.URL,
+				"elapsedTime":    exp.GetElapsedTime(),
+			}).Warn("The Elastic artifacts API is not available yet")
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"retries":        retryCount,
+			"statusEndpoint": r.URL,
+			"elapsedTime":    exp.GetElapsedTime(),
+		}).Debug("The Elastic artifacts API is available")
+
+		body = response
+		return nil
+	}
+
+	err := backoff.Retry(apiStatus, exp)
+	if err != nil {
+		return "", err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"artifact":  artifact,
+			"version":   version,
+			"os":        os,
+			"arch":      arch,
+			"extension": extension,
+		}).Error("Could not parse the response body for the artifact")
+		return "", err
+	}
+
+	artifactPath := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, os, arch, extension)
+	packagesObject := jsonParsed.Path("packages")
+	// we need to get keys with dots using Search instead of Path
+	downloadObject := packagesObject.Search(artifactPath)
+	downloadURL := downloadObject.Path("url").Data().(string)
+
+	return downloadURL, nil
 }
 
 // DownloadFile will download a url and store it in a temporary path.

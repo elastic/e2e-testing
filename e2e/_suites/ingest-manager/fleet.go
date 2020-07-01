@@ -94,7 +94,18 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	fts.Cleanup = true
 
 	// install the agent in the box
-	cmd := []string{"curl", "-L", "-O", "https://snapshots.elastic.co/8.0.0-4c9cb790/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"}
+	artifact := "elastic-agent"
+	version := "8.0.0-SNAPSHOT"
+	os := "linux"
+	arch := "x86_64"
+	extension := "tar.gz"
+
+	downloadURL, err := e2e.GetElasticArtifactURL(artifact, version, os, arch, extension)
+	if err != nil {
+		return err
+	}
+
+	cmd := []string{"curl", "-L", "-O", downloadURL}
 	err = execCommandInService(profile, fts.BoxType, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -106,7 +117,10 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 		return err
 	}
 
-	cmd = []string{"tar", "xzvf", "elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"}
+	extractedDir := fmt.Sprintf("%s-%s-%s-%s", artifact, version, os, arch)
+	tarFile := fmt.Sprintf("%s.%s", extractedDir, extension)
+
+	cmd = []string{"tar", "xzvf", tarFile}
 	err = execCommandInService(profile, fts.BoxType, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -119,7 +133,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	}
 
 	// enable elastic-agent in PATH, because we know the location of the binary
-	cmd = []string{"ln", "-s", "/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64/elastic-agent", "/usr/local/bin/elastic-agent"}
+	cmd = []string{"ln", "-s", "/" + extractedDir + "/elastic-agent", "/usr/local/bin/elastic-agent"}
 	err = execCommandInService(profile, fts.BoxType, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
