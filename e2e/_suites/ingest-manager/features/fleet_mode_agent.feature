@@ -4,7 +4,6 @@ Feature: Fleet Mode Agent
 
 @enroll
 Scenario: Deploying an agent
-  Given the "Fleet" Kibana setup has been executed
   When an agent is deployed to Fleet
   Then the agent is listed in Fleet as online
     And system package dashboards are listed in Fleet

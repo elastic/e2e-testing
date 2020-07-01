@@ -29,7 +29,6 @@ type FleetTestSuite struct {
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
-	s.Step(`^the "([^"]*)" Kibana setup has been executed$`, fts.kibanaSetupHasBeenExecuted)
 	s.Step(`^an agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	s.Step(`^the agent is listed in Fleet as online$`, fts.theAgentIsListedInFleetAsOnline)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
@@ -39,29 +38,6 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the agent is re-enrolled on the host$`, fts.theAgentIsReenrolledOnTheHost)
 	s.Step(`^the enrollment token is revoked$`, fts.theEnrollmentTokenIsRevoked)
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
-}
-
-func (fts *FleetTestSuite) kibanaSetupHasBeenExecuted(setup string) error {
-	log.WithFields(log.Fields{
-		"setup": setup,
-	}).Debug("Creating Kibana setup")
-
-	err := createFleetConfiguration()
-	if err != nil {
-		return err
-	}
-
-	err = checkFleetConfiguration()
-	if err != nil {
-		return err
-	}
-
-	fts.ConfigID, err = getAgentDefaultConfig()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
@@ -171,6 +147,27 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 			"tag":     serviceTag,
 		}).Error("Could not run the agent")
 
+		return err
+	}
+
+	return nil
+}
+
+func (fts *FleetTestSuite) setup() error {
+	log.Debug("Creating Fleet setup")
+
+	err := createFleetConfiguration()
+	if err != nil {
+		return err
+	}
+
+	err = checkFleetConfiguration()
+	if err != nil {
+		return err
+	}
+
+	fts.ConfigID, err = getAgentDefaultConfig()
+	if err != nil {
 		return err
 	}
 
