@@ -7,6 +7,8 @@ elasticsearch.username: elastic
 elasticsearch.password: changeme
 xpack.monitoring.ui.container.elasticsearch.enabled: true
 
+xpack.encryptedSavedObjects.encryptionKey: "12345678901234567890123456789012"
+
 xpack.ingestManager.enabled: true
 xpack.ingestManager.epm.enabled: true
 xpack.ingestManager.epm.registryUrl: http://package-registry:8080
