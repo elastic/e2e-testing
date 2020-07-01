@@ -8,7 +8,6 @@ Scenario: Deploying an agent
   When an agent is deployed to Fleet
   Then the agent is listed in Fleet as online
     And system package dashboards are listed in Fleet
-    And there is data in the index
 
 @start-agent
 Scenario: Starting the agent starts backend processes
@@ -38,7 +37,6 @@ Scenario: Re-enrolling an agent
   When the agent is re-enrolled on the host
     And the "agent" process is "started" on the host
   Then the agent is listed in Fleet as online
-    And there is data in the index
 
 @revoke-token
 Scenario: Revoking the enrollment token for an agent
