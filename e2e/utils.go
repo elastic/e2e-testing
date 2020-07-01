@@ -46,9 +46,8 @@ func GetIntegerFromEnv(envVar string, defaultValue int) int {
 	return defaultValue
 }
 
-// getExponentialBackOff returns a preconfigured exponential backoff instance
-//nolint:unused
-func getExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOff {
+// GetExponentialBackOff returns a preconfigured exponential backoff instance
+func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOff {
 	var (
 		initialInterval     = 500 * time.Millisecond
 		randomizationFactor = 0.5
@@ -83,7 +82,7 @@ func DownloadFile(url string) (string, error) {
 
 	filepath := tempFile.Name()
 
-	exp := getExponentialBackOff(3)
+	exp := GetExponentialBackOff(3)
 
 	retryCount := 1
 	var fileReader io.ReadCloser
@@ -178,7 +177,7 @@ func Sleep(seconds string) error {
 // WaitForProcess polls a container executing "ps" command until the process is in the desired state (present or not),
 // or a timeout happens
 func WaitForProcess(host string, process string, desiredState string, maxTimeout time.Duration) error {
-	exp := getExponentialBackOff(maxTimeout)
+	exp := GetExponentialBackOff(maxTimeout)
 
 	mustBePresent := false
 	if desiredState == "started" {
