@@ -20,13 +20,8 @@
 pipeline {
   agent none
   environment {
-    REPO = 'e2e-testing'
-    BASE_DIR = "src/github.com/elastic/${env.REPO}"
-    GOPATH = "${env.WORKSPACE}"
-    HOME = "${env.WORKSPACE}"
     JOB_GCS_BUCKET = credentials('gcs-bucket')
     NOTIFY_TO = credentials('notify-to')
-    PATH = "${env.GOPATH}/bin:${env.PATH}"
     PIPELINE_LOG_LEVEL='INFO'
   }
   options {
