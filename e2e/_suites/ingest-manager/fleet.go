@@ -93,8 +93,8 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	fts.Cleanup = true
 
 	// install the agent in the box
-	cmd := []string{"curl", "-L", "-O", "https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-7.8.0-linux-x86_64.tar.gz"}
-	err = waitForExecCommandInService(profile, fts.BoxType, cmd, true)
+	cmd := []string{"curl", "-L", "-O", "https://snapshots.elastic.co/8.0.0-4c9cb790/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"}
+	err = execCommandInService(profile, fts.BoxType, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd,
@@ -105,8 +105,8 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 		return err
 	}
 
-	cmd = []string{"tar", "xzvf", "elastic-agent-7.8.0-linux-x86_64.tar.gz"}
-	err = waitForExecCommandInService(profile, fts.BoxType, cmd, true)
+	cmd = []string{"tar", "xzvf", "elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"}
+	err = execCommandInService(profile, fts.BoxType, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd,
@@ -118,8 +118,8 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	}
 
 	// enable elastic-agent in PATH, because we know the location of the binary
-	cmd = []string{"ln", "-s", "/elastic-agent-7.8.0-linux-x86_64/elastic-agent", "/usr/local/bin/elastic-agent"}
-	err = execCommandInService(profile, fts.BoxType, cmd)
+	cmd = []string{"ln", "-s", "/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64/elastic-agent", "/usr/local/bin/elastic-agent"}
+	err = execCommandInService(profile, fts.BoxType, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd,
@@ -131,8 +131,8 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	}
 
 	// enroll the agent
-	cmd = []string{"elastic-agent", "enroll", "http://localhost:5601", fts.EnrollmentToken, "-f"}
-	err = waitForExecCommandInService(profile, fts.BoxType, cmd, true)
+	cmd = []string{"elastic-agent", "enroll", "http://kibana:5601", fts.EnrollmentToken, "-f"}
+	err = execCommandInService(profile, fts.BoxType, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd,
@@ -146,7 +146,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 
 	// run the agent
 	cmd = []string{"elastic-agent", "run"}
-	err = execCommandInService(profile, fts.BoxType, cmd)
+	err = execCommandInService(profile, fts.BoxType, cmd, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd,
@@ -370,18 +370,18 @@ func createDefaultHTTPRequest(url string) curl.HTTPRequest {
 	}
 }
 
-func execCommandInService(profile string, serviceName string, cmds []string) error {
-	return waitForExecCommandInService(profile, serviceName, cmds, false)
-}
-
-func waitForExecCommandInService(profile string, serviceName string, cmds []string, waitFor bool) error {
+func execCommandInService(profile string, serviceName string, cmds []string, detach bool) error {
 	serviceManager := services.NewServiceManager()
 
 	composes := []string{
 		profile,     // profile name
 		serviceName, // service
 	}
-	composeArgs := []string{"exec", "-d", "-T", serviceName}
+	composeArgs := []string{"exec", "-T"}
+	if detach {
+		composeArgs = append(composeArgs, "-d")
+	}
+	composeArgs = append(composeArgs, serviceName)
 	composeArgs = append(composeArgs, cmds...)
 
 	err := serviceManager.RunCommand(profile, composes, composeArgs, profileEnv)
@@ -393,23 +393,6 @@ func waitForExecCommandInService(profile string, serviceName string, cmds []stri
 		}).Error("Could not execute command in container")
 
 		return err
-	}
-
-	if waitFor {
-		containerName := profile + "_elastic-agent_1"
-		maxTimeout := 3 * time.Minute
-
-		err = e2e.WaitForProcess(containerName, cmds[0], "absent", maxTimeout)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"command":       cmds[0],
-				"error":         err,
-				"maxTimeout":    maxTimeout,
-				"containerName": containerName,
-			}).Error("The command did not finish")
-
-			return err
-		}
 	}
 
 	return nil
