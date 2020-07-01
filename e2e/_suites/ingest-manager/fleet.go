@@ -159,19 +159,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 		return err
 	}
 
-	if log.IsLevelEnabled(log.DebugLevel) {
-		err = execCommandInService(profile, fts.BoxType, []string{"logs"}, false)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error":   err,
-				"service": fts.BoxType,
-				"tag":     serviceTag,
-			}).Error("Could not retrieve box logs")
-
-			return err
-		}
-	}
-
 	return nil
 }
 
