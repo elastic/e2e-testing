@@ -2,7 +2,7 @@
 - job:
     name: stack/e2e-testing-helm-daily
     display-name: End-2-End tests for Observability Helm charts Pipeline
-    description: Run E2E Helm charts test suite daily
+    description: Run E2E Helm Charts test suite daily
     view: APM-CI
     project-type: pipeline
     parameters:
