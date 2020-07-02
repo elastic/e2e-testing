@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"path"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
@@ -156,7 +158,30 @@ type IngestManagerTestSuite struct {
 }
 
 func (imts *IngestManagerTestSuite) processStateChangedOnTheHost(process string, state string) error {
-	return godog.ErrPending
+	if state != "stopped" {
+		return godog.ErrPending
+	}
+
+	host := "ingest-manager_elastic-agent_1"
+	log.WithFields(log.Fields{
+		"host":    host,
+		"process": process,
+	}).Debug("Stopping process on the host")
+
+	_, err := docker.ExecCommandIntoContainer(context.Background(), host, "root", []string{"pkill", "-9", process})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"action":  state,
+			"error":   err,
+			"host":    host,
+			"process": process,
+		}).Error("Could not stop process with 'pkill -9' on the host")
+
+		return err
+	}
+
+	// check process was stopped
+	return imts.processStateOnTheHost(process, "stopped")
 }
 
 func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
