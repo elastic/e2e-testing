@@ -264,7 +264,7 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 			"process":      process,
 		}).Debug("Checking process desired state on the host")
 
-		output, err := docker.ExecCommandIntoContainer(context.Background(), host, "root", []string{"ps"})
+		output, err := docker.ExecCommandIntoContainer(context.Background(), host, "root", []string{"pgrep", "-n", "-l", process})
 		if err != nil {
 			log.WithFields(log.Fields{
 				"desiredState": desiredState,
@@ -273,14 +273,14 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 				"host":         host,
 				"process":      process,
 				"retry":        retryCount,
-			}).Warn("Could not execute process in the host")
+			}).Warn("Could not execute 'pgrep -n -l' in the host")
 
 			retryCount++
 
 			return err
 		}
 
-		log.Debugf("Output: %s", output)
+		log.Debugf("pgrep -n -l %s: %s", process, output)
 
 		outputContainsProcess := strings.Contains(output, process)
 
