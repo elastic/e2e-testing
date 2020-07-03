@@ -3,7 +3,7 @@
     name: beats/e2e-testing-beats
     display-name: End-2-End Tests Pipeline for Beats
     description: Jenkins pipeline for running the functional tests for Beats project
-    view: APM-CI
+    view: E2E
     project-type: pipeline
     pipeline-scm:
       script-path: .ci/functionalTests.groovy

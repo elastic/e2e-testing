@@ -1,0 +1,5 @@
+---
+- job:
+    name: e2e-tests
+    description: E2E Tests
+    project-type: folder

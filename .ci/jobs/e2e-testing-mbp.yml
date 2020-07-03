@@ -3,7 +3,7 @@
     name: stack/e2e-testing-mbp
     display-name: End-2-End Tests Pipeline
     description: Jenkins pipeline for the e2e-testing project
-    view: APM-CI
+    view: E2E
     project-type: multibranch
     script-path: .ci/Jenkinsfile
     scm:
@@ -25,7 +25,7 @@
                 ignore-tags-newer-than: -1
             - regular-branches: true
             - change-request:
-                ignore-target-only-changes: false
+                ignore-target-only-changes: true
           clean:
             after: true
             before: true
