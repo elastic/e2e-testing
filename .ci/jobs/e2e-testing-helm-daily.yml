@@ -1,6 +1,6 @@
 ---
 - job:
-    name: stack/e2e-testing-helm-daily
+    name: e2e-tests/e2e-testing-helm-daily
     display-name: End-2-End tests for Observability Helm charts Pipeline
     description: Run E2E Helm Charts test suite daily
     view: E2E
