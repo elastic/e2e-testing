@@ -15,7 +15,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const fleetAgentsURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents?page=1&showInactive=%t"
+const fleetAgentsURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents"
+const fleetAgentsUnEnrollURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents/%s/unenroll"
 const fleetEnrollmentTokenURL = kibanaBaseURL + "/api/ingest_manager/fleet/enrollment-api-keys"
 const fleetSetupURL = kibanaBaseURL + "/api/ingest_manager/fleet/setup"
 const ingestManagerAgentConfigsURL = kibanaBaseURL + "/api/ingest_manager/agent_configs"
@@ -23,9 +24,10 @@ const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/ingest_manager/data_st
 
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
-	BoxType  string // we currently support Linux
-	Cleanup  bool
-	ConfigID string // will be used to manage tokens
+	EnrolledAgentID string // will be used to store current agent
+	BoxType         string // we currently support Linux
+	Cleanup         bool
+	ConfigID        string // will be used to manage tokens
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
@@ -150,7 +152,10 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 		return err
 	}
 
-	return nil
+	// get first agentID in online status, for future processing
+	fts.EnrolledAgentID, err = getAgentID(true, 0)
+
+	return err
 }
 
 func (fts *FleetTestSuite) setup() error {
@@ -285,15 +290,79 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 }
 
 func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
-	log.Debug("Un-enrolling agent in Fleet")
+	log.WithFields(log.Fields{
+		"agentID": fts.EnrolledAgentID,
+	}).Debug("Un-enrolling agent in Fleet")
 
-	return godog.ErrPending
+	unEnrollURL := fmt.Sprintf(fleetAgentsUnEnrollURL, fts.EnrolledAgentID)
+	postReq := createDefaultHTTPRequest(unEnrollURL)
+
+	body, err := curl.Post(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"agentID": fts.EnrolledAgentID,
+			"body":    body,
+			"error":   err,
+			"url":     unEnrollURL,
+		}).Error("Could unenroll agent")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"agentID": fts.EnrolledAgentID,
+	}).Debug("Fleet agent was unenrolled")
+
+	return nil
 }
 
 func (fts *FleetTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
 	log.Debug("Checking if the agent is not listed as online in Fleet")
 
-	return godog.ErrPending
+	agentsCount := 0.0
+	maxTimeout := 10 * time.Second
+	retryCount := 1
+
+	exp := e2e.GetExponentialBackOff(maxTimeout)
+
+	countAgentsFn := func() error {
+		count, err := countAgentsByStatus(true)
+		if err != nil || count != 0 {
+			if err == nil {
+				err = fmt.Errorf("The Agent is still online")
+			}
+
+			log.WithFields(log.Fields{
+				"retry":        retryCount,
+				"onlineAgents": count,
+				"elapsedTime":  exp.GetElapsedTime(),
+			}).Warn(err.Error())
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"elapsedTime":  exp.GetElapsedTime(),
+			"onlineAgents": count,
+			"retries":      retryCount,
+		}).Info("The Agent is offline")
+		agentsCount = count
+		return nil
+	}
+
+	err := backoff.Retry(countAgentsFn, exp)
+	if err != nil {
+		return err
+	}
+
+	if agentsCount != 0 {
+		err = fmt.Errorf("There are %.0f online agents. We expected to have none", agentsCount)
+		log.Error(err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (fts *FleetTestSuite) thereIsNoDataInTheIndex() error {
@@ -355,27 +424,11 @@ func checkFleetConfiguration() error {
 	return nil
 }
 
-// countAgentsByStatus sends a GET request to Fleet for the existing agents
-// allowing to filter by agent status: online, offline
+// countAgentsByStatus extracts the number of agents in the desired status
+// querying Fleet's agents endpoing
 func countAgentsByStatus(online bool) (float64, error) {
-	r := createDefaultHTTPRequest(fmt.Sprintf(fleetAgentsURL, online))
-	body, err := curl.Get(r)
+	jsonParsed, err := getAgentsByStatus(online)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"body":   body,
-			"online": online,
-			"error":  err,
-			"url":    fleetAgentsURL,
-		}).Error("Could not get Fleet's agents by status")
-		return 0, err
-	}
-
-	jsonParsed, err := gabs.ParseJSON([]byte(body))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":        err,
-			"responseBody": body,
-		}).Error("Could not parse response into JSON")
 		return 0, err
 	}
 
@@ -551,6 +604,59 @@ func getAgentDefaultConfig() (string, error) {
 
 	configID := configs.Index(0).Path("id").Data().(string)
 	return configID, nil
+}
+
+// getAgentID sends a GET request to Fleet for the existing agents
+// allowing to filter by agent status: online, offline. This method will
+// retrieve the agent ID
+func getAgentID(online bool, index int) (string, error) {
+	jsonParsed, err := getAgentsByStatus(online)
+	if err != nil {
+		return "", err
+	}
+
+	agentID := jsonParsed.Path("list").Index(index).Path("id").Data().(string)
+
+	log.WithFields(log.Fields{
+		"index":   index,
+		"agentID": agentID,
+	}).Debug("Agent ID retrieved")
+
+	return agentID, nil
+}
+
+// getAgentsByStatus sends a GET request to Fleet for the existing agents
+// allowing to filter by agent status: online, offline. Will return the
+// JSON object representing the response of querying Fleet's Agents endpoint
+func getAgentsByStatus(online bool) (*gabs.Container, error) {
+	r := createDefaultHTTPRequest(fleetAgentsURL)
+	// let's not URL encode the querystring, as it seems Kibana is not handling
+	// the request properly, returning an 400 Bad Request error with this message:
+	// [request query.page=1&perPage=20&showInactive=false]: definition for this key is missing
+	r.EncodeURL = false
+	r.QueryString = fmt.Sprintf("page=1&perPage=20&showInactive=%t", false)
+
+	body, err := curl.Get(r)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":   body,
+			"online": online,
+			"error":  err,
+			"url":    r.GetURL(),
+		}).Error("Could not get Fleet's agents by status")
+		return nil, err
+	}
+
+	jsonResponse, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return nil, err
+	}
+
+	return jsonResponse, nil
 }
 
 // getDataStreams sends a GET request to Fleet for the existing data-streams
