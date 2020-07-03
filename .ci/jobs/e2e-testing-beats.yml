@@ -1,6 +1,6 @@
 ---
 - job:
-    name: beats/e2e-testing-beats
+    name: e2e-tests/e2e-testing-beats
     display-name: End-2-End Tests Pipeline for Beats
     description: Jenkins pipeline for running the functional tests for Beats project
     view: E2E

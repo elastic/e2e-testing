@@ -1,6 +1,6 @@
 ---
 - job:
-    name: stack/e2e-testing-mbp
+    name: e2e-tests/e2e-testing-mbp
     display-name: End-2-End Tests Pipeline
     description: Jenkins pipeline for the e2e-testing project
     view: E2E

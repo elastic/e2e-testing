@@ -1,6 +1,6 @@
 ---
 - job:
-    name: stack/e2e-testing-ingest-manager-daily
+    name: e2e-tests/e2e-testing-ingest-manager-daily
     display-name: End-2-End tests for Ingest Manager Pipeline
     description: Run E2E Ingest Manager test suite daily
     view: E2E
