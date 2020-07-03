@@ -36,7 +36,6 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
 	s.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)
 	s.Step(`^the agent is not listed as online in Fleet$`, fts.theAgentIsNotListedAsOnlineInFleet)
-	s.Step(`^there is no data in the index$`, fts.thereIsNoDataInTheIndex)
 	s.Step(`^the agent is re-enrolled on the host$`, fts.theAgentIsReenrolledOnTheHost)
 	s.Step(`^the enrollment token is revoked$`, fts.theEnrollmentTokenIsRevoked)
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
@@ -363,12 +362,6 @@ func (fts *FleetTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
 	}
 
 	return nil
-}
-
-func (fts *FleetTestSuite) thereIsNoDataInTheIndex() error {
-	log.Debug("Querying Elasticsearch index for agent data")
-
-	return godog.ErrPending
 }
 
 func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
