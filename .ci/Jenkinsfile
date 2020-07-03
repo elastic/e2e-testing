@@ -5,6 +5,8 @@
 pipeline {
   agent any
   environment {
+    DOCKER_REGISTRY = 'docker.elastic.co'
+    DOCKER_REGISTRY_SECRET = 'secret/observability-team/ci/docker-registry/prod'
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
     NOTIFY_TO = credentials('notify-to')
@@ -79,7 +81,7 @@ pipeline {
                   unstash 'source'
                   dir(BASE_DIR){
                     sh script: """.ci/scripts/install-dependencies.sh "${GO_VERSION}" """, label: 'Install dependencies'
-                    preCommit(commit: "${GIT_BASE_COMMIT}", junit: true)
+                    preCommit(commit: "${GIT_BASE_COMMIT}", junit: true, registry: "${env.DOCKER_REGISTRY}", secretRegistry: "${env.DOCKER_REGISTRY_SECRET}")
                   }
                 }
               }
