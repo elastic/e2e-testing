@@ -189,7 +189,7 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	countAgentsFn := func() error {
-		count, err := countAgentsByStatus(true)
+		count, err := countOnlineAgents()
 		if err != nil || count == 0 {
 			if err == nil {
 				err = fmt.Errorf("The Agent is not online yet")
@@ -325,7 +325,7 @@ func (fts *FleetTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	countAgentsFn := func() error {
-		count, err := countAgentsByStatus(true)
+		count, err := countOnlineAgents()
 		if err != nil || count != 0 {
 			if err == nil {
 				err = fmt.Errorf("The Agent is still online")
@@ -424,20 +424,19 @@ func checkFleetConfiguration() error {
 	return nil
 }
 
-// countAgentsByStatus extracts the number of agents in the desired status
-// querying Fleet's agents endpoing
-func countAgentsByStatus(online bool) (float64, error) {
-	jsonParsed, err := getAgentsByStatus(online)
+// countOnlineAgents extracts the number of agents in the online status
+// querying Fleet's agents endpoint
+func countOnlineAgents() (float64, error) {
+	jsonResponse, err := getOnlineAgents()
 	if err != nil {
 		return 0, err
 	}
 
-	agentsCount := jsonParsed.Path("total").Data().(float64)
+	agentsCount := jsonResponse.Path("total").Data().(float64)
 
 	log.WithFields(log.Fields{
-		"count":  agentsCount,
-		"online": online,
-	}).Debug("Agents by status retrieved")
+		"count": agentsCount,
+	}).Debug("Online agents retrieved")
 
 	return agentsCount, nil
 }
@@ -610,7 +609,7 @@ func getAgentDefaultConfig() (string, error) {
 // allowing to filter by agent status: online, offline. This method will
 // retrieve the agent ID
 func getAgentID(online bool, index int) (string, error) {
-	jsonParsed, err := getAgentsByStatus(online)
+	jsonParsed, err := getOnlineAgents()
 	if err != nil {
 		return "", err
 	}
@@ -623,40 +622,6 @@ func getAgentID(online bool, index int) (string, error) {
 	}).Debug("Agent ID retrieved")
 
 	return agentID, nil
-}
-
-// getAgentsByStatus sends a GET request to Fleet for the existing agents
-// allowing to filter by agent status: online, offline. Will return the
-// JSON object representing the response of querying Fleet's Agents endpoint
-func getAgentsByStatus(online bool) (*gabs.Container, error) {
-	r := createDefaultHTTPRequest(fleetAgentsURL)
-	// let's not URL encode the querystring, as it seems Kibana is not handling
-	// the request properly, returning an 400 Bad Request error with this message:
-	// [request query.page=1&perPage=20&showInactive=false]: definition for this key is missing
-	r.EncodeURL = false
-	r.QueryString = fmt.Sprintf("page=1&perPage=20&showInactive=%t", false)
-
-	body, err := curl.Get(r)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"body":   body,
-			"online": online,
-			"error":  err,
-			"url":    r.GetURL(),
-		}).Error("Could not get Fleet's agents by status")
-		return nil, err
-	}
-
-	jsonResponse, err := gabs.ParseJSON([]byte(body))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":        err,
-			"responseBody": body,
-		}).Error("Could not parse response into JSON")
-		return nil, err
-	}
-
-	return jsonResponse, nil
 }
 
 // getDataStreams sends a GET request to Fleet for the existing data-streams
@@ -692,4 +657,37 @@ func getDataStreams() (*gabs.Container, error) {
 	}).Debug("Data Streams retrieved")
 
 	return dataStreams, nil
+}
+
+// getAgentsByStatus sends a GET request to Fleet for the existing online agents
+// Will return the JSON object representing the response of querying Fleet's Agents
+// endpoint
+func getOnlineAgents() (*gabs.Container, error) {
+	r := createDefaultHTTPRequest(fleetAgentsURL)
+	// let's not URL encode the querystring, as it seems Kibana is not handling
+	// the request properly, returning an 400 Bad Request error with this message:
+	// [request query.page=1&perPage=20&showInactive=false]: definition for this key is missing
+	r.EncodeURL = false
+	r.QueryString = fmt.Sprintf("page=1&perPage=20&showInactive=%t", false)
+
+	body, err := curl.Get(r)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   r.GetURL(),
+		}).Error("Could not get Fleet's online agents")
+		return nil, err
+	}
+
+	jsonResponse, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return nil, err
+	}
+
+	return jsonResponse, nil
 }
