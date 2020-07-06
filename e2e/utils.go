@@ -72,7 +72,15 @@ func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOf
 // Elastic's artifact repository, bbuilding the JSON path query based
 // on the desired OS, architecture and file extension
 // i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "linux", "x86_64", "tar.gz")
-func GetElasticArtifactURL(artifact string, version string, os string, arch string, extension string) (string, error) {
+// If the environment variable ARTIFACT_HASH exists, then the artifact to be downloaded will
+// be defined by that value
+func GetElasticArtifactURL(artifact string, version string, OS string, arch string, extension string) (string, error) {
+	hash := os.Getenv("ARTIFACT_HASH")
+	if hash != "" {
+		hashedVersion := strings.ReplaceAll(version, "-SNAPSHOT", "")
+		return fmt.Sprintf("https://snapshots.elastic.co/%s-%s/downloads/beats/%s/%s-%s-%s-%s.%s", hashedVersion, hash, artifact, artifact, version, OS, arch, extension), nil
+	}
+
 	exp := GetExponentialBackOff(1 * time.Minute)
 
 	retryCount := 1
@@ -89,7 +97,7 @@ func GetElasticArtifactURL(artifact string, version string, os string, arch stri
 			log.WithFields(log.Fields{
 				"artifact":       artifact,
 				"version":        version,
-				"os":             os,
+				"os":             OS,
 				"arch":           arch,
 				"extension":      extension,
 				"error":          err,
@@ -123,14 +131,14 @@ func GetElasticArtifactURL(artifact string, version string, os string, arch stri
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
 			"version":   version,
-			"os":        os,
+			"os":        OS,
 			"arch":      arch,
 			"extension": extension,
 		}).Error("Could not parse the response body for the artifact")
 		return "", err
 	}
 
-	artifactPath := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, os, arch, extension)
+	artifactPath := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
 	packagesObject := jsonParsed.Path("packages")
 	// we need to get keys with dots using Search instead of Path
 	downloadObject := packagesObject.Search(artifactPath)
