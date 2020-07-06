@@ -26,7 +26,6 @@ Scenario: Un-enrolling an agent
   Given an agent is deployed to Fleet
   When the agent is un-enrolled
   Then the agent is not listed as online in Fleet
-    And there is no data in the index
 
 @reenroll
 Scenario: Re-enrolling an agent
