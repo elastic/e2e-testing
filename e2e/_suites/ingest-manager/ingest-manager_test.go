@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"os"
 	"path"
 	"time"
@@ -9,7 +8,6 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
@@ -158,22 +156,26 @@ type IngestManagerTestSuite struct {
 }
 
 func (imts *IngestManagerTestSuite) processStateChangedOnTheHost(process string, state string) error {
-	if state != "stopped" {
+	profile := "ingest-manager"
+	serviceName := "centos"
+
+	if state == "started" {
+		return startAgent(profile, serviceName)
+	} else if state != "stopped" {
 		return godog.ErrPending
 	}
 
-	host := "ingest-manager_elastic-agent_1"
 	log.WithFields(log.Fields{
-		"host":    host,
+		"service": serviceName,
 		"process": process,
-	}).Debug("Stopping process on the host")
+	}).Debug("Stopping process on the service")
 
-	_, err := docker.ExecCommandIntoContainer(context.Background(), host, "root", []string{"pkill", "-9", process})
+	err := execCommandInService(profile, serviceName, []string{"pkill", "-9", process}, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"action":  state,
 			"error":   err,
-			"host":    host,
+			"service": serviceName,
 			"process": process,
 		}).Error("Could not stop process with 'pkill -9' on the host")
 
@@ -205,6 +207,50 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 				"timeout": timeout,
 			}).Error("The process was found but shouldn't be present")
 		}
+
+		return err
+	}
+
+	return nil
+}
+
+func startAgent(profile string, serviceName string) error {
+	cmd := []string{"elastic-agent", "run"}
+	err := execCommandInService(profile, serviceName, cmd, true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmd,
+			"error":   err,
+			"service": serviceName,
+		}).Error("Could not run the agent")
+
+		return err
+	}
+
+	return nil
+}
+
+func execCommandInService(profile string, serviceName string, cmds []string, detach bool) error {
+	serviceManager := services.NewServiceManager()
+
+	composes := []string{
+		profile,     // profile name
+		serviceName, // service
+	}
+	composeArgs := []string{"exec", "-T"}
+	if detach {
+		composeArgs = append(composeArgs, "-d")
+	}
+	composeArgs = append(composeArgs, serviceName)
+	composeArgs = append(composeArgs, cmds...)
+
+	err := serviceManager.RunCommand(profile, composes, composeArgs, profileEnv)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmds,
+			"error":   err,
+			"service": serviceName,
+		}).Error("Could not execute command in container")
 
 		return err
 	}

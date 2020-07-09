@@ -28,6 +28,7 @@ type FleetTestSuite struct {
 	BoxType         string // we currently support Linux
 	Cleanup         bool
 	ConfigID        string // will be used to manage tokens
+	CurrentToken    string // current enrollment token
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
@@ -121,33 +122,19 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	}
 
 	// enroll the agent with a new token
-	token, err := createFleetToken("name", fts.ConfigID)
-
-	cmd = []string{"elastic-agent", "enroll", "http://kibana:5601", token, "-f"}
-	err = execCommandInService(profile, fts.BoxType, cmd, false)
+	fts.CurrentToken, err = createFleetToken("name", fts.ConfigID)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"service": fts.BoxType,
-			"tag":     serviceTag,
-			"token":   token,
-		}).Error("Could not enroll the agent with the new token")
+		return err
+	}
 
+	err = enrollAgent(profile, fts.BoxType, serviceTag, fts.CurrentToken)
+	if err != nil {
 		return err
 	}
 
 	// run the agent
-	cmd = []string{"elastic-agent", "run"}
-	err = execCommandInService(profile, fts.BoxType, cmd, true)
+	err = startAgent(profile, fts.BoxType)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"service": fts.BoxType,
-			"tag":     serviceTag,
-		}).Error("Could not run the agent")
-
 		return err
 	}
 
@@ -365,9 +352,17 @@ func (fts *FleetTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
 }
 
 func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
-	log.Debug("Re-enrolling the agent on the host")
+	log.Debug("Re-enrolling the agent on the host with same token")
 
-	return godog.ErrPending
+	profile := "ingest-manager"
+	serviceTag := "7"
+
+	err := enrollAgent(profile, fts.BoxType, serviceTag, fts.CurrentToken)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
@@ -537,27 +532,17 @@ func createFleetToken(name string, configID string) (string, error) {
 	return token, nil
 }
 
-func execCommandInService(profile string, serviceName string, cmds []string, detach bool) error {
-	serviceManager := services.NewServiceManager()
-
-	composes := []string{
-		profile,     // profile name
-		serviceName, // service
-	}
-	composeArgs := []string{"exec", "-T"}
-	if detach {
-		composeArgs = append(composeArgs, "-d")
-	}
-	composeArgs = append(composeArgs, serviceName)
-	composeArgs = append(composeArgs, cmds...)
-
-	err := serviceManager.RunCommand(profile, composes, composeArgs, profileEnv)
+func enrollAgent(profile string, serviceName string, serviceTag string, token string) error {
+	cmd := []string{"elastic-agent", "enroll", "http://kibana:5601", token, "-f"}
+	err := execCommandInService(profile, serviceName, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"command": cmds,
+			"command": cmd,
 			"error":   err,
 			"service": serviceName,
-		}).Error("Could not execute command in container")
+			"tag":     serviceTag,
+			"token":   token,
+		}).Error("Could not enroll the agent with the token")
 
 		return err
 	}
