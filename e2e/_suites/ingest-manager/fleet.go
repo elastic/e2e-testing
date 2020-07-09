@@ -29,6 +29,7 @@ type FleetTestSuite struct {
 	Cleanup         bool
 	ConfigID        string // will be used to manage tokens
 	CurrentToken    string // current enrollment token
+	CurrentTokenID  string // current enrollment tokenID
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
@@ -122,10 +123,12 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	}
 
 	// enroll the agent with a new token
-	fts.CurrentToken, err = createFleetToken("name", fts.ConfigID)
+	tokenJSONObject, err := createFleetToken("name", fts.ConfigID)
 	if err != nil {
 		return err
 	}
+	fts.CurrentToken = tokenJSONObject.Path("api_key").Data().(string)
+	fts.CurrentTokenID = tokenJSONObject.Path("id").Data().(string)
 
 	err = enrollAgent(profile, fts.BoxType, serviceTag, fts.CurrentToken)
 	if err != nil {
@@ -366,9 +369,32 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 }
 
 func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
-	log.Debug("Revoking enrollment token")
+	log.WithFields(log.Fields{
+		"token":   fts.CurrentToken,
+		"tokenID": fts.CurrentTokenID,
+	}).Debug("Revoking enrollment token")
 
-	return godog.ErrPending
+	revokeTokenURL := fleetEnrollmentTokenURL + "/" + fts.CurrentTokenID
+	deleteReq := createDefaultHTTPRequest(revokeTokenURL)
+
+	body, err := curl.Delete(deleteReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"token":   fts.CurrentToken,
+			"tokenID": fts.CurrentTokenID,
+			"body":    body,
+			"error":   err,
+			"url":     revokeTokenURL,
+		}).Error("Could revoke token")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"token":   fts.CurrentToken,
+		"tokenID": fts.CurrentTokenID,
+	}).Debug("Token was revoked")
+
+	return nil
 }
 
 func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
@@ -481,7 +507,7 @@ func createDefaultHTTPRequest(url string) curl.HTTPRequest {
 }
 
 // createFleetToken sends a POST request to Fleet creating a new token with a name
-func createFleetToken(name string, configID string) (string, error) {
+func createFleetToken(name string, configID string) (*gabs.Container, error) {
 	type payload struct {
 		ConfigID string `json:"config_id"`
 		Name     string `json:"name"`
@@ -494,7 +520,7 @@ func createFleetToken(name string, configID string) (string, error) {
 	payloadBytes, err := json.Marshal(data)
 	if err != nil {
 		log.Error("Could not serialise payload")
-		return "", err
+		return nil, err
 	}
 
 	postReq := createDefaultHTTPRequest(fleetEnrollmentTokenURL)
@@ -508,7 +534,7 @@ func createFleetToken(name string, configID string) (string, error) {
 			"error": err,
 			"url":   fleetSetupURL,
 		}).Error("Could not create Fleet token")
-		return "", err
+		return nil, err
 	}
 
 	jsonParsed, err := gabs.ParseJSON([]byte(body))
@@ -517,19 +543,17 @@ func createFleetToken(name string, configID string) (string, error) {
 			"error":        err,
 			"responseBody": body,
 		}).Error("Could not parse response into JSON")
-		return "", err
+		return nil, err
 	}
 
-	// data streams should contain array of elements
 	tokenItem := jsonParsed.Path("item")
 
 	log.WithFields(log.Fields{
-		"apiKeyId": tokenItem.Path("id").Data().(string),
-		"tokenId":  tokenItem.Path("api_key_id").Data().(string),
+		"tokenId":  tokenItem.Path("id").Data().(string),
+		"apiKeyId": tokenItem.Path("api_key_id").Data().(string),
 	}).Debug("Fleet token created")
 
-	token := tokenItem.Path("api_key").Data().(string)
-	return token, nil
+	return tokenItem, nil
 }
 
 func enrollAgent(profile string, serviceName string, serviceTag string, token string) error {

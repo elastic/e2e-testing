@@ -37,6 +37,13 @@ func (req *HTTPRequest) GetURL() string {
 	return u + req.QueryString
 }
 
+// Delete executes a DELETE request
+func Delete(r HTTPRequest) (string, error) {
+	r.method = "DELETE"
+
+	return request(r)
+}
+
 // Get executes a GET request
 func Get(r HTTPRequest) (string, error) {
 	r.method = "GET"
