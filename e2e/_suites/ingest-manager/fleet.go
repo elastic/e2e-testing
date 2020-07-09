@@ -400,7 +400,26 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	log.Debug("Enrolling a new agent with an revoked token")
 
-	return godog.ErrPending
+	profile := "ingest-manager" // name of the runtime dependencies compose file
+	serviceTag := "7"
+
+	err := enrollAgent(profile, fts.BoxType, serviceTag, fts.CurrentToken)
+	if err == nil {
+		err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
+
+		log.WithFields(log.Fields{
+			"tokenID": fts.CurrentTokenID,
+			"error":   err,
+		}).Error(err.Error())
+
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"err":   err,
+		"token": fts.CurrentToken,
+	}).Debug("As expected, it's not possible to enroll an agent with a revoked token")
+	return nil
 }
 
 // checkFleetConfiguration checks that Fleet configuration is not missing
