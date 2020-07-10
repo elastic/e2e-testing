@@ -32,7 +32,6 @@ func init() {
 	config.Init()
 
 	queryRetryTimeout = e2e.GetIntegerFromEnv("OP_RETRY_TIMEOUT", queryRetryTimeout)
-	stackVersion = e2e.GetEnv("OP_STACK_VERSION", stackVersion)
 }
 
 func IngestManagerFeatureContext(s *godog.Suite) {
