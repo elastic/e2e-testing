@@ -49,7 +49,7 @@ pipeline {
   stages {
     stage('Run Tests') {
       steps {
-        build(job: 'stack/e2e-testing-mbp/master',
+        build(job: 'e2e-tests/e2e-testing-mbp/master',
           parameters: [
             string(name: 'runTestsSuite', value: 'helm'),
             string(name: 'LOG_LEVEL', value: "${params.LOG_LEVEL.trim()}"),

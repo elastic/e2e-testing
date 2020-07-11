@@ -1,4 +1,4 @@
-[![Build Status](https://apm-ci.elastic.co/buildStatus/icon?job=beats%2Fpoc-metricbeat-tests-poc-mbp%2Fmaster)](https://apm-ci.elastic.co/job/beats/job/poc-metricbeat-tests-poc-mbp/job/master/)
+[![Build Status](https://beats-ci.elastic.co/buildStatus/icon?job=e2e-tests%2Fe2e-testing-mbp%2Fmaster)](https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-mbp/job/master/)
 
 # Environment Provisioner for Observability
 
