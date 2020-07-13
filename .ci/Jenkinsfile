@@ -38,7 +38,7 @@ pipeline {
   }
   stages {
     stage('Initializing'){
-      agent { label 'linux && immutable' }
+      agent { label 'ubuntu-1804 && immutable' }
       options { skipDefaultCheckout() }
       environment {
         HOME = "${env.WORKSPACE}"
@@ -67,7 +67,7 @@ pipeline {
         stage('Tests') {
           parallel {
             stage('Sanity checks') {
-              agent { label 'linux && immutable' }
+              agent { label 'ubuntu-1804 && immutable' }
               environment {
                 GOROOT = "${env.WORKSPACE}/.gimme/versions/go${env.GO_VERSION}.linux.amd64"
                 PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.PATH}:${env.GOROOT}/bin"
@@ -85,7 +85,7 @@ pipeline {
               }
             }
             stage('Unit Tests') {
-              agent { label 'linux && immutable' }
+              agent { label 'ubuntu-1804 && immutable' }
               options { skipDefaultCheckout() }
               steps {
                 withGithubNotify(context: 'Tests', tab: 'tests') {
@@ -175,7 +175,7 @@ def generateStep(Map params = [:]){
   def oss = params.get('oss')
   def platform = params.get('platform')
   return {
-    node('linux && immutable') {
+    node('ubuntu-1804 && immutable') {
       try {
         deleteDir()
         unstash 'build'
@@ -197,7 +197,7 @@ def generateFunctionalTestStep(Map params = [:]){
   def suite = params.get('suite')
   def feature = params.get('feature')
   return {
-    node('linux && immutable') {
+    node('ubuntu-1804 && immutable') {
       try {
         deleteDir()
         unstash 'build'
