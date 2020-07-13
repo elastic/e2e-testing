@@ -13,14 +13,6 @@ FEATURE_FLAG=--tags
 endif
 
 GO_IMAGE_TAG?='stretch'
-GOOS?='linux'
-GOARCH?='amd64'
-
-.PHONY: fetch-binary
-fetch-binary:
-	@$(MAKE) -C ../cli build
-	cp ../cli/.github/releases/download/$(VERSION_VALUE)/$(GOOS)$(subst amd,,$(GOARCH))-op ./op
-	chmod +x ./op
 
 .PHONY: install
 install:
@@ -40,7 +32,3 @@ functional-test: install-godog
 	OP_METRICBEAT_VERSION=${METRICBEAT_VERSION} \
 	OP_STACK_VERSION=${STACK_VERSION} \
 	godog --format=${FORMAT} ${FEATURE_FLAG} ${FEATURE}
-
-.PHONY: sync-integrations
-sync-integrations:
-	OP_LOG_LEVEL=${LOG_LEVEL} ./op sync integrations --delete
