@@ -15,7 +15,7 @@ func CheckInstalledSoftware(binaries []string) {
 	for _, binary := range binaries {
 		err := which(binary)
 		if err != nil {
-			log.Fatalf("The program cannot be run because %s are not installed. Required: %v", binary, binaries)
+			log.Warnf("The program cannot be run because %s are not installed. Required: %v", binary, binaries)
 		}
 	}
 }
