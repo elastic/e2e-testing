@@ -29,10 +29,11 @@ install:
 sync-integrations:
 	docker run --rm \
 		-v $(ROOT_DIR):/go/src/github.com/elastic/e2e-testing/cli \
-		-v $(HOME)/.op:/root/.op \
+		-v $(HOME)/.op:/tmp/.op \
 		-u "$(CURRENT_UID):$(CURRENT_GID)" \
 		-w /go/src/github.com/elastic/e2e-testing/cli \
-		-e GO111MODULE=on -e OP_LOG_LEVEL=${LOG_LEVEL} -e GOCACHE=/tmp/.cache \
+		-e GO111MODULE=on -e OP_LOG_LEVEL=${LOG_LEVEL} \
+		-e GOCACHE=/tmp/.cache -e HOME=/tmp \
 		$(GO_IMAGE):$(GO_VERSION)-$(GO_IMAGE_TAG) \
 		go run main.go sync integrations --delete 
 
