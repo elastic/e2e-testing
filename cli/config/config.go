@@ -83,6 +83,7 @@ func GetComposeFile(isProfile bool, composeName string) (string, error) {
 
 	log.WithFields(log.Fields{
 		"composeFilePath": composeFilePath,
+		"error":           err,
 		"type":            serviceType,
 	}).Debug("Compose file not found at workdir. Extracting from binary resources")
 
