@@ -18,7 +18,7 @@ import (
 
 // metricbeatVersion is the version of the metricbeat to use
 // It can be overriden by OP_METRICBEAT_VERSION env var
-var metricbeatVersion = "7.7.0"
+var metricbeatVersion = "7.8.0"
 
 // queryRetryTimeout is the number of seconds between elasticsearch retry queries.
 // It can be overriden by OP_RETRY_TIMEOUT env var
@@ -28,7 +28,7 @@ var serviceManager services.ServiceManager
 
 // stackVersion is the version of the stack to use
 // It can be overriden by OP_STACK_VERSION env var
-var stackVersion = "7.7.0"
+var stackVersion = "7.8.0"
 
 func init() {
 	config.Init()

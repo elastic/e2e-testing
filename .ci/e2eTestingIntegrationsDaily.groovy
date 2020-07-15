@@ -40,9 +40,9 @@ pipeline {
   parameters {
     choice(name: 'LOG_LEVEL', choices: ['INFO', 'DEBUG'], description: 'Log level to be used')
     booleanParam(name: "forceSkipGitChecks", defaultValue: true, description: "If it's needed to check for Git changes to filter by modified sources")
-    string(name: 'METRICBEAT_VERSION', defaultValue: '7.7.0', description: 'SemVer version of the metricbeat to be used.')
+    string(name: 'METRICBEAT_VERSION', defaultValue: '7.8.0', description: 'SemVer version of the metricbeat to be used.')
     choice(name: 'RETRY_TIMEOUT', choices: ['3', '5', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
-    string(name: 'STACK_VERSION', defaultValue: '7.7.0', description: 'SemVer version of the stack to be used.')
+    string(name: 'STACK_VERSION', defaultValue: '7.8.0', description: 'SemVer version of the stack to be used.')
     string(name: 'GO_VERSION', defaultValue: '1.13.4', description: "Go version to use.")
   }
   stages {
