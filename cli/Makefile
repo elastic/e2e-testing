@@ -1,6 +1,3 @@
-CURRENT_UID := $(shell id -u)
-CURRENT_GID := $(shell id -g)
-
 # Get current directory of a Makefile: https://stackoverflow.com/a/23324703
 ROOT_DIR:=$(CURDIR)
 
@@ -30,7 +27,7 @@ sync-integrations:
 	docker run --rm \
 		-v $(ROOT_DIR):/go/src/github.com/elastic/e2e-testing/cli \
 		-v $(HOME)/.op:/root/.op \
-		-u "$(CURRENT_UID):$(CURRENT_GID)" \
+		-u "$(id -u):$(id -g)" \
 		-w /go/src/github.com/elastic/e2e-testing/cli \
 		-e GO111MODULE=on -e OP_LOG_LEVEL=${LOG_LEVEL} \
 		$(GO_IMAGE):$(GO_VERSION)-$(GO_IMAGE_TAG) \
