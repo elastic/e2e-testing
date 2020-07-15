@@ -576,7 +576,7 @@ func createFleetToken(name string, configID string) (*gabs.Container, error) {
 }
 
 func enrollAgent(profile string, serviceName string, serviceTag string, token string) error {
-	cmd := []string{"elastic-agent", "enroll", "http://kibana:5601", token, "-f"}
+	cmd := []string{"elastic-agent", "enroll", "http://kibana:5601", token, "-f", "--insecure"}
 	err := execCommandInService(profile, serviceName, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
