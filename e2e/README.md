@@ -98,7 +98,7 @@ $ export GO111MODULE=on                            # Go modules support
 $ make -C cli install                              # installs CLI dependencies
 $ export STACK_VERSION=7.7.0                       # exports stack version as runtime
 $ export METRICBEAT_VERSION=7.7.0                  # exports metricbeat version to be tested
-$ # export FEATURE=redis                           # exports which feature to run (default 'all')
+$ # export FEATURE=redis                           # exports which feature to run (default 'all')                           # exports your O.S. (default 'amd64', valid: [amd64, 386])
 $ make -C e2e install                              # installs tests dependencies
 $ make -C e2e functional-test                      # runs the test suite for Redis and stack 
 ```
