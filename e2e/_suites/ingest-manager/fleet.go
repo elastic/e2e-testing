@@ -46,81 +46,17 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	log.Debug("Deploying an agent to Fleet")
 
-	serviceManager := services.NewServiceManager()
-
 	profile := "ingest-manager"                         // name of the runtime dependencies compose file
 	fts.BoxType = "centos"                              // name of the service type
 	serviceName := "elastic-agent"                      // name of the service
 	containerName := profile + "_" + serviceName + "_1" // name of the container
 	serviceTag := "7"                                   // docker tag of the service
 
-	// let's start with Centos 7
-	profileEnv[fts.BoxType+"Tag"] = serviceTag
-	// we are setting the container name because Centos service could be reused by any other test suite
-	profileEnv[fts.BoxType+"ContainerName"] = containerName
-
-	err := serviceManager.AddServicesToCompose(profile, []string{fts.BoxType}, profileEnv)
+	err := deployAgentToFleet(profile, fts.BoxType, serviceTag, containerName)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"service": fts.BoxType,
-			"tag":     serviceTag,
-		}).Error("Could not run the target box")
 		return err
 	}
-
 	fts.Cleanup = true
-
-	// install the agent in the box
-	artifact := "elastic-agent"
-	version := "8.0.0-SNAPSHOT"
-	os := "linux"
-	arch := "x86_64"
-	extension := "tar.gz"
-
-	downloadURL, err := e2e.GetElasticArtifactURL(artifact, version, os, arch, extension)
-	if err != nil {
-		return err
-	}
-
-	cmd := []string{"curl", "-L", "-O", downloadURL}
-	err = execCommandInService(profile, fts.BoxType, cmd, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"service": fts.BoxType,
-		}).Error("Could not download agent in box")
-
-		return err
-	}
-
-	extractedDir := fmt.Sprintf("%s-%s-%s-%s", artifact, version, os, arch)
-	tarFile := fmt.Sprintf("%s.%s", extractedDir, extension)
-
-	cmd = []string{"tar", "xzvf", tarFile}
-	err = execCommandInService(profile, fts.BoxType, cmd, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"service": fts.BoxType,
-		}).Error("Could not extract the agent in the box")
-
-		return err
-	}
-
-	// enable elastic-agent in PATH, because we know the location of the binary
-	cmd = []string{"ln", "-s", "/" + extractedDir + "/elastic-agent", "/usr/local/bin/elastic-agent"}
-	err = execCommandInService(profile, fts.BoxType, cmd, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"service": fts.BoxType,
-		}).Error("Could not extract the agent in the box")
-
-		return err
-	}
 
 	// enroll the agent with a new token
 	tokenJSONObject, err := createFleetToken("name", fts.ConfigID)
@@ -403,7 +339,14 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	profile := "ingest-manager" // name of the runtime dependencies compose file
 	serviceTag := "7"
 
-	err := enrollAgent(profile, fts.BoxType, serviceTag, fts.CurrentToken)
+	containerName := profile + "_" + fts.BoxType + "_2" // name of the new container
+
+	err := deployAgentToFleet(profile, fts.BoxType, serviceTag, containerName)
+	if err != nil {
+		return err
+	}
+
+	err = enrollAgent(profile, fts.BoxType, serviceTag, fts.CurrentToken)
 	if err == nil {
 		err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
 
@@ -573,6 +516,78 @@ func createFleetToken(name string, configID string) (*gabs.Container, error) {
 	}).Debug("Fleet token created")
 
 	return tokenItem, nil
+}
+
+func deployAgentToFleet(profile string, service string, serviceTag string, containerName string) error {
+	// let's start with Centos 7
+	profileEnv[service+"Tag"] = serviceTag
+	// we are setting the container name because Centos service could be reused by any other test suite
+	profileEnv[service+"ContainerName"] = containerName
+
+	serviceManager := services.NewServiceManager()
+
+	err := serviceManager.AddServicesToCompose(profile, []string{service}, profileEnv)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"service": service,
+			"tag":     serviceTag,
+		}).Error("Could not run the target box")
+		return err
+	}
+
+	// install the agent in the box
+	artifact := "elastic-agent"
+	version := "8.0.0-SNAPSHOT"
+	os := "linux"
+	arch := "x86_64"
+	extension := "tar.gz"
+
+	downloadURL, err := e2e.GetElasticArtifactURL(artifact, version, os, arch, extension)
+	if err != nil {
+		return err
+	}
+
+	cmd := []string{"curl", "-L", "-O", downloadURL}
+	err = execCommandInService(profile, service, cmd, false)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmd,
+			"error":   err,
+			"service": service,
+		}).Error("Could not download agent in box")
+
+		return err
+	}
+
+	extractedDir := fmt.Sprintf("%s-%s-%s-%s", artifact, version, os, arch)
+	tarFile := fmt.Sprintf("%s.%s", extractedDir, extension)
+
+	cmd = []string{"tar", "xzvf", tarFile}
+	err = execCommandInService(profile, service, cmd, false)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmd,
+			"error":   err,
+			"service": service,
+		}).Error("Could not extract the agent in the box")
+
+		return err
+	}
+
+	// enable elastic-agent in PATH, because we know the location of the binary
+	cmd = []string{"ln", "-s", "/" + extractedDir + "/elastic-agent", "/usr/local/bin/elastic-agent"}
+	err = execCommandInService(profile, service, cmd, false)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmd,
+			"error":   err,
+			"service": service,
+		}).Error("Could not extract the agent in the box")
+
+		return err
+	}
+
+	return nil
 }
 
 func enrollAgent(profile string, serviceName string, serviceTag string, token string) error {
