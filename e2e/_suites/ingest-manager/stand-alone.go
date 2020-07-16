@@ -83,7 +83,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 
 func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 	maxTimeout := time.Duration(queryRetryTimeout) * time.Minute
-	minimumHitsCount := 100
+	minimumHitsCount := 50
 
 	result, err := searchAgentData(sats.Hostname, sats.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
 	if err != nil {
