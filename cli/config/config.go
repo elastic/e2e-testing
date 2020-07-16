@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"os/user"
 	"path"
 	"path/filepath"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	shell "github.com/elastic/e2e-testing/cli/shell"
 
 	packr "github.com/gobuffalo/packr/v2"
+	homedir "github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 
 	"gopkg.in/yaml.v2"
@@ -83,6 +83,7 @@ func GetComposeFile(isProfile bool, composeName string) (string, error) {
 
 	log.WithFields(log.Fields{
 		"composeFilePath": composeFilePath,
+		"error":           err,
 		"type":            serviceType,
 	}).Debug("Compose file not found at workdir. Extracting from binary resources")
 
@@ -142,9 +143,14 @@ func InitConfig() {
 		return
 	}
 
-	usr, _ := user.Current()
+	home, err := homedir.Dir()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Fatal("Could not get current user's HOME dir")
+	}
 
-	w := filepath.Join(usr.HomeDir, ".op")
+	w := filepath.Join(home, ".op")
 
 	newConfig(w)
 }

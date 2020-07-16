@@ -22,16 +22,6 @@ build:
 install:
 	go get -v -t ./...
 
-.PHONY: sync-integrations
-sync-integrations:
-	docker run --rm \
-		-v $(ROOT_DIR):/go/src/github.com/elastic/e2e-testing/cli \
-		-v ~/.op/git:/root/.op/git \
-		-w /go/src/github.com/elastic/e2e-testing/cli \
-		-e GO111MODULE=on -e OP_LOG_LEVEL=${LOG_LEVEL} \
-		$(GO_IMAGE):$(GO_VERSION)-$(GO_IMAGE_TAG) \
-		go run main.go sync integrations --delete 
-
 .PHONY: test
 test:
 	go test -v -timeout=$(TEST_TIMEOUT) ./...
