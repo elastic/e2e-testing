@@ -106,7 +106,7 @@ func (sats *StandAloneTestSuite) theDockerContainerIsStopped(serviceName string)
 
 		return err
 	}
-	sats.AgentStoppedDate = time.Now()
+	sats.AgentStoppedDate = time.Now().UTC()
 
 	return nil
 }
@@ -156,7 +156,6 @@ func getContainerHostname(serviceName string) (string, error) {
 
 func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int, maxTimeout time.Duration) (e2e.SearchResult, error) {
 	timezone := "America/New_York"
-	now := time.Now()
 
 	esQuery := map[string]interface{}{
 		"version": true,
@@ -203,7 +202,7 @@ func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int,
 											{
 												"range": map[string]interface{}{
 													"@timestamp": map[string]interface{}{
-														"gte":       now,
+														"gte":       startDate,
 														"time_zone": timezone,
 													},
 												},

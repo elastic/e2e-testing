@@ -83,7 +83,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 
 		imts.Fleet.setup()
 
-		imts.StandAlone.RuntimeDependenciesStartDate = time.Now()
+		imts.StandAlone.RuntimeDependenciesStartDate = time.Now().UTC()
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
 		log.Debug("Before Ingest Manager scenario")
