@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
@@ -143,6 +144,13 @@ func getContainerHostname(serviceName string) (string, error) {
 			"service":       serviceName,
 		}).Error("Could not retrieve container name from the Docker client")
 		return "", err
+	}
+
+	if strings.HasPrefix(hostname, "\x01\x00\x00\x00\x00\x00\x00\r") {
+		hostname = strings.ReplaceAll(hostname, "\x01\x00\x00\x00\x00\x00\x00\r", "")
+		log.WithFields(log.Fields{
+			"hostname": hostname,
+		}).Debug("Container name has been sanitized")
 	}
 
 	log.WithFields(log.Fields{

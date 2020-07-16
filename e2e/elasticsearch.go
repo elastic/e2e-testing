@@ -284,7 +284,7 @@ func WaitForNumberOfHits(indexName string, query map[string]interface{}, desired
 
 			retryCount++
 
-			return fmt.Errorf("Not enough hits in the index yet")
+			return fmt.Errorf("Not enough hits in the index yet. Current: %d, Desired: %d", hitsCount, desiredHits)
 		}
 
 		result = hits
