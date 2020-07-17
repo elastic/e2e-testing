@@ -28,12 +28,14 @@ const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/ingest_manager/data_st
 
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
-	EnrolledAgentID string // will be used to store current agent
-	BoxType         string // we currently support Linux
-	Cleanup         bool
-	ConfigID        string // will be used to manage tokens
-	CurrentToken    string // current enrollment token
-	CurrentTokenID  string // current enrollment tokenID
+	AgentDownloadName string // the name for the binary
+	AgentDownloadPath string // the path where the agent for the binary is installed
+	EnrolledAgentID   string // will be used to store current agent
+	BoxType           string // we currently support Linux
+	Cleanup           bool
+	ConfigID          string // will be used to manage tokens
+	CurrentToken      string // current enrollment token
+	CurrentTokenID    string // current enrollment tokenID
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
@@ -56,7 +58,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	containerName := profile + "_" + serviceName + "_1" // name of the container
 	serviceTag := "7"                                   // docker tag of the service
 
-	err := deployAgentToFleet(profile, fts.BoxType, serviceTag, containerName)
+	err := deployAgentToFleet(profile, fts.BoxType, serviceTag, containerName, fts.AgentDownloadPath, fts.AgentDownloadName)
 	if err != nil {
 		return err
 	}
@@ -84,6 +86,25 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	// get first agentID in online status, for future processing
 	fts.EnrolledAgentID, err = getAgentID(true, 0)
 
+	return err
+}
+
+// downloadAgentBinary it downloads the binary and stores the location of the downloaded file
+// into the Fleet struct, to be used else where
+func (fts *FleetTestSuite) downloadAgentBinary() error {
+	artifact := "elastic-agent"
+	version := "8.0.0-SNAPSHOT"
+	os := "linux"
+	arch := "x86_64"
+	extension := "tar.gz"
+
+	downloadURL, err := e2e.GetElasticArtifactURL(artifact, version, os, arch, extension)
+	if err != nil {
+		return err
+	}
+
+	fts.AgentDownloadName = fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, os, arch, extension)
+	fts.AgentDownloadPath, err = e2e.DownloadFile(downloadURL)
 	return err
 }
 
@@ -345,7 +366,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 	containerName := profile + "_" + fts.BoxType + "_2" // name of the new container
 
-	err := deployAgentToFleet(profile, fts.BoxType, serviceTag, containerName)
+	err := deployAgentToFleet(profile, fts.BoxType, serviceTag, containerName, fts.AgentDownloadPath, fts.AgentDownloadName)
 	if err != nil {
 		return err
 	}
@@ -522,11 +543,14 @@ func createFleetToken(name string, configID string) (*gabs.Container, error) {
 	return tokenItem, nil
 }
 
-func deployAgentToFleet(profile string, service string, serviceTag string, containerName string) error {
+func deployAgentToFleet(profile string, service string, serviceTag string, containerName string, agentBinaryPath string, agentBinaryName string) error {
 	// let's start with Centos 7
 	profileEnv[service+"Tag"] = serviceTag
 	// we are setting the container name because Centos service could be reused by any other test suite
 	profileEnv[service+"ContainerName"] = containerName
+	// define paths where the binary will be mounted
+	profileEnv[service+"AgentBinarySrcPath"] = agentBinaryPath
+	profileEnv[service+"AgentBinaryTargetPath"] = "/" + agentBinaryName
 
 	serviceManager := services.NewServiceManager()
 
@@ -539,34 +563,17 @@ func deployAgentToFleet(profile string, service string, serviceTag string, conta
 		return err
 	}
 
-	// install the agent in the box
+	// extract the agent in the box, as it's mounted as a volume
 	artifact := "elastic-agent"
 	version := "8.0.0-SNAPSHOT"
 	os := "linux"
 	arch := "x86_64"
 	extension := "tar.gz"
 
-	downloadURL, err := e2e.GetElasticArtifactURL(artifact, version, os, arch, extension)
-	if err != nil {
-		return err
-	}
-
-	cmd := []string{"curl", "-L", "-O", downloadURL}
-	err = execCommandInService(profile, service, cmd, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"service": service,
-		}).Error("Could not download agent in box")
-
-		return err
-	}
-
 	extractedDir := fmt.Sprintf("%s-%s-%s-%s", artifact, version, os, arch)
 	tarFile := fmt.Sprintf("%s.%s", extractedDir, extension)
 
-	cmd = []string{"tar", "xzvf", tarFile}
+	cmd := []string{"tar", "xzvf", tarFile}
 	err = execCommandInService(profile, service, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{

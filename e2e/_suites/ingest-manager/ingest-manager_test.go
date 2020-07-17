@@ -88,6 +88,13 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		imts.Fleet.setup()
 
 		imts.StandAlone.RuntimeDependenciesStartDate = time.Now().UTC()
+
+		err = imts.Fleet.downloadAgentBinary()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Fatal("The Elastic Agent could not be downloaded")
+		}
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
 		log.Debug("Before Ingest Manager scenario")
@@ -104,6 +111,20 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 				"error":   err,
 				"profile": profile,
 			}).Warn("Could not destroy the runtime dependencies for the profile.")
+		}
+
+		if _, err := os.Stat(imts.Fleet.AgentDownloadPath); err == nil {
+			err = os.Remove(imts.Fleet.AgentDownloadPath)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err":  err,
+					"path": imts.Fleet.AgentDownloadPath,
+				}).Warn("Elastic Agent binary could not be removed.")
+			} else {
+				log.WithFields(log.Fields{
+					"path": imts.Fleet.AgentDownloadPath,
+				}).Debug("Elastic Agent binary was removed.")
+			}
 		}
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {
