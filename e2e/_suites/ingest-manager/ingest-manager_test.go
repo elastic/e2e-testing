@@ -32,7 +32,6 @@ func init() {
 	config.Init()
 
 	queryRetryTimeout = e2e.GetIntegerFromEnv("OP_RETRY_TIMEOUT", queryRetryTimeout)
-	stackVersion = e2e.GetEnv("OP_STACK_VERSION", stackVersion)
 }
 
 func IngestManagerFeatureContext(s *godog.Suite) {
@@ -42,7 +41,8 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	}
 	serviceManager := services.NewServiceManager()
 
-	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, imts.processStateOnTheHost)
+	s.Step(`^the "([^"]*)" process is in the "([^"]*)" state on the host$`, imts.processStateOnTheHost)
+	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, imts.processStateChangedOnTheHost)
 
 	imts.Fleet.contributeSteps(s)
 	imts.StandAlone.contributeSteps(s)
@@ -61,7 +61,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": profile,
-			}).Error("Could not run the runtime dependencies for the profile.")
+			}).Fatal("Could not run the runtime dependencies for the profile.")
 		}
 
 		minutesToBeHealthy := 3 * time.Minute
@@ -70,7 +70,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			log.WithFields(log.Fields{
 				"error":   err,
 				"minutes": minutesToBeHealthy,
-			}).Error("The Elasticsearch cluster could not get the healthy status")
+			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
 
 		healthyKibana, err := e2e.WaitForKibana(minutesToBeHealthy)
@@ -78,10 +78,12 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			log.WithFields(log.Fields{
 				"error":   err,
 				"minutes": minutesToBeHealthy,
-			}).Error("The Kibana instance could not get the healthy status")
+			}).Fatal("The Kibana instance could not get the healthy status")
 		}
 
-		imts.StandAlone.RuntimeDependenciesStartDate = time.Now()
+		imts.Fleet.setup()
+
+		imts.StandAlone.RuntimeDependenciesStartDate = time.Now().UTC()
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
 		log.Debug("Before Ingest Manager scenario")
@@ -126,6 +128,23 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 				}).Debug("Elastic Agent configuration file removed.")
 			}
 		}
+
+		if imts.Fleet.Cleanup {
+			serviceName := imts.Fleet.BoxType
+
+			services := []string{serviceName}
+
+			err := serviceManager.RemoveServicesFromCompose("ingest-manager", services, profileEnv)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"service": serviceName,
+				}).Error("Could not stop the service.")
+			}
+
+			log.WithFields(log.Fields{
+				"service": serviceName,
+			}).Debug("Service removed from compose.")
+		}
 	})
 }
 
@@ -133,6 +152,37 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 type IngestManagerTestSuite struct {
 	Fleet      *FleetTestSuite
 	StandAlone *StandAloneTestSuite
+}
+
+func (imts *IngestManagerTestSuite) processStateChangedOnTheHost(process string, state string) error {
+	profile := "ingest-manager"
+	serviceName := "centos"
+
+	if state == "started" {
+		return startAgent(profile, serviceName)
+	} else if state != "stopped" {
+		return godog.ErrPending
+	}
+
+	log.WithFields(log.Fields{
+		"service": serviceName,
+		"process": process,
+	}).Debug("Stopping process on the service")
+
+	err := execCommandInService(profile, serviceName, []string{"pkill", "-9", process}, false)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"action":  state,
+			"error":   err,
+			"service": serviceName,
+			"process": process,
+		}).Error("Could not stop process with 'pkill -9' on the host")
+
+		return err
+	}
+
+	// check process was stopped
+	return imts.processStateOnTheHost(process, "stopped")
 }
 
 func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
@@ -156,6 +206,50 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 				"timeout": timeout,
 			}).Error("The process was found but shouldn't be present")
 		}
+
+		return err
+	}
+
+	return nil
+}
+
+func startAgent(profile string, serviceName string) error {
+	cmd := []string{"elastic-agent", "run"}
+	err := execCommandInService(profile, serviceName, cmd, true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmd,
+			"error":   err,
+			"service": serviceName,
+		}).Error("Could not run the agent")
+
+		return err
+	}
+
+	return nil
+}
+
+func execCommandInService(profile string, serviceName string, cmds []string, detach bool) error {
+	serviceManager := services.NewServiceManager()
+
+	composes := []string{
+		profile,     // profile name
+		serviceName, // service
+	}
+	composeArgs := []string{"exec", "-T"}
+	if detach {
+		composeArgs = append(composeArgs, "-d")
+	}
+	composeArgs = append(composeArgs, serviceName)
+	composeArgs = append(composeArgs, cmds...)
+
+	err := serviceManager.RunCommand(profile, composes, composeArgs, profileEnv)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmds,
+			"error":   err,
+			"service": serviceName,
+		}).Error("Could not execute command in container")
 
 		return err
 	}

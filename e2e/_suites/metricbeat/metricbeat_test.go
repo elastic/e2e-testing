@@ -167,7 +167,7 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": "metricbeat",
-			}).Error("Could not run the profile.")
+			}).Fatal("Could not run the profile.")
 		}
 
 		minutesToBeHealthy := 3 * time.Minute
@@ -176,7 +176,7 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 			log.WithFields(log.Fields{
 				"error":   err,
 				"minutes": minutesToBeHealthy,
-			}).Error("The Elasticsearch cluster could not get the healthy status")
+			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
 	})
 	s.BeforeScenario(func(*messages.Pickle) {

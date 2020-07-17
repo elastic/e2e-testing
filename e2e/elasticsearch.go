@@ -216,7 +216,7 @@ func WaitForElasticsearch(maxTimeoutMinutes time.Duration) (bool, error) {
 // WaitForElasticsearchFromHostPort waits for an elasticsearch running in a host:port to be healthy, returning false
 // if elasticsearch does not get healthy status in a defined number of minutes.
 func WaitForElasticsearchFromHostPort(host string, port int, maxTimeoutMinutes time.Duration) (bool, error) {
-	exp := getExponentialBackOff(maxTimeoutMinutes)
+	exp := GetExponentialBackOff(maxTimeoutMinutes)
 
 	retryCount := 1
 
@@ -261,7 +261,7 @@ func WaitForElasticsearchFromHostPort(host string, port int, maxTimeoutMinutes t
 // WaitForNumberOfHits waits for an elasticsearch query to return more than a number of hits,
 // returning false if the query does not reach that number in a defined number of time.
 func WaitForNumberOfHits(indexName string, query map[string]interface{}, desiredHits int, maxTimeout time.Duration) (SearchResult, error) {
-	exp := getExponentialBackOff(maxTimeout)
+	exp := GetExponentialBackOff(maxTimeout)
 
 	retryCount := 1
 	result := SearchResult{}
@@ -284,7 +284,7 @@ func WaitForNumberOfHits(indexName string, query map[string]interface{}, desired
 
 			retryCount++
 
-			return fmt.Errorf("Not enough hits in the index yet")
+			return fmt.Errorf("Not enough hits in the index yet. Current: %d, Desired: %d", hitsCount, desiredHits)
 		}
 
 		result = hits

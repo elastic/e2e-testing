@@ -3,6 +3,7 @@ package docker
 import (
 	"bytes"
 	"context"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
@@ -92,9 +93,10 @@ func ExecCommandIntoContainer(ctx context.Context, containerName string, user st
 		"container": containerName,
 		"command":   cmd,
 		"detach":    detach,
-		"output":    output,
 		"tty":       tty,
 	}).Debug("Command sucessfully executed in container")
+
+	output = strings.ReplaceAll(output, "\n", "")
 
 	return output, nil
 }

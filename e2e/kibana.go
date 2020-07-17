@@ -18,7 +18,7 @@ func WaitForKibana(maxTimeoutMinutes time.Duration) (bool, error) {
 // WaitForKibanaFromHostPort waits for kibana running in a host:port to be healthy, returning false
 // if kibana does not get healthy status in a defined number of minutes.
 func WaitForKibanaFromHostPort(host string, port int, maxTimeoutMinutes time.Duration) (bool, error) {
-	exp := getExponentialBackOff(maxTimeoutMinutes)
+	exp := GetExponentialBackOff(maxTimeoutMinutes)
 
 	retryCount := 1
 

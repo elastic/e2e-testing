@@ -8,6 +8,8 @@ SUITES:
     feature: "metricbeat"
   - suite: "ingest-manager"
     feature: "stand_alone_mode"
+  - suite: "ingest-manager"
+    feature: "fleet_mode"
   - suite: "metricbeat"
     feature: "apache"
   - suite: "metricbeat"

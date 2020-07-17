@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -14,10 +15,33 @@ import (
 type HTTPRequest struct {
 	BasicAuthUser     string
 	BasicAuthPassword string
+	EncodeURL         bool
 	Headers           map[string]string
 	method            string
 	Payload           []byte
+	QueryString       string
 	URL               string
+}
+
+// GetURL returns the URL as a string
+func (req *HTTPRequest) GetURL() string {
+	if req.QueryString == "" {
+		return req.URL
+	}
+
+	u := req.URL + "?"
+	if req.EncodeURL {
+		return u + url.QueryEscape(req.QueryString)
+	}
+
+	return u + req.QueryString
+}
+
+// Delete executes a DELETE request
+func Delete(r HTTPRequest) (string, error) {
+	r.method = "DELETE"
+
+	return request(r)
 }
 
 // Get executes a GET request
@@ -36,9 +60,11 @@ func Post(r HTTPRequest) (string, error) {
 
 // Post executes a request
 func request(r HTTPRequest) (string, error) {
+	escapedURL := r.GetURL()
+
 	log.WithFields(log.Fields{
-		"method": r.method,
-		"url":    r.URL,
+		"method":     r.method,
+		"escapedURL": escapedURL,
 	}).Debug("Executing request")
 
 	var body io.Reader
@@ -48,12 +74,12 @@ func request(r HTTPRequest) (string, error) {
 		body = nil
 	}
 
-	req, err := http.NewRequest(r.method, r.URL, body)
+	req, err := http.NewRequest(r.method, escapedURL, body)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"error":  err,
-			"method": r.method,
-			"url":    r.URL,
+			"error":      err,
+			"method":     r.method,
+			"escapedURL": escapedURL,
 		}).Warn("Error creating request")
 		return "", err
 	}
@@ -71,9 +97,9 @@ func request(r HTTPRequest) (string, error) {
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"error":  err,
-			"method": r.method,
-			"url":    r.URL,
+			"error":      err,
+			"method":     r.method,
+			"escapedURL": escapedURL,
 		}).Warn("Error executing request")
 		return "", err
 	}
@@ -82,9 +108,9 @@ func request(r HTTPRequest) (string, error) {
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"error":  err,
-			"method": r.method,
-			"url":    r.URL,
+			"error":      err,
+			"method":     r.method,
+			"escapedURL": escapedURL,
 		}).Warn("Could not read response body")
 		return "", err
 	}

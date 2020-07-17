@@ -13,8 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Jeffail/gabs/v2"
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/docker"
+	curl "github.com/elastic/e2e-testing/cli/shell"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -46,9 +48,8 @@ func GetIntegerFromEnv(envVar string, defaultValue int) int {
 	return defaultValue
 }
 
-// getExponentialBackOff returns a preconfigured exponential backoff instance
-//nolint:unused
-func getExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOff {
+// GetExponentialBackOff returns a preconfigured exponential backoff instance
+func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOff {
 	var (
 		initialInterval     = 500 * time.Millisecond
 		randomizationFactor = 0.5
@@ -67,6 +68,85 @@ func getExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOf
 	return exp
 }
 
+// GetElasticArtifactURL returns the URL of a released artifact from
+// Elastic's artifact repository, bbuilding the JSON path query based
+// on the desired OS, architecture and file extension
+// i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "linux", "x86_64", "tar.gz")
+// If the environment variable ARTIFACT_HASH exists, then the artifact to be downloaded will
+// be defined by that value
+func GetElasticArtifactURL(artifact string, version string, OS string, arch string, extension string) (string, error) {
+	hash := os.Getenv("ARTIFACT_HASH")
+	if hash != "" {
+		hashedVersion := strings.ReplaceAll(version, "-SNAPSHOT", "")
+		return fmt.Sprintf("https://snapshots.elastic.co/%s-%s/downloads/beats/%s/%s-%s-%s-%s.%s", hashedVersion, hash, artifact, artifact, version, OS, arch, extension), nil
+	}
+
+	exp := GetExponentialBackOff(1 * time.Minute)
+
+	retryCount := 1
+
+	body := ""
+
+	apiStatus := func() error {
+		r := curl.HTTPRequest{
+			URL: fmt.Sprintf("https://artifacts-api.elastic.co/v1/search/%s/%s", version, artifact),
+		}
+
+		response, err := curl.Get(r)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"artifact":       artifact,
+				"version":        version,
+				"os":             OS,
+				"arch":           arch,
+				"extension":      extension,
+				"error":          err,
+				"retry":          retryCount,
+				"statusEndpoint": r.URL,
+				"elapsedTime":    exp.GetElapsedTime(),
+			}).Warn("The Elastic artifacts API is not available yet")
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"retries":        retryCount,
+			"statusEndpoint": r.URL,
+			"elapsedTime":    exp.GetElapsedTime(),
+		}).Debug("The Elastic artifacts API is available")
+
+		body = response
+		return nil
+	}
+
+	err := backoff.Retry(apiStatus, exp)
+	if err != nil {
+		return "", err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"artifact":  artifact,
+			"version":   version,
+			"os":        OS,
+			"arch":      arch,
+			"extension": extension,
+		}).Error("Could not parse the response body for the artifact")
+		return "", err
+	}
+
+	artifactPath := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
+	packagesObject := jsonParsed.Path("packages")
+	// we need to get keys with dots using Search instead of Path
+	downloadObject := packagesObject.Search(artifactPath)
+	downloadURL := downloadObject.Path("url").Data().(string)
+
+	return downloadURL, nil
+}
+
 // DownloadFile will download a url and store it in a temporary path.
 // It writes to the destination file as it downloads it, without
 // loading the entire file into memory.
@@ -83,7 +163,7 @@ func DownloadFile(url string) (string, error) {
 
 	filepath := tempFile.Name()
 
-	exp := getExponentialBackOff(3)
+	exp := GetExponentialBackOff(3)
 
 	retryCount := 1
 	var fileReader io.ReadCloser
@@ -178,7 +258,7 @@ func Sleep(seconds string) error {
 // WaitForProcess polls a container executing "ps" command until the process is in the desired state (present or not),
 // or a timeout happens
 func WaitForProcess(host string, process string, desiredState string, maxTimeout time.Duration) error {
-	exp := getExponentialBackOff(maxTimeout)
+	exp := GetExponentialBackOff(maxTimeout)
 
 	mustBePresent := false
 	if desiredState == "started" {
@@ -192,7 +272,7 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 			"process":      process,
 		}).Debug("Checking process desired state on the host")
 
-		output, err := docker.ExecCommandIntoContainer(context.Background(), host, "root", []string{"ps"})
+		output, err := docker.ExecCommandIntoContainer(context.Background(), host, "root", []string{"pgrep", "-n", "-l", process})
 		if err != nil {
 			log.WithFields(log.Fields{
 				"desiredState": desiredState,
@@ -201,14 +281,14 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 				"host":         host,
 				"process":      process,
 				"retry":        retryCount,
-			}).Warn("Could not execute process in the host")
+			}).Warn("Could not execute 'pgrep -n -l' in the host")
 
 			retryCount++
 
 			return err
 		}
 
-		log.Debugf("Output: %s", output)
+		log.Debugf("pgrep -n -l %s: %s", process, output)
 
 		outputContainsProcess := strings.Contains(output, process)
 
@@ -219,7 +299,6 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 				"host":          host,
 				"mustBePresent": outputContainsProcess,
 				"process":       process,
-				"ps":            output,
 			}).Infof("Process desired state checked")
 
 			return nil

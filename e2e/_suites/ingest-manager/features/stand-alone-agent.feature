@@ -7,8 +7,8 @@ Feature: Stand-alone Agent Mode
 @start-agent
 Scenario: Starting the agent starts backend processes
   Given a stand-alone agent is deployed
-  Then the "filebeat" process is "started" on the host
-    And the "metricbeat" process is "started" on the host
+  Then the "filebeat" process is in the "started" state on the host
+    And the "metricbeat" process is in the "started" state on the host
 
 @deploy-stand-alone
 Scenario: Deploying a stand-alone agent
