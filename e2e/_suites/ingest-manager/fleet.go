@@ -43,7 +43,6 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^an attempt to enroll an agent with the old token fails$`, fts.anAttemptToEnrollANewAgentFails)
 	s.Step(`^the package list API returns successfully$`, fts.thePackageListAPIReturnsSuccessfully)
 	s.Step(`^the "([^"]*)" "([^"]*)" package version is installed successfully$`, fts.thePackageVersionIsInstalledSuccessfully)
-	s.Step(`^a "([^"]*)" package datasource is added to the \'default\' configuration$`, fts.aPackageDatasourceIsAddedToTheDefaultConfiguration)
 	s.Step(`^the "([^"]*)" configuration shows the "([^"]*)" datasource added$`, fts.theConfigurationShowsTheDatasourceAdded)
 	s.Step(`^a new configuration named "([^"]*)" is created$`, fts.aNewConfigurationNamedIsCreated)
 	s.Step(`^the Agent is assigned to the configuration "([^"]*)"$`, fts.theAgentIsAssignedToTheConfiguration)
@@ -379,10 +378,6 @@ func (fts *FleetTestSuite) thePackageListAPIReturnsSuccessfully() error {
 }
 
 func (fts *FleetTestSuite) thePackageVersionIsInstalledSuccessfully(packageName string, packageVersion string) error {
-	return godog.ErrPending
-}
-
-func (fts *FleetTestSuite) aPackageDatasourceIsAddedToTheDefaultConfiguration(packageName string) error {
 	return godog.ErrPending
 }
 
