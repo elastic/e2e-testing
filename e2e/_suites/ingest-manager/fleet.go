@@ -41,7 +41,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the agent is re-enrolled on the host$`, fts.theAgentIsReenrolledOnTheHost)
 	s.Step(`^the enrollment token is revoked$`, fts.theEnrollmentTokenIsRevoked)
 	s.Step(`^an attempt to enroll an agent with the old token fails$`, fts.anAttemptToEnrollANewAgentFails)
-	s.Step(`^the package list api returns successfully$`, fts.thePackageListAPIReturnsSuccessfully)
+	s.Step(`^the package list API returns successfully$`, fts.thePackageListAPIReturnsSuccessfully)
 	s.Step(`^the "([^"]*)" latest package version is installed successfull$`, fts.theLatestPackageVersionIsInstalledSuccessfull)
 	s.Step(`^a "([^"]*)" package datasource is added to the \'default\' configuration$`, fts.aPackageDatasourceIsAddedToTheDefaultConfiguration)
 	s.Step(`^the "([^"]*)" configuration shows the "([^"]*)" datasource added$`, fts.theConfigurationShowsTheDatasourceAdded)

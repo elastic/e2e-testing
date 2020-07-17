@@ -42,9 +42,9 @@ Scenario: Revoking the enrollment token for an agent
   Then an attempt to enroll an agent with the old token fails
 
 @package-added-to-default-config
-Scenario: Execute packages api calls
+Scenario: Execute packages API calls
   Given an agent is deployed to Fleet
-    And the package list api returns successfully
+    And the package list API returns successfully
   When the "Cisco" latest package version is installed successfull
     And a "Cisco" package datasource is added to the 'default' configuration
   Then the "default" configuration shows the "Cisco" datasource added
