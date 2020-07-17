@@ -28,8 +28,8 @@ pipeline {
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
     choice(name: 'LOG_LEVEL', choices: ['INFO', 'DEBUG'], description: 'Log level to be used')
     choice(name: 'RETRY_TIMEOUT', choices: ['3', '5', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
-    string(name: 'STACK_VERSION', defaultValue: '7.7.0', description: 'SemVer version of the stack to be used.')
-    string(name: 'METRICBEAT_VERSION', defaultValue: '7.7.0', description: 'SemVer version of the metricbeat to be used.')
+    string(name: 'STACK_VERSION', defaultValue: '7.8.0', description: 'SemVer version of the stack to be used.')
+    string(name: 'METRICBEAT_VERSION', defaultValue: '7.8.0', description: 'SemVer version of the metricbeat to be used.')
     string(name: 'HELM_CHART_VERSION', defaultValue: '7.6.1', description: 'SemVer version of Helm chart to be used.')
     string(name: 'HELM_VERSION', defaultValue: '2.16.3', description: 'SemVer version of Helm to be used.')
     string(name: 'KIND_VERSION', defaultValue: '0.7.0', description: 'SemVer version of Kind to be used.')
@@ -38,7 +38,7 @@ pipeline {
   }
   stages {
     stage('Initializing'){
-      agent { label 'linux && immutable' }
+      agent { label 'ubuntu-18.04 && immutable && docker' }
       options { skipDefaultCheckout() }
       environment {
         HOME = "${env.WORKSPACE}"
@@ -67,7 +67,7 @@ pipeline {
         stage('Tests') {
           parallel {
             stage('Sanity checks') {
-              agent { label 'linux && immutable' }
+              agent { label 'ubuntu-18.04 && immutable && docker' }
               environment {
                 GOROOT = "${env.WORKSPACE}/.gimme/versions/go${env.GO_VERSION}.linux.amd64"
                 PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.PATH}:${env.GOROOT}/bin"
@@ -85,7 +85,7 @@ pipeline {
               }
             }
             stage('Unit Tests') {
-              agent { label 'linux && immutable' }
+              agent { label 'ubuntu-18.04 && immutable && docker' }
               options { skipDefaultCheckout() }
               steps {
                 withGithubNotify(context: 'Tests', tab: 'tests') {
@@ -175,7 +175,7 @@ def generateStep(Map params = [:]){
   def oss = params.get('oss')
   def platform = params.get('platform')
   return {
-    node('linux && immutable') {
+    node('ubuntu-18.04 && immutable && docker') {
       try {
         deleteDir()
         unstash 'build'
@@ -197,7 +197,7 @@ def generateFunctionalTestStep(Map params = [:]){
   def suite = params.get('suite')
   def feature = params.get('feature')
   return {
-    node('linux && immutable') {
+    node('ubuntu-18.04 && immutable && docker') {
       try {
         deleteDir()
         unstash 'build'

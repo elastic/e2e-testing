@@ -96,8 +96,8 @@ At this moment, the CLI and the functional tests coexist in the same repository,
 ```shell
 $ export GO111MODULE=on                            # Go modules support
 $ make -C cli install                              # installs CLI dependencies
-$ export STACK_VERSION=7.7.0                       # exports stack version as runtime
-$ export METRICBEAT_VERSION=7.7.0                  # exports metricbeat version to be tested
+$ export STACK_VERSION=7.8.0                       # exports stack version as runtime
+$ export METRICBEAT_VERSION=7.8.0                  # exports metricbeat version to be tested
 $ # export FEATURE=redis                           # exports which feature to run (default 'all')
 $ # export GOOS=darwin                             # exports your O.S. (default 'linux', valid: [darwin, linux, windows])
 $ # export GOARCH=amd64                            # exports your O.S. (default 'amd64', valid: [amd64, 386])
@@ -110,8 +110,8 @@ or simply run as the CI does:
 
 ```shell
 $ export GO_VERSION=1.12.7                         # exports which GIMME version to use
-$ export STACK_VERSION=7.7.0                       # exports stack version as runtime
-$ export METRICBEAT_VERSION=7.7.0                  # exports metricbeat version
+$ export STACK_VERSION=7.8.0                       # exports stack version as runtime
+$ export METRICBEAT_VERSION=7.8.0                  # exports metricbeat version
 $ #export FEATURE=redis                            # exports which feature to run (default 'all')
 $ ./.ci/scripts/functional-test.sh ${GO_VERSION} ${FEATURE}
 ```

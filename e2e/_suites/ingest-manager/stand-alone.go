@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
@@ -82,7 +83,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 
 func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 	maxTimeout := time.Duration(queryRetryTimeout) * time.Minute
-	minimumHitsCount := 100
+	minimumHitsCount := 50
 
 	result, err := searchAgentData(sats.Hostname, sats.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
 	if err != nil {
@@ -106,7 +107,7 @@ func (sats *StandAloneTestSuite) theDockerContainerIsStopped(serviceName string)
 
 		return err
 	}
-	sats.AgentStoppedDate = time.Now()
+	sats.AgentStoppedDate = time.Now().UTC()
 
 	return nil
 }
@@ -145,6 +146,13 @@ func getContainerHostname(serviceName string) (string, error) {
 		return "", err
 	}
 
+	if strings.HasPrefix(hostname, "\x01\x00\x00\x00\x00\x00\x00\r") {
+		hostname = strings.ReplaceAll(hostname, "\x01\x00\x00\x00\x00\x00\x00\r", "")
+		log.WithFields(log.Fields{
+			"hostname": hostname,
+		}).Debug("Container name has been sanitized")
+	}
+
 	log.WithFields(log.Fields{
 		"containerName": containerName,
 		"hostname":      hostname,
@@ -156,7 +164,6 @@ func getContainerHostname(serviceName string) (string, error) {
 
 func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int, maxTimeout time.Duration) (e2e.SearchResult, error) {
 	timezone := "America/New_York"
-	now := time.Now()
 
 	esQuery := map[string]interface{}{
 		"version": true,
@@ -203,7 +210,7 @@ func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int,
 											{
 												"range": map[string]interface{}{
 													"@timestamp": map[string]interface{}{
-														"gte":       now,
+														"gte":       startDate,
 														"time_zone": timezone,
 													},
 												},
@@ -230,7 +237,7 @@ func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int,
 		},
 	}
 
-	indexName := "logs-agent-default"
+	indexName := ".ds-logs-elastic.agent-default-000001"
 
 	return e2e.WaitForNumberOfHits(indexName, esQuery, minimumHitsCount, maxTimeout)
 }

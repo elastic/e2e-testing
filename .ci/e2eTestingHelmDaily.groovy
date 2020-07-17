@@ -42,7 +42,7 @@ pipeline {
       steps {
         build(job: 'e2e-tests/e2e-testing-mbp/master',
           parameters: [
-            string(name: 'runTestsSuite', value: 'ingest-manager')
+            string(name: 'runTestsSuite', value: 'helm')
           ],
           propagate: false,
           wait: false
