@@ -64,5 +64,5 @@ Scenario: Add a new config and a new package and assign an agent
   When a new configuration named "Test - custom logs" is created
     And the "custom logs" package datasource is added to the "Test - custom logs" configuration
     And the Agent is assigned to the configuration "Test - custom logs"
-    And the "Test - custom logs" configuration shows the "custom logs" datasource added
-  Then there is new data in the index from agent from "custom logs" stream
+  Then the "Test - custom logs" configuration shows the "custom logs" datasource added
+    And there is new data in the index from agent from "custom logs" stream
