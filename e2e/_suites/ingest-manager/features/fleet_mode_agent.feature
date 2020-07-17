@@ -25,7 +25,8 @@ Scenario: Stopping the agent stops backend processes
 Scenario: Un-enrolling an agent
   Given an agent is deployed to Fleet
   When the agent is un-enrolled
-  Then the agent is not listed as online in Fleet
+  Then the "elastic-agent" process is in the "started" state on the host
+    But the agent is not listed as online in Fleet
 
 @reenroll
 Scenario: Re-enrolling an agent
