@@ -45,7 +45,7 @@ Scenario: Revoking the enrollment token for an agent
 Scenario: Execute packages API calls
   Given an agent is deployed to Fleet
     And the package list API returns successfully
-  When the "Cisco" latest package version is installed successfull
+  When the "Cisco" latest package version is installed successfully
     And a "Cisco" package datasource is added to the 'default' configuration
   Then the "default" configuration shows the "Cisco" datasource added
 
