@@ -41,6 +41,15 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the agent is re-enrolled on the host$`, fts.theAgentIsReenrolledOnTheHost)
 	s.Step(`^the enrollment token is revoked$`, fts.theEnrollmentTokenIsRevoked)
 	s.Step(`^an attempt to enroll an agent with the old token fails$`, fts.anAttemptToEnrollANewAgentFails)
+	s.Step(`^the package list api returns successfully$`, fts.thePackageListAPIReturnsSuccessfully)
+	s.Step(`^the "([^"]*)" latest package version is installed successfull$`, fts.theLatestPackageVersionIsInstalledSuccessfull)
+	s.Step(`^a "([^"]*)" package datasource is added to the \'default\' configuration$`, fts.aPackageDatasourceIsAddedToTheDefaultConfiguration)
+	s.Step(`^the "([^"]*)" configuration shows the "([^"]*)" datasource added$`, fts.theConfigurationShowsTheDatasourceAdded)
+	s.Step(`^a new configuration named "([^"]*)" is created$`, fts.aNewConfigurationNamedIsCreated)
+	s.Step(`^the Agent is assigned to the configuration "([^"]*)"$`, fts.theAgentIsAssignedToTheConfiguration)
+	s.Step(`^a new enrollment token is created$`, fts.aNewEnrollmentTokenIsCreated)
+	s.Step(`^the "([^"]*)" package datasource is added to the "([^"]*)" configuration$`, fts.thePackageDatasourceIsAddedToTheConfiguration)
+	s.Step(`^there is new data in the index from agent from "([^"]*)" stream$`, fts.thereIsNewDataInTheIndexFromAgentFromStream)
 }
 
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
@@ -363,6 +372,42 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 		"token": fts.CurrentToken,
 	}).Debug("As expected, it's not possible to enroll an agent with a revoked token")
 	return nil
+}
+
+func (fts *FleetTestSuite) thePackageListAPIReturnsSuccessfully() error {
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) theLatestPackageVersionIsInstalledSuccessfull(packageName string) error {
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) aPackageDatasourceIsAddedToTheDefaultConfiguration(packageName string) error {
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(configName string, packageName string) error {
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) aNewConfigurationNamedIsCreated(configName string) error {
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) theAgentIsAssignedToTheConfiguration(configName string) error {
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) aNewEnrollmentTokenIsCreated() error {
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) thePackageDatasourceIsAddedToTheConfiguration(packageName string, configName string) error {
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgentFromStream(streamName string) error {
+	return godog.ErrPending
 }
 
 // checkFleetConfiguration checks that Fleet configuration is not missing
