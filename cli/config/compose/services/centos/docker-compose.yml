@@ -4,3 +4,5 @@ services:
     image: centos:${centosTag:-7}
     container_name: ${centosContainerName} 
     entrypoint: tail -f /dev/null
+    volumes:
+      - ${centosAgentBinarySrcPath:-.}:${centosAgentBinaryTargetPath:-/tmp}
