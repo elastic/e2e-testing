@@ -65,7 +65,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	fts.Cleanup = true
 
 	// enroll the agent with a new token
-	tokenJSONObject, err := createFleetToken("name", fts.ConfigID)
+	tokenJSONObject, err := createFleetToken(containerName, fts.ConfigID)
 	if err != nil {
 		return err
 	}
