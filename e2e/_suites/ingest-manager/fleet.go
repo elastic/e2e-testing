@@ -140,23 +140,23 @@ func (fts *FleetTestSuite) setup() error {
 func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 	log.Debug("Checking agent is listed in Fleet as online")
 
-	agentsCount := 0.0
 	maxTimeout := 10 * time.Second
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
-	countAgentsFn := func() error {
-		count, err := countOnlineAgents()
-		if err != nil || count == 0 {
+	agentOnlineFn := func() error {
+		status, err := isAgentOnline(fts.Hostname)
+		if err != nil || !status {
 			if err == nil {
 				err = fmt.Errorf("The Agent is not online yet")
 			}
 
 			log.WithFields(log.Fields{
-				"retry":        retryCount,
-				"onlineAgents": count,
-				"elapsedTime":  exp.GetElapsedTime(),
+				"active":      status,
+				"elapsedTime": exp.GetElapsedTime(),
+				"hostname":    fts.Hostname,
+				"retry":       retryCount,
 			}).Warn(err.Error())
 
 			retryCount++
@@ -165,22 +165,16 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 		}
 
 		log.WithFields(log.Fields{
-			"elapsedTime":  exp.GetElapsedTime(),
-			"onlineAgents": count,
-			"retries":      retryCount,
+			"active":      status,
+			"elapsedTime": exp.GetElapsedTime(),
+			"hostname":    fts.Hostname,
+			"retries":     retryCount,
 		}).Info("The Agent is online")
-		agentsCount = count
 		return nil
 	}
 
-	err := backoff.Retry(countAgentsFn, exp)
+	err := backoff.Retry(agentOnlineFn, exp)
 	if err != nil {
-		return err
-	}
-
-	if agentsCount != 1 {
-		err = fmt.Errorf("There are %.0f online agents. We expected to have exactly one", agentsCount)
-		log.Error(err.Error())
 		return err
 	}
 
@@ -276,23 +270,23 @@ func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
 func (fts *FleetTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
 	log.Debug("Checking if the agent is not listed as online in Fleet")
 
-	agentsCount := 0.0
 	maxTimeout := 10 * time.Second
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
-	countAgentsFn := func() error {
-		count, err := countOnlineAgents()
-		if err != nil || count != 0 {
+	agentOnlineFn := func() error {
+		status, err := isAgentOnline(fts.Hostname)
+		if err != nil || status {
 			if err == nil {
 				err = fmt.Errorf("The Agent is still online")
 			}
 
 			log.WithFields(log.Fields{
-				"retry":        retryCount,
-				"onlineAgents": count,
-				"elapsedTime":  exp.GetElapsedTime(),
+				"active":      status,
+				"elapsedTime": exp.GetElapsedTime(),
+				"hostname":    fts.Hostname,
+				"retry":       retryCount,
 			}).Warn(err.Error())
 
 			retryCount++
@@ -301,22 +295,16 @@ func (fts *FleetTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
 		}
 
 		log.WithFields(log.Fields{
-			"elapsedTime":  exp.GetElapsedTime(),
-			"onlineAgents": count,
-			"retries":      retryCount,
+			"active":      status,
+			"elapsedTime": exp.GetElapsedTime(),
+			"hostname":    fts.Hostname,
+			"retries":     retryCount,
 		}).Info("The Agent is offline")
-		agentsCount = count
 		return nil
 	}
 
-	err := backoff.Retry(countAgentsFn, exp)
+	err := backoff.Retry(agentOnlineFn, exp)
 	if err != nil {
-		return err
-	}
-
-	if agentsCount != 0 {
-		err = fmt.Errorf("There are %.0f online agents. We expected to have none", agentsCount)
-		log.Error(err.Error())
 		return err
 	}
 
@@ -441,21 +429,30 @@ func checkFleetConfiguration() error {
 	return nil
 }
 
-// countOnlineAgents extracts the number of agents in the online status
-// querying Fleet's agents endpoint
-func countOnlineAgents() (float64, error) {
+// isAgentOnline extracts the status for an agent, identified by its hotname
+// It will wuery Fleet's agents endpoint
+func isAgentOnline(hostname string) (bool, error) {
 	jsonResponse, err := getOnlineAgents()
 	if err != nil {
-		return 0, err
+		return false, err
 	}
 
-	agentsCount := jsonResponse.Path("total").Data().(float64)
+	agents := jsonResponse.Path("list")
 
-	log.WithFields(log.Fields{
-		"count": agentsCount,
-	}).Debug("Online agents retrieved")
+	for _, agent := range agents.Children() {
+		agentStatus := agent.Path("active").Data().(bool)
+		agentHostname := agent.Path("local_metadata.host.hostname").Data().(string)
+		if agentHostname == hostname {
+			log.WithFields(log.Fields{
+				"active":   agentStatus,
+				"hostname": hostname,
+			}).Debug("Agent status retrieved")
 
-	return agentsCount, nil
+			return agentStatus, nil
+		}
+	}
+
+	return false, fmt.Errorf("The agent '" + hostname + "' was not found in Fleet")
 }
 
 // createFleetConfiguration sends a POST request to Fleet forcing the
@@ -729,9 +726,9 @@ func getOnlineAgents() (*gabs.Container, error) {
 	r := createDefaultHTTPRequest(fleetAgentsURL)
 	// let's not URL encode the querystring, as it seems Kibana is not handling
 	// the request properly, returning an 400 Bad Request error with this message:
-	// [request query.page=1&perPage=20&showInactive=false]: definition for this key is missing
+	// [request query.page=1&perPage=20&showInactive=true]: definition for this key is missing
 	r.EncodeURL = false
-	r.QueryString = fmt.Sprintf("page=1&perPage=20&showInactive=%t", false)
+	r.QueryString = fmt.Sprintf("page=1&perPage=20&showInactive=%t", true)
 
 	body, err := curl.Get(r)
 	if err != nil {
