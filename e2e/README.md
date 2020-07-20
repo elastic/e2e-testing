@@ -151,3 +151,13 @@ When using VSCode as editor, it's possible to debug the project using the existi
 In order to debug the `godog` tests, 1) you must have the `runner_test.go` file opened as the current file in the IDE, 2) Use the Run/Debug module of VSCode, and 3) select the `Godog Tests` debug configuration to be executed.
 
 ![](./debug.png)
+
+## Noticing the test framework
+
+Because we are using a project layout which consumes another directory from the same project (the CLI), and the test project uses its own `go.mod` file, totally decoupled from the CLI one, we are forced to do a workaround to generate the notice files for this project:
+
+1. In the go.mod file, remove the `replace` entry, which replaces the upstream dependency with the local one.
+1. Execute `make notice` to generate NOTICE.txt file.
+1. Do not forget to return back the `go.mod` to its original state without commiting the change.
+
+For more information about this workaround please read https://github.com/elastic/go-licence-detector/issues/11.
