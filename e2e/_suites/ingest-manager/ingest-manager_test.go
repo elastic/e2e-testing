@@ -169,6 +169,14 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			log.WithFields(log.Fields{
 				"service": serviceName,
 			}).Debug("Service removed from compose.")
+
+			err = imts.Fleet.removeToken()
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err":     err,
+					"tokenID": imts.Fleet.CurrentTokenID,
+				}).Warn("The enrollment token could not be deleted")
+			}
 		}
 	})
 }

@@ -335,18 +335,8 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 		"tokenID": fts.CurrentTokenID,
 	}).Debug("Revoking enrollment token")
 
-	revokeTokenURL := fleetEnrollmentTokenURL + "/" + fts.CurrentTokenID
-	deleteReq := createDefaultHTTPRequest(revokeTokenURL)
-
-	body, err := curl.Delete(deleteReq)
+	err := fts.removeToken()
 	if err != nil {
-		log.WithFields(log.Fields{
-			"token":   fts.CurrentToken,
-			"tokenID": fts.CurrentTokenID,
-			"body":    body,
-			"error":   err,
-			"url":     revokeTokenURL,
-		}).Error("Could revoke token")
 		return err
 	}
 
@@ -387,6 +377,24 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 		"err":   err,
 		"token": fts.CurrentToken,
 	}).Debug("As expected, it's not possible to enroll an agent with a revoked token")
+	return nil
+}
+
+func (fts *FleetTestSuite) removeToken() error {
+	revokeTokenURL := fleetEnrollmentTokenURL + "/" + fts.CurrentTokenID
+	deleteReq := createDefaultHTTPRequest(revokeTokenURL)
+
+	body, err := curl.Delete(deleteReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"tokenID": fts.CurrentTokenID,
+			"body":    body,
+			"error":   err,
+			"url":     revokeTokenURL,
+		}).Error("Could delete token")
+		return err
+	}
+
 	return nil
 }
 
