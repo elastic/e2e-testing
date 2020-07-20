@@ -249,15 +249,27 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	return nil
 }
 
-func startAgent(profile string, serviceName string) error {
-	cmd := []string{"elastic-agent", "run"}
-	err := execCommandInService(profile, serviceName, cmd, true)
+func execCommandInService(profile string, serviceName string, cmds []string, detach bool) error {
+	serviceManager := services.NewServiceManager()
+
+	composes := []string{
+		profile,     // profile name
+		serviceName, // service
+	}
+	composeArgs := []string{"exec", "-T"}
+	if detach {
+		composeArgs = append(composeArgs, "-d")
+	}
+	composeArgs = append(composeArgs, serviceName)
+	composeArgs = append(composeArgs, cmds...)
+
+	err := serviceManager.RunCommand(profile, composes, composeArgs, profileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"command": cmd,
+			"command": cmds,
 			"error":   err,
 			"service": serviceName,
-		}).Error("Could not run the agent")
+		}).Error("Could not execute command in container")
 
 		return err
 	}
@@ -295,27 +307,15 @@ func getContainerHostname(containerName string) (string, error) {
 	return hostname, nil
 }
 
-func execCommandInService(profile string, serviceName string, cmds []string, detach bool) error {
-	serviceManager := services.NewServiceManager()
-
-	composes := []string{
-		profile,     // profile name
-		serviceName, // service
-	}
-	composeArgs := []string{"exec", "-T"}
-	if detach {
-		composeArgs = append(composeArgs, "-d")
-	}
-	composeArgs = append(composeArgs, serviceName)
-	composeArgs = append(composeArgs, cmds...)
-
-	err := serviceManager.RunCommand(profile, composes, composeArgs, profileEnv)
+func startAgent(profile string, serviceName string) error {
+	cmd := []string{"elastic-agent", "run"}
+	err := execCommandInService(profile, serviceName, cmd, true)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"command": cmds,
+			"command": cmd,
 			"error":   err,
 			"service": serviceName,
-		}).Error("Could not execute command in container")
+		}).Error("Could not run the agent")
 
 		return err
 	}

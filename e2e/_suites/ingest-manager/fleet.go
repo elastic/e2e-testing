@@ -429,32 +429,6 @@ func checkFleetConfiguration() error {
 	return nil
 }
 
-// isAgentOnline extracts the status for an agent, identified by its hotname
-// It will wuery Fleet's agents endpoint
-func isAgentOnline(hostname string) (bool, error) {
-	jsonResponse, err := getOnlineAgents()
-	if err != nil {
-		return false, err
-	}
-
-	agents := jsonResponse.Path("list")
-
-	for _, agent := range agents.Children() {
-		agentStatus := agent.Path("active").Data().(bool)
-		agentHostname := agent.Path("local_metadata.host.hostname").Data().(string)
-		if agentHostname == hostname {
-			log.WithFields(log.Fields{
-				"active":   agentStatus,
-				"hostname": hostname,
-			}).Debug("Agent status retrieved")
-
-			return agentStatus, nil
-		}
-	}
-
-	return false, fmt.Errorf("The agent '" + hostname + "' was not found in Fleet")
-}
-
 // createFleetConfiguration sends a POST request to Fleet forcing the
 // recreation of the configuration
 func createFleetConfiguration() error {
@@ -750,4 +724,30 @@ func getOnlineAgents() (*gabs.Container, error) {
 	}
 
 	return jsonResponse, nil
+}
+
+// isAgentOnline extracts the status for an agent, identified by its hotname
+// It will wuery Fleet's agents endpoint
+func isAgentOnline(hostname string) (bool, error) {
+	jsonResponse, err := getOnlineAgents()
+	if err != nil {
+		return false, err
+	}
+
+	agents := jsonResponse.Path("list")
+
+	for _, agent := range agents.Children() {
+		agentStatus := agent.Path("active").Data().(bool)
+		agentHostname := agent.Path("local_metadata.host.hostname").Data().(string)
+		if agentHostname == hostname {
+			log.WithFields(log.Fields{
+				"active":   agentStatus,
+				"hostname": hostname,
+			}).Debug("Agent status retrieved")
+
+			return agentStatus, nil
+		}
+	}
+
+	return false, fmt.Errorf("The agent '" + hostname + "' was not found in Fleet")
 }
