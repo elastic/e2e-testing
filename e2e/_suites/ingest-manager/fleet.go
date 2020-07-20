@@ -36,6 +36,7 @@ type FleetTestSuite struct {
 	ConfigID          string // will be used to manage tokens
 	CurrentToken      string // current enrollment token
 	CurrentTokenID    string // current enrollment tokenID
+	Hostname          string // the hostname of the container
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
@@ -64,8 +65,15 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	}
 	fts.Cleanup = true
 
+	// get container hostname once
+	hostname, err := getContainerHostname(containerName)
+	if err != nil {
+		return err
+	}
+	fts.Hostname = hostname
+
 	// enroll the agent with a new token
-	tokenJSONObject, err := createFleetToken(containerName, fts.ConfigID)
+	tokenJSONObject, err := createFleetToken("Test token for "+hostname, fts.ConfigID)
 	if err != nil {
 		return err
 	}
