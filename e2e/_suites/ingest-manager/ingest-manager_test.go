@@ -5,13 +5,16 @@
 package main
 
 import (
+	"context"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
@@ -169,6 +172,14 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			log.WithFields(log.Fields{
 				"service": serviceName,
 			}).Debug("Service removed from compose.")
+
+			err = imts.Fleet.removeToken()
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err":     err,
+					"tokenID": imts.Fleet.CurrentTokenID,
+				}).Warn("The enrollment token could not be deleted")
+			}
 		}
 	})
 }
@@ -238,22 +249,6 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	return nil
 }
 
-func startAgent(profile string, serviceName string) error {
-	cmd := []string{"elastic-agent", "run"}
-	err := execCommandInService(profile, serviceName, cmd, true)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"service": serviceName,
-		}).Error("Could not run the agent")
-
-		return err
-	}
-
-	return nil
-}
-
 func execCommandInService(profile string, serviceName string, cmds []string, detach bool) error {
 	serviceManager := services.NewServiceManager()
 
@@ -275,6 +270,52 @@ func execCommandInService(profile string, serviceName string, cmds []string, det
 			"error":   err,
 			"service": serviceName,
 		}).Error("Could not execute command in container")
+
+		return err
+	}
+
+	return nil
+}
+
+// we need the container name because we use the Docker Client instead of Docker Compose
+func getContainerHostname(containerName string) (string, error) {
+	log.WithFields(log.Fields{
+		"containerName": containerName,
+	}).Debug("Retrieving container name from the Docker client")
+
+	hostname, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"hostname"})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"containerName": containerName,
+			"error":         err,
+		}).Error("Could not retrieve container name from the Docker client")
+		return "", err
+	}
+
+	if strings.HasPrefix(hostname, "\x01\x00\x00\x00\x00\x00\x00\r") {
+		hostname = strings.ReplaceAll(hostname, "\x01\x00\x00\x00\x00\x00\x00\r", "")
+		log.WithFields(log.Fields{
+			"hostname": hostname,
+		}).Debug("Container name has been sanitized")
+	}
+
+	log.WithFields(log.Fields{
+		"containerName": containerName,
+		"hostname":      hostname,
+	}).Info("Hostname retrieved from the Docker client")
+
+	return hostname, nil
+}
+
+func startAgent(profile string, serviceName string) error {
+	cmd := []string{"elastic-agent", "run"}
+	err := execCommandInService(profile, serviceName, cmd, true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmd,
+			"error":   err,
+			"service": serviceName,
+		}).Error("Could not run the agent")
 
 		return err
 	}
