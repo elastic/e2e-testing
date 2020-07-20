@@ -154,7 +154,7 @@ In order to debug the `godog` tests, 1) you must have the `runner_test.go` file 
 
 ## Noticing the test framework
 
-Because we are using a project layout which consumes another directory from the same project (the CLI), and the test project uses its own `go.mod` file, totally decoupled from the CLI one, we are forced to od a workaround to generate the notice files for this project:
+Because we are using a project layout which consumes another directory from the same project (the CLI), and the test project uses its own `go.mod` file, totally decoupled from the CLI one, we are forced to do a workaround to generate the notice files for this project:
 
 1. In the go.mod file, remove the `replace` entry, which replaces the upstream dependency with the local one.
 1. Execute `make notice` to generate NOTICE.txt file.
