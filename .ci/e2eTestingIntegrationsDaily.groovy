@@ -42,7 +42,7 @@ pipeline {
       steps {
         build(job: 'e2e-tests/e2e-testing-mbp/master',
           parameters: [
-            booleanParam(name: 'forceSkipGitChecks', value: true)
+            booleanParam(name: 'forceSkipGitChecks', value: true),
             string(name: 'runTestsSuite', value: 'metricbeat')
           ],
           propagate: false,
