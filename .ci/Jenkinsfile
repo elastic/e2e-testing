@@ -26,7 +26,7 @@ pipeline {
   parameters {
     choice(name: 'runTestsSuite', choices: ['all', 'helm', 'ingest-manager', 'metricbeat'], description: 'Choose which test suite to run (default: all)')
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
-    string(name: 'ELASTIC_AGENT_HASH', defaultValue: '', description: 'If present, it will override the released version of the Elastic agent artifact.')
+    string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
     choice(name: 'LOG_LEVEL', choices: ['INFO', 'DEBUG'], description: 'Log level to be used')
     choice(name: 'RETRY_TIMEOUT', choices: ['3', '5', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
     string(name: 'STACK_VERSION', defaultValue: '7.8.0', description: 'SemVer version of the stack to be used.')
@@ -48,7 +48,7 @@ pipeline {
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
         GO111MODULE = 'on'
         GOPROXY = 'https://proxy.golang.org'
-        ELASTIC_AGENT_HASH = "${params.ELASTIC_AGENT_HASH.trim()}"
+        ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
         METRICBEAT_VERSION = "${params.METRICBEAT_VERSION.trim()}"
         STACK_VERSION = "${params.STACK_VERSION.trim()}"
         FORCE_SKIP_GIT_CHECKS = "${params.forceSkipGitChecks}"

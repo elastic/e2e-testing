@@ -76,13 +76,12 @@ func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOf
 // Elastic's artifact repository, bbuilding the JSON path query based
 // on the desired OS, architecture and file extension
 // i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "linux", "x86_64", "tar.gz")
-// If the environment variable ELASTIC_AGENT_HASH exists, then the artifact to be downloaded will
+// If the environment variable ELASTIC_AGENT_DOWNLOAD_URL exists, then the artifact to be downloaded will
 // be defined by that value
 func GetElasticArtifactURL(artifact string, version string, OS string, arch string, extension string) (string, error) {
-	hash := os.Getenv("ELASTIC_AGENT_HASH")
-	if hash != "" {
-		hashedVersion := strings.ReplaceAll(version, "-SNAPSHOT", "")
-		return fmt.Sprintf("https://snapshots.elastic.co/%s-%s/downloads/beats/%s/%s-%s-%s-%s.%s", hashedVersion, hash, artifact, artifact, version, OS, arch, extension), nil
+	downloadURL := os.Getenv("ELASTIC_AGENT_DOWNLOAD_URL")
+	if downloadURL != "" {
+		return downloadURL, nil
 	}
 
 	exp := GetExponentialBackOff(1 * time.Minute)
@@ -146,7 +145,7 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 	packagesObject := jsonParsed.Path("packages")
 	// we need to get keys with dots using Search instead of Path
 	downloadObject := packagesObject.Search(artifactPath)
-	downloadURL := downloadObject.Path("url").Data().(string)
+	downloadURL = downloadObject.Path("url").Data().(string)
 
 	return downloadURL, nil
 }
