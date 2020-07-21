@@ -1,3 +1,7 @@
+// Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+// or more contributor license agreements. Licensed under the Elastic License;
+// you may not use this file except in compliance with the Elastic License.
+
 package main
 
 import (
@@ -24,12 +28,15 @@ const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/ingest_manager/data_st
 
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
-	EnrolledAgentID string // will be used to store current agent
-	BoxType         string // we currently support Linux
-	Cleanup         bool
-	ConfigID        string // will be used to manage tokens
-	CurrentToken    string // current enrollment token
-	CurrentTokenID  string // current enrollment tokenID
+	AgentDownloadName string // the name for the binary
+	AgentDownloadPath string // the path where the agent for the binary is installed
+	EnrolledAgentID   string // will be used to store current agent
+	BoxType           string // we currently support Linux
+	Cleanup           bool
+	ConfigID          string // will be used to manage tokens
+	CurrentToken      string // current enrollment token
+	CurrentTokenID    string // current enrollment tokenID
+	Hostname          string // the hostname of the container
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
@@ -60,14 +67,21 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	containerName := profile + "_" + serviceName + "_1" // name of the container
 	serviceTag := "7"                                   // docker tag of the service
 
-	err := deployAgentToFleet(profile, fts.BoxType, serviceTag, containerName)
+	err := deployAgentToFleet(profile, fts.BoxType, serviceTag, containerName, fts.AgentDownloadPath, fts.AgentDownloadName)
 	if err != nil {
 		return err
 	}
 	fts.Cleanup = true
 
+	// get container hostname once
+	hostname, err := getContainerHostname(containerName)
+	if err != nil {
+		return err
+	}
+	fts.Hostname = hostname
+
 	// enroll the agent with a new token
-	tokenJSONObject, err := createFleetToken("name", fts.ConfigID)
+	tokenJSONObject, err := createFleetToken("Test token for "+hostname, fts.ConfigID)
 	if err != nil {
 		return err
 	}
@@ -88,6 +102,25 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	// get first agentID in online status, for future processing
 	fts.EnrolledAgentID, err = getAgentID(true, 0)
 
+	return err
+}
+
+// downloadAgentBinary it downloads the binary and stores the location of the downloaded file
+// into the Fleet struct, to be used else where
+func (fts *FleetTestSuite) downloadAgentBinary() error {
+	artifact := "elastic-agent"
+	version := "8.0.0-SNAPSHOT"
+	os := "linux"
+	arch := "x86_64"
+	extension := "tar.gz"
+
+	downloadURL, err := e2e.GetElasticArtifactURL(artifact, version, os, arch, extension)
+	if err != nil {
+		return err
+	}
+
+	fts.AgentDownloadName = fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, os, arch, extension)
+	fts.AgentDownloadPath, err = e2e.DownloadFile(downloadURL)
 	return err
 }
 
@@ -115,23 +148,23 @@ func (fts *FleetTestSuite) setup() error {
 func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 	log.Debug("Checking agent is listed in Fleet as online")
 
-	agentsCount := 0.0
 	maxTimeout := 10 * time.Second
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
-	countAgentsFn := func() error {
-		count, err := countOnlineAgents()
-		if err != nil || count == 0 {
+	agentOnlineFn := func() error {
+		status, err := isAgentOnline(fts.Hostname)
+		if err != nil || !status {
 			if err == nil {
 				err = fmt.Errorf("The Agent is not online yet")
 			}
 
 			log.WithFields(log.Fields{
-				"retry":        retryCount,
-				"onlineAgents": count,
-				"elapsedTime":  exp.GetElapsedTime(),
+				"active":      status,
+				"elapsedTime": exp.GetElapsedTime(),
+				"hostname":    fts.Hostname,
+				"retry":       retryCount,
 			}).Warn(err.Error())
 
 			retryCount++
@@ -140,22 +173,16 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 		}
 
 		log.WithFields(log.Fields{
-			"elapsedTime":  exp.GetElapsedTime(),
-			"onlineAgents": count,
-			"retries":      retryCount,
+			"active":      status,
+			"elapsedTime": exp.GetElapsedTime(),
+			"hostname":    fts.Hostname,
+			"retries":     retryCount,
 		}).Info("The Agent is online")
-		agentsCount = count
 		return nil
 	}
 
-	err := backoff.Retry(countAgentsFn, exp)
+	err := backoff.Retry(agentOnlineFn, exp)
 	if err != nil {
-		return err
-	}
-
-	if agentsCount != 1 {
-		err = fmt.Errorf("There are %.0f online agents. We expected to have exactly one", agentsCount)
-		log.Error(err.Error())
 		return err
 	}
 
@@ -251,23 +278,23 @@ func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
 func (fts *FleetTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
 	log.Debug("Checking if the agent is not listed as online in Fleet")
 
-	agentsCount := 0.0
 	maxTimeout := 10 * time.Second
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
-	countAgentsFn := func() error {
-		count, err := countOnlineAgents()
-		if err != nil || count != 0 {
+	agentOnlineFn := func() error {
+		status, err := isAgentOnline(fts.Hostname)
+		if err != nil || status {
 			if err == nil {
 				err = fmt.Errorf("The Agent is still online")
 			}
 
 			log.WithFields(log.Fields{
-				"retry":        retryCount,
-				"onlineAgents": count,
-				"elapsedTime":  exp.GetElapsedTime(),
+				"active":      status,
+				"elapsedTime": exp.GetElapsedTime(),
+				"hostname":    fts.Hostname,
+				"retry":       retryCount,
 			}).Warn(err.Error())
 
 			retryCount++
@@ -276,22 +303,16 @@ func (fts *FleetTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
 		}
 
 		log.WithFields(log.Fields{
-			"elapsedTime":  exp.GetElapsedTime(),
-			"onlineAgents": count,
-			"retries":      retryCount,
+			"active":      status,
+			"elapsedTime": exp.GetElapsedTime(),
+			"hostname":    fts.Hostname,
+			"retries":     retryCount,
 		}).Info("The Agent is offline")
-		agentsCount = count
 		return nil
 	}
 
-	err := backoff.Retry(countAgentsFn, exp)
+	err := backoff.Retry(agentOnlineFn, exp)
 	if err != nil {
-		return err
-	}
-
-	if agentsCount != 0 {
-		err = fmt.Errorf("There are %.0f online agents. We expected to have none", agentsCount)
-		log.Error(err.Error())
 		return err
 	}
 
@@ -318,18 +339,8 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 		"tokenID": fts.CurrentTokenID,
 	}).Debug("Revoking enrollment token")
 
-	revokeTokenURL := fleetEnrollmentTokenURL + "/" + fts.CurrentTokenID
-	deleteReq := createDefaultHTTPRequest(revokeTokenURL)
-
-	body, err := curl.Delete(deleteReq)
+	err := fts.removeToken()
 	if err != nil {
-		log.WithFields(log.Fields{
-			"token":   fts.CurrentToken,
-			"tokenID": fts.CurrentTokenID,
-			"body":    body,
-			"error":   err,
-			"url":     revokeTokenURL,
-		}).Error("Could revoke token")
 		return err
 	}
 
@@ -349,7 +360,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 	containerName := profile + "_" + fts.BoxType + "_2" // name of the new container
 
-	err := deployAgentToFleet(profile, fts.BoxType, serviceTag, containerName)
+	err := deployAgentToFleet(profile, fts.BoxType, serviceTag, containerName, fts.AgentDownloadPath, fts.AgentDownloadName)
 	if err != nil {
 		return err
 	}
@@ -370,6 +381,24 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 		"err":   err,
 		"token": fts.CurrentToken,
 	}).Debug("As expected, it's not possible to enroll an agent with a revoked token")
+	return nil
+}
+
+func (fts *FleetTestSuite) removeToken() error {
+	revokeTokenURL := fleetEnrollmentTokenURL + "/" + fts.CurrentTokenID
+	deleteReq := createDefaultHTTPRequest(revokeTokenURL)
+
+	body, err := curl.Delete(deleteReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"tokenID": fts.CurrentTokenID,
+			"body":    body,
+			"error":   err,
+			"url":     revokeTokenURL,
+		}).Error("Could delete token")
+		return err
+	}
+
 	return nil
 }
 
@@ -438,23 +467,6 @@ func checkFleetConfiguration() error {
 	}).Info("Kibana setup initialised")
 
 	return nil
-}
-
-// countOnlineAgents extracts the number of agents in the online status
-// querying Fleet's agents endpoint
-func countOnlineAgents() (float64, error) {
-	jsonResponse, err := getOnlineAgents()
-	if err != nil {
-		return 0, err
-	}
-
-	agentsCount := jsonResponse.Path("total").Data().(float64)
-
-	log.WithFields(log.Fields{
-		"count": agentsCount,
-	}).Debug("Online agents retrieved")
-
-	return agentsCount, nil
 }
 
 // createFleetConfiguration sends a POST request to Fleet forcing the
@@ -558,11 +570,14 @@ func createFleetToken(name string, configID string) (*gabs.Container, error) {
 	return tokenItem, nil
 }
 
-func deployAgentToFleet(profile string, service string, serviceTag string, containerName string) error {
+func deployAgentToFleet(profile string, service string, serviceTag string, containerName string, agentBinaryPath string, agentBinaryName string) error {
 	// let's start with Centos 7
 	profileEnv[service+"Tag"] = serviceTag
 	// we are setting the container name because Centos service could be reused by any other test suite
 	profileEnv[service+"ContainerName"] = containerName
+	// define paths where the binary will be mounted
+	profileEnv[service+"AgentBinarySrcPath"] = agentBinaryPath
+	profileEnv[service+"AgentBinaryTargetPath"] = "/" + agentBinaryName
 
 	serviceManager := services.NewServiceManager()
 
@@ -575,34 +590,17 @@ func deployAgentToFleet(profile string, service string, serviceTag string, conta
 		return err
 	}
 
-	// install the agent in the box
+	// extract the agent in the box, as it's mounted as a volume
 	artifact := "elastic-agent"
 	version := "8.0.0-SNAPSHOT"
 	os := "linux"
 	arch := "x86_64"
 	extension := "tar.gz"
 
-	downloadURL, err := e2e.GetElasticArtifactURL(artifact, version, os, arch, extension)
-	if err != nil {
-		return err
-	}
-
-	cmd := []string{"curl", "-L", "-O", downloadURL}
-	err = execCommandInService(profile, service, cmd, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"service": service,
-		}).Error("Could not download agent in box")
-
-		return err
-	}
-
 	extractedDir := fmt.Sprintf("%s-%s-%s-%s", artifact, version, os, arch)
 	tarFile := fmt.Sprintf("%s.%s", extractedDir, extension)
 
-	cmd = []string{"tar", "xzvf", tarFile}
+	cmd := []string{"tar", "xzvf", tarFile}
 	err = execCommandInService(profile, service, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -742,9 +740,9 @@ func getOnlineAgents() (*gabs.Container, error) {
 	r := createDefaultHTTPRequest(fleetAgentsURL)
 	// let's not URL encode the querystring, as it seems Kibana is not handling
 	// the request properly, returning an 400 Bad Request error with this message:
-	// [request query.page=1&perPage=20&showInactive=false]: definition for this key is missing
+	// [request query.page=1&perPage=20&showInactive=true]: definition for this key is missing
 	r.EncodeURL = false
-	r.QueryString = fmt.Sprintf("page=1&perPage=20&showInactive=%t", false)
+	r.QueryString = fmt.Sprintf("page=1&perPage=20&showInactive=%t", true)
 
 	body, err := curl.Get(r)
 	if err != nil {
@@ -766,4 +764,30 @@ func getOnlineAgents() (*gabs.Container, error) {
 	}
 
 	return jsonResponse, nil
+}
+
+// isAgentOnline extracts the status for an agent, identified by its hotname
+// It will wuery Fleet's agents endpoint
+func isAgentOnline(hostname string) (bool, error) {
+	jsonResponse, err := getOnlineAgents()
+	if err != nil {
+		return false, err
+	}
+
+	agents := jsonResponse.Path("list")
+
+	for _, agent := range agents.Children() {
+		agentStatus := agent.Path("active").Data().(bool)
+		agentHostname := agent.Path("local_metadata.host.hostname").Data().(string)
+		if agentHostname == hostname {
+			log.WithFields(log.Fields{
+				"active":   agentStatus,
+				"hostname": hostname,
+			}).Debug("Agent status retrieved")
+
+			return agentStatus, nil
+		}
+	}
+
+	return false, fmt.Errorf("The agent '" + hostname + "' was not found in Fleet")
 }

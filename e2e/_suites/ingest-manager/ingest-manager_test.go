@@ -1,13 +1,20 @@
+// Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+// or more contributor license agreements. Licensed under the Elastic License;
+// you may not use this file except in compliance with the Elastic License.
+
 package main
 
 import (
+	"context"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
@@ -84,6 +91,13 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		imts.Fleet.setup()
 
 		imts.StandAlone.RuntimeDependenciesStartDate = time.Now().UTC()
+
+		err = imts.Fleet.downloadAgentBinary()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Fatal("The Elastic Agent could not be downloaded")
+		}
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
 		log.Debug("Before Ingest Manager scenario")
@@ -100,6 +114,20 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 				"error":   err,
 				"profile": profile,
 			}).Warn("Could not destroy the runtime dependencies for the profile.")
+		}
+
+		if _, err := os.Stat(imts.Fleet.AgentDownloadPath); err == nil {
+			err = os.Remove(imts.Fleet.AgentDownloadPath)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err":  err,
+					"path": imts.Fleet.AgentDownloadPath,
+				}).Warn("Elastic Agent binary could not be removed.")
+			} else {
+				log.WithFields(log.Fields{
+					"path": imts.Fleet.AgentDownloadPath,
+				}).Debug("Elastic Agent binary was removed.")
+			}
 		}
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {
@@ -144,6 +172,14 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			log.WithFields(log.Fields{
 				"service": serviceName,
 			}).Debug("Service removed from compose.")
+
+			err = imts.Fleet.removeToken()
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err":     err,
+					"tokenID": imts.Fleet.CurrentTokenID,
+				}).Warn("The enrollment token could not be deleted")
+			}
 		}
 	})
 }
@@ -213,22 +249,6 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	return nil
 }
 
-func startAgent(profile string, serviceName string) error {
-	cmd := []string{"elastic-agent", "run"}
-	err := execCommandInService(profile, serviceName, cmd, true)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"service": serviceName,
-		}).Error("Could not run the agent")
-
-		return err
-	}
-
-	return nil
-}
-
 func execCommandInService(profile string, serviceName string, cmds []string, detach bool) error {
 	serviceManager := services.NewServiceManager()
 
@@ -250,6 +270,52 @@ func execCommandInService(profile string, serviceName string, cmds []string, det
 			"error":   err,
 			"service": serviceName,
 		}).Error("Could not execute command in container")
+
+		return err
+	}
+
+	return nil
+}
+
+// we need the container name because we use the Docker Client instead of Docker Compose
+func getContainerHostname(containerName string) (string, error) {
+	log.WithFields(log.Fields{
+		"containerName": containerName,
+	}).Debug("Retrieving container name from the Docker client")
+
+	hostname, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"hostname"})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"containerName": containerName,
+			"error":         err,
+		}).Error("Could not retrieve container name from the Docker client")
+		return "", err
+	}
+
+	if strings.HasPrefix(hostname, "\x01\x00\x00\x00\x00\x00\x00\r") {
+		hostname = strings.ReplaceAll(hostname, "\x01\x00\x00\x00\x00\x00\x00\r", "")
+		log.WithFields(log.Fields{
+			"hostname": hostname,
+		}).Debug("Container name has been sanitized")
+	}
+
+	log.WithFields(log.Fields{
+		"containerName": containerName,
+		"hostname":      hostname,
+	}).Info("Hostname retrieved from the Docker client")
+
+	return hostname, nil
+}
+
+func startAgent(profile string, serviceName string) error {
+	cmd := []string{"elastic-agent", "run"}
+	err := execCommandInService(profile, serviceName, cmd, true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmd,
+			"error":   err,
+			"service": serviceName,
+		}).Error("Could not run the agent")
 
 		return err
 	}

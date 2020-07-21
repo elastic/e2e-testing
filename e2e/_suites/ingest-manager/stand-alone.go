@@ -1,12 +1,14 @@
+// Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+// or more contributor license agreements. Licensed under the Elastic License;
+// you may not use this file except in compliance with the Elastic License.
+
 package main
 
 import (
-	"context"
-	"strings"
+	"fmt"
 	"time"
 
 	"github.com/cucumber/godog"
-	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
@@ -36,6 +38,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 
 	profile := "ingest-manager"
 	serviceName := "elastic-agent"
+	containerName := fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
 
 	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/master/x-pack/elastic-agent/elastic-agent.docker.yml"
 
@@ -54,7 +57,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 	}
 
 	// get container hostname once
-	hostname, err := getContainerHostname(serviceName)
+	hostname, err := getContainerHostname(containerName)
 	if err != nil {
 		return err
 	}
@@ -125,41 +128,6 @@ func (sats *StandAloneTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown()
 	}
 
 	return e2e.AssertHitsAreNotPresent(result)
-}
-
-// we need the container name because we use the Docker Client instead of Docker Compose
-func getContainerHostname(serviceName string) (string, error) {
-	containerName := "ingest-manager_" + serviceName + "_1"
-
-	log.WithFields(log.Fields{
-		"service":       serviceName,
-		"containerName": containerName,
-	}).Debug("Retrieving container name from the Docker client")
-
-	hostname, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"hostname"})
-	if err != nil {
-		log.WithFields(log.Fields{
-			"containerName": containerName,
-			"error":         err,
-			"service":       serviceName,
-		}).Error("Could not retrieve container name from the Docker client")
-		return "", err
-	}
-
-	if strings.HasPrefix(hostname, "\x01\x00\x00\x00\x00\x00\x00\r") {
-		hostname = strings.ReplaceAll(hostname, "\x01\x00\x00\x00\x00\x00\x00\r", "")
-		log.WithFields(log.Fields{
-			"hostname": hostname,
-		}).Debug("Container name has been sanitized")
-	}
-
-	log.WithFields(log.Fields{
-		"containerName": containerName,
-		"hostname":      hostname,
-		"service":       serviceName,
-	}).Info("Hostname retrieved from the Docker client")
-
-	return hostname, nil
 }
 
 func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int, maxTimeout time.Duration) (e2e.SearchResult, error) {
