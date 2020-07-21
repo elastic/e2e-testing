@@ -39,6 +39,9 @@ The first step in determining the exact failure is to try and reproduce the test
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch, kibana, package registry)
    export OP_STACK_VERSION=8.0.0-SNAPSHOT
+   # This environment variable will use a fixed version of the Elastic agent binary, obtained from
+   # https://artifacts-api.elastic.co/v1/search/8.0.0-SNAPSHOT/elastic-agent
+   export ELASTIC_AGENT_HASH="59098054"
    ```
 
 3. Define the proper Docker images to be used in tests.
