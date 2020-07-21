@@ -25,12 +25,6 @@ TARGET_ARCH=${GOARCH:-amd64}
 # shellcheck disable=SC1091
 source .ci/scripts/install-go.sh "${GO_VERSION}"
 
-# Build OP Binary
-GOOS=${TARGET_OS} GOARCH=${TARGET_ARCH} make -C e2e fetch-binary
-
-# Sync integrations
-make -C e2e sync-integrations
-
 rm -rf outputs || true
 mkdir -p outputs
 
