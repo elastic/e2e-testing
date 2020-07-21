@@ -22,4 +22,9 @@ SUITE=${2:?SUITE is not set}
 source .ci/scripts/install-go.sh "${GO_VERSION}"
 
 # execute specific test dependencies if it exists
-[ -f .ci/scripts/install-${SUITE}-dependencies.sh ] && .ci/scripts/install-${SUITE}-dependencies.sh
+if [ -f .ci/scripts/install-${SUITE}-dependencies.sh ]
+then
+    .ci/scripts/install-${SUITE}-dependencies.sh
+else
+    echo "Not installing test dependencies for ${SUITE}"
+fi
