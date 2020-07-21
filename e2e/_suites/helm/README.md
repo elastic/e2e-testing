@@ -1,3 +1,5 @@
+[![Build Status](https://beats-ci.elastic.co/buildStatus/icon?job=e2e-tests%2Fe2e-testing-helm-daily)](https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-helm-daily/)
+
 # Observability Helm charts End-To-End tests
 
 ## Motivation

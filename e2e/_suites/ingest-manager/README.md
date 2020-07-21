@@ -1,3 +1,5 @@
+[![Build Status](https://beats-ci.elastic.co/buildStatus/icon?job=e2e-tests%2Fe2e-testing-ingest-manager-daily)](https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-ingest-manager-daily/)
+
 # Ingest Manager End-To-End tests
 
 ## Motivation
