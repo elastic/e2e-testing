@@ -82,59 +82,6 @@ The anatomy of a feature file is:
 ### Configuration files
 It's possible that there will exist configuration YAML files in the test suire. We recommend locating them under the `configurations` folder in the suite directory. The name of the file will represent the feature to be tested (i.e. `apache.yml`). In this file we will add those configurations that are exclusive to the feature to be tests.
 
-## Running the tests
-At this moment, the CLI and the functional tests coexist in the same repository, that's why we are building the CLI to get access to its features. Eventually that would change and we would consume it as a binary. Meanwhile, execute this from the ROOT directory of this project:
-
-```shell
-$ export GO111MODULE=on                            # Go modules support
-$ make -C cli install                              # installs CLI dependencies
-$ export STACK_VERSION=7.8.0                       # exports stack version as runtime
-$ export METRICBEAT_VERSION=7.8.0                  # exports metricbeat version to be tested
-$ # export FEATURE=redis                           # exports which feature to run (default 'all')
-$ # export GOOS=darwin                             # exports your O.S. (default 'linux', valid: [darwin, linux, windows])
-$ # export GOARCH=amd64                            # exports your O.S. (default 'amd64', valid: [amd64, 386])
-$ make -C e2e install                              # installs tests dependencies
-$ make -C e2e fetch-binary                         # generates the binary from the repository
-$ make -C e2e functional-test                      # runs the test suite for Redis and stack 
-```
-
-or simply run as the CI does:
-
-```shell
-$ export GO_VERSION=1.12.7                         # exports which GIMME version to use
-$ export STACK_VERSION=7.8.0                       # exports stack version as runtime
-$ export METRICBEAT_VERSION=7.8.0                  # exports metricbeat version
-$ #export FEATURE=redis                            # exports which feature to run (default 'all')
-$ ./.ci/scripts/functional-test.sh ${GO_VERSION} ${FEATURE}
-```
-
-You could set up the environment so that it's possible to run one single module. As we are using _tags_ for matching modules, we could tell `make` to run just the tests for redis:
-
-```shell
-$ LOG_LEVEL=DEBUG FEATURE="redis" make functional-test
-```
-where:
-
-- LOG_LEVEL: sets the default log level in the tool (DEBUG, INFO, WARN, ERROR, FATAL)
-- FEATURE: sets the tag to filter by (apache, mysql, redis)
-
-### Advanced usage
-There are some environment variables you can use to improve the experience running the tests with `Make`.
-
-- **METRICBEAT_FETCH_TIMEOUT** (default: 20). This is the time in seconds we leave metricbeat grabbing metrics from the monitored integration module.
-- **RETRY_TIMEOUT** (default: 3 minutes). It's possible that the Elasticsearch is not ready for writes, so we can define a retry strategy to wait for our index to be ready. This variable defines the number of minutes the retry process will use as max timeout, where the implementation code will try using a backoff strategy until a condition is met.
-
->Interested in running the tests directly using Godog? Please check out [the Makefile](./Makefile#L19).
-
-```shell
-export OP_RETRY_TIMEOUT=${OP_RETRY_TIMEOUT:-3}
-export FORMAT=${FORMAT:-pretty} # valid formats are: pretty, junit
-# If you do not pass a '-t moduleName' argument, then all tests will be run
-go test -v --godog.format=${FORMAT} redis
-```
-
->For environment variables reference affecting the logs, please check out [CLI's docs](../cli/README.md#logging)
-
 ## Debugging the tests
 
 ### VSCode
