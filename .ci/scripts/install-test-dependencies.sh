@@ -10,9 +10,7 @@ set -euxo pipefail
 #
 # Parameters:
 #   - GO_VERSION - that's the Go version which will be used for running Go code.
-#   - HELM_VERSION - that's the Helm version which will be installed and enabled.
-#   - KIND_VERSION - that's the Kind version which will be installed and enabled.
-#   - KUBERNETES_VERSION - that's the Kubernetes version which will be installed and enabled.
+#   - SUITE - that's the name of the test suite to install the dependencies for.
 #
 
 GO_VERSION=${1:?GO_VERSION is not set}
