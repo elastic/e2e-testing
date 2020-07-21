@@ -105,7 +105,7 @@ Version: v0.0.0-20200717181709-15d2db53ded7
 Licence type (autodetected): Elastic
 --------------------------------------------------------------------------------
 
-Contents of probable licence file $GOMODCACHE/github.com/elastic/e2e-testing/cli@v0.0.0-20200717181709-15d2db53ded7/LICENSE.txt:
+Contents of probable licence file LICENSE.txt:
 
 Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
 or more contributor license agreements. Licensed under the Elastic License;
