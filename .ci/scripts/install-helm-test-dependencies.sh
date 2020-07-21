@@ -9,16 +9,10 @@ set -euxo pipefail
 # Install the dependencies using the install and test make goals.
 #
 # Parameters:
-#   - GO_VERSION - that's the Go version which will be used for running Go code.
 #   - HELM_VERSION - that's the Helm version which will be installed and enabled.
 #   - KIND_VERSION - that's the Kind version which will be installed and enabled.
 #   - KUBERNETES_VERSION - that's the Kubernetes version which will be installed and enabled.
 #
-
-GO_VERSION=${1:?GO_VERSION is not set}
-
-# shellcheck disable=SC1091
-source .ci/scripts/install-go.sh "${GO_VERSION}"
 
 MSG="parameter missing."
 HOME=${HOME:?$MSG}
