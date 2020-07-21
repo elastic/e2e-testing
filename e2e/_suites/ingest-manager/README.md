@@ -61,6 +61,7 @@ The first step in determining the exact failure is to try and reproduce the test
 5. Run the tests.
 
    ```shell
+   cd e2e/_suites/ingest-manager
    OP_LOG_LEVEL=DEBUG godog
    ```
 
