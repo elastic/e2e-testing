@@ -22,7 +22,7 @@ source .ci/scripts/install-go.sh "${GO_VERSION}"
 # execute specific test dependencies if it exists
 if [ -f .ci/scripts/install-${SUITE}-test-dependencies.sh ]
 then
-    .ci/scripts/install-${SUITE}-test-dependencies.sh
+    source .ci/scripts/install-${SUITE}-test-dependencies.sh
 else
     echo "Not installing test dependencies for ${SUITE}"
 fi
