@@ -55,8 +55,6 @@ github.com/docker/go-connections v0.4.0/go.mod h1:Gbd7IOopHjR8Iph03tsViu4nIes5Xh
 github.com/docker/go-units v0.3.3/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
 github.com/docker/go-units v0.4.0 h1:3uh0PgVws3nIA0Q+MwDC8yjEPf9zjRfZZWXZYDct3Tw=
 github.com/docker/go-units v0.4.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
-github.com/elastic/e2e-testing/cli v0.0.0-20200717181709-15d2db53ded7 h1:tL6DCtvQhSwQMJVX/Td3vFLvWfQqkLb0jP8NF83qjkg=
-github.com/elastic/e2e-testing/cli v0.0.0-20200717181709-15d2db53ded7/go.mod h1:Eq3+wl9gKcTNITuEIDqbxaWfV0IO1s3U17l+sHzCDzE=
 github.com/elastic/go-elasticsearch/v8 v8.0.0-20190731061900-ea052088db25 h1:7jd4dZ3/qtoQL7FEg6XXn1/nopYTz9HJSTPcZsj6h0o=
 github.com/elastic/go-elasticsearch/v8 v8.0.0-20190731061900-ea052088db25/go.mod h1:xe9a/L2aeOgFKKgrO3ibQTnMdpAeL0GC+5/HpGScSa4=
 github.com/emirpasic/gods v1.12.0 h1:QAUIPSaCu4G+POclxeqb3F+WPpdKqFGlw36+yOzGlrg=
