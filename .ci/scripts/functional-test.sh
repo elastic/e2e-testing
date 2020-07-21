@@ -11,7 +11,10 @@ set -euxo pipefail
 #
 # Parameters:
 #   - GO_VERSION - that's the version which will be installed and enabled.
-#   - FEATURE  - that's the feature to be tested. Default '' which means all of them.
+#   - SUITE - that's the suite to be tested. Default '' which means all of them.
+#   - FEATURE - that's the feature to be tested. Default '' which means all of them.
+#   - STACK_VERSION - that's the version of the stack to be tested. Default '7.8.0'.
+#   - METRICBEAT_VERSION - that's the version of the metricbeat to be tested. Default '7.8.0'.
 #
 
 GO_VERSION=${1:?GO_VERSION is not set}
