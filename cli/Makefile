@@ -4,7 +4,7 @@ ROOT_DIR:=$(CURDIR)
 TEST_TIMEOUT?=5m
 
 GO_IMAGE?='golang'
-GO_VERSION?='1.13'
+GO_VERSION?='$(shell cat ../.go-version )'
 GO_IMAGE_TAG?='stretch'
 GOOS?='linux'
 GOARCH?='amd64'
