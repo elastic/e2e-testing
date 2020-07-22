@@ -68,13 +68,15 @@ pipeline {
               agent { label 'ubuntu-18.04 && immutable && docker' }
               environment {
                 PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.PATH}"
-                GO_VERSION = readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim()
               }
               options { skipDefaultCheckout() }
               steps {
                 withGithubNotify(context: 'Sanity checks', tab: 'tests') {
                   deleteDir()
                   unstash 'source'
+                  script {
+                    env.GO_VERSION = readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim()
+                  }
                   withGoEnv(version: "${GO_VERSION}"){
                     dir(BASE_DIR){
                       sh script: '.ci/scripts/install-dependencies.sh', label: 'Install dependencies'
@@ -86,14 +88,14 @@ pipeline {
             }
             stage('Unit Tests') {
               agent { label 'ubuntu-18.04 && immutable && docker' }
-              environment {
-                GO_VERSION = readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim()
-              }
               options { skipDefaultCheckout() }
               steps {
                 withGithubNotify(context: 'Tests', tab: 'tests') {
                   deleteDir()
                   unstash 'source'
+                  script {
+                    env.GO_VERSION = readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim()
+                  }
                   withGoEnv(version: "${GO_VERSION}"){
                     dir(BASE_DIR){
                       sh script: '.ci/scripts/build-test.sh', label: 'Build and test'
@@ -114,7 +116,6 @@ pipeline {
         stage('End-To-End Tests') {
           options { skipDefaultCheckout() }
           environment {
-            GO_VERSION = readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim()
             GO111MODULE = 'on'
             PATH = "${env.HOME}/bin:${env.WORKSPACE}/${env.BASE_DIR}/bin:${HOME}/go/bin:${env.PATH}"
           }
@@ -206,6 +207,7 @@ def generateFunctionalTestStep(Map params = [:]){
       try {
         deleteDir()
         unstash 'build'
+        env.GO_VERSION = readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim()
         withGoEnv(version: "${GO_VERSION}"){
           retry(3){
             dir("${BASE_DIR}"){
