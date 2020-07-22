@@ -43,7 +43,7 @@ pipeline {
       environment {
         HOME = "${env.WORKSPACE}"
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
-        GO_VERSION = readFile(".go-version").trim()
+        GO_VERSION = readFile("${env.BASE_DIR}/.go-version").trim()
         GO111MODULE = 'on'
         ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
         METRICBEAT_VERSION = "${params.METRICBEAT_VERSION.trim()}"
