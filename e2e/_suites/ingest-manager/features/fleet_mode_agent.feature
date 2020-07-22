@@ -55,7 +55,6 @@ Scenario: Assign an Agent to a new configuration
   When an agent is deployed to Fleet
     And the Agent is assigned to the configuration "Test Fleet"
   Then a new enrollment token is created
-    And there is new data in the index from agent
 
 @new-configuration-new-package
 Scenario: Add a new config and a new package and assign an agent
