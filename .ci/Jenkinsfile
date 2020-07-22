@@ -94,7 +94,7 @@ pipeline {
                     dir(BASE_DIR){
                       sh script: '.ci/scripts/build-test.sh', label: 'Build and test'
                     }
-                    stash allowEmpty: false, name: 'build', useDefaultExcludes: false, excludes: '.gimme/**'
+                    stash allowEmpty: false, name: 'build', useDefaultExcludes: false, excludes: '.gvm/**'
                   }
                 }
               }
