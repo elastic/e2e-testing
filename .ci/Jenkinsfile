@@ -205,7 +205,7 @@ def generateFunctionalTestStep(Map params = [:]){
         unstash 'build'
         retry(3){
           dir("${BASE_DIR}"){
-            sh script: """.ci/scripts/install-test-dependencies.sh "${GO_VERSION}" """, label: "Install test dependencies for ${suite}:${feature}"
+            sh script: """.ci/scripts/install-test-dependencies.sh "${GO_VERSION}" "${suite}" """, label: "Install test dependencies for ${suite}:${feature}"
           }
         }
         dir("${BASE_DIR}"){

@@ -11,7 +11,10 @@ set -euxo pipefail
 #
 # Parameters:
 #   - GO_VERSION - that's the version which will be installed and enabled.
-#   - FEATURE  - that's the feature to be tested. Default '' which means all of them.
+#   - SUITE - that's the suite to be tested. Default '' which means all of them.
+#   - FEATURE - that's the feature to be tested. Default '' which means all of them.
+#   - STACK_VERSION - that's the version of the stack to be tested. Default '7.8.0'.
+#   - METRICBEAT_VERSION - that's the version of the metricbeat to be tested. Default '7.8.0'.
 #
 
 GO_VERSION=${1:?GO_VERSION is not set}
@@ -24,12 +27,6 @@ TARGET_ARCH=${GOARCH:-amd64}
 
 # shellcheck disable=SC1091
 source .ci/scripts/install-go.sh "${GO_VERSION}"
-
-# Build OP Binary
-GOOS=${TARGET_OS} GOARCH=${TARGET_ARCH} make -C e2e fetch-binary
-
-# Sync integrations
-make -C e2e sync-integrations
 
 rm -rf outputs || true
 mkdir -p outputs
