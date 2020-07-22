@@ -10,23 +10,18 @@ set -euxo pipefail
 # output to JUnit format.
 #
 # Parameters:
-#   - GO_VERSION - that's the version which will be installed and enabled.
 #   - SUITE - that's the suite to be tested. Default '' which means all of them.
 #   - FEATURE - that's the feature to be tested. Default '' which means all of them.
 #   - STACK_VERSION - that's the version of the stack to be tested. Default '7.8.0'.
 #   - METRICBEAT_VERSION - that's the version of the metricbeat to be tested. Default '7.8.0'.
 #
 
-GO_VERSION=${1:?GO_VERSION is not set}
-SUITE=${2:-''}
-FEATURE=${3:-''}
-STACK_VERSION=${4:-'7.8.0'}
-METRICBEAT_VERSION=${5:-'7.8.0'}
+SUITE=${1:-''}
+FEATURE=${2:-''}
+STACK_VERSION=${3:-'7.8.0'}
+METRICBEAT_VERSION=${4:-'7.8.0'}
 TARGET_OS=${GOOS:-linux}
 TARGET_ARCH=${GOARCH:-amd64}
-
-# shellcheck disable=SC1091
-source .ci/scripts/install-go.sh "${GO_VERSION}"
 
 rm -rf outputs || true
 mkdir -p outputs
