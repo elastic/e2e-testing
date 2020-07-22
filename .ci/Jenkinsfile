@@ -43,7 +43,6 @@ pipeline {
       environment {
         HOME = "${env.WORKSPACE}"
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
-        GO_VERSION = readFile("${env.BASE_DIR}/.go-version").trim()
         GO111MODULE = 'on'
         ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
         METRICBEAT_VERSION = "${params.METRICBEAT_VERSION.trim()}"
@@ -69,6 +68,7 @@ pipeline {
               agent { label 'ubuntu-18.04 && immutable && docker' }
               environment {
                 PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.PATH}"
+                GO_VERSION = readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim()
               }
               options { skipDefaultCheckout() }
               steps {
@@ -86,6 +86,9 @@ pipeline {
             }
             stage('Unit Tests') {
               agent { label 'ubuntu-18.04 && immutable && docker' }
+              environment {
+                GO_VERSION = readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim()
+              }
               options { skipDefaultCheckout() }
               steps {
                 withGithubNotify(context: 'Tests', tab: 'tests') {
@@ -111,6 +114,7 @@ pipeline {
         stage('End-To-End Tests') {
           options { skipDefaultCheckout() }
           environment {
+            GO_VERSION = readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim()
             GO111MODULE = 'on'
             PATH = "${env.HOME}/bin:${env.WORKSPACE}/${env.BASE_DIR}/bin:${HOME}/go/bin:${env.PATH}"
           }
