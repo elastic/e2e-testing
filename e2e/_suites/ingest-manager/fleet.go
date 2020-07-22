@@ -48,7 +48,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the agent is re-enrolled on the host$`, fts.theAgentIsReenrolledOnTheHost)
 	s.Step(`^the enrollment token is revoked$`, fts.theEnrollmentTokenIsRevoked)
 	s.Step(`^an attempt to enroll an agent with the old token fails$`, fts.anAttemptToEnrollANewAgentFails)
-	s.Step(`^the package list API returns successfully$`, fts.thePackageListAPIReturnsSuccessfully)
+	s.Step(`^the package list service is available$`, fts.thePackageListServiceIsAvailable)
 	s.Step(`^the "([^"]*)" "([^"]*)" package version is installed successfully$`, fts.thePackageVersionIsInstalledSuccessfully)
 	s.Step(`^a new configuration named "([^"]*)" is created$`, fts.aNewConfigurationNamedIsCreated)
 	s.Step(`^a new configuration named "([^"]*)" includes the "([^"]*)" package datasource$`, fts.aNewConfigurationNamedIncludesThePackageDatasource)
@@ -402,7 +402,7 @@ func (fts *FleetTestSuite) removeToken() error {
 	return nil
 }
 
-func (fts *FleetTestSuite) thePackageListAPIReturnsSuccessfully() error {
+func (fts *FleetTestSuite) thePackageListServiceIsAvailable() error {
 	return godog.ErrPending
 }
 
