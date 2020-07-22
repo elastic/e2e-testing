@@ -51,9 +51,8 @@ Scenario: Adding packages to configurations
 
 @new-agent-configuration
 Scenario: Assign an Agent to a new configuration
-  Given an agent is deployed to Fleet
-    And the agent is listed in Fleet as online
-  When a new configuration named "Test Fleet" is created
+  Given a new configuration named "Test Fleet" is created
+  When an agent is deployed to Fleet
     And the Agent is assigned to the configuration "Test Fleet"
   Then a new enrollment token is created
     And there is new data in the index from agent
@@ -61,8 +60,6 @@ Scenario: Assign an Agent to a new configuration
 @new-configuration-new-package
 Scenario: Add a new config and a new package and assign an agent
   Given an agent is deployed to Fleet
-  When a new configuration named "Test - custom logs" is created
-    And the "custom logs" package datasource is added to the "Test - custom logs" configuration
-    And the Agent is assigned to the configuration "Test - custom logs"
-  Then the "Test - custom logs" configuration shows the "custom logs" datasource added
-    And there is new data in the index from agent from "custom logs" stream
+    And a new configuration named "Test - custom logs" includes the "custom logs" package datasource
+  When the Agent is assigned to the configuration "Test - custom logs"
+  Then there is new data in the index from agent from "custom logs" stream

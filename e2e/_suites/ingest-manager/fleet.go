@@ -50,8 +50,8 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^an attempt to enroll an agent with the old token fails$`, fts.anAttemptToEnrollANewAgentFails)
 	s.Step(`^the package list API returns successfully$`, fts.thePackageListAPIReturnsSuccessfully)
 	s.Step(`^the "([^"]*)" "([^"]*)" package version is installed successfully$`, fts.thePackageVersionIsInstalledSuccessfully)
-	s.Step(`^the "([^"]*)" configuration shows the "([^"]*)" datasource added$`, fts.theConfigurationShowsTheDatasourceAdded)
 	s.Step(`^a new configuration named "([^"]*)" is created$`, fts.aNewConfigurationNamedIsCreated)
+	s.Step(`^a new configuration named "([^"]*)" includes the "([^"]*)" package datasource$`, fts.aNewConfigurationNamedIncludesThePackageDatasource)
 	s.Step(`^the Agent is assigned to the configuration "([^"]*)"$`, fts.theAgentIsAssignedToTheConfiguration)
 	s.Step(`^a new enrollment token is created$`, fts.aNewEnrollmentTokenIsCreated)
 	s.Step(`^the "([^"]*)" package datasource is added to the "([^"]*)" configuration$`, fts.thePackageDatasourceIsAddedToTheConfiguration)
@@ -410,11 +410,11 @@ func (fts *FleetTestSuite) thePackageVersionIsInstalledSuccessfully(packageName 
 	return godog.ErrPending
 }
 
-func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(configName string, packageName string) error {
+func (fts *FleetTestSuite) aNewConfigurationNamedIsCreated(configName string) error {
 	return godog.ErrPending
 }
 
-func (fts *FleetTestSuite) aNewConfigurationNamedIsCreated(configName string) error {
+func (fts *FleetTestSuite) aNewConfigurationNamedIncludesThePackageDatasource(configName string, packageName string) error {
 	return godog.ErrPending
 }
 
