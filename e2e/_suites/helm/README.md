@@ -10,7 +10,7 @@ Our goal is for the Observability team to execute this automated e2e test suite 
 
 At the topmost level, the test framework uses a BDD framework written in Go, where we set
 the expected behavior of use cases in a feature file using Gherkin, and implementing the steps in Go code.
-The provisining of services is accomplish using [Kind (Kubernetes in Docker)](https://kind.sigs.k8s.io/https://kind.sigs.k8s.io/) and [Helm](https://helm.sh/) packages.
+The provisioning of services is accomplished using [Kind (Kubernetes in Docker)](https://kind.sigs.k8s.io/https://kind.sigs.k8s.io/) and [Helm](https://helm.sh/) packages.
 
 The tests will follow this general high-level approach:
 
@@ -54,7 +54,7 @@ The first step in determining the exact failure is to try and reproduce the test
    OP_LOG_LEVEL=DEBUG godog
    ```
 
-   The tests will take a few minutes to run, spinning up the kubernetes cluster, instgalling the helm charts, and performing the test steps outlined earlier.
+   The tests will take a few minutes to run, spinning up the Kubernetes cluster, installing the helm charts, and performing the test steps outlined earlier.
 
    As the tests are running they will output the results in your terminal console. This will be quite verbose and you can ignore most of it until the tests finish. Then inspect at the output of the last play that ran and failed. On the contrary, you could use a different log level for the `OP_LOG_LEVEL` variable, being it possible to use `DEBUG`, `INFO (default)`, `WARN`, `ERROR`, `FATAL` as log levels.
 
