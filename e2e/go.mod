@@ -1,6 +1,6 @@
 module github.com/elastic/e2e-testing/e2e
 
-go 1.12
+go 1.13
 
 require (
 	github.com/Jeffail/gabs/v2 v2.5.1

@@ -9,15 +9,15 @@ set -euxo pipefail
 # Install the dependencies using the install and test make goals.
 #
 # Parameters:
-#   - SUITE - that's the name of the test suite to install the dependencies for.
+#   - GOOS - that's the name of the O.S. used to build the binary
+#   - GOARCH - that's the name of the architecture of the O.S. used to build the binary.
 #
 
-SUITE=${1:?SUITE is not set}
+TARGET_OS=${GOOS:-linux}
+TARGET_ARCH=${GOARCH:-amd64}
 
-# execute specific test dependencies if it exists
-if [ -f .ci/scripts/install-${SUITE}-test-dependencies.sh ]
-then
-    source .ci/scripts/install-${SUITE}-test-dependencies.sh
-else
-    echo "Not installing test dependencies for ${SUITE}"
-fi
+# Build OP Binary
+GOOS=${TARGET_OS} GOARCH=${TARGET_ARCH} make -C e2e fetch-binary
+
+# Sync integrations
+make -C e2e sync-integrations

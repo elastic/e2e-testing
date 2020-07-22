@@ -39,6 +39,9 @@ The first step in determining the exact failure is to try and reproduce the test
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch, kibana, package registry)
    export OP_STACK_VERSION=8.0.0-SNAPSHOT
+   # This environment variable will use a fixed version of the Elastic agent binary, obtained from
+   # https://artifacts-api.elastic.co/v1/search/8.0.0-SNAPSHOT/elastic-agent
+   export ELASTIC_AGENT_DOWNLOAD_URL="https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"
    ```
 
 3. Define the proper Docker images to be used in tests.
@@ -49,7 +52,7 @@ The first step in determining the exact failure is to try and reproduce the test
 
 4. Install dependencies.
 
-   - Install Go with Gimme: `.ci/scripts/install-go.sh 1.13.4`
+   - Install Go with Gimme: `$(curl -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | GIMME_GO_VERSION=1.13.4 bash)`
    - Configure Go Path:
       - Mac: `export GOROOT=${HOME}/.gimme/versions/go1.13.4.darwin.amd64`
       - Linux: `export GOROOT=${HOME}/.gimme/versions/go1.13.4.linux.amd64`
