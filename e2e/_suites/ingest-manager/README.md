@@ -41,6 +41,8 @@ To change it, please use Docker UI, go to `Preferences > Resources > File Sharin
 
 2. Configure the version of the product you want to test (Optional).
 
+This is an example of the optional configuration:
+
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch, kibana, package registry)
    export OP_STACK_VERSION=8.0.0-SNAPSHOT

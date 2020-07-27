@@ -29,6 +29,8 @@ The first step in determining the exact failure is to try and reproduce the test
 
 2. Configure the version of the tools you want to test (Optional).
 
+This is an example of the optional configuration:
+
    ```shell
    # Depending on the versions used, 
    export HELM_VERSION="3.2.2"        # Helm version: for Helm v2.x.x we have to initialise Tiller right after the k8s cluster
