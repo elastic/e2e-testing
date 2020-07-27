@@ -199,7 +199,7 @@ def generateStep(Map params = [:]){
 def generateFunctionalTestStep(Map params = [:]){
   def suite = params.get('suite')
   def sneakCaseSuite = suite.toUpperCase().replaceAll("-", "_")
-  def stackVersion = env["STACK_VERSION_${sneakCaseSuite}"]
+  def stackVersion = env["STACK_VERSION_${sneakCaseSuite}"]?.trim()
   def feature = params.get('feature')
   return {
     node('ubuntu-18.04 && immutable && docker') {
