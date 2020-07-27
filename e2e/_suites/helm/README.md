@@ -39,10 +39,7 @@ The first step in determining the exact failure is to try and reproduce the test
 
 3. Install dependencies.
 
-   - Install Go with Gimme: `.ci/scripts/install-go.sh 1.13.4`
-   - Configure Go Path:
-      - Mac: `export GOROOT=${HOME}/.gimme/versions/go1.13.4.darwin.amd64`
-      - Linux: `export GOROOT=${HOME}/.gimme/versions/go1.13.4.linux.amd64`
+   - Install Go: `https://golang.org/doc/install` _(The CI uses [GVM](https://github.com/andrewkroh/gvm))_
    - Install godog: `make -C e2e install-godog`
 
 4. Run the tests.
