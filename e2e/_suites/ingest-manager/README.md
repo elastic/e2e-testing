@@ -31,10 +31,9 @@ The first step in determining the exact failure is to try and reproduce the test
 
    ``` shell
    git clone git@github.com:elastic/e2e-testing.git
-   cd e2e-testing/e2e/_suites/ingest-manager
    ```
 
-2. Configure the version of the product you want to test.
+2. Configure the version of the product you want to test (Optional).
 
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch, kibana, package registry)
@@ -44,7 +43,7 @@ The first step in determining the exact failure is to try and reproduce the test
    export ELASTIC_AGENT_DOWNLOAD_URL="https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"
    ```
 
-3. Define the proper Docker images to be used in tests.
+3. Define the proper Docker images to be used in tests (Optional).
 
     Update the Docker compose files with the local version of the images you want to use.
 
@@ -53,7 +52,7 @@ The first step in determining the exact failure is to try and reproduce the test
 4. Install dependencies.
 
    - Install Go: `https://golang.org/doc/install` _(The CI uses [GVM](https://github.com/andrewkroh/gvm))_
-   - Install godog: `make -C e2e install-godog`
+   - Install godog (from project's root directory): `make -C e2e install-godog`
 
 5. Run the tests.
 

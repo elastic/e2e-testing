@@ -25,10 +25,9 @@ The first step in determining the exact failure is to try and reproduce the test
 
    ``` shell
    git clone git@github.com:elastic/e2e-testing.git
-   cd e2e-testing/e2e/_suites/helm
    ```
 
-2. Configure the version of the tools you want to test.
+2. Configure the version of the tools you want to test (Optional).
 
    ```shell
    # Depending on the versions used, 
@@ -40,7 +39,7 @@ The first step in determining the exact failure is to try and reproduce the test
 3. Install dependencies.
 
    - Install Go: `https://golang.org/doc/install` _(The CI uses [GVM](https://github.com/andrewkroh/gvm))_
-   - Install godog: `make -C e2e install-godog`
+   - Install godog (from project's root directory): `make -C e2e install-godog`
 
 4. Run the tests.
 
