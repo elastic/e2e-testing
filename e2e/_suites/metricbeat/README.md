@@ -25,16 +25,23 @@ For Windows or other platform support, we should build Windows images and contai
 
 The first step in determining the exact failure is to try and reproduce the test run locally, ideally using the DEBUG log level to enhance the log output. Once you've done that, look at the output from the test run.
 
+#### (For Mac) Docker is not able to save files in a temporary directory
+
+It's important to configure `Docker for Mac` to allow it accessing the `/var/folders` directory, as this framework uses Mac's default temporary directory for storing tempoorary files.
+
+To change it, please use Docker UI, go to `Preferences > Resources > File Sharing`, and add there `/var/folders` to the list of paths that can be mounted into Docker containers. For more information, please read https://docs.docker.com/docker-for-mac/#file-sharing.
+
 ### Running the tests
 
 1. Clone this repository, say into a folder named `e2e-testing`.
 
    ``` shell
    git clone git@github.com:elastic/e2e-testing.git
-   cd e2e-testing/e2e/_suites/metricbeat
    ```
 
-2. Configure the version of the product you want to test.
+2. Configure the version of the product you want to test (Optional).
+
+This is an example of the optional configuration:
 
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch, kibana, package registry)
@@ -42,7 +49,7 @@ The first step in determining the exact failure is to try and reproduce the test
    export OP_METRICBEAT_VERSION="7.8.0"
    ```
 
-3. Define the proper Docker images to be used in tests.
+3. Define the proper Docker images to be used in tests (Optional).
 
     Update the Docker compose files with the local version of the images you want to use.
 
@@ -51,7 +58,7 @@ The first step in determining the exact failure is to try and reproduce the test
 4. Install dependencies.
 
    - Install Go: `https://golang.org/doc/install` _(The CI uses [GVM](https://github.com/andrewkroh/gvm))_
-   - Install godog: `make -C e2e install-godog`
+   - Install godog (from project's root directory): `make -C e2e install-godog`
 
 5. Run the tests.
 
@@ -95,3 +102,7 @@ rm -fr ~/.op/compose
 ```
 
 Note what you find and file a bug in the `elastic/e2e-testing` repository, requiring a fix to the metricbeat suite to properly configure and start the product.
+
+### I cannot move on
+
+Please open an issue here: https://github.com/elastic/e2e-testing/issues/new
