@@ -85,3 +85,7 @@ kind delete cluster --name helm-charts-test-suite
 ```
 
 Note what you find and file a bug in the `elastic/e2e-testing` repository, requiring a fix to the helm suite to properly configure and start the product.
+
+### I cannot move on
+
+Please open an issue here: https://github.com/elastic/e2e-testing/issues/new
