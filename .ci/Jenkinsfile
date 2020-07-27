@@ -29,7 +29,8 @@ pipeline {
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
     choice(name: 'LOG_LEVEL', choices: ['INFO', 'DEBUG'], description: 'Log level to be used')
     choice(name: 'RETRY_TIMEOUT', choices: ['3', '5', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
-    string(name: 'STACK_VERSION', defaultValue: '7.8.0', description: 'SemVer version of the stack to be used.')
+    string(name: 'STACK_VERSION_INGEST_MANAGER', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for Ingest Manager tests.')
+    string(name: 'STACK_VERSION_METRICBEAT', defaultValue: '7.8.0', description: 'SemVer version of the stack to be used for Metricbeat tests.')
     string(name: 'METRICBEAT_VERSION', defaultValue: '7.8.0', description: 'SemVer version of the metricbeat to be used.')
     string(name: 'HELM_CHART_VERSION', defaultValue: '7.6.1', description: 'SemVer version of Helm chart to be used.')
     string(name: 'HELM_VERSION', defaultValue: '2.16.3', description: 'SemVer version of Helm to be used.')
@@ -46,7 +47,8 @@ pipeline {
         GO111MODULE = 'on'
         ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
         METRICBEAT_VERSION = "${params.METRICBEAT_VERSION.trim()}"
-        STACK_VERSION = "${params.STACK_VERSION.trim()}"
+        STACK_VERSION_INGEST_MANAGER = "${params.STACK_VERSION_INGEST_MANAGER.trim()}"
+        STACK_VERSION_METRICBEAT = "${params.STACK_VERSION_METRICBEAT.trim()}"
         FORCE_SKIP_GIT_CHECKS = "${params.forceSkipGitChecks}"
         HELM_CHART_VERSION = "${params.HELM_CHART_VERSION.trim()}"
         HELM_VERSION = "${params.HELM_VERSION.trim()}"
@@ -196,6 +198,8 @@ def generateStep(Map params = [:]){
 
 def generateFunctionalTestStep(Map params = [:]){
   def suite = params.get('suite')
+  def sneakCaseSuite = suite.toUpperCase().replaceAll("-", "_")
+  def stackVersion = env["STACK_VERSION_${sneakCaseSuite}"]
   def feature = params.get('feature')
   return {
     node('ubuntu-18.04 && immutable && docker') {
@@ -209,7 +213,7 @@ def generateFunctionalTestStep(Map params = [:]){
             }
           }
           dir("${BASE_DIR}"){
-            sh script: """.ci/scripts/functional-test.sh "${suite}" "${feature}" "${STACK_VERSION}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${feature}"
+            sh script: """.ci/scripts/functional-test.sh "${suite}" "${feature}" "${stackVersion}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${feature}"
           }
         }
       } catch(e) {
