@@ -25,6 +25,12 @@ For Windows or other platform support, we should build Windows images and contai
 
 The first step in determining the exact failure is to try and reproduce the test run locally, ideally using the DEBUG log level to enhance the log output. Once you've done that, look at the output from the test run.
 
+#### (For Mac) Docker is not able to save files in a temporary directory
+
+It's important to configure `Docker for Mac` to allow it accessing the `/var/folders` directory, as this framework uses Mac's default temporary directory for storing tempoorary files.
+
+To change it, please use Docker UI, go to `Preferences > Resources > File Sharing`, and add there `/var/folders` to the list of paths that can be mounted into Docker containers. For more information, please read https://docs.docker.com/docker-for-mac/#file-sharing.
+
 ### Running the tests
 
 1. Clone this repository, say into a folder named `e2e-testing`.
