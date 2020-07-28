@@ -67,7 +67,7 @@ pipeline {
             setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
           }
         }
-        stage('Tests') {
+        stage('Pre-Submit') {
           when {
             beforeAgent true
             expression { return env.FORCE_SKIP_PRESUBMIT == "false" }
