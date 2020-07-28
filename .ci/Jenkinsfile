@@ -26,6 +26,7 @@ pipeline {
   parameters {
     choice(name: 'runTestsSuite', choices: ['all', 'helm', 'ingest-manager', 'metricbeat'], description: 'Choose which test suite to run (default: all)')
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
+    booleanParam(name: "forceSkipPresubmit", defaultValue: false, description: "If it's needed to execute the pre-submit tests: unit and precommit.")
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
     choice(name: 'LOG_LEVEL', choices: ['INFO', 'DEBUG'], description: 'Log level to be used')
     choice(name: 'RETRY_TIMEOUT', choices: ['3', '5', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
@@ -50,6 +51,7 @@ pipeline {
         STACK_VERSION_INGEST_MANAGER = "${params.STACK_VERSION_INGEST_MANAGER.trim()}"
         STACK_VERSION_METRICBEAT = "${params.STACK_VERSION_METRICBEAT.trim()}"
         FORCE_SKIP_GIT_CHECKS = "${params.forceSkipGitChecks}"
+        FORCE_SKIP_PRESUBMIT = "${params.forceSkipPresubmit}"
         HELM_CHART_VERSION = "${params.HELM_CHART_VERSION.trim()}"
         HELM_VERSION = "${params.HELM_VERSION.trim()}"
         KIND_VERSION = "${params.KIND_VERSION.trim()}"
@@ -66,6 +68,10 @@ pipeline {
           }
         }
         stage('Tests') {
+          when {
+            beforeAgent true
+            expression { return env.FORCE_SKIP_PRESUBMIT == "false" }
+          }
           parallel {
             stage('Sanity checks') {
               agent { label 'ubuntu-18.04 && immutable && docker' }
