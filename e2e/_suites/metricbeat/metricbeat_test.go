@@ -39,7 +39,7 @@ func init() {
 	config.Init()
 
 	metricbeatVersion = shell.GetEnv("OP_METRICBEAT_VERSION", metricbeatVersion)
-	queryRetryTimeout = shell.GetIntegerFromEnv("OP_RETRY_TIMEOUT", queryRetryTimeout)
+	queryRetryTimeout = shell.GetEnvInteger("OP_RETRY_TIMEOUT", queryRetryTimeout)
 	stackVersion = shell.GetEnv("OP_STACK_VERSION", stackVersion)
 
 	serviceManager = services.NewServiceManager()
