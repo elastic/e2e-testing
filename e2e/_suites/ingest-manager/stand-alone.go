@@ -49,6 +49,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 	sats.AgentConfigFilePath = configurationFilePath
 
 	profileEnv["elasticAgentConfigFile"] = sats.AgentConfigFilePath
+	profileEnv["elasticAgentTag"] = stackVersion
 
 	err = serviceManager.AddServicesToCompose(profile, []string{serviceName}, profileEnv)
 	if err != nil {
