@@ -49,6 +49,9 @@ This is an example of the optional configuration:
    # This environment variable will use a fixed version of the Elastic agent binary, obtained from
    # https://artifacts-api.elastic.co/v1/search/8.0.0-SNAPSHOT/elastic-agent
    export ELASTIC_AGENT_DOWNLOAD_URL="https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"
+   # This environment variable will use the snapshots produced by Beats CI. If the above variable
+   # is set, this variable will take no effect
+   export ELASTIC_AGENT_USE_CI_SNAPSHOTS="true"
    ```
 
 3. Define the proper Docker images to be used in tests (Optional).

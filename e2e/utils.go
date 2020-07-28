@@ -72,16 +72,27 @@ func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOf
 	return exp
 }
 
-// GetElasticArtifactURL returns the URL of a released artifact from
-// Elastic's artifact repository, bbuilding the JSON path query based
-// on the desired OS, architecture and file extension
+// GetElasticArtifactURL returns the URL of a released artifact from two possible sources
+// on the desired OS, architecture and file extension:
+// 1. Observability CI Storage bucket
+// 2. Elastic's artifact repository, building the JSON path query based
 // i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "linux", "x86_64", "tar.gz")
 // If the environment variable ELASTIC_AGENT_DOWNLOAD_URL exists, then the artifact to be downloaded will
 // be defined by that value
+// Else, if the environment variable ELASTIC_AGENT_USE_CI_SNAPSHOTS is set, then the artifact
+// to be downloaded will be defined by the latest snapshot produced by the Beats CI.
 func GetElasticArtifactURL(artifact string, version string, OS string, arch string, extension string) (string, error) {
 	downloadURL := os.Getenv("ELASTIC_AGENT_DOWNLOAD_URL")
 	if downloadURL != "" {
 		return downloadURL, nil
+	}
+
+	useCISnapshots := os.Getenv("ELASTIC_AGENT_USE_CI_SNAPSHOTS")
+	if useCISnapshots != "" {
+		// We will use the snapshots produced by Beats CI
+		bucket := "beats-ci-artifacts"
+		object := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
+		return GetObjectURLFromBucket(bucket, object)
 	}
 
 	exp := GetExponentialBackOff(1 * time.Minute)
@@ -148,6 +159,72 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 	downloadURL = downloadObject.Path("url").Data().(string)
 
 	return downloadURL, nil
+}
+
+// GetObjectURLFromBucket extracts the media URL for the desired artifact from the
+// Google Cloud Storage bucket used by the CI to push snapshots
+func GetObjectURLFromBucket(bucket string, object string) (string, error) {
+	exp := GetExponentialBackOff(1 * time.Minute)
+
+	retryCount := 1
+
+	body := ""
+
+	storageAPI := func() error {
+		r := curl.HTTPRequest{
+			URL: fmt.Sprintf("https://storage.googleapis.com/storage/v1/b/%s/o", bucket),
+		}
+
+		response, err := curl.Get(r)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"bucket":         bucket,
+				"elapsedTime":    exp.GetElapsedTime(),
+				"error":          err,
+				"object":         object,
+				"retry":          retryCount,
+				"statusEndpoint": r.URL,
+			}).Warn("Google Cloud Storage API is not available yet")
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"bucket":         bucket,
+			"elapsedTime":    exp.GetElapsedTime(),
+			"object":         object,
+			"retries":        retryCount,
+			"statusEndpoint": r.URL,
+		}).Debug("Google Cloud Storage API is available")
+
+		body = response
+		return nil
+	}
+
+	err := backoff.Retry(storageAPI, exp)
+	if err != nil {
+		return "", err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"bucket": bucket,
+			"object": object,
+		}).Error("Could not parse the response body for the object")
+		return "", err
+	}
+
+	for _, item := range jsonParsed.Path("items").Children() {
+		itemID := item.Path("id").Data().(string)
+		if strings.Contains(itemID, object) {
+			return item.Path("mediaLink").Data().(string), nil
+		}
+	}
+
+	return "", fmt.Errorf("The %s object could not be found in the %s bucket", object, bucket)
 }
 
 // DownloadFile will download a url and store it in a temporary path.
