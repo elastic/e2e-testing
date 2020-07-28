@@ -211,7 +211,7 @@ def generateFunctionalTestStep(Map params = [:]){
     node('ubuntu-18.04 && immutable && docker') {
       try {
         deleteDir()
-        unstash 'build'
+        unstash 'source'
         withGoEnv(version: "${GO_VERSION}"){
           retry(3){
             dir("${BASE_DIR}"){
