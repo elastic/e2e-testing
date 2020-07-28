@@ -21,6 +21,7 @@ import (
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/docker"
 	curl "github.com/elastic/e2e-testing/cli/shell"
+	shell "github.com/elastic/e2e-testing/cli/shell"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -30,27 +31,6 @@ const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 //nolint:unused
 var seededRand *rand.Rand = rand.New(
 	rand.NewSource(time.Now().UnixNano()))
-
-// GetEnv returns an environment variable as string
-func GetEnv(envVar string, defaultValue string) string {
-	if value, exists := os.LookupEnv(envVar); exists {
-		return value
-	}
-
-	return defaultValue
-}
-
-// GetIntegerFromEnv returns an environment variable as integer, including a default value
-func GetIntegerFromEnv(envVar string, defaultValue int) int {
-	if value, exists := os.LookupEnv(envVar); exists {
-		v, err := strconv.Atoi(value)
-		if err == nil {
-			return v
-		}
-	}
-
-	return defaultValue
-}
 
 // GetExponentialBackOff returns a preconfigured exponential backoff instance
 func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOff {
@@ -87,8 +67,8 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 		return downloadURL, nil
 	}
 
-	useCISnapshots := os.Getenv("ELASTIC_AGENT_USE_CI_SNAPSHOTS")
-	if useCISnapshots != "" {
+	useCISnapshots := shell.GetEnvBool("ELASTIC_AGENT_USE_CI_SNAPSHOTS")
+	if useCISnapshots {
 		// We will use the snapshots produced by Beats CI
 		bucket := "beats-ci-artifacts"
 		object := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)

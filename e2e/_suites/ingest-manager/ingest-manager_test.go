@@ -16,6 +16,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
+	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
@@ -38,8 +39,8 @@ const kibanaBaseURL = "http://localhost:5601"
 func init() {
 	config.Init()
 
-	queryRetryTimeout = e2e.GetIntegerFromEnv("OP_RETRY_TIMEOUT", queryRetryTimeout)
-	stackVersion = e2e.GetEnv("OP_STACK_VERSION", stackVersion)
+	queryRetryTimeout = shell.GetEnvInteger("OP_RETRY_TIMEOUT", queryRetryTimeout)
+	stackVersion = shell.GetEnv("OP_STACK_VERSION", stackVersion)
 }
 
 func IngestManagerFeatureContext(s *godog.Suite) {

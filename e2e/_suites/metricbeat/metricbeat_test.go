@@ -16,6 +16,7 @@ import (
 	messages "github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/cli/services"
+	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
@@ -37,9 +38,9 @@ var stackVersion = "7.8.0"
 func init() {
 	config.Init()
 
-	metricbeatVersion = e2e.GetEnv("OP_METRICBEAT_VERSION", metricbeatVersion)
-	queryRetryTimeout = e2e.GetIntegerFromEnv("OP_RETRY_TIMEOUT", queryRetryTimeout)
-	stackVersion = e2e.GetEnv("OP_STACK_VERSION", stackVersion)
+	metricbeatVersion = shell.GetEnv("OP_METRICBEAT_VERSION", metricbeatVersion)
+	queryRetryTimeout = shell.GetIntegerFromEnv("OP_RETRY_TIMEOUT", queryRetryTimeout)
+	stackVersion = shell.GetEnv("OP_STACK_VERSION", stackVersion)
 
 	serviceManager = services.NewServiceManager()
 }

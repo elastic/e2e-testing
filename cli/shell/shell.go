@@ -6,7 +6,9 @@ package shell
 
 import (
 	"bytes"
+	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -52,6 +54,42 @@ func Execute(workspace string, command string, args ...string) (string, error) {
 	}
 
 	return strings.Trim(out.String(), "\n"), nil
+}
+
+// GetEnv returns an environment variable as string
+func GetEnv(envVar string, defaultValue string) string {
+	if value, exists := os.LookupEnv(envVar); exists {
+		return value
+	}
+
+	return defaultValue
+}
+
+// GetEnvBool returns an environment variable as boolean
+func GetEnvBool(key string) bool {
+	s := os.Getenv(key)
+	if s == "" {
+		return false
+	}
+
+	v, err := strconv.ParseBool(s)
+	if err != nil {
+		return false
+	}
+
+	return v
+}
+
+// GetEnvInteger returns an environment variable as integer, including a default value
+func GetEnvInteger(envVar string, defaultValue int) int {
+	if value, exists := os.LookupEnv(envVar); exists {
+		v, err := strconv.Atoi(value)
+		if err == nil {
+			return v
+		}
+	}
+
+	return defaultValue
 }
 
 // which checks if software is installed, else it aborts the execution
