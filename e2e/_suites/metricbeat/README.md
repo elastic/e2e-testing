@@ -1,8 +1,8 @@
-# Ingest Manager End-To-End tests
+# Integrations End-To-End tests
 
 ## Motivation
 
-Our goal is for the Ingest Manager team to execute this automated e2e test suite while developing the product. The tests in this folder assert that the use cases (or scenarios) defined in the `features` directory are behaving as expected.
+Our goal is for the Integrations team to execute this automated e2e test suite while developing the product. The tests in this folder assert that the use cases (or scenarios) defined in the `features` directory are behaving as expected.
 
 ## How do the tests work?
 
@@ -12,7 +12,7 @@ The provisining of services is accomplish using Docker Compose and the [testcont
 
 The tests will follow this general high-level approach:
 
-1. Install runtime dependencies as Docker containers via Docker Compose, happening at before the test suite runs. These runtime dependencies are defined in a specific `profile` for Ingest Manager, in the form of a `docker-compose.yml` file.
+1. Install runtime dependencies as Docker containers via Docker Compose, happening at before the test suite runs. These runtime dependencies are defined in a specific `profile` for Metricbeat, in the form of a `docker-compose.yml` file.
 1. Execute BDD steps representing each scenario. Each step will return an Error if the behavior is not satisfied, marking the step and the scenario as failed, or will return `nil`.
 
 ## Known Limitations
@@ -45,10 +45,8 @@ This is an example of the optional configuration:
 
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch, kibana, package registry)
-   export OP_STACK_VERSION=8.0.0-SNAPSHOT
-   # This environment variable will use a fixed version of the Elastic agent binary, obtained from
-   # https://artifacts-api.elastic.co/v1/search/8.0.0-SNAPSHOT/elastic-agent
-   export ELASTIC_AGENT_DOWNLOAD_URL="https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"
+   export OP_STACK_VERSION="7.8.0"
+   export OP_METRICBEAT_VERSION="7.8.0"
    ```
 
 3. Define the proper Docker images to be used in tests (Optional).
@@ -65,7 +63,7 @@ This is an example of the optional configuration:
 5. Run the tests.
 
    ```shell
-   cd e2e/_suites/ingest-manager
+   cd e2e/_suites/metricbeat
    OP_LOG_LEVEL=DEBUG godog
    ```
 
@@ -90,7 +88,7 @@ Check if the scenario has an annotation/tag supporting the test runner to filter
 Example:
 
    ```shell
-   OP_LOG_LEVEL=DEBUG godog -t '@stand_alone_mode'
+   OP_LOG_LEVEL=DEBUG godog -t '@apache'
    ```
 
 ### Setup failures
@@ -103,7 +101,7 @@ this happened, look at your terminal log in DEBUG mode. If a `docker-compose.yml
 rm -fr ~/.op/compose
 ```
 
-Note what you find and file a bug in the `elastic/e2e-testing` repository, requiring a fix to the ingest-manager suite to properly configure and start the product.
+Note what you find and file a bug in the `elastic/e2e-testing` repository, requiring a fix to the metricbeat suite to properly configure and start the product.
 
 ### I cannot move on
 
