@@ -9,6 +9,8 @@ pipeline {
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
     NOTIFY_TO = credentials('notify-to')
     JOB_GCS_BUCKET = credentials('gcs-bucket')
+    DOCKER_ELASTIC_SECRET = 'secret/observability-team/ci/docker-registry/prod'
+    DOCKER_REGISTRY = 'docker.elastic.co'
   }
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -209,6 +211,9 @@ def generateFunctionalTestStep(Map params = [:]){
         deleteDir()
         unstash 'build'
         withGoEnv(version: "${GO_VERSION}"){
+          if(isInstalled(tool: 'docker', flag: '--version')) {
+            dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
+          }
           retry(3){
             dir("${BASE_DIR}"){
               sh script: """.ci/scripts/install-test-dependencies.sh "${suite}" """, label: "Install test dependencies for ${suite}:${feature}"
