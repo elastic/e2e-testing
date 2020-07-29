@@ -185,7 +185,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	log.Debug("Checking system Package dashboards in Fleet")
 
 	dataStreamsCount := 0
-	maxTimeout := 1 * time.Minute
+	maxTimeout := time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)

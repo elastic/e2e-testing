@@ -75,7 +75,7 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 		return GetObjectURLFromBucket(bucket, object)
 	}
 
-	exp := GetExponentialBackOff(1 * time.Minute)
+	exp := GetExponentialBackOff(time.Minute)
 
 	retryCount := 1
 
@@ -144,7 +144,7 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 // GetObjectURLFromBucket extracts the media URL for the desired artifact from the
 // Google Cloud Storage bucket used by the CI to push snapshots
 func GetObjectURLFromBucket(bucket string, object string) (string, error) {
-	exp := GetExponentialBackOff(1 * time.Minute)
+	exp := GetExponentialBackOff(time.Minute)
 
 	retryCount := 1
 
