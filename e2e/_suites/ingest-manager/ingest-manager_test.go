@@ -22,7 +22,7 @@ import (
 )
 
 // stackVersion is the version of the stack to use
-// It can be overriden by OP_STACK_VERSION env var
+// It can be overriden by STACK_VERSION env var
 var stackVersion = "8.0.0-SNAPSHOT"
 
 // profileEnv is the environment to be applied to any execution
@@ -40,7 +40,7 @@ func init() {
 	config.Init()
 
 	queryRetryTimeout = shell.GetEnvInteger("OP_RETRY_TIMEOUT", queryRetryTimeout)
-	stackVersion = shell.GetEnv("OP_STACK_VERSION", stackVersion)
+	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 }
 
 func IngestManagerFeatureContext(s *godog.Suite) {

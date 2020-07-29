@@ -45,7 +45,7 @@ This is an example of the optional configuration:
 
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch, kibana, package registry)
-   export OP_STACK_VERSION=8.0.0-SNAPSHOT
+   export STACK_VERSION=8.0.0-SNAPSHOT
    # (Fleet mode) This environment variable will use a fixed version of the Elastic agent binary, obtained from
    # https://artifacts-api.elastic.co/v1/search/8.0.0-SNAPSHOT/elastic-agent
    export ELASTIC_AGENT_DOWNLOAD_URL="https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"
