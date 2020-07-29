@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
@@ -122,6 +123,10 @@ func (sats *StandAloneTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown()
 
 	result, err := searchAgentData(sats.Hostname, sats.AgentStoppedDate, minimumHitsCount, maxTimeout)
 	if err != nil {
+		if strings.Contains(err.Error(), "type:index_not_found_exception") {
+			return err
+		}
+
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Info("No documents were found for the Agent in the index after it stopped")
@@ -208,5 +213,12 @@ func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int,
 
 	indexName := ".ds-logs-elastic.agent-default-000001"
 
-	return e2e.WaitForNumberOfHits(indexName, esQuery, minimumHitsCount, maxTimeout)
+	result, err := e2e.WaitForNumberOfHits(indexName, esQuery, minimumHitsCount, maxTimeout)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Warn(e2e.WaitForIndices())
+	}
+
+	return result, err
 }
