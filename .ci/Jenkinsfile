@@ -28,6 +28,7 @@ pipeline {
   parameters {
     choice(name: 'runTestsSuite', choices: ['all', 'helm', 'ingest-manager', 'metricbeat'], description: 'Choose which test suite to run (default: all)')
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
+    booleanParam(name: "forceSkipPresubmit", defaultValue: false, description: "If it's needed to execute the pre-submit tests: unit and precommit.")
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
     booleanParam(name: "ELASTIC_AGENT_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the snapshots produced by Beats CI instead of the official releases")
     choice(name: 'LOG_LEVEL', choices: ['INFO', 'DEBUG'], description: 'Log level to be used')
@@ -54,6 +55,7 @@ pipeline {
         STACK_VERSION_INGEST_MANAGER = "${params.STACK_VERSION_INGEST_MANAGER.trim()}"
         STACK_VERSION_METRICBEAT = "${params.STACK_VERSION_METRICBEAT.trim()}"
         FORCE_SKIP_GIT_CHECKS = "${params.forceSkipGitChecks}"
+        FORCE_SKIP_PRESUBMIT = "${params.forceSkipPresubmit}"
         HELM_CHART_VERSION = "${params.HELM_CHART_VERSION.trim()}"
         HELM_VERSION = "${params.HELM_VERSION.trim()}"
         KIND_VERSION = "${params.KIND_VERSION.trim()}"
@@ -69,7 +71,11 @@ pipeline {
             setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
           }
         }
-        stage('Tests') {
+        stage('Pre-Submit') {
+          when {
+            beforeAgent true
+            expression { return env.FORCE_SKIP_PRESUBMIT == "false" }
+          }
           parallel {
             stage('Sanity checks') {
               agent { label 'ubuntu-18.04 && immutable && docker' }
@@ -101,7 +107,6 @@ pipeline {
                     dir(BASE_DIR){
                       sh script: '.ci/scripts/build-test.sh', label: 'Build and test'
                     }
-                    stash allowEmpty: false, name: 'build', useDefaultExcludes: false, excludes: '.gvm/**'
                   }
                 }
               }
@@ -185,7 +190,7 @@ def generateStep(Map params = [:]){
     node('ubuntu-18.04 && immutable && docker') {
       try {
         deleteDir()
-        unstash 'build'
+        unstash 'source'
         dir("${BASE_DIR}/cli") {
           withEnv(["GOOS=${oss}", "GOARCH=${platform}"]) {
             sh script: 'make build', label: 'Create releases'
@@ -209,7 +214,7 @@ def generateFunctionalTestStep(Map params = [:]){
     node('ubuntu-18.04 && immutable && docker') {
       try {
         deleteDir()
-        unstash 'build'
+        unstash 'source'
         withGoEnv(version: "${GO_VERSION}"){
           if(isInstalled(tool: 'docker', flag: '--version')) {
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
