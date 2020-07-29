@@ -67,7 +67,7 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 		return downloadURL, nil
 	}
 
-	useCISnapshots := shell.GetEnvBool("ELASTIC_AGENT_USE_CI_SNAPSHOTS")
+	useCISnapshots, _ := shell.GetEnvBool("ELASTIC_AGENT_USE_CI_SNAPSHOTS")
 	if useCISnapshots {
 		// We will use the snapshots produced by Beats CI
 		bucket := "beats-ci-artifacts"
@@ -115,7 +115,7 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 		return nil
 	}
 
-	err := backoff.Retry(apiStatus, exp)
+	err = backoff.Retry(apiStatus, exp)
 	if err != nil {
 		return "", err
 	}
