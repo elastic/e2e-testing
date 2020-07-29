@@ -10,10 +10,22 @@ import (
 	"time"
 
 	"github.com/cucumber/godog"
+	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/cli/services"
+	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
+
+// agentVersion is the version of the agent to use
+// It can be overriden by ELASTIC_AGENT_VERSION env var
+var standAloneVersion = "8.0.0-SNAPSHOT"
+
+func init() {
+	config.Init()
+
+	standAloneVersion = shell.GetEnv("ELASTIC_AGENT_STAND_ALONE_VERSION", standAloneVersion)
+}
 
 // StandAloneTestSuite represents the scenarios for Stand-alone-mode
 type StandAloneTestSuite struct {
@@ -50,7 +62,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 	sats.AgentConfigFilePath = configurationFilePath
 
 	profileEnv["elasticAgentConfigFile"] = sats.AgentConfigFilePath
-	profileEnv["elasticAgentTag"] = stackVersion
+	profileEnv["elasticAgentTag"] = standAloneVersion
 
 	err = serviceManager.AddServicesToCompose(profile, []string{serviceName}, profileEnv)
 	if err != nil {
