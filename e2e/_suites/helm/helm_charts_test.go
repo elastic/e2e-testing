@@ -489,7 +489,7 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	if value, exists := os.LookupEnv("HELM_CHART_VERSION"); exists {
 		testSuite.Version = value
 	}
-	if value, exists := os.LookupEnv("KUBERNETES_VERSION"); exists {
+	if value, exists := os.LookupEnv("HELM_KUBERNETES_VERSION"); exists {
 		testSuite.KubernetesVersion = value
 	}
 
