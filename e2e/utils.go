@@ -72,6 +72,11 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 		// We will use the snapshots produced by Beats CI
 		bucket := "beats-ci-artifacts"
 		object := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
+
+		if agentVersion, exists := os.LookupEnv("ELASTIC_AGENT_VERSION"); exists {
+			object = fmt.Sprintf("pull-requests/%s/%s-%s-%s-%s.%s", agentVersion, artifact, version, OS, arch, extension)
+		}
+
 		return GetObjectURLFromBucket(bucket, object)
 	}
 
