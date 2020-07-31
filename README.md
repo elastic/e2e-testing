@@ -2,7 +2,7 @@
 
 # End-2-End tests for the Observability projects
 
-This repository contains:
+This repository contains
 
 1. a [Go library](./cli/README.md) to provision services in the way of Docker containers. It will provide the services using Docker Compose files.
 1. A [test framework](./e2e/README.md) to execute e2e tests for certain Observability projects:
