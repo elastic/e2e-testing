@@ -187,7 +187,19 @@ func (h *helm2X) InstallChart(name string, chart string, version string, flags [
 	args := []string{
 		"install", chart, "--name", name, "--version", version,
 	}
-	args = append(args, flags...)
+	for _, flag := range flags {
+		if strings.HasPrefix(flag, "--timeout=") {
+			log.WithFields(log.Fields{
+				"flag": flag,
+			}).Debug("Sanitising flag format for Helm 2")
+			timeoutValue := strings.Split(flag, "=")
+			args = append(args, timeoutValue[0])
+			args = append(args, timeoutValue[1])
+			continue
+		}
+
+		args = append(args, flag)
+	}
 
 	output, err := helmExecute(args...)
 	if err != nil {
