@@ -71,6 +71,12 @@ pipeline {
             gitCheckout(basedir: BASE_DIR, githubNotifyFirstTimeContributor: true)
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
             setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
+            script {
+              dir("${BASE_DIR}"){
+                // Skip all the test stages for PR's with markdown changes only
+                env.SKIP_TESTS = isGitRegionMatch(patterns: [ '.*\\.md' ], shouldMatchAll: true)
+              }
+            }
           }
         }
         stage('Pre-Submit') {
@@ -101,6 +107,12 @@ pipeline {
             stage('Unit Tests') {
               agent { label 'ubuntu-18.04 && immutable && docker' }
               options { skipDefaultCheckout() }
+              when {
+                beforeAgent true
+                allOf {
+                  expression { return env.SKIP_TESTS == "false" }
+                }
+              }
               steps {
                 withGithubNotify(context: 'Tests', tab: 'tests') {
                   deleteDir()
@@ -126,6 +138,12 @@ pipeline {
           environment {
             GO111MODULE = 'on'
             PATH = "${env.HOME}/bin:${env.WORKSPACE}/${env.BASE_DIR}/bin:${HOME}/go/bin:${env.PATH}"
+          }
+          when {
+            beforeAgent true
+            allOf {
+              expression { return env.SKIP_TESTS == "false" }
+            }
           }
           steps {
             withGithubNotify(context: 'E2E Tests', tab: 'tests') {
