@@ -99,7 +99,7 @@ func (h *helm3X) InstallChart(name string, chart string, version string, flags [
 		"name":    name,
 		"output":  output,
 		"version": version,
-	}).Debug("Chart installed")
+	}).Info("Chart installed")
 
 	return nil
 }
@@ -173,7 +173,7 @@ func (h *helm2X) Init() error {
 	if err != nil {
 		return err
 	}
-	log.Debug("Helm initialised")
+	log.Info("Helm initialised")
 	return nil
 }
 
@@ -210,7 +210,7 @@ func (h *helm2X) InstallChart(name string, chart string, version string, flags [
 		"name":    name,
 		"output":  output,
 		"version": version,
-	}).Debug("Chart installed")
+	}).Info("Chart installed")
 
 	return nil
 }
