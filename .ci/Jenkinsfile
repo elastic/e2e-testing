@@ -141,7 +141,8 @@ pipeline {
           }
           when {
             beforeAgent true
-            allOf {
+            anyOf {
+              expression { return env.FORCE_SKIP_GIT_CHECKS == "true" }
               expression { return env.SKIP_TESTS == "false" }
             }
           }
