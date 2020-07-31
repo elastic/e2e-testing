@@ -53,7 +53,7 @@ This is an example of the optional configuration:
    # is set, this variable will take no effect
    export ELASTIC_AGENT_USE_CI_SNAPSHOTS="true"
    # (Stand-Alone mode) This environment variable will use the its value as the Docker tag produced by Beats CI.
-   export ELASTIC_AGENT_STAND_ALONE_VERSION="78a762c76080aafa34c52386341b590dac24e2df"
+   export ELASTIC_AGENT_VERSION="78a762c76080aafa34c52386341b590dac24e2df"
    ```
 
 3. Define the proper Docker images to be used in tests (Optional).

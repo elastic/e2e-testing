@@ -24,7 +24,7 @@ var standAloneVersion = "8.0.0-SNAPSHOT"
 func init() {
 	config.Init()
 
-	standAloneVersion = shell.GetEnv("ELASTIC_AGENT_STAND_ALONE_VERSION", standAloneVersion)
+	standAloneVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", standAloneVersion)
 }
 
 // StandAloneTestSuite represents the scenarios for Stand-alone-mode

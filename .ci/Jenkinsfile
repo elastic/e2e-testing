@@ -30,7 +30,7 @@ pipeline {
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
     booleanParam(name: "forceSkipPresubmit", defaultValue: false, description: "If it's needed to execute the pre-submit tests: unit and precommit.")
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
-    string(name: 'ELASTIC_AGENT_STAND_ALONE_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stand-alone elastic-agent to be used for Ingest Manager tests. You can use here the tag of your PR to test your changes')
+    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stand-alone elastic-agent to be used for Ingest Manager tests. You can use here the tag of your PR to test your changes')
     booleanParam(name: "ELASTIC_AGENT_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the binary snapshots produced by Beats CI instead of the official releases")
     choice(name: 'LOG_LEVEL', choices: ['INFO', 'DEBUG'], description: 'Log level to be used')
     choice(name: 'RETRY_TIMEOUT', choices: ['3', '5', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
@@ -51,7 +51,7 @@ pipeline {
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
         GO111MODULE = 'on'
         ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
-        ELASTIC_AGENT_STAND_ALONE_VERSION = "${params.ELASTIC_AGENT_STAND_ALONE_VERSION.trim()}"
+        ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
         ELASTIC_AGENT_USE_CI_SNAPSHOTS = "${params.ELASTIC_AGENT_USE_CI_SNAPSHOTS}"
         INGEST_MANAGER_STACK_VERSION = "${params.INGEST_MANAGER_STACK_VERSION.trim()}"
         METRICBEAT_VERSION = "${params.METRICBEAT_VERSION.trim()}"
