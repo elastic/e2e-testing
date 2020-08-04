@@ -33,13 +33,15 @@ This is an example of the optional configuration:
 
    ```shell
    # Depending on the versions used, 
-   export HELM_VERSION="3.2.2"        # Helm version: for Helm v2.x.x we have to initialise Tiller right after the k8s cluster
+   export HELM_VERSION="2.16.3"        # Helm version: for Helm v2.x.x we have to initialise Tiller right after the k8s cluster
    export HELM_CHART_VERSION="7.6.1"  # version of the Elastic's Observability Helm charts
-   export HELM_KUBERNETES_VERSION="1.15.3" # version of the cluster to be passedd to kind
+   export HELM_KUBERNETES_VERSION="1.18.2" # version of the cluster to be passed to kind
    ```
 
 3. Install dependencies.
 
+   - Install Helm 2.16.3
+   - Install Kind 0.8.1
    - Install Go: `https://golang.org/doc/install` _(The CI uses [GVM](https://github.com/andrewkroh/gvm))_
    - Install godog (from project's root directory): `make -C e2e install-godog`
 

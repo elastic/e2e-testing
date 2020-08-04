@@ -99,7 +99,7 @@ func (h *helm3X) InstallChart(name string, chart string, version string, flags [
 		"name":    name,
 		"output":  output,
 		"version": version,
-	}).Debug("Chart installed")
+	}).Info("Chart installed")
 
 	return nil
 }
@@ -173,13 +173,16 @@ func (h *helm2X) Init() error {
 	if err != nil {
 		return err
 	}
-	log.Debug("Helm initialised")
+	log.WithFields(log.Fields{
+		"version": h.Version,
+	}).Info("Helm initialised")
 	return nil
 }
 
 func (h *helm2X) InstallChart(name string, chart string, version string, flags []string) error {
 	log.WithFields(log.Fields{
 		"chart":   chart,
+		"flags":   flags,
 		"name":    name,
 		"version": version,
 	}).Debug("Installing chart")
@@ -187,7 +190,19 @@ func (h *helm2X) InstallChart(name string, chart string, version string, flags [
 	args := []string{
 		"install", chart, "--name", name, "--version", version,
 	}
-	args = append(args, flags...)
+	for _, flag := range flags {
+		if strings.HasPrefix(flag, "--timeout=") {
+			log.WithFields(log.Fields{
+				"flag": flag,
+			}).Debug("Sanitising flag format for Helm 2")
+			timeoutValue := strings.Split(flag, "=")
+			args = append(args, timeoutValue[0])
+			args = append(args, timeoutValue[1])
+			continue
+		}
+
+		args = append(args, flag)
+	}
 
 	output, err := helmExecute(args...)
 	if err != nil {
@@ -195,10 +210,11 @@ func (h *helm2X) InstallChart(name string, chart string, version string, flags [
 	}
 	log.WithFields(log.Fields{
 		"chart":   chart,
+		"flags":   args,
 		"name":    name,
 		"output":  output,
 		"version": version,
-	}).Debug("Chart installed")
+	}).Info("Chart installed")
 
 	return nil
 }
