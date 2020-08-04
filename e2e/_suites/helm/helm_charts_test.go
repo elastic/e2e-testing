@@ -277,11 +277,7 @@ func (ts *HelmChartTestSuite) install(chart string) error {
 	flags := []string{}
 	if chart == "elasticsearch" {
 		// Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes
-		args := []string{
-			"apply", "-f", "https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml",
-		}
-
-		_, err := shell.Execute(".", "kubectl", args...)
+		_, err := kubectl.Run("apply", "-f", "https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml")
 		if err != nil {
 			log.Errorf("Could not apply Rancher Local Path Provisioner: %v", err)
 			return err
@@ -405,10 +401,7 @@ func (ts *HelmChartTestSuite) volumeMountedWithSubpath(name string, mountPath st
 
 	getMountValues := func(key string) ([]string, error) {
 		// build the arguments for capturing the volume mounts
-		args := []string{
-			"get", "pods", "-l", "app=" + ts.getPodName(), "-o", `jsonpath="{.items[0].spec.containers[0].volumeMounts[*]['` + key + `']}"`,
-		}
-		output, err := shell.Execute(".", "kubectl", args...)
+		output, err := kubectl.Run("get", "pods", "-l", "app="+ts.getPodName(), "-o", `jsonpath="{.items[0].spec.containers[0].volumeMounts[*]['`+key+`']}"`)
 		if err != nil {
 			return []string{}, err
 		}
