@@ -33,7 +33,7 @@ func init() {
 
 	h, err := k8s.HelmFactory(helmVersion)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Helm could not be initialised: %v", err)
 	}
 	helm = h
 }
@@ -52,7 +52,7 @@ func (ts *HelmChartTestSuite) aClusterIsRunning() error {
 
 	output, err := shell.Execute(".", "kind", args...)
 	if err != nil {
-		log.Fatalf("Could not check the status of the cluster. Aborting: %v", err)
+		log.WithField("error", err).Error("Could not check the status of the cluster.")
 	}
 	if output != ts.ClusterName {
 		return fmt.Errorf("The cluster is not running")
@@ -64,11 +64,12 @@ func (ts *HelmChartTestSuite) aClusterIsRunning() error {
 	return nil
 }
 
-func (ts *HelmChartTestSuite) addElasticRepo() {
+func (ts *HelmChartTestSuite) addElasticRepo() error {
 	err := helm.AddRepo("elastic", "https://helm.elastic.co")
 	if err != nil {
-		log.Fatalf("Could not add Elastic Helm repo. Aborting: %v", err)
+		log.WithField("error", err).Error("Could not add Elastic Helm repo")
 	}
+	return err
 }
 
 func (ts *HelmChartTestSuite) aResourceContainsTheKey(resource string, key string) error {
@@ -172,13 +173,14 @@ func (ts *HelmChartTestSuite) checkResources(resourceType, selector string, min 
 	return items, nil
 }
 
-func (ts *HelmChartTestSuite) createCluster(k8sVersion string) {
+func (ts *HelmChartTestSuite) createCluster(k8sVersion string) error {
 	args := []string{"create", "cluster", "--name", ts.ClusterName, "--image", "kindest/node:v" + k8sVersion}
 
 	log.Debug("Creating cluster with kind")
 	output, err := shell.Execute(".", "kind", args...)
 	if err != nil {
-		log.Fatalf("Could not create the cluster. Aborting: %v", err)
+		log.WithField("error", err).Error("Could not create the cluster")
+		return err
 	}
 	log.WithFields(log.Fields{
 		"cluster":    ts.ClusterName,
@@ -191,8 +193,10 @@ func (ts *HelmChartTestSuite) createCluster(k8sVersion string) {
 	// right after the k8s cluster
 	err = helm.Init()
 	if err != nil {
-		log.Fatalf("Could not initiase Helm. Aborting: %v", err)
+		log.WithField("error", err).Error("Could not initiase Helm")
 	}
+
+	return err
 }
 
 func (ts *HelmChartTestSuite) deleteChart() {
@@ -204,18 +208,20 @@ func (ts *HelmChartTestSuite) deleteChart() {
 	}
 }
 
-func (ts *HelmChartTestSuite) destroyCluster() {
+func (ts *HelmChartTestSuite) destroyCluster() error {
 	args := []string{"delete", "cluster", "--name", ts.ClusterName}
 
 	log.Debug("Deleting cluster")
 	output, err := shell.Execute(".", "kind", args...)
 	if err != nil {
-		log.Fatalf("Could not destroy the cluster. Aborting: %v", err)
+		log.WithField("error", err).Error("Could not destroy the cluster")
+		return err
 	}
 	log.WithFields(log.Fields{
 		"output":  output,
 		"cluster": ts.ClusterName,
 	}).Debug("Cluster destroyed")
+	return nil
 }
 
 func (ts *HelmChartTestSuite) elasticsHelmChartIsInstalled(chart string) error {
@@ -291,14 +297,20 @@ func (ts *HelmChartTestSuite) install(chart string) error {
 	return helm.InstallChart(ts.Name, elasticChart, ts.Version, flags)
 }
 
-func (ts *HelmChartTestSuite) installRuntimeDependencies(dependencies ...string) {
+func (ts *HelmChartTestSuite) installRuntimeDependencies(dependencies ...string) error {
 	for _, dependency := range dependencies {
 		// Install Elasticsearch
 		err := ts.install(dependency)
 		if err != nil {
-			log.Fatalf("Could not install %s as runtime dependency. Aborting: %v", dependency, err)
+			log.WithFields(log.Fields{
+				"dependency": dependency,
+				"error":      err,
+			}).Error("Could not install runtime dependency")
+			return err
 		}
 	}
+
+	return nil
 }
 
 func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
@@ -513,16 +525,28 @@ func HelmChartFeatureContext(s *godog.Suite) {
 		log.Debug("Before Suite...")
 		toolsAreInstalled()
 
-		testSuite.createCluster(testSuite.KubernetesVersion)
-		testSuite.addElasticRepo()
-		testSuite.installRuntimeDependencies("elasticsearch")
+		err := testSuite.createCluster(testSuite.KubernetesVersion)
+		if err != nil {
+			return
+		}
+		err = testSuite.addElasticRepo()
+		if err != nil {
+			return
+		}
+		err = testSuite.installRuntimeDependencies("elasticsearch")
+		if err != nil {
+			return
+		}
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
 		log.Info("Before Helm scenario...")
 	})
 	s.AfterSuite(func() {
 		log.Debug("After Suite...")
-		testSuite.destroyCluster()
+		err := testSuite.destroyCluster()
+		if err != nil {
+			return
+		}
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {
 		log.Debug("After Helm scenario...")
