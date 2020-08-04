@@ -54,11 +54,6 @@ func (k *Kubectl) Describe(resourceType, selector string) (map[string]interface{
 func (k *Kubectl) GetResourcesBySelector(resourceType, selector string) (map[string]interface{}, error) {
 	output, err := k.Run("get", resourceType, "--selector", selector, "-o", "json")
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error":  err,
-			"output": yamlValue,
-		}).Error("Could not unmarshal YAML")
-
 		return nil, err
 	}
 
