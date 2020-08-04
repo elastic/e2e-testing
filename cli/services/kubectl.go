@@ -39,9 +39,24 @@ var ResourceTypes = &resourceList{
 type Kubectl struct {
 }
 
-// Run a kubectl command and return the output
-func (k *Kubectl) Run(args ...string) (string, error) {
-	return shell.Execute(".", "kubectl", args...)
+// Describe Use kubecontrol describe command to get the description of a resource identified by a selector, return the resource in a map[string]interface{}.
+func (k *Kubectl) Describe(resourceType, selector string) (map[string]interface{}, error) {
+	output, err := k.Run("describe", resourceType, "--selector", selector)
+	if err != nil {
+		return nil, err
+	}
+
+	return yamlToObj(output)
+}
+
+// GetResourcesBySelector Use kubectl to get a resource identified by a selector, return the resource in a map[string]interface{}.
+func (k *Kubectl) GetResourcesBySelector(resourceType, selector string) (map[string]interface{}, error) {
+	output, err := k.Run("get", resourceType, "--selector", selector, "-o", "json")
+	if err != nil {
+		return nil, err
+	}
+
+	return jsonToObj(output)
 }
 
 // GetResourceJSONPath use kubectl to get a resource by type and name, and a jsonpath, and return the definition of the resource in JSON.
@@ -74,24 +89,9 @@ func (k *Kubectl) GetResourceSelector(resourceType, resource string) (string, er
 	return status["selector"].(string), nil
 }
 
-// GetResourcesBySelector Use kubectl to get a resource identified by a selector, return the resource in a map[string]interface{}.
-func (k *Kubectl) GetResourcesBySelector(resourceType, selector string) (map[string]interface{}, error) {
-	output, err := k.Run("get", resourceType, "--selector", selector, "-o", "json")
-	if err != nil {
-		return nil, err
-	}
-
-	return jsonToObj(output)
-}
-
-// Describe Use kubecontrol describe command to get the description of a resource identified by a selector, return the resource in a map[string]interface{}.
-func (k *Kubectl) Describe(resourceType, selector string) (map[string]interface{}, error) {
-	output, err := k.Run("describe", resourceType, "--selector", selector)
-	if err != nil {
-		return nil, err
-	}
-
-	return yamlToObj(output)
+// Run a kubectl command and return the output
+func (k *Kubectl) Run(args ...string) (string, error) {
+	return shell.Execute(".", "kubectl", args...)
 }
 
 // jsonToObj Converts a JSON string to a map[string]interface{}.
