@@ -124,7 +124,7 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 
 	endpoints := strings.SplitN(describe["Endpoints"].(string), ",", -1)
 	if len(endpoints) == 0 {
-		return fmt.Errorf("Error there are not Enpoints for the %s with the selector %s", resourceType, selector)
+		return fmt.Errorf("Error there are no Endpoints for the %s with the selector %s", resourceType, selector)
 	}
 
 	log.WithFields(log.Fields{
