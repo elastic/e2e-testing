@@ -92,7 +92,7 @@ func (k *Kubectl) GetResourceSelector(resourceType, resource string) (string, er
 	}
 
 	status := jsonObj["status"].(map[string]interface{})
-	return status["targetSelector"].(string), nil
+	return status["selector"].(string), nil
 }
 
 // Use kubectl to get a resource identified by a selector, return the resource in a map[string]interface{}.
