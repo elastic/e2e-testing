@@ -44,28 +44,6 @@ func (k *Kubectl) Run(args ...string) (string, error) {
 	return shell.Execute(".", "kubectl", args...)
 }
 
-// JsonToObj Convert a JSON string to a map[string]interface{}.
-func (k *Kubectl) JsonToObj(jsonValue string) (map[string]interface{}, error) {
-	var obj map[string]interface{}
-	err := json.Unmarshal([]byte(jsonValue), &obj)
-	if err != nil {
-		return nil, err
-	}
-
-	return obj, nil
-}
-
-// YamlToObj Convert a YAML string to a map[string]interface{}.
-func (k *Kubectl) YamlToObj(yamlValue string) (map[string]interface{}, error) {
-	var obj map[string]interface{}
-	err := yaml.Unmarshal([]byte(yamlValue), &obj)
-	if err != nil {
-		return nil, err
-	}
-
-	return obj, nil
-}
-
 // GetResourceJSONPath use kubectl to get a resource by type and name, and a jsonpath, and return the definition of the resource in JSON.
 func (k *Kubectl) GetResourceJSONPath(resourceType, resource, jsonPath string) (string, error) {
 	output, err := k.Run("get", resourceType, resource, "-o", "jsonpath='"+jsonPath+"'")
@@ -87,7 +65,7 @@ func (k *Kubectl) GetResourceSelector(resourceType, resource string) (string, er
 		return "", err
 	}
 
-	jsonObj, err := k.JsonToObj(output)
+	jsonObj, err := jsonToObj(output)
 	if err != nil {
 		return "", err
 	}
@@ -103,7 +81,7 @@ func (k *Kubectl) GetResourcesBySelector(resourceType, selector string) (map[str
 		return nil, err
 	}
 
-	return k.JsonToObj(output)
+	return jsonToObj(output)
 }
 
 // Describe Use kubecontrol describe command to get the description of a resource identified by a selector, return the resource in a map[string]interface{}.
@@ -113,5 +91,27 @@ func (k *Kubectl) Describe(resourceType, selector string) (map[string]interface{
 		return nil, err
 	}
 
-	return k.YamlToObj(output)
+	return yamlToObj(output)
+}
+
+// jsonToObj Converts a JSON string to a map[string]interface{}.
+func jsonToObj(jsonValue string) (map[string]interface{}, error) {
+	var obj map[string]interface{}
+	err := json.Unmarshal([]byte(jsonValue), &obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return obj, nil
+}
+
+// yamlToObj Convert a YAML string to a map[string]interface{}.
+func yamlToObj(yamlValue string) (map[string]interface{}, error) {
+	var obj map[string]interface{}
+	err := yaml.Unmarshal([]byte(yamlValue), &obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return obj, nil
 }
