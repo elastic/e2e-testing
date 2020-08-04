@@ -6,9 +6,10 @@ package services
 
 import (
 	"encoding/json"
+	"strings"
+
 	"github.com/elastic/e2e-testing/cli/shell"
 	"gopkg.in/yaml.v2"
-	"strings"
 )
 
 // Resource hide the real type of the enum
@@ -43,7 +44,7 @@ func (k *Kubectl) Run(args ...string) (string, error) {
 	return shell.Execute(".", "kubectl", args...)
 }
 
-// Convert a JSON string to a map[string]interface{}.
+// JsonToObj Convert a JSON string to a map[string]interface{}.
 func (k *Kubectl) JsonToObj(jsonValue string) (map[string]interface{}, error) {
 	var obj map[string]interface{}
 	err := json.Unmarshal([]byte(jsonValue), &obj)
@@ -54,7 +55,7 @@ func (k *Kubectl) JsonToObj(jsonValue string) (map[string]interface{}, error) {
 	return obj, nil
 }
 
-// Convert a YAML string to a map[string]interface{}.
+// YamlToObj Convert a YAML string to a map[string]interface{}.
 func (k *Kubectl) YamlToObj(yamlValue string) (map[string]interface{}, error) {
 	var obj map[string]interface{}
 	err := yaml.Unmarshal([]byte(yamlValue), &obj)
@@ -65,7 +66,7 @@ func (k *Kubectl) YamlToObj(yamlValue string) (map[string]interface{}, error) {
 	return obj, nil
 }
 
-// use kubectl to get a resource by type and name, and a jsonpath, and return the definition of the resource in JSON.
+// GetResourceJSONPath use kubectl to get a resource by type and name, and a jsonpath, and return the definition of the resource in JSON.
 func (k *Kubectl) GetResourceJSONPath(resourceType, resource, jsonPath string) (string, error) {
 	output, err := k.Run("get", resourceType, resource, "-o", "jsonpath='"+jsonPath+"'")
 	if err != nil {
@@ -74,7 +75,7 @@ func (k *Kubectl) GetResourceJSONPath(resourceType, resource, jsonPath string) (
 	return output, nil
 }
 
-// use kubectl to get the selector for a resource identified by type and name.
+// GetResourceSelector use kubectl to get the selector for a resource identified by type and name.
 func (k *Kubectl) GetResourceSelector(resourceType, resource string) (string, error) {
 	output, err := k.GetResourceJSONPath(resourceType, resource, "{.metadata.selfLink}")
 	if err != nil {
@@ -95,7 +96,7 @@ func (k *Kubectl) GetResourceSelector(resourceType, resource string) (string, er
 	return status["selector"].(string), nil
 }
 
-// Use kubectl to get a resource identified by a selector, return the resource in a map[string]interface{}.
+// GetResourcesBySelector Use kubectl to get a resource identified by a selector, return the resource in a map[string]interface{}.
 func (k *Kubectl) GetResourcesBySelector(resourceType, selector string) (map[string]interface{}, error) {
 	output, err := k.Run("get", resourceType, "--selector", selector, "-o", "json")
 	if err != nil {
@@ -105,7 +106,7 @@ func (k *Kubectl) GetResourcesBySelector(resourceType, selector string) (map[str
 	return k.JsonToObj(output)
 }
 
-// Use kubecontrol describe command to get the description of a resource identified by a selector, return the resource in a map[string]interface{}.
+// Describe Use kubecontrol describe command to get the description of a resource identified by a selector, return the resource in a map[string]interface{}.
 func (k *Kubectl) Describe(resourceType, selector string) (map[string]interface{}, error) {
 	output, err := k.Run("describe", resourceType, "--selector", selector)
 	if err != nil {
