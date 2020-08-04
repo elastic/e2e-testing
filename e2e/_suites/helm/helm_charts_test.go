@@ -487,7 +487,7 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 func HelmChartFeatureContext(s *godog.Suite) {
 	testSuite := HelmChartTestSuite{
 		ClusterName:       "helm-charts-test-suite",
-		KubernetesVersion: "1.15.3",
+		KubernetesVersion: "1.18.2",
 		Version:           "7.6.1",
 	}
 
