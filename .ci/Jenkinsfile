@@ -9,6 +9,8 @@ pipeline {
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
     NOTIFY_TO = credentials('notify-to')
     JOB_GCS_BUCKET = credentials('gcs-bucket')
+    DOCKER_ELASTIC_SECRET = 'secret/observability-team/ci/docker-registry/prod'
+    DOCKER_REGISTRY = 'docker.elastic.co'
   }
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -24,36 +26,43 @@ pipeline {
     issueCommentTrigger('(?i).*(?:jenkins\\W+)?run\\W+(?:the\\W+)?tests(?:\\W+please)?.*')
   }
   parameters {
+    choice(name: 'runTestsSuite', choices: ['all', 'helm', 'ingest-manager', 'metricbeat'], description: 'Choose which test suite to run (default: all)')
+    booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
+    booleanParam(name: "forceSkipPresubmit", defaultValue: false, description: "If it's needed to execute the pre-submit tests: unit and precommit.")
+    string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
+    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stand-alone elastic-agent to be used for Ingest Manager tests. You can use here the tag of your PR to test your changes')
+    booleanParam(name: "ELASTIC_AGENT_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the binary snapshots produced by Beats CI instead of the official releases")
     choice(name: 'LOG_LEVEL', choices: ['INFO', 'DEBUG'], description: 'Log level to be used')
-    choice(name: 'QUERY_MAX_ATTEMPTS', choices: ['5', '10', '20'], description: 'Number of attempts to create the connection to Elasticsearch')
-    choice(name: 'RETRY_TIMEOUT', choices: ['3', '5', '7', '11'], description: 'Number of seconds between retry')
-    string(name: 'STACK_VERSION', defaultValue: '7.7.0', description: 'SemVer version of the stack to be used.')
-    string(name: 'METRICBEAT_VERSION', defaultValue: '7.7.0', description: 'SemVer version of the metricbeat to be used.')
+    choice(name: 'RETRY_TIMEOUT', choices: ['3', '5', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
+    string(name: 'INGEST_MANAGER_STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for Ingest Manager tests.')
+    string(name: 'METRICBEAT_STACK_VERSION', defaultValue: '7.8.0', description: 'SemVer version of the stack to be used for Metricbeat tests.')
+    string(name: 'METRICBEAT_VERSION', defaultValue: '7.8.0', description: 'SemVer version of the metricbeat to be used.')
     string(name: 'HELM_CHART_VERSION', defaultValue: '7.6.1', description: 'SemVer version of Helm chart to be used.')
     string(name: 'HELM_VERSION', defaultValue: '3.2.1', description: 'SemVer version of Helm to be used.')
-    string(name: 'KIND_VERSION', defaultValue: '0.7.0', description: 'SemVer version of Kind to be used.')
-    string(name: 'KUBERNETES_VERSION', defaultValue: '1.15.3', description: 'SemVer version of Kubernetes to be used.')
-    string(name: 'GO_VERSION', defaultValue: '1.13.4', description: "Go version to use.")
+    string(name: 'HELM_KIND_VERSION', defaultValue: '0.8.1', description: 'SemVer version of Kind to be used.')
+    string(name: 'HELM_KUBERNETES_VERSION', defaultValue: '1.18.2', description: 'SemVer version of Kubernetes to be used.')
   }
   stages {
     stage('Initializing'){
-      agent { label 'linux && immutable' }
+      agent { label 'ubuntu-18.04 && immutable && docker' }
       options { skipDefaultCheckout() }
       environment {
         HOME = "${env.WORKSPACE}"
-        GOPATH = "${env.WORKSPACE}"
-        GO_VERSION = "${params.GO_VERSION.trim()}"
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
         GO111MODULE = 'on'
-        GOPROXY = 'https://proxy.golang.org'
+        ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
+        ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
+        ELASTIC_AGENT_USE_CI_SNAPSHOTS = "${params.ELASTIC_AGENT_USE_CI_SNAPSHOTS}"
+        INGEST_MANAGER_STACK_VERSION = "${params.INGEST_MANAGER_STACK_VERSION.trim()}"
         METRICBEAT_VERSION = "${params.METRICBEAT_VERSION.trim()}"
-        STACK_VERSION = "${params.STACK_VERSION.trim()}"
+        METRICBEAT_STACK_VERSION = "${params.METRICBEAT_STACK_VERSION.trim()}"
+        FORCE_SKIP_GIT_CHECKS = "${params.forceSkipGitChecks}"
+        FORCE_SKIP_PRESUBMIT = "${params.forceSkipPresubmit}"
         HELM_CHART_VERSION = "${params.HELM_CHART_VERSION.trim()}"
         HELM_VERSION = "${params.HELM_VERSION.trim()}"
-        KIND_VERSION = "${params.KIND_VERSION.trim()}"
-        KUBERNETES_VERSION = "${params.KUBERNETES_VERSION.trim()}"
+        HELM_KIND_VERSION = "${params.HELM_KIND_VERSION.trim()}"
+        HELM_KUBERNETES_VERSION = "${params.HELM_KUBERNETES_VERSION.trim()}"
         LOG_LEVEL = "${params.LOG_LEVEL.trim()}"
-        QUERY_MAX_ATTEMPTS = "${params.QUERY_MAX_ATTEMPTS.trim()}"
         RETRY_TIMEOUT = "${params.RETRY_TIMEOUT.trim()}"
       }
       stages {
@@ -61,44 +70,62 @@ pipeline {
           steps {
             gitCheckout(basedir: BASE_DIR, githubNotifyFirstTimeContributor: true)
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
+            setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
+            script {
+              dir("${BASE_DIR}"){
+                // Skip all the test stages for PR's with markdown changes only
+                env.SKIP_TESTS = isGitRegionMatch(patterns: [ '.*\\.md' ], shouldMatchAll: true)
+              }
+            }
           }
         }
-        stage('Tests') {
+        stage('Pre-Submit') {
+          when {
+            beforeAgent true
+            expression { return env.FORCE_SKIP_PRESUBMIT == "false" }
+          }
           parallel {
             stage('Sanity checks') {
-              agent { label 'linux && immutable' }
+              agent { label 'ubuntu-18.04 && immutable && docker' }
               environment {
-                GOROOT = "${env.WORKSPACE}/.gimme/versions/go${env.GO_VERSION}.linux.amd64"
-                PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.PATH}:${env.GOROOT}/bin"
+                PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.PATH}"
               }
               options { skipDefaultCheckout() }
               steps {
                 withGithubNotify(context: 'Sanity checks', tab: 'tests') {
                   deleteDir()
                   unstash 'source'
-                  dir(BASE_DIR){
-                    sh script: """.ci/scripts/install-dependencies.sh "${GO_VERSION}" """, label: 'Install dependencies'
-                    preCommit(commit: "${GIT_BASE_COMMIT}", junit: true)
+                  withGoEnv(version: "${GO_VERSION}"){
+                    dir(BASE_DIR){
+                      sh script: '.ci/scripts/install-dependencies.sh', label: 'Install dependencies'
+                      preCommit(commit: "${GIT_BASE_COMMIT}", junit: true)
+                    }
                   }
                 }
               }
             }
             stage('Unit Tests') {
-              agent { label 'linux && immutable' }
+              agent { label 'ubuntu-18.04 && immutable && docker' }
               options { skipDefaultCheckout() }
+              when {
+                beforeAgent true
+                expression { return env.SKIP_TESTS == "false" }
+              }
               steps {
                 withGithubNotify(context: 'Tests', tab: 'tests') {
                   deleteDir()
                   unstash 'source'
-                  dir(BASE_DIR){
-                    sh script: """.ci/scripts/build-test.sh "${GO_VERSION}" """, label: 'Build and test'
+                  withGoEnv(version: "${GO_VERSION}"){
+                    dir(BASE_DIR){
+                      sh script: '.ci/scripts/build-test.sh', label: 'Build and test'
+                    }
                   }
-                  stash allowEmpty: false, name: 'build', useDefaultExcludes: false, excludes: '.gimme/**'
                 }
               }
               post {
                 always {
                   junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-unit.xml")
+                  archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-unit.xml"
                 }
               }
             }
@@ -108,8 +135,14 @@ pipeline {
           options { skipDefaultCheckout() }
           environment {
             GO111MODULE = 'on'
-            PATH = "${env.HOME}/bin:${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.GOPATH}/bin:${HOME}/go/bin:${env.PATH}"
-            GOPROXY = 'https://proxy.golang.org'
+            PATH = "${env.HOME}/bin:${env.WORKSPACE}/${env.BASE_DIR}/bin:${HOME}/go/bin:${env.PATH}"
+          }
+          when {
+            beforeAgent true
+            anyOf {
+              expression { return env.FORCE_SKIP_GIT_CHECKS == "true" }
+              expression { return env.SKIP_TESTS == "false" }
+            }
           }
           steps {
             withGithubNotify(context: 'E2E Tests', tab: 'tests') {
@@ -117,12 +150,21 @@ pipeline {
               unstash 'source'
               dir("${BASE_DIR}") {
                 script {
+                  def suiteParam = params.runTestsSuite
                   def suites = readYaml(file: '.ci/.e2e-tests.yaml')
                   def parallelTasks = [:]
                   suites['SUITES'].each { item ->
                     def suite = item.suite
                     def feature = item.feature
-                    parallelTasks["${suite}_${feature}"] = generateFunctionalTestStep(suite: "${suite}", feature: "${feature}")
+                    if (suiteParam == "all" || suiteParam == suite) {
+                      def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
+                      if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
+                        log(level: 'INFO', text: "Adding ${suite}:${feature} test suite to the build execution")
+                        parallelTasks["${suite}_${feature}"] = generateFunctionalTestStep(suite: "${suite}", feature: "${feature}")
+                      } else {
+                        log(level: 'WARN', text: "The ${suite}:${feature} test suite won't be executed because there are no modified files")
+                      }
+                    }
                   }
                   parallel(parallelTasks)
                 }
@@ -164,10 +206,10 @@ def generateStep(Map params = [:]){
   def oss = params.get('oss')
   def platform = params.get('platform')
   return {
-    node('linux && immutable') {
+    node('ubuntu-18.04 && immutable && docker') {
       try {
         deleteDir()
-        unstash 'build'
+        unstash 'source'
         dir("${BASE_DIR}/cli") {
           withEnv(["GOOS=${oss}", "GOARCH=${platform}"]) {
             sh script: 'make build', label: 'Create releases'
@@ -184,19 +226,26 @@ def generateStep(Map params = [:]){
 
 def generateFunctionalTestStep(Map params = [:]){
   def suite = params.get('suite')
+  def sneakCaseSuite = suite.toUpperCase().replaceAll("-", "_")
+  def stackVersion = env."${sneakCaseSuite}_STACK_VERSION"
   def feature = params.get('feature')
   return {
-    node('linux && immutable') {
+    node('ubuntu-18.04 && immutable && docker') {
       try {
         deleteDir()
-        unstash 'build'
-        retry(3){
-          dir("${BASE_DIR}"){
-            sh script: """.ci/scripts/install-test-dependencies.sh "${GO_VERSION}" """, label: "Install test dependencies for ${suite}:${feature}"
+        unstash 'source'
+        withGoEnv(version: "${GO_VERSION}"){
+          if(isInstalled(tool: 'docker', flag: '--version')) {
+            dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
           }
-        }
-        dir("${BASE_DIR}"){
-          sh script: """.ci/scripts/functional-test.sh "${GO_VERSION}" "${suite}" "${feature}" "${STACK_VERSION}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${feature}"
+          retry(3){
+            dir("${BASE_DIR}"){
+              sh script: """.ci/scripts/install-test-dependencies.sh "${suite}" """, label: "Install test dependencies for ${suite}:${feature}"
+            }
+          }
+          dir("${BASE_DIR}"){
+            sh script: """.ci/scripts/functional-test.sh "${suite}" "${feature}" "${stackVersion}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${feature}"
+          }
         }
       } catch(e) {
         error(e.toString())

@@ -1,3 +1,7 @@
+// Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+// or more contributor license agreements. Licensed under the Elastic License;
+// you may not use this file except in compliance with the Elastic License.
+
 package main
 
 import (
@@ -12,17 +16,14 @@ import (
 	messages "github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/cli/services"
+	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
 
 // metricbeatVersion is the version of the metricbeat to use
-// It can be overriden by OP_METRICBEAT_VERSION env var
-var metricbeatVersion = "7.7.0"
-
-// queryMaxAttempts is the number of attempts to query elasticsearch before aborting
-// It can be overriden by OP_QUERY_MAX_ATTEMPTS env var
-var queryMaxAttempts = 5
+// It can be overriden by METRICBEAT_VERSION env var
+var metricbeatVersion = "7.8.0"
 
 // queryRetryTimeout is the number of seconds between elasticsearch retry queries.
 // It can be overriden by OP_RETRY_TIMEOUT env var
@@ -31,16 +32,15 @@ var queryRetryTimeout = 3
 var serviceManager services.ServiceManager
 
 // stackVersion is the version of the stack to use
-// It can be overriden by OP_STACK_VERSION env var
-var stackVersion = "7.7.0"
+// It can be overriden by STACK_VERSION env var
+var stackVersion = "7.8.0"
 
 func init() {
 	config.Init()
 
-	metricbeatVersion = e2e.GetEnv("OP_METRICBEAT_VERSION", metricbeatVersion)
-	queryMaxAttempts = e2e.GetIntegerFromEnv("OP_QUERY_MAX_ATTEMPTS", queryMaxAttempts)
-	queryRetryTimeout = e2e.GetIntegerFromEnv("OP_RETRY_TIMEOUT", queryRetryTimeout)
-	stackVersion = e2e.GetEnv("OP_STACK_VERSION", stackVersion)
+	metricbeatVersion = shell.GetEnv("METRICBEAT_VERSION", metricbeatVersion)
+	queryRetryTimeout = shell.GetEnvInteger("OP_RETRY_TIMEOUT", queryRetryTimeout)
+	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 
 	serviceManager = services.NewServiceManager()
 }
@@ -172,7 +172,7 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": "metricbeat",
-			}).Error("Could not run the profile.")
+			}).Fatal("Could not run the profile.")
 		}
 
 		minutesToBeHealthy := 3 * time.Minute
@@ -181,7 +181,7 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 			log.WithFields(log.Fields{
 				"error":   err,
 				"minutes": minutesToBeHealthy,
-			}).Error("The Elasticsearch cluster could not get the healthy status")
+			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
@@ -216,7 +216,7 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 	// look up configurations under workspace's configurations directory
 	dir, _ := os.Getwd()
 	mts.configurationFile = path.Join(dir, "configurations", mts.ServiceName+".yml")
-	os.Chmod(mts.configurationFile, 0666)
+	_ = os.Chmod(mts.configurationFile, 0666)
 
 	mts.setEventModule(mts.ServiceType)
 	mts.setServiceVersion(mts.Version)
@@ -403,12 +403,25 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 		},
 	}
 
-	result, err := e2e.RetrySearch(mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
+	minimumHitsCount := 5
+	maxTimeout := time.Duration(queryRetryTimeout) * time.Minute
+
+	result, err := e2e.WaitForNumberOfHits(mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
 	}
 
-	return e2e.AssertHitsArePresent(result, mts.Query)
+	err = e2e.AssertHitsArePresent(result)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"eventModule":    mts.Query.EventModule,
+			"index":          mts.Query.IndexName,
+			"serviceVersion": mts.Query.ServiceVersion,
+		}).Error(err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
@@ -426,7 +439,10 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 		},
 	}
 
-	result, err := e2e.RetrySearch(mts.getIndexName(), esQuery, queryMaxAttempts, queryRetryTimeout)
+	minimumHitsCount := 5
+	maxTimeout := time.Duration(queryRetryTimeout) * time.Minute
+
+	result, err := e2e.WaitForNumberOfHits(mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
 	}

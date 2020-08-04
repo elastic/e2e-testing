@@ -1,3 +1,7 @@
+// Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+// or more contributor license agreements. Licensed under the Elastic License;
+// you may not use this file except in compliance with the Elastic License.
+
 package e2e
 
 import (
@@ -7,12 +11,19 @@ import (
 )
 
 // AssertHitsArePresent returns an error if no hits are present
-func AssertHitsArePresent(hits map[string]interface{}, q ElasticsearchQuery) error {
-	hitsCount := len(hits["hits"].(map[string]interface{})["hits"].([]interface{}))
-	if hitsCount == 0 {
-		return fmt.Errorf(
-			"There aren't documents for %s-%s on Metricbeat index %s",
-			q.EventModule, q.ServiceVersion, q.IndexName)
+func AssertHitsArePresent(hits map[string]interface{}) error {
+	if getHitsCount(hits) == 0 {
+		return fmt.Errorf("There aren't documents in the index")
+	}
+
+	return nil
+}
+
+// AssertHitsAreNotPresent returns an error if hits are present
+func AssertHitsAreNotPresent(hits map[string]interface{}) error {
+	count := getHitsCount(hits)
+	if count != 0 {
+		return fmt.Errorf("There are %d documents in the index", count)
 	}
 
 	return nil
@@ -38,4 +49,8 @@ func AssertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQu
 	}
 
 	return nil
+}
+
+func getHitsCount(hits map[string]interface{}) int {
+	return len(hits["hits"].(map[string]interface{})["hits"].([]interface{}))
 }

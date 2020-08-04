@@ -8,8 +8,8 @@ services:
       - xpack.security=false
       - xpack.monitoring.collection.enabled=true
       - ELASTIC_USERNAME=elastic
-      - ELASTIC_PASSWORD=p4ssw0rd
-    image: "docker.elastic.co/elasticsearch/elasticsearch:${elasticsearchTag}"
+      - ELASTIC_PASSWORD=changeme
+    image: "docker.elastic.co/observability-ci/elasticsearch:${elasticsearchTag}"
     ports:
       - "9200:9200"
       - "9300:9300"

@@ -1,3 +1,7 @@
+// Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+// or more contributor license agreements. Licensed under the Elastic License;
+// you may not use this file except in compliance with the Elastic License.
+
 package services
 
 import (
@@ -91,7 +95,7 @@ func (h *helm3X) InstallChart(name string, chart string, version string, flags [
 		"name":    name,
 		"output":  output,
 		"version": version,
-	}).Debug("Chart installed")
+	}).Info("Chart installed")
 
 	return nil
 }

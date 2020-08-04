@@ -1,8 +1,15 @@
+// Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+// or more contributor license agreements. Licensed under the Elastic License;
+// you may not use this file except in compliance with the Elastic License.
+
 package shell
 
 import (
 	"bytes"
+	"fmt"
+	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -48,6 +55,43 @@ func Execute(workspace string, command string, args ...string) (string, error) {
 	}
 
 	return strings.Trim(out.String(), "\n"), nil
+}
+
+// GetEnv returns an environment variable as string
+func GetEnv(envVar string, defaultValue string) string {
+	if value, exists := os.LookupEnv(envVar); exists {
+		return value
+	}
+
+	return defaultValue
+}
+
+// GetEnvBool returns an environment variable as boolean, returning also an error if
+// and only if the variable is not present
+func GetEnvBool(key string) (bool, error) {
+	s := os.Getenv(key)
+	if s == "" {
+		return false, fmt.Errorf("The %s variable is not set", key)
+	}
+
+	v, err := strconv.ParseBool(s)
+	if err != nil {
+		return false, nil
+	}
+
+	return v, nil
+}
+
+// GetEnvInteger returns an environment variable as integer, including a default value
+func GetEnvInteger(envVar string, defaultValue int) int {
+	if value, exists := os.LookupEnv(envVar); exists {
+		v, err := strconv.Atoi(value)
+		if err == nil {
+			return v
+		}
+	}
+
+	return defaultValue
 }
 
 // which checks if software is installed, else it aborts the execution

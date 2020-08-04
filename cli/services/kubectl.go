@@ -1,3 +1,7 @@
+// Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+// or more contributor license agreements. Licensed under the Elastic License;
+// you may not use this file except in compliance with the Elastic License.
+
 package services
 
 import (
@@ -36,26 +40,19 @@ var ResourceTypes = &resourceList{
 type Kubectl struct {
 }
 
-// Run a kubectl command and return the output
-func (k *Kubectl) Run(args ...string) (string, error) {
-	return shell.Execute(".", "kubectl", args...)
-}
-
-// JsonToObj Convert a JSON string to a map[string]interface{}.
-func (k *Kubectl) JsonToObj(jsonValue string) (map[string]interface{}, error) {
-	var obj map[string]interface{}
-	err := json.Unmarshal([]byte(jsonValue), &obj)
+// Describe Use kubecontrol describe command to get the description of a resource identified by a selector, return the resource in a map[string]interface{}.
+func (k *Kubectl) Describe(resourceType, selector string) (map[string]interface{}, error) {
+	output, err := k.Run("describe", resourceType, "--selector", selector)
 	if err != nil {
 		return nil, err
 	}
 
-	return obj, nil
+	return yamlToObj(output)
 }
 
-// YamlToObj Convert a YAML string to a map[string]interface{}.
-func (k *Kubectl) YamlToObj(yamlValue string) (map[string]interface{}, error) {
-	var obj map[string]interface{}
-	err := yaml.Unmarshal([]byte(yamlValue), &obj)
+// GetResourcesBySelector Use kubectl to get a resource identified by a selector, return the resource in a map[string]interface{}.
+func (k *Kubectl) GetResourcesBySelector(resourceType, selector string) (map[string]interface{}, error) {
+	output, err := k.Run("get", resourceType, "--selector", selector, "-o", "json")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":  err,
@@ -65,7 +62,7 @@ func (k *Kubectl) YamlToObj(yamlValue string) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	return obj, nil
+	return jsonToObj(output)
 }
 
 // GetResourceJSONPath use kubectl to get a resource by type and name, and a jsonpath, and return the definition of the resource in JSON.
@@ -89,31 +86,43 @@ func (k *Kubectl) GetResourceSelector(resourceType, resource string) (string, er
 		return "", err
 	}
 
-	jsonObj, err := k.JsonToObj(output)
+	jsonObj, err := jsonToObj(output)
 	if err != nil {
 		return "", err
 	}
 
 	status := jsonObj["status"].(map[string]interface{})
-	return status["targetSelector"].(string), nil
+	return status["selector"].(string), nil
 }
 
-// GetResourcesBySelector Use kubectl to get a resource identified by a selector, return the resource in a map[string]interface{}.
-func (k *Kubectl) GetResourcesBySelector(resourceType, selector string) (map[string]interface{}, error) {
-	output, err := k.Run("get", resourceType, "--selector", selector, "-o", "json")
+// Run a kubectl command and return the output
+func (k *Kubectl) Run(args ...string) (string, error) {
+	return shell.Execute(".", "kubectl", args...)
+}
+
+// jsonToObj Converts a JSON string to a map[string]interface{}.
+func jsonToObj(jsonValue string) (map[string]interface{}, error) {
+	var obj map[string]interface{}
+	err := json.Unmarshal([]byte(jsonValue), &obj)
 	if err != nil {
 		return nil, err
 	}
 
-	return k.JsonToObj(output)
+	return obj, nil
 }
 
-// Describe Use kubecontrol describe command to get the description of a resource identified by a selector, return the resource in a map[string]interface{}.
-func (k *Kubectl) Describe(resourceType, selector string) (map[string]interface{}, error) {
-	output, err := k.Run("describe", resourceType, "--selector", selector)
+// yamlToObj Convert a YAML string to a map[string]interface{}.
+func yamlToObj(yamlValue string) (map[string]interface{}, error) {
+	var obj map[string]interface{}
+	err := yaml.Unmarshal([]byte(yamlValue), &obj)
 	if err != nil {
+		log.WithFields(log.Fields{
+			"error":  err,
+			"output": yamlValue,
+		}).Error("Could not unmarshal YAML")
+
 		return nil, err
 	}
 
-	return k.YamlToObj(output)
+	return obj, nil
 }

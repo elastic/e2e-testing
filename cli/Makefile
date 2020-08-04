@@ -4,7 +4,7 @@ ROOT_DIR:=$(CURDIR)
 TEST_TIMEOUT?=5m
 
 GO_IMAGE?='golang'
-GO_VERSION?='1.13'
+GO_VERSION?='$(shell cat ../.go-version )'
 GO_IMAGE_TAG?='stretch'
 GOOS?='linux'
 GOARCH?='amd64'
@@ -21,6 +21,19 @@ build:
 .PHONY: install
 install:
 	go get -v -t ./...
+
+.PHONY: notice
+notice:
+	@echo "Generating NOTICE"
+	go mod tidy
+	go mod download
+	go list -m -json all | go run go.elastic.co/go-licence-detector \
+		-includeIndirect \
+		-rules ../notice/rules.json \
+		-overrides ../notice/overrides.json \
+		-noticeTemplate ../notice/NOTICE.txt.tmpl \
+		-noticeOut NOTICE.txt \
+		-depsOut ""
 
 .PHONY: test
 test:

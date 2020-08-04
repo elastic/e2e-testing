@@ -1,0 +1,13 @@
+version: '2.3'
+services:
+  elastic-agent:
+    image: docker.elastic.co/observability-ci/elastic-agent:${elasticAgentTag:-8.0.0-SNAPSHOT}
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
+    environment:
+      - "KIBANA_HOST=http://${kibanaHost:-kibana}:${kibanaPort:-5601}"
+    volumes:
+      - "${elasticAgentConfigFile}:/usr/share/elastic-agent/elastic-agent.yml"

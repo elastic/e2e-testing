@@ -1,0 +1,21 @@
+---
+  - "automation":
+    - ".ci/**/*.*"
+    - ".github/**/*.*"
+    - "notice/**/*.*"
+    - "**/Makefile"
+    - ".pre-commit-config.yaml"
+  - "cli":
+    - "cli/**/*.*"
+  - "helm":
+    - "e2e/_suites/helm/**/*.*"
+  - "ingest-manager":
+    - "e2e/_suites/ingest-manager/**/*.*"
+  - "licenses":
+    - "notice/**/*.*"
+    - "**/go.mod"
+    - "**/go.sum"
+    - "**/LICENSE.txt"
+    - "**/NOTICE.txt"
+  - "metricbeat":
+    - "e2e/_suites/metricbeat/**/*.*"

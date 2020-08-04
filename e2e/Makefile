@@ -3,7 +3,6 @@ FEATURE?=
 FORMAT?=pretty
 LOG_INCLUDE_TIMESTAMP?=TRUE
 LOG_LEVEL?=INFO
-QUERY_MAX_ATTEMPTS?=5
 RETRY_TIMEOUT?=3
 STACK_VERSION?=
 METRICBEAT_VERSION?=
@@ -37,11 +36,23 @@ functional-test: install-godog
 	cd _suites/${SUITE} && \
 	OP_LOG_LEVEL=${LOG_LEVEL} \
 	OP_LOG_INCLUDE_TIMESTAMP=${LOG_INCLUDE_TIMESTAMP} \
-	OP_QUERY_MAX_ATTEMPTS=${QUERY_MAX_ATTEMPTS} \
 	OP_RETRY_TIMEOUT=${RETRY_TIMEOUT} \
-	OP_METRICBEAT_VERSION=${METRICBEAT_VERSION} \
-	OP_STACK_VERSION=${STACK_VERSION} \
+	METRICBEAT_VERSION=${METRICBEAT_VERSION} \
+	STACK_VERSION=${STACK_VERSION} \
 	godog --format=${FORMAT} ${FEATURE_FLAG} ${FEATURE}
+
+.PHONY: notice
+notice:
+	@echo "Generating NOTICE"
+	go mod tidy
+	go mod download
+	go list -m -json all | go run go.elastic.co/go-licence-detector \
+		-includeIndirect \
+		-rules ../notice/rules.json \
+		-overrides ../notice/overrides.json \
+		-noticeTemplate ../notice/NOTICE.txt.tmpl \
+		-noticeOut NOTICE.txt \
+		-depsOut ""
 
 .PHONY: sync-integrations
 sync-integrations:

@@ -1,3 +1,7 @@
+// Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+// or more contributor license agreements. Licensed under the Elastic License;
+// you may not use this file except in compliance with the Elastic License.
+
 package cmd
 
 import (
@@ -138,6 +142,10 @@ func copyIntegrationsComposeFiles(beats git.Project, target string) {
 			}).Warn("Meta dir was not copied")
 			continue
 		}
+		log.WithFields(log.Fields{
+			"meta":       metaDir,
+			"targetMeta": targetMetaDir,
+		}).Debug("Integration _meta directory copied")
 
 		err = sanitizeComposeFile(targetFile)
 		if err != nil {
@@ -147,7 +155,16 @@ func copyIntegrationsComposeFiles(beats git.Project, target string) {
 			}).Warn("Could not sanitize compose file")
 			continue
 		}
+		log.WithFields(log.Fields{
+			"file":       file,
+			"targetFile": targetFile,
+		}).Debug("Integration compose file copied")
 	}
+
+	log.WithFields(log.Fields{
+		"files":  len(files),
+		"target": target,
+	}).Info("Integrations files copied")
 }
 
 type service interface{}

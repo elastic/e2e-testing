@@ -7,7 +7,7 @@ pipeline {
   * this node will be reused across the nested stages because it's needed to
   * reuse the Docker cache
   */
-  agent { label 'linux && immutable' }
+  agent { label 'ubuntu-18.04 && immutable && docker' }
   environment {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"

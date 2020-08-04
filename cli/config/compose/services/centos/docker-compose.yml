@@ -1,0 +1,8 @@
+version: '2.3'
+services:
+  centos:
+    image: centos:${centosTag:-7}
+    container_name: ${centosContainerName} 
+    entrypoint: tail -f /dev/null
+    volumes:
+      - ${centosAgentBinarySrcPath:-.}:${centosAgentBinaryTargetPath:-/tmp}

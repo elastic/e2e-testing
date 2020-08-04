@@ -5,10 +5,16 @@ repos:
     -   id: check-case-conflict
     -   id: check-executables-have-shebangs
     -   id: check-json
+        exclude: ^notice/overrides.json
     -   id: check-merge-conflict
     -   id: check-yaml
     -   id: check-xml
     -   id: end-of-file-fixer
+        exclude: >
+            (?x)^(
+                cli/NOTICE.txt|
+                e2e/NOTICE.txt
+            )$
 
 -   repo: git://github.com/dnephin/pre-commit-golang
     rev: v0.3.4
