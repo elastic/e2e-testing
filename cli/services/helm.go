@@ -173,13 +173,16 @@ func (h *helm2X) Init() error {
 	if err != nil {
 		return err
 	}
-	log.Info("Helm initialised")
+	log.WithFields(log.Fields{
+		"version": h.Version,
+	}).Info("Helm initialised")
 	return nil
 }
 
 func (h *helm2X) InstallChart(name string, chart string, version string, flags []string) error {
 	log.WithFields(log.Fields{
 		"chart":   chart,
+		"flags":   flags,
 		"name":    name,
 		"version": version,
 	}).Debug("Installing chart")
@@ -207,6 +210,7 @@ func (h *helm2X) InstallChart(name string, chart string, version string, flags [
 	}
 	log.WithFields(log.Fields{
 		"chart":   chart,
+		"flags":   args,
 		"name":    name,
 		"output":  output,
 		"version": version,

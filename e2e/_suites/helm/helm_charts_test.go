@@ -184,7 +184,7 @@ func (ts *HelmChartTestSuite) createCluster(k8sVersion string) {
 		"cluster":    ts.ClusterName,
 		"k8sVersion": k8sVersion,
 		"output":     output,
-	}).Debug("Cluster created")
+	}).Info("Cluster created")
 
 	// initialise Helm after the cluster is created
 	// For Helm v2.x.x we have to initialise Tiller
@@ -281,10 +281,10 @@ func (ts *HelmChartTestSuite) install(chart string) error {
 			return err
 		}
 		log.WithFields(log.Fields{
-			"name": ts.Name,
-		}).Debug("Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes installed")
+			"chart": ts.Name,
+		}).Info("Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes installed")
 
-		// workaround to use Rancher's local-path storage class for Elasticsearch volumes
+		log.Debug("Applying workaround to use Rancher's local-path storage class for Elasticsearch volumes")
 		flags = []string{"--wait", "--timeout=900", "--values", "https://raw.githubusercontent.com/elastic/helm-charts/master/elasticsearch/examples/kubernetes-kind/values.yaml"}
 	}
 
