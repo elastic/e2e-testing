@@ -52,54 +52,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 }
 
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
-	log.Debug("Deploying an agent to Fleet, using default base")
-
-	fts.Image = "centos"
-
-	installer := fts.Installers[fts.Image]
-
-	profile := installer.profile                        // name of the runtime dependencies compose file
-	boxType := installer.image                          // name of the service type
-	serviceName := "elastic-agent"                      // name of the service
-	containerName := profile + "_" + serviceName + "_1" // name of the container
-	serviceTag := installer.tag                         // docker tag of the service
-
-	err := deployAgentToFleet(profile, boxType, serviceTag, containerName, installer)
-	if err != nil {
-		return err
-	}
-	fts.Cleanup = true
-
-	// get container hostname once
-	hostname, err := getContainerHostname(containerName)
-	if err != nil {
-		return err
-	}
-	fts.Hostname = hostname
-
-	// enroll the agent with a new token
-	tokenJSONObject, err := createFleetToken("Test token for "+hostname, fts.ConfigID)
-	if err != nil {
-		return err
-	}
-	fts.CurrentToken = tokenJSONObject.Path("api_key").Data().(string)
-	fts.CurrentTokenID = tokenJSONObject.Path("id").Data().(string)
-
-	err = enrollAgent(profile, boxType, serviceTag, fts.CurrentToken)
-	if err != nil {
-		return err
-	}
-
-	// run the agent
-	err = startAgent(profile, boxType)
-	if err != nil {
-		return err
-	}
-
-	// get first agentID in online status, for future processing
-	fts.EnrolledAgentID, err = getAgentID(true, 0)
-
-	return err
+	return fts.anAgentRunningOnOSIsDeployedToFleet("centos")
 }
 
 func (fts *FleetTestSuite) anAgentRunningOnOSIsDeployedToFleet(image string) error {
