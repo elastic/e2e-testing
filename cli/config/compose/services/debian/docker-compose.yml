@@ -1,0 +1,8 @@
+version: '2.3'
+services:
+  debian:
+    image: debian:${debianTag:-9}
+    container_name: ${debianContainerName} 
+    entrypoint: tail -f /dev/null
+    volumes:
+      - ${debianAgentBinarySrcPath:-.}:${debianAgentBinaryTargetPath:-/tmp}

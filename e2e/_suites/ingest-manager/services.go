@@ -41,6 +41,8 @@ func downloadAgentBinary(artifact string, version string, os string, arch string
 func GetElasticAgentInstaller(image string) ElasticAgentInstaller {
 	if "centos" == image {
 		return newCentosInstaller()
+	} else if "debian" == image {
+		return newDebianInstaller()
 	}
 
 	log.WithField("image", image).Fatal("Sorry, we currently do not support this installer")
@@ -51,6 +53,71 @@ func GetElasticAgentInstaller(image string) ElasticAgentInstaller {
 func newCentosInstaller() ElasticAgentInstaller {
 	image := "centos"
 	tag := "7"
+	profile := "ingest-manager"
+
+	// extract the agent in the box, as it's mounted as a volume
+	artifact := "elastic-agent"
+	version := "8.0.0-SNAPSHOT"
+	os := "linux"
+	arch := "x86_64"
+	extension := "tar.gz"
+
+	binaryName, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"artifact":  artifact,
+			"version":   version,
+			"os":        os,
+			"arch":      arch,
+			"extension": extension,
+			"error":     err,
+		}).Error("Could not download the binary for the agent")
+	}
+
+	extractedDir := fmt.Sprintf("%s-%s-%s-%s", artifact, version, os, arch)
+	tarFile := fmt.Sprintf("%s.%s", extractedDir, extension)
+
+	fn := func() error {
+		// enable elastic-agent in PATH, because we know the location of the binary
+		cmd := []string{"ln", "-s", "/" + extractedDir + "/elastic-agent", "/usr/local/bin/elastic-agent"}
+		err := execCommandInService(profile, image, cmd, false)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"command": cmd,
+				"error":   err,
+				"service": image,
+			}).Error("Could not symlink the agent to PATH")
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"command": cmd,
+			"service": image,
+		}).Debug("The symlink for the agent was created")
+		return nil
+	}
+
+	return ElasticAgentInstaller{
+		artifactArch:      arch,
+		artifactExtension: extension,
+		artifactName:      artifact,
+		artifactOS:        os,
+		artifactVersion:   version,
+		image:             image,
+		InstallCmds:       []string{"tar", "xzvf", tarFile},
+		name:              binaryName,
+		path:              binaryPath,
+		PostInstallFn:     fn,
+		profile:           profile,
+		tag:               tag,
+	}
+}
+
+// newDebianInstaller returns an instance of the Debian installer
+func newDebianInstaller() ElasticAgentInstaller {
+	image := "debian"
+	tag := "9"
 	profile := "ingest-manager"
 
 	// extract the agent in the box, as it's mounted as a volume

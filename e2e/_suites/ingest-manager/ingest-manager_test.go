@@ -46,7 +46,10 @@ func init() {
 func IngestManagerFeatureContext(s *godog.Suite) {
 	imts := IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
-			Installer: GetElasticAgentInstaller("centos"),
+			Installers: map[string]ElasticAgentInstaller{
+				"centos": GetElasticAgentInstaller("centos"),
+				"debian": GetElasticAgentInstaller("debian"),
+			},
 		},
 		StandAlone: &StandAloneTestSuite{},
 	}
@@ -113,18 +116,23 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			}).Warn("Could not destroy the runtime dependencies for the profile.")
 		}
 
-		agentPath := imts.Fleet.getInstallerPath()
-		if _, err := os.Stat(agentPath); err == nil {
-			err = os.Remove(agentPath)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"err":  err,
-					"path": agentPath,
-				}).Warn("Elastic Agent binary could not be removed.")
-			} else {
-				log.WithFields(log.Fields{
-					"path": agentPath,
-				}).Debug("Elastic Agent binary was removed.")
+		installers := imts.Fleet.Installers
+		for k, v := range installers {
+			agentPath := v.path
+			if _, err := os.Stat(agentPath); err == nil {
+				err = os.Remove(agentPath)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"err":       err,
+						"installer": k,
+						"path":      agentPath,
+					}).Warn("Elastic Agent binary could not be removed.")
+				} else {
+					log.WithFields(log.Fields{
+						"installer": k,
+						"path":      agentPath,
+					}).Debug("Elastic Agent binary was removed.")
+				}
 			}
 		}
 	})
@@ -156,7 +164,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		}
 
 		if imts.Fleet.Cleanup {
-			serviceName := imts.Fleet.getInstallerImage()
+			serviceName := imts.Fleet.Image
 
 			services := []string{serviceName}
 
