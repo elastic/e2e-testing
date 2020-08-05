@@ -353,8 +353,6 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 			return err
 		}
 
-		log.Debugf("pgrep -n -l %s: %s", process, output)
-
 		outputContainsProcess := strings.Contains(output, process)
 
 		// both true or both false
