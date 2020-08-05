@@ -122,15 +122,39 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 		return err
 	}
 
-	endpoints := strings.SplitN(describe["Endpoints"].(string), ",", -1)
+	log.WithFields(log.Fields{
+		"describe":     describe,
+		"resourceType": resourceType,
+		"selector":     selector,
+	}).Debug("Describing resource")
+
+	// TO-DO: workaround meanwhile we identify why the output changed to a non-valid YAML format
+	describeMap := map[string]string{}
+	items := strings.Split(describe, "\n")
+	for _, item := range items {
+		trimmedItem := strings.TrimSpace(item)
+		if !strings.HasPrefix(trimmedItem, "Endpoints:") {
+			continue
+		}
+
+		tokens := strings.SplitN(item, ":", -1)
+		if len(tokens) < 2 {
+			continue
+		}
+
+		// sanitise the output
+		tokens[1] = strings.TrimSpace(tokens[1])
+		if tokens[1] == "<none>" {
+			tokens[1] = ""
+		}
+		describeMap[strings.TrimSpace(tokens[0])] = tokens[1]
+		break
+	}
+
+	endpoints := strings.SplitN(describeMap["Endpoints:"], ",", -1)
 	if len(endpoints) == 0 {
 		return fmt.Errorf("Error there are no Endpoints for the %s with the selector %s", resourceType, selector)
 	}
-
-	log.WithFields(log.Fields{
-		"name":     ts.Name,
-		"describe": describe,
-	}).Debug("Checking the configmap")
 
 	return nil
 }
