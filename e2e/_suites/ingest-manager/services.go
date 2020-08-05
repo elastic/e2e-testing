@@ -3,18 +3,38 @@ package main
 import (
 	"fmt"
 
+	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
 
 // ElasticAgentInstaller represents how to install an agent, depending of the box type
 type ElasticAgentInstaller struct {
-	image         string // docker image
-	InstallCmds   []string
-	name          string // the name for the binary
-	path          string // the path where the agent for the binary is installed
-	profile       string // parent docker-compose file
-	PostInstallFn func() error
-	tag           string // docker tag
+	artifactArch      string // architecture of the artifact
+	artifactExtension string // extension of the artifact
+	artifactName      string // name of the artifact
+	artifactOS        string // OS of the artifact
+	artifactVersion   string // version of the artifact
+	image             string // docker image
+	InstallCmds       []string
+	name              string // the name for the binary
+	path              string // the local path where the agent for the binary is located
+	profile           string // parent docker-compose file
+	PostInstallFn     func() error
+	tag               string // docker tag
+}
+
+// downloadAgentBinary it downloads the binary and stores the location of the downloaded file
+// into the installer struct, to be used else where
+func downloadAgentBinary(artifact string, version string, os string, arch string, extension string) (string, string, error) {
+	downloadURL, err := e2e.GetElasticArtifactURL(artifact, version, os, arch, extension)
+	if err != nil {
+		return "", "", err
+	}
+
+	fileName := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, os, arch, extension)
+	filePath, err := e2e.DownloadFile(downloadURL)
+
+	return fileName, filePath, err
 }
 
 // GetElasticAgentInstaller returns an installer from a docker image
@@ -39,6 +59,18 @@ func newCentosInstaller() ElasticAgentInstaller {
 	os := "linux"
 	arch := "x86_64"
 	extension := "tar.gz"
+
+	binaryName, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"artifact":  artifact,
+			"version":   version,
+			"os":        os,
+			"arch":      arch,
+			"extension": extension,
+			"error":     err,
+		}).Error("Could not download the binary for the agent")
+	}
 
 	extractedDir := fmt.Sprintf("%s-%s-%s-%s", artifact, version, os, arch)
 	tarFile := fmt.Sprintf("%s.%s", extractedDir, extension)
@@ -65,10 +97,17 @@ func newCentosInstaller() ElasticAgentInstaller {
 	}
 
 	return ElasticAgentInstaller{
-		image:         image,
-		InstallCmds:   []string{"tar", "xzvf", tarFile},
-		PostInstallFn: fn,
-		profile:       profile,
-		tag:           tag,
+		artifactArch:      arch,
+		artifactExtension: extension,
+		artifactName:      artifact,
+		artifactOS:        os,
+		artifactVersion:   version,
+		image:             image,
+		InstallCmds:       []string{"tar", "xzvf", tarFile},
+		name:              binaryName,
+		path:              binaryPath,
+		PostInstallFn:     fn,
+		profile:           profile,
+		tag:               tag,
 	}
 }

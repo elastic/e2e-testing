@@ -50,9 +50,13 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 }
 
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
-	log.Debug("Deploying an agent to Fleet")
+	log.Debug("Deploying an agent to Fleet, using default base")
 
-	profile := "ingest-manager"                         // name of the runtime dependencies compose file
+	installer := GetElasticAgentInstaller("centos")
+
+	fts.Installer = installer
+
+	profile := fts.getInstallerProfile()                // name of the runtime dependencies compose file
 	boxType := fts.getInstallerImage()                  // name of the service type
 	serviceName := "elastic-agent"                      // name of the service
 	containerName := profile + "_" + serviceName + "_1" // name of the container
@@ -96,26 +100,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	return err
 }
 
-// downloadAgentBinary it downloads the binary and stores the location of the downloaded file
-// into the Fleet struct, to be used else where
-func (fts *FleetTestSuite) downloadAgentBinary() error {
-	artifact := "elastic-agent"
-	version := "8.0.0-SNAPSHOT"
-	os := "linux"
-	arch := "x86_64"
-	extension := "tar.gz"
-
-	downloadURL, err := e2e.GetElasticArtifactURL(artifact, version, os, arch, extension)
-	if err != nil {
-		return err
-	}
-
-	fts.setInstallerName(fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, os, arch, extension))
-	uri, err := e2e.DownloadFile(downloadURL)
-	fts.setInstallerPath(uri)
-	return err
-}
-
 func (fts *FleetTestSuite) getInstallerImage() string {
 	return fts.Installer.image
 }
@@ -132,6 +116,10 @@ func (fts *FleetTestSuite) getInstallerPath() string {
 }
 func (fts *FleetTestSuite) setInstallerPath(p string) {
 	fts.Installer.path = p
+}
+
+func (fts *FleetTestSuite) getInstallerProfile() string {
+	return fts.Installer.profile
 }
 
 func (fts *FleetTestSuite) getInstallerTag() string {
@@ -206,7 +194,7 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 func (fts *FleetTestSuite) theHostIsRestarted() error {
 	serviceManager := services.NewServiceManager()
 
-	profile := "ingest-manager"            // name of the runtime dependencies compose file
+	profile := fts.getInstallerProfile()   // name of the runtime dependencies compose file
 	serviceName := fts.getInstallerImage() // name of the service
 
 	composes := []string{
@@ -361,7 +349,7 @@ func (fts *FleetTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
 func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 	log.Debug("Re-enrolling the agent on the host with same token")
 
-	profile := "ingest-manager"
+	profile := fts.getInstallerProfile()
 	boxType := fts.getInstallerImage()
 	serviceTag := fts.getInstallerTag()
 
@@ -395,7 +383,7 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	log.Debug("Enrolling a new agent with an revoked token")
 
-	profile := "ingest-manager" // name of the runtime dependencies compose file
+	profile := fts.getInstallerProfile() // name of the runtime dependencies compose file
 	boxType := fts.getInstallerImage()
 	serviceTag := fts.getInstallerTag()
 

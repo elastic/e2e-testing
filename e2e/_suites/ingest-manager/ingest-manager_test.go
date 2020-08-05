@@ -95,13 +95,6 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		imts.Fleet.setup()
 
 		imts.StandAlone.RuntimeDependenciesStartDate = time.Now().UTC()
-
-		err = imts.Fleet.downloadAgentBinary()
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Fatal("The Elastic Agent could not be downloaded")
-		}
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
 		log.Debug("Before Ingest Manager scenario")
