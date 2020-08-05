@@ -17,8 +17,18 @@ type ElasticAgentInstaller struct {
 	tag           string // docker tag
 }
 
-// NewCentosInstaller returns an instance of the Centos installer
-func NewCentosInstaller() ElasticAgentInstaller {
+// GetElasticAgentInstaller returns an installer from a docker image
+func GetElasticAgentInstaller(image string) ElasticAgentInstaller {
+	if "centos" == image {
+		return newCentosInstaller()
+	}
+
+	log.WithField("image", image).Fatal("Sorry, we currently do not support this installer")
+	return ElasticAgentInstaller{}
+}
+
+// newCentosInstaller returns an instance of the Centos installer
+func newCentosInstaller() ElasticAgentInstaller {
 	image := "centos"
 	tag := "7"
 	profile := "ingest-manager"

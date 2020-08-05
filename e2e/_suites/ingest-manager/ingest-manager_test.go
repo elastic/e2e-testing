@@ -46,7 +46,7 @@ func init() {
 func IngestManagerFeatureContext(s *godog.Suite) {
 	imts := IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
-			Installer: NewCentosInstaller(),
+			Installer: GetElasticAgentInstaller("centos"),
 		},
 		StandAlone: &StandAloneTestSuite{},
 	}
