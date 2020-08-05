@@ -138,6 +138,12 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 	}
 
 	artifactPath := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
+	if extension == "deb" || extension == "rpm" {
+		// elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm
+		// elastic-agent-8.0.0-SNAPSHOT-amd64.deb
+		artifactPath = fmt.Sprintf("%s-%s-%s.%s", artifact, version, arch, extension)
+	}
+
 	packagesObject := jsonParsed.Path("packages")
 	// we need to get keys with dots using Search instead of Path
 	downloadObject := packagesObject.Search(artifactPath)

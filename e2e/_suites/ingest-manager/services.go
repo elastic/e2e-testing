@@ -60,7 +60,7 @@ func newCentosInstaller() ElasticAgentInstaller {
 	version := "8.0.0-SNAPSHOT"
 	os := "linux"
 	arch := "x86_64"
-	extension := "tar.gz"
+	extension := "rpm"
 
 	binaryName, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension)
 	if err != nil {
@@ -74,28 +74,8 @@ func newCentosInstaller() ElasticAgentInstaller {
 		}).Error("Could not download the binary for the agent")
 	}
 
-	extractedDir := fmt.Sprintf("%s-%s-%s-%s", artifact, version, os, arch)
-	tarFile := fmt.Sprintf("%s.%s", extractedDir, extension)
-
 	fn := func() error {
-		// enable elastic-agent in PATH, because we know the location of the binary
-		cmd := []string{"ln", "-s", "/" + extractedDir + "/elastic-agent", "/usr/local/bin/elastic-agent"}
-		err := execCommandInService(profile, image, cmd, false)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"command": cmd,
-				"error":   err,
-				"service": image,
-			}).Error("Could not symlink the agent to PATH")
-
-			return err
-		}
-
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"service": image,
-		}).Debug("The symlink for the agent was created")
-		return nil
+		return systemctlInstall(profile, image)
 	}
 
 	return ElasticAgentInstaller{
@@ -105,7 +85,7 @@ func newCentosInstaller() ElasticAgentInstaller {
 		artifactOS:        os,
 		artifactVersion:   version,
 		image:             image,
-		InstallCmds:       []string{"tar", "xzvf", tarFile},
+		InstallCmds:       []string{"yum", "localinstall", "/" + binaryName, "-y"},
 		name:              binaryName,
 		path:              binaryPath,
 		PostInstallFn:     fn,
@@ -124,8 +104,8 @@ func newDebianInstaller() ElasticAgentInstaller {
 	artifact := "elastic-agent"
 	version := "8.0.0-SNAPSHOT"
 	os := "linux"
-	arch := "x86_64"
-	extension := "tar.gz"
+	arch := "amd64"
+	extension := "deb"
 
 	binaryName, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension)
 	if err != nil {
@@ -139,28 +119,8 @@ func newDebianInstaller() ElasticAgentInstaller {
 		}).Error("Could not download the binary for the agent")
 	}
 
-	extractedDir := fmt.Sprintf("%s-%s-%s-%s", artifact, version, os, arch)
-	tarFile := fmt.Sprintf("%s.%s", extractedDir, extension)
-
 	fn := func() error {
-		// enable elastic-agent in PATH, because we know the location of the binary
-		cmd := []string{"ln", "-s", "/" + extractedDir + "/elastic-agent", "/usr/local/bin/elastic-agent"}
-		err := execCommandInService(profile, image, cmd, false)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"command": cmd,
-				"error":   err,
-				"service": image,
-			}).Error("Could not symlink the agent to PATH")
-
-			return err
-		}
-
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"service": image,
-		}).Debug("The symlink for the agent was created")
-		return nil
+		return systemctlInstall(profile, image)
 	}
 
 	return ElasticAgentInstaller{
@@ -170,11 +130,35 @@ func newDebianInstaller() ElasticAgentInstaller {
 		artifactOS:        os,
 		artifactVersion:   version,
 		image:             image,
-		InstallCmds:       []string{"tar", "xzvf", tarFile},
+		InstallCmds:       []string{"apt", "install", "/" + binaryName, "-y"},
 		name:              binaryName,
 		path:              binaryPath,
 		PostInstallFn:     fn,
 		profile:           profile,
 		tag:               tag,
 	}
+}
+
+func systemctlInstall(profile string, service string) error {
+	commands := []string{"enable", "start"}
+
+	for _, command := range commands {
+		cmd := []string{"systemctl", command, "elastic-agent"}
+		err := execCommandInService(profile, service, cmd, false)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"command": cmd,
+				"error":   err,
+				"service": service,
+			}).Errorf("Could not %s the service", command)
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"command": cmd,
+			"service": service,
+		}).Debug("Systemctl executed")
+	}
+	return nil
 }

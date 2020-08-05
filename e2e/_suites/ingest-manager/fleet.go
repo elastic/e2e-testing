@@ -71,10 +71,10 @@ func (fts *FleetTestSuite) anAgentRunningOnOSIsDeployedToFleet(image string) err
 	containerName := profile + "_" + serviceName + "_1" // name of the container
 
 	err := deployAgentToFleet(installer, containerName)
+	fts.Cleanup = true
 	if err != nil {
 		return err
 	}
-	fts.Cleanup = true
 
 	// get container hostname once
 	hostname, err := getContainerHostname(containerName)
@@ -581,7 +581,7 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string) e
 			"command": cmd,
 			"error":   err,
 			"service": service,
-		}).Error("Could not extract the agent in the box")
+		}).Error("Could not install the agent in the box")
 
 		return err
 	}
