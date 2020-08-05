@@ -64,13 +64,13 @@ func (fts *FleetTestSuite) anAgentRunningOnOSIsDeployedToFleet(image string) err
 
 	installer := fts.Installers[fts.Image]
 
-	profile := installer.profile                        // name of the runtime dependencies compose file
-	boxType := installer.image                          // name of the service type
+	profile := installer.profile // name of the runtime dependencies compose file
+	boxType := installer.image   // name of the service type
+
 	serviceName := "elastic-agent"                      // name of the service
 	containerName := profile + "_" + serviceName + "_1" // name of the container
-	serviceTag := installer.tag                         // docker tag of the service
 
-	err := deployAgentToFleet(profile, boxType, serviceTag, containerName, installer)
+	err := deployAgentToFleet(installer, containerName)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (fts *FleetTestSuite) anAgentRunningOnOSIsDeployedToFleet(image string) err
 	fts.CurrentToken = tokenJSONObject.Path("api_key").Data().(string)
 	fts.CurrentTokenID = tokenJSONObject.Path("id").Data().(string)
 
-	err = enrollAgent(profile, boxType, serviceTag, fts.CurrentToken)
+	err = enrollAgent(installer, fts.CurrentToken)
 	if err != nil {
 		return err
 	}
@@ -335,11 +335,7 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 
 	installer := fts.Installers[fts.Image]
 
-	profile := installer.profile // name of the runtime dependencies compose file
-	boxType := installer.image   // name of the service
-	serviceTag := installer.tag  // tag of the service
-
-	err := enrollAgent(profile, boxType, serviceTag, fts.CurrentToken)
+	err := enrollAgent(installer, fts.CurrentToken)
 	if err != nil {
 		return err
 	}
@@ -373,16 +369,15 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 	profile := installer.profile // name of the runtime dependencies compose file
 	boxType := installer.image   // name of the service
-	serviceTag := installer.tag  // tag of the service
 
 	containerName := profile + "_" + boxType + "_2" // name of the new container
 
-	err := deployAgentToFleet(profile, boxType, serviceTag, containerName, installer)
+	err := deployAgentToFleet(installer, containerName)
 	if err != nil {
 		return err
 	}
 
-	err = enrollAgent(profile, boxType, serviceTag, fts.CurrentToken)
+	err = enrollAgent(installer, fts.CurrentToken)
 	if err == nil {
 		err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
 
@@ -555,7 +550,11 @@ func createFleetToken(name string, configID string) (*gabs.Container, error) {
 	return tokenItem, nil
 }
 
-func deployAgentToFleet(profile string, service string, serviceTag string, containerName string, installer ElasticAgentInstaller) error {
+func deployAgentToFleet(installer ElasticAgentInstaller, containerName string) error {
+	profile := installer.profile // name of the runtime dependencies compose file
+	service := installer.image   // name of the service type
+	serviceTag := installer.tag  // docker tag of the service
+
 	// let's start with Centos 7
 	profileEnv[service+"Tag"] = serviceTag
 	// we are setting the container name because Centos service could be reused by any other test suite
@@ -590,7 +589,11 @@ func deployAgentToFleet(profile string, service string, serviceTag string, conta
 	return installer.PostInstallFn()
 }
 
-func enrollAgent(profile string, serviceName string, serviceTag string, token string) error {
+func enrollAgent(installer ElasticAgentInstaller, token string) error {
+	profile := installer.profile   // name of the runtime dependencies compose file
+	serviceName := installer.image // name of the service
+	serviceTag := installer.tag    // tag of the service
+
 	cmd := []string{"elastic-agent", "enroll", "http://kibana:5601", token, "-f", "--insecure"}
 	err := execCommandInService(profile, serviceName, cmd, false)
 	if err != nil {
