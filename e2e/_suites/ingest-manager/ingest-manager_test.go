@@ -45,7 +45,9 @@ func init() {
 
 func IngestManagerFeatureContext(s *godog.Suite) {
 	imts := IngestManagerTestSuite{
-		Fleet:      &FleetTestSuite{},
+		Fleet: &FleetTestSuite{
+			Installer: NewCentosInstaller(),
+		},
 		StandAlone: &StandAloneTestSuite{},
 	}
 	serviceManager := services.NewServiceManager()
@@ -118,16 +120,17 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			}).Warn("Could not destroy the runtime dependencies for the profile.")
 		}
 
-		if _, err := os.Stat(imts.Fleet.AgentDownloadPath); err == nil {
-			err = os.Remove(imts.Fleet.AgentDownloadPath)
+		agentPath := imts.Fleet.getInstallerPath()
+		if _, err := os.Stat(agentPath); err == nil {
+			err = os.Remove(agentPath)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"err":  err,
-					"path": imts.Fleet.AgentDownloadPath,
+					"path": agentPath,
 				}).Warn("Elastic Agent binary could not be removed.")
 			} else {
 				log.WithFields(log.Fields{
-					"path": imts.Fleet.AgentDownloadPath,
+					"path": agentPath,
 				}).Debug("Elastic Agent binary was removed.")
 			}
 		}
@@ -160,7 +163,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		}
 
 		if imts.Fleet.Cleanup {
-			serviceName := imts.Fleet.BoxType
+			serviceName := imts.Fleet.getInstallerImage()
 
 			services := []string{serviceName}
 

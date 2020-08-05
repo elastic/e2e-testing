@@ -28,15 +28,13 @@ const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/ingest_manager/data_st
 
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
-	AgentDownloadName string // the name for the binary
-	AgentDownloadPath string // the path where the agent for the binary is installed
-	EnrolledAgentID   string // will be used to store current agent
-	BoxType           string // we currently support Linux
-	Cleanup           bool
-	ConfigID          string // will be used to manage tokens
-	CurrentToken      string // current enrollment token
-	CurrentTokenID    string // current enrollment tokenID
-	Hostname          string // the hostname of the container
+	EnrolledAgentID string // will be used to store current agent
+	Installer       ElasticAgentInstaller
+	Cleanup         bool
+	ConfigID        string // will be used to manage tokens
+	CurrentToken    string // current enrollment token
+	CurrentTokenID  string // current enrollment tokenID
+	Hostname        string // the hostname of the container
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
@@ -55,12 +53,12 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	log.Debug("Deploying an agent to Fleet")
 
 	profile := "ingest-manager"                         // name of the runtime dependencies compose file
-	fts.BoxType = "centos"                              // name of the service type
+	boxType := fts.getInstallerImage()                  // name of the service type
 	serviceName := "elastic-agent"                      // name of the service
 	containerName := profile + "_" + serviceName + "_1" // name of the container
-	serviceTag := "7"                                   // docker tag of the service
+	serviceTag := fts.getInstallerTag()                 // docker tag of the service
 
-	err := deployAgentToFleet(profile, fts.BoxType, serviceTag, containerName, fts.AgentDownloadPath, fts.AgentDownloadName)
+	err := deployAgentToFleet(profile, boxType, serviceTag, containerName, fts.getInstallerPath(), fts.getInstallerName())
 	if err != nil {
 		return err
 	}
@@ -81,13 +79,13 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	fts.CurrentToken = tokenJSONObject.Path("api_key").Data().(string)
 	fts.CurrentTokenID = tokenJSONObject.Path("id").Data().(string)
 
-	err = enrollAgent(profile, fts.BoxType, serviceTag, fts.CurrentToken)
+	err = enrollAgent(profile, boxType, serviceTag, fts.CurrentToken)
 	if err != nil {
 		return err
 	}
 
 	// run the agent
-	err = startAgent(profile, fts.BoxType)
+	err = startAgent(profile, boxType)
 	if err != nil {
 		return err
 	}
@@ -112,9 +110,32 @@ func (fts *FleetTestSuite) downloadAgentBinary() error {
 		return err
 	}
 
-	fts.AgentDownloadName = fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, os, arch, extension)
-	fts.AgentDownloadPath, err = e2e.DownloadFile(downloadURL)
+	fts.setInstallerName(fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, os, arch, extension))
+	uri, err := e2e.DownloadFile(downloadURL)
+	fts.setInstallerPath(uri)
 	return err
+}
+
+func (fts *FleetTestSuite) getInstallerImage() string {
+	return fts.Installer.image
+}
+
+func (fts *FleetTestSuite) getInstallerName() string {
+	return fts.Installer.name
+}
+func (fts *FleetTestSuite) setInstallerName(n string) {
+	fts.Installer.name = n
+}
+
+func (fts *FleetTestSuite) getInstallerPath() string {
+	return fts.Installer.path
+}
+func (fts *FleetTestSuite) setInstallerPath(p string) {
+	fts.Installer.path = p
+}
+
+func (fts *FleetTestSuite) getInstallerTag() string {
+	return fts.Installer.tag
 }
 
 func (fts *FleetTestSuite) setup() error {
@@ -185,8 +206,8 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 func (fts *FleetTestSuite) theHostIsRestarted() error {
 	serviceManager := services.NewServiceManager()
 
-	profile := "ingest-manager" // name of the runtime dependencies compose file
-	serviceName := fts.BoxType  // name of the service
+	profile := "ingest-manager"            // name of the runtime dependencies compose file
+	serviceName := fts.getInstallerImage() // name of the service
 
 	composes := []string{
 		profile,     // profile name
@@ -341,9 +362,10 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 	log.Debug("Re-enrolling the agent on the host with same token")
 
 	profile := "ingest-manager"
-	serviceTag := "7"
+	boxType := fts.getInstallerImage()
+	serviceTag := fts.getInstallerTag()
 
-	err := enrollAgent(profile, fts.BoxType, serviceTag, fts.CurrentToken)
+	err := enrollAgent(profile, boxType, serviceTag, fts.CurrentToken)
 	if err != nil {
 		return err
 	}
@@ -374,16 +396,17 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	log.Debug("Enrolling a new agent with an revoked token")
 
 	profile := "ingest-manager" // name of the runtime dependencies compose file
-	serviceTag := "7"
+	boxType := fts.getInstallerImage()
+	serviceTag := fts.getInstallerTag()
 
-	containerName := profile + "_" + fts.BoxType + "_2" // name of the new container
+	containerName := profile + "_" + boxType + "_2" // name of the new container
 
-	err := deployAgentToFleet(profile, fts.BoxType, serviceTag, containerName, fts.AgentDownloadPath, fts.AgentDownloadName)
+	err := deployAgentToFleet(profile, boxType, serviceTag, containerName, fts.getInstallerPath(), fts.getInstallerName())
 	if err != nil {
 		return err
 	}
 
-	err = enrollAgent(profile, fts.BoxType, serviceTag, fts.CurrentToken)
+	err = enrollAgent(profile, boxType, serviceTag, fts.CurrentToken)
 	if err == nil {
 		err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
 
