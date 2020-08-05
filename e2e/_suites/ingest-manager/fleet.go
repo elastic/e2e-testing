@@ -58,7 +58,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	containerName := profile + "_" + serviceName + "_1" // name of the container
 	serviceTag := fts.getInstallerTag()                 // docker tag of the service
 
-	err := deployAgentToFleet(profile, boxType, serviceTag, containerName, fts.getInstallerPath(), fts.getInstallerName())
+	err := deployAgentToFleet(profile, boxType, serviceTag, containerName, fts.Installer)
 	if err != nil {
 		return err
 	}
@@ -401,7 +401,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 	containerName := profile + "_" + boxType + "_2" // name of the new container
 
-	err := deployAgentToFleet(profile, boxType, serviceTag, containerName, fts.getInstallerPath(), fts.getInstallerName())
+	err := deployAgentToFleet(profile, boxType, serviceTag, containerName, fts.Installer)
 	if err != nil {
 		return err
 	}
@@ -579,14 +579,14 @@ func createFleetToken(name string, configID string) (*gabs.Container, error) {
 	return tokenItem, nil
 }
 
-func deployAgentToFleet(profile string, service string, serviceTag string, containerName string, agentBinaryPath string, agentBinaryName string) error {
+func deployAgentToFleet(profile string, service string, serviceTag string, containerName string, installer ElasticAgentInstaller) error {
 	// let's start with Centos 7
 	profileEnv[service+"Tag"] = serviceTag
 	// we are setting the container name because Centos service could be reused by any other test suite
 	profileEnv[service+"ContainerName"] = containerName
 	// define paths where the binary will be mounted
-	profileEnv[service+"AgentBinarySrcPath"] = agentBinaryPath
-	profileEnv[service+"AgentBinaryTargetPath"] = "/" + agentBinaryName
+	profileEnv[service+"AgentBinarySrcPath"] = installer.path
+	profileEnv[service+"AgentBinaryTargetPath"] = "/" + installer.name
 
 	serviceManager := services.NewServiceManager()
 
@@ -599,17 +599,7 @@ func deployAgentToFleet(profile string, service string, serviceTag string, conta
 		return err
 	}
 
-	// extract the agent in the box, as it's mounted as a volume
-	artifact := "elastic-agent"
-	version := "8.0.0-SNAPSHOT"
-	os := "linux"
-	arch := "x86_64"
-	extension := "tar.gz"
-
-	extractedDir := fmt.Sprintf("%s-%s-%s-%s", artifact, version, os, arch)
-	tarFile := fmt.Sprintf("%s.%s", extractedDir, extension)
-
-	cmd := []string{"tar", "xzvf", tarFile}
+	cmd := installer.InstallCmds
 	err = execCommandInService(profile, service, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -621,20 +611,7 @@ func deployAgentToFleet(profile string, service string, serviceTag string, conta
 		return err
 	}
 
-	// enable elastic-agent in PATH, because we know the location of the binary
-	cmd = []string{"ln", "-s", "/" + extractedDir + "/elastic-agent", "/usr/local/bin/elastic-agent"}
-	err = execCommandInService(profile, service, cmd, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"service": service,
-		}).Error("Could not extract the agent in the box")
-
-		return err
-	}
-
-	return nil
+	return installer.PostInstallFn()
 }
 
 func enrollAgent(profile string, serviceName string, serviceTag string, token string) error {
