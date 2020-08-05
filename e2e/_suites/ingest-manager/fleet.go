@@ -42,6 +42,7 @@ type FleetTestSuite struct {
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^an agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	s.Step(`^the agent is listed in Fleet as online$`, fts.theAgentIsListedInFleetAsOnline)
+	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
 	s.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)
 	s.Step(`^the agent is not listed as online in Fleet$`, fts.theAgentIsNotListedAsOnlineInFleet)
@@ -178,6 +179,31 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 		return err
 	}
 
+	return nil
+}
+
+func (fts *FleetTestSuite) theHostIsRestarted() error {
+	serviceManager := services.NewServiceManager()
+
+	profile := "ingest-manager" // name of the runtime dependencies compose file
+	serviceName := fts.BoxType  // name of the service
+
+	composes := []string{
+		profile,     // profile name
+		serviceName, // service
+	}
+
+	err := serviceManager.RunCommand(profile, composes, []string{"restart", serviceName}, profileEnv)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"service": serviceName,
+		}).Error("Could not restart the service")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"service": serviceName,
+	}).Debug("The service has been restarted")
 	return nil
 }
 

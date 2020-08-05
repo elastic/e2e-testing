@@ -21,6 +21,14 @@ Scenario: Stopping the agent stops backend processes
   Then the "filebeat" process is in the "stopped" state on the host
     And the "metricbeat" process is in the "stopped" state on the host
 
+@restart-agent
+Scenario: Restarting the agent restarts backend processes
+  Given an agent is deployed to Fleet
+  When the host is restarted
+  Then the "elastic-agent" process is in the "started" state on the host
+    And the "filebeat" process is in the "started" state on the host
+    And the "metricbeat" process is in the "started" state on the host
+
 @unenroll
 Scenario: Un-enrolling an agent
   Given an agent is deployed to Fleet
