@@ -29,9 +29,8 @@ Scenario Outline: Restarting a <os> agent restarts backend processes
     And the "filebeat" process is in the "started" state on the host
     And the "metricbeat" process is in the "started" state on the host
 Examples:
-| os     |
-| centos |
-| debian |
+| os             |
+| centos-systemd |
 
 @unenroll
 Scenario: Un-enrolling an agent

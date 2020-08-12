@@ -20,6 +20,7 @@ type ElasticAgentInstaller struct {
 	path              string // the local path where the agent for the binary is located
 	profile           string // parent docker-compose file
 	PostInstallFn     func() error
+	service           string // name of the service
 	tag               string // docker tag
 }
 
@@ -39,8 +40,14 @@ func downloadAgentBinary(artifact string, version string, os string, arch string
 
 // GetElasticAgentInstaller returns an installer from a docker image
 func GetElasticAgentInstaller(image string) ElasticAgentInstaller {
+	log.WithFields(log.Fields{
+		"image": image,
+	}).Debug("Configuring installer for the agent")
+
 	if "centos" == image {
-		return newCentosInstaller()
+		return newCentosInstaller("centos", "7")
+	} else if "centos-systemd" == image {
+		return newCentosInstaller("centos-systemd", "latest")
 	} else if "debian" == image {
 		return newDebianInstaller()
 	}
@@ -50,9 +57,8 @@ func GetElasticAgentInstaller(image string) ElasticAgentInstaller {
 }
 
 // newCentosInstaller returns an instance of the Centos installer
-func newCentosInstaller() ElasticAgentInstaller {
-	image := "centos"
-	tag := "7"
+func newCentosInstaller(image string, tag string) ElasticAgentInstaller {
+	service := image
 	profile := "ingest-manager"
 
 	// extract the agent in the box, as it's mounted as a volume
@@ -75,7 +81,12 @@ func newCentosInstaller() ElasticAgentInstaller {
 	}
 
 	fn := func() error {
-		return systemctlInstall(profile, image)
+		return startAgent(profile, image, service)
+	}
+	if image == "centos-systemd" {
+		fn = func() error {
+			return systemctlInstall(profile, image, service)
+		}
 	}
 
 	return ElasticAgentInstaller{
@@ -90,6 +101,7 @@ func newCentosInstaller() ElasticAgentInstaller {
 		path:              binaryPath,
 		PostInstallFn:     fn,
 		profile:           profile,
+		service:           service,
 		tag:               tag,
 	}
 }
@@ -120,7 +132,7 @@ func newDebianInstaller() ElasticAgentInstaller {
 	}
 
 	fn := func() error {
-		return systemctlInstall(profile, image)
+		return systemctlInstall(profile, image, image)
 	}
 
 	return ElasticAgentInstaller{
@@ -135,16 +147,40 @@ func newDebianInstaller() ElasticAgentInstaller {
 		path:              binaryPath,
 		PostInstallFn:     fn,
 		profile:           profile,
+		service:           image, // same service name as image
 		tag:               tag,
 	}
 }
 
-func systemctlInstall(profile string, service string) error {
+func startAgent(profile string, image string, service string) error {
+	cmd := []string{"elastic-agent", "run"}
+	err := execCommandInService(profile, image, service, cmd, true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmd,
+			"error":   err,
+			"image":   image,
+			"service": service,
+		}).Error("Could not run the agent")
+
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"command": cmd,
+		"image":   image,
+		"service": service,
+	}).Debug("Agent run")
+
+	return nil
+}
+
+func systemctlInstall(profile string, image string, service string) error {
 	commands := []string{"enable", "start"}
 
 	for _, command := range commands {
 		cmd := []string{"systemctl", command, "elastic-agent"}
-		err := execCommandInService(profile, service, cmd, false)
+		err := execCommandInService(profile, image, service, cmd, false)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"command": cmd,

@@ -47,8 +47,9 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	imts := IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			Installers: map[string]ElasticAgentInstaller{
-				"centos": GetElasticAgentInstaller("centos"),
-				"debian": GetElasticAgentInstaller("debian"),
+				"centos":         GetElasticAgentInstaller("centos"),
+				"centos-systemd": GetElasticAgentInstaller("centos-systemd"),
+				"debian":         GetElasticAgentInstaller("debian"),
 			},
 		},
 		StandAlone: &StandAloneTestSuite{},
@@ -198,10 +199,11 @@ type IngestManagerTestSuite struct {
 
 func (imts *IngestManagerTestSuite) processStateChangedOnTheHost(process string, state string) error {
 	profile := "ingest-manager"
+	image := "centos"
 	serviceName := "centos"
 
 	if state == "started" {
-		return startAgent(profile, serviceName)
+		return startAgent(profile, image, serviceName)
 	} else if state != "stopped" {
 		return godog.ErrPending
 	}
@@ -211,7 +213,7 @@ func (imts *IngestManagerTestSuite) processStateChangedOnTheHost(process string,
 		"process": process,
 	}).Debug("Stopping process on the service")
 
-	err := execCommandInService(profile, serviceName, []string{"pkill", "-9", process}, false)
+	err := execCommandInService(profile, image, serviceName, []string{"pkill", "-9", process}, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"action":  state,
@@ -255,12 +257,12 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	return nil
 }
 
-func execCommandInService(profile string, serviceName string, cmds []string, detach bool) error {
+func execCommandInService(profile string, image string, serviceName string, cmds []string, detach bool) error {
 	serviceManager := services.NewServiceManager()
 
 	composes := []string{
-		profile,     // profile name
-		serviceName, // service
+		profile, // profile name
+		image,   // image for the service
 	}
 	composeArgs := []string{"exec", "-T"}
 	if detach {
@@ -311,20 +313,4 @@ func getContainerHostname(containerName string) (string, error) {
 	}).Info("Hostname retrieved from the Docker client")
 
 	return hostname, nil
-}
-
-func startAgent(profile string, serviceName string) error {
-	cmd := []string{"elastic-agent", "run"}
-	err := execCommandInService(profile, serviceName, cmd, true)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"service": serviceName,
-		}).Error("Could not run the agent")
-
-		return err
-	}
-
-	return nil
 }

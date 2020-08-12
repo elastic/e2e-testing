@@ -172,22 +172,25 @@ func (fts *FleetTestSuite) theHostIsRestarted() error {
 	installer := fts.Installers[fts.Image]
 
 	profile := installer.profile // name of the runtime dependencies compose file
-	service := installer.image   // name of the service
+	image := installer.image     // image of the service
+	service := installer.service // name of the service
 
 	composes := []string{
 		profile, // profile name
-		service, // service
+		image,   // service
 	}
 
 	err := serviceManager.RunCommand(profile, composes, []string{"restart", service}, profileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
+			"image":   image,
 			"service": service,
 		}).Error("Could not restart the service")
 		return err
 	}
 
 	log.WithFields(log.Fields{
+		"image":   image,
 		"service": service,
 	}).Debug("The service has been restarted")
 	return nil
@@ -361,7 +364,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	installer := fts.Installers[fts.Image]
 
 	profile := installer.profile // name of the runtime dependencies compose file
-	service := installer.image   // name of the service
+	service := installer.service // name of the service
 
 	containerName := profile + "_" + service + "_2" // name of the new container
 
@@ -545,16 +548,19 @@ func createFleetToken(name string, configID string) (*gabs.Container, error) {
 
 func deployAgentToFleet(installer ElasticAgentInstaller, containerName string) error {
 	profile := installer.profile // name of the runtime dependencies compose file
-	service := installer.image   // name of the service type
+	image := installer.image     // image of the service
+	service := installer.service // name of the service
 	serviceTag := installer.tag  // docker tag of the service
 
+	envVarsPrefix := strings.ReplaceAll(service, "-", "_")
+
 	// let's start with Centos 7
-	profileEnv[service+"Tag"] = serviceTag
+	profileEnv[envVarsPrefix+"Tag"] = serviceTag
 	// we are setting the container name because Centos service could be reused by any other test suite
-	profileEnv[service+"ContainerName"] = containerName
+	profileEnv[envVarsPrefix+"ContainerName"] = containerName
 	// define paths where the binary will be mounted
-	profileEnv[service+"AgentBinarySrcPath"] = installer.path
-	profileEnv[service+"AgentBinaryTargetPath"] = "/" + installer.name
+	profileEnv[envVarsPrefix+"AgentBinarySrcPath"] = installer.path
+	profileEnv[envVarsPrefix+"AgentBinaryTargetPath"] = "/" + installer.name
 
 	serviceManager := services.NewServiceManager()
 
@@ -568,11 +574,12 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string) e
 	}
 
 	cmd := installer.InstallCmds
-	err = execCommandInService(profile, service, cmd, false)
+	err = execCommandInService(profile, image, service, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd,
 			"error":   err,
+			"image":   image,
 			"service": service,
 		}).Error("Could not install the agent in the box")
 
@@ -584,15 +591,17 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string) e
 
 func enrollAgent(installer ElasticAgentInstaller, token string) error {
 	profile := installer.profile // name of the runtime dependencies compose file
-	service := installer.image   // name of the service
+	image := installer.image     // image of the service
+	service := installer.service // name of the service
 	serviceTag := installer.tag  // tag of the service
 
 	cmd := []string{"elastic-agent", "enroll", "http://kibana:5601", token, "-f", "--insecure"}
-	err := execCommandInService(profile, service, cmd, false)
+	err := execCommandInService(profile, image, service, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd,
 			"error":   err,
+			"image":   image,
 			"service": service,
 			"tag":     serviceTag,
 			"token":   token,
