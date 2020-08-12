@@ -384,6 +384,8 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 				"retry":        retryCount,
 			}).Warn(err.Error())
 
+			retryCount++
+
 			return err
 		}
 
@@ -396,6 +398,8 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 			"state":       desiredState,
 			"retry":       retryCount,
 		}).Warn(err.Error())
+
+		retryCount++
 
 		return err
 	}
