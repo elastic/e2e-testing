@@ -178,24 +178,24 @@ func (fts *FleetTestSuite) theHostIsRestarted() error {
 
 	installer := fts.Installers[fts.Image]
 
-	profile := installer.profile   // name of the runtime dependencies compose file
-	serviceName := installer.image // name of the service
+	profile := installer.profile // name of the runtime dependencies compose file
+	service := installer.image   // name of the service
 
 	composes := []string{
-		profile,     // profile name
-		serviceName, // service
+		profile, // profile name
+		service, // service
 	}
 
-	err := serviceManager.RunCommand(profile, composes, []string{"restart", serviceName}, profileEnv)
+	err := serviceManager.RunCommand(profile, composes, []string{"restart", service}, profileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"service": serviceName,
+			"service": service,
 		}).Error("Could not restart the service")
 		return err
 	}
 
 	log.WithFields(log.Fields{
-		"service": serviceName,
+		"service": service,
 	}).Debug("The service has been restarted")
 	return nil
 }
@@ -368,9 +368,9 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	installer := fts.Installers[fts.Image]
 
 	profile := installer.profile // name of the runtime dependencies compose file
-	boxType := installer.image   // name of the service
+	service := installer.image   // name of the service
 
-	containerName := profile + "_" + boxType + "_2" // name of the new container
+	containerName := profile + "_" + service + "_2" // name of the new container
 
 	err := deployAgentToFleet(installer, containerName)
 	if err != nil {
@@ -590,17 +590,17 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string) e
 }
 
 func enrollAgent(installer ElasticAgentInstaller, token string) error {
-	profile := installer.profile   // name of the runtime dependencies compose file
-	serviceName := installer.image // name of the service
-	serviceTag := installer.tag    // tag of the service
+	profile := installer.profile // name of the runtime dependencies compose file
+	service := installer.image   // name of the service
+	serviceTag := installer.tag  // tag of the service
 
 	cmd := []string{"elastic-agent", "enroll", "http://kibana:5601", token, "-f", "--insecure"}
-	err := execCommandInService(profile, serviceName, cmd, false)
+	err := execCommandInService(profile, service, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd,
 			"error":   err,
-			"service": serviceName,
+			"service": service,
 			"tag":     serviceTag,
 			"token":   token,
 		}).Error("Could not enroll the agent with the token")
