@@ -235,7 +235,7 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	// because it does not support returning the output of a
 	// command: it simply returns error level
 	serviceName := "ingest-manager_elastic-agent_1"
-	timeout := time.Minute
+	timeout := 2 * time.Minute
 
 	err := e2e.WaitForProcess(serviceName, process, state, timeout)
 	if err != nil {

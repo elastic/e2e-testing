@@ -125,7 +125,7 @@ func (fts *FleetTestSuite) setup() error {
 func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 	log.Debug("Checking agent is listed in Fleet as online")
 
-	maxTimeout := 10 * time.Second
+	maxTimeout := time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
@@ -285,7 +285,7 @@ func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
 func (fts *FleetTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
 	log.Debug("Checking if the agent is not listed as online in Fleet")
 
-	maxTimeout := 10 * time.Second
+	maxTimeout := time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
@@ -744,15 +744,17 @@ func isAgentOnline(hostname string) (bool, error) {
 	agents := jsonResponse.Path("list")
 
 	for _, agent := range agents.Children() {
-		agentStatus := agent.Path("active").Data().(bool)
+		agentStatus := agent.Path("status").Data().(string)
 		agentHostname := agent.Path("local_metadata.host.hostname").Data().(string)
-		if agentHostname == hostname {
-			log.WithFields(log.Fields{
-				"active":   agentStatus,
-				"hostname": hostname,
-			}).Debug("Agent status retrieved")
 
-			return agentStatus, nil
+		log.WithFields(log.Fields{
+			"status":   agentStatus,
+			"hostname": agentHostname,
+		}).Debug("Agent status retrieved")
+
+		if agentHostname == hostname {
+			isOnline := (strings.ToLower(agentStatus) == "online")
+			return isOnline, nil
 		}
 	}
 
