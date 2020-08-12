@@ -374,7 +374,7 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 		}
 
 		if mustBePresent {
-			err = fmt.Errorf("Process is not running in the host yet")
+			err = fmt.Errorf("%s process is not running in the host yet", process)
 			log.WithFields(log.Fields{
 				"desiredState": desiredState,
 				"elapsedTime":  exp.GetElapsedTime(),
@@ -384,12 +384,10 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 				"retry":        retryCount,
 			}).Warn(err.Error())
 
-			retryCount++
-
 			return err
 		}
 
-		err = fmt.Errorf("Process is still running in the host")
+		err = fmt.Errorf("%s process is still running in the host", process)
 		log.WithFields(log.Fields{
 			"elapsedTime": exp.GetElapsedTime(),
 			"error":       err,
@@ -398,8 +396,6 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 			"state":       desiredState,
 			"retry":       retryCount,
 		}).Warn(err.Error())
-
-		retryCount++
 
 		return err
 	}
