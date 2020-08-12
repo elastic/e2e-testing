@@ -65,7 +65,6 @@ func (fts *FleetTestSuite) anAgentRunningOnOSIsDeployedToFleet(image string) err
 	installer := fts.Installers[fts.Image]
 
 	profile := installer.profile // name of the runtime dependencies compose file
-	boxType := installer.image   // name of the service type
 
 	serviceName := "elastic-agent"                      // name of the service
 	containerName := profile + "_" + serviceName + "_1" // name of the container
@@ -92,12 +91,6 @@ func (fts *FleetTestSuite) anAgentRunningOnOSIsDeployedToFleet(image string) err
 	fts.CurrentTokenID = tokenJSONObject.Path("id").Data().(string)
 
 	err = enrollAgent(installer, fts.CurrentToken)
-	if err != nil {
-		return err
-	}
-
-	// run the agent
-	err = startAgent(profile, boxType)
 	if err != nil {
 		return err
 	}
