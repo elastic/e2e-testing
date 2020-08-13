@@ -1,5 +1,6 @@
 @redis
-Feature: As a Metricbeat developer I want to check that the Redis module works as expected
+Feature: Redis
+  As a Metricbeat developer I want to check that the Redis module works as expected
 
 Scenario Outline: Check Redis-<redis_version> is sending metrics to Elasticsearch without errors
   Given Redis "<redis_version>" is running for metricbeat

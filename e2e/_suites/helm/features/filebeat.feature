@@ -1,5 +1,6 @@
 @filebeat
-Feature: The Helm chart is following product recommended configuration for Kubernetes
+Feature: Filebeat
+  The Helm chart is following product recommended configuration for Kubernetes
 
 Scenario: The Filebeat chart will create recommended K8S resources
   Given a cluster is running

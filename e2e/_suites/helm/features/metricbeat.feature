@@ -1,5 +1,6 @@
 @metricbeat
-Feature: The Helm chart is following product recommended configuration for Kubernetes
+Feature: Metricbeat
+  The Helm chart is following product recommended configuration for Kubernetes
 
 Scenario: The Metricbeat chart will create recommended K8S resources
   Given a cluster is running
