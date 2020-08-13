@@ -31,6 +31,7 @@ Scenario Outline: Restarting the <os> host with persistent agent restarts backen
 Examples:
 | os             |
 | centos-systemd |
+| debian-systemd |
 
 @unenroll
 Scenario: Un-enrolling an agent

@@ -48,7 +48,7 @@ func GetElasticAgentInstaller(image string) ElasticAgentInstaller {
 		return newCentosInstaller("centos", "7")
 	} else if "centos-systemd" == image {
 		return newCentosInstaller("centos-systemd", "latest")
-	} else if "debian" == image {
+	} else if "debian-systemd" == image {
 		return newDebianInstaller()
 	}
 
@@ -108,8 +108,9 @@ func newCentosInstaller(image string, tag string) ElasticAgentInstaller {
 
 // newDebianInstaller returns an instance of the Debian installer
 func newDebianInstaller() ElasticAgentInstaller {
-	image := "debian"
-	tag := "9"
+	image := "debian-systemd"
+	service := image
+	tag := "stretch"
 	profile := "ingest-manager"
 
 	// extract the agent in the box, as it's mounted as a volume
@@ -132,7 +133,7 @@ func newDebianInstaller() ElasticAgentInstaller {
 	}
 
 	fn := func() error {
-		return systemctlInstall(profile, image, image)
+		return systemctlInstall(profile, image, service)
 	}
 
 	return ElasticAgentInstaller{
@@ -147,7 +148,7 @@ func newDebianInstaller() ElasticAgentInstaller {
 		path:              binaryPath,
 		PostInstallFn:     fn,
 		profile:           profile,
-		service:           image, // same service name as image
+		service:           service,
 		tag:               tag,
 	}
 }

@@ -49,7 +49,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			Installers: map[string]ElasticAgentInstaller{
 				"centos":         GetElasticAgentInstaller("centos"),
 				"centos-systemd": GetElasticAgentInstaller("centos-systemd"),
-				"debian":         GetElasticAgentInstaller("debian"),
+				"debian-systemd": GetElasticAgentInstaller("debian-systemd"),
 			},
 		},
 		StandAlone: &StandAloneTestSuite{},
