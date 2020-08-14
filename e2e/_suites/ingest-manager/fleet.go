@@ -28,20 +28,21 @@ const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/ingest_manager/data_st
 
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
-	AgentDownloadName string // the name for the binary
-	AgentDownloadPath string // the path where the agent for the binary is installed
-	EnrolledAgentID   string // will be used to store current agent
-	BoxType           string // we currently support Linux
-	Cleanup           bool
-	ConfigID          string // will be used to manage tokens
-	CurrentToken      string // current enrollment token
-	CurrentTokenID    string // current enrollment tokenID
-	Hostname          string // the hostname of the container
+	EnrolledAgentID string // will be used to store current agent
+	Image           string // base image used to install the agent
+	Installers      map[string]ElasticAgentInstaller
+	Cleanup         bool
+	ConfigID        string // will be used to manage tokens
+	CurrentToken    string // current enrollment token
+	CurrentTokenID  string // current enrollment tokenID
+	Hostname        string // the hostname of the container
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^an agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
+	s.Step(`^an agent running on "([^"]*)" is deployed to Fleet$`, fts.anAgentRunningOnOSIsDeployedToFleet)
 	s.Step(`^the agent is listed in Fleet as online$`, fts.theAgentIsListedInFleetAsOnline)
+	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
 	s.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)
 	s.Step(`^the agent is not listed as online in Fleet$`, fts.theAgentIsNotListedAsOnlineInFleet)
@@ -51,19 +52,28 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 }
 
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
-	log.Debug("Deploying an agent to Fleet")
+	return fts.anAgentRunningOnOSIsDeployedToFleet("centos")
+}
 
-	profile := "ingest-manager"                         // name of the runtime dependencies compose file
-	fts.BoxType = "centos"                              // name of the service type
+func (fts *FleetTestSuite) anAgentRunningOnOSIsDeployedToFleet(image string) error {
+	log.WithFields(log.Fields{
+		"image": image,
+	}).Debug("Deploying an agent to Fleet with base image")
+
+	fts.Image = image
+
+	installer := fts.Installers[fts.Image]
+
+	profile := installer.profile // name of the runtime dependencies compose file
+
 	serviceName := "elastic-agent"                      // name of the service
 	containerName := profile + "_" + serviceName + "_1" // name of the container
-	serviceTag := "7"                                   // docker tag of the service
 
-	err := deployAgentToFleet(profile, fts.BoxType, serviceTag, containerName, fts.AgentDownloadPath, fts.AgentDownloadName)
+	err := deployAgentToFleet(installer, containerName)
+	fts.Cleanup = true
 	if err != nil {
 		return err
 	}
-	fts.Cleanup = true
 
 	// get container hostname once
 	hostname, err := getContainerHostname(containerName)
@@ -80,13 +90,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	fts.CurrentToken = tokenJSONObject.Path("api_key").Data().(string)
 	fts.CurrentTokenID = tokenJSONObject.Path("id").Data().(string)
 
-	err = enrollAgent(profile, fts.BoxType, serviceTag, fts.CurrentToken)
-	if err != nil {
-		return err
-	}
-
-	// run the agent
-	err = startAgent(profile, fts.BoxType)
+	err = enrollAgent(installer, fts.CurrentToken)
 	if err != nil {
 		return err
 	}
@@ -94,25 +98,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
 	// get first agentID in online status, for future processing
 	fts.EnrolledAgentID, err = getAgentID(true, 0)
 
-	return err
-}
-
-// downloadAgentBinary it downloads the binary and stores the location of the downloaded file
-// into the Fleet struct, to be used else where
-func (fts *FleetTestSuite) downloadAgentBinary() error {
-	artifact := "elastic-agent"
-	version := "8.0.0-SNAPSHOT"
-	os := "linux"
-	arch := "x86_64"
-	extension := "tar.gz"
-
-	downloadURL, err := e2e.GetElasticArtifactURL(artifact, version, os, arch, extension)
-	if err != nil {
-		return err
-	}
-
-	fts.AgentDownloadName = fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, os, arch, extension)
-	fts.AgentDownloadPath, err = e2e.DownloadFile(downloadURL)
 	return err
 }
 
@@ -140,7 +125,7 @@ func (fts *FleetTestSuite) setup() error {
 func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 	log.Debug("Checking agent is listed in Fleet as online")
 
-	maxTimeout := 10 * time.Second
+	maxTimeout := time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
@@ -178,6 +163,36 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 		return err
 	}
 
+	return nil
+}
+
+func (fts *FleetTestSuite) theHostIsRestarted() error {
+	serviceManager := services.NewServiceManager()
+
+	installer := fts.Installers[fts.Image]
+
+	profile := installer.profile // name of the runtime dependencies compose file
+	image := installer.image     // image of the service
+	service := installer.service // name of the service
+
+	composes := []string{
+		profile, // profile name
+		image,   // service
+	}
+
+	err := serviceManager.RunCommand(profile, composes, []string{"restart", service}, profileEnv)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"image":   image,
+			"service": service,
+		}).Error("Could not restart the service")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"image":   image,
+		"service": service,
+	}).Debug("The service has been restarted")
 	return nil
 }
 
@@ -270,7 +285,7 @@ func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
 func (fts *FleetTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
 	log.Debug("Checking if the agent is not listed as online in Fleet")
 
-	maxTimeout := 10 * time.Second
+	maxTimeout := time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
@@ -314,10 +329,9 @@ func (fts *FleetTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
 func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 	log.Debug("Re-enrolling the agent on the host with same token")
 
-	profile := "ingest-manager"
-	serviceTag := "7"
+	installer := fts.Installers[fts.Image]
 
-	err := enrollAgent(profile, fts.BoxType, serviceTag, fts.CurrentToken)
+	err := enrollAgent(installer, fts.CurrentToken)
 	if err != nil {
 		return err
 	}
@@ -347,17 +361,19 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	log.Debug("Enrolling a new agent with an revoked token")
 
-	profile := "ingest-manager" // name of the runtime dependencies compose file
-	serviceTag := "7"
+	installer := fts.Installers[fts.Image]
 
-	containerName := profile + "_" + fts.BoxType + "_2" // name of the new container
+	profile := installer.profile // name of the runtime dependencies compose file
+	service := installer.service // name of the service
 
-	err := deployAgentToFleet(profile, fts.BoxType, serviceTag, containerName, fts.AgentDownloadPath, fts.AgentDownloadName)
+	containerName := profile + "_" + service + "_2" // name of the new container
+
+	err := deployAgentToFleet(installer, containerName)
 	if err != nil {
 		return err
 	}
 
-	err = enrollAgent(profile, fts.BoxType, serviceTag, fts.CurrentToken)
+	err = enrollAgent(installer, fts.CurrentToken)
 	if err == nil {
 		err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
 
@@ -530,14 +546,21 @@ func createFleetToken(name string, configID string) (*gabs.Container, error) {
 	return tokenItem, nil
 }
 
-func deployAgentToFleet(profile string, service string, serviceTag string, containerName string, agentBinaryPath string, agentBinaryName string) error {
+func deployAgentToFleet(installer ElasticAgentInstaller, containerName string) error {
+	profile := installer.profile // name of the runtime dependencies compose file
+	image := installer.image     // image of the service
+	service := installer.service // name of the service
+	serviceTag := installer.tag  // docker tag of the service
+
+	envVarsPrefix := strings.ReplaceAll(service, "-", "_")
+
 	// let's start with Centos 7
-	profileEnv[service+"Tag"] = serviceTag
+	profileEnv[envVarsPrefix+"Tag"] = serviceTag
 	// we are setting the container name because Centos service could be reused by any other test suite
-	profileEnv[service+"ContainerName"] = containerName
+	profileEnv[envVarsPrefix+"ContainerName"] = containerName
 	// define paths where the binary will be mounted
-	profileEnv[service+"AgentBinarySrcPath"] = agentBinaryPath
-	profileEnv[service+"AgentBinaryTargetPath"] = "/" + agentBinaryName
+	profileEnv[envVarsPrefix+"AgentBinarySrcPath"] = installer.path
+	profileEnv[envVarsPrefix+"AgentBinaryTargetPath"] = "/" + installer.name
 
 	serviceManager := services.NewServiceManager()
 
@@ -550,52 +573,36 @@ func deployAgentToFleet(profile string, service string, serviceTag string, conta
 		return err
 	}
 
-	// extract the agent in the box, as it's mounted as a volume
-	artifact := "elastic-agent"
-	version := "8.0.0-SNAPSHOT"
-	os := "linux"
-	arch := "x86_64"
-	extension := "tar.gz"
-
-	extractedDir := fmt.Sprintf("%s-%s-%s-%s", artifact, version, os, arch)
-	tarFile := fmt.Sprintf("%s.%s", extractedDir, extension)
-
-	cmd := []string{"tar", "xzvf", tarFile}
-	err = execCommandInService(profile, service, cmd, false)
+	cmd := installer.InstallCmds
+	err = execCommandInService(profile, image, service, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd,
 			"error":   err,
+			"image":   image,
 			"service": service,
-		}).Error("Could not extract the agent in the box")
+		}).Error("Could not install the agent in the box")
 
 		return err
 	}
 
-	// enable elastic-agent in PATH, because we know the location of the binary
-	cmd = []string{"ln", "-s", "/" + extractedDir + "/elastic-agent", "/usr/local/bin/elastic-agent"}
-	err = execCommandInService(profile, service, cmd, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"service": service,
-		}).Error("Could not extract the agent in the box")
-
-		return err
-	}
-
-	return nil
+	return installer.PostInstallFn()
 }
 
-func enrollAgent(profile string, serviceName string, serviceTag string, token string) error {
+func enrollAgent(installer ElasticAgentInstaller, token string) error {
+	profile := installer.profile // name of the runtime dependencies compose file
+	image := installer.image     // image of the service
+	service := installer.service // name of the service
+	serviceTag := installer.tag  // tag of the service
+
 	cmd := []string{"elastic-agent", "enroll", "http://kibana:5601", token, "-f", "--insecure"}
-	err := execCommandInService(profile, serviceName, cmd, false)
+	err := execCommandInService(profile, image, service, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd,
 			"error":   err,
-			"service": serviceName,
+			"image":   image,
+			"service": service,
 			"tag":     serviceTag,
 			"token":   token,
 		}).Error("Could not enroll the agent with the token")
@@ -737,15 +744,17 @@ func isAgentOnline(hostname string) (bool, error) {
 	agents := jsonResponse.Path("list")
 
 	for _, agent := range agents.Children() {
-		agentStatus := agent.Path("active").Data().(bool)
+		agentStatus := agent.Path("status").Data().(string)
 		agentHostname := agent.Path("local_metadata.host.hostname").Data().(string)
-		if agentHostname == hostname {
-			log.WithFields(log.Fields{
-				"active":   agentStatus,
-				"hostname": hostname,
-			}).Debug("Agent status retrieved")
 
-			return agentStatus, nil
+		log.WithFields(log.Fields{
+			"status":   agentStatus,
+			"hostname": agentHostname,
+		}).Debug("Agent status retrieved")
+
+		if agentHostname == hostname {
+			isOnline := (strings.ToLower(agentStatus) == "online")
+			return isOnline, nil
 		}
 	}
 

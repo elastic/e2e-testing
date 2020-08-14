@@ -45,7 +45,13 @@ func init() {
 
 func IngestManagerFeatureContext(s *godog.Suite) {
 	imts := IngestManagerTestSuite{
-		Fleet:      &FleetTestSuite{},
+		Fleet: &FleetTestSuite{
+			Installers: map[string]ElasticAgentInstaller{
+				"centos":         GetElasticAgentInstaller("centos"),
+				"centos-systemd": GetElasticAgentInstaller("centos-systemd"),
+				"debian-systemd": GetElasticAgentInstaller("debian-systemd"),
+			},
+		},
 		StandAlone: &StandAloneTestSuite{},
 	}
 	serviceManager := services.NewServiceManager()
@@ -93,13 +99,6 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		imts.Fleet.setup()
 
 		imts.StandAlone.RuntimeDependenciesStartDate = time.Now().UTC()
-
-		err = imts.Fleet.downloadAgentBinary()
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Fatal("The Elastic Agent could not be downloaded")
-		}
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
 		log.Debug("Before Ingest Manager scenario")
@@ -118,17 +117,23 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			}).Warn("Could not destroy the runtime dependencies for the profile.")
 		}
 
-		if _, err := os.Stat(imts.Fleet.AgentDownloadPath); err == nil {
-			err = os.Remove(imts.Fleet.AgentDownloadPath)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"err":  err,
-					"path": imts.Fleet.AgentDownloadPath,
-				}).Warn("Elastic Agent binary could not be removed.")
-			} else {
-				log.WithFields(log.Fields{
-					"path": imts.Fleet.AgentDownloadPath,
-				}).Debug("Elastic Agent binary was removed.")
+		installers := imts.Fleet.Installers
+		for k, v := range installers {
+			agentPath := v.path
+			if _, err := os.Stat(agentPath); err == nil {
+				err = os.Remove(agentPath)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"err":       err,
+						"installer": k,
+						"path":      agentPath,
+					}).Warn("Elastic Agent binary could not be removed.")
+				} else {
+					log.WithFields(log.Fields{
+						"installer": k,
+						"path":      agentPath,
+					}).Debug("Elastic Agent binary was removed.")
+				}
 			}
 		}
 	})
@@ -160,7 +165,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		}
 
 		if imts.Fleet.Cleanup {
-			serviceName := imts.Fleet.BoxType
+			serviceName := imts.Fleet.Image
 
 			services := []string{serviceName}
 
@@ -194,10 +199,11 @@ type IngestManagerTestSuite struct {
 
 func (imts *IngestManagerTestSuite) processStateChangedOnTheHost(process string, state string) error {
 	profile := "ingest-manager"
+	image := "centos"
 	serviceName := "centos"
 
 	if state == "started" {
-		return startAgent(profile, serviceName)
+		return startAgent(profile, image, serviceName)
 	} else if state != "stopped" {
 		return godog.ErrPending
 	}
@@ -207,7 +213,7 @@ func (imts *IngestManagerTestSuite) processStateChangedOnTheHost(process string,
 		"process": process,
 	}).Debug("Stopping process on the service")
 
-	err := execCommandInService(profile, serviceName, []string{"pkill", "-9", process}, false)
+	err := execCommandInService(profile, image, serviceName, []string{"pkill", "-9", process}, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"action":  state,
@@ -229,7 +235,7 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	// because it does not support returning the output of a
 	// command: it simply returns error level
 	serviceName := "ingest-manager_elastic-agent_1"
-	timeout := 3 * time.Minute
+	timeout := 2 * time.Minute
 
 	err := e2e.WaitForProcess(serviceName, process, state, timeout)
 	if err != nil {
@@ -251,12 +257,12 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	return nil
 }
 
-func execCommandInService(profile string, serviceName string, cmds []string, detach bool) error {
+func execCommandInService(profile string, image string, serviceName string, cmds []string, detach bool) error {
 	serviceManager := services.NewServiceManager()
 
 	composes := []string{
-		profile,     // profile name
-		serviceName, // service
+		profile, // profile name
+		image,   // image for the service
 	}
 	composeArgs := []string{"exec", "-T"}
 	if detach {
@@ -307,20 +313,4 @@ func getContainerHostname(containerName string) (string, error) {
 	}).Info("Hostname retrieved from the Docker client")
 
 	return hostname, nil
-}
-
-func startAgent(profile string, serviceName string) error {
-	cmd := []string{"elastic-agent", "run"}
-	err := execCommandInService(profile, serviceName, cmd, true)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"service": serviceName,
-		}).Error("Could not run the agent")
-
-		return err
-	}
-
-	return nil
 }
