@@ -677,7 +677,7 @@ func getDataStreams() (*gabs.Container, error) {
 			"body":  body,
 			"error": err,
 			"url":   ingestManagerDataStreamsURL,
-		}).Error("Could not get Fleet's default enrollment token")
+		}).Error("Could not get Fleet's data streams for the agent")
 		return nil, err
 	}
 
