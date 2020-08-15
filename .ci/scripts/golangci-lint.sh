@@ -8,21 +8,22 @@ BASEDIR=$(dirname "$0")
 
 error=0
 
-for file in "$@"; do
-    echo "golangci-lint run ${file}"
-    if [[ $(echo $file |grep "^cli") ]]; then
-        parsedFile=$(echo $file |sed "s#cli/##")
-        cd cli
+function run() {
+    local module=${1}
+    local file=${2}
+
+    if [[ $(echo $file |grep "^${module}") ]]; then
+        parsedFile=$(echo $file |sed "s#${module}/##")
+        cd ${module}
         golangci-lint run "${parsedFile}" || error=1
         cd -
     fi
+}
 
-    if [[ $(echo $file |grep "^e2e") ]]; then
-        parsedFile=$(echo $file |sed "s#e2e/##")
-        cd e2e
-        golangci-lint run "${parsedFile}" || error=1
-        cd -
-    fi 
+for file in "$@"; do
+    echo "golangci-lint run ${file}"
+    run "cli" "${file}"
+    run "e2e" "${file}"
 done
 
 if [[ ${error} -gt 0 ]]; then
