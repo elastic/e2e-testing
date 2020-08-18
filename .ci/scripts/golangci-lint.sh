@@ -12,12 +12,12 @@ function run() {
     local module=${1}
     local file=${2}
 
+    cd ${module}
     if [[ $(echo $file |grep "^${module}") ]]; then
         parsedFile=$(echo $file |sed "s#${module}/##")
-        cd ${module}
         golangci-lint run "${parsedFile}" || error=1
-        cd -
     fi
+    cd -
 }
 
 for file in "$@"; do
