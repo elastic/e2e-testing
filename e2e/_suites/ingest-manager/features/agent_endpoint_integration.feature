@@ -3,10 +3,10 @@ Feature: Fleet Mode Agent with Endpoint Integration
   Scenarios for Agent to deploy Endpoint and sending data to Ingest Manager and Elasticsearch.
 
 @deploy-endpoint-with-agent
-Scenario: Deploy Endpoint with Agent and see host in Security App
+Scenario: Deploy Agent and add Endpoint Integration and host shows in Security App
   Given an agent is deployed to Fleet
   When the "Endpoint" latest package version is installed successfully
-    And a "Endpoint" package datasource is added to the 'default' configuration
+    And the "Endpoint" integration is "added" in the "default" configuration
   Then the "default" configuration shows the "Endpoint" datasource added
     And the host name is shown in the security app
     
@@ -22,9 +22,17 @@ Scenario: Deploy Endpoint and change default policy and verify in Security App
   Then the policy response will be listed in the security app
 
 @deploy-endpoint-then-unenroll-agent-and-verify
-Scenario: Deploy Endpoint and then un-enroll Agent to confirm Endpoint shuts down
+Scenario: Deploy Endpoint and then un-enroll Agent to confirm Endpoint stops
   Given an Endpoint is successfully deployed with Agent
   When the agent is un-enrolled
-  Then the agent is not listed as online in Fleet
-    And the endpoint is not listed as online in Security App
-    And the endpoint process is stopped on the host
+  Then the agent is not listed in Fleet as online
+    And the endpoint is not listed in Security App as online
+    And the "elastic-endpoint" process is "stopped" on the host
+
+@deploy-endpoint-then-remove-it-from-configuration-and-verify
+Scenario: Deploy Endpoint and remove it from the configuration then confirm Endpoint stops
+  Given an Endpoint is successfully deployed with Agent
+  When the "Endpoint" integration is "removed" in the "default" configuration
+  Then the agent is listed in Fleet as online
+    And the endpoint is not listed in Security App as online
+    And the "elastic-endpoint" process is "stopped" on the host
