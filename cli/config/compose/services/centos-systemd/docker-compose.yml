@@ -1,0 +1,10 @@
+version: '2.3'
+services:
+  centos-systemd:
+    image: centos/systemd:${centos_systemdTag:-latest} 
+    container_name: ${centos_systemdContainerName}
+    entrypoint: "/usr/sbin/init"
+    privileged: true
+    volumes:
+      - ${centos_systemdAgentBinarySrcPath:-.}:${centos_systemdAgentBinaryTargetPath:-/tmp}
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro 

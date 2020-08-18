@@ -12,6 +12,7 @@ import (
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v4"
+	curl "github.com/elastic/e2e-testing/cli/shell"
 	es "github.com/elastic/go-elasticsearch/v8"
 	log "github.com/sirupsen/logrus"
 )
@@ -260,6 +261,48 @@ func WaitForElasticsearchFromHostPort(host string, port int, maxTimeoutMinutes t
 	}
 
 	return true, nil
+}
+
+// WaitForIndices waits for the elasticsearch indices to return the list of indices.
+func WaitForIndices() (string, error) {
+	exp := GetExponentialBackOff(60 * time.Second)
+
+	retryCount := 1
+	body := ""
+
+	catIndices := func() error {
+		r := curl.HTTPRequest{
+			URL:               "http://localhost:9200/_cat/indices?v",
+			BasicAuthPassword: "changeme",
+			BasicAuthUser:     "elastic",
+		}
+
+		response, err := curl.Get(r)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":          err,
+				"retry":          retryCount,
+				"statusEndpoint": r.URL,
+				"elapsedTime":    exp.GetElapsedTime(),
+			}).Warn("The Elasticsearch Cat Indices API is not available yet")
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"retries":        retryCount,
+			"statusEndpoint": r.URL,
+			"elapsedTime":    exp.GetElapsedTime(),
+		}).Debug("The Elasticsearc Cat Indices API is available")
+
+		body = response
+		return nil
+	}
+
+	err := backoff.Retry(catIndices, exp)
+	return body, err
 }
 
 // WaitForNumberOfHits waits for an elasticsearch query to return more than a number of hits,

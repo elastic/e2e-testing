@@ -33,7 +33,7 @@ func init() {
 
 	h, err := k8s.HelmFactory(helmVersion)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Helm could not be initialised: %v", err)
 	}
 	helm = h
 }
@@ -52,7 +52,7 @@ func (ts *HelmChartTestSuite) aClusterIsRunning() error {
 
 	output, err := shell.Execute(".", "kind", args...)
 	if err != nil {
-		log.Fatalf("Could not check the status of the cluster. Aborting: %v", err)
+		log.WithField("error", err).Error("Could not check the status of the cluster.")
 	}
 	if output != ts.ClusterName {
 		return fmt.Errorf("The cluster is not running")
@@ -64,11 +64,12 @@ func (ts *HelmChartTestSuite) aClusterIsRunning() error {
 	return nil
 }
 
-func (ts *HelmChartTestSuite) addElasticRepo() {
+func (ts *HelmChartTestSuite) addElasticRepo() error {
 	err := helm.AddRepo("elastic", "https://helm.elastic.co")
 	if err != nil {
-		log.Fatalf("Could not add Elastic Helm repo. Aborting: %v", err)
+		log.WithField("error", err).Error("Could not add Elastic Helm repo")
 	}
+	return err
 }
 
 func (ts *HelmChartTestSuite) aResourceContainsTheKey(resource string, key string) error {
@@ -172,27 +173,30 @@ func (ts *HelmChartTestSuite) checkResources(resourceType, selector string, min 
 	return items, nil
 }
 
-func (ts *HelmChartTestSuite) createCluster(k8sVersion string) {
+func (ts *HelmChartTestSuite) createCluster(k8sVersion string) error {
 	args := []string{"create", "cluster", "--name", ts.ClusterName, "--image", "kindest/node:v" + k8sVersion}
 
 	log.Debug("Creating cluster with kind")
 	output, err := shell.Execute(".", "kind", args...)
 	if err != nil {
-		log.Fatalf("Could not create the cluster. Aborting: %v", err)
+		log.WithField("error", err).Error("Could not create the cluster")
+		return err
 	}
 	log.WithFields(log.Fields{
 		"cluster":    ts.ClusterName,
 		"k8sVersion": k8sVersion,
 		"output":     output,
-	}).Debug("Cluster created")
+	}).Info("Cluster created")
 
 	// initialise Helm after the cluster is created
 	// For Helm v2.x.x we have to initialise Tiller
 	// right after the k8s cluster
 	err = helm.Init()
 	if err != nil {
-		log.Fatalf("Could not initiase Helm. Aborting: %v", err)
+		log.WithField("error", err).Error("Could not initiase Helm")
 	}
+
+	return err
 }
 
 func (ts *HelmChartTestSuite) deleteChart() {
@@ -204,18 +208,20 @@ func (ts *HelmChartTestSuite) deleteChart() {
 	}
 }
 
-func (ts *HelmChartTestSuite) destroyCluster() {
+func (ts *HelmChartTestSuite) destroyCluster() error {
 	args := []string{"delete", "cluster", "--name", ts.ClusterName}
 
 	log.Debug("Deleting cluster")
 	output, err := shell.Execute(".", "kind", args...)
 	if err != nil {
-		log.Fatalf("Could not destroy the cluster. Aborting: %v", err)
+		log.WithField("error", err).Error("Could not destroy the cluster")
+		return err
 	}
 	log.WithFields(log.Fields{
 		"output":  output,
 		"cluster": ts.ClusterName,
 	}).Debug("Cluster destroyed")
+	return nil
 }
 
 func (ts *HelmChartTestSuite) elasticsHelmChartIsInstalled(chart string) error {
@@ -271,34 +277,36 @@ func (ts *HelmChartTestSuite) install(chart string) error {
 	flags := []string{}
 	if chart == "elasticsearch" {
 		// Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes
-		args := []string{
-			"apply", "-f", "https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml",
-		}
-
-		_, err := shell.Execute(".", "kubectl", args...)
+		_, err := kubectl.Run("apply", "-f", "https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml")
 		if err != nil {
 			log.Errorf("Could not apply Rancher Local Path Provisioner: %v", err)
 			return err
 		}
 		log.WithFields(log.Fields{
-			"name": ts.Name,
-		}).Debug("Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes installed")
+			"chart": ts.Name,
+		}).Info("Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes installed")
 
-		// workaround to use Rancher's local-path storage class for Elasticsearch volumes
+		log.Debug("Applying workaround to use Rancher's local-path storage class for Elasticsearch volumes")
 		flags = []string{"--wait", "--timeout=900", "--values", "https://raw.githubusercontent.com/elastic/helm-charts/master/elasticsearch/examples/kubernetes-kind/values.yaml"}
 	}
 
 	return helm.InstallChart(ts.Name, elasticChart, ts.Version, flags)
 }
 
-func (ts *HelmChartTestSuite) installRuntimeDependencies(dependencies ...string) {
+func (ts *HelmChartTestSuite) installRuntimeDependencies(dependencies ...string) error {
 	for _, dependency := range dependencies {
 		// Install Elasticsearch
 		err := ts.install(dependency)
 		if err != nil {
-			log.Fatalf("Could not install %s as runtime dependency. Aborting: %v", dependency, err)
+			log.WithFields(log.Fields{
+				"dependency": dependency,
+				"error":      err,
+			}).Error("Could not install runtime dependency")
+			return err
 		}
 	}
+
+	return nil
 }
 
 func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
@@ -393,10 +401,7 @@ func (ts *HelmChartTestSuite) volumeMountedWithSubpath(name string, mountPath st
 
 	getMountValues := func(key string) ([]string, error) {
 		// build the arguments for capturing the volume mounts
-		args := []string{
-			"get", "pods", "-l", "app=" + ts.getPodName(), "-o", `jsonpath="{.items[0].spec.containers[0].volumeMounts[*]['` + key + `']}"`,
-		}
-		output, err := shell.Execute(".", "kubectl", args...)
+		output, err := kubectl.Run("get", "pods", "-l", "app="+ts.getPodName(), "-o", `jsonpath="{.items[0].spec.containers[0].volumeMounts[*]['`+key+`']}"`)
 		if err != nil {
 			return []string{}, err
 		}
@@ -482,14 +487,14 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 func HelmChartFeatureContext(s *godog.Suite) {
 	testSuite := HelmChartTestSuite{
 		ClusterName:       "helm-charts-test-suite",
-		KubernetesVersion: "1.15.3",
+		KubernetesVersion: "1.18.2",
 		Version:           "7.6.1",
 	}
 
 	if value, exists := os.LookupEnv("HELM_CHART_VERSION"); exists {
 		testSuite.Version = value
 	}
-	if value, exists := os.LookupEnv("KUBERNETES_VERSION"); exists {
+	if value, exists := os.LookupEnv("HELM_KUBERNETES_VERSION"); exists {
 		testSuite.KubernetesVersion = value
 	}
 
@@ -513,16 +518,28 @@ func HelmChartFeatureContext(s *godog.Suite) {
 		log.Debug("Before Suite...")
 		toolsAreInstalled()
 
-		testSuite.createCluster(testSuite.KubernetesVersion)
-		testSuite.addElasticRepo()
-		testSuite.installRuntimeDependencies("elasticsearch")
+		err := testSuite.createCluster(testSuite.KubernetesVersion)
+		if err != nil {
+			return
+		}
+		err = testSuite.addElasticRepo()
+		if err != nil {
+			return
+		}
+		err = testSuite.installRuntimeDependencies("elasticsearch")
+		if err != nil {
+			return
+		}
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
 		log.Info("Before Helm scenario...")
 	})
 	s.AfterSuite(func() {
 		log.Debug("After Suite...")
-		testSuite.destroyCluster()
+		err := testSuite.destroyCluster()
+		if err != nil {
+			return
+		}
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {
 		log.Debug("After Helm scenario...")
