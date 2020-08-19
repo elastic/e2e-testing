@@ -8,18 +8,18 @@ Scenario: Adding the Endpoint Integration to an Agent makes the host to show in 
   When the "Endpoint" latest package version is installed successfully
     And the "Endpoint" integration is "added" in the "default" configuration
   Then the "default" configuration shows the "Endpoint" datasource added
-    And the host name is shown in the security app
+    And the host name is shown in the Security App
     
 @endpoint-policy-check
-Scenario: Deploy Endpoint and see policy return successful in Security App
+Scenario: Deploying an Endpoint makes policies to appear in the Security App
   Given an Endpoint is successfully deployed with Agent
-  Then the policy response will be listed in the security app
+  Then the policy response will be listed in the Security App
 
 @set-policy-and-check-changes
 Scenario: Deploy Endpoint and change default policy and verify in Security App
   Given an Endpoint is successfully deployed with Agent
   When the policy is updated to have malware in detect mode
-  Then the policy response will be listed in the security app
+  Then the policy response will be listed in the Security App
 
 @deploy-endpoint-then-unenroll-agent-and-verify
 Scenario: Deploy Endpoint and then un-enroll Agent to confirm Endpoint stops
