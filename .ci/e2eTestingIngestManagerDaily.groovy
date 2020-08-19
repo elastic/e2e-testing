@@ -44,7 +44,7 @@ pipeline {
           parameters: [
             booleanParam(name: 'forceSkipGitChecks', value: true),
             booleanParam(name: 'forceSkipPresubmit', value: true),
-            string(name: 'runTestsSuite', value: 'ingest-manager')
+            string(name: 'runTestsSuite', value: 'ingest-manager'),
             string(name: 'SLACK_CHANNEL', value: "ingest-management"),
           ],
           propagate: false,
