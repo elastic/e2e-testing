@@ -45,6 +45,7 @@ pipeline {
             booleanParam(name: 'forceSkipGitChecks', value: true),
             booleanParam(name: 'forceSkipPresubmit', value: true),
             string(name: 'runTestsSuite', value: 'metricbeat')
+            string(name: 'SLACK_CHANNEL', value: "integrations"),
           ],
           propagate: false,
           wait: false
