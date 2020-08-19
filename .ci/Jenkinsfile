@@ -199,7 +199,7 @@ pipeline {
   }
   post {
     cleanup {
-      notifyBuildResult(prComment: true)
+      notifyBuildResult(analyzeFlakey: true, prComment: true)
     }
     unsuccessful {
       whenFalse(isPR()) {
