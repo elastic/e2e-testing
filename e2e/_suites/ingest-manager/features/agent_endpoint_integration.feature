@@ -13,24 +13,24 @@ Scenario: Adding the Endpoint Integration to an Agent makes the host to show in 
 @endpoint-policy-check
 Scenario: Deploying an Endpoint makes policies to appear in the Security App
   Given an Endpoint is successfully deployed with Agent
-  Then the policy response will be listed in the Security App
+  Then the policy response will be shown in the Security App
 
 @set-policy-and-check-changes
-Scenario: Deploy Endpoint and change default policy and verify in Security App
+Scenario: Changing an Agent policy is reflected in the Security App
   Given an Endpoint is successfully deployed with Agent
   When the policy is updated to have malware in detect mode
-  Then the policy response will be listed in the Security App
+  Then the policy will reflect the change in the Security App
 
-@deploy-endpoint-then-unenroll-agent-and-verify
-Scenario: Deploy Endpoint and then un-enroll Agent to confirm Endpoint stops
+@deploy-endpoint-then-unenroll-agent
+Scenario: Un-enrolling Elastic Agent stops Elastic Endpoint
   Given an Endpoint is successfully deployed with Agent
   When the agent is un-enrolled
   Then the agent is not listed in Fleet as online
     And the endpoint is not listed in Security App as online
     And the "elastic-endpoint" process is "stopped" on the host
 
-@deploy-endpoint-then-remove-it-from-configuration-and-verify
-Scenario: Deploy Endpoint and remove it from the configuration then confirm Endpoint stops
+@deploy-endpoint-then-remove-it-from-configuration
+Scenario: Removing Endpoint from Agent configuration stops the connected Endpoint
   Given an Endpoint is successfully deployed with Agent
   When the "Endpoint" integration is "removed" in the "default" configuration
   Then the agent is listed in Fleet as online
