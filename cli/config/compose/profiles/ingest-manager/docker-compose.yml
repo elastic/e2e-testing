@@ -14,6 +14,7 @@ services:
       - xpack.license.self_generated.type=trial
       - xpack.security.enabled=true
       - xpack.security.authc.api_key.enabled=true
+      - xpack.security.authc.realms.file.file1.order=0
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=changeme
     image: "docker.elastic.co/observability-ci/elasticsearch:${stackVersion:-8.0.0-SNAPSHOT}"
