@@ -3,7 +3,7 @@ Feature: Agent Endpoint Integration
   Scenarios for Agent to deploy Endpoint and sending data to Ingest Manager and Elasticsearch.
 
 @deploy-endpoint-with-agent
-Scenario: Deploy Agent and add Endpoint Integration and host shows in Security App
+Scenario: Adding the Endpoint Integration to an Agent makes the host to show in Security App
   Given an agent is deployed to Fleet
   When the "Endpoint" latest package version is installed successfully
     And the "Endpoint" integration is "added" in the "default" configuration
