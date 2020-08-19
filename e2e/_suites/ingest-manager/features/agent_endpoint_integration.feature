@@ -1,5 +1,5 @@
 @agent_endpoint_integration
-Feature: Fleet Mode Agent with Endpoint Integration
+Feature: Agent Endpoint Integration
   Scenarios for Agent to deploy Endpoint and sending data to Ingest Manager and Elasticsearch.
 
 @deploy-endpoint-with-agent
