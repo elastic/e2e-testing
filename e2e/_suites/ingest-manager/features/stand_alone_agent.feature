@@ -1,12 +1,12 @@
 @stand_alone_mode
-Feature: Stand-alone Agent Mode
+Feature: Stand-alone Agent
   Scenarios for a standalone mode Elastic Agent in Ingest Manager, where an Elasticseach
   and a Kibana instances are already provisioned, so that the Agent is able to communicate
   with them
 
 @start-agent
 Scenario: Starting the agent starts backend processes
-  Given a stand-alone agent is deployed
+  When a stand-alone agent is deployed
   Then the "filebeat" process is in the "started" state on the host
     And the "metricbeat" process is in the "started" state on the host
 
