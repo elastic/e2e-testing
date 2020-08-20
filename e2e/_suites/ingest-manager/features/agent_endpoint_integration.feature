@@ -26,7 +26,7 @@ Scenario: Un-enrolling Elastic Agent stops Elastic Endpoint
   Given an Endpoint is successfully deployed with Agent
   When the agent is un-enrolled
   Then the agent is not listed as online in Fleet
-    And the endpoint is not listed in Security App as online
+#    And the endpoint is not listed in Security App as online
     And the "elastic-endpoint" process is "stopped" on the host
 
 @deploy-endpoint-then-remove-it-from-configuration
@@ -34,5 +34,5 @@ Scenario: Removing Endpoint from Agent configuration stops the connected Endpoin
   Given an Endpoint is successfully deployed with Agent
   When the "Endpoint" integration is "removed" in the "default" configuration
   Then the agent is not listed as online in Fleet
-    And the endpoint is not listed in Security App as online
+#    And the endpoint is not listed in Security App as online
     And the "elastic-endpoint" process is "stopped" on the host
