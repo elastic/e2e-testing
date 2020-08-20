@@ -49,6 +49,12 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the enrollment token is revoked$`, fts.theEnrollmentTokenIsRevoked)
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
+
+	// endpoint steps
+	s.Step(`^the "([^"]*)" version of the "([^"]*)" package is installed$`, fts.theVersionOfThePackageIsInstalled)
+	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the "([^"]*)" configuration$`, fts.theIntegrationIsOperatedInTheConfiguration)
+	s.Step(`^the "([^"]*)" datasource is shown in the "([^"]*)" configuration as added$`, fts.theConfigurationShowsTheDatasourceAdded)
+	s.Step(`^the host name is shown in the Security App$`, fts.theHostNameIsShownInTheSecurityApp)
 }
 
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
@@ -398,6 +404,40 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 	}).Debug("Token was revoked")
 
 	return nil
+}
+
+func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(configurationName string, packageName string) error {
+	log.WithFields(log.Fields{
+		"configuration": configurationName,
+		"package":       packageName,
+	}).Debug("Checking if the configuration shows the package added")
+
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) theIntegrationIsOperatedInTheConfiguration(packageName string, action string, configurationName string) error {
+	log.WithFields(log.Fields{
+		"action":        action,
+		"configuration": configurationName,
+		"package":       packageName,
+	}).Debug("Doing an operation for a package on a configuration")
+
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) theHostNameIsShownInTheSecurityApp() error {
+	log.Debug("Checking if the hostname is shown in the Security App")
+
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) theVersionOfThePackageIsInstalled(version string, packageName string) error {
+	log.WithFields(log.Fields{
+		"package": packageName,
+		"version": version,
+	}).Debug("Checking if package version is installed")
+
+	return godog.ErrPending
 }
 
 func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
