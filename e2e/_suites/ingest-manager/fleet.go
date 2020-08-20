@@ -373,7 +373,56 @@ func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(configuration
 		"package":       packageName,
 	}).Debug("Checking if the configuration shows the package added")
 
-	return godog.ErrPending
+	maxTimeout := time.Minute
+	retryCount := 1
+
+	exp := e2e.GetExponentialBackOff(maxTimeout)
+
+	configurationIsPresentFn := func() error {
+		defaultConfig, err := getAgentDefaultConfig()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":           err,
+				"packageConfigID": fts.Integration.packageConfigID,
+				"configurationID": fts.ConfigID,
+				"retry":           retryCount,
+			}).Warn("An error retrieving the configuration happened")
+
+			retryCount++
+
+			return err
+		}
+
+		packageConfigs := defaultConfig.Path("package_configs")
+
+		for _, child := range packageConfigs.Children() {
+			id := child.Data().(string)
+			if id == fts.Integration.packageConfigID {
+				log.WithFields(log.Fields{
+					"packageConfigID": fts.Integration.packageConfigID,
+					"configurationID": fts.ConfigID,
+				}).Info("The integration was found in the configuration")
+				return nil
+			}
+		}
+
+		log.WithFields(log.Fields{
+			"packageConfigID": fts.Integration.packageConfigID,
+			"configurationID": fts.ConfigID,
+			"retry":           retryCount,
+		}).Warn("The integration was not found in the configuration")
+
+		retryCount++
+
+		return err
+	}
+
+	err := backoff.Retry(configurationIsPresentFn, exp)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (fts *FleetTestSuite) theIntegrationIsOperatedInTheConfiguration(packageName string, action string, configurationName string) error {
@@ -387,7 +436,14 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInTheConfiguration(packageNam
 		return godog.ErrPending
 	}
 
-	return addIntegrationToConfiguration(fts.Integration, fts.ConfigID)
+	integrationConfigurationID, err := addIntegrationToConfiguration(fts.Integration, fts.ConfigID)
+	if err != nil {
+		return err
+	}
+
+	fts.Integration.packageConfigID = integrationConfigurationID
+
+	return nil
 }
 
 func (fts *FleetTestSuite) theHostNameIsShownInTheSecurityApp() error {
