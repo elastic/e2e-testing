@@ -26,6 +26,9 @@ const fleetSetupURL = kibanaBaseURL + "/api/ingest_manager/fleet/setup"
 const ingestManagerAgentConfigsURL = kibanaBaseURL + "/api/ingest_manager/agent_configs"
 const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/ingest_manager/data_streams"
 
+const actionADDED = "added"
+const actionREMOVED = "removed"
+
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
 	EnrolledAgentID string // will be used to store current agent
@@ -479,18 +482,28 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInTheConfiguration(packageNam
 		"package":       packageName,
 	}).Debug("Doing an operation for a package on a configuration")
 
-	if strings.ToLower(action) != "added" {
-		return godog.ErrPending
+	if strings.ToLower(action) == actionADDED {
+		integrationConfigurationID, err := addIntegrationToConfiguration(fts.Integration, fts.ConfigID)
+		if err != nil {
+			return err
+		}
+
+		fts.Integration.packageConfigID = integrationConfigurationID
+		return nil
+	} else if strings.ToLower(action) == actionREMOVED {
+		err := deleteIntegrationFromConfiguration(fts.Integration, fts.ConfigID)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err":             err,
+				"packageConfigID": fts.Integration.packageConfigID,
+				"configurationID": fts.ConfigID,
+			}).Error("The integration could not be deleted from the configuration")
+			return err
+		}
+		return nil
 	}
 
-	integrationConfigurationID, err := addIntegrationToConfiguration(fts.Integration, fts.ConfigID)
-	if err != nil {
-		return err
-	}
-
-	fts.Integration.packageConfigID = integrationConfigurationID
-
-	return nil
+	return godog.ErrPending
 }
 
 func (fts *FleetTestSuite) theHostNameIsShownInTheSecurityApp() error {
@@ -510,7 +523,7 @@ func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent() error {
 		return err
 	}
 
-	err = fts.theIntegrationIsOperatedInTheConfiguration("enpdoint", "added", "default")
+	err = fts.theIntegrationIsOperatedInTheConfiguration("enpdoint", actionADDED, "default")
 	if err != nil {
 		return err
 	}
