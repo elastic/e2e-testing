@@ -1,5 +1,6 @@
 @mysql
-Feature: As a Metricbeat developer I want to check that the MySQL module works as expected
+Feature: Mysql
+  As a Metricbeat developer I want to check that the MySQL module works as expected
 
 Scenario Outline: Check <variant>-<version> is sending metrics to Elasticsearch without errors
   Given "<variant>" v<version>, variant of "MySQL", is running for metricbeat

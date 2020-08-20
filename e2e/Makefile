@@ -41,6 +41,10 @@ functional-test: install-godog
 	STACK_VERSION=${STACK_VERSION} \
 	godog --format=${FORMAT} ${FEATURE_FLAG} ${FEATURE}
 
+.PHONY: lint
+lint:
+	@docker run -t --rm -v $(PWD):/src -w /src gherkin/lint **/*.feature --disable AvoidOutlineForSingleExample,TooClumsy,TooManySteps,TooManyDifferentTags,TooLongStep
+
 .PHONY: notice
 notice:
 	@echo "Generating NOTICE"

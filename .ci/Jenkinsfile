@@ -29,6 +29,7 @@ pipeline {
     choice(name: 'runTestsSuite', choices: ['all', 'helm', 'ingest-manager', 'metricbeat'], description: 'Choose which test suite to run (default: all)')
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
     booleanParam(name: "forceSkipPresubmit", defaultValue: false, description: "If it's needed to execute the pre-submit tests: unit and precommit.")
+    string(name: 'SLACK_CHANNEL', defaultValue: 'observablt-robots', description: 'The Slack channel where errors will be posted')
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
     string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stand-alone elastic-agent to be used for Ingest Manager tests. You can use here the tag of your PR to test your changes')
     booleanParam(name: "ELASTIC_AGENT_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the binary snapshots produced by Beats CI instead of the official releases")
@@ -50,6 +51,7 @@ pipeline {
         HOME = "${env.WORKSPACE}"
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
         GO111MODULE = 'on'
+        SLACK_CHANNEL = "${params.SLACK_CHANNEL.trim()}"
         ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
         ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
         ELASTIC_AGENT_USE_CI_SNAPSHOTS = "${params.ELASTIC_AGENT_USE_CI_SNAPSHOTS}"
@@ -197,7 +199,14 @@ pipeline {
   }
   post {
     cleanup {
-      notifyBuildResult(to: ['victor.martinez@elastic.co', 'manuel.delapena@elastic.co'])
+      notifyBuildResult(analyzeFlakey: true, flakyReportIdx: "reporter-e2e-tests-end-2-end-tests-pipeline-master", prComment: true)
+    }
+    unsuccessful {
+      whenFalse(isPR()) {
+        slackSend(channel: "#${env.SLACK_CHANNEL}", color: 'danger',
+                  message: "[${params.runTestsSuite}] Build Failed: ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.RUN_DISPLAY_URL}|Open>).",
+                  tokenCredentialId: 'jenkins-slack-integration-token')
+      }
     }
   }
 }
