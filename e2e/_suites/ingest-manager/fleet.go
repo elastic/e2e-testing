@@ -39,8 +39,7 @@ type FleetTestSuite struct {
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
-	s.Step(`^an agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
-	s.Step(`^an agent running on "([^"]*)" is deployed to Fleet$`, fts.anAgentRunningOnOSIsDeployedToFleet)
+	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	s.Step(`^the agent is listed in Fleet as online$`, fts.theAgentIsListedInFleetAsOnline)
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
@@ -51,11 +50,9 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
 }
 
-func (fts *FleetTestSuite) anAgentIsDeployedToFleet() error {
-	return fts.anAgentRunningOnOSIsDeployedToFleet("centos")
-}
+func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
+	image = image + "-systemd" // we want to consume systemd boxes
 
-func (fts *FleetTestSuite) anAgentRunningOnOSIsDeployedToFleet(image string) error {
 	log.WithFields(log.Fields{
 		"image": image,
 	}).Debug("Deploying an agent to Fleet with base image")

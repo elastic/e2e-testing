@@ -58,7 +58,6 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	imts := IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			Installers: map[string]ElasticAgentInstaller{
-				"centos":         GetElasticAgentInstaller("centos"),
 				"centos-systemd": GetElasticAgentInstaller("centos-systemd"),
 				"debian-systemd": GetElasticAgentInstaller("debian-systemd"),
 			},
@@ -212,8 +211,8 @@ type IngestManagerTestSuite struct {
 
 func (imts *IngestManagerTestSuite) processStateChangedOnTheHost(process string, state string) error {
 	profile := "ingest-manager"
-	image := "centos"
-	serviceName := "centos"
+	image := "centos-systemd"
+	serviceName := "centos-systemd"
 
 	if state == "started" {
 		return startAgent(profile, image, serviceName)
