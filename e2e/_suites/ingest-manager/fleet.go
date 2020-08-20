@@ -56,6 +56,11 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the "([^"]*)" configuration$`, fts.theIntegrationIsOperatedInTheConfiguration)
 	s.Step(`^the "([^"]*)" datasource is shown in the "([^"]*)" configuration as added$`, fts.theConfigurationShowsTheDatasourceAdded)
 	s.Step(`^the host name is shown in the Security App$`, fts.theHostNameIsShownInTheSecurityApp)
+	s.Step(`^an Endpoint is successfully deployed with Agent$`, fts.anEndpointIsSuccessfullyDeployedWithAgent)
+	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
+	s.Step(`^the policy is updated to have malware in detect mode$`, fts.thePolicyIsUpdatedToHaveMalwareInDetectMode)
+	s.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
+	s.Step(`^the endpoint is not listed in Security App as online$`, fts.theEndpointIsNotListedInSecurityAppAsOnline)
 }
 
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
@@ -446,6 +451,26 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInTheConfiguration(packageNam
 func (fts *FleetTestSuite) theHostNameIsShownInTheSecurityApp() error {
 	log.Debug("Checking if the hostname is shown in the Security App")
 
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent() error {
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMalwareInDetectMode() error {
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error {
+	return godog.ErrPending
+}
+
+func (fts *FleetTestSuite) theEndpointIsNotListedInSecurityAppAsOnline() error {
 	return godog.ErrPending
 }
 
