@@ -162,10 +162,11 @@ func (fts *FleetTestSuite) setup() error {
 		return err
 	}
 
-	fts.ConfigID, err = getAgentDefaultConfig()
+	defaultConfig, err := getAgentDefaultConfig()
 	if err != nil {
 		return err
 	}
+	fts.ConfigID = defaultConfig.Path("id").Data().(string)
 
 	return nil
 }
@@ -701,7 +702,7 @@ func enrollAgent(installer ElasticAgentInstaller, token string) error {
 }
 
 // getAgentDefaultConfig sends a GET request to Fleet for the existing default configuration
-func getAgentDefaultConfig() (string, error) {
+func getAgentDefaultConfig() (*gabs.Container, error) {
 	r := createDefaultHTTPRequest(ingestManagerAgentConfigsURL)
 	body, err := curl.Get(r)
 	if err != nil {
@@ -710,7 +711,7 @@ func getAgentDefaultConfig() (string, error) {
 			"error": err,
 			"url":   ingestManagerAgentConfigsURL,
 		}).Error("Could not get Fleet's configs")
-		return "", err
+		return nil, err
 	}
 
 	jsonParsed, err := gabs.ParseJSON([]byte(body))
@@ -719,7 +720,7 @@ func getAgentDefaultConfig() (string, error) {
 			"error":        err,
 			"responseBody": body,
 		}).Error("Could not parse response into JSON")
-		return "", err
+		return nil, err
 	}
 
 	// data streams should contain array of elements
@@ -729,8 +730,10 @@ func getAgentDefaultConfig() (string, error) {
 		"count": len(configs.Children()),
 	}).Debug("Fleet configs retrieved")
 
-	configID := configs.Index(0).Path("id").Data().(string)
-	return configID, nil
+	// TODO: perform a strong check to capture default config
+	defaultConfig := configs.Index(0)
+
+	return defaultConfig, nil
 }
 
 // getAgentID sends a GET request to Fleet for the existing agents
