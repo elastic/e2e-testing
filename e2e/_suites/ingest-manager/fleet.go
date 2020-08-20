@@ -395,7 +395,12 @@ func (fts *FleetTestSuite) theVersionOfThePackageIsInstalled(version string, pac
 		"version": version,
 	}).Debug("Checking if package version is installed")
 
-	return godog.ErrPending
+	name, version, err := getIntegrationLatestVersion(packageName)
+	if err != nil {
+		return err
+	}
+
+	return installIntegrationAssets(name, version)
 }
 
 func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
