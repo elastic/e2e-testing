@@ -500,7 +500,22 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheSecurityApp() error {
 }
 
 func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent() error {
-	return godog.ErrPending
+	err := fts.anAgentIsDeployedToFleet("centos")
+	if err != nil {
+		return err
+	}
+
+	err = fts.theVersionOfThePackageIsInstalled("latest", "endpoint")
+	if err != nil {
+		return err
+	}
+
+	err = fts.theIntegrationIsOperatedInTheConfiguration("enpdoint", "added", "default")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
