@@ -5,7 +5,7 @@ Feature: Agent Endpoint Integration
 @deploy-endpoint-with-agent
 Scenario: Adding the Endpoint Integration to an Agent makes the host to show in Security App
   Given an agent is deployed to Fleet
-  When the "Endpoint" latest package version is installed successfully
+  When the latest version of the "Endpoint" package is installed successfully
     And the "Endpoint" integration is "added" in the "default" configuration
   Then the "default" configuration shows the "Endpoint" datasource added
     And the host name is shown in the Security App
