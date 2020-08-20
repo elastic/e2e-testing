@@ -4,7 +4,7 @@ Feature: Agent Endpoint Integration
 
 @deploy-endpoint-with-agent
 Scenario: Adding the Endpoint Integration to an Agent makes the host to show in Security App
-  Given an agent is deployed to Fleet
+  Given an agent running on "centos-systemd" is deployed to Fleet
   When the "latest" version of the "Endpoint" package is installed
     And the "Endpoint" integration is "added" in the "default" configuration
   Then the "Endpoint" datasource is shown in the "default" configuration as added
