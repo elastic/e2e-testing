@@ -7,6 +7,8 @@ SUITES:
   - suite: "helm"
     feature: "metricbeat"
   - suite: "ingest-manager"
+    feature: "agent_endpoint_integration"
+  - suite: "ingest-manager"
     feature: "stand_alone_mode"
   - suite: "ingest-manager"
     feature: "fleet_mode"
