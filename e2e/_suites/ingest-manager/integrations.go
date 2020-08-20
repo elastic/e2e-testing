@@ -10,7 +10,95 @@ import (
 )
 
 const ingestManagerIntegrationURL = kibanaBaseURL + "/api/ingest_manager/epm/packages/%s-%s"
+const ingestManagerIntegrationDeleteURL = kibanaBaseURL + "/api/ingest_manager/package_configs/delete"
 const ingestManagerIntegrationsURL = kibanaBaseURL + "/api/ingest_manager/epm/packages?experimental=true&category="
+const ingestManagerIntegrationConfigsURL = kibanaBaseURL + "/api/ingest_manager/package_configs"
+
+// IntegrationPackage used to share information about a integration
+type IntegrationPackage struct {
+	packageConfigID string `json:"packageConfigId"`
+	name            string `json:"name"`
+	title           string `json:"title"`
+	version         string `json:"version"`
+}
+
+// installIntegration sends a POST request to Ingest Manager adding an integration to a configuration
+func addIntegrationToConfiguration(integrationPackage IntegrationPackage, configurationID string) (string, error) {
+	postReq := createDefaultHTTPRequest(ingestManagerIntegrationConfigsURL)
+
+	data := `{
+		"name":"` + integrationPackage.name + `-test-name",
+		"description":"` + integrationPackage.title + `-test-description",
+		"namespace":"default",
+		"config_id":"` + configurationID + `",
+		"enabled":true,
+		"output_id":"",
+		"inputs":[],
+		"package":{
+			"name":"` + integrationPackage.name + `",
+			"title":"` + integrationPackage.title + `",
+			"version":"` + integrationPackage.version + `"
+		}
+	}`
+	postReq.Payload = []byte(data)
+	body, err := curl.Post(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":    body,
+			"error":   err,
+			"url":     ingestManagerIntegrationConfigsURL,
+			"payload": data,
+		}).Error("Could not add integration to configuration")
+		return "", err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return "", err
+	}
+
+	integrationConfigurationID := jsonParsed.Path("item.id").Data().(string)
+
+	log.WithFields(log.Fields{
+		"configurationID":            configurationID,
+		"integrationConfigurationID": integrationConfigurationID,
+		"integration":                integrationPackage.name,
+		"version":                    integrationPackage.version,
+	}).Info("Integration added to the configuration")
+
+	return integrationConfigurationID, nil
+}
+
+// deleteIntegrationFromConfiguration sends a POST request to Ingest Manager deleting an integration from a configuration
+func deleteIntegrationFromConfiguration(integrationPackage IntegrationPackage, configurationID string) error {
+	postReq := createDefaultHTTPRequest(ingestManagerIntegrationDeleteURL)
+
+	data := `{"packageConfigIds":["` + integrationPackage.packageConfigID + `"]}`
+	postReq.Payload = []byte(data)
+	body, err := curl.Post(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":    body,
+			"error":   err,
+			"url":     ingestManagerIntegrationDeleteURL,
+			"payload": data,
+		}).Error("Could not delete integration from configuration")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"configurationID": configurationID,
+		"integration":     integrationPackage.name,
+		"packageConfigId": integrationPackage.packageConfigID,
+		"version":         integrationPackage.version,
+	}).Info("Integration deleted from the configuration")
+
+	return nil
+}
 
 // getIntegrationLatestVersion sends a GET request to Ingest Manager for the existing integrations
 // checking if the desired integration exists in the package registry. If so, it will
@@ -55,7 +143,7 @@ func getIntegrationLatestVersion(integrationName string) (string, string, error)
 }
 
 // installIntegration sends a POST request to Ingest Manager installing the assets for an integration
-func installIntegrationAssets(integration string, version string) error {
+func installIntegrationAssets(integration string, version string) (IntegrationPackage, error) {
 	url := fmt.Sprintf(ingestManagerIntegrationURL, integration, version)
 	postReq := createDefaultHTTPRequest(url)
 
@@ -66,7 +154,7 @@ func installIntegrationAssets(integration string, version string) error {
 			"error": err,
 			"url":   url,
 		}).Error("Could not install assets for the integration")
-		return err
+		return IntegrationPackage{}, err
 	}
 
 	log.WithFields(log.Fields{
@@ -74,5 +162,45 @@ func installIntegrationAssets(integration string, version string) error {
 		"version":     version,
 	}).Debug("Assets for the integration where installed")
 
-	return nil
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse install response into JSON")
+		return IntegrationPackage{}, err
+	}
+	response := jsonParsed.Path("response").Index(0)
+
+	packageConfigID := response.Path("id").Data().(string)
+
+	// get the integration again in the case it's already installed
+	body, err = curl.Get(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   url,
+		}).Error("Could not get the integration")
+		return IntegrationPackage{}, err
+	}
+
+	jsonParsed, err = gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse get response into JSON")
+		return IntegrationPackage{}, err
+	}
+
+	response = jsonParsed.Path("response")
+	integrationPackage := IntegrationPackage{
+		packageConfigID: packageConfigID,
+		name:            response.Path("name").Data().(string),
+		title:           response.Path("title").Data().(string),
+		version:         response.Path("latestVersion").Data().(string),
+	}
+
+	return integrationPackage, nil
 }
