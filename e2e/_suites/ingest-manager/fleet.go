@@ -36,6 +36,8 @@ type FleetTestSuite struct {
 	CurrentToken    string // current enrollment token
 	CurrentTokenID  string // current enrollment tokenID
 	Hostname        string // the hostname of the container
+	// integrations
+	Integration IntegrationPackage // the installed integration
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
@@ -423,7 +425,11 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInTheConfiguration(packageNam
 		"package":       packageName,
 	}).Debug("Doing an operation for a package on a configuration")
 
-	return godog.ErrPending
+	if strings.ToLower(action) != "added" {
+		return godog.ErrPending
+	}
+
+	return addIntegrationToConfiguration(fts.Integration, fts.ConfigID)
 }
 
 func (fts *FleetTestSuite) theHostNameIsShownInTheSecurityApp() error {
@@ -443,7 +449,13 @@ func (fts *FleetTestSuite) theVersionOfThePackageIsInstalled(version string, pac
 		return err
 	}
 
-	return installIntegrationAssets(name, version)
+	installedIntegration, err := installIntegrationAssets(name, version)
+	if err != nil {
+		return err
+	}
+	fts.Integration = installedIntegration
+
+	return nil
 }
 
 func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {

@@ -192,6 +192,15 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 					"tokenID": imts.Fleet.CurrentTokenID,
 				}).Warn("The enrollment token could not be deleted")
 			}
+
+			err = deleteIntegrationFromConfiguration(imts.Fleet.Integration, imts.Fleet.ConfigID)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err":             err,
+					"packageConfigID": imts.Fleet.Integration.packageConfigID,
+					"configurationID": imts.Fleet.ConfigID,
+				}).Warn("The integration could not be deleted from the configuration")
+			}
 		}
 
 		imts.Fleet.Image = ""
