@@ -497,14 +497,14 @@ func createDefaultHTTPRequest(url string) curl.HTTPRequest {
 }
 
 // createFleetToken sends a POST request to Fleet creating a new token with a name
-func createFleetToken(name string, configID string) (*gabs.Container, error) {
+func createFleetToken(name string, policyID string) (*gabs.Container, error) {
 	type payload struct {
 		PolicyID string `json:"policy_id"`
 		Name     string `json:"name"`
 	}
 
 	data := payload{
-		PolicyID: configID,
+		PolicyID: policyID,
 		Name:     name,
 	}
 	payloadBytes, err := json.Marshal(data)
@@ -642,8 +642,8 @@ func getAgentDefaultPolicy() (string, error) {
 		"count": len(policies.Children()),
 	}).Debug("Fleet policies retrieved")
 
-	configID := policies.Index(0).Path("id").Data().(string)
-	return configID, nil
+	policyID := policies.Index(0).Path("id").Data().(string)
+	return policyID, nil
 }
 
 // getAgentID sends a GET request to Fleet for the existing agents
