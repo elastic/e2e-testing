@@ -241,13 +241,7 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 	mts.Version = metricbeatVersion
 	mts.setIndexName()
 
-	// use master branch for snapshots
-	tag := "v" + metricbeatVersion
-	if strings.Contains(metricbeatVersion, "SNAPSHOT") {
-		tag = "master"
-	}
-
-	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + tag + "/metricbeat/" + configuration + ".yml"
+	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + metricbeatVersion + "/metricbeat/" + configuration + ".yml"
 
 	configurationFilePath, err := e2e.DownloadFile(configurationFileURL)
 	if err != nil {
