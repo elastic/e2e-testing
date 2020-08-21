@@ -201,6 +201,13 @@ pipeline {
     cleanup {
       notifyBuildResult(analyzeFlakey: true, flakyReportIdx: "reporter-e2e-tests-end-2-end-tests-pipeline-master", prComment: true)
     }
+    success {
+      whenFalse(isPR()) {
+        slackSend(channel: "#${env.SLACK_CHANNEL}", color: 'good',
+                  message: "[${params.runTestsSuite}] Build Passed: ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.RUN_DISPLAY_URL}|Open>).",
+                  tokenCredentialId: 'jenkins-slack-integration-token')
+      }
+    }
     unsuccessful {
       whenFalse(isPR()) {
         slackSend(channel: "#${env.SLACK_CHANNEL}", color: 'danger',
