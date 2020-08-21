@@ -21,6 +21,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// developerMode tears down the backend services (the elasticsearch instance)
+// after a test suite. This is the desired behavior, but when developing, we maybe want to keep
+// them running to speed up the development cycle.
+// It can be overriden by the DEVELOPER_MODE env var
+var developerMode = false
+
 // metricbeatVersion is the version of the metricbeat to use
 // It can be overriden by METRICBEAT_VERSION env var
 var metricbeatVersion = "7.9.0"
@@ -37,6 +43,11 @@ var stackVersion = "7.9.0"
 
 func init() {
 	config.Init()
+
+	developerMode, _ = shell.GetEnvBool("DEVELOPER_MODE")
+	if developerMode {
+		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
+	}
 
 	metricbeatVersion = shell.GetEnv("METRICBEAT_VERSION", metricbeatVersion)
 	queryRetryTimeout = shell.GetEnvInteger("OP_RETRY_TIMEOUT", queryRetryTimeout)
@@ -188,12 +199,14 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 		log.Debug("Before scenario...")
 	})
 	s.AfterSuite(func() {
-		serviceManager := services.NewServiceManager()
-		err := serviceManager.StopCompose(true, []string{"metricbeat"})
-		if err != nil {
-			log.WithFields(log.Fields{
-				"profile": "metricbeat",
-			}).Error("Could not stop the profile.")
+		if !developerMode {
+			serviceManager := services.NewServiceManager()
+			err := serviceManager.StopCompose(true, []string{"metricbeat"})
+			if err != nil {
+				log.WithFields(log.Fields{
+					"profile": "metricbeat",
+				}).Error("Could not stop the profile.")
+			}
 		}
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {
