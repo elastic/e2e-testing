@@ -403,7 +403,7 @@ func (fts *FleetTestSuite) removeToken() error {
 			"body":    body,
 			"error":   err,
 			"url":     revokeTokenURL,
-		}).Error("Could delete token")
+		}).Error("Could not delete token")
 		return err
 	}
 
