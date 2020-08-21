@@ -89,7 +89,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			}).Fatal("Could not run the runtime dependencies for the profile.")
 		}
 
-		minutesToBeHealthy := 3 * time.Minute
+		minutesToBeHealthy := 5 * time.Minute
 		healthy, err := e2e.WaitForElasticsearch(minutesToBeHealthy)
 		if !healthy {
 			log.WithFields(log.Fields{
@@ -247,7 +247,7 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	// because it does not support returning the output of a
 	// command: it simply returns error level
 	serviceName := "ingest-manager_elastic-agent_1"
-	timeout := 2 * time.Minute
+	timeout := 4 * time.Minute
 
 	err := e2e.WaitForProcess(serviceName, process, state, timeout)
 	if err != nil {
