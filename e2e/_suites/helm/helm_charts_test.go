@@ -18,6 +18,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// developerMode tears down the backend services (the k8s cluster)
+// after a test suite. This is the desired behavior, but when developing, we maybe want to keep
+// them running to speed up the development cycle.
+// It can be overriden by the DEVELOPER_MODE env var
+var developerMode = false
+
 var helm k8s.HelmManager
 
 //nolint:unused
@@ -25,6 +31,11 @@ var kubectl k8s.Kubectl
 
 func init() {
 	config.Init()
+
+	developerMode, _ = shell.GetEnvBool("DEVELOPER_MODE")
+	if developerMode {
+		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
+	}
 
 	helmVersion := "2.x"
 	if value, exists := os.LookupEnv("HELM_VERSION"); exists {
@@ -535,10 +546,12 @@ func HelmChartFeatureContext(s *godog.Suite) {
 		log.Info("Before Helm scenario...")
 	})
 	s.AfterSuite(func() {
-		log.Debug("After Suite...")
-		err := testSuite.destroyCluster()
-		if err != nil {
-			return
+		if !developerMode {
+			log.Debug("After Suite...")
+			err := testSuite.destroyCluster()
+			if err != nil {
+				return
+			}
 		}
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {

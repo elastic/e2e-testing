@@ -21,6 +21,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// developerMode tears down the backend services (ES, Kibana, Package Registry)
+// after a test suite. This is the desired behavior, but when developing, we maybe want to keep
+// them running to speed up the development cycle.
+// It can be overriden by the DEVELOPER_MODE env var
+var developerMode = false
+
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
 var stackVersion = "8.0.0-SNAPSHOT"
@@ -39,6 +45,11 @@ const kibanaBaseURL = "http://localhost:5601"
 func init() {
 	config.Init()
 
+	developerMode, _ = shell.GetEnvBool("DEVELOPER_MODE")
+	if developerMode {
+		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
+	}
+
 	queryRetryTimeout = shell.GetEnvInteger("OP_RETRY_TIMEOUT", queryRetryTimeout)
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 }
@@ -47,7 +58,6 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	imts := IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			Installers: map[string]ElasticAgentInstaller{
-				"centos":         GetElasticAgentInstaller("centos"),
 				"centos-systemd": GetElasticAgentInstaller("centos-systemd"),
 				"debian-systemd": GetElasticAgentInstaller("debian-systemd"),
 			},
@@ -106,15 +116,17 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		imts.StandAlone.Cleanup = false
 	})
 	s.AfterSuite(func() {
-		log.Debug("Destroying ingest-manager runtime dependencies")
-		profile := "ingest-manager"
+		if !developerMode {
+			log.Debug("Destroying ingest-manager runtime dependencies")
+			profile := "ingest-manager"
 
-		err := serviceManager.StopCompose(true, []string{profile})
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error":   err,
-				"profile": profile,
-			}).Warn("Could not destroy the runtime dependencies for the profile.")
+			err := serviceManager.StopCompose(true, []string{profile})
+			if err != nil {
+				log.WithFields(log.Fields{
+					"error":   err,
+					"profile": profile,
+				}).Warn("Could not destroy the runtime dependencies for the profile.")
+			}
 		}
 
 		installers := imts.Fleet.Installers
@@ -199,8 +211,8 @@ type IngestManagerTestSuite struct {
 
 func (imts *IngestManagerTestSuite) processStateChangedOnTheHost(process string, state string) error {
 	profile := "ingest-manager"
-	image := "centos"
-	serviceName := "centos"
+	image := "centos-systemd"
+	serviceName := "centos-systemd"
 
 	if state == "started" {
 		return startAgent(profile, image, serviceName)

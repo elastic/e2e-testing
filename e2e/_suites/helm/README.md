@@ -47,6 +47,13 @@ This is an example of the optional configuration:
 
 4. Run the tests.
 
+   If you want to run the tests in Developer mode, which means reusing bakend services between test runs, please set this environment variable first:
+
+   ```shell
+   # It won't tear down the backend services (k8s cluster) after a test suite. 
+   export DEVELOPER_MODE=true
+   ```
+
    ```shell
    cd e2e/_suites/helm
    OP_LOG_LEVEL=DEBUG godog

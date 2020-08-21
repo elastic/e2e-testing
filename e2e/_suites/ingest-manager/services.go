@@ -56,9 +56,7 @@ func GetElasticAgentInstaller(image string) ElasticAgentInstaller {
 		"image": image,
 	}).Debug("Configuring installer for the agent")
 
-	if "centos" == image {
-		return newCentosInstaller("centos", "7")
-	} else if "centos-systemd" == image {
+	if "centos-systemd" == image {
 		return newCentosInstaller("centos-systemd", "latest")
 	} else if "debian-systemd" == image {
 		return newDebianInstaller()
