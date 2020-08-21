@@ -75,7 +75,7 @@ This is an example of the optional configuration:
 
    ```shell
    # It won't tear down the backend services (ES, Kibana, Package Registry) after a test suite. 
-   export DEVELOPER_MODE = true
+   export DEVELOPER_MODE=true
    ```
 
    ```shell
