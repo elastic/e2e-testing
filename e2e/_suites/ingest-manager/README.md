@@ -109,7 +109,7 @@ Example:
 
 ### Setup failures
 
-Sometimes the tests coulf fail to configure or start a product such as Metricbeat, Elasticsearch, etc. To determine why 
+Sometimes the tests could fail to configure or start a product such as Metricbeat, Elasticsearch, etc. To determine why 
 this happened, look at your terminal log in DEBUG mode. If a `docker-compose.yml` file is not present please execute this command:
 
 ```shell
