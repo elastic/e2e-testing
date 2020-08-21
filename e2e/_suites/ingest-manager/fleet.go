@@ -23,7 +23,7 @@ const fleetAgentsURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents"
 const fleetAgentsUnEnrollURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents/%s/unenroll"
 const fleetEnrollmentTokenURL = kibanaBaseURL + "/api/ingest_manager/fleet/enrollment-api-keys"
 const fleetSetupURL = kibanaBaseURL + "/api/ingest_manager/fleet/setup"
-const ingestManagerAgentConfigsURL = kibanaBaseURL + "/api/ingest_manager/agent_configs"
+const ingestManagerAgentPoliciesURL = kibanaBaseURL + "/api/ingest_manager/agent_policies"
 const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/ingest_manager/data_streams"
 
 // FleetTestSuite represents the scenarios for Fleet-mode
@@ -32,7 +32,7 @@ type FleetTestSuite struct {
 	Image           string // base image used to install the agent
 	Installers      map[string]ElasticAgentInstaller
 	Cleanup         bool
-	ConfigID        string // will be used to manage tokens
+	PolicyID        string // will be used to manage tokens
 	CurrentToken    string // current enrollment token
 	CurrentTokenID  string // current enrollment tokenID
 	Hostname        string // the hostname of the container
@@ -83,7 +83,7 @@ func (fts *FleetTestSuite) anAgentRunningOnOSIsDeployedToFleet(image string) err
 	fts.Hostname = hostname
 
 	// enroll the agent with a new token
-	tokenJSONObject, err := createFleetToken("Test token for "+hostname, fts.ConfigID)
+	tokenJSONObject, err := createFleetToken("Test token for "+hostname, fts.PolicyID)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (fts *FleetTestSuite) setup() error {
 		return err
 	}
 
-	fts.ConfigID, err = getAgentDefaultConfig()
+	fts.PolicyID, err = getAgentDefaultPolicy()
 	if err != nil {
 		return err
 	}
@@ -499,12 +499,12 @@ func createDefaultHTTPRequest(url string) curl.HTTPRequest {
 // createFleetToken sends a POST request to Fleet creating a new token with a name
 func createFleetToken(name string, configID string) (*gabs.Container, error) {
 	type payload struct {
-		ConfigID string `json:"config_id"`
+		PolicyID string `json:"policy_id"`
 		Name     string `json:"name"`
 	}
 
 	data := payload{
-		ConfigID: configID,
+		PolicyID: configID,
 		Name:     name,
 	}
 	payloadBytes, err := json.Marshal(data)
@@ -613,16 +613,16 @@ func enrollAgent(installer ElasticAgentInstaller, token string) error {
 	return nil
 }
 
-// getAgentDefaultConfig sends a GET request to Fleet for the existing default configuration
-func getAgentDefaultConfig() (string, error) {
-	r := createDefaultHTTPRequest(ingestManagerAgentConfigsURL)
+// getAgentDefaultPolicy sends a GET request to Fleet for the existing default configuration
+func getAgentDefaultPolicy() (string, error) {
+	r := createDefaultHTTPRequest(ingestManagerAgentPoliciesURL)
 	body, err := curl.Get(r)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"body":  body,
 			"error": err,
-			"url":   ingestManagerAgentConfigsURL,
-		}).Error("Could not get Fleet's configs")
+			"url":   ingestManagerAgentPoliciesURL,
+		}).Error("Could not get Fleet's policies")
 		return "", err
 	}
 
@@ -636,13 +636,13 @@ func getAgentDefaultConfig() (string, error) {
 	}
 
 	// data streams should contain array of elements
-	configs := jsonParsed.Path("items")
+	policies := jsonParsed.Path("items")
 
 	log.WithFields(log.Fields{
-		"count": len(configs.Children()),
-	}).Debug("Fleet configs retrieved")
+		"count": len(policies.Children()),
+	}).Debug("Fleet policies retrieved")
 
-	configID := configs.Index(0).Path("id").Data().(string)
+	configID := policies.Index(0).Path("id").Data().(string)
 	return configID, nil
 }
 
