@@ -1,4 +1,4 @@
-[![Build Status](https://beats-ci.elastic.co/buildStatus/icon?job=e2e-tests%2Fe2e-testing-mbp%2Fmaster)](https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-mbp/job/master/)
+[![Build Status](https://beats-ci.elastic.co/buildStatus/icon?job=e2e-tests%2Fe2e-testing-mbp%2F7.9.x)](https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-mbp/job/7.9.x/)
 
 # End-2-End tests for the Observability projects
 

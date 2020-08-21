@@ -12,14 +12,14 @@ set -euxo pipefail
 # Parameters:
 #   - SUITE - that's the suite to be tested. Default '' which means all of them.
 #   - FEATURE - that's the feature to be tested. Default '' which means all of them.
-#   - STACK_VERSION - that's the version of the stack to be tested. Default '7.8.0'.
-#   - METRICBEAT_VERSION - that's the version of the metricbeat to be tested. Default '7.8.0'.
+#   - STACK_VERSION - that's the version of the stack to be tested. Default '7.9.0'.
+#   - METRICBEAT_VERSION - that's the version of the metricbeat to be tested. Default '7.9.0'.
 #
 
 SUITE=${1:-''}
 FEATURE=${2:-''}
-STACK_VERSION=${3:-'7.8.0'}
-METRICBEAT_VERSION=${4:-'7.8.0'}
+STACK_VERSION=${3:-'7.9.0'}
+METRICBEAT_VERSION=${4:-'7.9.0'}
 TARGET_OS=${GOOS:-linux}
 TARGET_ARCH=${GOARCH:-amd64}
 
