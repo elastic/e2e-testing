@@ -3,9 +3,21 @@ package main
 import (
 	"fmt"
 
+	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
+
+// agentVersion is the version of the agent to use
+// It can be overriden by ELASTIC_AGENT_VERSION env var
+var agentVersion = "8.0.0-SNAPSHOT"
+
+func init() {
+	config.Init()
+
+	agentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", agentVersion)
+}
 
 // ElasticAgentInstaller represents how to install an agent, depending of the box type
 type ElasticAgentInstaller struct {
@@ -63,7 +75,7 @@ func newCentosInstaller(image string, tag string) ElasticAgentInstaller {
 
 	// extract the agent in the box, as it's mounted as a volume
 	artifact := "elastic-agent"
-	version := "8.0.0-SNAPSHOT"
+	version := agentVersion
 	os := "linux"
 	arch := "x86_64"
 	extension := "rpm"
@@ -115,7 +127,7 @@ func newDebianInstaller() ElasticAgentInstaller {
 
 	// extract the agent in the box, as it's mounted as a volume
 	artifact := "elastic-agent"
-	version := "8.0.0-SNAPSHOT"
+	version := agentVersion
 	os := "linux"
 	arch := "amd64"
 	extension := "deb"
