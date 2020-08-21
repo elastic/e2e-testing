@@ -10,9 +10,9 @@ import (
 )
 
 const ingestManagerIntegrationURL = kibanaBaseURL + "/api/ingest_manager/epm/packages/%s-%s"
-const ingestManagerIntegrationDeleteURL = kibanaBaseURL + "/api/ingest_manager/package_configs/delete"
+const ingestManagerIntegrationDeleteURL = kibanaBaseURL + "/api/ingest_manager/package_policies/delete"
 const ingestManagerIntegrationsURL = kibanaBaseURL + "/api/ingest_manager/epm/packages?experimental=true&category="
-const ingestManagerIntegrationConfigsURL = kibanaBaseURL + "/api/ingest_manager/package_configs"
+const ingestManagerIntegrationPoliciesURL = kibanaBaseURL + "/api/ingest_manager/package_policies"
 
 // IntegrationPackage used to share information about a integration
 type IntegrationPackage struct {
@@ -23,14 +23,14 @@ type IntegrationPackage struct {
 }
 
 // addIntegrationToPolicy sends a POST request to Ingest Manager adding an integration to a configuration
-func addIntegrationToPolicy(integrationPackage IntegrationPackage, configurationID string) (string, error) {
-	postReq := createDefaultHTTPRequest(ingestManagerIntegrationConfigsURL)
+func addIntegrationToPolicy(integrationPackage IntegrationPackage, policyID string) (string, error) {
+	postReq := createDefaultHTTPRequest(ingestManagerIntegrationPoliciesURL)
 
 	data := `{
 		"name":"` + integrationPackage.name + `-test-name",
 		"description":"` + integrationPackage.title + `-test-description",
 		"namespace":"default",
-		"config_id":"` + configurationID + `",
+		"policy_id":"` + policyID + `",
 		"enabled":true,
 		"output_id":"",
 		"inputs":[],
@@ -46,7 +46,7 @@ func addIntegrationToPolicy(integrationPackage IntegrationPackage, configuration
 		log.WithFields(log.Fields{
 			"body":    body,
 			"error":   err,
-			"url":     ingestManagerIntegrationConfigsURL,
+			"url":     ingestManagerIntegrationPoliciesURL,
 			"payload": data,
 		}).Error("Could not add integration to configuration")
 		return "", err
@@ -64,7 +64,7 @@ func addIntegrationToPolicy(integrationPackage IntegrationPackage, configuration
 	integrationConfigurationID := jsonParsed.Path("item.id").Data().(string)
 
 	log.WithFields(log.Fields{
-		"configurationID":            configurationID,
+		"policyID":                   policyID,
 		"integrationConfigurationID": integrationConfigurationID,
 		"integration":                integrationPackage.name,
 		"version":                    integrationPackage.version,
@@ -74,10 +74,10 @@ func addIntegrationToPolicy(integrationPackage IntegrationPackage, configuration
 }
 
 // deleteIntegrationFromPolicy sends a POST request to Ingest Manager deleting an integration from a configuration
-func deleteIntegrationFromPolicy(integrationPackage IntegrationPackage, configurationID string) error {
+func deleteIntegrationFromPolicy(integrationPackage IntegrationPackage, policyID string) error {
 	postReq := createDefaultHTTPRequest(ingestManagerIntegrationDeleteURL)
 
-	data := `{"packageConfigIds":["` + integrationPackage.packageConfigID + `"]}`
+	data := `{"packagePolicyIds":["` + integrationPackage.packageConfigID + `"]}`
 	postReq.Payload = []byte(data)
 	body, err := curl.Post(postReq)
 	if err != nil {
@@ -91,7 +91,7 @@ func deleteIntegrationFromPolicy(integrationPackage IntegrationPackage, configur
 	}
 
 	log.WithFields(log.Fields{
-		"configurationID": configurationID,
+		"policyID":        policyID,
 		"integration":     integrationPackage.name,
 		"packageConfigId": integrationPackage.packageConfigID,
 		"version":         integrationPackage.version,
