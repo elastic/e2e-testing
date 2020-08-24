@@ -122,7 +122,7 @@ func (fts *FleetTestSuite) setup() error {
 func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 	log.Debug("Checking agent is listed in Fleet as online")
 
-	maxTimeout := time.Minute
+	maxTimeout := 2 * time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
@@ -197,7 +197,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	log.Debug("Checking system Package dashboards in Fleet")
 
 	dataStreamsCount := 0
-	maxTimeout := time.Minute
+	maxTimeout := 2 * time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
@@ -282,7 +282,7 @@ func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
 func (fts *FleetTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
 	log.Debug("Checking if the agent is not listed as online in Fleet")
 
-	maxTimeout := time.Minute
+	maxTimeout := 2 * time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
