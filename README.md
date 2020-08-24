@@ -18,3 +18,16 @@ This repository contains:
         - MySQL
         - Redis
         - vSphere
+
+## Contributing
+
+### pre-commit
+
+This project uses [pre-commit](https://pre-commit.com/) so, after installing it, please install the already configured pre-commit hooks we support, to enable pre-commit in your local git repository:
+
+```shell
+$ pre-commit install
+pre-commit installed at .git/hooks/pre-commit
+```
+
+To understand more about the hooks we use, please take a look at pre-commit's [configuration file](./.pre-commit-confifg.yml).
