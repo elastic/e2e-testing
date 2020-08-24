@@ -53,7 +53,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 	serviceName := "elastic-agent"
 	containerName := fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
 
-	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/7.9.0/x-pack/elastic-agent/elastic-agent.docker.yml"
+	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + standAloneVersion + "/x-pack/elastic-agent/elastic-agent.docker.yml"
 
 	configurationFilePath, err := e2e.DownloadFile(configurationFileURL)
 	if err != nil {
