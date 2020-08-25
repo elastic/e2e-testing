@@ -16,7 +16,7 @@ services:
       - xpack.security.authc.api_key.enabled=true
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=changeme
-    image: "docker.elastic.co/observability-ci/elasticsearch:${stackVersion:-7.9.0}"
+    image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion:-7.9.0}"
     ports:
       - "9200:9200"
   kibana:
@@ -29,13 +29,13 @@ services:
       test: "curl -f http://localhost:5601/login | grep kbn-injected-metadata 2>&1 >/dev/null"
       retries: 600
       interval: 1s
-    image: "docker.elastic.co/observability-ci/kibana:${stackVersion:-7.9.0}"
+    image: "docker.elastic.co/kibana/kibana:${stackVersion:-7.9.0}"
     ports:
       - "5601:5601"
     volumes:
       - ${kibanaConfigPath}:/usr/share/kibana/config/kibana.yml
   package-registry:
-    image: docker.elastic.co/package-registry/package-registry:41c150c8020efc53ab16e3bba774c62a419b51ea
+    image: docker.elastic.co/package-registry/distribution:staging
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]
       retries: 300
