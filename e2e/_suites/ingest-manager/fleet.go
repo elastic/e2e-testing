@@ -92,6 +92,11 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
 		return err
 	}
 
+	err = systemctlRun(profile, image, image, "start")
+	if err != nil {
+		return err
+	}
+
 	// get first agentID in online status, for future processing
 	fts.EnrolledAgentID, err = getAgentID(true, 0)
 
