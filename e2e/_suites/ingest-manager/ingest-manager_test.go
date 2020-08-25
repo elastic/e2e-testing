@@ -225,14 +225,20 @@ func (imts *IngestManagerTestSuite) processStateChangedOnTheHost(process string,
 		"process": process,
 	}).Debug("Stopping process on the service")
 
-	err := execCommandInService(profile, image, serviceName, []string{"pkill", "-9", process}, false)
+	stopCmds := []string{"pkill", "-9", process}
+	if process == "elastic-agent" {
+		stopCmds = []string{"systemctl", "stop", process}
+	}
+
+	err := execCommandInService(profile, image, serviceName, stopCmds, false)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"action":  state,
-			"error":   err,
-			"service": serviceName,
-			"process": process,
-		}).Error("Could not stop process with 'pkill -9' on the host")
+			"action":   state,
+			"stopCmds": stopCmds,
+			"error":    err,
+			"service":  serviceName,
+			"process":  process,
+		}).Error("Could not stop process on the host")
 
 		return err
 	}
