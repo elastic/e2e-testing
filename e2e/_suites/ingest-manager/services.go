@@ -95,7 +95,7 @@ func newCentosInstaller(image string, tag string) ElasticAgentInstaller {
 	}
 	if image == "centos-systemd" {
 		fn = func() error {
-			return systemctlInstall(profile, image, service)
+			return systemctlRun(profile, image, service, "enable")
 		}
 	}
 
@@ -143,7 +143,7 @@ func newDebianInstaller() ElasticAgentInstaller {
 	}
 
 	fn := func() error {
-		return systemctlInstall(profile, image, service)
+		return systemctlRun(profile, image, service, "enable")
 	}
 
 	return ElasticAgentInstaller{
@@ -186,26 +186,22 @@ func startAgent(profile string, image string, service string) error {
 	return nil
 }
 
-func systemctlInstall(profile string, image string, service string) error {
-	commands := []string{"enable", "start"}
-
-	for _, command := range commands {
-		cmd := []string{"systemctl", command, "elastic-agent"}
-		err := execCommandInService(profile, image, service, cmd, false)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"command": cmd,
-				"error":   err,
-				"service": service,
-			}).Errorf("Could not %s the service", command)
-
-			return err
-		}
-
+func systemctlRun(profile string, image string, service string, command string) error {
+	cmd := []string{"systemctl", command, "elastic-agent"}
+	err := execCommandInService(profile, image, service, cmd, false)
+	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd,
+			"error":   err,
 			"service": service,
-		}).Debug("Systemctl executed")
+		}).Errorf("Could not %s the service", command)
+
+		return err
 	}
+
+	log.WithFields(log.Fields{
+		"command": cmd,
+		"service": service,
+	}).Debug("Systemctl executed")
 	return nil
 }
