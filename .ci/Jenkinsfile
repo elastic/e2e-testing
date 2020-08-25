@@ -33,7 +33,7 @@ pipeline {
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
     string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stand-alone elastic-agent to be used for Ingest Manager tests. You can use here the tag of your PR to test your changes')
     booleanParam(name: "ELASTIC_AGENT_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the binary snapshots produced by Beats CI instead of the official releases")
-    choice(name: 'LOG_LEVEL', choices: ['INFO', 'DEBUG'], description: 'Log level to be used')
+    choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'INFO'], description: 'Log level to be used')
     choice(name: 'RETRY_TIMEOUT', choices: ['3', '5', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
     string(name: 'INGEST_MANAGER_STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for Ingest Manager tests.')
     string(name: 'METRICBEAT_STACK_VERSION', defaultValue: '7.8.0', description: 'SemVer version of the stack to be used for Metricbeat tests.')
