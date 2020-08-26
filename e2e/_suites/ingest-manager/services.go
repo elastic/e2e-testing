@@ -60,6 +60,8 @@ func GetElasticAgentInstaller(image string) ElasticAgentInstaller {
 		return newCentosInstaller("centos-systemd", "latest")
 	} else if "debian-systemd" == image {
 		return newDebianInstaller()
+	} else if "redhat-ubi" == image {
+		return newCentosInstaller("redhat-ubi", "7")
 	}
 
 	log.WithField("image", image).Fatal("Sorry, we currently do not support this installer")

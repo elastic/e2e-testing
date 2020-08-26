@@ -60,6 +60,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			Installers: map[string]ElasticAgentInstaller{
 				"centos-systemd": GetElasticAgentInstaller("centos-systemd"),
 				"debian-systemd": GetElasticAgentInstaller("debian-systemd"),
+				"redhat-ubi":     GetElasticAgentInstaller("redhat-ubi"),
 			},
 		},
 		StandAlone: &StandAloneTestSuite{},
@@ -309,7 +310,7 @@ func getContainerHostname(containerName string) (string, error) {
 		"containerName": containerName,
 	}).Debug("Retrieving container name from the Docker client")
 
-	hostname, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"hostname"})
+	hostname, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"cat", "/proc/sys/kernel/hostname"})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"containerName": containerName,

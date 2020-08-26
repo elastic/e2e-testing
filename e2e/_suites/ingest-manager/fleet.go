@@ -51,7 +51,9 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 }
 
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
-	image = image + "-systemd" // we want to consume systemd boxes
+	if image != "redhat-ubi" {
+		image = image + "-systemd" // we want to consume systemd boxes
+	}
 
 	log.WithFields(log.Fields{
 		"image": image,

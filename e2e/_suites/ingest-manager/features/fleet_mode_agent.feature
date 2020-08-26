@@ -29,9 +29,10 @@ Scenario Outline: Restarting the <os> host with persistent agent restarts backen
     And the "filebeat" process is in the "started" state on the host
     And the "metricbeat" process is in the "started" state on the host
 Examples:
-| os     |
-| centos |
-| debian |
+| os         |
+| centos     |
+| debian     |
+| redhat-ubi |
 
 @unenroll
 Scenario: Un-enrolling an agent

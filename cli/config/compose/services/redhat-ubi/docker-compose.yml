@@ -1,0 +1,10 @@
+version: '2.3'
+services:
+  redhat-ubi:
+    image: registry.redhat.io/ubi${redhat_ubiTag:-7}/ubi-init
+    container_name: ${redhat_ubiContainerName}
+    entrypoint: "/sbin/init"
+    privileged: true
+    volumes:
+      - ${redhat_ubiAgentBinarySrcPath:-.}:${redhat_ubiAgentBinaryTargetPath:-/tmp}
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro 
