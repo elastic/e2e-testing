@@ -154,19 +154,22 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 
 		if imts.StandAlone.Cleanup {
 			serviceName := "elastic-agent"
+			if !developerMode {
+				services := []string{serviceName}
 
-			services := []string{serviceName}
+				err := serviceManager.RemoveServicesFromCompose("ingest-manager", services, profileEnv)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"service": serviceName,
+					}).Error("Could not stop the service.")
+				}
 
-			err := serviceManager.RemoveServicesFromCompose("ingest-manager", services, profileEnv)
-			if err != nil {
 				log.WithFields(log.Fields{
 					"service": serviceName,
-				}).Error("Could not stop the service.")
+				}).Debug("Service removed from compose.")
+			} else {
+				log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 			}
-
-			log.WithFields(log.Fields{
-				"service": serviceName,
-			}).Debug("Service removed from compose.")
 
 			if _, err := os.Stat(imts.StandAlone.AgentConfigFilePath); err == nil {
 				os.Remove(imts.StandAlone.AgentConfigFilePath)
@@ -178,19 +181,22 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 
 		if imts.Fleet.Cleanup {
 			serviceName := imts.Fleet.Image
+			if !developerMode {
+				services := []string{serviceName}
 
-			services := []string{serviceName}
+				err := serviceManager.RemoveServicesFromCompose("ingest-manager", services, profileEnv)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"service": serviceName,
+					}).Error("Could not stop the service.")
+				}
 
-			err := serviceManager.RemoveServicesFromCompose("ingest-manager", services, profileEnv)
-			if err != nil {
 				log.WithFields(log.Fields{
 					"service": serviceName,
-				}).Error("Could not stop the service.")
+				}).Debug("Service removed from compose.")
+			} else {
+				log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 			}
-
-			log.WithFields(log.Fields{
-				"service": serviceName,
-			}).Debug("Service removed from compose.")
 
 			err = imts.Fleet.removeToken()
 			if err != nil {
