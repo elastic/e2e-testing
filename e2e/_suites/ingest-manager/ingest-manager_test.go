@@ -176,7 +176,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 				log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 			}
 
-			err = imts.Fleet.removeToken()
+			err := imts.Fleet.removeToken()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"err":     err,
