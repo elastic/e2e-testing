@@ -155,18 +155,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		if imts.StandAlone.Cleanup {
 			serviceName := "elastic-agent"
 			if !developerMode {
-				services := []string{serviceName}
-
-				err := serviceManager.RemoveServicesFromCompose("ingest-manager", services, profileEnv)
-				if err != nil {
-					log.WithFields(log.Fields{
-						"service": serviceName,
-					}).Error("Could not stop the service.")
-				}
-
-				log.WithFields(log.Fields{
-					"service": serviceName,
-				}).Debug("Service removed from compose.")
+				_ = serviceManager.RemoveServicesFromCompose("ingest-manager", []string{serviceName}, profileEnv)
 			} else {
 				log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 			}
@@ -182,18 +171,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		if imts.Fleet.Cleanup {
 			serviceName := imts.Fleet.Image
 			if !developerMode {
-				services := []string{serviceName}
-
-				err := serviceManager.RemoveServicesFromCompose("ingest-manager", services, profileEnv)
-				if err != nil {
-					log.WithFields(log.Fields{
-						"service": serviceName,
-					}).Error("Could not stop the service.")
-				}
-
-				log.WithFields(log.Fields{
-					"service": serviceName,
-				}).Debug("Service removed from compose.")
+				_ = serviceManager.RemoveServicesFromCompose("ingest-manager", []string{serviceName}, profileEnv)
 			} else {
 				log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 			}
