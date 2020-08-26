@@ -117,11 +117,6 @@ func (sats *StandAloneTestSuite) theDockerContainerIsStopped(serviceName string)
 
 	err := serviceManager.RemoveServicesFromCompose("ingest-manager", []string{serviceName}, profileEnv)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"service": serviceName,
-		}).Error("Could not stop the service.")
-
 		return err
 	}
 	sats.AgentStoppedDate = time.Now().UTC()

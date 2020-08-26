@@ -131,15 +131,6 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	}
 
 	err := serviceManager.RemoveServicesFromCompose("metricbeat", services, env)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"service": mts.ServiceName,
-		}).Error("Could not stop the service.")
-	}
-
-	log.WithFields(log.Fields{
-		"service": mts.ServiceName,
-	}).Debug("Service removed from compose.")
 
 	if mts.cleanUpTmpFiles {
 		if _, err := os.Stat(mts.configurationFile); err == nil {
