@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -26,6 +27,15 @@ import (
 // them running to speed up the development cycle.
 // It can be overriden by the DEVELOPER_MODE env var
 var developerMode = false
+
+// ElasticAgentProcessName the name of the process for the Elastic Agent
+const ElasticAgentProcessName = "elastic-agent"
+
+// ElasticAgentServiceName the name of the service for the Elastic Agent
+const ElasticAgentServiceName = "elastic-agent"
+
+// IngestManagerProfileName the name of the profile to run the runtime, backend services
+const IngestManagerProfileName = "ingest-manager"
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
@@ -67,7 +77,6 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	serviceManager := services.NewServiceManager()
 
 	s.Step(`^the "([^"]*)" process is in the "([^"]*)" state on the host$`, imts.processStateOnTheHost)
-	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, imts.processStateChangedOnTheHost)
 
 	imts.Fleet.contributeSteps(s)
 	imts.StandAlone.contributeSteps(s)
@@ -81,7 +90,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			"kibanaConfigPath": path.Join(workDir, "configurations", "kibana.config.yml"),
 		}
 
-		profile := "ingest-manager"
+		profile := IngestManagerProfileName
 		err := serviceManager.RunCompose(true, []string{profile}, profileEnv)
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -118,7 +127,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	s.AfterSuite(func() {
 		if !developerMode {
 			log.Debug("Destroying ingest-manager runtime dependencies")
-			profile := "ingest-manager"
+			profile := IngestManagerProfileName
 
 			err := serviceManager.StopCompose(true, []string{profile})
 			if err != nil {
@@ -153,9 +162,9 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		log.Debug("After Ingest Manager scenario")
 
 		if imts.StandAlone.Cleanup {
-			serviceName := "elastic-agent"
+			serviceName := ElasticAgentServiceName
 			if !developerMode {
-				_ = serviceManager.RemoveServicesFromCompose("ingest-manager", []string{serviceName}, profileEnv)
+				_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
 			} else {
 				log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 			}
@@ -171,7 +180,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		if imts.Fleet.Cleanup {
 			serviceName := imts.Fleet.Image
 			if !developerMode {
-				_ = serviceManager.RemoveServicesFromCompose("ingest-manager", []string{serviceName}, profileEnv)
+				_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
 			} else {
 				log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 			}
@@ -184,6 +193,9 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 				}).Warn("The enrollment token could not be deleted")
 			}
 		}
+
+		imts.Fleet.Image = ""
+		imts.StandAlone.Hostname = ""
 	})
 }
 
@@ -193,63 +205,38 @@ type IngestManagerTestSuite struct {
 	StandAlone *StandAloneTestSuite
 }
 
-func (imts *IngestManagerTestSuite) processStateChangedOnTheHost(process string, state string) error {
-	profile := "ingest-manager"
-	image := "centos-systemd"
-	serviceName := "centos-systemd"
+func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
+	profile := IngestManagerProfileName
+	serviceName := ElasticAgentServiceName
 
-	if state == "started" {
-		return startAgent(profile, image, serviceName)
-	} else if state != "stopped" {
-		return godog.ErrPending
+	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, imts.Fleet.Image, serviceName, 1)
+	if imts.StandAlone.Hostname != "" {
+		containerName = fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
 	}
 
-	log.WithFields(log.Fields{
-		"service": serviceName,
-		"process": process,
-	}).Debug("Stopping process on the service")
-
-	stopCmds := []string{"pkill", "-9", process}
-	if process == "elastic-agent" {
-		stopCmds = []string{"systemctl", "stop", process}
-	}
-
-	err := execCommandInService(profile, image, serviceName, stopCmds, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"action":   state,
-			"stopCmds": stopCmds,
-			"error":    err,
-			"service":  serviceName,
-			"process":  process,
-		}).Error("Could not stop process on the host")
-
-		return err
-	}
-
-	// check process was stopped
-	return imts.processStateOnTheHost(process, "stopped")
+	return checkProcessStateOnTheHost(containerName, process, state)
 }
 
-func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
-	// name of the container for the service:
-	// we are using the Docker client instead of docker-compose
-	// because it does not support returning the output of a
-	// command: it simply returns error level
-	serviceName := "ingest-manager_elastic-agent_1"
+// name of the container for the service:
+// we are using the Docker client instead of docker-compose
+// because it does not support returning the output of a
+// command: it simply returns error level
+func checkProcessStateOnTheHost(containerName string, process string, state string) error {
 	timeout := 4 * time.Minute
 
-	err := e2e.WaitForProcess(serviceName, process, state, timeout)
+	err := e2e.WaitForProcess(containerName, process, state, timeout)
 	if err != nil {
 		if state == "started" {
 			log.WithFields(log.Fields{
-				"error":   err,
-				"timeout": timeout,
+				"container ": containerName,
+				"error":      err,
+				"timeout":    timeout,
 			}).Error("The process was not found but should be present")
 		} else {
 			log.WithFields(log.Fields{
-				"error":   err,
-				"timeout": timeout,
+				"container": containerName,
+				"error":     err,
+				"timeout":   timeout,
 			}).Error("The process was found but shouldn't be present")
 		}
 
