@@ -28,6 +28,15 @@ import (
 // It can be overriden by the DEVELOPER_MODE env var
 var developerMode = false
 
+// ElasticAgentProcessName the name of the process for the Elastic Agent
+const ElasticAgentProcessName = "elastic-agent"
+
+// ElasticAgentServiceName the name of the service for the Elastic Agent
+const ElasticAgentServiceName = "elastic-agent"
+
+// IngestManagerProfileName the name of the profile to run the runtime, backend services
+const IngestManagerProfileName = "ingest-manager"
+
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
 var stackVersion = "8.0.0-SNAPSHOT"
@@ -81,7 +90,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			"kibanaConfigPath": path.Join(workDir, "configurations", "kibana.config.yml"),
 		}
 
-		profile := "ingest-manager"
+		profile := IngestManagerProfileName
 		err := serviceManager.RunCompose(true, []string{profile}, profileEnv)
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -118,7 +127,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	s.AfterSuite(func() {
 		if !developerMode {
 			log.Debug("Destroying ingest-manager runtime dependencies")
-			profile := "ingest-manager"
+			profile := IngestManagerProfileName
 
 			err := serviceManager.StopCompose(true, []string{profile})
 			if err != nil {
@@ -153,9 +162,9 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		log.Debug("After Ingest Manager scenario")
 
 		if imts.StandAlone.Cleanup {
-			serviceName := "elastic-agent"
+			serviceName := ElasticAgentServiceName
 			if !developerMode {
-				_ = serviceManager.RemoveServicesFromCompose("ingest-manager", []string{serviceName}, profileEnv)
+				_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
 			} else {
 				log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 			}
@@ -171,7 +180,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		if imts.Fleet.Cleanup {
 			serviceName := imts.Fleet.Image
 			if !developerMode {
-				_ = serviceManager.RemoveServicesFromCompose("ingest-manager", []string{serviceName}, profileEnv)
+				_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
 			} else {
 				log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 			}
@@ -197,8 +206,8 @@ type IngestManagerTestSuite struct {
 }
 
 func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
-	profile := "ingest-manager"
-	serviceName := "elastic-agent"
+	profile := IngestManagerProfileName
+	serviceName := ElasticAgentServiceName
 
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, imts.Fleet.Image, serviceName, 1)
 	if imts.StandAlone.Hostname != "" {

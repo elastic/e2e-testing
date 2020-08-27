@@ -30,6 +30,7 @@ type ElasticAgentInstaller struct {
 	InstallCmds       []string
 	name              string // the name for the binary
 	path              string // the local path where the agent for the binary is located
+	processName       string // name of the elastic-agent process
 	profile           string // parent docker-compose file
 	PostInstallFn     func() error
 	service           string // name of the service
@@ -69,7 +70,7 @@ func GetElasticAgentInstaller(image string) ElasticAgentInstaller {
 // newCentosInstaller returns an instance of the Centos installer
 func newCentosInstaller(image string, tag string) ElasticAgentInstaller {
 	service := image
-	profile := "ingest-manager"
+	profile := IngestManagerProfileName
 
 	// extract the agent in the box, as it's mounted as a volume
 	artifact := "elastic-agent"
@@ -110,6 +111,7 @@ func newCentosInstaller(image string, tag string) ElasticAgentInstaller {
 		name:              binaryName,
 		path:              binaryPath,
 		PostInstallFn:     fn,
+		processName:       ElasticAgentProcessName,
 		profile:           profile,
 		service:           service,
 		tag:               tag,
@@ -121,7 +123,7 @@ func newDebianInstaller() ElasticAgentInstaller {
 	image := "debian-systemd"
 	service := image
 	tag := "stretch"
-	profile := "ingest-manager"
+	profile := IngestManagerProfileName
 
 	// extract the agent in the box, as it's mounted as a volume
 	artifact := "elastic-agent"
@@ -157,6 +159,7 @@ func newDebianInstaller() ElasticAgentInstaller {
 		name:              binaryName,
 		path:              binaryPath,
 		PostInstallFn:     fn,
+		processName:       ElasticAgentProcessName,
 		profile:           profile,
 		service:           service,
 		tag:               tag,
@@ -164,7 +167,7 @@ func newDebianInstaller() ElasticAgentInstaller {
 }
 
 func startAgent(profile string, image string, service string) error {
-	cmd := []string{"elastic-agent", "run"}
+	cmd := []string{ElasticAgentProcessName, "run"}
 	err := execCommandInService(profile, image, service, cmd, true)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -187,7 +190,7 @@ func startAgent(profile string, image string, service string) error {
 }
 
 func systemctlRun(profile string, image string, service string, command string) error {
-	cmd := []string{"systemctl", command, "elastic-agent"}
+	cmd := []string{"systemctl", command, ElasticAgentProcessName}
 	err := execCommandInService(profile, image, service, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{

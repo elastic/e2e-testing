@@ -64,7 +64,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
 
 	profile := installer.profile // name of the runtime dependencies compose file
 
-	serviceName := "elastic-agent"                                                  // name of the service
+	serviceName := ElasticAgentServiceName                                          // name of the service
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image, serviceName, 1) // name of the container
 
 	err := deployAgentToFleet(installer, containerName)
@@ -105,7 +105,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
 }
 
 func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state string) error {
-	profile := "ingest-manager"
+	profile := IngestManagerProfileName
 	image := fts.Image
 
 	installer := fts.Installers[fts.Image]
@@ -139,7 +139,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	// we are using the Docker client instead of docker-compose
 	// because it does not support returning the output of a
 	// command: it simply returns error level
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image, "elastic-agent", 1)
+	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image, ElasticAgentServiceName, 1)
 	return checkProcessStateOnTheHost(containerName, process, "stopped")
 }
 
@@ -637,7 +637,7 @@ func enrollAgent(installer ElasticAgentInstaller, token string) error {
 	service := installer.service // name of the service
 	serviceTag := installer.tag  // tag of the service
 
-	cmd := []string{"elastic-agent", "enroll", "http://kibana:5601", token, "-f", "--insecure"}
+	cmd := []string{installer.processName, "enroll", "http://kibana:5601", token, "-f", "--insecure"}
 	err := execCommandInService(profile, image, service, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
