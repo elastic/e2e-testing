@@ -50,7 +50,7 @@ Scenario Outline: Un-enrolling the <os> agent
   Given a "<os>" agent is deployed to Fleet
   When the agent is un-enrolled
   Then the "elastic-agent" process is in the "started" state on the host
-    And the agent is listed in Fleet as "offline"
+    And the agent is listed in Fleet as "inactive"
 Examples:
 | os     |
 | centos |
