@@ -177,6 +177,12 @@ func (fts *FleetTestSuite) setup() error {
 	}
 	fts.ConfigID = defaultConfig.Path("id").Data().(string)
 
+	// install enddpoint assets on
+	err = fts.theVersionOfThePackageIsInstalled("latest", "endpoint")
+	if err != nil {
+		log.Warn(err)
+	}
+
 	return nil
 }
 
