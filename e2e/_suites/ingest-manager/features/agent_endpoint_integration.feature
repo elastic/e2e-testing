@@ -25,7 +25,7 @@ Scenario: Changing an Agent policy is reflected in the Security App
 Scenario: Un-enrolling Elastic Agent stops Elastic Endpoint
   Given an Endpoint is successfully deployed with a "centos" Agent
   When the agent is un-enrolled
-  Then the agent is not listed as online in Fleet
+  Then the agent is listed as "inactive" in Fleet
 #    And the endpoint is not listed in Security App as online
     And the "elastic-endpoint" process is in the "stopped" state on the host
 
@@ -33,6 +33,6 @@ Scenario: Un-enrolling Elastic Agent stops Elastic Endpoint
 Scenario: Removing Endpoint from Agent policy stops the connected Endpoint
   Given an Endpoint is successfully deployed with a "centos" Agent
   When the "Endpoint" integration is "removed" in the "default" policy
-  Then the agent is not listed as online in Fleet
+  Then the agent is listed as "inactive" in Fleet
 #    And the endpoint is not listed in Security App as online
     And the "elastic-endpoint" process is in the "stopped" state on the host
