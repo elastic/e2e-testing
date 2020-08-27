@@ -6,8 +6,8 @@ Feature: Agent Endpoint Integration
 Scenario: Adding the Endpoint Integration to an Agent makes the host to show in Security App
   Given a "centos" agent is deployed to Fleet
   When the "latest" version of the "Endpoint" package is installed
-    And the "Endpoint" integration is "added" in the "default" configuration
-  Then the "Endpoint" datasource is shown in the "default" configuration as added
+    And the "Endpoint" integration is "added" in the "default" policy
+  Then the "Endpoint" datasource is shown in the "default" policy as added
 #    And the host name is shown in the Security App
     
 @endpoint-policy-check
@@ -29,10 +29,10 @@ Scenario: Un-enrolling Elastic Agent stops Elastic Endpoint
 #    And the endpoint is not listed in Security App as online
     And the "elastic-endpoint" process is in the "stopped" state on the host
 
-@deploy-endpoint-then-remove-it-from-configuration
-Scenario: Removing Endpoint from Agent configuration stops the connected Endpoint
+@deploy-endpoint-then-remove-it-from-policy
+Scenario: Removing Endpoint from Agent policy stops the connected Endpoint
   Given an Endpoint is successfully deployed with a "centos" Agent
-  When the "Endpoint" integration is "removed" in the "default" configuration
+  When the "Endpoint" integration is "removed" in the "default" policy
   Then the agent is not listed as online in Fleet
 #    And the endpoint is not listed in Security App as online
     And the "elastic-endpoint" process is in the "stopped" state on the host

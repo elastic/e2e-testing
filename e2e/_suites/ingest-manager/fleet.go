@@ -57,8 +57,8 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 
 	// endpoint steps
 	s.Step(`^the "([^"]*)" version of the "([^"]*)" package is installed$`, fts.theVersionOfThePackageIsInstalled)
-	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the "([^"]*)" configuration$`, fts.theIntegrationIsOperatedInThePolicy)
-	s.Step(`^the "([^"]*)" datasource is shown in the "([^"]*)" configuration as added$`, fts.thePolicyShowsTheDatasourceAdded)
+	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the "([^"]*)" policy$`, fts.theIntegrationIsOperatedInThePolicy)
+	s.Step(`^the "([^"]*)" datasource is shown in the "([^"]*)" policy as added$`, fts.thePolicyShowsTheDatasourceAdded)
 	s.Step(`^the host name is shown in the Security App$`, fts.theHostNameIsShownInTheSecurityApp)
 	s.Step(`^an Endpoint is successfully deployed with a "([^"]*)" Agent$`, fts.anEndpointIsSuccessfullyDeployedWithAgent)
 	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
@@ -419,9 +419,9 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 
 func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(configurationName string, packageName string) error {
 	log.WithFields(log.Fields{
-		"configuration": configurationName,
-		"package":       packageName,
-	}).Debug("Checking if the configuration shows the package added")
+		"policy":  configurationName,
+		"package": packageName,
+	}).Debug("Checking if the policy shows the package added")
 
 	maxTimeout := time.Minute
 	retryCount := 1
@@ -436,7 +436,7 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(configurationName st
 				"packageConfigID": fts.Integration.packageConfigID,
 				"policyID":        fts.PolicyID,
 				"retry":           retryCount,
-			}).Warn("An error retrieving the configuration happened")
+			}).Warn("An error retrieving the policy happened")
 
 			retryCount++
 
@@ -460,7 +460,7 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(configurationName st
 			"packageConfigID": fts.Integration.packageConfigID,
 			"policyID":        fts.PolicyID,
 			"retry":           retryCount,
-		}).Warn("The integration was not found in the configuration")
+		}).Warn("The integration was not found in the policy")
 
 		retryCount++
 
@@ -477,10 +477,10 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(configurationName st
 
 func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName string, action string, configurationName string) error {
 	log.WithFields(log.Fields{
-		"action":        action,
-		"configuration": configurationName,
-		"package":       packageName,
-	}).Debug("Doing an operation for a package on a configuration")
+		"action":  action,
+		"policy":  configurationName,
+		"package": packageName,
+	}).Debug("Doing an operation for a package on a policy")
 
 	if strings.ToLower(action) == actionADDED {
 		integrationPolicyID, err := addIntegrationToPolicy(fts.Integration, fts.PolicyID)
@@ -497,7 +497,7 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 				"err":             err,
 				"packageConfigID": fts.Integration.packageConfigID,
 				"policyID":        fts.PolicyID,
-			}).Error("The integration could not be deleted from the configuration")
+			}).Error("The integration could not be deleted from the policy")
 			return err
 		}
 		return nil
@@ -822,7 +822,7 @@ func enrollAgent(installer ElasticAgentInstaller, token string) error {
 	return nil
 }
 
-// getAgentDefaultPolicy sends a GET request to Fleet for the existing default configuration
+// getAgentDefaultPolicy sends a GET request to Fleet for the existing default policy
 func getAgentDefaultPolicy() (*gabs.Container, error) {
 	r := createDefaultHTTPRequest(ingestManagerAgentPoliciesURL)
 	body, err := curl.Get(r)
