@@ -49,8 +49,8 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 
 	serviceManager := services.NewServiceManager()
 
-	profile := "ingest-manager"
-	serviceName := "elastic-agent"
+	profile := IngestManagerProfileName
+	serviceName := ElasticAgentServiceName
 	containerName := fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
 
 	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/master/x-pack/elastic-agent/elastic-agent.docker.yml"
@@ -115,13 +115,8 @@ func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 func (sats *StandAloneTestSuite) theDockerContainerIsStopped(serviceName string) error {
 	serviceManager := services.NewServiceManager()
 
-	err := serviceManager.RemoveServicesFromCompose("ingest-manager", []string{serviceName}, profileEnv)
+	err := serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"service": serviceName,
-		}).Error("Could not stop the service.")
-
 		return err
 	}
 	sats.AgentStoppedDate = time.Now().UTC()
