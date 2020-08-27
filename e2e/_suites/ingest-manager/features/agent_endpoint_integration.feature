@@ -8,7 +8,7 @@ Scenario: Adding the Endpoint Integration to an Agent makes the host to show in 
   When the "latest" version of the "Endpoint" package is installed
     And the "Endpoint" integration is "added" in the "default" configuration
   Then the "Endpoint" datasource is shown in the "default" configuration as added
-#    And the host name is shown in the Security App
+    And the host name is shown in the Security App as "online"
     
 @endpoint-policy-check
 Scenario: Deploying an Endpoint makes policies to appear in the Security App

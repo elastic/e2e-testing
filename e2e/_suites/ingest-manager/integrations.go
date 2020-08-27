@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const endpointMetadataURL = kibanaBaseURL + "/api/endpoint/metadata"
 const ingestManagerIntegrationURL = kibanaBaseURL + "/api/ingest_manager/epm/packages/%s-%s"
 const ingestManagerIntegrationDeleteURL = kibanaBaseURL + "/api/ingest_manager/package_configs/delete"
 const ingestManagerIntegrationsURL = kibanaBaseURL + "/api/ingest_manager/epm/packages?experimental=true&category="
@@ -203,4 +204,48 @@ func installIntegrationAssets(integration string, version string) (IntegrationPa
 	}
 
 	return integrationPackage, nil
+}
+
+// isAgentListedInSecurityAppWithStatus sends a POST request to Endpoint to check if a hostname
+// in the desired status is listed in the Security App. For that, we will inspect the metadata,
+// and will iterate through the hosts, until we get the proper hostname. Then we will checkk if
+// the status matches the desired status, returning an error if the agent is not present in the
+// Security App
+func isAgentListedInSecurityAppWithStatus(hostName string, desiredStatus string) (bool, error) {
+	postReq := createDefaultHTTPRequest(endpointMetadataURL)
+	body, err := curl.Post(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   postReq.URL,
+		}).Error("Could not get endpoint metadata")
+		return false, err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return false, err
+	}
+
+	hosts := jsonParsed.Path("hosts").Children()
+	for _, host := range hosts {
+		metadataHostname := host.Path("metadata.host.hostname").Data().(string)
+		if metadataHostname == hostName {
+			hostStatus := host.Path("host_status").Data().(string)
+			log.WithFields(log.Fields{
+				"desiredStatus": desiredStatus,
+				"hostname":      hostName,
+				"status":        hostStatus,
+			}).Debug("Hostname for the agent listed in the Security App")
+
+			return (hostStatus == desiredStatus), nil
+		}
+	}
+
+	return false, fmt.Errorf("The host %s is not listed in the Security App", hostName)
 }
