@@ -45,11 +45,10 @@ type FleetTestSuite struct {
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
-	s.Step(`^the agent is listed in Fleet as online$`, fts.theAgentIsListedInFleetAsOnline)
+	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
 	s.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)
-	s.Step(`^the agent is not listed as online in Fleet$`, fts.theAgentIsNotListedAsOnlineInFleet)
 	s.Step(`^the agent is re-enrolled on the host$`, fts.theAgentIsReenrolledOnTheHost)
 	s.Step(`^the enrollment token is revoked$`, fts.theEnrollmentTokenIsRevoked)
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
@@ -181,8 +180,8 @@ func (fts *FleetTestSuite) setup() error {
 	return nil
 }
 
-func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
-	log.Debug("Checking agent is listed in Fleet as online")
+func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
+	log.Debugf("Checking if agent is listed in Fleet as %s", desiredStatus)
 
 	maxTimeout := 2 * time.Minute
 	retryCount := 1
@@ -190,17 +189,18 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	agentOnlineFn := func() error {
-		status, err := isAgentOnline(fts.Hostname)
-		if err != nil || !status {
+		isAgentInStatus, err := isAgentInStatus(fts.Hostname, desiredStatus)
+		if err != nil || !isAgentInStatus {
 			if err == nil {
-				err = fmt.Errorf("The Agent is not online yet")
+				err = fmt.Errorf("The Agent is not in the %s status yet", desiredStatus)
 			}
 
 			log.WithFields(log.Fields{
-				"active":      status,
-				"elapsedTime": exp.GetElapsedTime(),
-				"hostname":    fts.Hostname,
-				"retry":       retryCount,
+				"isAgentInStatus": isAgentInStatus,
+				"elapsedTime":     exp.GetElapsedTime(),
+				"hostname":        fts.Hostname,
+				"retry":           retryCount,
+				"status":          desiredStatus,
 			}).Warn(err.Error())
 
 			retryCount++
@@ -209,11 +209,12 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetAsOnline() error {
 		}
 
 		log.WithFields(log.Fields{
-			"active":      status,
-			"elapsedTime": exp.GetElapsedTime(),
-			"hostname":    fts.Hostname,
-			"retries":     retryCount,
-		}).Info("The Agent is online")
+			"isAgentInStatus": isAgentInStatus,
+			"elapsedTime":     exp.GetElapsedTime(),
+			"hostname":        fts.Hostname,
+			"retries":         retryCount,
+			"status":          desiredStatus,
+		}).Info("The Agent is in the desired status")
 		return nil
 	}
 
@@ -337,50 +338,6 @@ func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
 	log.WithFields(log.Fields{
 		"agentID": fts.EnrolledAgentID,
 	}).Debug("Fleet agent was unenrolled")
-
-	return nil
-}
-
-func (fts *FleetTestSuite) theAgentIsNotListedAsOnlineInFleet() error {
-	log.Debug("Checking if the agent is not listed as online in Fleet")
-
-	maxTimeout := 2 * time.Minute
-	retryCount := 1
-
-	exp := e2e.GetExponentialBackOff(maxTimeout)
-
-	agentOnlineFn := func() error {
-		status, err := isAgentOnline(fts.Hostname)
-		if err != nil || status {
-			if err == nil {
-				err = fmt.Errorf("The Agent is still online")
-			}
-
-			log.WithFields(log.Fields{
-				"active":      status,
-				"elapsedTime": exp.GetElapsedTime(),
-				"hostname":    fts.Hostname,
-				"retry":       retryCount,
-			}).Warn(err.Error())
-
-			retryCount++
-
-			return err
-		}
-
-		log.WithFields(log.Fields{
-			"active":      status,
-			"elapsedTime": exp.GetElapsedTime(),
-			"hostname":    fts.Hostname,
-			"retries":     retryCount,
-		}).Info("The Agent is offline")
-		return nil
-	}
-
-	err := backoff.Retry(agentOnlineFn, exp)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
@@ -944,9 +901,9 @@ func getOnlineAgents() (*gabs.Container, error) {
 	return jsonResponse, nil
 }
 
-// isAgentOnline extracts the status for an agent, identified by its hotname
+// isAgentInStatus extracts the status for an agent, identified by its hostname
 // It will wuery Fleet's agents endpoint
-func isAgentOnline(hostname string) (bool, error) {
+func isAgentInStatus(hostname string, desiredStatus string) (bool, error) {
 	jsonResponse, err := getOnlineAgents()
 	if err != nil {
 		return false, err
@@ -964,8 +921,8 @@ func isAgentOnline(hostname string) (bool, error) {
 		}).Debug("Agent status retrieved")
 
 		if agentHostname == hostname {
-			isOnline := (strings.ToLower(agentStatus) == "online")
-			return isOnline, nil
+			isAgentInStatus := (strings.ToLower(agentStatus) == desiredStatus)
+			return isAgentInStatus, nil
 		}
 	}
 
