@@ -58,7 +58,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the "([^"]*)" version of the "([^"]*)" package is installed$`, fts.theVersionOfThePackageIsInstalled)
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the "([^"]*)" policy$`, fts.theIntegrationIsOperatedInThePolicy)
 	s.Step(`^the "([^"]*)" datasource is shown in the "([^"]*)" policy as added$`, fts.thePolicyShowsTheDatasourceAdded)
-	s.Step(`^the host name is shown in the Security App$`, fts.theHostNameIsShownInTheSecurityApp)
+	s.Step(`^the host name is shown in the Security App as "([^"]*)"$`, fts.theHostNameIsShownInTheSecurityApp)
 	s.Step(`^an Endpoint is successfully deployed with a "([^"]*)" Agent$`, fts.anEndpointIsSuccessfullyDeployedWithAgent)
 	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
 	s.Step(`^the policy is updated to have malware in detect mode$`, fts.thePolicyIsUpdatedToHaveMalwareInDetectMode)
@@ -464,10 +464,49 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 	return godog.ErrPending
 }
 
-func (fts *FleetTestSuite) theHostNameIsShownInTheSecurityApp() error {
+func (fts *FleetTestSuite) theHostNameIsShownInTheSecurityApp(status string) error {
 	log.Debug("Checking if the hostname is shown in the Security App")
 
-	return godog.ErrPending
+	maxTimeout := 2 * time.Minute
+	retryCount := 1
+
+	exp := e2e.GetExponentialBackOff(maxTimeout)
+
+	agentListedInSecurityFn := func() error {
+		matches, err := isAgentListedInSecurityAppWithStatus(fts.Hostname, status)
+		if err != nil || !matches {
+			log.WithFields(log.Fields{
+				"agentID":       fts.EnrolledAgentID,
+				"elapsedTime":   exp.GetElapsedTime(),
+				"desiredStatus": status,
+				"err":           err,
+				"hostname":      fts.Hostname,
+				"matches":       matches,
+				"retry":         retryCount,
+			}).Warn("The agent is not listed in the Security App in the desired status yet")
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"agentID":       fts.EnrolledAgentID,
+			"elapsedTime":   exp.GetElapsedTime(),
+			"desiredStatus": status,
+			"hostname":      fts.Hostname,
+			"matches":       matches,
+			"retries":       retryCount,
+		}).Info("The Agent is listed in the Security App in the desired status")
+		return nil
+	}
+
+	err := backoff.Retry(agentListedInSecurityFn, exp)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent(image string) error {
