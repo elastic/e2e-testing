@@ -92,12 +92,7 @@ func newCentosInstaller(image string, tag string) ElasticAgentInstaller {
 	}
 
 	fn := func() error {
-		return startAgent(profile, image, service)
-	}
-	if image == "centos-systemd" {
-		fn = func() error {
-			return systemctlRun(profile, image, service, "enable")
-		}
+		return systemctlRun(profile, image, service, "enable")
 	}
 
 	return ElasticAgentInstaller{
@@ -164,29 +159,6 @@ func newDebianInstaller() ElasticAgentInstaller {
 		service:           service,
 		tag:               tag,
 	}
-}
-
-func startAgent(profile string, image string, service string) error {
-	cmd := []string{ElasticAgentProcessName, "run"}
-	err := execCommandInService(profile, image, service, cmd, true)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"image":   image,
-			"service": service,
-		}).Error("Could not run the agent")
-
-		return err
-	}
-
-	log.WithFields(log.Fields{
-		"command": cmd,
-		"image":   image,
-		"service": service,
-	}).Debug("Agent run")
-
-	return nil
 }
 
 func systemctlRun(profile string, image string, service string, command string) error {
