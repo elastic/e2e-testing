@@ -60,7 +60,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the "([^"]*)" configuration$`, fts.theIntegrationIsOperatedInTheConfiguration)
 	s.Step(`^the "([^"]*)" datasource is shown in the "([^"]*)" configuration as added$`, fts.theConfigurationShowsTheDatasourceAdded)
 	s.Step(`^the host name is shown in the Security App$`, fts.theHostNameIsShownInTheSecurityApp)
-	s.Step(`^an Endpoint is successfully deployed with Agent$`, fts.anEndpointIsSuccessfullyDeployedWithAgent)
+	s.Step(`^an Endpoint is successfully deployed with a "([^"]*)" Agent$`, fts.anEndpointIsSuccessfullyDeployedWithAgent)
 	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
 	s.Step(`^the policy is updated to have malware in detect mode$`, fts.thePolicyIsUpdatedToHaveMalwareInDetectMode)
 	s.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
@@ -512,8 +512,8 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheSecurityApp() error {
 	return godog.ErrPending
 }
 
-func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent() error {
-	err := fts.anAgentIsDeployedToFleet("centos")
+func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent(image string) error {
+	err := fts.anAgentIsDeployedToFleet(image)
 	if err != nil {
 		return err
 	}
