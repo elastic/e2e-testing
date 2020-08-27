@@ -63,7 +63,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
 	s.Step(`^the policy is updated to have malware in detect mode$`, fts.thePolicyIsUpdatedToHaveMalwareInDetectMode)
 	s.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
-	s.Step(`^the endpoint is not listed in Security App as online$`, fts.theEndpointIsNotListedInSecurityAppAsOnline)
+	s.Step(`^the endpoint is listed in Security App as "([^"]*)"$`, fts.theEndpointIsListedInSecurityAppAs)
 }
 
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
@@ -540,7 +540,7 @@ func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error
 	return godog.ErrPending
 }
 
-func (fts *FleetTestSuite) theEndpointIsNotListedInSecurityAppAsOnline() error {
+func (fts *FleetTestSuite) theEndpointIsListedInSecurityAppAs(status string) error {
 	return godog.ErrPending
 }
 
