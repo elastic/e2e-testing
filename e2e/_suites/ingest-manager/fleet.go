@@ -515,11 +515,6 @@ func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent(image strin
 		return err
 	}
 
-	err = fts.theVersionOfThePackageIsInstalled("latest", "endpoint")
-	if err != nil {
-		return err
-	}
-
 	err = fts.theIntegrationIsOperatedInTheConfiguration("enpdoint", actionADDED, "default")
 	if err != nil {
 		return err
