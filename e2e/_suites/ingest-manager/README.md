@@ -74,7 +74,7 @@ This is an example of the optional configuration:
    If you want to run the tests in Developer mode, which means reusing bakend services between test runs, please set this environment variable first:
 
    ```shell
-   # It won't tear down the backend services (ES, Kibana, Package Registry) after a test suite. 
+   # It won't tear down the backend services (ES, Kibana, Package Registry) or agent services after a test suite. 
    export DEVELOPER_MODE=true
    ```
 

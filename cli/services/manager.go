@@ -78,12 +78,16 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(profile string, compos
 		err := executeCompose(sm, true, newComposeNames, command, persistedEnv)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"command":  command,
-				"services": composeNames,
-				"profile":  profile,
-			}).Error("Could not remove services")
+				"command": command,
+				"service": composeName,
+				"profile": profile,
+			}).Error("Could not remove service from compose")
 			return err
 		}
+		log.WithFields(log.Fields{
+			"profile": profile,
+			"service": composeName,
+		}).Debug("Service removed from compose")
 	}
 
 	return nil
