@@ -12,7 +12,7 @@ Scenario: Adding the Endpoint Integration to an Agent makes the host to show in 
     
 @endpoint-policy-check
 Scenario: Deploying an Endpoint makes policies to appear in the Security App
-  Given an Endpoint is successfully deployed with a "centos" Agent
+  When an Endpoint is successfully deployed with a "centos" Agent
   Then the policy response will be shown in the Security App
 
 @set-policy-and-check-changes
