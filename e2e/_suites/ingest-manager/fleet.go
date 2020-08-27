@@ -189,13 +189,14 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	agentOnlineFn := func() error {
-		isAgentInStatus, err := isAgentInStatus(fts.Hostname, desiredStatus)
+		isAgentInStatus, err := isAgentInStatus(fts.EnrolledAgentID, desiredStatus)
 		if err != nil || !isAgentInStatus {
 			if err == nil {
 				err = fmt.Errorf("The Agent is not in the %s status yet", desiredStatus)
 			}
 
 			log.WithFields(log.Fields{
+				"agentID":         fts.EnrolledAgentID,
 				"isAgentInStatus": isAgentInStatus,
 				"elapsedTime":     exp.GetElapsedTime(),
 				"hostname":        fts.Hostname,
@@ -902,29 +903,24 @@ func getOnlineAgents() (*gabs.Container, error) {
 }
 
 // isAgentInStatus extracts the status for an agent, identified by its hostname
-// It will wuery Fleet's agents endpoint
-func isAgentInStatus(hostname string, desiredStatus string) (bool, error) {
-	jsonResponse, err := getOnlineAgents()
+// It will query Fleet's agents endpoint
+func isAgentInStatus(agentID string, desiredStatus string) (bool, error) {
+	r := createDefaultHTTPRequest(fleetAgentsURL + "/" + agentID)
+	body, err := curl.Get(r)
 	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   r.GetURL(),
+		}).Error("Could not get agent in Fleet")
 		return false, err
 	}
 
-	agents := jsonResponse.Path("list")
+	jsonResponse, err := gabs.ParseJSON([]byte(body))
 
-	for _, agent := range agents.Children() {
-		agentStatus := agent.Path("status").Data().(string)
-		agentHostname := agent.Path("local_metadata.host.hostname").Data().(string)
+	agentStatus := jsonResponse.Path("item.status").Data().(string)
 
-		log.WithFields(log.Fields{
-			"status":   agentStatus,
-			"hostname": agentHostname,
-		}).Debug("Agent status retrieved")
+	isAgentInStatus := (strings.ToLower(agentStatus) == desiredStatus)
 
-		if agentHostname == hostname {
-			isAgentInStatus := (strings.ToLower(agentStatus) == desiredStatus)
-			return isAgentInStatus, nil
-		}
-	}
-
-	return false, fmt.Errorf("The agent '" + hostname + "' was not found in Fleet")
+	return isAgentInStatus, nil
 }
