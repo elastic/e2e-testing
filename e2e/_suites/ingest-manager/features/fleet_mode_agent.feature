@@ -3,7 +3,7 @@ Feature: Fleet Mode Agent
   Scenarios for the Agent in Fleet mode connecting to Ingest Manager application.
 
 @enroll
-Scenario: Deploying the <os> agent
+Scenario Outline: Deploying the <os> agent
   When a "<os>" agent is deployed to Fleet
   Then the agent is listed in Fleet as online
     And system package dashboards are listed in Fleet
@@ -13,7 +13,7 @@ Examples:
 | debian |
 
 @start-agent
-Scenario: Starting the <os> agent starts backend processes
+Scenario Outline: Starting the <os> agent starts backend processes
   When a "<os>" agent is deployed to Fleet
   Then the "filebeat" process is in the "started" state on the host
     And the "metricbeat" process is in the "started" state on the host
@@ -23,7 +23,7 @@ Examples:
 | debian |
 
 @stop-agent
-Scenario: Stopping the <os> agent stops backend processes
+Scenario Outline: Stopping the <os> agent stops backend processes
   Given a "<os>" agent is deployed to Fleet
   When the "elastic-agent" process is "stopped" on the host
   Then the "filebeat" process is in the "stopped" state on the host
@@ -46,7 +46,7 @@ Examples:
 | debian |
 
 @unenroll
-Scenario: Un-enrolling the <os> agent
+Scenario Outline: Un-enrolling the <os> agent
   Given a "<os>" agent is deployed to Fleet
   When the agent is un-enrolled
   Then the "elastic-agent" process is in the "started" state on the host
@@ -57,7 +57,7 @@ Examples:
 | debian |
 
 @reenroll
-Scenario: Re-enrolling the <os> agent
+Scenario Outline: Re-enrolling the <os> agent
   Given a "<os>" agent is deployed to Fleet
     And the agent is un-enrolled
     And the "elastic-agent" process is "stopped" on the host
@@ -70,7 +70,7 @@ Examples:
 | debian |
 
 @revoke-token
-Scenario: Revoking the enrollment token for the <os> agent
+Scenario Outline: Revoking the enrollment token for the <os> agent
   Given a "<os>" agent is deployed to Fleet
   When the enrollment token is revoked
   Then an attempt to enroll a new agent fails
