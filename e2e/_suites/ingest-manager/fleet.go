@@ -54,7 +54,6 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 
 	// endpoint steps
-	s.Step(`^the "([^"]*)" version of the "([^"]*)" package is installed$`, fts.theVersionOfThePackageIsInstalled)
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the "([^"]*)" configuration$`, fts.theIntegrationIsOperatedInTheConfiguration)
 	s.Step(`^the "([^"]*)" datasource is shown in the "([^"]*)" configuration as added$`, fts.theConfigurationShowsTheDatasourceAdded)
 	s.Step(`^the host name is shown in the Administration view in the Security App as "([^"]*)"$`, fts.theHostNameIsShownInTheAdminViewInTheSecurityApp)
@@ -172,12 +171,6 @@ func (fts *FleetTestSuite) setup() error {
 		return err
 	}
 	fts.ConfigID = defaultConfig.Path("id").Data().(string)
-
-	// install enddpoint assets on
-	err = fts.theVersionOfThePackageIsInstalled("latest", "endpoint")
-	if err != nil {
-		log.Warn(err)
-	}
 
 	return nil
 }
@@ -558,6 +551,7 @@ func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error
 	return godog.ErrPending
 }
 
+// theVersionOfThePackageIsInstalled installs a package in a version
 func (fts *FleetTestSuite) theVersionOfThePackageIsInstalled(version string, packageName string) error {
 	log.WithFields(log.Fields{
 		"package": packageName,
