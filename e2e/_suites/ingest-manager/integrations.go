@@ -41,7 +41,8 @@ func addIntegrationToPolicy(integrationPackage IntegrationPackage, policyID stri
 			"version":"` + integrationPackage.version + `"
 		}
 	}`
-	postReq.Payload = []byte(data)
+	postReq.Payload = data
+
 	body, err := curl.Post(postReq)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -79,7 +80,8 @@ func deleteIntegrationFromPolicy(integrationPackage IntegrationPackage, policyID
 	postReq := createDefaultHTTPRequest(ingestManagerIntegrationDeleteURL)
 
 	data := `{"packagePolicyIds":["` + integrationPackage.packageConfigID + `"]}`
-	postReq.Payload = []byte(data)
+	postReq.Payload = data
+
 	body, err := curl.Post(postReq)
 	if err != nil {
 		log.WithFields(log.Fields{

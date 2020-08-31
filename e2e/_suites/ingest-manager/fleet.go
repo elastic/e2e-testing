@@ -5,7 +5,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -693,22 +692,10 @@ func checkFleetConfiguration() error {
 // createFleetConfiguration sends a POST request to Fleet forcing the
 // recreation of the configuration
 func createFleetConfiguration() error {
-	type payload struct {
-		ForceRecreate bool `json:"forceRecreate"`
-	}
-
-	data := payload{
-		ForceRecreate: true,
-	}
-	payloadBytes, err := json.Marshal(data)
-	if err != nil {
-		log.Error("Could not serialise payload")
-		return err
-	}
-
 	postReq := createDefaultHTTPRequest(fleetSetupURL)
-
-	postReq.Payload = payloadBytes
+	postReq.Payload = `{
+		"forceRecreate": true
+	}`
 
 	body, err := curl.Post(postReq)
 	if err != nil {
@@ -743,24 +730,11 @@ func createDefaultHTTPRequest(url string) curl.HTTPRequest {
 
 // createFleetToken sends a POST request to Fleet creating a new token with a name
 func createFleetToken(name string, policyID string) (*gabs.Container, error) {
-	type payload struct {
-		PolicyID string `json:"policy_id"`
-		Name     string `json:"name"`
-	}
-
-	data := payload{
-		PolicyID: policyID,
-		Name:     name,
-	}
-	payloadBytes, err := json.Marshal(data)
-	if err != nil {
-		log.Error("Could not serialise payload")
-		return nil, err
-	}
-
 	postReq := createDefaultHTTPRequest(fleetEnrollmentTokenURL)
-
-	postReq.Payload = payloadBytes
+	postReq.Payload = `{
+		"policy_id": "` + policyID + `",
+		"name": "` + name + `"
+	}`
 
 	body, err := curl.Post(postReq)
 	if err != nil {
@@ -1027,19 +1001,9 @@ func unenrollAgent(agentID string, force bool) error {
 	postReq := createDefaultHTTPRequest(unEnrollURL)
 
 	if force {
-		type payload struct {
-			Force bool `json:"force"`
-		}
-
-		data := payload{
-			Force: true,
-		}
-		payloadBytes, err := json.Marshal(data)
-		if err != nil {
-			log.Error("Could not serialise payload")
-			return err
-		}
-		postReq.Payload = payloadBytes
+		postReq.Payload = `{
+			"force": true
+		}`
 	}
 
 	body, err := curl.Post(postReq)
