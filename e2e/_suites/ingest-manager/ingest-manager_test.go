@@ -178,7 +178,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		}
 
 		if imts.Fleet.Cleanup {
-			err := imts.Fleet.unenrollHostname()
+			err := imts.Fleet.unenrollHostname(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"err":      err,

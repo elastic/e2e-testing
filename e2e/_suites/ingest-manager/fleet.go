@@ -318,7 +318,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 }
 
 func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
-	return fts.unenrollHostname()
+	return fts.unenrollHostname(false)
 }
 
 func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
@@ -625,7 +625,7 @@ func (fts *FleetTestSuite) removeToken() error {
 }
 
 // unenrollHostname deletes the statuses for an existing agent, filtering by hostname
-func (fts *FleetTestSuite) unenrollHostname() error {
+func (fts *FleetTestSuite) unenrollHostname(force bool) error {
 	log.Debugf("Un-enrolling all agentIDs for %s", fts.Hostname)
 
 	jsonParsed, err := getOnlineAgents()
@@ -645,7 +645,7 @@ func (fts *FleetTestSuite) unenrollHostname() error {
 				"agentID":  agentID,
 			}).Debug("Un-enrolling agent in Fleet")
 
-			err := unenrollAgent(agentID)
+			err := unenrollAgent(agentID, force)
 			if err != nil {
 				return err
 			}
@@ -1022,24 +1022,25 @@ func isAgentInStatus(agentIDs []string, desiredStatus string) (bool, error) {
 	return false, fmt.Errorf("There are no agentIDs in the %s status", desiredStatus)
 }
 
-func unenrollAgent(agentID string) error {
-	type payload struct {
-		Force bool `json:"force"`
-	}
-
-	data := payload{
-		Force: true,
-	}
-	payloadBytes, err := json.Marshal(data)
-	if err != nil {
-		log.Error("Could not serialise payload")
-		return err
-	}
-
+func unenrollAgent(agentID string, force bool) error {
 	unEnrollURL := fmt.Sprintf(fleetAgentsUnEnrollURL, agentID)
 	postReq := createDefaultHTTPRequest(unEnrollURL)
 
-	postReq.Payload = payloadBytes
+	if force {
+		type payload struct {
+			Force bool `json:"force"`
+		}
+
+		data := payload{
+			Force: true,
+		}
+		payloadBytes, err := json.Marshal(data)
+		if err != nil {
+			log.Error("Could not serialise payload")
+			return err
+		}
+		postReq.Payload = payloadBytes
+	}
 
 	body, err := curl.Post(postReq)
 	if err != nil {
