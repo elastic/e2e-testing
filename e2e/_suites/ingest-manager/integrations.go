@@ -41,7 +41,8 @@ func addIntegrationToConfiguration(integrationPackage IntegrationPackage, config
 			"version":"` + integrationPackage.version + `"
 		}
 	}`
-	postReq.Payload = []byte(data)
+	postReq.Payload = data
+
 	body, err := curl.Post(postReq)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -79,7 +80,8 @@ func deleteIntegrationFromConfiguration(integrationPackage IntegrationPackage, c
 	postReq := createDefaultHTTPRequest(ingestManagerIntegrationDeleteURL)
 
 	data := `{"packageConfigIds":["` + integrationPackage.packageConfigID + `"]}`
-	postReq.Payload = []byte(data)
+	postReq.Payload = data
+
 	body, err := curl.Post(postReq)
 	if err != nil {
 		log.WithFields(log.Fields{
