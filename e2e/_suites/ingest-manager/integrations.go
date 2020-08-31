@@ -206,6 +206,45 @@ func installIntegrationAssets(integration string, version string) (IntegrationPa
 	return integrationPackage, nil
 }
 
+// isAgentListedInSecurityApp sends a POST request to Endpoint to check if a hostname
+// is listed in the Security App. For that, we will inspect the metadata, and will iterate
+// through the hosts, until we get the proper hostname.
+func isAgentListedInSecurityApp(hostName string) (*gabs.Container, error) {
+	postReq := createDefaultHTTPRequest(endpointMetadataURL)
+	body, err := curl.Post(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   postReq.URL,
+		}).Error("Could not get endpoint metadata")
+		return nil, err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return nil, err
+	}
+
+	hosts := jsonParsed.Path("hosts").Children()
+	for _, host := range hosts {
+		metadataHostname := host.Path("metadata.host.hostname").Data().(string)
+		if metadataHostname == hostName {
+			log.WithFields(log.Fields{
+				"hostname": hostName,
+			}).Debug("Hostname for the agent listed in the Security App")
+
+			return host, nil
+		}
+	}
+
+	return nil, nil
+}
+
 // isAgentListedInSecurityAppWithStatus sends a POST request to Endpoint to check if a hostname
 // in the desired status is listed in the Security App. For that, we will inspect the metadata,
 // and will iterate through the hosts, until we get the proper hostname. Then we will checkk if
@@ -247,5 +286,5 @@ func isAgentListedInSecurityAppWithStatus(hostName string, desiredStatus string)
 		}
 	}
 
-	return false, fmt.Errorf("The host %s is not listed in the Security App", hostName)
+	return false, fmt.Errorf("The host %s is not listed in the Security App. %v", hostName, hosts)
 }
