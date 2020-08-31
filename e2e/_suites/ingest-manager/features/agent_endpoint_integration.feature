@@ -5,6 +5,7 @@ Feature: Agent Endpoint Integration
 @deploy-endpoint-with-agent
 Scenario: Adding the Endpoint Integration to an Agent makes the host to show in Security App
   Given a "centos" agent is deployed to Fleet
+    And the agent is listed in Fleet as "online"
   When the "Endpoint" integration is "added" in the "default" policy
   Then the "Endpoint" datasource is shown in the "default" policy as added
     And the host name is shown in the Security App as "online"
