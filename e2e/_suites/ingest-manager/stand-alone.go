@@ -45,7 +45,7 @@ func (sats *StandAloneTestSuite) contributeSteps(s *godog.Suite) {
 }
 
 func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
-	log.Debug("Deploying an agent to Fleet")
+	log.Trace("Deploying an agent to Fleet")
 
 	serviceManager := services.NewServiceManager()
 
@@ -107,7 +107,7 @@ func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 		return err
 	}
 
-	log.Debugf("Search result: %v", result)
+	log.Tracef("Search result: %v", result)
 
 	return e2e.AssertHitsArePresent(result)
 }

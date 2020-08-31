@@ -163,7 +163,7 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 	s.Step(`^metricbeat is installed using "([^"]*)" configuration$`, testSuite.installedUsingConfiguration)
 
 	s.BeforeSuite(func() {
-		log.Debug("Before Metricbeat Suite...")
+		log.Trace("Before Metricbeat Suite...")
 		serviceManager := services.NewServiceManager()
 
 		env := map[string]string{
@@ -187,7 +187,7 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 		}
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
-		log.Debug("Before scenario...")
+		log.Trace("Before scenario...")
 	})
 	s.AfterSuite(func() {
 		if !developerMode {
@@ -201,7 +201,7 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 		}
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {
-		log.Debug("After scenario...")
+		log.Trace("After scenario...")
 		err := testSuite.CleanUp()
 		if err != nil {
 			log.Errorf("CleanUp failed: %v", err)

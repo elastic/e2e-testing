@@ -17,7 +17,7 @@ import (
 // stateRun represents a Run
 type stateRun struct {
 	ID       string            // ID of the run
-	Profile    stateService      // profile of the run (Optional)
+	Profile  stateService      // profile of the run (Optional)
 	Env      map[string]string // environment for the run
 	Services []stateService    // services in the run
 }
@@ -64,7 +64,7 @@ func Destroy(id string, workdir string) {
 
 	log.WithFields(log.Fields{
 		"stateFile": stateFile,
-	}).Debug("State destroyed")
+	}).Trace("State destroyed")
 }
 
 // Update updates the state of en execution, using ID as the file name for the run.
@@ -76,7 +76,7 @@ func Update(id string, workdir string, composeFilePaths []string, env map[string
 	log.WithFields(log.Fields{
 		"dir":       workdir,
 		"stateFile": stateFile,
-	}).Debug("Updating state")
+	}).Trace("Updating state")
 
 	run := stateRun{
 		ID:       id,
@@ -119,5 +119,5 @@ func Update(id string, workdir string, composeFilePaths []string, env map[string
 	log.WithFields(log.Fields{
 		"dir":       workdir,
 		"stateFile": stateFile,
-	}).Debug("State updated")
+	}).Trace("State updated")
 }

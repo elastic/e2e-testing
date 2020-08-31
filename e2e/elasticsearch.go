@@ -122,7 +122,7 @@ func RetrySearch(indexName string, esQuery map[string]interface{}, maxAttempts i
 				"query":         esQuery,
 				"retryAttempts": maxAttempts,
 				"retryTimeout":  retryTimeout,
-			}).Debugf("Waiting %d seconds for the index to be ready", retryTimeout)
+			}).Tracef("Waiting %d seconds for the index to be ready", retryTimeout)
 			time.Sleep(time.Duration(retryTimeout) * time.Second)
 		}
 	}
@@ -295,7 +295,7 @@ func WaitForIndices() (string, error) {
 			"retries":        retryCount,
 			"statusEndpoint": r.URL,
 			"elapsedTime":    exp.GetElapsedTime(),
-		}).Debug("The Elasticsearc Cat Indices API is available")
+		}).Trace("The Elasticsearc Cat Indices API is available")
 
 		body = response
 		return nil
