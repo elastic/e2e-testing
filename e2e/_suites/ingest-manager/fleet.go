@@ -498,12 +498,12 @@ func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent(image strin
 		return err
 	}
 
-	err = fts.theIntegrationIsOperatedInTheConfiguration("enpdoint", actionADDED, "default")
+	err = fts.theAgentIsListedInFleetWithStatus("online")
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return fts.theIntegrationIsOperatedInTheConfiguration("enpdoint", actionADDED, "default")
 }
 
 func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
