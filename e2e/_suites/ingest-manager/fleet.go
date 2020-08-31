@@ -328,8 +328,23 @@ func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
 		"agentID": fts.EnrolledAgentID,
 	}).Debug("Un-enrolling agent in Fleet")
 
+	type payload struct {
+		Force bool `json:"force"`
+	}
+
+	data := payload{
+		Force: true,
+	}
+	payloadBytes, err := json.Marshal(data)
+	if err != nil {
+		log.Error("Could not serialise payload")
+		return err
+	}
+
 	unEnrollURL := fmt.Sprintf(fleetAgentsUnEnrollURL, fts.EnrolledAgentID)
 	postReq := createDefaultHTTPRequest(unEnrollURL)
+
+	postReq.Payload = payloadBytes
 
 	body, err := curl.Post(postReq)
 	if err != nil {
