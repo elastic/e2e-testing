@@ -31,14 +31,13 @@ const actionREMOVED = "removed"
 
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
-	EnrolledAgentID string // will be used to store current agent
-	Image           string // base image used to install the agent
-	Installers      map[string]ElasticAgentInstaller
-	Cleanup         bool
-	PolicyID        string // will be used to manage tokens
-	CurrentToken    string // current enrollment token
-	CurrentTokenID  string // current enrollment tokenID
-	Hostname        string // the hostname of the container
+	Image          string // base image used to install the agent
+	Installers     map[string]ElasticAgentInstaller
+	Cleanup        bool
+	PolicyID       string // will be used to manage tokens
+	CurrentToken   string // current enrollment token
+	CurrentTokenID string // current enrollment tokenID
+	Hostname       string // the hostname of the container
 	// integrations
 	Integration IntegrationPackage // the installed integration
 }
@@ -112,9 +111,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
 	if err != nil {
 		return err
 	}
-
-	// get first agentID in online status, for future processing
-	fts.EnrolledAgentID, err = getAgentID(true, 0)
 
 	return err
 }
@@ -195,14 +191,19 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	agentOnlineFn := func() error {
-		isAgentInStatus, err := isAgentInStatus(fts.EnrolledAgentID, desiredStatus)
+		agentIDs, err := getAgentIDs(fts.Hostname)
+		if err != nil {
+			return err
+		}
+
+		isAgentInStatus, err := isAgentInStatus(agentIDs, desiredStatus)
 		if err != nil || !isAgentInStatus {
 			if err == nil {
 				err = fmt.Errorf("The Agent is not in the %s status yet", desiredStatus)
 			}
 
 			log.WithFields(log.Fields{
-				"agentID":         fts.EnrolledAgentID,
+				"agentIDs":        agentIDs,
 				"isAgentInStatus": isAgentInStatus,
 				"elapsedTime":     exp.GetElapsedTime(),
 				"hostname":        fts.Hostname,
@@ -324,44 +325,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 }
 
 func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
-	log.WithFields(log.Fields{
-		"agentID": fts.EnrolledAgentID,
-	}).Debug("Un-enrolling agent in Fleet")
-
-	type payload struct {
-		Force bool `json:"force"`
-	}
-
-	data := payload{
-		Force: true,
-	}
-	payloadBytes, err := json.Marshal(data)
-	if err != nil {
-		log.Error("Could not serialise payload")
-		return err
-	}
-
-	unEnrollURL := fmt.Sprintf(fleetAgentsUnEnrollURL, fts.EnrolledAgentID)
-	postReq := createDefaultHTTPRequest(unEnrollURL)
-
-	postReq.Payload = payloadBytes
-
-	body, err := curl.Post(postReq)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"agentID": fts.EnrolledAgentID,
-			"body":    body,
-			"error":   err,
-			"url":     unEnrollURL,
-		}).Error("Could unenroll agent")
-		return err
-	}
-
-	log.WithFields(log.Fields{
-		"agentID": fts.EnrolledAgentID,
-	}).Debug("Fleet agent was unenrolled")
-
-	return nil
+	return fts.unenrollHostname()
 }
 
 func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
@@ -497,7 +461,6 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheSecurityApp(status string) err
 		matches, err := isAgentListedInSecurityAppWithStatus(fts.Hostname, status)
 		if err != nil || !matches {
 			log.WithFields(log.Fields{
-				"agentID":       fts.EnrolledAgentID,
 				"elapsedTime":   exp.GetElapsedTime(),
 				"desiredStatus": status,
 				"err":           err,
@@ -512,7 +475,6 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheSecurityApp(status string) err
 		}
 
 		log.WithFields(log.Fields{
-			"agentID":       fts.EnrolledAgentID,
 			"elapsedTime":   exp.GetElapsedTime(),
 			"desiredStatus": status,
 			"hostname":      fts.Hostname,
@@ -627,6 +589,37 @@ func (fts *FleetTestSuite) removeToken() error {
 			"url":     revokeTokenURL,
 		}).Error("Could not delete token")
 		return err
+	}
+
+	return nil
+}
+
+// unenrollHostname deletes the statuses for an existing agent, filtering by hostname
+func (fts *FleetTestSuite) unenrollHostname() error {
+	log.Debugf("Un-enrolling all agentIDs for %s", fts.Hostname)
+
+	jsonParsed, err := getOnlineAgents()
+	if err != nil {
+		return err
+	}
+
+	hosts := jsonParsed.Path("list").Children()
+
+	for _, host := range hosts {
+		hostname := host.Path("local_metadata.host.hostname").Data().(string)
+		// a hostname has an agentID by status
+		if hostname == fts.Hostname {
+			agentID := host.Path("id").Data().(string)
+			log.WithFields(log.Fields{
+				"hostname": fts.Hostname,
+				"agentID":  agentID,
+			}).Debug("Un-enrolling agent in Fleet")
+
+			err := unenrollAgent(agentID)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -870,23 +863,38 @@ func getAgentDefaultPolicy() (*gabs.Container, error) {
 	return defaultPolicy, nil
 }
 
-// getAgentID sends a GET request to Fleet for the existing agents
-// allowing to filter by agent status: online, offline. This method will
-// retrieve the agent ID
-func getAgentID(online bool, index int) (string, error) {
+// getAgentIDs sends a GET request to Fleet for a existing hostname
+// This method will retrieve all agent IDs for a hostname
+func getAgentIDs(agentHostname string) ([]string, error) {
+	log.Debugf("Retrieving agentID for %s", agentHostname)
+
 	jsonParsed, err := getOnlineAgents()
 	if err != nil {
-		return "", err
+		return []string{}, err
 	}
 
-	agentID := jsonParsed.Path("list").Index(index).Path("id").Data().(string)
+	hosts := jsonParsed.Path("list").Children()
 
-	log.WithFields(log.Fields{
-		"index":   index,
-		"agentID": agentID,
-	}).Debug("Agent ID retrieved")
+	agentIDs := []string{}
 
-	return agentID, nil
+	for _, host := range hosts {
+		hostname := host.Path("local_metadata.host.hostname").Data().(string)
+		// an agentID by status is created for a hostname: inactive has different ID than online, that's why we must get the ID for online
+		if hostname == agentHostname {
+			agentID := host.Path("id").Data().(string)
+			log.WithFields(log.Fields{
+				"hostname": agentHostname,
+				"agentID":  agentID,
+			}).Debug("Agent listed in Fleet")
+			agentIDs = append(agentIDs, agentID)
+		}
+	}
+
+	if len(agentIDs) > 0 {
+		return agentIDs, nil
+	}
+
+	return agentIDs, fmt.Errorf("The Agent with hostname %s is not listed in Fleet", agentHostname)
 }
 
 // getDataStreams sends a GET request to Fleet for the existing data-streams
@@ -924,7 +932,7 @@ func getDataStreams() (*gabs.Container, error) {
 	return dataStreams, nil
 }
 
-// getAgentsByStatus sends a GET request to Fleet for the existing online agents
+// getOnlineAgents sends a GET request to Fleet for the existing online agents
 // Will return the JSON object representing the response of querying Fleet's Agents
 // endpoint
 func getOnlineAgents() (*gabs.Container, error) {
@@ -959,23 +967,64 @@ func getOnlineAgents() (*gabs.Container, error) {
 
 // isAgentInStatus extracts the status for an agent, identified by its hostname
 // It will query Fleet's agents endpoint
-func isAgentInStatus(agentID string, desiredStatus string) (bool, error) {
-	r := createDefaultHTTPRequest(fleetAgentsURL + "/" + agentID)
-	body, err := curl.Get(r)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"body":  body,
-			"error": err,
-			"url":   r.GetURL(),
-		}).Error("Could not get agent in Fleet")
-		return false, err
+func isAgentInStatus(agentIDs []string, desiredStatus string) (bool, error) {
+	for _, agentID := range agentIDs {
+		r := createDefaultHTTPRequest(fleetAgentsURL + "/" + agentID)
+		body, err := curl.Get(r)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"body":  body,
+				"error": err,
+				"url":   r.GetURL(),
+			}).Error("Could not get agent in Fleet")
+			return false, err
+		}
+
+		jsonResponse, err := gabs.ParseJSON([]byte(body))
+
+		agentStatus := jsonResponse.Path("item.status").Data().(string)
+
+		if strings.ToLower(agentStatus) == desiredStatus {
+			return true, nil
+		}
 	}
 
-	jsonResponse, err := gabs.ParseJSON([]byte(body))
+	return false, fmt.Errorf("There are no agentIDs in the %s status", desiredStatus)
+}
 
-	agentStatus := jsonResponse.Path("item.status").Data().(string)
+func unenrollAgent(agentID string) error {
+	type payload struct {
+		Force bool `json:"force"`
+	}
 
-	isAgentInStatus := (strings.ToLower(agentStatus) == desiredStatus)
+	data := payload{
+		Force: true,
+	}
+	payloadBytes, err := json.Marshal(data)
+	if err != nil {
+		log.Error("Could not serialise payload")
+		return err
+	}
 
-	return isAgentInStatus, nil
+	unEnrollURL := fmt.Sprintf(fleetAgentsUnEnrollURL, agentID)
+	postReq := createDefaultHTTPRequest(unEnrollURL)
+
+	postReq.Payload = payloadBytes
+
+	body, err := curl.Post(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"agentID": agentID,
+			"body":    body,
+			"error":   err,
+			"url":     unEnrollURL,
+		}).Error("Could unenroll agent")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"agentID": agentID,
+	}).Debug("Fleet agent was unenrolled")
+
+	return nil
 }

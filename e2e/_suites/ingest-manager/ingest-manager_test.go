@@ -178,6 +178,14 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		}
 
 		if imts.Fleet.Cleanup {
+			err := imts.Fleet.unenrollHostname()
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err":      err,
+					"hostname": imts.Fleet.Hostname,
+				}).Warn("The agentIDs for the hostname could not be unenrolled")
+			}
+
 			serviceName := imts.Fleet.Image
 			if !developerMode {
 				_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
@@ -185,7 +193,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 				log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 			}
 
-			err := imts.Fleet.removeToken()
+			err = imts.Fleet.removeToken()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"err":     err,
