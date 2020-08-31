@@ -260,7 +260,7 @@ func DownloadFile(url string) (string, error) {
 			"retries":     retryCount,
 			"path":        filepath,
 			"url":         url,
-		}).Debug("File downloaded")
+		}).Trace("File downloaded")
 
 		fileReader = resp.Body
 
@@ -270,7 +270,7 @@ func DownloadFile(url string) (string, error) {
 	log.WithFields(log.Fields{
 		"url":  url,
 		"path": filepath,
-	}).Debug("Downloading file")
+	}).Trace("Downloading file")
 
 	err = backoff.Retry(download, exp)
 	if err != nil {
@@ -320,7 +320,7 @@ func Sleep(seconds string) error {
 		return err
 	}
 
-	log.WithFields(fields).Debugf("Waiting %s seconds", seconds)
+	log.WithFields(fields).Tracef("Waiting %s seconds", seconds)
 	time.Sleep(time.Duration(s) * time.Second)
 
 	return nil
@@ -341,7 +341,7 @@ func WaitForProcess(containerName string, process string, desiredState string, m
 		log.WithFields(log.Fields{
 			"desiredState": desiredState,
 			"process":      process,
-		}).Debug("Checking process desired state on the container")
+		}).Trace("Checking process desired state on the container")
 
 		output, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"pgrep", "-n", "-l", process})
 		if err != nil {

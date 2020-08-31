@@ -71,11 +71,11 @@ var syncIntegrationsCmd = &cobra.Command{
 
 			log.WithFields(log.Fields{
 				"path": repoDir,
-			}).Debug("Removing repository")
+			}).Trace("Removing repository")
 			os.RemoveAll(repoDir)
 			log.WithFields(log.Fields{
 				"path": repoDir,
-			}).Debug("Repository removed")
+			}).Trace("Repository removed")
 		}
 
 		git.Clone(BeatsRepo)
@@ -145,7 +145,7 @@ func copyIntegrationsComposeFiles(beats git.Project, target string) {
 		log.WithFields(log.Fields{
 			"meta":       metaDir,
 			"targetMeta": targetMetaDir,
-		}).Debug("Integration _meta directory copied")
+		}).Trace("Integration _meta directory copied")
 
 		err = sanitizeComposeFile(targetFile)
 		if err != nil {
@@ -158,7 +158,7 @@ func copyIntegrationsComposeFiles(beats git.Project, target string) {
 		log.WithFields(log.Fields{
 			"file":       file,
 			"targetFile": targetFile,
-		}).Debug("Integration compose file copied")
+		}).Trace("Integration compose file copied")
 	}
 
 	log.WithFields(log.Fields{
@@ -201,7 +201,7 @@ func sanitizeComposeFile(composeFilePath string) error {
 			log.WithFields(log.Fields{
 				"name":         k,
 				"compose-file": composeFilePath,
-			}).Debug("sanitize service in docker-compose file")
+			}).Trace("sanitize service in docker-compose file")
 
 			for key, value := range i {
 				strKey := fmt.Sprintf("%v", key)

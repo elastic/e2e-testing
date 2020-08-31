@@ -68,7 +68,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
 
 	log.WithFields(log.Fields{
 		"image": image,
-	}).Debug("Deploying an agent to Fleet with base image")
+	}).Trace("Deploying an agent to Fleet with base image")
 
 	fts.Image = image
 
@@ -130,7 +130,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	log.WithFields(log.Fields{
 		"service": serviceName,
 		"process": process,
-	}).Debug("Stopping process on the service")
+	}).Trace("Stopping process on the service")
 
 	err := systemctlRun(profile, image, serviceName, "stop")
 	if err != nil {
@@ -153,7 +153,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 }
 
 func (fts *FleetTestSuite) setup() error {
-	log.Debug("Creating Fleet setup")
+	log.Trace("Creating Fleet setup")
 
 	err := createFleetConfiguration()
 	if err != nil {
@@ -175,7 +175,7 @@ func (fts *FleetTestSuite) setup() error {
 }
 
 func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
-	log.Debugf("Checking if agent is listed in Fleet as %s", desiredStatus)
+	log.Tracef("Checking if agent is listed in Fleet as %s", desiredStatus)
 
 	maxTimeout := 2 * time.Minute
 	retryCount := 1
@@ -257,7 +257,7 @@ func (fts *FleetTestSuite) theHostIsRestarted() error {
 }
 
 func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
-	log.Debug("Checking system Package dashboards in Fleet")
+	log.Trace("Checking system Package dashboards in Fleet")
 
 	dataStreamsCount := 0
 	maxTimeout := 2 * time.Minute
@@ -321,7 +321,7 @@ func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
 }
 
 func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
-	log.Debug("Re-enrolling the agent on the host with same token")
+	log.Trace("Re-enrolling the agent on the host with same token")
 
 	installer := fts.Installers[fts.Image]
 
@@ -337,7 +337,7 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 	log.WithFields(log.Fields{
 		"token":   fts.CurrentToken,
 		"tokenID": fts.CurrentTokenID,
-	}).Debug("Revoking enrollment token")
+	}).Trace("Revoking enrollment token")
 
 	err := fts.removeToken()
 	if err != nil {
@@ -356,7 +356,7 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(configurationName st
 	log.WithFields(log.Fields{
 		"policy":  configurationName,
 		"package": packageName,
-	}).Debug("Checking if the policy shows the package added")
+	}).Trace("Checking if the policy shows the package added")
 
 	maxTimeout := time.Minute
 	retryCount := 1
@@ -415,7 +415,7 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 		"action":  action,
 		"policy":  configurationName,
 		"package": packageName,
-	}).Debug("Doing an operation for a package on a policy")
+	}).Trace("Doing an operation for a package on a policy")
 
 	if strings.ToLower(action) == actionADDED {
 		integrationPolicyID, err := addIntegrationToPolicy(fts.Integration, fts.PolicyID)
@@ -442,7 +442,7 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 }
 
 func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp() error {
-	log.Debug("Checking if the hostname is not shown in the Administration view in the Security App")
+	log.Trace("Checking if the hostname is not shown in the Administration view in the Security App")
 
 	maxTimeout := 2 * time.Minute
 	retryCount := 1
@@ -482,7 +482,7 @@ func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp()
 }
 
 func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(status string) error {
-	log.Debug("Checking if the hostname is shown in the Admin view in the Security App")
+	log.Trace("Checking if the hostname is shown in the Admin view in the Security App")
 
 	maxTimeout := 2 * time.Minute
 	retryCount := 1
@@ -555,7 +555,7 @@ func (fts *FleetTestSuite) theVersionOfThePackageIsInstalled(version string, pac
 	log.WithFields(log.Fields{
 		"package": packageName,
 		"version": version,
-	}).Debug("Checking if package version is installed")
+	}).Trace("Checking if package version is installed")
 
 	name, version, err := getIntegrationLatestVersion(packageName)
 	if err != nil {
@@ -572,7 +572,7 @@ func (fts *FleetTestSuite) theVersionOfThePackageIsInstalled(version string, pac
 }
 
 func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
-	log.Debug("Enrolling a new agent with an revoked token")
+	log.Trace("Enrolling a new agent with an revoked token")
 
 	installer := fts.Installers[fts.Image]
 
@@ -625,7 +625,7 @@ func (fts *FleetTestSuite) removeToken() error {
 
 // unenrollHostname deletes the statuses for an existing agent, filtering by hostname
 func (fts *FleetTestSuite) unenrollHostname(force bool) error {
-	log.Debugf("Un-enrolling all agentIDs for %s", fts.Hostname)
+	log.Tracef("Un-enrolling all agentIDs for %s", fts.Hostname)
 
 	jsonParsed, err := getOnlineAgents()
 	if err != nil {
@@ -667,7 +667,7 @@ func checkFleetConfiguration() error {
 		URL: fleetSetupURL,
 	}
 
-	log.Debug("Ensuring Fleet setup was initialised")
+	log.Trace("Ensuring Fleet setup was initialised")
 	responseBody, err := curl.Get(getReq)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -709,7 +709,7 @@ func createFleetConfiguration() error {
 
 	log.WithFields(log.Fields{
 		"responseBody": body,
-	}).Debug("Fleet setup done")
+	}).Info("Fleet setup done")
 
 	return nil
 }
@@ -859,7 +859,7 @@ func getAgentDefaultPolicy() (*gabs.Container, error) {
 
 	log.WithFields(log.Fields{
 		"count": len(policies.Children()),
-	}).Debug("Fleet policies retrieved")
+	}).Trace("Fleet policies retrieved")
 
 	// TODO: perform a strong check to capture default policy
 	defaultPolicy := policies.Index(0)
@@ -870,7 +870,7 @@ func getAgentDefaultPolicy() (*gabs.Container, error) {
 // getAgentIDs sends a GET request to Fleet for a existing hostname
 // This method will retrieve all agent IDs for a hostname
 func getAgentIDs(agentHostname string) ([]string, error) {
-	log.Debugf("Retrieving agentID for %s", agentHostname)
+	log.Tracef("Retrieving agentID for %s", agentHostname)
 
 	jsonParsed, err := getOnlineAgents()
 	if err != nil {

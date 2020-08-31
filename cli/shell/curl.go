@@ -79,7 +79,7 @@ func request(r HTTPRequest) (string, error) {
 		body = nil
 	}
 
-	log.WithFields(fields).Debug("Executing request")
+	log.WithFields(fields).Trace("Executing request")
 
 	req, err := http.NewRequest(r.method, escapedURL, body)
 	if err != nil {

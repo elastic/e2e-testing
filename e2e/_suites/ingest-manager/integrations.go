@@ -132,7 +132,7 @@ func getIntegrationLatestVersion(integrationName string) (string, string, error)
 
 	log.WithFields(log.Fields{
 		"count": len(integrations),
-	}).Debug("Integrations retrieved")
+	}).Trace("Integrations retrieved")
 
 	for _, integration := range integrations {
 		name := integration.Path("name").Data().(string)
@@ -163,7 +163,7 @@ func installIntegrationAssets(integration string, version string) (IntegrationPa
 	log.WithFields(log.Fields{
 		"integration": integration,
 		"version":     version,
-	}).Debug("Assets for the integration where installed")
+	}).Info("Assets for the integration where installed")
 
 	jsonParsed, err := gabs.ParseJSON([]byte(body))
 	if err != nil {
@@ -236,7 +236,7 @@ func isAgentListedInSecurityApp(hostName string) (*gabs.Container, error) {
 
 	log.WithFields(log.Fields{
 		"hosts": hosts,
-	}).Debug("Hosts in the Security App")
+	}).Trace("Hosts in the Security App")
 
 	for _, host := range hosts {
 		metadataHostname := host.Path("metadata.host.hostname").Data().(string)
