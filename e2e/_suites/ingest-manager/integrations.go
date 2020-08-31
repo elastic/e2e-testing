@@ -231,6 +231,11 @@ func isAgentListedInSecurityApp(hostName string) (*gabs.Container, error) {
 	}
 
 	hosts := jsonParsed.Path("hosts").Children()
+
+	log.WithFields(log.Fields{
+		"hosts": hosts,
+	}).Debug("Hosts in the Security App")
+
 	for _, host := range hosts {
 		metadataHostname := host.Path("metadata.host.hostname").Data().(string)
 		if metadataHostname == hostName {
@@ -245,46 +250,29 @@ func isAgentListedInSecurityApp(hostName string) (*gabs.Container, error) {
 	return nil, nil
 }
 
-// isAgentListedInSecurityAppWithStatus sends a POST request to Endpoint to check if a hostname
-// in the desired status is listed in the Security App. For that, we will inspect the metadata,
-// and will iterate through the hosts, until we get the proper hostname. Then we will checkk if
-// the status matches the desired status, returning an error if the agent is not present in the
-// Security App
+// isAgentListedInSecurityAppWithStatus inspects the metadata field for a hostname, obtained from
+// the security App. We will check if the status matches the desired status, returning an error
+// if the agent is not present in the Security App
 func isAgentListedInSecurityAppWithStatus(hostName string, desiredStatus string) (bool, error) {
-	postReq := createDefaultHTTPRequest(endpointMetadataURL)
-	body, err := curl.Post(postReq)
+	host, err := isAgentListedInSecurityApp(hostName)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"body":  body,
-			"error": err,
-			"url":   postReq.URL,
-		}).Error("Could not get endpoint metadata")
+			"hostname": hostName,
+			"error":    err,
+		}).Error("There was an error getting the agent in the Security app")
 		return false, err
 	}
 
-	jsonParsed, err := gabs.ParseJSON([]byte(body))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":        err,
-			"responseBody": body,
-		}).Error("Could not parse response into JSON")
-		return false, err
+	if host == nil {
+		return false, fmt.Errorf("The host %s is not listed in the Security App", hostName)
 	}
 
-	hosts := jsonParsed.Path("hosts").Children()
-	for _, host := range hosts {
-		metadataHostname := host.Path("metadata.host.hostname").Data().(string)
-		if metadataHostname == hostName {
-			hostStatus := host.Path("host_status").Data().(string)
-			log.WithFields(log.Fields{
-				"desiredStatus": desiredStatus,
-				"hostname":      hostName,
-				"status":        hostStatus,
-			}).Debug("Hostname for the agent listed in the Security App")
+	hostStatus := host.Path("host_status").Data().(string)
+	log.WithFields(log.Fields{
+		"desiredStatus": desiredStatus,
+		"hostname":      hostName,
+		"status":        hostStatus,
+	}).Debug("Hostname for the agent listed with desired status in the Security App")
 
-			return (hostStatus == desiredStatus), nil
-		}
-	}
-
-	return false, fmt.Errorf("The host %s is not listed in the Security App. %v", hostName, hosts)
+	return (hostStatus == desiredStatus), nil
 }
