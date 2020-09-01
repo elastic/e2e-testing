@@ -60,7 +60,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the host name is not shown in the Administration view in the Security App$`, fts.theHostNameIsNotShownInTheAdminViewInTheSecurityApp)
 	s.Step(`^an Endpoint is successfully deployed with a "([^"]*)" Agent$`, fts.anEndpointIsSuccessfullyDeployedWithAgent)
 	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
-	s.Step(`^the policy is updated to have malware in detect mode$`, fts.thePolicyIsUpdatedToHaveMalwareInDetectMode)
+	s.Step(`^the policy is updated to have "([^"]*)" in "([^"]*)" mode$`, fts.thePolicyIsUpdatedToHaveMode)
 	s.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
 }
 
@@ -579,8 +579,53 @@ func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error 
 	return godog.ErrPending
 }
 
-func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMalwareInDetectMode() error {
-	return godog.ErrPending
+func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMode(name string, mode string) error {
+	if name != "malware" {
+		log.WithFields(log.Fields{
+			"name": name,
+		}).Warn("We only support 'malware' policy to be updated")
+		return godog.ErrPending
+	}
+
+	if mode != "detect" && mode != "prevent" {
+		log.WithFields(log.Fields{
+			"name": name,
+			"mode": mode,
+		}).Warn("We only support 'detect' and 'prevent' modes")
+		return godog.ErrPending
+	}
+
+	integration, err := getIntegrationFromAgentPolicy("Elastic Endpoint", fts.PolicyID)
+	if err != nil {
+		return err
+	}
+	fts.Integration = integration
+
+	integrationJSON := fts.Integration.json
+
+	// prune fields not allowed in the API side
+	prunedFields := []string{
+		"created_at", "created_by", "id", "revision", "updated_at", "updated_by",
+	}
+	for _, f := range prunedFields {
+		integrationJSON.Delete(f)
+	}
+
+	// wee only support Windows and Mac, not Linux
+	integrationJSON.SetP(mode, "inputs.0.config.policy.value.windows."+name+".mode")
+	integrationJSON.SetP(mode, "inputs.0.config.policy.value.mac."+name+".mode")
+
+	response, err := updateIntegrationPackageConfig(fts.Integration.packageConfigID, integrationJSON.String())
+	if err != nil {
+		return err
+	}
+
+	success := response.Path("success").Data().(bool)
+	if !success {
+		return fmt.Errorf("The update of the integration package configuration failed. %v", response)
+	}
+
+	return nil
 }
 
 func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error {

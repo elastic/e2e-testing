@@ -14,13 +14,15 @@ const ingestManagerIntegrationURL = kibanaBaseURL + "/api/ingest_manager/epm/pac
 const ingestManagerIntegrationDeleteURL = kibanaBaseURL + "/api/ingest_manager/package_policies/delete"
 const ingestManagerIntegrationsURL = kibanaBaseURL + "/api/ingest_manager/epm/packages?experimental=true&category="
 const ingestManagerIntegrationPoliciesURL = kibanaBaseURL + "/api/ingest_manager/package_policies"
+const ingestManagerIntegrationPolicyURL = ingestManagerIntegrationPoliciesURL + "/%s"
 
 // IntegrationPackage used to share information about a integration
 type IntegrationPackage struct {
-	packageConfigID string `json:"packageConfigId"`
-	name            string `json:"name"`
-	title           string `json:"title"`
-	version         string `json:"version"`
+	packageConfigID string          `json:"packageConfigId"`
+	name            string          `json:"name"`
+	title           string          `json:"title"`
+	version         string          `json:"version"`
+	json            *gabs.Container // json representation of the integration
 }
 
 // addIntegrationToPolicy sends a POST request to Ingest Manager adding an integration to a configuration
@@ -173,6 +175,7 @@ func getIntegrationFromAgentPolicy(packageName string, agentPolicyID string) (In
 				name:            packagePolicy.Path("package.name").Data().(string),
 				title:           title,
 				version:         packagePolicy.Path("package.version").Data().(string),
+				json:            packagePolicy,
 			}
 
 			log.WithFields(log.Fields{
@@ -347,4 +350,38 @@ func isAgentListedInSecurityAppWithStatus(hostName string, desiredStatus string)
 	}).Debug("Hostname for the agent listed with desired status in the Security App")
 
 	return (hostStatus == desiredStatus), nil
+}
+
+// updateIntegrationPackageConfig sends a PUT request to Ingest Manager updating integration
+// configuration
+func updateIntegrationPackageConfig(packageConfigID string, payload string) (*gabs.Container, error) {
+	url := fmt.Sprintf(ingestManagerIntegrationPolicyURL, packageConfigID)
+	putReq := createDefaultHTTPRequest(url)
+
+	putReq.Payload = payload
+
+	body, err := curl.Put(putReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   url,
+		}).Error("Could not update integration configuration")
+		return nil, err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return nil, err
+	}
+
+	log.WithFields(log.Fields{
+		"policyID": packageConfigID,
+	}).Debug("Configuration for the integration was updated")
+
+	return jsonParsed, nil
 }
