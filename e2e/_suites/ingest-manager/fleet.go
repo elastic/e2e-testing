@@ -184,19 +184,19 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	agentOnlineFn := func() error {
-		agentIDs, err := getAgentIDs(fts.Hostname)
+		agentID, err := getAgentID(fts.Hostname)
 		if err != nil {
 			return err
 		}
 
-		isAgentInStatus, err := isAgentInStatus(agentIDs, desiredStatus)
+		isAgentInStatus, err := isAgentInStatus(agentID, desiredStatus)
 		if err != nil || !isAgentInStatus {
 			if err == nil {
 				err = fmt.Errorf("The Agent is not in the %s status yet", desiredStatus)
 			}
 
 			log.WithFields(log.Fields{
-				"agentIDs":        agentIDs,
+				"agentID":         agentID,
 				"isAgentInStatus": isAgentInStatus,
 				"elapsedTime":     exp.GetElapsedTime(),
 				"hostname":        fts.Hostname,
@@ -950,38 +950,31 @@ func getAgentDefaultConfig() (*gabs.Container, error) {
 	return defaultConfig, nil
 }
 
-// getAgentIDs sends a GET request to Fleet for a existing hostname
-// This method will retrieve all agent IDs for a hostname
-func getAgentIDs(agentHostname string) ([]string, error) {
+// getAgentID sends a GET request to Fleet for a existing hostname
+// This method will retrieve the only agent ID for a hostname in the online status
+func getAgentID(agentHostname string) (string, error) {
 	log.Tracef("Retrieving agentID for %s", agentHostname)
 
 	jsonParsed, err := getOnlineAgents()
 	if err != nil {
-		return []string{}, err
+		return "", err
 	}
 
 	hosts := jsonParsed.Path("list").Children()
 
-	agentIDs := []string{}
-
 	for _, host := range hosts {
 		hostname := host.Path("local_metadata.host.hostname").Data().(string)
-		// an agentID by status is created for a hostname: inactive has different ID than online, that's why we must get the ID for online
 		if hostname == agentHostname {
 			agentID := host.Path("id").Data().(string)
 			log.WithFields(log.Fields{
 				"hostname": agentHostname,
 				"agentID":  agentID,
-			}).Debug("Agent listed in Fleet")
-			agentIDs = append(agentIDs, agentID)
+			}).Debug("Agent listed in Fleet with online status")
+			return agentID, nil
 		}
 	}
 
-	if len(agentIDs) > 0 {
-		return agentIDs, nil
-	}
-
-	return agentIDs, fmt.Errorf("The Agent with hostname %s is not listed in Fleet", agentHostname)
+	return "", fmt.Errorf("The Agent with hostname %s is not listed in Fleet", agentHostname)
 }
 
 // getDataStreams sends a GET request to Fleet for the existing data-streams
@@ -1028,7 +1021,7 @@ func getOnlineAgents() (*gabs.Container, error) {
 	// the request properly, returning an 400 Bad Request error with this message:
 	// [request query.page=1&perPage=20&showInactive=true]: definition for this key is missing
 	r.EncodeURL = false
-	r.QueryString = fmt.Sprintf("page=1&perPage=20&showInactive=%t", true)
+	r.QueryString = fmt.Sprintf("page=1&perPage=20&showInactive=%t", false)
 
 	body, err := curl.Get(r)
 	if err != nil {
@@ -1054,29 +1047,27 @@ func getOnlineAgents() (*gabs.Container, error) {
 
 // isAgentInStatus extracts the status for an agent, identified by its hostname
 // It will query Fleet's agents endpoint
-func isAgentInStatus(agentIDs []string, desiredStatus string) (bool, error) {
-	for _, agentID := range agentIDs {
-		r := createDefaultHTTPRequest(fleetAgentsURL + "/" + agentID)
-		body, err := curl.Get(r)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"body":  body,
-				"error": err,
-				"url":   r.GetURL(),
-			}).Error("Could not get agent in Fleet")
-			return false, err
-		}
-
-		jsonResponse, err := gabs.ParseJSON([]byte(body))
-
-		agentStatus := jsonResponse.Path("item.status").Data().(string)
-
-		if strings.ToLower(agentStatus) == desiredStatus {
-			return true, nil
-		}
+func isAgentInStatus(agentID string, desiredStatus string) (bool, error) {
+	r := createDefaultHTTPRequest(fleetAgentsURL + "/" + agentID)
+	body, err := curl.Get(r)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   r.GetURL(),
+		}).Error("Could not get agent in Fleet")
+		return false, err
 	}
 
-	return false, fmt.Errorf("There are no agentIDs in the %s status", desiredStatus)
+	jsonResponse, err := gabs.ParseJSON([]byte(body))
+
+	agentStatus := jsonResponse.Path("item.status").Data().(string)
+
+	if strings.ToLower(agentStatus) == desiredStatus {
+		return true, nil
+	}
+
+	return false, fmt.Errorf("There is no agentID in the %s status", desiredStatus)
 }
 
 func unenrollAgent(agentID string, force bool) error {
