@@ -19,6 +19,7 @@ import (
 )
 
 const fleetAgentsURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents"
+const fleetAgentEventsURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents/%s/events"
 const fleetAgentsUnEnrollURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents/%s/unenroll"
 const fleetEnrollmentTokenURL = kibanaBaseURL + "/api/ingest_manager/fleet/enrollment-api-keys"
 const fleetSetupURL = kibanaBaseURL + "/api/ingest_manager/fleet/setup"
@@ -39,7 +40,8 @@ type FleetTestSuite struct {
 	CurrentTokenID string // current enrollment tokenID
 	Hostname       string // the hostname of the container
 	// integrations
-	Integration IntegrationPackage // the installed integration
+	Integration     IntegrationPackage // the installed integration
+	PolicyUpdatedAt string             // the moment the policy was updated
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
@@ -643,11 +645,50 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMode(name string, mode string
 		return fmt.Errorf("The update of the integration package configuration failed. %v", response)
 	}
 
+	// we use a string because we are not able to process what comes in the event, so we will do
+	// an alphabetical order, as they share same layour but different millis and timezone format
+	updatedAt := response.Path("item.updated_at").Data().(string)
+	fts.PolicyUpdatedAt = updatedAt
 	return nil
 }
 
 func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error {
-	return godog.ErrPending
+	agentID, err := getAgentID(fts.Hostname)
+	if err != nil {
+		return err
+	}
+
+	maxTimeout := 2 * time.Minute
+	retryCount := 1
+
+	exp := e2e.GetExponentialBackOff(maxTimeout)
+
+	getEventsFn := func() error {
+		err := getAgentEvents(agentID, fts.PolicyID, fts.PolicyUpdatedAt)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"err":         err,
+				"retries":     retryCount,
+			}).Warn("There are no events for the agent in Fleet")
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"elapsedTime": exp.GetElapsedTime(),
+			"retries":     retryCount,
+		}).Info("There are events for the agent in Fleet")
+		return nil
+	}
+
+	err = backoff.Retry(getEventsFn, exp)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // theVersionOfThePackageIsInstalled installs a package in a version
@@ -965,6 +1006,61 @@ func getAgentDefaultPolicy() (*gabs.Container, error) {
 	defaultPolicy := policies.Index(0)
 
 	return defaultPolicy, nil
+}
+
+func getAgentEvents(agentID string, policyID string, updatedAt string) error {
+	url := fmt.Sprintf(fleetAgentEventsURL, agentID)
+	getReq := createDefaultHTTPRequest(url)
+	getReq.QueryString = "page=1&perPage=20"
+
+	body, err := curl.Get(getReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"agentID": agentID,
+			"body":    body,
+			"error":   err,
+			"url":     url,
+		}).Error("Could not get agent events from Fleet")
+		return err
+	}
+
+	jsonResponse, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return err
+	}
+
+	listItems := jsonResponse.Path("list").Children()
+	for _, item := range listItems {
+		message := item.Path("message").Data().(string)
+		timestamp := item.Path("timestamp").Data().(string)
+
+		log.WithFields(log.Fields{
+			"agentID":    agentID,
+			"policyID":   policyID,
+			"event_at":   timestamp,
+			"message":    message,
+			"updated_at": updatedAt,
+		}).Trace("Event found")
+
+		matches := (strings.Contains(message, "endpoint-security") &&
+			strings.Contains(message, "["+agentID+"]: State changed to RUNNING: Running") &&
+			strings.Contains(message, "Protecting with policy {"+policyID+"}"))
+
+		if matches && timestamp > updatedAt {
+			log.WithFields(log.Fields{
+				"updated_at": updatedAt,
+				"event_at":   timestamp,
+				"message":    message,
+			}).Info("Event after the update was found")
+			return nil
+		}
+	}
+
+	return fmt.Errorf("No events where found for the agent in the policy")
 }
 
 // getAgentID sends a GET request to Fleet for a existing hostname
