@@ -186,7 +186,25 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 	agentOnlineFn := func() error {
 		agentID, err := getAgentID(fts.Hostname)
 		if err != nil {
+			retryCount++
 			return err
+		}
+
+		if agentID == "" {
+			// the agent is not listed in Fleet
+			if desiredStatus == "inactive" {
+				log.WithFields(log.Fields{
+					"isAgentInStatus": isAgentInStatus,
+					"elapsedTime":     exp.GetElapsedTime(),
+					"hostname":        fts.Hostname,
+					"retries":         retryCount,
+					"status":          desiredStatus,
+				}).Info("The Agent is not present in Fleet, as expected")
+				return nil
+			} else if desiredStatus == "online" {
+				retryCount++
+				return fmt.Errorf("The agent is not present in Fleet, but it should")
+			}
 		}
 
 		isAgentInStatus, err := isAgentInStatus(agentID, desiredStatus)
@@ -973,7 +991,7 @@ func getAgentID(agentHostname string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("The Agent with hostname %s is not listed in Fleet", agentHostname)
+	return "", nil
 }
 
 // getDataStreams sends a GET request to Fleet for the existing data-streams
