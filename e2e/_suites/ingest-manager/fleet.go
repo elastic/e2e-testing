@@ -451,7 +451,7 @@ func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp()
 
 	agentListedInSecurityFn := func() error {
 		host, err := isAgentListedInSecurityApp(fts.Hostname)
-		if err != nil || host != nil {
+		if err != nil {
 			log.WithFields(log.Fields{
 				"elapsedTime": exp.GetElapsedTime(),
 				"err":         err,
@@ -463,6 +463,19 @@ func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp()
 			retryCount++
 
 			return err
+		}
+
+		if host != nil {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"host":        host,
+				"hostname":    fts.Hostname,
+				"retry":       retryCount,
+			}).Warn("The host is still present in the Administration view in the Security App")
+
+			retryCount++
+
+			return fmt.Errorf("The host %s is still present in the Administration view in the Security App", fts.Hostname)
 		}
 
 		log.WithFields(log.Fields{
