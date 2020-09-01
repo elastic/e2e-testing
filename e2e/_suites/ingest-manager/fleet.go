@@ -23,6 +23,7 @@ const fleetAgentsUnEnrollURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents
 const fleetEnrollmentTokenURL = kibanaBaseURL + "/api/ingest_manager/fleet/enrollment-api-keys"
 const fleetSetupURL = kibanaBaseURL + "/api/ingest_manager/fleet/setup"
 const ingestManagerAgentPoliciesURL = kibanaBaseURL + "/api/ingest_manager/agent_policies"
+const ingestManagerAgentPolicyURL = ingestManagerAgentPoliciesURL + "/%s"
 const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/ingest_manager/data_streams"
 
 const actionADDED = "added"
@@ -352,9 +353,9 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 	return nil
 }
 
-func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(configurationName string, packageName string) error {
+func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string, policyName string) error {
 	log.WithFields(log.Fields{
-		"policy":  configurationName,
+		"policy":  policyName,
 		"package": packageName,
 	}).Trace("Checking if the policy shows the package added")
 
@@ -363,14 +364,19 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(configurationName st
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
+	integration, err := getIntegrationFromAgentPolicy(packageName, fts.PolicyID)
+	if err != nil {
+		return err
+	}
+	fts.Integration = integration
+
 	configurationIsPresentFn := func() error {
 		defaultPolicy, err := getAgentDefaultPolicy()
 		if err != nil {
 			log.WithFields(log.Fields{
-				"error":           err,
-				"packageConfigID": fts.Integration.packageConfigID,
-				"policyID":        fts.PolicyID,
-				"retry":           retryCount,
+				"error":    err,
+				"policyID": fts.PolicyID,
+				"retry":    retryCount,
 			}).Warn("An error retrieving the policy happened")
 
 			retryCount++
@@ -402,7 +408,7 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(configurationName st
 		return err
 	}
 
-	err := backoff.Retry(configurationIsPresentFn, exp)
+	err = backoff.Retry(configurationIsPresentFn, exp)
 	if err != nil {
 		return err
 	}
@@ -410,14 +416,25 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(configurationName st
 	return nil
 }
 
-func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName string, action string, configurationName string) error {
+func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName string, action string, policyName string) error {
 	log.WithFields(log.Fields{
 		"action":  action,
-		"policy":  configurationName,
+		"policy":  policyName,
 		"package": packageName,
 	}).Trace("Doing an operation for a package on a policy")
 
 	if strings.ToLower(action) == actionADDED {
+		name, version, err := getIntegrationLatestVersion(packageName)
+		if err != nil {
+			return err
+		}
+
+		integration, err := getIntegration(name, version)
+		if err != nil {
+			return err
+		}
+		fts.Integration = integration
+
 		integrationPolicyID, err := addIntegrationToPolicy(fts.Integration, fts.PolicyID)
 		if err != nil {
 			return err
@@ -426,7 +443,13 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 		fts.Integration.packageConfigID = integrationPolicyID
 		return nil
 	} else if strings.ToLower(action) == actionREMOVED {
-		err := deleteIntegrationFromPolicy(fts.Integration, fts.PolicyID)
+		integration, err := getIntegrationFromAgentPolicy(packageName, fts.PolicyID)
+		if err != nil {
+			return err
+		}
+		fts.Integration = integration
+
+		err = deleteIntegrationFromPolicy(fts.Integration, fts.PolicyID)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"err":             err,
@@ -548,7 +571,8 @@ func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent(image strin
 		return err
 	}
 
-	return fts.theIntegrationIsOperatedInThePolicy("enpdoint", actionADDED, "default")
+	// we use integration's title
+	return fts.theIntegrationIsOperatedInThePolicy("Elastic Endpoint", actionADDED, "default")
 }
 
 func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
