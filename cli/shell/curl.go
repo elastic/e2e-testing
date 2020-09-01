@@ -62,6 +62,13 @@ func Post(r HTTPRequest) (string, error) {
 	return request(r)
 }
 
+// Put executes a PUT request
+func Put(r HTTPRequest) (string, error) {
+	r.method = "PUT"
+
+	return request(r)
+}
+
 // Post executes a request
 func request(r HTTPRequest) (string, error) {
 	escapedURL := r.GetURL()

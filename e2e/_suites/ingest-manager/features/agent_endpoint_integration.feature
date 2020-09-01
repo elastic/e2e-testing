@@ -18,7 +18,7 @@ Scenario: Deploying an Endpoint makes policies to appear in the Security App
 @set-policy-and-check-changes
 Scenario: Changing an Agent policy is reflected in the Security App
   Given an Endpoint is successfully deployed with a "centos" Agent
-  When the policy is updated to have malware in detect mode
+  When the policy is updated to have "malware" in "detect" mode
   Then the policy will reflect the change in the Security App
 
 @deploy-endpoint-then-unenroll-agent
