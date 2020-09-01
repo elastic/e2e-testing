@@ -103,6 +103,90 @@ func deleteIntegrationFromConfiguration(integrationPackage IntegrationPackage, c
 	return nil
 }
 
+// getIntegration returns metadata from an integration from Fleet, without the package ID
+func getIntegration(packageName string, version string) (IntegrationPackage, error) {
+	url := fmt.Sprintf(ingestManagerIntegrationURL, packageName, version)
+	getReq := createDefaultHTTPRequest(url)
+
+	body, err := curl.Get(getReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   url,
+		}).Error("Could not get the integration from Package Registry")
+		return IntegrationPackage{}, err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse get response into JSON")
+		return IntegrationPackage{}, err
+	}
+
+	response := jsonParsed.Path("response")
+	integrationPackage := IntegrationPackage{
+		name:    response.Path("name").Data().(string),
+		title:   response.Path("title").Data().(string),
+		version: response.Path("latestVersion").Data().(string),
+	}
+
+	return integrationPackage, nil
+}
+
+// getIntegrationFromAgentConfiguration inspects the integrations added to an agent configuration, returning the
+// a struct representing the package, including the packageID for the integration in the configuration
+func getIntegrationFromAgentConfiguration(packageName string, agentConfigID string) (IntegrationPackage, error) {
+	url := fmt.Sprintf(ingestManagerAgentConfigURL, agentConfigID)
+	reqReq := createDefaultHTTPRequest(url)
+
+	body, err := curl.Get(reqReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":        body,
+			"error":       err,
+			"packageName": packageName,
+			"configID":    agentConfigID,
+			"url":         url,
+		}).Error("Could not get integration packages from the configuration")
+		return IntegrationPackage{}, err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return IntegrationPackage{}, err
+	}
+
+	packageConfigs := jsonParsed.Path("item.package_configs").Children()
+	for _, packageConfig := range packageConfigs {
+		title := packageConfig.Path("package.title").Data().(string)
+		if title == packageName {
+			integrationPackage := IntegrationPackage{
+				packageConfigID: packageConfig.Path("id").Data().(string),
+				name:            packageConfig.Path("package.name").Data().(string),
+				title:           title,
+				version:         packageConfig.Path("package.version").Data().(string),
+			}
+
+			log.WithFields(log.Fields{
+				"package":  integrationPackage,
+				"configID": agentConfigID,
+			}).Debug("Package config found in the configuration")
+
+			return integrationPackage, nil
+		}
+	}
+
+	return IntegrationPackage{}, fmt.Errorf("%s package config not found in the configuration", packageName)
+}
+
 // getIntegrationLatestVersion sends a GET request to Ingest Manager for the existing integrations
 // checking if the desired integration exists in the package registry. If so, it will
 // return name and version (latest) of the integration
@@ -135,9 +219,15 @@ func getIntegrationLatestVersion(integrationName string) (string, string, error)
 	}).Trace("Integrations retrieved")
 
 	for _, integration := range integrations {
-		name := integration.Path("name").Data().(string)
-		if name == strings.ToLower(integrationName) {
+		title := integration.Path("title").Data().(string)
+		if strings.ToLower(title) == strings.ToLower(integrationName) {
+			name := integration.Path("name").Data().(string)
 			version := integration.Path("version").Data().(string)
+			log.WithFields(log.Fields{
+				"name":    name,
+				"title":   title,
+				"version": version,
+			}).Debug("Integration in latest version found")
 			return name, version, nil
 		}
 	}
@@ -178,32 +268,12 @@ func installIntegrationAssets(integration string, version string) (IntegrationPa
 	packageConfigID := response.Path("id").Data().(string)
 
 	// get the integration again in the case it's already installed
-	body, err = curl.Get(postReq)
+	integrationPackage, err := getIntegration(integration, version)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"body":  body,
-			"error": err,
-			"url":   url,
-		}).Error("Could not get the integration")
 		return IntegrationPackage{}, err
 	}
 
-	jsonParsed, err = gabs.ParseJSON([]byte(body))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":        err,
-			"responseBody": body,
-		}).Error("Could not parse get response into JSON")
-		return IntegrationPackage{}, err
-	}
-
-	response = jsonParsed.Path("response")
-	integrationPackage := IntegrationPackage{
-		packageConfigID: packageConfigID,
-		name:            response.Path("name").Data().(string),
-		title:           response.Path("title").Data().(string),
-		version:         response.Path("latestVersion").Data().(string),
-	}
+	integrationPackage.packageConfigID = packageConfigID
 
 	return integrationPackage, nil
 }

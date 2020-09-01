@@ -23,6 +23,7 @@ const fleetAgentsUnEnrollURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents
 const fleetEnrollmentTokenURL = kibanaBaseURL + "/api/ingest_manager/fleet/enrollment-api-keys"
 const fleetSetupURL = kibanaBaseURL + "/api/ingest_manager/fleet/setup"
 const ingestManagerAgentConfigsURL = kibanaBaseURL + "/api/ingest_manager/agent_configs"
+const ingestManagerAgentConfigURL = ingestManagerAgentConfigsURL + "/%s"
 const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/ingest_manager/data_streams"
 
 const actionADDED = "added"
@@ -352,7 +353,7 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 	return nil
 }
 
-func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(configurationName string, packageName string) error {
+func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(packageName string, configurationName string) error {
 	log.WithFields(log.Fields{
 		"configuration": configurationName,
 		"package":       packageName,
@@ -362,6 +363,12 @@ func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(configuration
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
+
+	integration, err := getIntegrationFromAgentConfiguration(packageName, fts.ConfigID)
+	if err != nil {
+		return err
+	}
+	fts.Integration = integration
 
 	configurationIsPresentFn := func() error {
 		defaultConfig, err := getAgentDefaultConfig()
@@ -402,7 +409,7 @@ func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(configuration
 		return err
 	}
 
-	err := backoff.Retry(configurationIsPresentFn, exp)
+	err = backoff.Retry(configurationIsPresentFn, exp)
 	if err != nil {
 		return err
 	}
@@ -418,6 +425,17 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInTheConfiguration(packageNam
 	}).Trace("Doing an operation for a package on a configuration")
 
 	if strings.ToLower(action) == actionADDED {
+		name, version, err := getIntegrationLatestVersion(packageName)
+		if err != nil {
+			return err
+		}
+
+		integration, err := getIntegration(name, version)
+		if err != nil {
+			return err
+		}
+		fts.Integration = integration
+
 		integrationConfigurationID, err := addIntegrationToConfiguration(fts.Integration, fts.ConfigID)
 		if err != nil {
 			return err
@@ -426,7 +444,13 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInTheConfiguration(packageNam
 		fts.Integration.packageConfigID = integrationConfigurationID
 		return nil
 	} else if strings.ToLower(action) == actionREMOVED {
-		err := deleteIntegrationFromConfiguration(fts.Integration, fts.ConfigID)
+		integration, err := getIntegrationFromAgentConfiguration(packageName, fts.ConfigID)
+		if err != nil {
+			return err
+		}
+		fts.Integration = integration
+
+		err = deleteIntegrationFromConfiguration(fts.Integration, fts.ConfigID)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"err":             err,
@@ -548,7 +572,8 @@ func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent(image strin
 		return err
 	}
 
-	return fts.theIntegrationIsOperatedInTheConfiguration("enpdoint", actionADDED, "default")
+	// we use integration's title
+	return fts.theIntegrationIsOperatedInTheConfiguration("Elastic Endpoint", actionADDED, "default")
 }
 
 func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
