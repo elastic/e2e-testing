@@ -814,7 +814,7 @@ func (fts *FleetTestSuite) removeToken() error {
 func (fts *FleetTestSuite) unenrollHostname(force bool) error {
 	log.Tracef("Un-enrolling all agentIDs for %s", fts.Hostname)
 
-	jsonParsed, err := getOnlineAgents()
+	jsonParsed, err := getOnlineAgents(true)
 	if err != nil {
 		return err
 	}
@@ -1114,7 +1114,7 @@ func getAgentEvents(agentID string, policyID string, updatedAt string) error {
 func getAgentID(agentHostname string) (string, error) {
 	log.Tracef("Retrieving agentID for %s", agentHostname)
 
-	jsonParsed, err := getOnlineAgents()
+	jsonParsed, err := getOnlineAgents(false)
 	if err != nil {
 		return "", err
 	}
@@ -1174,13 +1174,13 @@ func getDataStreams() (*gabs.Container, error) {
 // getOnlineAgents sends a GET request to Fleet for the existing online agents
 // Will return the JSON object representing the response of querying Fleet's Agents
 // endpoint
-func getOnlineAgents() (*gabs.Container, error) {
+func getOnlineAgents(showInactive bool) (*gabs.Container, error) {
 	r := createDefaultHTTPRequest(fleetAgentsURL)
 	// let's not URL encode the querystring, as it seems Kibana is not handling
 	// the request properly, returning an 400 Bad Request error with this message:
 	// [request query.page=1&perPage=20&showInactive=true]: definition for this key is missing
 	r.EncodeURL = false
-	r.QueryString = fmt.Sprintf("page=1&perPage=20&showInactive=%t", false)
+	r.QueryString = fmt.Sprintf("page=1&perPage=20&showInactive=%t", showInactive)
 
 	body, err := curl.Get(r)
 	if err != nil {
@@ -1222,11 +1222,7 @@ func isAgentInStatus(agentID string, desiredStatus string) (bool, error) {
 
 	agentStatus := jsonResponse.Path("item.status").Data().(string)
 
-	if strings.ToLower(agentStatus) == desiredStatus {
-		return true, nil
-	}
-
-	return false, fmt.Errorf("There is no agentID in the %s status", desiredStatus)
+	return (strings.ToLower(agentStatus) == strings.ToLower(desiredStatus)), nil
 }
 
 func unenrollAgent(agentID string, force bool) error {
