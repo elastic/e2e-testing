@@ -710,7 +710,7 @@ func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	getEventsFn := func() error {
-		err := getAgentEvents(agentID, fts.PolicyID, fts.PolicyUpdatedAt)
+		err := getAgentEvents("endpoint-security", agentID, fts.Integration.packageConfigID, fts.PolicyUpdatedAt)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"elapsedTime": exp.GetElapsedTime(),
@@ -1054,7 +1054,7 @@ func getAgentDefaultPolicy() (*gabs.Container, error) {
 	return defaultPolicy, nil
 }
 
-func getAgentEvents(agentID string, policyID string, updatedAt string) error {
+func getAgentEvents(applicationName string, agentID string, packagePolicyID string, updatedAt string) error {
 	url := fmt.Sprintf(fleetAgentEventsURL, agentID)
 	getReq := createDefaultHTTPRequest(url)
 	getReq.QueryString = "page=1&perPage=20"
@@ -1062,10 +1062,12 @@ func getAgentEvents(agentID string, policyID string, updatedAt string) error {
 	body, err := curl.Get(getReq)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"agentID": agentID,
-			"body":    body,
-			"error":   err,
-			"url":     url,
+			"agentID":         agentID,
+			"application":     applicationName,
+			"body":            body,
+			"error":           err,
+			"packagePolicyID": packagePolicyID,
+			"url":             url,
 		}).Error("Could not get agent events from Fleet")
 		return err
 	}
@@ -1085,28 +1087,31 @@ func getAgentEvents(agentID string, policyID string, updatedAt string) error {
 		timestamp := item.Path("timestamp").Data().(string)
 
 		log.WithFields(log.Fields{
-			"agentID":    agentID,
-			"policyID":   policyID,
-			"event_at":   timestamp,
-			"message":    message,
-			"updated_at": updatedAt,
+			"agentID":         agentID,
+			"application":     applicationName,
+			"event_at":        timestamp,
+			"message":         message,
+			"packagePolicyID": packagePolicyID,
+			"updated_at":      updatedAt,
 		}).Trace("Event found")
 
-		matches := (strings.Contains(message, "endpoint-security") &&
-			strings.Contains(message, "["+agentID+"]: State changed to RUNNING: Running") &&
-			strings.Contains(message, "Protecting with policy {"+policyID+"}"))
+		matches := (strings.Contains(message, applicationName) &&
+			strings.Contains(message, "["+agentID+"]: State changed to") &&
+			strings.Contains(message, "Protecting with policy {"+packagePolicyID+"}"))
 
 		if matches && timestamp > updatedAt {
 			log.WithFields(log.Fields{
-				"updated_at": updatedAt,
-				"event_at":   timestamp,
-				"message":    message,
+				"application":     applicationName,
+				"event_at":        timestamp,
+				"packagePolicyID": packagePolicyID,
+				"updated_at":      updatedAt,
+				"message":         message,
 			}).Info("Event after the update was found")
 			return nil
 		}
 	}
 
-	return fmt.Errorf("No events where found for the agent in the policy")
+	return fmt.Errorf("No %s events where found for the agent in the %s policy", applicationName, packagePolicyID)
 }
 
 // getAgentID sends a GET request to Fleet for a existing hostname
