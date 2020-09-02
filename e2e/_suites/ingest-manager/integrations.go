@@ -238,6 +238,38 @@ func getIntegrationLatestVersion(integrationName string) (string, string, error)
 	return "", "", fmt.Errorf("The %s integration was not found", integrationName)
 }
 
+// getMetadataFromSecurityApp sends a POST request to Endpoint retrieving the metadata that
+// is listed in the Security App
+func getMetadataFromSecurityApp() (*gabs.Container, error) {
+	postReq := createDefaultHTTPRequest(endpointMetadataURL)
+	body, err := curl.Post(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   postReq.URL,
+		}).Error("Could not get endpoint metadata")
+		return nil, err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return nil, err
+	}
+
+	hosts := jsonParsed.Path("hosts")
+
+	log.WithFields(log.Fields{
+		"hosts": hosts,
+	}).Trace("Hosts in the Security App")
+
+	return hosts, nil
+}
+
 // installIntegration sends a POST request to Ingest Manager installing the assets for an integration
 func installIntegrationAssets(integration string, version string) (IntegrationPackage, error) {
 	url := fmt.Sprintf(ingestManagerIntegrationURL, integration, version)
@@ -281,37 +313,16 @@ func installIntegrationAssets(integration string, version string) (IntegrationPa
 	return integrationPackage, nil
 }
 
-// isAgentListedInSecurityApp sends a POST request to Endpoint to check if a hostname
+// isAgentListedInSecurityApp retrieves the hosts from Endpoint to check if a hostname
 // is listed in the Security App. For that, we will inspect the metadata, and will iterate
 // through the hosts, until we get the proper hostname.
 func isAgentListedInSecurityApp(hostName string) (*gabs.Container, error) {
-	postReq := createDefaultHTTPRequest(endpointMetadataURL)
-	body, err := curl.Post(postReq)
+	hosts, err := getMetadataFromSecurityApp()
 	if err != nil {
-		log.WithFields(log.Fields{
-			"body":  body,
-			"error": err,
-			"url":   postReq.URL,
-		}).Error("Could not get endpoint metadata")
 		return nil, err
 	}
 
-	jsonParsed, err := gabs.ParseJSON([]byte(body))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":        err,
-			"responseBody": body,
-		}).Error("Could not parse response into JSON")
-		return nil, err
-	}
-
-	hosts := jsonParsed.Path("hosts").Children()
-
-	log.WithFields(log.Fields{
-		"hosts": hosts,
-	}).Trace("Hosts in the Security App")
-
-	for _, host := range hosts {
+	for _, host := range hosts.Children() {
 		metadataHostname := host.Path("metadata.host.hostname").Data().(string)
 		if metadataHostname == hostName {
 			log.WithFields(log.Fields{
@@ -350,6 +361,34 @@ func isAgentListedInSecurityAppWithStatus(hostName string, desiredStatus string)
 	}).Debug("Hostname for the agent listed with desired status in the Security App")
 
 	return (hostStatus == desiredStatus), nil
+}
+
+// isPolicyResponseListedInSecurityApp sends a POST request to Endpoint to check if a hostname
+// is listed in the Security App. For that, we will inspect the metadata, and will iterate
+// through the hosts, until we get the policy status, finally checking for the success
+// status.
+func isPolicyResponseListedInSecurityApp(agentID string) (bool, error) {
+	hosts, err := getMetadataFromSecurityApp()
+	if err != nil {
+		return false, err
+	}
+
+	for _, host := range hosts.Children() {
+		metadataAgentID := host.Path("metadata.elastic.agent.id").Data().(string)
+		name := host.Path("metadata.Endpoint.policy.applied.name").Data().(string)
+		status := host.Path("metadata.Endpoint.policy.applied.status").Data().(string)
+		if metadataAgentID == agentID {
+			log.WithFields(log.Fields{
+				"agentID": agentID,
+				"name":    name,
+				"status":  status,
+			}).Debug("Policy response for the agent listed in the Security App")
+
+			return (status == "success"), nil
+		}
+	}
+
+	return false, nil
 }
 
 // updateIntegrationPackageConfig sends a PUT request to Ingest Manager updating integration

@@ -597,7 +597,53 @@ func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent(image strin
 }
 
 func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
-	return godog.ErrPending
+	agentID, err := getAgentID(fts.Hostname)
+	if err != nil {
+		return err
+	}
+
+	maxTimeout := 2 * time.Minute
+	retryCount := 1
+
+	exp := e2e.GetExponentialBackOff(maxTimeout)
+
+	getEventsFn := func() error {
+		listed, err := isPolicyResponseListedInSecurityApp(agentID)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"err":         err,
+				"retries":     retryCount,
+			}).Warn("Could not get metadata from the Administration view in the Security App yet")
+			retryCount++
+
+			return err
+		}
+
+		if !listed {
+			log.WithFields(log.Fields{
+				"agentID":     agentID,
+				"elapsedTime": exp.GetElapsedTime(),
+				"retries":     retryCount,
+			}).Warn("The policy response is not listed as 'success' in the Administration view in the Security App yet")
+			retryCount++
+
+			return fmt.Errorf("The policy response is not listed as 'success' in the Administration view in the Security App yet")
+		}
+
+		log.WithFields(log.Fields{
+			"elapsedTime": exp.GetElapsedTime(),
+			"retries":     retryCount,
+		}).Info("The policy response is listed as 'success' in the Administration view in the Security App")
+		return nil
+	}
+
+	err = backoff.Retry(getEventsFn, exp)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMode(name string, mode string) error {
