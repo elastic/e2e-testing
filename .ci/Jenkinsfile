@@ -191,10 +191,11 @@ pipeline {
             unstash 'source'
             dir("${BASE_DIR}/e2e") {
               sh(label: 'Build docs', script: 'make build-docs')
-          }
-          post {
-            always {
-              archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/e2e/docs/**"
+            }
+            post {
+              always {
+                archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/e2e/docs/**"
+              }
             }
           }
         }
