@@ -6,6 +6,7 @@ LOG_LEVEL?=INFO
 RETRY_TIMEOUT?=3
 STACK_VERSION?=
 METRICBEAT_VERSION?=
+PICKLES_VERSION?="2.20.1"
 VERSION_VALUE=`cat ../cli/VERSION.txt`
 
 ifneq ($(FEATURE),)
@@ -15,6 +16,14 @@ endif
 GO_IMAGE_TAG?='stretch'
 GOOS?='linux'
 GOARCH?='amd64'
+
+.PHONT: build-docs
+build-docs:
+	rm -fr docs
+	@docker run --rm -it -v $(PWD):/suites docker.elastic.co/observavbility-ci/picklesdoc:$(PICKLES_VERSION) -f /suites -o /suites/docs --sn "E2E Testing" --sv $(VERSION_VALUE)
+	# because pickledocs is a Windows tool, there is a wrong slash.
+	mv docs/.\\/index.html docs/index.html
+	rm -fr docs/.\\
 
 .PHONY: fetch-binary
 fetch-binary:
