@@ -33,6 +33,6 @@ Scenario: Un-enrolling Elastic Agent stops Elastic Endpoint
 Scenario: Removing Endpoint from Agent policy stops the connected Endpoint
   Given an Endpoint is successfully deployed with a "centos" Agent
   When the "Elastic Endpoint" integration is "removed" in the "default" policy
-  Then the agent is listed in Fleet as "inactive"
-    And the host name is not shown in the Administration view in the Security App
+  Then the agent is listed in Fleet as "online"
+    But the host name is not shown in the Administration view in the Security App
     And the "elastic-endpoint" process is in the "stopped" state on the host
