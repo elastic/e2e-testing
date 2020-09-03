@@ -82,6 +82,15 @@ The anatomy of a feature file is:
 ### Configuration files
 It's possible that there will exist configuration YAML files in the test suire. We recommend locating them under the `configurations` folder in the suite directory. The name of the file will represent the feature to be tested (i.e. `apache.yml`). In this file we will add those configurations that are exclusive to the feature to be tests.
 
+## Generating documentation about the specifications
+If you want to generate a website for the feature files, please run this command:
+
+```shell
+$ make build-docs
+```
+
+It will generate the website under the `./docs` directory (which is ignored in Git). You'll be able to navigate through the feature files and scenarios in a website.
+
 ## Debugging the tests
 
 ### VSCode
