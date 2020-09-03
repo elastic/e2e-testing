@@ -20,7 +20,7 @@ GOARCH?='amd64'
 .PHONT: build-docs
 build-docs:
 	rm -fr docs
-	@docker run --rm -v $(PWD):/suites docker.elastic.co/observavbility-ci/picklesdoc:$(PICKLES_VERSION) -f /suites -o /suites/docs --sn "E2E Testing" --sv $(VERSION_VALUE)
+	@docker run --rm -v $(PWD):/suites docker.elastic.co/observability-ci/picklesdoc:$(PICKLES_VERSION) -f /suites -o /suites/docs --sn "E2E Testing" --sv $(VERSION_VALUE)
 	# because pickledocs is a Windows tool, there is a wrong slash.
 	mv docs/.\\/index.html docs/index.html
 	rm -fr docs/.\\
