@@ -136,6 +136,28 @@ pipeline {
             }
           }
         }
+        stage('Build Docs') {
+          options { skipDefaultCheckout() }
+          when {
+            beforeAgent true
+            anyOf {
+              expression { return env.FORCE_SKIP_GIT_CHECKS == "true" }
+              expression { return env.SKIP_TESTS == "false" }
+            }
+          }
+          steps {
+            deleteDir()
+            unstash 'source'
+            dir("${BASE_DIR}/e2e") {
+              sh(label: 'Build docs', script: 'make build-docs')
+            }
+            post {
+              always {
+                archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/e2e/docs/**"
+              }
+            }
+          }
+        }
         stage('End-To-End Tests') {
           options { skipDefaultCheckout() }
           environment {
@@ -173,28 +195,6 @@ pipeline {
                   }
                   parallel(parallelTasks)
                 }
-              }
-            }
-          }
-        }
-        stage('Build Docs') {
-          options { skipDefaultCheckout() }
-          when {
-            beforeAgent true
-            anyOf {
-              expression { return env.FORCE_SKIP_GIT_CHECKS == "true" }
-              expression { return env.SKIP_TESTS == "false" }
-            }
-          }
-          steps {
-            deleteDir()
-            unstash 'source'
-            dir("${BASE_DIR}/e2e") {
-              sh(label: 'Build docs', script: 'make build-docs')
-            }
-            post {
-              always {
-                archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/e2e/docs/**"
               }
             }
           }
