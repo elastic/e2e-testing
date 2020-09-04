@@ -153,7 +153,9 @@ pipeline {
             }
             post {
               always {
-                archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/e2e/docs/**"
+                dir("${BASE_DIR}") {
+                  archiveArtifacts allowEmptyArchive: true, artifacts: "e2e/docs/**"
+                }
               }
             }
           }
