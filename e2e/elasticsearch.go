@@ -316,6 +316,15 @@ func WaitForNumberOfHits(indexName string, query map[string]interface{}, desired
 	numberOfHits := func() error {
 		hits, err := search(indexName, query)
 		if err != nil {
+			log.WithFields(log.Fields{
+				"desiredHits": desiredHits,
+				"elapsedTime": exp.GetElapsedTime(),
+				"error":       err,
+				"index":       indexName,
+				"retry":       retryCount,
+			}).Warn("There was an error executing the query")
+
+			retryCount++
 			return err
 		}
 
@@ -331,7 +340,7 @@ func WaitForNumberOfHits(indexName string, query map[string]interface{}, desired
 
 			retryCount++
 
-			return fmt.Errorf("Not enough hits in the index yet. Current: %d, Desired: %d", hitsCount, desiredHits)
+			return fmt.Errorf("Not enough hits in the %s index yet. Current: %d, Desired: %d", indexName, hitsCount, desiredHits)
 		}
 
 		result = hits
