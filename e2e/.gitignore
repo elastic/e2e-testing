@@ -1,6 +1,7 @@
 godog.test
 report.xml
 
+docs
 outputs/*
 !outputs/.touch
 

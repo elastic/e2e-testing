@@ -136,6 +136,31 @@ pipeline {
             }
           }
         }
+        stage('Build Docs') {
+          options { skipDefaultCheckout() }
+          when {
+            beforeAgent true
+            anyOf {
+              expression { return env.FORCE_SKIP_GIT_CHECKS == "true" }
+              expression { return env.SKIP_TESTS == "false" }
+            }
+          }
+          steps {
+            deleteDir()
+            unstash 'source'
+            dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
+            dir("${BASE_DIR}/e2e") {
+              sh(label: 'Build docs', script: 'make build-docs')
+            }
+          }
+          post {
+            always {
+              dir("${BASE_DIR}") {
+                archiveArtifacts allowEmptyArchive: true, artifacts: "e2e/docs/**"
+              }
+            }
+          }
+        }
         stage('End-To-End Tests') {
           options { skipDefaultCheckout() }
           environment {
