@@ -161,7 +161,7 @@ func search(indexName string, query map[string]interface{}) (SearchResult, error
 	log.WithFields(log.Fields{
 		"index": indexName,
 		"query": fmt.Sprintf("%s", query),
-	}).Debug("Elasticsearch query")
+	}).Trace("Elasticsearch query")
 
 	res, err := esClient.Search(
 		esClient.Search.WithIndex(indexName),
