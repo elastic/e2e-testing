@@ -17,7 +17,7 @@ import (
 
 // CheckInstalledSoftware checks that the required software is present
 func CheckInstalledSoftware(binaries []string) {
-	log.Debugf("Validating required tools: %v", binaries)
+	log.Tracef("Validating required tools: %v", binaries)
 
 	for _, binary := range binaries {
 		err := which(binary)
@@ -108,6 +108,6 @@ func which(binary string) error {
 	log.WithFields(log.Fields{
 		"binary": binary,
 		"path":   path,
-	}).Debug("Binary is present")
+	}).Trace("Binary is present")
 	return nil
 }

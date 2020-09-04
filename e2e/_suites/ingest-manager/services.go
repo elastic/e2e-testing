@@ -177,6 +177,6 @@ func systemctlRun(profile string, image string, service string, command string) 
 	log.WithFields(log.Fields{
 		"command": cmd,
 		"service": service,
-	}).Debug("Systemctl executed")
+	}).Trace("Systemctl executed")
 	return nil
 }

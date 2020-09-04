@@ -22,7 +22,7 @@ type HTTPRequest struct {
 	EncodeURL         bool
 	Headers           map[string]string
 	method            string
-	Payload           []byte
+	Payload           string // string representation of fthe payload, in JSON format
 	QueryString       string
 	URL               string
 }
@@ -62,21 +62,31 @@ func Post(r HTTPRequest) (string, error) {
 	return request(r)
 }
 
+// Put executes a PUT request
+func Put(r HTTPRequest) (string, error) {
+	r.method = "PUT"
+
+	return request(r)
+}
+
 // Post executes a request
 func request(r HTTPRequest) (string, error) {
 	escapedURL := r.GetURL()
 
-	log.WithFields(log.Fields{
+	fields := log.Fields{
 		"method":     r.method,
 		"escapedURL": escapedURL,
-	}).Debug("Executing request")
+	}
 
 	var body io.Reader
-	if r.Payload != nil {
-		body = bytes.NewReader(r.Payload)
+	if r.Payload != "" {
+		body = bytes.NewReader([]byte(r.Payload))
+		fields["payload"] = r.Payload
 	} else {
 		body = nil
 	}
+
+	log.WithFields(fields).Trace("Executing request")
 
 	req, err := http.NewRequest(r.method, escapedURL, body)
 	if err != nil {
