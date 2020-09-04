@@ -40,7 +40,7 @@ pipeline {
   stages {
     stage('Run Tests') {
       steps {
-        build(job: "e2e-tests/e2e-testing-mbp/${ env.JOB_BASE_NAME.startsWith('PR-') ? 'none' : env.JOB_BASE_NAME }",
+        build(job: "e2e-tests/e2e-testing-mbp/${env.JOB_BASE_NAME}",
           parameters: [
             booleanParam(name: 'forceSkipGitChecks', value: true),
             booleanParam(name: 'forceSkipPresubmit', value: true),
