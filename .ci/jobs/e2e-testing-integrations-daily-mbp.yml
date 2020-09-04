@@ -1,7 +1,7 @@
 ---
 - job:
     name: e2e-tests/e2e-testing-helm-daily-mbp
-    display-name: End-2-End tests for Observability Metricbeat Integrations Pipeline
+    display-name: End-2-End tests for Metricbeat Integrations Pipeline
     description: Run E2E Metricbeat Integrations test suite daily, including maintenance branches
     view: E2E
     project-type: multibranch
