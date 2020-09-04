@@ -148,6 +148,7 @@ pipeline {
           steps {
             deleteDir()
             unstash 'source'
+            dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
             dir("${BASE_DIR}/e2e") {
               sh(label: 'Build docs', script: 'make build-docs')
             }
