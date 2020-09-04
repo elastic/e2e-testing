@@ -64,19 +64,24 @@ func (sats *StandAloneTestSuite) afterScenario() {
 }
 
 func (sats *StandAloneTestSuite) contributeSteps(s *godog.Suite) {
-	s.Step(`^a stand-alone agent is deployed$`, sats.aStandaloneAgentIsDeployed)
+	s.Step(`^a "([^"]*)" stand-alone agent is deployed$`, sats.aStandaloneAgentIsDeployed)
 	s.Step(`^there is new data in the index from agent$`, sats.thereIsNewDataInTheIndexFromAgent)
 	s.Step(`^the "([^"]*)" docker container is stopped$`, sats.theDockerContainerIsStopped)
 	s.Step(`^there is no new data in the index after agent shuts down$`, sats.thereIsNoNewDataInTheIndexAfterAgentShutsDown)
 }
 
-func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
+func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error {
 	log.Trace("Deploying an agent to Fleet")
 
 	serviceManager := services.NewServiceManager()
 
 	profile := IngestManagerProfileName
 	serviceName := ElasticAgentServiceName
+
+	if image == "ubi" {
+		serviceName = ElasticAgentServiceName + "-ubi"
+	}
+
 	containerName := fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
 
 	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/master/x-pack/elastic-agent/elastic-agent.docker.yml"
@@ -87,6 +92,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 	}
 	sats.AgentConfigFilePath = configurationFilePath
 
+	profileEnv["elasticAgentContainerName"] = containerName
 	profileEnv["elasticAgentConfigFile"] = sats.AgentConfigFilePath
 	profileEnv["elasticAgentTag"] = standAloneVersion
 
