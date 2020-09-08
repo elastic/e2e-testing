@@ -6,6 +6,7 @@ LOG_LEVEL?=INFO
 RETRY_TIMEOUT?=3
 STACK_VERSION?=
 METRICBEAT_VERSION?=
+PICKLES_VERSION?="2.20.1"
 VERSION_VALUE=`cat ../cli/VERSION.txt`
 
 ifneq ($(FEATURE),)
@@ -15,6 +16,14 @@ endif
 GO_IMAGE_TAG?='stretch'
 GOOS?='linux'
 GOARCH?='amd64'
+
+.PHONT: build-docs
+build-docs:
+	rm -fr docs
+	@docker run --rm --user $$(id -u):$$(id -g) -v $(PWD):/suites docker.elastic.co/observability-ci/picklesdoc:$(PICKLES_VERSION) -f /suites -o /suites/docs --sn "E2E Testing" --sv $(VERSION_VALUE)
+	# because pickledocs is a Windows tool, there is a wrong slash.
+	mv docs/.\\/index.html docs/index.html
+	rm -fr docs/.\\
 
 .PHONY: fetch-binary
 fetch-binary:
@@ -29,7 +38,7 @@ install:
 .PHONY: install-godog
 install-godog: export GO111MODULE := on
 install-godog:
-	go get -v github.com/cucumber/godog/cmd/godog@v0.9.0
+	go get -v github.com/cucumber/godog/cmd/godog@v0.10.0
 
 .PHONY: functional-test
 functional-test: install-godog
@@ -40,6 +49,10 @@ functional-test: install-godog
 	METRICBEAT_VERSION=${METRICBEAT_VERSION} \
 	STACK_VERSION=${STACK_VERSION} \
 	godog --format=${FORMAT} ${FEATURE_FLAG} ${FEATURE}
+
+.PHONY: lint
+lint:
+	@docker run -t --rm -v $(PWD):/src -w /src gherkin/lint **/*.feature --disable AvoidOutlineForSingleExample,TooClumsy,TooManySteps,TooManyDifferentTags,TooLongStep
 
 .PHONY: notice
 notice:

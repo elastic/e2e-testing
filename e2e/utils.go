@@ -138,6 +138,12 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 	}
 
 	artifactPath := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
+	if extension == "deb" || extension == "rpm" {
+		// elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm
+		// elastic-agent-8.0.0-SNAPSHOT-amd64.deb
+		artifactPath = fmt.Sprintf("%s-%s-%s.%s", artifact, version, arch, extension)
+	}
+
 	packagesObject := jsonParsed.Path("packages")
 	// we need to get keys with dots using Search instead of Path
 	downloadObject := packagesObject.Search(artifactPath)
@@ -254,7 +260,7 @@ func DownloadFile(url string) (string, error) {
 			"retries":     retryCount,
 			"path":        filepath,
 			"url":         url,
-		}).Debug("File downloaded")
+		}).Trace("File downloaded")
 
 		fileReader = resp.Body
 
@@ -264,7 +270,7 @@ func DownloadFile(url string) (string, error) {
 	log.WithFields(log.Fields{
 		"url":  url,
 		"path": filepath,
-	}).Debug("Downloading file")
+	}).Trace("Downloading file")
 
 	err = backoff.Retry(download, exp)
 	if err != nil {
@@ -314,7 +320,7 @@ func Sleep(seconds string) error {
 		return err
 	}
 
-	log.WithFields(fields).Debugf("Waiting %s seconds", seconds)
+	log.WithFields(fields).Tracef("Waiting %s seconds", seconds)
 	time.Sleep(time.Duration(s) * time.Second)
 
 	return nil
@@ -322,7 +328,7 @@ func Sleep(seconds string) error {
 
 // WaitForProcess polls a container executing "ps" command until the process is in the desired state (present or not),
 // or a timeout happens
-func WaitForProcess(host string, process string, desiredState string, maxTimeout time.Duration) error {
+func WaitForProcess(containerName string, process string, desiredState string, maxTimeout time.Duration) error {
 	exp := GetExponentialBackOff(maxTimeout)
 
 	mustBePresent := false
@@ -335,25 +341,24 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 		log.WithFields(log.Fields{
 			"desiredState": desiredState,
 			"process":      process,
-		}).Debug("Checking process desired state on the host")
+		}).Trace("Checking process desired state on the container")
 
-		output, err := docker.ExecCommandIntoContainer(context.Background(), host, "root", []string{"pgrep", "-n", "-l", process})
+		output, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"pgrep", "-n", "-l", process})
 		if err != nil {
 			log.WithFields(log.Fields{
-				"desiredState": desiredState,
-				"elapsedTime":  exp.GetElapsedTime(),
-				"error":        err,
-				"host":         host,
-				"process":      process,
-				"retry":        retryCount,
-			}).Warn("Could not execute 'pgrep -n -l' in the host")
+				"desiredState":  desiredState,
+				"elapsedTime":   exp.GetElapsedTime(),
+				"error":         err,
+				"container":     containerName,
+				"mustBePresent": mustBePresent,
+				"process":       process,
+				"retry":         retryCount,
+			}).Warn("Could not execute 'pgrep -n -l' in the container")
 
 			retryCount++
 
 			return err
 		}
-
-		log.Debugf("pgrep -n -l %s: %s", process, output)
 
 		outputContainsProcess := strings.Contains(output, process)
 
@@ -361,8 +366,8 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 		if mustBePresent == outputContainsProcess {
 			log.WithFields(log.Fields{
 				"desiredState":  desiredState,
-				"host":          host,
-				"mustBePresent": outputContainsProcess,
+				"container":     containerName,
+				"mustBePresent": mustBePresent,
 				"process":       process,
 			}).Infof("Process desired state checked")
 
@@ -370,12 +375,12 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 		}
 
 		if mustBePresent {
-			err = fmt.Errorf("Process is not running in the host yet")
+			err = fmt.Errorf("%s process is not running in the container yet", process)
 			log.WithFields(log.Fields{
 				"desiredState": desiredState,
 				"elapsedTime":  exp.GetElapsedTime(),
 				"error":        err,
-				"host":         host,
+				"container":    containerName,
 				"process":      process,
 				"retry":        retryCount,
 			}).Warn(err.Error())
@@ -385,11 +390,11 @@ func WaitForProcess(host string, process string, desiredState string, maxTimeout
 			return err
 		}
 
-		err = fmt.Errorf("Process is still running in the host")
+		err = fmt.Errorf("%s process is still running in the container", process)
 		log.WithFields(log.Fields{
 			"elapsedTime": exp.GetElapsedTime(),
 			"error":       err,
-			"host":        host,
+			"container":   containerName,
 			"process":     process,
 			"state":       desiredState,
 			"retry":       retryCount,

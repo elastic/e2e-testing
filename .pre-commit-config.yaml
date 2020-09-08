@@ -36,13 +36,4 @@ repos:
     -   id: remove-en-dashes
     -   id: check-jjbb
     -   id: check-gherkin-lint
-
--   repo: local
-    hooks:
-    -   id: golangci-lint
-        name: 'golangci-lint'
-        entry: .ci/scripts/golangci-lint.sh
-        language: 'script'
-        verbose: true
-        files: '\.go$'
-        description: "Runs `golangci-lint`, requires https://github.com/golangci/golangci-lint"
+        args: ["--disable", "AvoidOutlineForSingleExample,TooClumsy,TooLongStep,TooManyDifferentTags,TooManySteps"]

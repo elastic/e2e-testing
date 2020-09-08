@@ -17,7 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// agentVersion is the version of the agent to use
+// standAloneVersion is the version of the agent to use
 // It can be overriden by ELASTIC_AGENT_VERSION env var
 var standAloneVersion = "8.0.0-SNAPSHOT"
 
@@ -45,12 +45,12 @@ func (sats *StandAloneTestSuite) contributeSteps(s *godog.Suite) {
 }
 
 func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
-	log.Debug("Deploying an agent to Fleet")
+	log.Trace("Deploying an agent to Fleet")
 
 	serviceManager := services.NewServiceManager()
 
-	profile := "ingest-manager"
-	serviceName := "elastic-agent"
+	profile := IngestManagerProfileName
+	serviceName := ElasticAgentServiceName
 	containerName := fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
 
 	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/master/x-pack/elastic-agent/elastic-agent.docker.yml"
@@ -107,7 +107,7 @@ func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 		return err
 	}
 
-	log.Debugf("Search result: %v", result)
+	log.Tracef("Search result: %v", result)
 
 	return e2e.AssertHitsArePresent(result)
 }
@@ -115,13 +115,8 @@ func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 func (sats *StandAloneTestSuite) theDockerContainerIsStopped(serviceName string) error {
 	serviceManager := services.NewServiceManager()
 
-	err := serviceManager.RemoveServicesFromCompose("ingest-manager", []string{serviceName}, profileEnv)
+	err := serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"service": serviceName,
-		}).Error("Could not stop the service.")
-
 		return err
 	}
 	sats.AgentStoppedDate = time.Now().UTC()

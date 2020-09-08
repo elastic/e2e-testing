@@ -18,6 +18,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// developerMode tears down the backend services (the k8s cluster)
+// after a test suite. This is the desired behavior, but when developing, we maybe want to keep
+// them running to speed up the development cycle.
+// It can be overriden by the DEVELOPER_MODE env var
+var developerMode = false
+
 var helm k8s.HelmManager
 
 //nolint:unused
@@ -25,6 +31,11 @@ var kubectl k8s.Kubectl
 
 func init() {
 	config.Init()
+
+	developerMode, _ = shell.GetEnvBool("DEVELOPER_MODE")
+	if developerMode {
+		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
+	}
 
 	helmVersion := "3.x"
 	if value, exists := os.LookupEnv("HELM_VERSION"); exists {
@@ -173,7 +184,7 @@ func (ts *HelmChartTestSuite) aResourceWillManagePods(resourceType string) error
 	log.WithFields(log.Fields{
 		"name":      ts.Name,
 		"resources": resources,
-	}).Debugf("Checking the %s pods", resourceType)
+	}).Tracef("Checking the %s pods", resourceType)
 
 	return nil
 }
@@ -192,7 +203,7 @@ func (ts *HelmChartTestSuite) checkResources(resourceType, selector string, min 
 	log.WithFields(log.Fields{
 		"name":  ts.Name,
 		"items": items,
-	}).Debugf("Checking for %d %s with selector %s", min, resourceType, selector)
+	}).Tracef("Checking for %d %s with selector %s", min, resourceType, selector)
 
 	return items, nil
 }
@@ -200,7 +211,7 @@ func (ts *HelmChartTestSuite) checkResources(resourceType, selector string, min 
 func (ts *HelmChartTestSuite) createCluster(k8sVersion string) error {
 	args := []string{"create", "cluster", "--name", ts.ClusterName, "--image", "kindest/node:v" + k8sVersion}
 
-	log.Debug("Creating cluster with kind")
+	log.Trace("Creating cluster with kind")
 	output, err := shell.Execute(".", "kind", args...)
 	if err != nil {
 		log.WithField("error", err).Error("Could not create the cluster")
@@ -235,7 +246,7 @@ func (ts *HelmChartTestSuite) deleteChart() {
 func (ts *HelmChartTestSuite) destroyCluster() error {
 	args := []string{"delete", "cluster", "--name", ts.ClusterName}
 
-	log.Debug("Deleting cluster")
+	log.Trace("Deleting cluster")
 	output, err := shell.Execute(".", "kind", args...)
 	if err != nil {
 		log.WithField("error", err).Error("Could not destroy the cluster")
@@ -539,7 +550,7 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	s.Step(`^a "([^"]*)" will expose the pods as network services internal to the k8s cluster$`, testSuite.aResourceWillExposePods)
 
 	s.BeforeSuite(func() {
-		log.Debug("Before Suite...")
+		log.Trace("Before Suite...")
 		toolsAreInstalled()
 
 		err := testSuite.createCluster(testSuite.KubernetesVersion)
@@ -556,17 +567,19 @@ func HelmChartFeatureContext(s *godog.Suite) {
 		}
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
-		log.Info("Before Helm scenario...")
+		log.Trace("Before Helm scenario...")
 	})
 	s.AfterSuite(func() {
-		log.Debug("After Suite...")
-		err := testSuite.destroyCluster()
-		if err != nil {
-			return
+		if !developerMode {
+			log.Trace("After Suite...")
+			err := testSuite.destroyCluster()
+			if err != nil {
+				return
+			}
 		}
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {
-		log.Debug("After Helm scenario...")
+		log.Trace("After Helm scenario...")
 		testSuite.deleteChart()
 	})
 }

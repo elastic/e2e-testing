@@ -80,7 +80,7 @@ func GetComposeFile(isProfile bool, composeName string) (string, error) {
 		log.WithFields(log.Fields{
 			"composeFilePath": composeFilePath,
 			"type":            serviceType,
-		}).Debug("Compose file found at workdir")
+		}).Trace("Compose file found at workdir")
 
 		return composeFilePath, nil
 	}
@@ -89,7 +89,7 @@ func GetComposeFile(isProfile bool, composeName string) (string, error) {
 		"composeFilePath": composeFilePath,
 		"error":           err,
 		"type":            serviceType,
-	}).Debug("Compose file not found at workdir. Extracting from binary resources")
+	}).Trace("Compose file not found at workdir. Extracting from binary resources")
 
 	composeBytes, err := opComposeBox.Find(path.Join(serviceType, composeName, composeFileName))
 	if err != nil {
@@ -118,7 +118,7 @@ func GetComposeFile(isProfile bool, composeName string) (string, error) {
 		"composeFilePath": composeFilePath,
 		"isProfile":       isProfile,
 		"type":            serviceType,
-	}).Debug("Compose file generated at workdir.")
+	}).Trace("Compose file generated at workdir.")
 
 	return composeFilePath, nil
 }
@@ -247,7 +247,7 @@ func checkConfigDirs(workspace string) {
 	log.WithFields(log.Fields{
 		"servicesPath": servicesPath,
 		"profilesPath": profilesPath,
-	}).Debug("'op' workdirs created.")
+	}).Trace("'op' workdirs created.")
 }
 
 func configureLogger() {
@@ -318,7 +318,7 @@ func packComposeFiles(op *OpConfig) *packr.Box {
 		log.WithFields(log.Fields{
 			"service": composeName,
 			"path":    boxedPath,
-		}).Debug("Boxed file")
+		}).Trace("Boxed file")
 
 		if composeType == "profiles" {
 			op.Profiles[composeName] = Profile{
@@ -363,7 +363,7 @@ func readFilesFromFileSystem(serviceType string) {
 				log.WithFields(log.Fields{
 					"service": name,
 					"path":    composeFilePath,
-				}).Debug("Workspace file")
+				}).Trace("Workspace file")
 
 				if serviceType == "services" {
 					// add a service or a profile

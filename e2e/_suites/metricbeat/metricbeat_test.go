@@ -21,9 +21,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// developerMode tears down the backend services (the elasticsearch instance)
+// after a test suite. This is the desired behavior, but when developing, we maybe want to keep
+// them running to speed up the development cycle.
+// It can be overriden by the DEVELOPER_MODE env var
+var developerMode = false
+
 // metricbeatVersion is the version of the metricbeat to use
 // It can be overriden by METRICBEAT_VERSION env var
-var metricbeatVersion = "7.8.0"
+var metricbeatVersion = "8.0.0-SNAPSHOT"
 
 // queryRetryTimeout is the number of seconds between elasticsearch retry queries.
 // It can be overriden by OP_RETRY_TIMEOUT env var
@@ -33,10 +39,15 @@ var serviceManager services.ServiceManager
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
-var stackVersion = "7.8.0"
+var stackVersion = "8.0.0-SNAPSHOT"
 
 func init() {
 	config.Init()
+
+	developerMode, _ = shell.GetEnvBool("DEVELOPER_MODE")
+	if developerMode {
+		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
+	}
 
 	metricbeatVersion = shell.GetEnv("METRICBEAT_VERSION", metricbeatVersion)
 	queryRetryTimeout = shell.GetEnvInteger("OP_RETRY_TIMEOUT", queryRetryTimeout)
@@ -120,15 +131,6 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	}
 
 	err := serviceManager.RemoveServicesFromCompose("metricbeat", services, env)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"service": mts.ServiceName,
-		}).Error("Could not stop the service.")
-	}
-
-	log.WithFields(log.Fields{
-		"service": mts.ServiceName,
-	}).Debug("Service removed from compose.")
 
 	if mts.cleanUpTmpFiles {
 		if _, err := os.Stat(mts.configurationFile); err == nil {
@@ -161,7 +163,7 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 	s.Step(`^metricbeat is installed using "([^"]*)" configuration$`, testSuite.installedUsingConfiguration)
 
 	s.BeforeSuite(func() {
-		log.Debug("Before Metricbeat Suite...")
+		log.Trace("Before Metricbeat Suite...")
 		serviceManager := services.NewServiceManager()
 
 		env := map[string]string{
@@ -185,19 +187,21 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 		}
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
-		log.Debug("Before scenario...")
+		log.Trace("Before scenario...")
 	})
 	s.AfterSuite(func() {
-		serviceManager := services.NewServiceManager()
-		err := serviceManager.StopCompose(true, []string{"metricbeat"})
-		if err != nil {
-			log.WithFields(log.Fields{
-				"profile": "metricbeat",
-			}).Error("Could not stop the profile.")
+		if !developerMode {
+			serviceManager := services.NewServiceManager()
+			err := serviceManager.StopCompose(true, []string{"metricbeat"})
+			if err != nil {
+				log.WithFields(log.Fields{
+					"profile": "metricbeat",
+				}).Error("Could not stop the profile.")
+			}
 		}
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {
-		log.Debug("After scenario...")
+		log.Trace("After scenario...")
 		err := testSuite.CleanUp()
 		if err != nil {
 			log.Errorf("CleanUp failed: %v", err)

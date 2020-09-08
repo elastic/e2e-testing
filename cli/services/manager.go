@@ -38,7 +38,7 @@ func (sm *DockerServiceManager) AddServicesToCompose(profile string, composeName
 	log.WithFields(log.Fields{
 		"profile":  profile,
 		"services": composeNames,
-	}).Debug("Adding services to compose")
+	}).Trace("Adding services to compose")
 
 	newComposeNames := []string{profile}
 	newComposeNames = append(newComposeNames, composeNames...)
@@ -61,7 +61,7 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(profile string, compos
 	log.WithFields(log.Fields{
 		"profile":  profile,
 		"services": composeNames,
-	}).Debug("Removing services to compose")
+	}).Trace("Removing services from compose")
 
 	newComposeNames := []string{profile}
 	newComposeNames = append(newComposeNames, composeNames...)
@@ -78,12 +78,16 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(profile string, compos
 		err := executeCompose(sm, true, newComposeNames, command, persistedEnv)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"command":  command,
-				"services": composeNames,
-				"profile":  profile,
-			}).Error("Could not remove services")
+				"command": command,
+				"service": composeName,
+				"profile": profile,
+			}).Error("Could not remove service from compose")
 			return err
 		}
+		log.WithFields(log.Fields{
+			"profile": profile,
+			"service": composeName,
+		}).Debug("Service removed from compose")
 	}
 
 	return nil
@@ -130,7 +134,7 @@ func (sm *DockerServiceManager) StopCompose(isProfile bool, composeNames []strin
 	log.WithFields(log.Fields{
 		"composeFilePath": composeFilePaths,
 		"profile":         composeNames[0],
-	}).Debug("Docker compose down.")
+	}).Trace("Docker compose down.")
 
 	return nil
 }

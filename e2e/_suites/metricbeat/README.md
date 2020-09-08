@@ -45,8 +45,8 @@ This is an example of the optional configuration:
 
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch, kibana, package registry)
-   export STACK_VERSION="7.8.0"
-   export METRICBEAT_VERSION="7.8.0"
+   export STACK_VERSION="8.0.0-SNAPSHOT"
+   export METRICBEAT_VERSION="8.0.0-SNAPSHOT"
    ```
 
 3. Define the proper Docker images to be used in tests (Optional).
@@ -61,6 +61,13 @@ This is an example of the optional configuration:
    - Install godog (from project's root directory): `make -C e2e install-godog`
 
 5. Run the tests.
+
+   If you want to run the tests in Developer mode, which means reusing bakend services between test runs, please set this environment variable first:
+
+   ```shell
+   # It won't tear down the backend services (Elasticsearch) after a test suite. 
+   export DEVELOPER_MODE=true
+   ```
 
    ```shell
    cd e2e/_suites/metricbeat

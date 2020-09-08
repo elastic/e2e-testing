@@ -40,11 +40,12 @@ pipeline {
   stages {
     stage('Run Tests') {
       steps {
-        build(job: 'e2e-tests/e2e-testing-mbp/master',
+        build(job: "e2e-tests/e2e-testing-mbp/${env.JOB_BASE_NAME}",
           parameters: [
             booleanParam(name: 'forceSkipGitChecks', value: true),
             booleanParam(name: 'forceSkipPresubmit', value: true),
-            string(name: 'runTestsSuite', value: 'helm')
+            string(name: 'runTestsSuite', value: 'helm'),
+            string(name: 'SLACK_CHANNEL', value: "integrations"),
           ],
           propagate: false,
           wait: false
