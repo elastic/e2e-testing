@@ -8,10 +8,14 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/Jeffail/gabs/v2"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/config"
 	k8s "github.com/elastic/e2e-testing/cli/services"
 	shell "github.com/elastic/e2e-testing/cli/shell"
+	"github.com/elastic/e2e-testing/e2e"
 
 	"github.com/cucumber/godog"
 	messages "github.com/cucumber/messages-go/v10"
@@ -128,37 +132,68 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 		return err
 	}
 
-	describe, err := kubectl.Describe(resourceType, selector)
+	exp := e2e.GetExponentialBackOff(time.Minute)
+	retryCount := 1
+
+	checkEndpointsFn := func() error {
+		output, err := kubectl.GetStringResourcesBySelector("endpoints", selector)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"error":       err,
+				"selector":    selector,
+				"resource":    "endpoints",
+				"retry":       retryCount,
+			}).Warn("Could not inspect resource with kubectl")
+
+			retryCount++
+
+			return err
+		}
+
+		jsonParsed, err := gabs.ParseJSON([]byte(output))
+		if err != nil {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"error":       err,
+				"output":      output,
+				"selector":    selector,
+				"resource":    "endpoints",
+				"retry":       retryCount,
+			}).Warn("Could not parse JSON")
+
+			retryCount++
+
+			return err
+		}
+
+		subsets := jsonParsed.Path("items.0.subsets")
+		if len(subsets.Children()) == 0 {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"resource":    "endpoints",
+				"retry":       retryCount,
+				"selector":    selector,
+			}).Warn("Enpdoints not present yet")
+
+			retryCount++
+
+			return fmt.Errorf("Error there are no Endpoint subsets for the %s with the selector %s", resourceType, selector)
+		}
+
+		log.WithFields(log.Fields{
+			"elapsedTime": exp.GetElapsedTime(),
+			"resource":    "endpoints",
+			"retry":       retryCount,
+			"selector":    selector,
+		}).Info("Enpdoints found")
+
+		return nil
+	}
+
+	err = backoff.Retry(checkEndpointsFn, exp)
 	if err != nil {
 		return err
-	}
-
-	// TO-DO: workaround meanwhile we identify why the output changed to a non-valid YAML format
-	describeMap := map[string]string{}
-	items := strings.Split(describe, "\n")
-	for _, item := range items {
-		trimmedItem := strings.TrimSpace(item)
-		if !strings.HasPrefix(trimmedItem, "Endpoints:") {
-			continue
-		}
-
-		tokens := strings.SplitN(item, ":", -1)
-		if len(tokens) < 2 {
-			continue
-		}
-
-		// sanitise the output
-		tokens[1] = strings.TrimSpace(tokens[1])
-		if tokens[1] == "<none>" {
-			tokens[1] = ""
-		}
-		describeMap[strings.TrimSpace(tokens[0])] = tokens[1]
-		break
-	}
-
-	endpoints := strings.SplitN(describeMap["Endpoints:"], ",", -1)
-	if len(endpoints) == 0 {
-		return fmt.Errorf("Error there are no Endpoints for the %s with the selector %s", resourceType, selector)
 	}
 
 	return nil

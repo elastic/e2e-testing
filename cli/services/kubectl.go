@@ -38,9 +38,9 @@ var ResourceTypes = &resourceList{
 type Kubectl struct {
 }
 
-// Describe Use kubecontrol describe command to get the description of a resource identified by a selector, returns the resource as a string.
-func (k *Kubectl) Describe(resourceType, selector string) (string, error) {
-	output, err := k.Run("describe", resourceType, "--selector", selector)
+// GetStringResourcesBySelector Use kubectl to get a resource identified by a selector, return the resource in a string.
+func (k *Kubectl) GetStringResourcesBySelector(resourceType, selector string) (string, error) {
+	output, err := k.Run("get", resourceType, "--selector", selector, "-o", "json")
 	if err != nil {
 		return "", err
 	}
