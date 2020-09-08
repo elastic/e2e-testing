@@ -686,11 +686,6 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMode(name string, mode string
 		return err
 	}
 
-	success := response.Path("success").Data().(bool)
-	if !success {
-		return fmt.Errorf("The update of the integration package configuration failed. %v", response)
-	}
-
 	// we use a string because we are not able to process what comes in the event, so we will do
 	// an alphabetical order, as they share same layour but different millis and timezone format
 	updatedAt := response.Path("item.updated_at").Data().(string)
