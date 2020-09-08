@@ -78,8 +78,9 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 	profile := IngestManagerProfileName
 	serviceName := ElasticAgentServiceName
 
-	if image == "ubi" {
-		serviceName = ElasticAgentServiceName + "-ubi"
+	profileEnv["elasticAgentDockerImageSuffix"] = ""
+	if image != "default" {
+		profileEnv["elasticAgentDockerImageSuffix"] = "-" + image
 	}
 
 	containerName := fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)

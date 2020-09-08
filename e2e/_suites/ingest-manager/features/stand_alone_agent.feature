@@ -12,7 +12,7 @@ Scenario Outline: Starting the <image> agent starts backend processes
 Examples:
 | image   |
 | default |
-| ubi     |
+| ubi8    |
 
 @deploy-stand-alone
 Scenario Outline: Deploying a <image> stand-alone agent
@@ -21,7 +21,7 @@ Scenario Outline: Deploying a <image> stand-alone agent
 Examples:
 | image   |
 | default |
-| ubi     |
+| ubi8    |
 
 @stop-agent
 Scenario Outline: Stopping the <image> agent container stops data going into ES
@@ -31,4 +31,4 @@ Scenario Outline: Stopping the <image> agent container stops data going into ES
 Examples:
 | image   |
 | default |
-| ubi     |
+| ubi8    |
