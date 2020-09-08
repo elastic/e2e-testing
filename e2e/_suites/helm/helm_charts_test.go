@@ -133,12 +133,6 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 		return err
 	}
 
-	log.WithFields(log.Fields{
-		"describe":     describe,
-		"resourceType": resourceType,
-		"selector":     selector,
-	}).Debug("Describing resource")
-
 	// TO-DO: workaround meanwhile we identify why the output changed to a non-valid YAML format
 	describeMap := map[string]string{}
 	items := strings.Split(describe, "\n")
