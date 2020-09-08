@@ -100,10 +100,8 @@ pipeline {
                   unstash 'source'
                   withGoEnv(version: "${GO_VERSION}"){
                     dir(BASE_DIR){
-                      catchError(message: 'There were some failures when running pre-commit checks', buildResult: 'SUCCESS') {
-                        sh script: '.ci/scripts/install-dependencies.sh', label: 'Install dependencies'
-                        preCommit(commit: "${GIT_BASE_COMMIT}", junit: true)
-                      } 
+                      sh script: '.ci/scripts/install-dependencies.sh', label: 'Install dependencies'
+                      preCommit(commit: "${GIT_BASE_COMMIT}", junit: true)
                     }
                   }
                 }
