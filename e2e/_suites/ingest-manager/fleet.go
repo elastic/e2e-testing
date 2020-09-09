@@ -855,7 +855,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 }
 
 func (fts *FleetTestSuite) removePolicy() error {
-	removePolicyURL := fleetEnrollmentTokenURL + "/delete"
+	removePolicyURL := ingestManagerAgentPoliciesURL + "/delete"
 	postReq := createDefaultHTTPRequest(removePolicyURL)
 	postReq.Payload = `{"agentPolicyId":"` + fts.PolicyID + `"}`
 
