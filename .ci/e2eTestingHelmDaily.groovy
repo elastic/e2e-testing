@@ -45,7 +45,7 @@ pipeline {
             booleanParam(name: 'forceSkipGitChecks', value: true),
             booleanParam(name: 'forceSkipPresubmit', value: true),
             string(name: 'runTestsSuite', value: 'helm'),
-            string(name: 'SLACK_CHANNEL', value: "integrations"),
+            string(name: 'SLACK_CHANNEL', value: "infra-release-notify,integrations"),
           ],
           propagate: false,
           wait: false
