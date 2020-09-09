@@ -748,13 +748,8 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMode(name string, mode string
 		return err
 	}
 
-	success := response.Path("success").Data().(bool)
-	if !success {
-		return fmt.Errorf("The update of the integration package configuration failed. %v", response)
-	}
-
 	// we use a string because we are not able to process what comes in the event, so we will do
-	// an alphabetical order, as they share same layour but different millis and timezone format
+	// an alphabetical order, as they share same layout but different millis and timezone format
 	updatedAt := response.Path("item.updated_at").Data().(string)
 	fts.PolicyUpdatedAt = updatedAt
 	return nil
@@ -766,7 +761,7 @@ func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error
 		return err
 	}
 
-	maxTimeout := 2 * time.Minute
+	maxTimeout := 4 * time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
@@ -1205,6 +1200,8 @@ func getAgentEvents(applicationName string, agentID string, packagePolicyID stri
 	listItems := jsonResponse.Path("list").Children()
 	for _, item := range listItems {
 		message := item.Path("message").Data().(string)
+		// we use a string because we are not able to process what comes in the event, so we will do
+		// an alphabetical order, as they share same layout but different millis and timezone format
 		timestamp := item.Path("timestamp").Data().(string)
 
 		log.WithFields(log.Fields{
