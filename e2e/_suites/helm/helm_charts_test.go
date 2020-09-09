@@ -252,15 +252,7 @@ func (ts *HelmChartTestSuite) createCluster(k8sVersion string) error {
 		"output":     output,
 	}).Info("Cluster created")
 
-	// initialise Helm after the cluster is created
-	// For Helm v2.x.x we have to initialise Tiller
-	// right after the k8s cluster
-	err = helm.Init()
-	if err != nil {
-		log.WithField("error", err).Error("Could not initiase Helm")
-	}
-
-	return err
+	return nil
 }
 
 func (ts *HelmChartTestSuite) deleteChart() {

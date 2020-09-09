@@ -16,7 +16,6 @@ import (
 type HelmManager interface {
 	AddRepo(repo string, URL string) error
 	DeleteChart(chart string) error
-	Init() error
 	InstallChart(name string, chart string, version string, flags []string) error
 }
 
@@ -73,10 +72,6 @@ func (h *helm3X) DeleteChart(chart string) error {
 		"output": output,
 		"chart":  chart,
 	}).Debug("Chart deleted")
-	return nil
-}
-
-func (h *helm3X) Init() error {
 	return nil
 }
 
