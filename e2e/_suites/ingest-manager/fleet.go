@@ -44,6 +44,57 @@ type FleetTestSuite struct {
 	PolicyUpdatedAt string             // the moment the policy was updated
 }
 
+// afterScenario destroys the state created by a scenario
+func (fts *FleetTestSuite) afterScenario() {
+	serviceManager := services.NewServiceManager()
+
+	err := fts.unenrollHostname(true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err":      err,
+			"hostname": fts.Hostname,
+		}).Warn("The agentIDs for the hostname could not be unenrolled")
+	}
+
+	serviceName := fts.Image
+	if !developerMode {
+		_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
+	} else {
+		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
+	}
+
+	err = fts.removeToken()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err":     err,
+			"tokenID": fts.CurrentTokenID,
+		}).Warn("The enrollment token could not be deleted")
+	}
+
+	err = deleteIntegrationFromPolicy(fts.Integration, fts.PolicyID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err":             err,
+			"packageConfigID": fts.Integration.packageConfigID,
+			"configurationID": fts.PolicyID,
+		}).Warn("The integration could not be deleted from the configuration")
+	}
+
+	err = fts.removePolicy()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err":      err,
+			"policyID": fts.PolicyID,
+		}).Warn("The policy could not be deleted")
+	}
+
+	// clean up fields
+	fts.CurrentTokenID = ""
+	fts.Image = ""
+	fts.Hostname = ""
+	fts.PolicyID = ""
+}
+
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
