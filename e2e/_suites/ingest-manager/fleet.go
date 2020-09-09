@@ -687,7 +687,7 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMode(name string, mode string
 	}
 
 	// we use a string because we are not able to process what comes in the event, so we will do
-	// an alphabetical order, as they share same layour but different millis and timezone format
+	// an alphabetical order, as they share same layout but different millis and timezone format
 	updatedAt := response.Path("item.updated_at").Data().(string)
 	fts.PolicyUpdatedAt = updatedAt
 	return nil
@@ -1079,6 +1079,8 @@ func getAgentEvents(applicationName string, agentID string, packagePolicyID stri
 	listItems := jsonResponse.Path("list").Children()
 	for _, item := range listItems {
 		message := item.Path("message").Data().(string)
+		// we use a string because we are not able to process what comes in the event, so we will do
+		// an alphabetical order, as they share same layout but different millis and timezone format
 		timestamp := item.Path("timestamp").Data().(string)
 
 		log.WithFields(log.Fields{
