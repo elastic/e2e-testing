@@ -865,6 +865,10 @@ func (fts *FleetTestSuite) removePolicy() error {
 		return err
 	}
 
+	log.WithFields(log.Fields{
+		"policyID": fts.PolicyID,
+	}).Debug("The policy was deleted")
+
 	return nil
 }
 
@@ -882,6 +886,10 @@ func (fts *FleetTestSuite) removeToken() error {
 		}).Error("Could not delete token")
 		return err
 	}
+
+	log.WithFields(log.Fields{
+		"tokenID": fts.CurrentTokenID,
+	}).Debug("The token was deleted")
 
 	return nil
 }
