@@ -699,7 +699,7 @@ func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error
 		return err
 	}
 
-	maxTimeout := 2 * time.Minute
+	maxTimeout := 4 * time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
