@@ -123,6 +123,8 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		log.Trace("Before Ingest Manager scenario")
 
 		imts.StandAlone.Cleanup = false
+
+		imts.Fleet.beforeScenario()
 	})
 	s.AfterSuite(func() {
 		if !developerMode {

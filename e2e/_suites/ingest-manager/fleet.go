@@ -95,6 +95,23 @@ func (fts *FleetTestSuite) afterScenario() {
 	fts.PolicyID = ""
 }
 
+// beforeScenario creates the state needed by a scenario
+func (fts *FleetTestSuite) beforeScenario() {
+	fts.Cleanup = false
+
+	// create policy with system monitoring enabled
+	newPolicy, err := createFleetPolicy(true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Warn("The policy could not be created")
+
+		return
+	}
+
+	fts.PolicyID = newPolicy.Path("id").Data().(string)
+}
+
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
@@ -218,13 +235,6 @@ func (fts *FleetTestSuite) setup() error {
 	if err != nil {
 		return err
 	}
-
-	// create policy with system monitoring enabled
-	newPolicy, err := createFleetPolicy(true)
-	if err != nil {
-		return err
-	}
-	fts.PolicyID = newPolicy.Path("id").Data().(string)
 
 	return nil
 }
