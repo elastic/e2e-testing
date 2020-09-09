@@ -168,11 +168,12 @@ func (fts *FleetTestSuite) setup() error {
 		return err
 	}
 
-	defaultPolicy, err := getAgentDefaultPolicy()
+	// create policy with system monitoring enabled
+	newPolicy, err := createFleetPolicy(true)
 	if err != nil {
 		return err
 	}
-	fts.PolicyID = defaultPolicy.Path("id").Data().(string)
+	fts.PolicyID = newPolicy.Path("id").Data().(string)
 
 	return nil
 }
@@ -792,6 +793,25 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	return nil
 }
 
+func (fts *FleetTestSuite) removePolicy() error {
+	removePolicyURL := fleetEnrollmentTokenURL + "/delete"
+	postReq := createDefaultHTTPRequest(removePolicyURL)
+	postReq.Payload = `{"agentPolicyId":"` + fts.PolicyID + `"}`
+
+	body, err := curl.Post(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"policyID": fts.PolicyID,
+			"body":     body,
+			"error":    err,
+			"url":      removePolicyURL,
+		}).Error("Could not delete policy")
+		return err
+	}
+
+	return nil
+}
+
 func (fts *FleetTestSuite) removeToken() error {
 	revokeTokenURL := fleetEnrollmentTokenURL + "/" + fts.CurrentTokenID
 	deleteReq := createDefaultHTTPRequest(revokeTokenURL)
@@ -913,6 +933,46 @@ func createDefaultHTTPRequest(url string) curl.HTTPRequest {
 		},
 		URL: url,
 	}
+}
+
+// createFleetPolicy() sends a POST request to Fleet creating a new test policy
+func createFleetPolicy(sysMonitoring bool) (*gabs.Container, error) {
+	name := e2e.RandomString(8)
+	url := fmt.Sprintf(ingestManagerAgentPoliciesURL+"?sys_monitoring=%t", sysMonitoring)
+	postReq := createDefaultHTTPRequest(url)
+	postReq.Payload = `{
+		"description": "Test policy ` + name + `",
+		"namespace": "default",
+		"monitoring_enabled": ["logs", "metrics"],
+		"name": "test-policy-` + name + `"
+	}`
+
+	body, err := curl.Post(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   url,
+		}).Error("Could not create Fleet policy")
+		return nil, err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return nil, err
+	}
+
+	policyItem := jsonParsed.Path("item")
+
+	log.WithFields(log.Fields{
+		"id": policyItem.Path("id").Data().(string),
+	}).Debug("Fleet policy created")
+
+	return policyItem, nil
 }
 
 // createFleetToken sends a POST request to Fleet creating a new token with a name

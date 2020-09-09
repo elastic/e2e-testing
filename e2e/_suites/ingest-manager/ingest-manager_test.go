@@ -209,6 +209,14 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 					"configurationID": imts.Fleet.PolicyID,
 				}).Warn("The integration could not be deleted from the configuration")
 			}
+
+			err = imts.Fleet.removePolicy()
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err":      err,
+					"policyID": imts.Fleet.PolicyID,
+				}).Warn("The policy could not be deleted")
+			}
 		}
 
 		imts.Fleet.Image = ""
