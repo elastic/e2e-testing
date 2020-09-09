@@ -345,12 +345,12 @@ func isAgentListedInSecurityAppWithStatus(hostName string, desiredStatus string)
 		log.WithFields(log.Fields{
 			"hostname": hostName,
 			"error":    err,
-		}).Error("There was an error getting the agent in the Security app")
+		}).Error("There was an error getting the agent in the Administration view in the Security app")
 		return false, err
 	}
 
 	if host == nil {
-		return false, fmt.Errorf("The host %s is not listed in the Security App", hostName)
+		return false, fmt.Errorf("The host %s is not listed in the Administration view in the Security App", hostName)
 	}
 
 	hostStatus := host.Path("host_status").Data().(string)
@@ -358,7 +358,7 @@ func isAgentListedInSecurityAppWithStatus(hostName string, desiredStatus string)
 		"desiredStatus": desiredStatus,
 		"hostname":      hostName,
 		"status":        hostStatus,
-	}).Debug("Hostname for the agent listed with desired status in the Security App")
+	}).Debug("Hostname for the agent listed with desired status in the Administration view in the Security App")
 
 	return (hostStatus == desiredStatus), nil
 }
