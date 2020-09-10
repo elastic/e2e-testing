@@ -124,8 +124,8 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 
 	// endpoint steps
-	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the "([^"]*)" configuration$`, fts.theIntegrationIsOperatedInTheConfiguration)
-	s.Step(`^the "([^"]*)" datasource is shown in the "([^"]*)" configuration as added$`, fts.theConfigurationShowsTheDatasourceAdded)
+	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the configuration$`, fts.theIntegrationIsOperatedInTheConfiguration)
+	s.Step(`^the "([^"]*)" datasource is shown in the configuration as added$`, fts.theConfigurationShowsTheDatasourceAdded)
 	s.Step(`^the host name is shown in the Administration view in the Security App as "([^"]*)"$`, fts.theHostNameIsShownInTheAdminViewInTheSecurityApp)
 	s.Step(`^the host name is not shown in the Administration view in the Security App$`, fts.theHostNameIsNotShownInTheAdminViewInTheSecurityApp)
 	s.Step(`^an Endpoint is successfully deployed with a "([^"]*)" Agent$`, fts.anEndpointIsSuccessfullyDeployedWithAgent)
@@ -435,10 +435,10 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 	return nil
 }
 
-func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(packageName string, configurationName string) error {
+func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(packageName string) error {
 	log.WithFields(log.Fields{
-		"configuration": configurationName,
-		"package":       packageName,
+		"configurationID": fts.ConfigID,
+		"package":         packageName,
 	}).Trace("Checking if the configuration shows the package added")
 
 	maxTimeout := time.Minute
@@ -499,11 +499,11 @@ func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(packageName s
 	return nil
 }
 
-func (fts *FleetTestSuite) theIntegrationIsOperatedInTheConfiguration(packageName string, action string, configurationName string) error {
+func (fts *FleetTestSuite) theIntegrationIsOperatedInTheConfiguration(packageName string, action string) error {
 	log.WithFields(log.Fields{
-		"action":        action,
-		"configuration": configurationName,
-		"package":       packageName,
+		"action":          action,
+		"configurationID": fts.ConfigID,
+		"package":         packageName,
 	}).Trace("Doing an operation for a package on a configuration")
 
 	if strings.ToLower(action) == actionADDED {
@@ -655,7 +655,7 @@ func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent(image strin
 	}
 
 	// we use integration's title
-	return fts.theIntegrationIsOperatedInTheConfiguration("Elastic Endpoint Security", actionADDED, "default")
+	return fts.theIntegrationIsOperatedInTheConfiguration("Elastic Endpoint Security", actionADDED)
 }
 
 func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
