@@ -44,6 +44,74 @@ type FleetTestSuite struct {
 	PolicyUpdatedAt string             // the moment the policy was updated
 }
 
+// afterScenario destroys the state created by a scenario
+func (fts *FleetTestSuite) afterScenario() {
+	serviceManager := services.NewServiceManager()
+
+	err := fts.unenrollHostname(true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err":      err,
+			"hostname": fts.Hostname,
+		}).Warn("The agentIDs for the hostname could not be unenrolled")
+	}
+
+	serviceName := fts.Image
+	if !developerMode {
+		_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
+	} else {
+		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
+	}
+
+	err = fts.removeToken()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err":     err,
+			"tokenID": fts.CurrentTokenID,
+		}).Warn("The enrollment token could not be deleted")
+	}
+
+	err = deleteIntegrationFromPolicy(fts.Integration, fts.PolicyID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err":             err,
+			"packageConfigID": fts.Integration.packageConfigID,
+			"configurationID": fts.PolicyID,
+		}).Warn("The integration could not be deleted from the configuration")
+	}
+
+	err = fts.removePolicy()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err":      err,
+			"policyID": fts.PolicyID,
+		}).Warn("The policy could not be deleted")
+	}
+
+	// clean up fields
+	fts.CurrentTokenID = ""
+	fts.Image = ""
+	fts.Hostname = ""
+	fts.PolicyID = ""
+}
+
+// beforeScenario creates the state needed by a scenario
+func (fts *FleetTestSuite) beforeScenario() {
+	fts.Cleanup = false
+
+	// create policy with system monitoring enabled
+	newPolicy, err := createFleetPolicy(true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Warn("The policy could not be created")
+
+		return
+	}
+
+	fts.PolicyID = newPolicy.Path("id").Data().(string)
+}
+
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
@@ -56,8 +124,8 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 
 	// endpoint steps
-	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the "([^"]*)" policy$`, fts.theIntegrationIsOperatedInThePolicy)
-	s.Step(`^the "([^"]*)" datasource is shown in the "([^"]*)" policy as added$`, fts.thePolicyShowsTheDatasourceAdded)
+	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)
+	s.Step(`^the "([^"]*)" datasource is shown in the policy as added$`, fts.thePolicyShowsTheDatasourceAdded)
 	s.Step(`^the host name is shown in the Administration view in the Security App as "([^"]*)"$`, fts.theHostNameIsShownInTheAdminViewInTheSecurityApp)
 	s.Step(`^the host name is not shown in the Administration view in the Security App$`, fts.theHostNameIsNotShownInTheAdminViewInTheSecurityApp)
 	s.Step(`^an Endpoint is successfully deployed with a "([^"]*)" Agent$`, fts.anEndpointIsSuccessfullyDeployedWithAgent)
@@ -167,12 +235,6 @@ func (fts *FleetTestSuite) setup() error {
 	if err != nil {
 		return err
 	}
-
-	defaultPolicy, err := getAgentDefaultPolicy()
-	if err != nil {
-		return err
-	}
-	fts.PolicyID = defaultPolicy.Path("id").Data().(string)
 
 	return nil
 }
@@ -373,10 +435,10 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 	return nil
 }
 
-func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string, policyName string) error {
+func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) error {
 	log.WithFields(log.Fields{
-		"policy":  policyName,
-		"package": packageName,
+		"policyID": fts.PolicyID,
+		"package":  packageName,
 	}).Trace("Checking if the policy shows the package added")
 
 	maxTimeout := time.Minute
@@ -436,11 +498,11 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string, 
 	return nil
 }
 
-func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName string, action string, policyName string) error {
+func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName string, action string) error {
 	log.WithFields(log.Fields{
-		"action":  action,
-		"policy":  policyName,
-		"package": packageName,
+		"action":   action,
+		"policyID": fts.PolicyID,
+		"package":  packageName,
 	}).Trace("Doing an operation for a package on a policy")
 
 	if strings.ToLower(action) == actionADDED {
@@ -592,7 +654,7 @@ func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent(image strin
 	}
 
 	// we use integration's title
-	return fts.theIntegrationIsOperatedInThePolicy(elasticEnpointIntegrationTitle, actionADDED, "default")
+	return fts.theIntegrationIsOperatedInThePolicy(elasticEnpointIntegrationTitle, actionADDED)
 }
 
 func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
@@ -787,6 +849,29 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	return nil
 }
 
+func (fts *FleetTestSuite) removePolicy() error {
+	removePolicyURL := ingestManagerAgentPoliciesURL + "/delete"
+	postReq := createDefaultHTTPRequest(removePolicyURL)
+	postReq.Payload = `{"agentPolicyId":"` + fts.PolicyID + `"}`
+
+	body, err := curl.Post(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"policyID": fts.PolicyID,
+			"body":     body,
+			"error":    err,
+			"url":      removePolicyURL,
+		}).Error("Could not delete policy")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"policyID": fts.PolicyID,
+	}).Debug("The policy was deleted")
+
+	return nil
+}
+
 func (fts *FleetTestSuite) removeToken() error {
 	revokeTokenURL := fleetEnrollmentTokenURL + "/" + fts.CurrentTokenID
 	deleteReq := createDefaultHTTPRequest(revokeTokenURL)
@@ -801,6 +886,10 @@ func (fts *FleetTestSuite) removeToken() error {
 		}).Error("Could not delete token")
 		return err
 	}
+
+	log.WithFields(log.Fields{
+		"tokenID": fts.CurrentTokenID,
+	}).Debug("The token was deleted")
 
 	return nil
 }
@@ -908,6 +997,46 @@ func createDefaultHTTPRequest(url string) curl.HTTPRequest {
 		},
 		URL: url,
 	}
+}
+
+// createFleetPolicy() sends a POST request to Fleet creating a new test policy
+func createFleetPolicy(sysMonitoring bool) (*gabs.Container, error) {
+	name := e2e.RandomString(8)
+	url := fmt.Sprintf(ingestManagerAgentPoliciesURL+"?sys_monitoring=%t", sysMonitoring)
+	postReq := createDefaultHTTPRequest(url)
+	postReq.Payload = `{
+		"description": "Test policy ` + name + `",
+		"namespace": "default",
+		"monitoring_enabled": ["logs", "metrics"],
+		"name": "test-policy-` + name + `"
+	}`
+
+	body, err := curl.Post(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   url,
+		}).Error("Could not create Fleet policy")
+		return nil, err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return nil, err
+	}
+
+	policyItem := jsonParsed.Path("item")
+
+	log.WithFields(log.Fields{
+		"id": policyItem.Path("id").Data().(string),
+	}).Debug("Fleet policy created")
+
+	return policyItem, nil
 }
 
 // createFleetToken sends a POST request to Fleet creating a new token with a name
