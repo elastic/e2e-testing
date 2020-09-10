@@ -22,8 +22,8 @@ type IntegrationPackage struct {
 	version         string `json:"version"`
 }
 
-// addIntegrationToPolicy sends a POST request to Ingest Manager adding an integration to a configuration
-func addIntegrationToPolicy(integrationPackage IntegrationPackage, configurationID string) (string, error) {
+// installIntegration sends a POST request to Ingest Manager adding an integration to a configuration
+func addIntegrationToConfiguration(integrationPackage IntegrationPackage, configurationID string) (string, error) {
 	postReq := createDefaultHTTPRequest(ingestManagerIntegrationConfigsURL)
 
 	data := `{
@@ -73,8 +73,8 @@ func addIntegrationToPolicy(integrationPackage IntegrationPackage, configuration
 	return integrationConfigurationID, nil
 }
 
-// deleteIntegrationFromPolicy sends a POST request to Ingest Manager deleting an integration from a configuration
-func deleteIntegrationFromPolicy(integrationPackage IntegrationPackage, configurationID string) error {
+// deleteIntegrationFromConfiguration sends a POST request to Ingest Manager deleting an integration from a configuration
+func deleteIntegrationFromConfiguration(integrationPackage IntegrationPackage, configurationID string) error {
 	postReq := createDefaultHTTPRequest(ingestManagerIntegrationDeleteURL)
 
 	data := `{"packageConfigIds":["` + integrationPackage.packageConfigID + `"]}`

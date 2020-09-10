@@ -434,7 +434,7 @@ func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(configuration
 			log.WithFields(log.Fields{
 				"error":           err,
 				"packageConfigID": fts.Integration.packageConfigID,
-				"configurationID": fts.PolicyID,
+				"configurationID": fts.ConfigID,
 				"retry":           retryCount,
 			}).Warn("An error retrieving the configuration happened")
 
@@ -450,7 +450,7 @@ func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(configuration
 			if id == fts.Integration.packageConfigID {
 				log.WithFields(log.Fields{
 					"packageConfigID": fts.Integration.packageConfigID,
-					"configurationID": fts.PolicyID,
+					"configurationID": fts.ConfigID,
 				}).Info("The integration was found in the configuration")
 				return nil
 			}
@@ -458,7 +458,7 @@ func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(configuration
 
 		log.WithFields(log.Fields{
 			"packageConfigID": fts.Integration.packageConfigID,
-			"configurationID": fts.PolicyID,
+			"configurationID": fts.ConfigID,
 			"retry":           retryCount,
 		}).Warn("The integration was not found in the configuration")
 
@@ -483,7 +483,7 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInTheConfiguration(packageNam
 	}).Debug("Doing an operation for a package on a configuration")
 
 	if strings.ToLower(action) == actionADDED {
-		integrationConfigurationID, err := addIntegrationToPolicy(fts.Integration, fts.PolicyID)
+		integrationConfigurationID, err := addIntegrationToConfiguration(fts.Integration, fts.ConfigID)
 		if err != nil {
 			return err
 		}
@@ -491,12 +491,12 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInTheConfiguration(packageNam
 		fts.Integration.packageConfigID = integrationConfigurationID
 		return nil
 	} else if strings.ToLower(action) == actionREMOVED {
-		err := deleteIntegrationFromPolicy(fts.Integration, fts.PolicyID)
+		err := deleteIntegrationFromConfiguration(fts.Integration, fts.ConfigID)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"err":             err,
 				"packageConfigID": fts.Integration.packageConfigID,
-				"configurationID": fts.PolicyID,
+				"configurationID": fts.ConfigID,
 			}).Error("The integration could not be deleted from the configuration")
 			return err
 		}
