@@ -123,6 +123,8 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		log.Trace("Before Ingest Manager scenario")
 
 		imts.StandAlone.Cleanup = false
+
+		imts.Fleet.beforeScenario()
 	})
 	s.AfterSuite(func() {
 		if !developerMode {
@@ -162,57 +164,12 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		log.Trace("After Ingest Manager scenario")
 
 		if imts.StandAlone.Cleanup {
-			serviceName := ElasticAgentServiceName
-			if !developerMode {
-				_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
-			} else {
-				log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
-			}
-
-			if _, err := os.Stat(imts.StandAlone.AgentConfigFilePath); err == nil {
-				os.Remove(imts.StandAlone.AgentConfigFilePath)
-				log.WithFields(log.Fields{
-					"path": imts.StandAlone.AgentConfigFilePath,
-				}).Debug("Elastic Agent configuration file removed.")
-			}
+			imts.StandAlone.afterScenario()
 		}
 
 		if imts.Fleet.Cleanup {
-			err := imts.Fleet.unenrollHostname(true)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"err":      err,
-					"hostname": imts.Fleet.Hostname,
-				}).Warn("The agentIDs for the hostname could not be unenrolled")
-			}
-
-			serviceName := imts.Fleet.Image
-			if !developerMode {
-				_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
-			} else {
-				log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
-			}
-
-			err = imts.Fleet.removeToken()
-			if err != nil {
-				log.WithFields(log.Fields{
-					"err":     err,
-					"tokenID": imts.Fleet.CurrentTokenID,
-				}).Warn("The enrollment token could not be deleted")
-			}
-
-			err = deleteIntegrationFromConfiguration(imts.Fleet.Integration, imts.Fleet.ConfigID)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"err":             err,
-					"packageConfigID": imts.Fleet.Integration.packageConfigID,
-					"configurationID": imts.Fleet.ConfigID,
-				}).Warn("The integration could not be deleted from the configuration")
-			}
+			imts.Fleet.afterScenario()
 		}
-
-		imts.Fleet.Image = ""
-		imts.StandAlone.Hostname = ""
 	})
 }
 

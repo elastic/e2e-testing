@@ -44,6 +44,74 @@ type FleetTestSuite struct {
 	ConfigUpdatedAt string             // the moment the configuration was updated
 }
 
+// afterScenario destroys the state created by a scenario
+func (fts *FleetTestSuite) afterScenario() {
+	serviceManager := services.NewServiceManager()
+
+	err := fts.unenrollHostname(true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err":      err,
+			"hostname": fts.Hostname,
+		}).Warn("The agentIDs for the hostname could not be unenrolled")
+	}
+
+	serviceName := fts.Image
+	if !developerMode {
+		_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
+	} else {
+		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
+	}
+
+	err = fts.removeToken()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err":     err,
+			"tokenID": fts.CurrentTokenID,
+		}).Warn("The enrollment token could not be deleted")
+	}
+
+	err = deleteIntegrationFromConfiguration(fts.Integration, fts.ConfigID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err":             err,
+			"packageConfigID": fts.Integration.packageConfigID,
+			"configurationID": fts.ConfigID,
+		}).Warn("The integration could not be deleted from the configuration")
+	}
+
+	err = fts.removeConfiguration()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err":             err,
+			"configurationID": fts.ConfigID,
+		}).Warn("The configuration could not be deleted")
+	}
+
+	// clean up fields
+	fts.CurrentTokenID = ""
+	fts.Image = ""
+	fts.Hostname = ""
+	fts.ConfigID = ""
+}
+
+// beforeScenario creates the state needed by a scenario
+func (fts *FleetTestSuite) beforeScenario() {
+	fts.Cleanup = false
+
+	// create configuration with system monitoring enabled
+	newConfiguration, err := createFleetConfig(true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Warn("The configuration could not be created")
+
+		return
+	}
+
+	fts.ConfigID = newConfiguration.Path("id").Data().(string)
+}
+
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
@@ -56,8 +124,8 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 
 	// endpoint steps
-	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the "([^"]*)" configuration$`, fts.theIntegrationIsOperatedInTheConfiguration)
-	s.Step(`^the "([^"]*)" datasource is shown in the "([^"]*)" configuration as added$`, fts.theConfigurationShowsTheDatasourceAdded)
+	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the configuration$`, fts.theIntegrationIsOperatedInTheConfiguration)
+	s.Step(`^the "([^"]*)" datasource is shown in the configuration as added$`, fts.theConfigurationShowsTheDatasourceAdded)
 	s.Step(`^the host name is shown in the Administration view in the Security App as "([^"]*)"$`, fts.theHostNameIsShownInTheAdminViewInTheSecurityApp)
 	s.Step(`^the host name is not shown in the Administration view in the Security App$`, fts.theHostNameIsNotShownInTheAdminViewInTheSecurityApp)
 	s.Step(`^an Endpoint is successfully deployed with a "([^"]*)" Agent$`, fts.anEndpointIsSuccessfullyDeployedWithAgent)
@@ -167,12 +235,6 @@ func (fts *FleetTestSuite) setup() error {
 	if err != nil {
 		return err
 	}
-
-	defaultConfig, err := getAgentDefaultConfig()
-	if err != nil {
-		return err
-	}
-	fts.ConfigID = defaultConfig.Path("id").Data().(string)
 
 	return nil
 }
@@ -373,10 +435,10 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 	return nil
 }
 
-func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(packageName string, configurationName string) error {
+func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(packageName string) error {
 	log.WithFields(log.Fields{
-		"configuration": configurationName,
-		"package":       packageName,
+		"configurationID": fts.ConfigID,
+		"package":         packageName,
 	}).Trace("Checking if the configuration shows the package added")
 
 	maxTimeout := time.Minute
@@ -437,11 +499,11 @@ func (fts *FleetTestSuite) theConfigurationShowsTheDatasourceAdded(packageName s
 	return nil
 }
 
-func (fts *FleetTestSuite) theIntegrationIsOperatedInTheConfiguration(packageName string, action string, configurationName string) error {
+func (fts *FleetTestSuite) theIntegrationIsOperatedInTheConfiguration(packageName string, action string) error {
 	log.WithFields(log.Fields{
-		"action":        action,
-		"configuration": configurationName,
-		"package":       packageName,
+		"action":          action,
+		"configurationID": fts.ConfigID,
+		"package":         packageName,
 	}).Trace("Doing an operation for a package on a configuration")
 
 	if strings.ToLower(action) == actionADDED {
@@ -593,7 +655,7 @@ func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent(image strin
 	}
 
 	// we use integration's title
-	return fts.theIntegrationIsOperatedInTheConfiguration("Elastic Endpoint Security", actionADDED, "default")
+	return fts.theIntegrationIsOperatedInTheConfiguration("Elastic Endpoint Security", actionADDED)
 }
 
 func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
@@ -793,6 +855,29 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	return nil
 }
 
+func (fts *FleetTestSuite) removeConfiguration() error {
+	removeConfigurationURL := ingestManagerAgentConfigsURL + "/delete"
+	postReq := createDefaultHTTPRequest(removeConfigurationURL)
+	postReq.Payload = `{"agentConfigId":"` + fts.ConfigID + `"}`
+
+	body, err := curl.Post(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"configurationID": fts.ConfigID,
+			"body":            body,
+			"error":           err,
+			"url":             removeConfigurationURL,
+		}).Error("Could not delete configuration")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"configurationID": fts.ConfigID,
+	}).Debug("The configuration was deleted")
+
+	return nil
+}
+
 func (fts *FleetTestSuite) removeToken() error {
 	revokeTokenURL := fleetEnrollmentTokenURL + "/" + fts.CurrentTokenID
 	deleteReq := createDefaultHTTPRequest(revokeTokenURL)
@@ -807,6 +892,10 @@ func (fts *FleetTestSuite) removeToken() error {
 		}).Error("Could not delete token")
 		return err
 	}
+
+	log.WithFields(log.Fields{
+		"tokenID": fts.CurrentTokenID,
+	}).Debug("The token was deleted")
 
 	return nil
 }
@@ -914,6 +1003,46 @@ func createDefaultHTTPRequest(url string) curl.HTTPRequest {
 		},
 		URL: url,
 	}
+}
+
+// createFleetConfig() sends a POST request to Fleet creating a new test configuration
+func createFleetConfig(sysMonitoring bool) (*gabs.Container, error) {
+	name := e2e.RandomString(8)
+	url := fmt.Sprintf(ingestManagerAgentConfigsURL+"?sys_monitoring=%t", sysMonitoring)
+	postReq := createDefaultHTTPRequest(url)
+	postReq.Payload = `{
+		"description": "Test configuration ` + name + `",
+		"namespace": "default",
+		"monitoring_enabled": ["logs", "metrics"],
+		"name": "test-configuration-` + name + `"
+	}`
+
+	body, err := curl.Post(postReq)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  body,
+			"error": err,
+			"url":   url,
+		}).Error("Could not create Fleet configuration")
+		return nil, err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return nil, err
+	}
+
+	configurationItem := jsonParsed.Path("item")
+
+	log.WithFields(log.Fields{
+		"id": configurationItem.Path("id").Data().(string),
+	}).Debug("Fleet configuration created")
+
+	return configurationItem, nil
 }
 
 // createFleetToken sends a POST request to Fleet creating a new token with a name
@@ -1055,7 +1184,7 @@ func getAgentDefaultConfig() (*gabs.Container, error) {
 	return defaultConfig, nil
 }
 
-func getAgentEvents(applicationName string, agentID string, packagePolicyID string, updatedAt string) error {
+func getAgentEvents(applicationName string, agentID string, packageConfigurationID string, updatedAt string) error {
 	url := fmt.Sprintf(fleetAgentEventsURL, agentID)
 	getReq := createDefaultHTTPRequest(url)
 	getReq.QueryString = "page=1&perPage=20"
@@ -1063,12 +1192,12 @@ func getAgentEvents(applicationName string, agentID string, packagePolicyID stri
 	body, err := curl.Get(getReq)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"agentID":         agentID,
-			"application":     applicationName,
-			"body":            body,
-			"error":           err,
-			"packagePolicyID": packagePolicyID,
-			"url":             url,
+			"agentID":                agentID,
+			"application":            applicationName,
+			"body":                   body,
+			"error":                  err,
+			"packageConfigurationID": packageConfigurationID,
+			"url":                    url,
 		}).Error("Could not get agent events from Fleet")
 		return err
 	}
@@ -1088,31 +1217,31 @@ func getAgentEvents(applicationName string, agentID string, packagePolicyID stri
 		timestamp := item.Path("timestamp").Data().(string)
 
 		log.WithFields(log.Fields{
-			"agentID":         agentID,
-			"application":     applicationName,
-			"event_at":        timestamp,
-			"message":         message,
-			"packagePolicyID": packagePolicyID,
-			"updated_at":      updatedAt,
+			"agentID":                agentID,
+			"application":            applicationName,
+			"event_at":               timestamp,
+			"message":                message,
+			"packageConfigurationID": packageConfigurationID,
+			"updated_at":             updatedAt,
 		}).Trace("Event found")
 
 		matches := (strings.Contains(message, applicationName) &&
 			strings.Contains(message, "["+agentID+"]: State changed to") &&
-			strings.Contains(message, "Protecting with policy {"+packagePolicyID+"}"))
+			strings.Contains(message, "Protecting with config {"+packageConfigurationID+"}"))
 
 		if matches && timestamp > updatedAt {
 			log.WithFields(log.Fields{
-				"application":     applicationName,
-				"event_at":        timestamp,
-				"packagePolicyID": packagePolicyID,
-				"updated_at":      updatedAt,
-				"message":         message,
+				"application":            applicationName,
+				"event_at":               timestamp,
+				"packageConfigurationID": packageConfigurationID,
+				"updated_at":             updatedAt,
+				"message":                message,
 			}).Info("Event after the update was found")
 			return nil
 		}
 	}
 
-	return fmt.Errorf("No %s events where found for the agent in the %s policy", applicationName, packagePolicyID)
+	return fmt.Errorf("No %s events where found for the agent in the %s configuration", applicationName, packageConfigurationID)
 }
 
 // getAgentID sends a GET request to Fleet for a existing hostname
