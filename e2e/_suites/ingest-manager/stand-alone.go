@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -35,6 +36,25 @@ type StandAloneTestSuite struct {
 	// date controls for queries
 	AgentStoppedDate             time.Time
 	RuntimeDependenciesStartDate time.Time
+}
+
+// afterScenario destroys the state created by a scenario
+func (sats *StandAloneTestSuite) afterScenario() {
+	serviceManager := services.NewServiceManager()
+	serviceName := ElasticAgentServiceName
+
+	if !developerMode {
+		_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
+	} else {
+		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
+	}
+
+	if _, err := os.Stat(sats.AgentConfigFilePath); err == nil {
+		os.Remove(sats.AgentConfigFilePath)
+		log.WithFields(log.Fields{
+			"path": sats.AgentConfigFilePath,
+		}).Debug("Elastic Agent configuration file removed.")
+	}
 }
 
 func (sats *StandAloneTestSuite) contributeSteps(s *godog.Suite) {
