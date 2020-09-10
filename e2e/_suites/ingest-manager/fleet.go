@@ -592,7 +592,7 @@ func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent(image strin
 	}
 
 	// we use integration's title
-	return fts.theIntegrationIsOperatedInThePolicy("Elastic Endpoint", actionADDED, "default")
+	return fts.theIntegrationIsOperatedInThePolicy(elasticEnpointIntegrationTitle, actionADDED, "default")
 }
 
 func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
@@ -661,7 +661,7 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMode(name string, mode string
 		return godog.ErrPending
 	}
 
-	integration, err := getIntegrationFromAgentPolicy("Elastic Endpoint", fts.PolicyID)
+	integration, err := getIntegrationFromAgentPolicy(elasticEnpointIntegrationTitle, fts.PolicyID)
 	if err != nil {
 		return err
 	}
