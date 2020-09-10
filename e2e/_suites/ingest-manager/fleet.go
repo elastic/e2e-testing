@@ -41,7 +41,7 @@ type FleetTestSuite struct {
 	Hostname       string // the hostname of the container
 	// integrations
 	Integration     IntegrationPackage // the installed integration
-	PolicyUpdatedAt string             // the moment the policy was updated
+	ConfigUpdatedAt string             // the moment the configuration was updated
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
@@ -695,7 +695,7 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMode(name string, mode string
 	// we use a string because we are not able to process what comes in the event, so we will do
 	// an alphabetical order, as they share same layour but different millis and timezone format
 	updatedAt := response.Path("item.updated_at").Data().(string)
-	fts.PolicyUpdatedAt = updatedAt
+	fts.ConfigUpdatedAt = updatedAt
 	return nil
 }
 
@@ -711,7 +711,7 @@ func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	getEventsFn := func() error {
-		err := getAgentEvents("endpoint-security", agentID, fts.Integration.packageConfigID, fts.PolicyUpdatedAt)
+		err := getAgentEvents("endpoint-security", agentID, fts.Integration.packageConfigID, fts.ConfigUpdatedAt)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"elapsedTime": exp.GetElapsedTime(),
