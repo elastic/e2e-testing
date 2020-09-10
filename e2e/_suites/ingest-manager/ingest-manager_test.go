@@ -82,7 +82,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	imts.StandAlone.contributeSteps(s)
 
 	s.BeforeSuite(func() {
-		log.Debug("Installing ingest-manager runtime dependencies")
+		log.Trace("Installing ingest-manager runtime dependencies")
 
 		workDir, _ := os.Getwd()
 		profileEnv = map[string]string{
@@ -120,7 +120,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		imts.StandAlone.RuntimeDependenciesStartDate = time.Now().UTC()
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
-		log.Debug("Before Ingest Manager scenario")
+		log.Trace("Before Ingest Manager scenario")
 
 		imts.StandAlone.Cleanup = false
 	})
@@ -159,7 +159,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		}
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {
-		log.Debug("After Ingest Manager scenario")
+		log.Trace("After Ingest Manager scenario")
 
 		if imts.StandAlone.Cleanup {
 			serviceName := ElasticAgentServiceName
@@ -178,6 +178,14 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		}
 
 		if imts.Fleet.Cleanup {
+			err := imts.Fleet.unenrollHostname(true)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err":      err,
+					"hostname": imts.Fleet.Hostname,
+				}).Warn("The agentIDs for the hostname could not be unenrolled")
+			}
+
 			serviceName := imts.Fleet.Image
 			if !developerMode {
 				_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
@@ -185,12 +193,21 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 				log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 			}
 
-			err := imts.Fleet.removeToken()
+			err = imts.Fleet.removeToken()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"err":     err,
 					"tokenID": imts.Fleet.CurrentTokenID,
 				}).Warn("The enrollment token could not be deleted")
+			}
+
+			err = deleteIntegrationFromConfiguration(imts.Fleet.Integration, imts.Fleet.ConfigID)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err":             err,
+					"packageConfigID": imts.Fleet.Integration.packageConfigID,
+					"configurationID": imts.Fleet.ConfigID,
+				}).Warn("The integration could not be deleted from the configuration")
 			}
 		}
 
@@ -278,7 +295,7 @@ func execCommandInService(profile string, image string, serviceName string, cmds
 func getContainerHostname(containerName string) (string, error) {
 	log.WithFields(log.Fields{
 		"containerName": containerName,
-	}).Debug("Retrieving container name from the Docker client")
+	}).Trace("Retrieving container name from the Docker client")
 
 	hostname, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"hostname"})
 	if err != nil {
@@ -293,7 +310,7 @@ func getContainerHostname(containerName string) (string, error) {
 		hostname = strings.ReplaceAll(hostname, "\x01\x00\x00\x00\x00\x00\x00\r", "")
 		log.WithFields(log.Fields{
 			"hostname": hostname,
-		}).Debug("Container name has been sanitized")
+		}).Trace("Container name has been sanitized")
 	}
 
 	log.WithFields(log.Fields{

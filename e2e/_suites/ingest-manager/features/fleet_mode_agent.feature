@@ -5,7 +5,7 @@ Feature: Fleet Mode Agent
 @enroll
 Scenario Outline: Deploying the <os> agent
   When a "<os>" agent is deployed to Fleet
-  Then the agent is listed in Fleet as online
+  Then the agent is listed in Fleet as "online"
     And system package dashboards are listed in Fleet
 Examples:
 | os     |
@@ -50,7 +50,7 @@ Scenario Outline: Un-enrolling the <os> agent
   Given a "<os>" agent is deployed to Fleet
   When the agent is un-enrolled
   Then the "elastic-agent" process is in the "started" state on the host
-    But the agent is not listed as online in Fleet
+    And the agent is listed in Fleet as "inactive"
 Examples:
 | os     |
 | centos |
@@ -63,7 +63,7 @@ Scenario Outline: Re-enrolling the <os> agent
     And the "elastic-agent" process is "stopped" on the host
   When the agent is re-enrolled on the host
     And the "elastic-agent" process is "started" on the host
-  Then the agent is listed in Fleet as online
+  Then the agent is listed in Fleet as "online"
 Examples:
 | os     |
 | centos |

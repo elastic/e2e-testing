@@ -185,7 +185,7 @@ func (h *helm2X) InstallChart(name string, chart string, version string, flags [
 		"flags":   flags,
 		"name":    name,
 		"version": version,
-	}).Debug("Installing chart")
+	}).Trace("Installing chart")
 
 	args := []string{
 		"install", chart, "--name", name, "--version", version,
