@@ -549,7 +549,7 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp() error {
 	log.Trace("Checking if the hostname is not shown in the Administration view in the Security App")
 
-	maxTimeout := 2 * time.Minute
+	maxTimeout := 4 * time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
@@ -602,7 +602,7 @@ func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp()
 func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(status string) error {
 	log.Trace("Checking if the hostname is shown in the Admin view in the Security App")
 
-	maxTimeout := 2 * time.Minute
+	maxTimeout := 4 * time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
@@ -663,7 +663,7 @@ func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error 
 		return err
 	}
 
-	maxTimeout := 2 * time.Minute
+	maxTimeout := 4 * time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
