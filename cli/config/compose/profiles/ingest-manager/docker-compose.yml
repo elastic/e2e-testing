@@ -35,7 +35,7 @@ services:
     volumes:
       - ${kibanaConfigPath}:/usr/share/kibana/config/kibana.yml
   package-registry:
-    image: docker.elastic.co/package-registry/package-registry:41c150c8020efc53ab16e3bba774c62a419b51ea
+    image: docker.elastic.co/package-registry/distribution:staging
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]
       retries: 300

@@ -9,6 +9,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// title for the Elastic Endpoint integration in the package registry.
+// This value could change depending on the version of the package registry
+// We are using the title because the feature files have to be super readable
+// and the title is more readable than the name
+const elasticEnpointIntegrationTitle = "Elastic Endpoint Security"
+
 const endpointMetadataURL = kibanaBaseURL + "/api/endpoint/metadata"
 const ingestManagerIntegrationURL = kibanaBaseURL + "/api/ingest_manager/epm/packages/%s-%s"
 const ingestManagerIntegrationDeleteURL = kibanaBaseURL + "/api/ingest_manager/package_policies/delete"
