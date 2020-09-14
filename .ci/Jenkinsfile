@@ -225,7 +225,7 @@ pipeline {
   }
   post {
     cleanup {
-      notifyBuildResult(analyzeFlakey: true, flakyReportIdx: "reporter-e2e-tests-end-2-end-tests-pipeline-7.9.x", prComment: true)
+      notifyBuildResult(analyzeFlakey: true, flakyReportIdx: "reporter-e2e-tests-end-2-end-tests-pipeline-${env.JOB_BASE_NAME}", prComment: true)
     }
     success {
       whenTrue(!isPR() && params.notifyOnGreenBuilds) {
