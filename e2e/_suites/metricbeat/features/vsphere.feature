@@ -2,7 +2,7 @@
 Feature: vSphere
   As a Metricbeat developer I want to check that the vSphere module works as expected
 
-Scenario Outline: Check vSphere-<vsphere_version> is sending metrics to Elasticsearch without errors
+Scenario Outline: vSphere-<vsphere_version> sends metrics to Elasticsearch without errors
   Given vSphere "<vsphere_version>" is running for metricbeat
     And metricbeat is installed and configured for vSphere module
     And metricbeat waits "120" seconds for the service
