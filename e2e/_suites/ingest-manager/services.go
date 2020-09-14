@@ -11,7 +11,7 @@ import (
 
 // agentVersion is the version of the agent to use
 // It can be overriden by ELASTIC_AGENT_VERSION env var
-var agentVersion = "7.9.0"
+var agentVersion = "7.9.1"
 
 func init() {
 	config.Init()

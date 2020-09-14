@@ -39,7 +39,7 @@ const IngestManagerProfileName = "ingest-manager"
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
-var stackVersion = "7.9.0"
+var stackVersion = "7.9.1"
 
 // profileEnv is the environment to be applied to any execution
 // affecting the runtime dependencies (or profile)
