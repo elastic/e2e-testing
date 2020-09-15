@@ -43,6 +43,13 @@ func (sats *StandAloneTestSuite) afterScenario() {
 	serviceManager := services.NewServiceManager()
 	serviceName := ElasticAgentServiceName
 
+	if log.IsLevelEnabled(log.DebugLevel) {
+		err := getContainerLogs(IngestManagerProfileName, serviceName)
+		if err != nil {
+			// NOOP
+		}
+	}
+
 	if !developerMode {
 		_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
 	} else {
@@ -98,13 +105,6 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 
 	sats.Hostname = hostname
 	sats.Cleanup = true
-
-	if log.IsLevelEnabled(log.DebugLevel) {
-		err = getContainerLogs(profile, serviceName)
-		if err != nil {
-			return err
-		}
-	}
 
 	return nil
 }
