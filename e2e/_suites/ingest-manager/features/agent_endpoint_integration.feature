@@ -9,7 +9,7 @@ Scenario: Adding the Endpoint Integration to an Agent makes the host to show in 
   When the "Elastic Endpoint Security" integration is "added" in the configuration
   Then the "Elastic Endpoint Security" datasource is shown in the configuration as added
     And the host name is shown in the Administration view in the Security App as "online"
-    
+
 @endpoint-policy-check
 Scenario: Deploying an Endpoint makes policies to appear in the Security App
   When an Endpoint is successfully deployed with a "centos" Agent
