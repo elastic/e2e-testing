@@ -44,10 +44,7 @@ func (sats *StandAloneTestSuite) afterScenario() {
 	serviceName := ElasticAgentServiceName
 
 	if log.IsLevelEnabled(log.DebugLevel) {
-		err := getContainerLogs(IngestManagerProfileName, serviceName)
-		if err != nil {
-			// NOOP
-		}
+		_ = getContainerLogs(IngestManagerProfileName, serviceName)
 	}
 
 	if !developerMode {
