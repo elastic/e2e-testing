@@ -238,7 +238,7 @@ func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int,
 		},
 	}
 
-	indexName := ".ds-logs-elastic.agent-default-000001"
+	indexName := "logs-elastic.agent-default"
 
 	result, err := e2e.WaitForNumberOfHits(indexName, esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
