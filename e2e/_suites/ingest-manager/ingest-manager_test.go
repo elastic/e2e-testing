@@ -277,3 +277,23 @@ func getContainerHostname(containerName string) (string, error) {
 
 	return hostname, nil
 }
+
+func getContainerLogs(profile string, serviceName string) error {
+	serviceManager := services.NewServiceManager()
+
+	composes := []string{
+		profile,     // profile name
+		serviceName, // agent service
+	}
+	err := serviceManager.RunCommand(profile, composes, []string{"logs", serviceName}, profileEnv)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"service": serviceName,
+		}).Error("Could not retrieve Elastic Agent logs")
+
+		return err
+	}
+
+	return nil
+}

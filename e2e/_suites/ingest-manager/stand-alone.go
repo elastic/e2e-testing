@@ -100,17 +100,8 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 	sats.Cleanup = true
 
 	if log.IsLevelEnabled(log.DebugLevel) {
-		composes := []string{
-			profile,     // profile name
-			serviceName, // agent service
-		}
-		err = serviceManager.RunCommand(profile, composes, []string{"logs", serviceName}, profileEnv)
+		err = getContainerLogs(profile, serviceName)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"error":   err,
-				"service": serviceName,
-			}).Error("Could not retrieve Elastic Agent logs")
-
 			return err
 		}
 	}

@@ -57,6 +57,14 @@ func (fts *FleetTestSuite) afterScenario() {
 	}
 
 	serviceName := fts.Image
+
+	if log.IsLevelEnabled(log.DebugLevel) {
+		err = getContainerLogs(IngestManagerProfileName, serviceName)
+		if err != nil {
+			// NOOP
+		}
+	}
+
 	if !developerMode {
 		_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
 	} else {
