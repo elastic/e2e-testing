@@ -70,8 +70,8 @@ func (i *ElasticAgentInstaller) getElasticAgentHash(containerName string) (strin
 	return shortHash, nil
 }
 
-// getElasticAgentLogs uses elastic-agent log dir to read a number of lines from the log file
-func (i *ElasticAgentInstaller) getElasticAgentLogs(hostname string, lines int) error {
+// getElasticAgentLogs uses elastic-agent log dir to read the entire log file
+func (i *ElasticAgentInstaller) getElasticAgentLogs(hostname string) error {
 	containerName := hostname // name of the container, which matches the hostname
 
 	hash, err := i.getElasticAgentHash(containerName)
@@ -86,10 +86,10 @@ func (i *ElasticAgentInstaller) getElasticAgentLogs(hostname string, lines int) 
 
 	logFile := i.logDir + i.logFile
 	cmd := []string{
-		"tail", fmt.Sprintf("-%d", lines), fmt.Sprintf(logFile, hash),
+		"cat", fmt.Sprintf(logFile, hash),
 	}
 
-	logs, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
+	err = execCommandInService(i.profile, i.image, i.service, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"containerName": containerName,
@@ -100,8 +100,6 @@ func (i *ElasticAgentInstaller) getElasticAgentLogs(hostname string, lines int) 
 
 		return err
 	}
-
-	fmt.Println(logs)
 
 	return nil
 }

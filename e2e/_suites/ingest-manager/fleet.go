@@ -60,7 +60,7 @@ func (fts *FleetTestSuite) afterScenario() {
 
 	if log.IsLevelEnabled(log.DebugLevel) {
 		installer := fts.Installers[fts.Image]
-		_ = installer.getElasticAgentLogs(fts.Hostname, 10000) // 10k lines of log
+		_ = installer.getElasticAgentLogs(fts.Hostname)
 	}
 
 	if !developerMode {
@@ -349,7 +349,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	log.Trace("Checking system Package dashboards in Fleet")
 
 	dataStreamsCount := 0
-	maxTimeout := 4 * time.Minute
+	maxTimeout := 10 * time.Second
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
