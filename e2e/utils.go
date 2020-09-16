@@ -21,7 +21,6 @@ import (
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/docker"
 	curl "github.com/elastic/e2e-testing/cli/shell"
-	shell "github.com/elastic/e2e-testing/cli/shell"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -56,30 +55,9 @@ func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOf
 // on the desired OS, architecture and file extension:
 // 1. Observability CI Storage bucket
 // 2. Elastic's artifact repository, building the JSON path query based
-// i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "linux", "x86_64", "tar.gz")
-// If the environment variable ELASTIC_AGENT_DOWNLOAD_URL exists, then the artifact to be downloaded will
-// be defined by that value
-// Else, if the environment variable ELASTIC_AGENT_USE_CI_SNAPSHOTS is set, then the artifact
-// to be downloaded will be defined by the latest snapshot produced by the Beats CI.
+// i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "x86_64", "rpm")
+// i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "amd64", "deb")
 func GetElasticArtifactURL(artifact string, version string, OS string, arch string, extension string) (string, error) {
-	downloadURL := os.Getenv("ELASTIC_AGENT_DOWNLOAD_URL")
-	if downloadURL != "" {
-		return downloadURL, nil
-	}
-
-	useCISnapshots, _ := shell.GetEnvBool("ELASTIC_AGENT_USE_CI_SNAPSHOTS")
-	if useCISnapshots {
-		// We will use the snapshots produced by Beats CI
-		bucket := "beats-ci-artifacts"
-		object := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
-
-		if agentVersion, exists := os.LookupEnv("ELASTIC_AGENT_VERSION"); exists {
-			object = fmt.Sprintf("pull-requests/%s/%s-%s-%s-%s.%s", agentVersion, artifact, version, OS, arch, extension)
-		}
-
-		return GetObjectURLFromBucket(bucket, object)
-	}
-
 	exp := GetExponentialBackOff(time.Minute)
 
 	retryCount := 1
@@ -147,7 +125,7 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 	packagesObject := jsonParsed.Path("packages")
 	// we need to get keys with dots using Search instead of Path
 	downloadObject := packagesObject.Search(artifactPath)
-	downloadURL = downloadObject.Path("url").Data().(string)
+	downloadURL := downloadObject.Path("url").Data().(string)
 
 	return downloadURL, nil
 }
@@ -159,22 +137,23 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 
 	retryCount := 1
 
-	body := ""
+	currentPage := 0
+	pageTokenQueryParam := ""
+	mediaLink := ""
 
 	storageAPI := func() error {
 		r := curl.HTTPRequest{
-			URL: fmt.Sprintf("https://storage.googleapis.com/storage/v1/b/%s/o", bucket),
+			URL: fmt.Sprintf("https://storage.googleapis.com/storage/v1/b/%s/o%s", bucket, pageTokenQueryParam),
 		}
 
 		response, err := curl.Get(r)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"bucket":         bucket,
-				"elapsedTime":    exp.GetElapsedTime(),
-				"error":          err,
-				"object":         object,
-				"retry":          retryCount,
-				"statusEndpoint": r.URL,
+				"bucket":      bucket,
+				"elapsedTime": exp.GetElapsedTime(),
+				"error":       err,
+				"object":      object,
+				"retry":       retryCount,
 			}).Warn("Google Cloud Storage API is not available yet")
 
 			retryCount++
@@ -183,39 +162,71 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 		}
 
 		log.WithFields(log.Fields{
-			"bucket":         bucket,
-			"elapsedTime":    exp.GetElapsedTime(),
-			"object":         object,
-			"retries":        retryCount,
-			"statusEndpoint": r.URL,
-		}).Debug("Google Cloud Storage API is available")
+			"bucket":      bucket,
+			"elapsedTime": exp.GetElapsedTime(),
+			"object":      object,
+			"retries":     retryCount,
+			"url":         r.URL,
+		}).Trace("Google Cloud Storage API is available")
 
-		body = response
-		return nil
+		jsonParsed, err := gabs.ParseJSON([]byte(response))
+		if err != nil {
+			log.WithFields(log.Fields{
+				"bucket": bucket,
+				"object": object,
+			}).Warn("Could not parse the response body for the object")
+
+			retryCount++
+
+			return err
+		}
+
+		for _, item := range jsonParsed.Path("items").Children() {
+			itemID := item.Path("id").Data().(string)
+			objectPath := bucket + "/" + object + "/"
+			if strings.HasPrefix(itemID, objectPath) {
+				mediaLink = item.Path("mediaLink").Data().(string)
+
+				log.WithFields(log.Fields{
+					"bucket": bucket,
+					"object": object,
+				}).Debug("Media link found for the object")
+				return nil
+			}
+		}
+
+		if jsonParsed.Path("nextPageToken") == nil {
+			log.WithFields(log.Fields{
+				"currentPage": currentPage,
+				"bucket":      bucket,
+				"object":      object,
+			}).Warn("Reached the end of the pages and the object was not found")
+
+			return nil
+		}
+
+		nextPageToken := jsonParsed.Path("nextPageToken").Data().(string)
+		pageTokenQueryParam = "?pageToken=" + nextPageToken
+		currentPage++
+
+		log.WithFields(log.Fields{
+			"currentPage": currentPage,
+			"bucket":      bucket,
+			"object":      object,
+		}).Warn("Object not found in current page. Continuing")
+
+		return fmt.Errorf("The %s object could not be found in the current page (%d) the %s bucket", object, currentPage, bucket)
 	}
 
 	err := backoff.Retry(storageAPI, exp)
 	if err != nil {
 		return "", err
 	}
-
-	jsonParsed, err := gabs.ParseJSON([]byte(body))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"bucket": bucket,
-			"object": object,
-		}).Error("Could not parse the response body for the object")
-		return "", err
+	if mediaLink == "" {
+		return "", fmt.Errorf("Reached the end of the pages and the %s object was not found for the %s bucket", object, bucket)
 	}
 
-	for _, item := range jsonParsed.Path("items").Children() {
-		itemID := item.Path("id").Data().(string)
-		if strings.Contains(itemID, object) {
-			return item.Path("mediaLink").Data().(string), nil
-		}
-	}
-
-	return "", fmt.Errorf("The %s object could not be found in the %s bucket", object, bucket)
+	return mediaLink, nil
 }
 
 // DownloadFile will download a url and store it in a temporary path.
