@@ -1,11 +1,9 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
@@ -43,59 +41,21 @@ type ElasticAgentInstaller struct {
 	tag               string // docker tag
 }
 
-// getElasticAgentHash uses Elastic Agent's home dir to read the file with agent's build hash
-// it will return the first six characters of the hash (short hash)
-func (i *ElasticAgentInstaller) getElasticAgentHash(containerName string) (string, error) {
-	commitFile := i.homeDir + i.commitFile
-
-	cmd := []string{
-		"cat", commitFile,
-	}
-
-	fullHash, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
-	if err != nil {
-		return "", err
-	}
-
-	runes := []rune(fullHash)
-	shortHash := string(runes[0:6])
-
-	log.WithFields(log.Fields{
-		"commitFile":    commitFile,
-		"containerName": containerName,
-		"hash":          fullHash,
-		"shortHash":     shortHash,
-	}).Debug("Agent build hash found")
-
-	return shortHash, nil
-}
-
 // getElasticAgentLogs uses elastic-agent log dir to read the entire log file
 func (i *ElasticAgentInstaller) getElasticAgentLogs(hostname string) error {
 	containerName := hostname // name of the container, which matches the hostname
 
-	hash, err := i.getElasticAgentHash(containerName)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"containerName": containerName,
-			"error":         err,
-		}).Error("Could not get agent hash in the container")
-
-		return err
-	}
-
 	logFile := i.logDir + i.logFile
 	cmd := []string{
-		"cat", fmt.Sprintf(logFile, hash),
+		"cat", logFile,
 	}
 
-	err = execCommandInService(i.profile, i.image, i.service, cmd, false)
+	err := execCommandInService(i.profile, i.image, i.service, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"containerName": containerName,
 			"command":       cmd,
 			"error":         err,
-			"hash":          hash,
 		}).Error("Could not get agent logs in the container")
 
 		return err
@@ -172,7 +132,7 @@ func newCentosInstaller(image string, tag string) ElasticAgentInstaller {
 		homeDir:           "/etc/elastic-agent/",
 		image:             image,
 		InstallCmds:       []string{"yum", "localinstall", "/" + binaryName, "-y"},
-		logDir:            "/var/lib/elastic-agent/data/elastic-agent-%s/logs/",
+		logDir:            "/var/lib/elastic-agent/logs/",
 		logFile:           "elastic-agent-json.log",
 		name:              binaryName,
 		path:              binaryPath,
@@ -224,7 +184,7 @@ func newDebianInstaller() ElasticAgentInstaller {
 		homeDir:           "/etc/elastic-agent/",
 		image:             image,
 		InstallCmds:       []string{"apt", "install", "/" + binaryName, "-y"},
-		logDir:            "/var/lib/elastic-agent/data/elastic-agent-%s/logs/",
+		logDir:            "/var/lib/elastic-agent/logs/",
 		logFile:           "elastic-agent-json.log",
 		name:              binaryName,
 		path:              binaryPath,
