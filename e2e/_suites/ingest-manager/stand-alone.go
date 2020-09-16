@@ -18,6 +18,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const standAloneVersionBase = "7.9.1"
+
 // standAloneVersion is the version of the agent to use
 // It can be overriden by ELASTIC_AGENT_VERSION env var
 var standAloneVersion = "7.9.1"
@@ -25,7 +27,7 @@ var standAloneVersion = "7.9.1"
 func init() {
 	config.Init()
 
-	standAloneVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", standAloneVersion)
+	standAloneVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", standAloneVersionBase)
 }
 
 // StandAloneTestSuite represents the scenarios for Stand-alone-mode
