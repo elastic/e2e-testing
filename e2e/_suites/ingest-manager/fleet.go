@@ -48,19 +48,19 @@ type FleetTestSuite struct {
 func (fts *FleetTestSuite) afterScenario() {
 	serviceManager := services.NewServiceManager()
 
+	serviceName := fts.Image
+
+	if log.IsLevelEnabled(log.DebugLevel) {
+		installer := fts.Installers[fts.Image]
+		_ = installer.getElasticAgentLogs(fts.Hostname)
+	}
+
 	err := fts.unenrollHostname(true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err":      err,
 			"hostname": fts.Hostname,
 		}).Warn("The agentIDs for the hostname could not be unenrolled")
-	}
-
-	serviceName := fts.Image
-
-	if log.IsLevelEnabled(log.DebugLevel) {
-		installer := fts.Installers[fts.Image]
-		_ = installer.getElasticAgentLogs(fts.Hostname)
 	}
 
 	if !developerMode {
