@@ -71,6 +71,8 @@ pipeline {
       stages {
         stage('Checkout') {
           steps {
+            pipelineManager([ cancelPreviousRunningBuilds: [ when: 'PR' ] ])
+            deleteDir()
             gitCheckout(basedir: BASE_DIR, githubNotifyFirstTimeContributor: true)
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
             setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
@@ -225,7 +227,7 @@ pipeline {
   }
   post {
     cleanup {
-      notifyBuildResult(analyzeFlakey: true, flakyReportIdx: "reporter-e2e-tests-end-2-end-tests-pipeline-${env.JOB_BASE_NAME}", prComment: true)
+      notifyBuildResult(analyzeFlakey: true, flakyReportIdx: "reporter-e2e-tests-end-2-end-tests-pipeline-master", prComment: true)
     }
     success {
       whenTrue(!isPR() && params.notifyOnGreenBuilds) {
