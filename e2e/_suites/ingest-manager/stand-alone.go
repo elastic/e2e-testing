@@ -45,6 +45,10 @@ func (sats *StandAloneTestSuite) afterScenario() {
 	serviceManager := services.NewServiceManager()
 	serviceName := ElasticAgentServiceName
 
+	if log.IsLevelEnabled(log.DebugLevel) {
+		_ = sats.getContainerLogs()
+	}
+
 	if !developerMode {
 		_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
 	} else {
@@ -101,20 +105,27 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 	sats.Hostname = hostname
 	sats.Cleanup = true
 
-	if log.IsLevelEnabled(log.DebugLevel) {
-		composes := []string{
-			profile,     // profile name
-			serviceName, // agent service
-		}
-		err = serviceManager.RunCommand(profile, composes, []string{"logs", serviceName}, profileEnv)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error":   err,
-				"service": serviceName,
-			}).Error("Could not retrieve Elastic Agent logs")
+	return nil
+}
 
-			return err
-		}
+func (sats *StandAloneTestSuite) getContainerLogs() error {
+	serviceManager := services.NewServiceManager()
+
+	profile := IngestManagerProfileName
+	serviceName := ElasticAgentServiceName
+
+	composes := []string{
+		profile,     // profile name
+		serviceName, // agent service
+	}
+	err := serviceManager.RunCommand(profile, composes, []string{"logs", serviceName}, profileEnv)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"service": serviceName,
+		}).Error("Could not retrieve Elastic Agent logs")
+
+		return err
 	}
 
 	return nil
