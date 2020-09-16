@@ -181,8 +181,6 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 			return err
 		}
 
-		nextPageToken := jsonParsed.Path("nextPageToken").Data().(string)
-
 		for _, item := range jsonParsed.Path("items").Children() {
 			itemID := item.Path("id").Data().(string)
 			objectPath := bucket + "/" + object + "/"
@@ -197,6 +195,17 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 			}
 		}
 
+		if jsonParsed.Path("nextPageToken") == nil {
+			log.WithFields(log.Fields{
+				"currentPage": currentPage,
+				"bucket":      bucket,
+				"object":      object,
+			}).Warn("Reached the end of the pages and the object was not found")
+
+			return nil
+		}
+
+		nextPageToken := jsonParsed.Path("nextPageToken").Data().(string)
 		pageTokenQueryParam = "?pageToken=" + nextPageToken
 		currentPage++
 
@@ -212,6 +221,9 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 	err := backoff.Retry(storageAPI, exp)
 	if err != nil {
 		return "", err
+	}
+	if mediaLink == "" {
+		return "", fmt.Errorf("Reached the end of the pages and the %s object was not found for the %s bucket", object, bucket)
 	}
 
 	return mediaLink, nil
