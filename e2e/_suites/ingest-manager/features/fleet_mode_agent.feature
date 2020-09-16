@@ -6,6 +6,7 @@ Feature: Fleet Mode Agent
 Scenario Outline: Deploying the <os> agent
   When a "<os>" agent is deployed to Fleet
   Then the agent is listed in Fleet as "online"
+    And the "elastic-agent" process is in the "started" state on the host
     And the "filebeat" process is in the "started" state on the host
     And the "metricbeat" process is in the "started" state on the host
     And system package dashboards are listed in Fleet
