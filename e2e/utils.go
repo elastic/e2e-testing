@@ -21,7 +21,6 @@ import (
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/docker"
 	curl "github.com/elastic/e2e-testing/cli/shell"
-	shell "github.com/elastic/e2e-testing/cli/shell"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -138,22 +137,23 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 
 	retryCount := 1
 
-	body := ""
+	currentPage := 0
+	pageTokenQueryParam := ""
+	mediaLink := ""
 
 	storageAPI := func() error {
 		r := curl.HTTPRequest{
-			URL: fmt.Sprintf("https://storage.googleapis.com/storage/v1/b/%s/o", bucket),
+			URL: fmt.Sprintf("https://storage.googleapis.com/storage/v1/b/%s/o%s", bucket, pageTokenQueryParam),
 		}
 
 		response, err := curl.Get(r)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"bucket":         bucket,
-				"elapsedTime":    exp.GetElapsedTime(),
-				"error":          err,
-				"object":         object,
-				"retry":          retryCount,
-				"statusEndpoint": r.URL,
+				"bucket":      bucket,
+				"elapsedTime": exp.GetElapsedTime(),
+				"error":       err,
+				"object":      object,
+				"retry":       retryCount,
 			}).Warn("Google Cloud Storage API is not available yet")
 
 			retryCount++
@@ -162,15 +162,51 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 		}
 
 		log.WithFields(log.Fields{
-			"bucket":         bucket,
-			"elapsedTime":    exp.GetElapsedTime(),
-			"object":         object,
-			"retries":        retryCount,
-			"statusEndpoint": r.URL,
-		}).Debug("Google Cloud Storage API is available")
+			"bucket":      bucket,
+			"elapsedTime": exp.GetElapsedTime(),
+			"object":      object,
+			"retries":     retryCount,
+			"url":         r.URL,
+		}).Trace("Google Cloud Storage API is available")
 
-		body = response
-		return nil
+		jsonParsed, err := gabs.ParseJSON([]byte(response))
+		if err != nil {
+			log.WithFields(log.Fields{
+				"bucket": bucket,
+				"object": object,
+			}).Warn("Could not parse the response body for the object")
+
+			retryCount++
+
+			return err
+		}
+
+		nextPageToken := jsonParsed.Path("nextPageToken").Data().(string)
+
+		for _, item := range jsonParsed.Path("items").Children() {
+			itemID := item.Path("id").Data().(string)
+			objectPath := bucket + "/" + object + "/"
+			if strings.HasPrefix(itemID, objectPath) {
+				mediaLink = item.Path("mediaLink").Data().(string)
+
+				log.WithFields(log.Fields{
+					"bucket": bucket,
+					"object": object,
+				}).Debug("Media link found for the object")
+				return nil
+			}
+		}
+
+		pageTokenQueryParam = "?pageToken=" + nextPageToken
+		currentPage++
+
+		log.WithFields(log.Fields{
+			"currentPage": currentPage,
+			"bucket":      bucket,
+			"object":      object,
+		}).Warn("Object not found in current page. Continuing")
+
+		return fmt.Errorf("The %s object could not be found in the current page (%d) the %s bucket", object, currentPage, bucket)
 	}
 
 	err := backoff.Retry(storageAPI, exp)
@@ -178,23 +214,7 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 		return "", err
 	}
 
-	jsonParsed, err := gabs.ParseJSON([]byte(body))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"bucket": bucket,
-			"object": object,
-		}).Error("Could not parse the response body for the object")
-		return "", err
-	}
-
-	for _, item := range jsonParsed.Path("items").Children() {
-		itemID := item.Path("id").Data().(string)
-		if strings.Contains(itemID, object) {
-			return item.Path("mediaLink").Data().(string), nil
-		}
-	}
-
-	return "", fmt.Errorf("The %s object could not be found in the %s bucket", object, bucket)
+	return mediaLink, nil
 }
 
 // DownloadFile will download a url and store it in a temporary path.
