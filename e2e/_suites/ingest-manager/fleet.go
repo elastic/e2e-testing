@@ -59,7 +59,8 @@ func (fts *FleetTestSuite) afterScenario() {
 	serviceName := fts.Image
 
 	if log.IsLevelEnabled(log.DebugLevel) {
-		_ = getContainerLogs(IngestManagerProfileName, serviceName)
+		installer := fts.Installers[fts.Image]
+		_ = installer.getElasticAgentLogs(fts.Hostname, 10000) // 10k lines of log
 	}
 
 	if !developerMode {
