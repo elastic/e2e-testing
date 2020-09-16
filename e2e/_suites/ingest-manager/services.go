@@ -65,14 +65,14 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 
 		// We will use the snapshots produced by Beats CI
 		bucket := "beats-ci-artifacts"
-		object := fmt.Sprintf("snapshots/%s-%s-%s.%s", artifact, version, arch, extension)
+		object := fmt.Sprintf("snapshots/%s", fileName)
 
 		// we are setting a version from a pull request: the version of the artifact will be kept as the base one
 		// i.e. /pull-requests/pr-21100/elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm
 		// i.e. /pull-requests/pr-21100/elastic-agent-8.0.0-SNAPSHOT-amd64.deb
 		if strings.HasPrefix(version, "pr-") {
 			log.WithField("PR", version).Debug("Using CI snapshots a pull request")
-			object = fmt.Sprintf("pull-requests/%s/%s/%s-%s-%s.%s", version, artifact, artifact, agentVersionBase, arch, extension)
+			object = fmt.Sprintf("pull-requests/%s/%s/%s", version, artifact, fileName)
 		}
 
 		downloadURL, err = e2e.GetObjectURLFromBucket(bucket, object)
