@@ -132,18 +132,28 @@ func GetElasticAgentInstaller(image string) ElasticAgentInstaller {
 		"image": image,
 	}).Debug("Configuring installer for the agent")
 
+	var installer ElasticAgentInstaller
+	var err error
 	if "centos-systemd" == image {
-		return newCentosInstaller("centos-systemd", "latest")
+		installer, err = newCentosInstaller("centos-systemd", "latest")
 	} else if "debian-systemd" == image {
-		return newDebianInstaller()
+		installer, err = newDebianInstaller()
+	} else {
+		log.WithField("image", image).Fatal("Sorry, we currently do not support this installer")
+		return ElasticAgentInstaller{}
 	}
 
-	log.WithField("image", image).Fatal("Sorry, we currently do not support this installer")
-	return ElasticAgentInstaller{}
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"image": image,
+		}).Fatal("Sorry, we could not download the installer")
+	}
+	return installer
 }
 
 // newCentosInstaller returns an instance of the Centos installer
-func newCentosInstaller(image string, tag string) ElasticAgentInstaller {
+func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 	service := image
 	profile := IngestManagerProfileName
 
@@ -164,6 +174,7 @@ func newCentosInstaller(image string, tag string) ElasticAgentInstaller {
 			"extension": extension,
 			"error":     err,
 		}).Error("Could not download the binary for the agent")
+		return ElasticAgentInstaller{}, err
 	}
 
 	fn := func() error {
@@ -189,11 +200,11 @@ func newCentosInstaller(image string, tag string) ElasticAgentInstaller {
 		profile:           profile,
 		service:           service,
 		tag:               tag,
-	}
+	}, nil
 }
 
 // newDebianInstaller returns an instance of the Debian installer
-func newDebianInstaller() ElasticAgentInstaller {
+func newDebianInstaller() (ElasticAgentInstaller, error) {
 	image := "debian-systemd"
 	service := image
 	tag := "stretch"
@@ -216,6 +227,7 @@ func newDebianInstaller() ElasticAgentInstaller {
 			"extension": extension,
 			"error":     err,
 		}).Error("Could not download the binary for the agent")
+		return ElasticAgentInstaller{}, err
 	}
 
 	fn := func() error {
@@ -241,7 +253,7 @@ func newDebianInstaller() ElasticAgentInstaller {
 		profile:           profile,
 		service:           service,
 		tag:               tag,
-	}
+	}, nil
 }
 
 func systemctlRun(profile string, image string, service string, command string) error {
