@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
@@ -35,6 +37,7 @@ type StandAloneTestSuite struct {
 	AgentConfigFilePath string
 	Cleanup             bool
 	Hostname            string
+	Image               string
 	// date controls for queries
 	AgentStoppedDate             time.Time
 	RuntimeDependenciesStartDate time.Time
@@ -109,8 +112,14 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 		return err
 	}
 
+	sats.Image = image
 	sats.Hostname = hostname
 	sats.Cleanup = true
+
+	err = sats.installTestTools(containerName)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -134,6 +143,39 @@ func (sats *StandAloneTestSuite) getContainerLogs() error {
 
 		return err
 	}
+
+	return nil
+}
+
+// installTestTools we need the container name because we use the Docker Client instead of Docker Compose
+// we are going to install those tools we use in the test framework for checking
+// and verifications
+func (sats *StandAloneTestSuite) installTestTools(containerName string) error {
+	if sats.Image != "ubi8" {
+		return nil
+	}
+
+	cmd := []string{"microdnf", "install", "procps-ng"}
+
+	log.WithFields(log.Fields{
+		"command":       cmd,
+		"containerName": containerName,
+	}).Trace("Installing test tools ")
+
+	_, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command":       cmd,
+			"containerName": containerName,
+			"error":         err,
+		}).Error("Could not install test tools using the Docker client")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"command":       cmd,
+		"containerName": containerName,
+	}).Debug("Test tools installed")
 
 	return nil
 }
