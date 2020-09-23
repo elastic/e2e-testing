@@ -31,9 +31,9 @@ var developerMode = false
 // It can be overriden by METRICBEAT_VERSION env var
 var metricbeatVersion = "8.0.0-SNAPSHOT"
 
-// queryRetryTimeout is the number of seconds between elasticsearch retry queries.
-// It can be overriden by OP_RETRY_TIMEOUT env var
-var queryRetryTimeout = 3
+// timeoutFactor a multiplier for the max timeout when doing backoff retries.
+// It can be overriden by TIMEOUT_FACTOR env var
+var timeoutFactor = 3
 
 var serviceManager services.ServiceManager
 
@@ -50,7 +50,7 @@ func init() {
 	}
 
 	metricbeatVersion = shell.GetEnv("METRICBEAT_VERSION", metricbeatVersion)
-	queryRetryTimeout = shell.GetEnvInteger("OP_RETRY_TIMEOUT", queryRetryTimeout)
+	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 
 	serviceManager = services.NewServiceManager()
@@ -177,7 +177,7 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 			}).Fatal("Could not run the profile.")
 		}
 
-		minutesToBeHealthy := 3 * time.Minute
+		minutesToBeHealthy := time.Duration(timeoutFactor) * time.Minute
 		healthy, err := e2e.WaitForElasticsearch(minutesToBeHealthy)
 		if !healthy {
 			log.WithFields(log.Fields{
@@ -408,7 +408,7 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 	}
 
 	minimumHitsCount := 5
-	maxTimeout := time.Duration(queryRetryTimeout) * time.Minute
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
 	result, err := e2e.WaitForNumberOfHits(mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
@@ -444,7 +444,7 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 	}
 
 	minimumHitsCount := 5
-	maxTimeout := time.Duration(queryRetryTimeout) * time.Minute
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
 	result, err := e2e.WaitForNumberOfHits(mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
