@@ -27,12 +27,9 @@ rm -rf outputs || true
 mkdir -p outputs
 
 ## Parse TAGS if not empty then enable the flags to be passed to the functional-test wrapper
-REPORT=''
+REPORT=outputs/TEST-${SUITE}
 if [ "${TAGS}" != "" ] ; then
   REPORT=outputs/TEST-${SUITE}-${TAGS}
-else
-  TAGS=''
-  REPORT=outputs/TEST-functional-tests
 fi
 
 ## Generate test report even if make failed.
