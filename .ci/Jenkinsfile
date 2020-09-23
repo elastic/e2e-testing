@@ -189,14 +189,14 @@ pipeline {
                   def parallelTasks = [:]
                   suites['SUITES'].each { item ->
                     def suite = item.suite
-                    def feature = item.feature
+                    def tags = item.tags
                     if (suiteParam == "all" || suiteParam == suite) {
                       def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
                       if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
-                        log(level: 'INFO', text: "Adding ${suite}:${feature} test suite to the build execution")
-                        parallelTasks["${suite}_${feature}"] = generateFunctionalTestStep(suite: "${suite}", feature: "${feature}")
+                        log(level: 'INFO', text: "Adding ${suite}:${tags} test suite to the build execution")
+                        parallelTasks["${suite}_${tags}"] = generateFunctionalTestStep(suite: "${suite}", tags: "${tags}")
                       } else {
-                        log(level: 'WARN', text: "The ${suite}:${feature} test suite won't be executed because there are no modified files")
+                        log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed because there are no modified files")
                       }
                     }
                   }
@@ -277,7 +277,7 @@ def generateFunctionalTestStep(Map params = [:]){
   def suite = params.get('suite')
   def sneakCaseSuite = suite.toUpperCase().replaceAll("-", "_")
   def stackVersion = env."${sneakCaseSuite}_STACK_VERSION"
-  def feature = params.get('feature')
+  def tags = params.get('tags')
   return {
     node('ubuntu-18.04 && immutable && docker') {
       try {
@@ -289,11 +289,11 @@ def generateFunctionalTestStep(Map params = [:]){
           }
           retry(3){
             dir("${BASE_DIR}"){
-              sh script: """.ci/scripts/install-test-dependencies.sh "${suite}" """, label: "Install test dependencies for ${suite}:${feature}"
+              sh script: """.ci/scripts/install-test-dependencies.sh "${suite}" """, label: "Install test dependencies for ${suite}:${tags}"
             }
           }
           dir("${BASE_DIR}"){
-            sh script: """.ci/scripts/functional-test.sh "${suite}" "${feature}" "${stackVersion}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${feature}"
+            sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${stackVersion}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
           }
         }
       } catch(e) {
