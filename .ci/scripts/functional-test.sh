@@ -26,9 +26,9 @@ TARGET_ARCH=${GOARCH:-amd64}
 rm -rf outputs || true
 mkdir -p outputs
 
-## Parse TAGS if not ALL then enable the flags to be passed to the functional-test wrapper
+## Parse TAGS if not empty then enable the flags to be passed to the functional-test wrapper
 REPORT=''
-if [ "${TAGS}" != "" ] && [ "${TAGS}" != "all" ] ; then
+if [ "${TAGS}" != "" ] ; then
   REPORT=outputs/TEST-${SUITE}-${TAGS}
 else
   TAGS=''
