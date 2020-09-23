@@ -36,7 +36,7 @@ pipeline {
     string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stand-alone elastic-agent to be used for Ingest Manager tests. You can use here the tag of your PR to test your changes')
     booleanParam(name: "ELASTIC_AGENT_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the binary snapshots produced by Beats CI instead of the official releases")
     choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'INFO'], description: 'Log level to be used')
-    choice(name: 'RETRY_TIMEOUT', choices: ['3', '5', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
+    choice(name: 'TIMEOUT_FACTOR', choices: ['3', '5', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
     string(name: 'INGEST_MANAGER_STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for Ingest Manager tests.')
     string(name: 'METRICBEAT_STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for Metricbeat tests.')
     string(name: 'METRICBEAT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the metricbeat to be used.')
@@ -70,7 +70,7 @@ pipeline {
         HELM_KIND_VERSION = "${params.HELM_KIND_VERSION.trim()}"
         HELM_KUBERNETES_VERSION = "${params.HELM_KUBERNETES_VERSION.trim()}"
         LOG_LEVEL = "${params.LOG_LEVEL.trim()}"
-        RETRY_TIMEOUT = "${params.RETRY_TIMEOUT.trim()}"
+        TIMEOUT_FACTOR = "${params.TIMEOUT_FACTOR.trim()}"
       }
       stages {
         stage('Checkout') {
