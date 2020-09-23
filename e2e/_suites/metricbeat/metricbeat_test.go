@@ -177,7 +177,7 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 			}).Fatal("Could not run the profile.")
 		}
 
-		minutesToBeHealthy := 3 * time.Minute
+		minutesToBeHealthy := time.Duration(timeoutFactor) * time.Minute
 		healthy, err := e2e.WaitForElasticsearch(minutesToBeHealthy)
 		if !healthy {
 			log.WithFields(log.Fields{
