@@ -200,7 +200,7 @@ pipeline {
                     suitesParam.split(',') { suiteParam ->
                       existingSuites['SUITES'].each { item ->
                         def existingSuite = item.suite
-                        if (suiteParam == existingSuite) {
+                        if (suiteParam.trim() == existingSuite) {
                           def tags = item.tags
                           checkTestSuite(parallelTasks, existingSuite, tags)
                         }
