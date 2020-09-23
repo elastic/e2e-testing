@@ -27,7 +27,7 @@ pipeline {
     issueCommentTrigger('(?i).*(?:jenkins\\W+)?run\\W+(?:the\\W+)?tests(?:\\W+please)?.*')
   }
   parameters {
-    choice(name: 'runTestsSuites', choices: ['', 'helm', 'ingest-manager', 'metricbeat'], description: 'Choose which test suite to run (default: empty)')
+    string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
     booleanParam(name: "forceSkipPresubmit", defaultValue: false, description: "If it's needed to execute the pre-submit tests: unit and precommit.")
     booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify with green builds.")
@@ -187,16 +187,35 @@ pipeline {
                   def suitesParam = params.runTestsSuites
                   def existingSuites = readYaml(file: '.ci/.e2e-tests.yaml')
                   def parallelTasks = [:]
-                  existingSuites['SUITES'].each { item ->
-                    def existingSuite = item.suite
-                    def tags = item.tags
-                    if (suitesParam == "" || suitesParam == existingSuite) {
+
+                  if (suitesParam == "") {
+                    // all test suites: iterate through existing test suites
+                    existingSuites['SUITES'].each { item ->
+                      def existingSuite = item.suite
+                      def tags = item.tags
                       def regexps = [ "^e2e/_suites/${existingSuite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
                       if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
                         log(level: 'INFO', text: "Adding ${existingSuite}:${tags} test suite to the build execution")
                         parallelTasks["${existingSuite}_${tags}"] = generateFunctionalTestStep(suite: "${existingSuite}", tags: "${tags}")
                       } else {
                         log(level: 'WARN', text: "The ${existingSuite}:${tags} test suite won't be executed because there are no modified files")
+                      }
+                    }
+                  } else {
+                    // iterate through the comma-separated test suites, comparing with the existing test suites
+                    suitesParam.split(',') { suiteParam ->
+                      existingSuites['SUITES'].each { item ->
+                        def existingSuite = item.suite
+                        if (suiteParam == existingSuite) {
+                          def tags = item.tags
+                          def regexps = [ "^e2e/_suites/${existingSuite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
+                          if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
+                            log(level: 'INFO', text: "Adding ${existingSuite}:${tags} test suite to the build execution")
+                            parallelTasks["${existingSuite}_${tags}"] = generateFunctionalTestStep(suite: "${existingSuite}", tags: "${tags}")
+                          } else {
+                            log(level: 'WARN', text: "The ${existingSuite}:${tags} test suite won't be executed because there are no modified files")
+                          }
+                        }
                       }
                     }
                   }
