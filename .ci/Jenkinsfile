@@ -27,7 +27,7 @@ pipeline {
     issueCommentTrigger('(?i).*(?:jenkins\\W+)?run\\W+(?:the\\W+)?tests(?:\\W+please)?.*')
   }
   parameters {
-    choice(name: 'runTestsSuite', choices: ['all', 'helm', 'ingest-manager', 'metricbeat'], description: 'Choose which test suite to run (default: all)')
+    choice(name: 'runTestsSuites', choices: ['all', 'helm', 'ingest-manager', 'metricbeat'], description: 'Choose which test suite to run (default: all)')
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
     booleanParam(name: "forceSkipPresubmit", defaultValue: false, description: "If it's needed to execute the pre-submit tests: unit and precommit.")
     booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify with green builds.")
@@ -184,13 +184,13 @@ pipeline {
               unstash 'source'
               dir("${BASE_DIR}") {
                 script {
-                  def suiteParam = params.runTestsSuite
+                  def suitesParam = params.runTestsSuites
                   def suites = readYaml(file: '.ci/.e2e-tests.yaml')
                   def parallelTasks = [:]
                   suites['SUITES'].each { item ->
                     def suite = item.suite
                     def tags = item.tags
-                    if (suiteParam == "all" || suiteParam == suite) {
+                    if (suitesParam == "all" || suitesParam == suite) {
                       def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
                       if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
                         log(level: 'INFO', text: "Adding ${suite}:${tags} test suite to the build execution")
@@ -237,14 +237,14 @@ pipeline {
     success {
       whenTrue(!isPR() && params.notifyOnGreenBuilds) {
         slackSend(channel: "#${env.SLACK_CHANNEL}", color: 'good',
-                  message: "[${params.runTestsSuite}] Build Passed: ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.RUN_DISPLAY_URL}|Open>).",
+                  message: "[${params.runTestsSuites}] Build Passed: ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.RUN_DISPLAY_URL}|Open>).",
                   tokenCredentialId: 'jenkins-slack-integration-token')
       }
     }
     unsuccessful {
       whenFalse(isPR()) {
         slackSend(channel: "#${env.SLACK_CHANNEL}", color: 'danger',
-                  message: "[${params.runTestsSuite}] Build Failed: ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.RUN_DISPLAY_URL}|Open>).",
+                  message: "[${params.runTestsSuites}] Build Failed: ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.RUN_DISPLAY_URL}|Open>).",
                   tokenCredentialId: 'jenkins-slack-integration-token')
       }
     }
