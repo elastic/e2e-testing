@@ -189,14 +189,14 @@ pipeline {
                   def parallelTasks = [:]
 
                   if (suitesParam == "") {
-                    // all test suites: iterate through existing test suites
+                    log(level: 'DEBUG', text: "Iterate through existing test suites")
                     existingSuites['SUITES'].each { item ->
                       def existingSuite = item.suite
                       def tags = item.tags
                       checkTestSuite(parallelTasks, existingSuite, tags)
                     }
                   } else {
-                    // iterate through the comma-separated test suites, comparing with the existing test suites
+                    log(level: 'DEBUG', text: "Iterate through the comma-separated test suites (${suitesParam}), comparing with the existing test suites")
                     suitesParam.split(',') { suiteParam ->
                       existingSuites['SUITES'].each { item ->
                         def existingSuite = item.suite
