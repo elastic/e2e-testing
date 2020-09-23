@@ -197,7 +197,7 @@ pipeline {
                     }
                   } else {
                     log(level: 'DEBUG', text: "Iterate through the comma-separated test suites (${suitesParam}), comparing with the existing test suites")
-                    suitesParam.split(',') { suiteParam ->
+                    suitesParam.split(',').each { suiteParam ->
                       existingSuites['SUITES'].each { item ->
                         def existingSuite = item.suite
                         if (suiteParam.trim() == existingSuite) {
