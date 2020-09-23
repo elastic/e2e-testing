@@ -132,7 +132,7 @@ func (sats *StandAloneTestSuite) getContainerLogs() error {
 }
 
 func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
-	maxTimeout := time.Duration(queryRetryTimeout) * time.Minute
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 	minimumHitsCount := 50
 
 	result, err := searchAgentData(sats.Hostname, sats.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
