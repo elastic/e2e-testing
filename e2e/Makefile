@@ -48,7 +48,7 @@ functional-test: install-godog
 	TIMEOUT_FACTOR=${TIMEOUT_FACTOR} \
 	METRICBEAT_VERSION=${METRICBEAT_VERSION} \
 	STACK_VERSION=${STACK_VERSION} \
-	godog --format=${FORMAT} ${TAGS_FLAG} ${TAGS}
+	godog --format=${FORMAT} ${TAGS_FLAG} "${TAGS}"
 
 .PHONY: lint
 lint:
