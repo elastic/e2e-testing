@@ -243,16 +243,12 @@ pipeline {
     }
     success {
       whenTrue(!isPR() && params.notifyOnGreenBuilds) {
-        slackSend(channel: "#${env.SLACK_CHANNEL}", color: 'good',
-                  message: "[${params.runTestsSuites}] Build Passed: ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.RUN_DISPLAY_URL}|Open>).",
-                  tokenCredentialId: 'jenkins-slack-integration-token')
+        doSlackSend('good')
       }
     }
     unsuccessful {
       whenFalse(isPR()) {
-        slackSend(channel: "#${env.SLACK_CHANNEL}", color: 'danger',
-                  message: "[${params.runTestsSuites}] Build Failed: ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.RUN_DISPLAY_URL}|Open>).",
-                  tokenCredentialId: 'jenkins-slack-integration-token')
+        doSlackSend('danger')
       }
     }
   }
@@ -267,6 +263,18 @@ def checkTestSuite(Map parallelTasks = [:], String suite, String tags) {
     log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed because there are no modified files")
   }
 }
+
+def doSlackSend(String color) {
+  def buildStatus = "Failed"
+  if (color == "good") {
+    buildStatus = "Passed"
+  }
+
+  def message = "[${params.runTestsSuites}] Build ${buildStatus}: ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.RUN_DISPLAY_URL}|Open>)."
+
+  slackSend(channel: "#${env.SLACK_CHANNEL}", color: "${color}", message: "${message}",tokenCredentialId: 'jenkins-slack-integration-token')
+}
+
 
 def generateStep(Map params = [:]){
   def oss = params.get('oss')
