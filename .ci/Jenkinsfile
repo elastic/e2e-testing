@@ -281,9 +281,9 @@ def doSlackSend(String color) {
 }
 
 
-def generateStep(Map params = [:]){
-  def oss = params.get('oss')
-  def platform = params.get('platform')
+def generateStep(Map args = [:]){
+  def oss = args.get('oss')
+  def platform = args.get('platform')
   return {
     node('ubuntu-18.04 && immutable && docker') {
       try {
@@ -303,11 +303,11 @@ def generateStep(Map params = [:]){
   }
 }
 
-def generateFunctionalTestStep(Map params = [:]){
-  def suite = params.get('suite')
+def generateFunctionalTestStep(Map args = [:]){
+  def suite = args.get('suite')
   def sneakCaseSuite = suite.toUpperCase().replaceAll("-", "_")
   def stackVersion = env."${sneakCaseSuite}_STACK_VERSION"
-  def tags = params.get('tags')
+  def tags = args.get('tags')
   return {
     node('ubuntu-18.04 && immutable && docker') {
       try {
