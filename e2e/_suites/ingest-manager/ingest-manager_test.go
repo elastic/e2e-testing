@@ -253,7 +253,7 @@ func getContainerHostname(containerName string) (string, error) {
 		"containerName": containerName,
 	}).Trace("Retrieving container name from the Docker client")
 
-	hostname, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"hostname"})
+	hostname, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"cat", "/etc/hostname"})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"containerName": containerName,
