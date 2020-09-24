@@ -1,5 +1,6 @@
 SUITE?=metricbeat
 TAGS?=
+DEVELOPER_MODE?=false
 FORMAT?=pretty
 LOG_INCLUDE_TIMESTAMP?=TRUE
 LOG_LEVEL?=INFO
@@ -48,7 +49,8 @@ functional-test: install-godog
 	TIMEOUT_FACTOR=${TIMEOUT_FACTOR} \
 	METRICBEAT_VERSION=${METRICBEAT_VERSION} \
 	STACK_VERSION=${STACK_VERSION} \
-	godog --format=${FORMAT} ${TAGS_FLAG} "${TAGS}"
+	DEVELOPER_MODE=${DEVELOPER_MODE} \
+	godog --format=${FORMAT} ${TAGS_FLAG} ${TAGS}
 
 .PHONY: lint
 lint:
