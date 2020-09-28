@@ -87,7 +87,7 @@ func parseFeatureFlags(flags []string) ([]string, []*contextMetadata) {
 	metadatas := []*contextMetadata{}
 	featurePaths := []string{}
 
-	if len(flags) == 1 && flags[0] == "all" {
+	if len(flags) == 1 && flags[0] == "" {
 		for k, metadata := range supportedProducts {
 			metadata.name = k // match key with context name
 			metadatas = append(metadatas, metadata)
