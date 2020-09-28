@@ -1,5 +1,5 @@
 SUITE?=metricbeat
-FEATURE?=
+TAGS?=
 DEVELOPER_MODE?=false
 FORMAT?=pretty
 LOG_INCLUDE_TIMESTAMP?=TRUE
@@ -10,8 +10,8 @@ METRICBEAT_VERSION?=
 PICKLES_VERSION?="2.20.1"
 VERSION_VALUE=`cat ../cli/VERSION.txt`
 
-ifneq ($(FEATURE),)
-FEATURE_FLAG=--tags
+ifneq ($(TAGS),)
+TAGS_FLAG=--tags
 endif
 
 GO_IMAGE_TAG?='stretch'
@@ -50,7 +50,7 @@ functional-test: install-godog
 	METRICBEAT_VERSION=${METRICBEAT_VERSION} \
 	STACK_VERSION=${STACK_VERSION} \
 	DEVELOPER_MODE=${DEVELOPER_MODE} \
-	godog --format=${FORMAT} ${FEATURE_FLAG} ${FEATURE}
+	godog --format=${FORMAT} ${TAGS_FLAG} ${TAGS}
 
 .PHONY: lint
 lint:
