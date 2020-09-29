@@ -40,6 +40,11 @@ func (k *KibanaClient) getURL() string {
 	return k.baseURL + k.url
 }
 
+func (k *KibanaClient) withBaseURL(base string) *KibanaClient {
+	k.baseURL = base
+	return k
+}
+
 func (k *KibanaClient) withURL(path string) *KibanaClient {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
