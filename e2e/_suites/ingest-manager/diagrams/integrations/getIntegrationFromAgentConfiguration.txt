@@ -1,0 +1,17 @@
+title Get an Integration from Agent Configuration
+
+participantgroup #lightgreen
+participant E2E tests
+participant Fleet
+end
+
+activate E2E tests
+E2E tests->Fleet:getIntegrationFromAgentConfiguration(package, configID)
+
+activate Fleet
+note left of Fleet:GET /api/ingest_manager/agent_configs/{:agentConfigID}
+Fleet-->E2E tests:Get payload, but interested only in the one with the desired title
+deactivate Fleet
+
+note right of E2E tests:{\n    "item": {\n       "package_configs": [\n           {\n               "id": "id1",\n               "package": {\n                   "name": "name1",\n                   "title": "title1",\n                   "version": "1.0"\n               }\n           },\n           {\n               "id": "id2",\n               "package": {\n                   "name": "name2",\n                   "title": "title2",\n                   "version": "1.0"\n               }\n           }\n       ]   \n    }\n}
+deactivateafter E2E tests
