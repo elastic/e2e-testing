@@ -9,12 +9,13 @@ import (
 )
 
 var commonHeaders = dsl.MapMatcher{
-	"Content-Type":         term("application/json; charset=utf-8", `application\/json`),
-	"X-Api-Correlation-Id": dsl.Like("100"),
+	"Content-Type": term("application/json; charset=utf-8", `application\/json`),
 }
 
-var headersWithToken = dsl.MapMatcher{
-	"Authorization": dsl.Like("Bearer 2019-01-01"),
+var headersWithBasicAuth = dsl.MapMatcher{
+	"Authorization": term("Basic ZWxhc3RpYzpjaGFuZ2VtZQ==", "Basic *"), // Base64('elastic:changeme') = 'ZWxhc3RpYzpjaGFuZ2VtZQ=='
+	"Content-Type":  term("application/json; charset=utf-8", `application\/json`),
+	"kbn-xsrf":      dsl.Like("e2e-tests"),
 }
 
 var client *KibanaClient
@@ -52,7 +53,7 @@ func TestPact_GetIntegrations(t *testing.T) {
 			WithRequest(request{
 				Method:  "GET",
 				Path:    dsl.Like(ingestManagerIntegrationsURL),
-				Headers: headersWithToken,
+				Headers: headersWithBasicAuth,
 			}).
 			WillRespondWith(dsl.Response{
 				Body:    dsl.String(`{"response": []}`),
