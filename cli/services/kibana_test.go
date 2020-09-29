@@ -24,3 +24,9 @@ func TestNewClientWithPathStartingWithoutSlash(t *testing.T) {
 	assert.NotNil(t, client)
 	assert.Equal(t, "http://localhost:5601/without_slash", client.getURL())
 }
+
+func TestNewClientWithPathStartingWithMultiplePathsKeepsLastOne(t *testing.T) {
+	client := NewKibanaClient().withURL("/with_slash").withURL("lastOne")
+	assert.NotNil(t, client)
+	assert.Equal(t, "http://localhost:5601/lastOne", client.getURL())
+}
