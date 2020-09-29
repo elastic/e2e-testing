@@ -25,18 +25,19 @@ const ingestManagerIntegrationURL = "/api/ingest_manager/epm/packages/%s-%s"
 
 // KibanaClient manages calls to Kibana APIs
 type KibanaClient struct {
-	url string
+	baseURL string
+	url     string
 }
 
 // NewKibanaClient returns a kibana client
 func NewKibanaClient() *KibanaClient {
 	return &KibanaClient{
-		url: kibanaBaseURL,
+		baseURL: kibanaBaseURL,
 	}
 }
 
 func (k *KibanaClient) getURL() string {
-	return k.url
+	return k.baseURL + k.url
 }
 
 func (k *KibanaClient) withURL(path string) *KibanaClient {
@@ -44,7 +45,7 @@ func (k *KibanaClient) withURL(path string) *KibanaClient {
 		path = "/" + path
 	}
 
-	k.url += path
+	k.url = path
 
 	return k
 }
