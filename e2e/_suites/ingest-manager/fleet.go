@@ -24,7 +24,6 @@ const fleetAgentsUnEnrollURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents
 const fleetEnrollmentTokenURL = kibanaBaseURL + "/api/ingest_manager/fleet/enrollment-api-keys"
 const fleetSetupURL = kibanaBaseURL + "/api/ingest_manager/fleet/setup"
 const ingestManagerAgentConfigsURL = kibanaBaseURL + "/api/ingest_manager/agent_configs"
-const ingestManagerAgentConfigURL = ingestManagerAgentConfigsURL + "/%s"
 const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/ingest_manager/data_streams"
 
 const actionADDED = "added"

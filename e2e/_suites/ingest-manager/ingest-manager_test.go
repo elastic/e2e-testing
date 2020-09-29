@@ -51,8 +51,12 @@ var timeoutFactor = 3
 // All URLs running on localhost as Kibana is expected to be exposed there
 const kibanaBaseURL = "http://localhost:5601"
 
+var kibanaClient *services.KibanaClient
+
 func init() {
 	config.Init()
+
+	kibanaClient = services.NewKibanaClient()
 
 	developerMode, _ = shell.GetEnvBool("DEVELOPER_MODE")
 	if developerMode {
