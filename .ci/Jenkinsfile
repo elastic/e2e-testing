@@ -264,8 +264,8 @@ def doSlackSend(String color) {
     buildStatus = "Passed"
   }
 
-  def testSuites = "${params.runTestsSuites}"
-  if (testSuites == "") {
+  def testsSuites = "${params.runTestsSuites}"
+  if (testsSuites == "") {
     testsSuites = "All suites"
   }
 
