@@ -1,0 +1,17 @@
+title Get an Integration
+
+participantgroup #lightgreen
+participant E2E tests
+participant Fleet
+end
+
+activate E2E tests
+E2E tests->Fleet:getIntegration(name, version)
+
+activate Fleet
+note left of Fleet:GET /api/ingest_manager/epm/packages/{:name}-{:version}
+Fleet-->E2E tests:Get payload, but interested only in the response
+deactivate Fleet
+
+note right of E2E tests:{\n   "response": {\n       "name": "name",\n       "title": "title",\n       "latestVersion": "1.0"\n    }\n}
+deactivateafter E2E tests

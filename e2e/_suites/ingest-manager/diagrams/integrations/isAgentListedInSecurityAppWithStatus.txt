@@ -1,0 +1,23 @@
+title Is Agent listed in the Security App With Status
+
+participantgroup #lightgreen
+participant E2E tests
+participant Fleet
+end
+
+activate E2E tests
+E2E tests->Fleet:isAgentListedInSecurityApp(hostname)
+activate Fleet
+note left of Fleet:POST /api/endpoint/metadata
+
+Fleet-->E2E tests:Get hosts payload, but only interested\nin the desired hostname
+deactivate Fleet
+
+note right of E2E tests:{\n    "hosts": [\n        {\n           "metadata": {\n               "host": {\n                   "hostname": "hostname1",\n               },\n           }\n        },\n        {\n           "metadata": {\n               "host": {\n                   "hostname": "hostname2",\n               },\n           }\n        },\n    ]\n}
+
+E2E tests->E2E tests:Get host status
+activate E2E tests
+note right of E2E tests:{\n    "metadata": {\n        "host": {\n            "hostname": "hostname1",\n        },\n    },\n    "host_status": "status"\n}
+deactivate E2E tests
+
+deactivateafter E2E tests
