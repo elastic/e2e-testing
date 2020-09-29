@@ -13,13 +13,23 @@
         "method": "GET",
         "path": "/api/ingest_manager/epm/packages?experimental=true&category=",
         "headers": {
-          "Authorization": "Bearer 2019-01-01"
+          "Authorization": "Basic ZWxhc3RpYzpjaGFuZ2VtZQ==",
+          "Content-Type": "application/json; charset=utf-8",
+          "kbn-xsrf": "e2e-tests"
         },
         "matchingRules": {
           "$.path": {
             "match": "type"
           },
           "$.headers.Authorization": {
+            "match": "regex",
+            "regex": "Basic *"
+          },
+          "$.headers.Content-Type": {
+            "match": "regex",
+            "regex": "application\\/json"
+          },
+          "$.headers.kbn-xsrf": {
             "match": "type"
           }
         }
@@ -27,17 +37,13 @@
       "response": {
         "status": 200,
         "headers": {
-          "Content-Type": "application/json; charset=utf-8",
-          "X-Api-Correlation-Id": "100"
+          "Content-Type": "application/json; charset=utf-8"
         },
         "body": "{\"response\": []}",
         "matchingRules": {
           "$.headers.Content-Type": {
             "match": "regex",
             "regex": "application\\/json"
-          },
-          "$.headers.X-Api-Correlation-Id": {
-            "match": "type"
           }
         }
       }
