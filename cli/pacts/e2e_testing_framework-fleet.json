@@ -1,0 +1,51 @@
+{
+  "consumer": {
+    "name": "E2E Testing framework"
+  },
+  "provider": {
+    "name": "Fleet"
+  },
+  "interactions": [
+    {
+      "description": "A request to get all integrations",
+      "providerState": "There are integration in the package registry",
+      "request": {
+        "method": "GET",
+        "path": "/api/ingest_manager/epm/packages?experimental=true&category=",
+        "headers": {
+          "Authorization": "Bearer 2019-01-01"
+        },
+        "matchingRules": {
+          "$.path": {
+            "match": "type"
+          },
+          "$.headers.Authorization": {
+            "match": "type"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json; charset=utf-8",
+          "X-Api-Correlation-Id": "100"
+        },
+        "body": "{\"response\": []}",
+        "matchingRules": {
+          "$.headers.Content-Type": {
+            "match": "regex",
+            "regex": "application\\/json"
+          },
+          "$.headers.X-Api-Correlation-Id": {
+            "match": "type"
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  }
+}
