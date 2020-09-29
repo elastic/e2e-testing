@@ -1,0 +1,17 @@
+title Install assets for an Integration
+
+participantgroup #lightgreen
+participant E2E tests
+participant Fleet
+end
+
+activate E2E tests
+E2E tests->Fleet:installIntegrationAssets(integration, version)
+
+activate Fleet
+note left of Fleet:POST /api/ingest_manager/epm/packages/{:name}-{:version}
+Fleet-->E2E tests:Assets where installed, being interested in the first element: response[0]
+deactivate Fleet
+
+note right of E2E tests:{\n    "response": [\n        {\n            "id": "packageConfigID-1"\n        },\n        {\n            "id": "packageConfigID-2"\n        }\n    ]\n}
+deactivateafter E2E tests

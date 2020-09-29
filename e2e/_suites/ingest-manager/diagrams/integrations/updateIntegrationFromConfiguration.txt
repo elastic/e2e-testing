@@ -1,0 +1,25 @@
+title Update Integration Package Mode (detect/prevent)
+
+participantgroup #lightgreen
+participant E2E tests
+participant Fleet
+end
+
+activate E2E tests
+E2E tests->E2E tests:getIntegrationFromAgentPolicy(name, policyID)\nReturns the JSON representing the integration
+
+E2E tests<<-E2E tests:prune not needed fields from the payload\n( "created_at", "created_by", "id", "revision",\n"updated_at", "updated_by" )
+
+
+E2E tests<<-E2E tests:Update mode values for config policies (Linux not supported)\n\ninputs.0.config.policy.value.windows."+name+".mode = mode\ninputs.0.config.policy.value.mac."+name+".mode = mode
+
+
+E2E tests->Fleet:updateIntegrationPackageConfig(packageConfigId, payload)
+activate Fleet
+note left of Fleet:POST /api/ingest_manager/package_policies/{:packageConfigId}
+Fleet-->E2E tests:updateIntegrationPackageConfig(packageConfigId, payload)
+deactivate Fleet
+
+note right of E2E tests:We are interested in the update time\n\n{\n    "item": {\n        "updated_at": "datetime",\n    }\n}
+
+deactivateafter E2E tests
