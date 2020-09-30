@@ -14,7 +14,15 @@ install-pact:
 		curl -fsSL https://raw.githubusercontent.com/pact-foundation/pact-ruby-standalone/master/install.sh | bash;\
     fi
 
-pact: export PACT_TEST := true
-pact: install-pact
+.PHONY: pact-consumer
+pact-consumer: export PACT_TEST := true
+pact-consumer: install-pact
 	@echo "--- 🔨Running Consumer Pact tests "
-	cd cli && go test -count=1 github.com/elastic/e2e-testing/cli/services -run 'TestPact'
+	cd cli && go test -count=1 github.com/elastic/e2e-testing/cli/services -run 'TestPactConsumer'
+
+# This target needs the stack (Elasticsearch, Kibana and Package Registry) up-and-running
+.PHONY: pact-provider
+pact-provider: export PACT_TEST := true
+pact-provider: install-pact
+	@echo "--- 🔨Running Provider Pact tests "
+	cd cli && go test -count=1 -tags=integration github.com/elastic/e2e-testing/cli/services -run "TestPactProvider"

@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func TestPact_GetIntegrations(t *testing.T) {
+func TestPactConsumer_GetIntegrations(t *testing.T) {
 	type GetIntegrationsResponse struct {
 		Response []struct {
 			Title   string `json:"title"`
