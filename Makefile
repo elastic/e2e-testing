@@ -1,5 +1,5 @@
 export PACT_DIR = $(PWD)/pacts
-export LOG_DIR = $(PWD)/pact-log
+export PACT_LOG_DIR = $(PWD)/pact-log
 export PATH := $(PWD)/pact/bin:$(PATH)
 export PATH
 

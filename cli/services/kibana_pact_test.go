@@ -116,7 +116,7 @@ func createPact() dsl.Pact {
 	return dsl.Pact{
 		Consumer:                 "E2E Testing framework",
 		Provider:                 "Fleet",
-		LogDir:                   os.Getenv("LOG_DIR"),
+		LogDir:                   os.Getenv("PACT_LOG_DIR"),
 		PactDir:                  os.Getenv("PACT_DIR"),
 		LogLevel:                 "INFO",
 		DisableToolValidityCheck: true,
