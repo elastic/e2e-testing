@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/Jeffail/gabs/v2"
-	curl "github.com/elastic/e2e-testing/cli/shell"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -14,13 +13,6 @@ import (
 // We are using the title because the feature files have to be super readable
 // and the title is more readable than the name
 const elasticEnpointIntegrationTitle = "Elastic Endpoint Security"
-
-const endpointMetadataURL = kibanaBaseURL + "/api/endpoint/metadata"
-const ingestManagerIntegrationURL = kibanaBaseURL + "/api/ingest_manager/epm/packages/%s-%s"
-const ingestManagerIntegrationDeleteURL = kibanaBaseURL + "/api/ingest_manager/package_policies/delete"
-const ingestManagerIntegrationsURL = kibanaBaseURL + "/api/ingest_manager/epm/packages?experimental=true&category="
-const ingestManagerIntegrationPoliciesURL = kibanaBaseURL + "/api/ingest_manager/package_policies"
-const ingestManagerIntegrationPolicyURL = ingestManagerIntegrationPoliciesURL + "/%s"
 
 // IntegrationPackage used to share information about a integration
 type IntegrationPackage struct {
@@ -33,32 +25,11 @@ type IntegrationPackage struct {
 
 // addIntegrationToPolicy sends a POST request to Ingest Manager adding an integration to a configuration
 func addIntegrationToPolicy(integrationPackage IntegrationPackage, policyID string) (string, error) {
-	postReq := createDefaultHTTPRequest(ingestManagerIntegrationPoliciesURL)
+	name := integrationPackage.name + "-test-name"
+	description := integrationPackage.title + "-test-description"
 
-	data := `{
-		"name":"` + integrationPackage.name + `-test-name",
-		"description":"` + integrationPackage.title + `-test-description",
-		"namespace":"default",
-		"policy_id":"` + policyID + `",
-		"enabled":true,
-		"output_id":"",
-		"inputs":[],
-		"package":{
-			"name":"` + integrationPackage.name + `",
-			"title":"` + integrationPackage.title + `",
-			"version":"` + integrationPackage.version + `"
-		}
-	}`
-	postReq.Payload = data
-
-	body, err := curl.Post(postReq)
+	body, err := kibanaClient.AddIntegrationToPolicy(integrationPackage.name, name, integrationPackage.title, description, integrationPackage.version, policyID)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"body":    body,
-			"error":   err,
-			"url":     ingestManagerIntegrationPoliciesURL,
-			"payload": data,
-		}).Error("Could not add integration to configuration")
 		return "", err
 	}
 
@@ -85,19 +56,8 @@ func addIntegrationToPolicy(integrationPackage IntegrationPackage, policyID stri
 
 // deleteIntegrationFromPolicy sends a POST request to Ingest Manager deleting an integration from a configuration
 func deleteIntegrationFromPolicy(integrationPackage IntegrationPackage, policyID string) error {
-	postReq := createDefaultHTTPRequest(ingestManagerIntegrationDeleteURL)
-
-	data := `{"packagePolicyIds":["` + integrationPackage.packageConfigID + `"]}`
-	postReq.Payload = data
-
-	body, err := curl.Post(postReq)
+	_, err := kibanaClient.DeleteIntegrationFromPolicy(integrationPackage.packageConfigID)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"body":    body,
-			"error":   err,
-			"url":     ingestManagerIntegrationDeleteURL,
-			"payload": data,
-		}).Error("Could not delete integration from configuration")
 		return err
 	}
 
@@ -113,16 +73,8 @@ func deleteIntegrationFromPolicy(integrationPackage IntegrationPackage, policyID
 
 // getIntegration returns metadata from an integration from Fleet, without the package ID
 func getIntegration(packageName string, version string) (IntegrationPackage, error) {
-	url := fmt.Sprintf(ingestManagerIntegrationURL, packageName, version)
-	getReq := createDefaultHTTPRequest(url)
-
-	body, err := curl.Get(getReq)
+	body, err := kibanaClient.GetIntegration(packageName, version)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"body":  body,
-			"error": err,
-			"url":   url,
-		}).Error("Could not get the integration from Package Registry")
 		return IntegrationPackage{}, err
 	}
 
@@ -148,18 +100,8 @@ func getIntegration(packageName string, version string) (IntegrationPackage, err
 // getIntegrationFromAgentPolicy inspects the integrations added to an agent policy, returning the
 // a struct representing the package, including the packageID for the integration in the policy
 func getIntegrationFromAgentPolicy(packageName string, agentPolicyID string) (IntegrationPackage, error) {
-	url := fmt.Sprintf(ingestManagerAgentPolicyURL, agentPolicyID)
-	reqReq := createDefaultHTTPRequest(url)
-
-	body, err := curl.Get(reqReq)
+	body, err := kibanaClient.GetIntegrationFromAgentPolicy(agentPolicyID)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"body":        body,
-			"error":       err,
-			"packageName": packageName,
-			"policyID":    agentPolicyID,
-			"url":         url,
-		}).Error("Could not get integration packages from the policy")
 		return IntegrationPackage{}, err
 	}
 
@@ -200,14 +142,8 @@ func getIntegrationFromAgentPolicy(packageName string, agentPolicyID string) (In
 // checking if the desired integration exists in the package registry. If so, it will
 // return name and version (latest) of the integration
 func getIntegrationLatestVersion(integrationName string) (string, string, error) {
-	r := createDefaultHTTPRequest(ingestManagerIntegrationsURL)
-	body, err := curl.Get(r)
+	body, err := kibanaClient.GetIntegrations()
 	if err != nil {
-		log.WithFields(log.Fields{
-			"body":  body,
-			"error": err,
-			"url":   ingestManagerIntegrationsURL,
-		}).Error("Could not get Integrations")
 		return "", "", err
 	}
 
@@ -247,14 +183,8 @@ func getIntegrationLatestVersion(integrationName string) (string, string, error)
 // getMetadataFromSecurityApp sends a POST request to Endpoint retrieving the metadata that
 // is listed in the Security App
 func getMetadataFromSecurityApp() (*gabs.Container, error) {
-	postReq := createDefaultHTTPRequest(endpointMetadataURL)
-	body, err := curl.Post(postReq)
+	body, err := kibanaClient.GetMetadataFromSecurityApp()
 	if err != nil {
-		log.WithFields(log.Fields{
-			"body":  body,
-			"error": err,
-			"url":   postReq.URL,
-		}).Error("Could not get endpoint metadata")
 		return nil, err
 	}
 
@@ -278,16 +208,8 @@ func getMetadataFromSecurityApp() (*gabs.Container, error) {
 
 // installIntegration sends a POST request to Ingest Manager installing the assets for an integration
 func installIntegrationAssets(integration string, version string) (IntegrationPackage, error) {
-	url := fmt.Sprintf(ingestManagerIntegrationURL, integration, version)
-	postReq := createDefaultHTTPRequest(url)
-
-	body, err := curl.Post(postReq)
+	body, err := kibanaClient.InstallIntegrationAssets(integration, version)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"body":  body,
-			"error": err,
-			"url":   url,
-		}).Error("Could not install assets for the integration")
 		return IntegrationPackage{}, err
 	}
 
@@ -400,18 +322,8 @@ func isPolicyResponseListedInSecurityApp(agentID string) (bool, error) {
 // updateIntegrationPackageConfig sends a PUT request to Ingest Manager updating integration
 // configuration
 func updateIntegrationPackageConfig(packageConfigID string, payload string) (*gabs.Container, error) {
-	url := fmt.Sprintf(ingestManagerIntegrationPolicyURL, packageConfigID)
-	putReq := createDefaultHTTPRequest(url)
-
-	putReq.Payload = payload
-
-	body, err := curl.Put(putReq)
+	body, err := kibanaClient.UpdateIntegrationPackageConfig(packageConfigID, payload)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"body":  body,
-			"error": err,
-			"url":   url,
-		}).Error("Could not update integration configuration")
 		return nil, err
 	}
 
