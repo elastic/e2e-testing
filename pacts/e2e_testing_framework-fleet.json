@@ -96,6 +96,32 @@
           }
         }
       }
+    },
+    {
+      "description": "A request to get the Foo integration in its 1.0.0 version",
+      "providerState": "Integration Foo-1.0.0 does not exist",
+      "request": {
+        "method": "GET",
+        "path": "/api/ingest_manager/epm/packages/foo-1.0.0",
+        "matchingRules": {
+          "$.path": {
+            "match": "regex",
+            "regex": "\\/api\\/ingest_manager\\/epm\\/packages\\/([a-zA-Z]+)-(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)"
+          }
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        "matchingRules": {
+          "$.headers.Content-Type": {
+            "match": "regex",
+            "regex": "application\\/json"
+          }
+        }
+      }
     }
   ],
   "metadata": {
