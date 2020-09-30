@@ -131,7 +131,7 @@ func TestPactConsumer_GetIntegrations(t *testing.T) {
 	t.Run("the integration does not exist", func(t *testing.T) {
 		packageName := "foo"
 		version := "1.0.0"
-		expectedHTTPErrorCode := 500 // kibana returns a 500 error for a not found
+		expectedHTTPErrorCode := 404 // return a 404 HTTP not found error
 
 		pact.
 			AddInteraction().
