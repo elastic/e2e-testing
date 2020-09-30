@@ -7,7 +7,11 @@ import (
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
+	"github.com/stretchr/testify/assert"
 )
+
+const packageNameRegex = `([a-zA-Z]+)`
+const semverRegex = `(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)`
 
 var commonHeaders = dsl.MapMatcher{
 	"Content-Type": term("application/json; charset=utf-8", `application\/json`),
@@ -92,6 +96,35 @@ func TestPactConsumer_GetIntegrations(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error on Verify: %v", err)
 		}
+	})
+
+	t.Run("the integration exists", func(t *testing.T) {
+		packageName := "endpoint"
+		version := "0.13.0"
+
+		pact.
+			AddInteraction().
+			Given("Integration endpoint-0.13.0 exists").
+			UponReceiving("A request to get the Elastic Endpoint integration on its 0.13.0 version").
+			WithRequest(request{
+				Method: "GET",
+				Path:   term(fmt.Sprintf(ingestManagerIntegrationURL, packageName, version), fmt.Sprintf(ingestManagerIntegrationURL, packageNameRegex, semverRegex)),
+			}).
+			WillRespondWith(dsl.Response{
+				Status:  200,
+				Headers: commonHeaders,
+			})
+
+		err := pact.Verify(func() error {
+			_, err := client.GetIntegration(packageName, version)
+			if err != nil {
+				return err
+			}
+
+			return err
+		})
+
+		assert.Nil(t, err)
 	})
 }
 
