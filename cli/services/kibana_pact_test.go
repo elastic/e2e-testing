@@ -107,8 +107,9 @@ func TestPactConsumer_GetIntegrations(t *testing.T) {
 			Given("Integration endpoint-0.13.0 exists").
 			UponReceiving("A request to get the Elastic Endpoint integration on its 0.13.0 version").
 			WithRequest(request{
-				Method: "GET",
-				Path:   term(fmt.Sprintf(ingestManagerIntegrationURL, packageName, version), fmt.Sprintf(ingestManagerIntegrationURL, packageNameRegex, semverRegex)),
+				Method:  "GET",
+				Path:    term(fmt.Sprintf(ingestManagerIntegrationURL, packageName, version), fmt.Sprintf(ingestManagerIntegrationURL, packageNameRegex, semverRegex)),
+				Headers: headersWithBasicAuth,
 			}).
 			WillRespondWith(dsl.Response{
 				Status:  200,
@@ -137,8 +138,9 @@ func TestPactConsumer_GetIntegrations(t *testing.T) {
 			Given("Integration Foo-1.0.0 does not exist").
 			UponReceiving("A request to get the Foo integration in its 1.0.0 version").
 			WithRequest(request{
-				Method: "GET",
-				Path:   term(fmt.Sprintf(ingestManagerIntegrationURL, packageName, version), fmt.Sprintf(ingestManagerIntegrationURL, packageNameRegex, semverRegex)),
+				Method:  "GET",
+				Path:    term(fmt.Sprintf(ingestManagerIntegrationURL, packageName, version), fmt.Sprintf(ingestManagerIntegrationURL, packageNameRegex, semverRegex)),
+				Headers: headersWithBasicAuth,
 			}).
 			WillRespondWith(dsl.Response{
 				Status:  expectedHTTPErrorCode,
