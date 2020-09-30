@@ -1,8 +1,8 @@
 # Get current directory of a Makefile: https://stackoverflow.com/a/23324703
 ROOT_DIR:=$(CURDIR)
 
-export PACT_DIR = $(PWD)/pacts
-export LOG_DIR = $(PWD)/log
+export PACT_DIR = $(PWD)/../pacts
+export LOG_DIR = $(PWD)/../pact-log
 export PATH := $(PWD)/pact/bin:$(PATH)
 export PATH
 
