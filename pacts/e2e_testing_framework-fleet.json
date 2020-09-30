@@ -39,11 +39,34 @@
         "headers": {
           "Content-Type": "application/json; charset=utf-8"
         },
-        "body": "{\"response\": []}",
+        "body": {
+          "response": [
+            {
+              "name": "string",
+              "title": "string",
+              "version": "string"
+            }
+          ]
+        },
         "matchingRules": {
           "$.headers.Content-Type": {
             "match": "regex",
             "regex": "application\\/json"
+          },
+          "$.body.response": {
+            "min": 1
+          },
+          "$.body.response[*].*": {
+            "match": "type"
+          },
+          "$.body.response[*].name": {
+            "match": "type"
+          },
+          "$.body.response[*].title": {
+            "match": "type"
+          },
+          "$.body.response[*].version": {
+            "match": "type"
           }
         }
       }
