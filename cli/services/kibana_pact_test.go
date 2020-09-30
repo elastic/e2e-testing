@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -45,6 +46,14 @@ func TestMain(m *testing.M) {
 }
 
 func TestPact_GetIntegrations(t *testing.T) {
+	type GetIntegrationsResponse struct {
+		Response []struct {
+			Title   string `json:"title"`
+			Name    string `json:"name"`
+			Version string `json:"version"`
+		} `json:"response"`
+	}
+
 	t.Run("there are integrations in the package registry", func(t *testing.T) {
 		pact.
 			AddInteraction().
@@ -56,18 +65,28 @@ func TestPact_GetIntegrations(t *testing.T) {
 				Headers: headersWithBasicAuth,
 			}).
 			WillRespondWith(dsl.Response{
-				Body:    dsl.String(`{"response": []}`),
+				Body:    dsl.Match(GetIntegrationsResponse{}),
 				Status:  200,
 				Headers: commonHeaders,
 			})
 
 		err := pact.Verify(func() error {
 			body, err := client.GetIntegrations()
-			if body != `{"response": []}` {
-				return fmt.Errorf("wanted an empty response, but was present")
+			if err != nil {
+				return err
 			}
 
-			return err
+			var r GetIntegrationsResponse
+			err = json.Unmarshal([]byte(body), &r)
+			if err != nil {
+				return err
+			}
+
+			if len(r.Response) == 0 {
+				return fmt.Errorf("Expected to retrieve integrations")
+			}
+
+			return nil
 		})
 
 		if err != nil {
