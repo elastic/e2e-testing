@@ -126,6 +126,36 @@ func TestPactConsumer_GetIntegrations(t *testing.T) {
 
 		assert.Nil(t, err)
 	})
+
+	t.Run("the integration does not exist", func(t *testing.T) {
+		packageName := "foo"
+		version := "1.0.0"
+		expectedHTTPErrorCode := 404 // we expect a 404 NOT FOUND error
+
+		pact.
+			AddInteraction().
+			Given("Integration Foo-1.0.0 does not exist").
+			UponReceiving("A request to get the Foo integration in its 1.0.0 version").
+			WithRequest(request{
+				Method: "GET",
+				Path:   term(fmt.Sprintf(ingestManagerIntegrationURL, packageName, version), fmt.Sprintf(ingestManagerIntegrationURL, packageNameRegex, semverRegex)),
+			}).
+			WillRespondWith(dsl.Response{
+				Status:  expectedHTTPErrorCode,
+				Headers: commonHeaders,
+			})
+
+		err := pact.Verify(func() error {
+			_, err := client.GetIntegration(packageName, version)
+			if err != nil {
+				return err
+			}
+
+			return err
+		})
+
+		assert.Equal(t, fmt.Errorf("GET request failed with %d", expectedHTTPErrorCode), err)
+	})
 }
 
 // Common test data
