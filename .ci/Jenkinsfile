@@ -88,38 +88,6 @@ pipeline {
             }
           }
         }
-        stage('Contract Tests') {
-          agent { label 'ubuntu-18.04 && immutable && docker' }
-          options { skipDefaultCheckout() }
-          when {
-            beforeAgent true
-            expression { return env.SKIP_TESTS == "false" }
-          }
-          steps {
-            withGithubNotify(context: 'Contract Tests') {
-              deleteDir()
-              unstash 'source'
-              withGoEnv(version: "${GO_VERSION}"){
-                whenTrue(isInstalled(tool: 'docker', flag: '--version')) {
-                  dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
-                }
-                dir(BASE_DIR){
-                  sh script: 'make verify-provider', label: 'Verify provider'
-                }
-              }
-            }
-          }
-          post {
-            always {
-              withGoEnv(version: "${GO_VERSION}"){
-                dir(BASE_DIR){
-                  archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/pact-logs/pact.log"
-                  sh script: 'make destroy-pact-provider-deps', label: 'Destroy runtime dependencies'
-                }
-              }
-            }
-          }
-        }
         stage('Pre-Submit') {
           when {
             beforeAgent true
@@ -193,6 +161,38 @@ pipeline {
             always {
               dir("${BASE_DIR}") {
                 archiveArtifacts allowEmptyArchive: true, artifacts: "e2e/docs/**"
+              }
+            }
+          }
+        }
+        stage('Contract Tests') {
+          agent { label 'ubuntu-18.04 && immutable && docker' }
+          options { skipDefaultCheckout() }
+          when {
+            beforeAgent true
+            expression { return env.SKIP_TESTS == "false" }
+          }
+          steps {
+            withGithubNotify(context: 'Contract Tests') {
+              deleteDir()
+              unstash 'source'
+              withGoEnv(version: "${GO_VERSION}"){
+                whenTrue(isInstalled(tool: 'docker', flag: '--version')) {
+                  dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
+                }
+                dir(BASE_DIR){
+                  sh script: 'make verify-provider', label: 'Verify provider'
+                }
+              }
+            }
+          }
+          post {
+            always {
+              withGoEnv(version: "${GO_VERSION}"){
+                dir(BASE_DIR){
+                  archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/pact-logs/pact.log"
+                  sh script: 'make destroy-pact-provider-deps', label: 'Destroy runtime dependencies'
+                }
               }
             }
           }
