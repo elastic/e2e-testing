@@ -3,6 +3,9 @@ export PACT_LOG_DIR = $(PWD)/pact-log
 export PATH := $(PWD)/pact/bin:$(PATH)
 export PATH
 
+TIMEOUT_FACTOR?=1
+WAIT_SECONDS = $(shell expr 30 \* $(TIMEOUT_FACTOR))
+
 FLEET_KIBANA_CONFIG := $(PWD)/e2e/_suites/ingest-manager/configurations/kibana.config.yml
 
 .PHONY: install
@@ -35,8 +38,8 @@ prepare-pact-provider-deps: install-pact
 
 .PHONY: pact-provider
 pact-provider: prepare-pact-provider-deps
-	@echo "--- ⏸️ Pausing 60 seconds waiting for Kibana to be ready"
-	@sleep 60
+	@echo "--- ⏸️ Pausing $(WAIT_SECONDS) seconds waiting for Kibana to be ready"
+	@sleep $(WAIT_SECONDS)
 	@echo "--- 🔨 Running Provider Pact tests"
 	cd cli && go test -count=1 -tags=integration github.com/elastic/e2e-testing/cli/services -run "TestPactProvider"
 
