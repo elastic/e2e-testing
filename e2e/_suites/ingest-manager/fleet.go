@@ -24,7 +24,6 @@ const fleetAgentsUnEnrollURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents
 const fleetEnrollmentTokenURL = kibanaBaseURL + "/api/ingest_manager/fleet/enrollment-api-keys"
 const fleetSetupURL = kibanaBaseURL + "/api/ingest_manager/fleet/setup"
 const ingestManagerAgentPoliciesURL = kibanaBaseURL + "/api/ingest_manager/agent_policies"
-const ingestManagerAgentPolicyURL = ingestManagerAgentPoliciesURL + "/%s"
 const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/ingest_manager/data_streams"
 
 const actionADDED = "added"
@@ -248,7 +247,7 @@ func (fts *FleetTestSuite) setup() error {
 func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
 	log.Tracef("Checking if agent is listed in Fleet as %s", desiredStatus)
 
-	maxTimeout := 4 * time.Minute
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
@@ -349,7 +348,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	log.Trace("Checking system Package dashboards in Fleet")
 
 	dataStreamsCount := 0
-	maxTimeout := 4 * time.Minute
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
@@ -555,7 +554,7 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp() error {
 	log.Trace("Checking if the hostname is not shown in the Administration view in the Security App")
 
-	maxTimeout := 4 * time.Minute
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
@@ -608,7 +607,7 @@ func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp()
 func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(status string) error {
 	log.Trace("Checking if the hostname is shown in the Admin view in the Security App")
 
-	maxTimeout := 4 * time.Minute
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
@@ -669,7 +668,7 @@ func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error 
 		return err
 	}
 
-	maxTimeout := 4 * time.Minute
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
@@ -767,7 +766,7 @@ func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error
 		return err
 	}
 
-	maxTimeout := 4 * time.Minute
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)

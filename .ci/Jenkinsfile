@@ -27,7 +27,7 @@ pipeline {
     issueCommentTrigger('(?i).*(?:jenkins\\W+)?run\\W+(?:the\\W+)?tests(?:\\W+please)?.*')
   }
   parameters {
-    choice(name: 'runTestsSuite', choices: ['all', 'helm', 'ingest-manager', 'metricbeat'], description: 'Choose which test suite to run (default: all)')
+    string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
     booleanParam(name: "forceSkipPresubmit", defaultValue: false, description: "If it's needed to execute the pre-submit tests: unit and precommit.")
     booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify with green builds.")
@@ -36,7 +36,7 @@ pipeline {
     string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stand-alone elastic-agent to be used for Ingest Manager tests. You can use here the tag of your PR to test your changes')
     booleanParam(name: "ELASTIC_AGENT_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the binary snapshots produced by Beats CI instead of the official releases")
     choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'INFO'], description: 'Log level to be used')
-    choice(name: 'RETRY_TIMEOUT', choices: ['3', '5', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
+    choice(name: 'TIMEOUT_FACTOR', choices: ['3', '5', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
     string(name: 'INGEST_MANAGER_STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for Ingest Manager tests.')
     string(name: 'METRICBEAT_STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for Metricbeat tests.')
     string(name: 'METRICBEAT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the metricbeat to be used.')
@@ -70,7 +70,7 @@ pipeline {
         HELM_KIND_VERSION = "${params.HELM_KIND_VERSION.trim()}"
         HELM_KUBERNETES_VERSION = "${params.HELM_KUBERNETES_VERSION.trim()}"
         LOG_LEVEL = "${params.LOG_LEVEL.trim()}"
-        RETRY_TIMEOUT = "${params.RETRY_TIMEOUT.trim()}"
+        TIMEOUT_FACTOR = "${params.TIMEOUT_FACTOR.trim()}"
       }
       stages {
         stage('Checkout') {
@@ -184,19 +184,20 @@ pipeline {
               unstash 'source'
               dir("${BASE_DIR}") {
                 script {
-                  def suiteParam = params.runTestsSuite
-                  def suites = readYaml(file: '.ci/.e2e-tests.yaml')
+                  def suitesParam = params.runTestsSuites
+                  def existingSuites = readYaml(file: '.ci/.e2e-tests.yaml')
                   def parallelTasks = [:]
-                  suites['SUITES'].each { item ->
-                    def suite = item.suite
-                    def feature = item.feature
-                    if (suiteParam == "all" || suiteParam == suite) {
-                      def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
-                      if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
-                        log(level: 'INFO', text: "Adding ${suite}:${feature} test suite to the build execution")
-                        parallelTasks["${suite}_${feature}"] = generateFunctionalTestStep(suite: "${suite}", feature: "${feature}")
-                      } else {
-                        log(level: 'WARN', text: "The ${suite}:${feature} test suite won't be executed because there are no modified files")
+
+                  if (suitesParam == "") {
+                    log(level: 'DEBUG', text: "Iterate through existing test suites")
+                    existingSuites['SUITES'].each { item ->
+                      checkTestSuite(parallelTasks, item.suite, item.tags)
+                    }
+                  } else {
+                    log(level: 'DEBUG', text: "Iterate through the comma-separated test suites (${suitesParam}), comparing with the existing test suites")
+                    suitesParam.split(',').each { suiteParam ->
+                      existingSuites['SUITES'].findAll { suiteParam.trim() == it.suite }.each { item ->
+                          checkTestSuite(parallelTasks, item.suite, item.tags)
                       }
                     }
                   }
@@ -236,24 +237,47 @@ pipeline {
     }
     success {
       whenTrue(!isPR() && params.notifyOnGreenBuilds) {
-        slackSend(channel: "#${env.SLACK_CHANNEL}", color: 'good',
-                  message: "[${params.runTestsSuite}] Build Passed: ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.RUN_DISPLAY_URL}|Open>).",
-                  tokenCredentialId: 'jenkins-slack-integration-token')
+        doSlackSend('good')
       }
     }
     unsuccessful {
       whenFalse(isPR()) {
-        slackSend(channel: "#${env.SLACK_CHANNEL}", color: 'danger',
-                  message: "[${params.runTestsSuite}] Build Failed: ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.RUN_DISPLAY_URL}|Open>).",
-                  tokenCredentialId: 'jenkins-slack-integration-token')
+        doSlackSend('danger')
       }
     }
   }
 }
 
-def generateStep(Map params = [:]){
-  def oss = params.get('oss')
-  def platform = params.get('platform')
+def checkTestSuite(Map parallelTasks = [:], String suite, String tags) {
+  def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
+  if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
+    log(level: 'INFO', text: "Adding ${suite}:${tags} test suite to the build execution")
+    parallelTasks["${suite}_${tags}"] = generateFunctionalTestStep(suite: "${suite}", tags: "${tags}")
+  } else {
+    log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed because there are no modified files")
+  }
+}
+
+def doSlackSend(String color) {
+  def buildStatus = "Failed"
+  if (color == "good") {
+    buildStatus = "Passed"
+  }
+
+  def testsSuites = "${params.runTestsSuites}"
+  if (testsSuites == "") {
+    testsSuites = "All suites"
+  }
+
+  def message = "*[${testsSuites}]* Build `${buildStatus}`: ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.RUN_DISPLAY_URL}|Open>)."
+
+  slackSend(channel: "#${env.SLACK_CHANNEL}", color: "${color}", message: "${message}",tokenCredentialId: 'jenkins-slack-integration-token')
+}
+
+
+def generateStep(Map args = [:]){
+  def oss = args.get('oss')
+  def platform = args.get('platform')
   return {
     node('ubuntu-18.04 && immutable && docker') {
       try {
@@ -273,11 +297,11 @@ def generateStep(Map params = [:]){
   }
 }
 
-def generateFunctionalTestStep(Map params = [:]){
-  def suite = params.get('suite')
+def generateFunctionalTestStep(Map args = [:]){
+  def suite = args.get('suite')
   def sneakCaseSuite = suite.toUpperCase().replaceAll("-", "_")
   def stackVersion = env."${sneakCaseSuite}_STACK_VERSION"
-  def feature = params.get('feature')
+  def tags = args.get('tags')
   return {
     node('ubuntu-18.04 && immutable && docker') {
       try {
@@ -289,11 +313,11 @@ def generateFunctionalTestStep(Map params = [:]){
           }
           retry(3){
             dir("${BASE_DIR}"){
-              sh script: """.ci/scripts/install-test-dependencies.sh "${suite}" """, label: "Install test dependencies for ${suite}:${feature}"
+              sh script: """.ci/scripts/install-test-dependencies.sh "${suite}" """, label: "Install test dependencies for ${suite}:${tags}"
             }
           }
           dir("${BASE_DIR}"){
-            sh script: """.ci/scripts/functional-test.sh "${suite}" "${feature}" "${stackVersion}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${feature}"
+            sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${stackVersion}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
           }
         }
       } catch(e) {

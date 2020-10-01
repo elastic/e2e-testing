@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
@@ -35,6 +37,7 @@ type StandAloneTestSuite struct {
 	AgentConfigFilePath string
 	Cleanup             bool
 	Hostname            string
+	Image               string
 	// date controls for queries
 	AgentStoppedDate             time.Time
 	RuntimeDependenciesStartDate time.Time
@@ -64,19 +67,25 @@ func (sats *StandAloneTestSuite) afterScenario() {
 }
 
 func (sats *StandAloneTestSuite) contributeSteps(s *godog.Suite) {
-	s.Step(`^a stand-alone agent is deployed$`, sats.aStandaloneAgentIsDeployed)
+	s.Step(`^a "([^"]*)" stand-alone agent is deployed$`, sats.aStandaloneAgentIsDeployed)
 	s.Step(`^there is new data in the index from agent$`, sats.thereIsNewDataInTheIndexFromAgent)
 	s.Step(`^the "([^"]*)" docker container is stopped$`, sats.theDockerContainerIsStopped)
 	s.Step(`^there is no new data in the index after agent shuts down$`, sats.thereIsNoNewDataInTheIndexAfterAgentShutsDown)
 }
 
-func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
+func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error {
 	log.Trace("Deploying an agent to Fleet")
 
 	serviceManager := services.NewServiceManager()
 
 	profile := IngestManagerProfileName
 	serviceName := ElasticAgentServiceName
+
+	profileEnv["elasticAgentDockerImageSuffix"] = ""
+	if image != "default" {
+		profileEnv["elasticAgentDockerImageSuffix"] = "-" + image
+	}
+
 	containerName := fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
 
 	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/master/x-pack/elastic-agent/elastic-agent.docker.yml"
@@ -87,6 +96,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 	}
 	sats.AgentConfigFilePath = configurationFilePath
 
+	profileEnv["elasticAgentContainerName"] = containerName
 	profileEnv["elasticAgentConfigFile"] = sats.AgentConfigFilePath
 	profileEnv["elasticAgentTag"] = standAloneVersion
 
@@ -102,8 +112,14 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 		return err
 	}
 
+	sats.Image = image
 	sats.Hostname = hostname
 	sats.Cleanup = true
+
+	err = sats.installTestTools(containerName)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -131,8 +147,41 @@ func (sats *StandAloneTestSuite) getContainerLogs() error {
 	return nil
 }
 
+// installTestTools we need the container name because we use the Docker Client instead of Docker Compose
+// we are going to install those tools we use in the test framework for checking
+// and verifications
+func (sats *StandAloneTestSuite) installTestTools(containerName string) error {
+	if sats.Image != "ubi8" {
+		return nil
+	}
+
+	cmd := []string{"microdnf", "install", "procps-ng"}
+
+	log.WithFields(log.Fields{
+		"command":       cmd,
+		"containerName": containerName,
+	}).Trace("Installing test tools ")
+
+	_, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command":       cmd,
+			"containerName": containerName,
+			"error":         err,
+		}).Error("Could not install test tools using the Docker client")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"command":       cmd,
+		"containerName": containerName,
+	}).Debug("Test tools installed")
+
+	return nil
+}
+
 func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
-	maxTimeout := time.Duration(queryRetryTimeout) * time.Minute
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 	minimumHitsCount := 50
 
 	result, err := searchAgentData(sats.Hostname, sats.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)

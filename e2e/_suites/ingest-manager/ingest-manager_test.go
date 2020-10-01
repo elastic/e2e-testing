@@ -44,22 +44,26 @@ var stackVersion = "8.0.0-SNAPSHOT"
 // affecting the runtime dependencies (or profile)
 var profileEnv map[string]string
 
-// queryRetryTimeout is the number of seconds between elasticsearch retry queries.
-// It can be overriden by OP_RETRY_TIMEOUT env var
-var queryRetryTimeout = 3
+// timeoutFactor a multiplier for the max timeout when doing backoff retries.
+// It can be overriden by TIMEOUT_FACTOR env var
+var timeoutFactor = 3
 
 // All URLs running on localhost as Kibana is expected to be exposed there
 const kibanaBaseURL = "http://localhost:5601"
 
+var kibanaClient *services.KibanaClient
+
 func init() {
 	config.Init()
+
+	kibanaClient = services.NewKibanaClient()
 
 	developerMode, _ = shell.GetEnvBool("DEVELOPER_MODE")
 	if developerMode {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
 
-	queryRetryTimeout = shell.GetEnvInteger("OP_RETRY_TIMEOUT", queryRetryTimeout)
+	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 }
 
@@ -97,7 +101,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			}).Fatal("Could not run the runtime dependencies for the profile.")
 		}
 
-		minutesToBeHealthy := 5 * time.Minute
+		minutesToBeHealthy := time.Duration(timeoutFactor) * time.Minute
 		healthy, err := e2e.WaitForElasticsearch(minutesToBeHealthy)
 		if !healthy {
 			log.WithFields(log.Fields{
@@ -195,7 +199,7 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 // because it does not support returning the output of a
 // command: it simply returns error level
 func checkProcessStateOnTheHost(containerName string, process string, state string) error {
-	timeout := 4 * time.Minute
+	timeout := time.Duration(timeoutFactor) * time.Minute
 
 	err := e2e.WaitForProcess(containerName, process, state, timeout)
 	if err != nil {
@@ -253,7 +257,7 @@ func getContainerHostname(containerName string) (string, error) {
 		"containerName": containerName,
 	}).Trace("Retrieving container name from the Docker client")
 
-	hostname, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"hostname"})
+	hostname, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"cat", "/etc/hostname"})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"containerName": containerName,
