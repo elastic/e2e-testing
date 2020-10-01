@@ -18,6 +18,7 @@ This repository contains:
         - MySQL
         - Redis
         - vSphere
+1. Contract tests for the integration between Fleet and the tests, using [pact.io](https://pact.io/). For further information, please read [CONTRACT_TESTING.md](CONTRACT_TESTING.md).
 
 ## Contributing
 
