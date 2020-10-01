@@ -100,6 +100,9 @@ pipeline {
               deleteDir()
               unstash 'source'
               withGoEnv(version: "${GO_VERSION}"){
+                if(isInstalled(tool: 'docker', flag: '--version')) {
+                  dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
+                }
                 dir(BASE_DIR){
                   sh script: 'make verify-provider', label: 'Verify provider'
                 }
