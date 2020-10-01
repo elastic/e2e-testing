@@ -40,7 +40,7 @@ For that reason, we are going to use Pact to get notified whenever the contracts
 ### Executing the tests
 From root directory, use the following Make targets:
 
-#### Generate the contracts ofr the consumer
+#### Generate the contracts for the consumer
 ```shell
 $ make pact-consumer
 ```
