@@ -24,6 +24,7 @@ pact-consumer: install-pact
 
 .PHONY: prepare-pact-provider-deps
 prepare-pact-provider-deps: install-pact
+	@rm -fr ~/.op/compose
 	@echo "--- 🚄 Starting Fleet dependencies"
 	cd cli && kibanaConfigPath="$(FLEET_KIBANA_CONFIG)" go run main.go run profile ingest-manager
 
