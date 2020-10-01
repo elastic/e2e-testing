@@ -234,13 +234,6 @@ func (k *KibanaClient) UpdateIntegrationPackageConfig(packageConfigID string, pa
 // WaitForKibana waits for kibana running in localhost:5601 to be healthy, returning false
 // if kibana does not get healthy status in a defined number of minutes.
 func (k *KibanaClient) WaitForKibana(maxTimeoutMinutes time.Duration) (bool, error) {
-	return k.WaitForKibanaFromHostPort("localhost", 5601, maxTimeoutMinutes)
-}
-
-// WaitForKibanaFromHostPort waits for kibana running in a host:port to be healthy, returning false
-// if kibana does not get healthy status in a defined number of minutes.
-func (k *KibanaClient) WaitForKibanaFromHostPort(host string, port int, maxTimeoutMinutes time.Duration) (bool, error) {
-	k.baseURL = fmt.Sprintf("http://%s:%d", host, port)
 	k.withURL("/status")
 
 	var (
