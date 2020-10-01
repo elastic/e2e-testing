@@ -54,8 +54,12 @@ It will execute Pact (using the [Go implementation](https://github.com/pact-foun
 
 
 #### Verify the contracts from provider side
+We want to verify that the provider satisfies the contracts. For that reason, we need the provider to be started first, and to achieve it, we are providing the following Make commands:
+
 ```shell
-$ make pact-provider
+$ make prepare-pact-provider-deps # will run an Elasticsearch, Kibana andd Package Registry
+$ make pact-provider              # will run the verification of the contracts by itself
+$ make verify-provider            # will tear down the runtime dependencies
 ```
 
-It will verify that the provider satisfies the contracts. For that reason, the provider must be started first.
+Each target depends on the one above it, so running `make verify-provider` will run the run the full life cycle.
