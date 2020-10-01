@@ -37,4 +37,4 @@ notice:
 
 .PHONY: test
 test:
-	go test -v -timeout=$(TEST_TIMEOUT) ./...
+	go test -v -timeout=$(TEST_TIMEOUT) ./... --tags unit
