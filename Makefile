@@ -22,6 +22,11 @@ pact-consumer: install-pact
 	@echo "--- 🔨Running Consumer Pact tests "
 	cd cli && go test -count=1 github.com/elastic/e2e-testing/cli/services -run 'TestPactConsumer'
 
+.PHONY: destroy-pact-provider-deps
+destroy-pact-provider-deps:
+	@echo "--- 🚒 Stopping Fleet dependencies"
+	cd cli && go run main.go stop profile ingest-manager
+
 .PHONY: prepare-pact-provider-deps
 prepare-pact-provider-deps: install-pact
 	@rm -fr ~/.op/compose
@@ -36,6 +41,4 @@ pact-provider: prepare-pact-provider-deps
 	cd cli && go test -count=1 -tags=integration github.com/elastic/e2e-testing/cli/services -run "TestPactProvider"
 
 .PHONY: verify-provider
-verify-provider: pact-provider
-	@echo "--- 🚒 Stopping Fleet dependencies"
-	cd cli && go run main.go stop profile ingest-manager
+verify-provider: pact-provider destroy-pact-provider-deps
