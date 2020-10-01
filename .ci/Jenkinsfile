@@ -93,6 +93,7 @@ pipeline {
           options { skipDefaultCheckout() }
           when {
             beforeAgent true
+            expression { return env.SKIP_TESTS == "false" }
           }
           steps {
             withGithubNotify(context: 'Contract Tests') {
