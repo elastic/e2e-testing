@@ -188,9 +188,9 @@ pipeline {
           }
           post {
             always {
+              archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/pact-log/pact.log"
               withGoEnv(version: "${GO_VERSION}"){
                 dir(BASE_DIR){
-                  archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/pact-log/pact.log"
                   sh script: 'make destroy-pact-provider-deps', label: 'Destroy runtime dependencies'
                 }
               }
