@@ -10,6 +10,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestGetBaseURL(t *testing.T) {
+	client := NewKibanaClient()
+	assert.NotNil(t, client)
+
+	assert.Equal(t, "http://localhost:5601", client.GetBaseURL())
+}
+
 func TestNewClient(t *testing.T) {
 	client := NewKibanaClient()
 

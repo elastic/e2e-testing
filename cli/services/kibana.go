@@ -115,6 +115,11 @@ func (k *KibanaClient) DeleteIntegrationFromPolicy(packageConfigID string) (stri
 	return body, err
 }
 
+// GetBaseURL retrieves the base URl where Kibana is listening
+func (k *KibanaClient) GetBaseURL() string {
+	return k.baseURL
+}
+
 // GetIntegration sends a GET request to fetch an integration by name and version
 func (k *KibanaClient) GetIntegration(packageName string, version string) (string, error) {
 	k.withURL(fmt.Sprintf(ingestManagerIntegrationURL, packageName, version))
