@@ -19,15 +19,15 @@ const kibanaBaseURL = "http://localhost:5601"
 
 const endpointMetadataURL = "/api/endpoint/metadata"
 
-const ingestManagerAgentPoliciesURL = "/api/ingest_manager/agent_policies"
+const ingestManagerAgentPoliciesURL = "/api/fleet/agent_policies"
 const ingestManagerAgentPolicyURL = ingestManagerAgentPoliciesURL + "/%s"
 
-const ingestManagerIntegrationDeleteURL = "/api/ingest_manager/package_policies/delete"
-const ingestManagerIntegrationPoliciesURL = "/api/ingest_manager/package_policies"
+const ingestManagerIntegrationDeleteURL = "/api/fleet/package_policies/delete"
+const ingestManagerIntegrationPoliciesURL = "/api/fleet/package_policies"
 const ingestManagerIntegrationPolicyURL = ingestManagerIntegrationPoliciesURL + "/%s"
 
-const ingestManagerIntegrationsURL = "/api/ingest_manager/epm/packages?experimental=true&category="
-const ingestManagerIntegrationURL = "/api/ingest_manager/epm/packages/%s-%s"
+const ingestManagerIntegrationsURL = "/api/fleet/epm/packages?experimental=true&category="
+const ingestManagerIntegrationURL = "/api/fleet/epm/packages/%s-%s"
 
 // KibanaClient manages calls to Kibana APIs
 type KibanaClient struct {
