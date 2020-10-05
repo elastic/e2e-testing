@@ -1,8 +1,8 @@
-@agent_subcommnds
+@agent_subcommands
 Feature: Agent subcommands
   Scenarios for the Agent to test the various subcommands connecting it to Fleet.
 
-@install
+@install-agent
 Scenario Outline: Deploying the <os> agent with install command
   When a "<os>" agent is deployed to Fleet with install command
   Then the agent is listed in Fleet as "online"
@@ -14,7 +14,7 @@ Examples:
 | centos |
 | debian |
 
-@stop-installed-agent
+@stop-agent
 Scenario Outline: Stopping an 'installed' <os> agent stops backend processes
   Given a "<os>" agent is deployed to Fleet with install command
   When the "elastic-agent" process is "stopped" on the host
@@ -25,7 +25,7 @@ Examples:
 | centos |
 | debian |
 
-@restart-installed-host
+@restart-host
 Scenario Outline: Restarting the installed <os> host restarts backend processes
   Given a "<os>" agent is deployed to Fleet with install command
   When the host is restarted
@@ -37,7 +37,7 @@ Examples:
 | centos |
 | debian |
 
-@unenroll-installed-host
+@unenroll-host
 Scenario Outline: Un-enrolling the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with install command
   When the agent is un-enrolled
@@ -50,7 +50,7 @@ Examples:
 | centos |
 | debian |
 
-@reenroll-installed-host
+@reenroll-host
 Scenario Outline: Re-enrolling the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with install command
     And the agent is un-enrolled
@@ -63,7 +63,7 @@ Examples:
 | centos |
 | debian |
 
-@uninstall-installed-host
+@uninstall-host
 Scenario Outline: Un-installing the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with install command
   When the agent is "uninstalled" on the host
@@ -73,7 +73,7 @@ Scenario Outline: Un-installing the installed <os> agent
     And the "metricbeat" process is in the "stopped" state on the host
     And the file system Agent folder is empty
 
-@restart-installed-host
+@restart-agent
 Scenario Outline: Restarting the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with install command
   When the agent is "restarted" on the host
