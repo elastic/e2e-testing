@@ -1,6 +1,6 @@
 @agent_subcommnds
-Feature: Agent subcommands testing
-  Scenarios for the Agent to test the various subcommnds connecting it to Fleet.
+Feature: Agent subcommands
+  Scenarios for the Agent to test the various subcommands connecting it to Fleet.
 
 @install
 Scenario Outline: Deploying the <os> agent with install command
@@ -81,4 +81,3 @@ Scenario Outline: Restarting the installed <os> agent
     And the agent is listed in Fleet as "online"
     And the "filebeat" process is in the "started" state on the host
     And the "metricbeat" process is in the "started" state on the host
-
