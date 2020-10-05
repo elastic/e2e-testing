@@ -1,7 +1,7 @@
 version: '2.3'
 services:
   elastic-agent:
-    image: docker.elastic.co/beats/elastic-agent:${elasticAgentTag:-7.9.1}
+    image: docker.elastic.co/beats/elastic-agent:${elasticAgentTag:-7.9.2}
     depends_on:
       elasticsearch:
         condition: service_healthy

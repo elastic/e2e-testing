@@ -11,11 +11,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const agentVersionBase = "7.9.1"
+const agentVersionBase = "7.9.2"
 
 // agentVersion is the version of the agent to use
 // It can be overriden by ELASTIC_AGENT_VERSION env var
-var agentVersion = "7.9.1"
+var agentVersion = "7.9.2"
 
 func init() {
 	config.Init()
@@ -95,8 +95,8 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 		object := fmt.Sprintf("snapshots/%s", fileName)
 
 		// we are setting a version from a pull request: the version of the artifact will be kept as the base one
-		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.9.1-x86_64.rpm
-		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.9.1-amd64.deb
+		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.9.2-x86_64.rpm
+		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.9.2-amd64.deb
 		if strings.HasPrefix(version, "pr-") {
 			fileName = fmt.Sprintf("%s-%s-%s.%s", artifact, agentVersionBase, arch, extension)
 			log.WithFields(log.Fields{

@@ -45,10 +45,10 @@ This is an example of the optional configuration:
 
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch, kibana, package registry)
-   export STACK_VERSION=7.9.1
+   export STACK_VERSION=7.9.2
    # (Fleet mode) This environment variable will use a fixed version of the Elastic agent binary, obtained from
-   # https://artifacts-api.elastic.co/v1/search/7.9.1/elastic-agent
-   export ELASTIC_AGENT_DOWNLOAD_URL="https://staging.elastic.co/7.9.1-7b774025/downloads/beats/elastic-agent/elastic-agent-7.9.1-linux-x86_64.tar.gz"
+   # https://artifacts-api.elastic.co/v1/search/7.9.2/elastic-agent
+   export ELASTIC_AGENT_DOWNLOAD_URL="https://staging.elastic.co/7.9.2-9a979774/downloads/beats/elastic-agent/elastic-agent-7.9.2-linux-x86_64.tar.gz"
    # (Fleet mode) This environment variable will use the snapshots produced by Beats CI. If the above variable
    # is set, this variable will take no effect
    export ELASTIC_AGENT_USE_CI_SNAPSHOTS="true"
