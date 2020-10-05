@@ -22,7 +22,7 @@ const fleetAgentsURL = kibanaBaseURL + "/api/fleet/agents"
 const fleetAgentEventsURL = kibanaBaseURL + "/api/fleet/agents/%s/events"
 const fleetAgentsUnEnrollURL = kibanaBaseURL + "/api/fleet/agents/%s/unenroll"
 const fleetEnrollmentTokenURL = kibanaBaseURL + "/api/fleet/enrollment-api-keys"
-const fleetSetupURL = kibanaBaseURL + "/api/fleet/setup"
+const fleetSetupURL = kibanaBaseURL + "/api/fleet/agents/setup"
 const ingestManagerAgentPoliciesURL = kibanaBaseURL + "/api/fleet/agent_policies"
 const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/fleet/data_streams"
 
