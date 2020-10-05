@@ -18,11 +18,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const standAloneVersionBase = "7.9.1"
+const standAloneVersionBase = "7.9.2"
 
 // standAloneVersion is the version of the agent to use
 // It can be overriden by ELASTIC_AGENT_VERSION env var
-var standAloneVersion = "7.9.1"
+var standAloneVersion = "7.9.2"
 
 func init() {
 	config.Init()

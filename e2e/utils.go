@@ -55,8 +55,8 @@ func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOf
 // on the desired OS, architecture and file extension:
 // 1. Observability CI Storage bucket
 // 2. Elastic's artifact repository, building the JSON path query based
-// i.e. GetElasticArtifactURL("elastic-agent", "7.9.1", "x86_64", "rpm")
-// i.e. GetElasticArtifactURL("elastic-agent", "7.9.1", "amd64", "deb")
+// i.e. GetElasticArtifactURL("elastic-agent", "7.9.2", "x86_64", "rpm")
+// i.e. GetElasticArtifactURL("elastic-agent", "7.9.2", "amd64", "deb")
 func GetElasticArtifactURL(artifact string, version string, OS string, arch string, extension string) (string, error) {
 	exp := GetExponentialBackOff(time.Minute)
 
@@ -117,8 +117,8 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 
 	artifactPath := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
 	if extension == "deb" || extension == "rpm" {
-		// elastic-agent-7.9.1-x86_64.rpm
-		// elastic-agent-7.9.1-amd64.deb
+		// elastic-agent-7.9.2-x86_64.rpm
+		// elastic-agent-7.9.2-amd64.deb
 		artifactPath = fmt.Sprintf("%s-%s-%s.%s", artifact, version, arch, extension)
 	}
 
