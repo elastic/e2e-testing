@@ -72,7 +72,6 @@ Scenario Outline: Un-installing the installed <os> agent
     And the "filebeat" process is in the "stopped" state on the host
     And the "metricbeat" process is in the "stopped" state on the host
     And the file system Agent folder is empty
-    (Agent may end up deleted, if so we change this to 'Elastic folder does not have an Agent subfolder'
 
 @restart-installed-host
 Scenario Outline: Restarting the installed <os> agent
