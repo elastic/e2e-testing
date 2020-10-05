@@ -110,7 +110,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
 
-		healthyKibana, err := e2e.WaitForKibana(minutesToBeHealthy)
+		healthyKibana, err := kibanaClient.WaitForKibana(minutesToBeHealthy)
 		if !healthyKibana {
 			log.WithFields(log.Fields{
 				"error":   err,
