@@ -66,7 +66,7 @@ Examples:
 @uninstall-host
 Scenario Outline: Un-installing the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with install command
-  When the agent is "uninstalled" on the host
+  When the "elastic-agent" process is "uninstalled" on the host
   Then the "elastic-agent" process is in the "stopped" state on the host
     And the agent is listed in Fleet as "inactive"
     And the "filebeat" process is in the "stopped" state on the host
@@ -76,7 +76,7 @@ Scenario Outline: Un-installing the installed <os> agent
 @restart-agent
 Scenario Outline: Restarting the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with install command
-  When the agent is "restarted" on the host
+  When the "elastic-agent" process is "restarted" on the host
     And the agent is listed in Fleet as "online"
     And the "filebeat" process is in the "started" state on the host
     And the "metricbeat" process is in the "started" state on the host
