@@ -32,6 +32,7 @@ type ElasticAgentInstaller struct {
 	artifactName      string // name of the artifact
 	artifactOS        string // OS of the artifact
 	artifactVersion   string // version of the artifact
+	binDir            string // location of the binary
 	commitFile        string // elastic agent commit file
 	homeDir           string // elastic agent home dir
 	image             string // docker image
@@ -174,10 +175,14 @@ func GetElasticAgentInstaller(image string) ElasticAgentInstaller {
 
 	var installer ElasticAgentInstaller
 	var err error
-	if "centos-systemd" == image {
+	if "centos" == image {
+		installer, err = newCentosInstaller("centos", "8")
+	} else if "centos-systemd" == image {
 		installer, err = newCentosInstaller("centos-systemd", "latest")
+	} else if "debian" == image {
+		installer, err = newDebianInstaller("debian", "stretch")
 	} else if "debian-systemd" == image {
-		installer, err = newDebianInstaller()
+		installer, err = newDebianInstaller("debian-systemd", "stretch")
 	} else {
 		log.WithField("image", image).Fatal("Sorry, we currently do not support this installer")
 		return ElasticAgentInstaller{}
@@ -192,8 +197,14 @@ func GetElasticAgentInstaller(image string) ElasticAgentInstaller {
 	return installer
 }
 
+func isSystemdBased(image string) bool {
+	return strings.HasSuffix(image, "-systemd")
+}
+
 // newCentosInstaller returns an instance of the Centos installer
 func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error) {
+	isSystemd := isSystemdBased(image)
+
 	service := image
 	profile := FleetProfileName
 
@@ -202,7 +213,11 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 	version := agentVersion
 	os := "linux"
 	arch := "x86_64"
-	extension := "rpm"
+
+	extension := "tar.gz"
+	if isSystemd {
+		extension = "rpm"
+	}
 
 	binaryName, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension)
 	if err != nil {
@@ -221,17 +236,20 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		return systemctlRun(profile, image, service, "enable")
 	}
 
+	binDir := "/var/lib/elastic-agent/data/elastic-agent-%s/"
+
 	return ElasticAgentInstaller{
 		artifactArch:      arch,
 		artifactExtension: extension,
 		artifactName:      artifact,
 		artifactOS:        os,
 		artifactVersion:   version,
+		binDir:            binDir,
 		commitFile:        ".elastic-agent.active.commit",
 		homeDir:           "/etc/elastic-agent/",
 		image:             image,
 		InstallCmds:       []string{"yum", "localinstall", "/" + binaryName, "-y"},
-		logDir:            "/var/lib/elastic-agent/data/elastic-agent-%s/logs/",
+		logDir:            binDir + "logs/",
 		logFile:           "elastic-agent-json.log",
 		name:              binaryName,
 		path:              binaryPath,
@@ -244,10 +262,10 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 }
 
 // newDebianInstaller returns an instance of the Debian installer
-func newDebianInstaller() (ElasticAgentInstaller, error) {
-	image := "debian-systemd"
+func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error) {
+	isSystemd := isSystemdBased(image)
+
 	service := image
-	tag := "stretch"
 	profile := FleetProfileName
 
 	// extract the agent in the box, as it's mounted as a volume
@@ -255,7 +273,11 @@ func newDebianInstaller() (ElasticAgentInstaller, error) {
 	version := agentVersion
 	os := "linux"
 	arch := "amd64"
-	extension := "deb"
+
+	extension := "tar.gz"
+	if isSystemd {
+		extension = "deb"
+	}
 
 	binaryName, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension)
 	if err != nil {
@@ -274,17 +296,20 @@ func newDebianInstaller() (ElasticAgentInstaller, error) {
 		return systemctlRun(profile, image, service, "enable")
 	}
 
+	binDir := "/var/lib/elastic-agent/data/elastic-agent-%s/"
+
 	return ElasticAgentInstaller{
 		artifactArch:      arch,
 		artifactExtension: extension,
 		artifactName:      artifact,
 		artifactOS:        os,
 		artifactVersion:   version,
+		binDir:            binDir,
 		commitFile:        ".elastic-agent.active.commit",
 		homeDir:           "/etc/elastic-agent/",
 		image:             image,
 		InstallCmds:       []string{"apt", "install", "/" + binaryName, "-y"},
-		logDir:            "/var/lib/elastic-agent/data/elastic-agent-%s/logs/",
+		logDir:            binDir + "logs/",
 		logFile:           "elastic-agent-json.log",
 		name:              binaryName,
 		path:              binaryPath,

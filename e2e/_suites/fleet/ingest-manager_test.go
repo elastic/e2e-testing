@@ -71,7 +71,9 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	imts := IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			Installers: map[string]ElasticAgentInstaller{
+				"centos":         GetElasticAgentInstaller("centos"),
 				"centos-systemd": GetElasticAgentInstaller("centos-systemd"),
+				"debian":         GetElasticAgentInstaller("debian"),
 				"debian-systemd": GetElasticAgentInstaller("debian-systemd"),
 			},
 		},
