@@ -36,7 +36,7 @@ type ElasticAgentInstaller struct {
 	commitFile        string // elastic agent commit file
 	homeDir           string // elastic agent home dir
 	image             string // docker image
-	InstallCmds       []string
+	InstallFn         func() error
 	logDir            string // location of the log file
 	logFile           string // the name of the log file
 	name              string // the name for the binary
@@ -53,6 +53,10 @@ type ElasticAgentInstaller struct {
 func (i *ElasticAgentInstaller) getElasticAgentHash(containerName string) (string, error) {
 	commitFile := i.homeDir + i.commitFile
 
+	return getElasticAgentHash(containerName, commitFile)
+}
+
+func getElasticAgentHash(containerName string, commitFile string) (string, error) {
 	cmd := []string{
 		"cat", commitFile,
 	}
@@ -102,6 +106,28 @@ func (i *ElasticAgentInstaller) getElasticAgentLogs(hostname string) error {
 			"error":         err,
 			"hash":          hash,
 		}).Error("Could not get agent logs in the container")
+
+		return err
+	}
+
+	return nil
+}
+
+// run runs a command for the elastic-agent
+func (i *ElasticAgentInstaller) run(command string, arguments []string) error {
+	cmds := []string{
+		i.processName, command,
+	}
+	cmds = append(cmds, arguments...)
+
+	err := execCommandInService(i.profile, i.image, i.service, cmds, false)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmds,
+			"profile": i.profile,
+			"service": i.service,
+			"error":   err,
+		}).Error("Could not run agent command in the box")
 
 		return err
 	}
@@ -176,11 +202,11 @@ func GetElasticAgentInstaller(image string) ElasticAgentInstaller {
 	var installer ElasticAgentInstaller
 	var err error
 	if "centos" == image {
-		installer, err = newCentosInstaller("centos", "8")
+		installer, err = newTarInstaller("centos-systemd", "latest")
 	} else if "centos-systemd" == image {
 		installer, err = newCentosInstaller("centos-systemd", "latest")
 	} else if "debian" == image {
-		installer, err = newDebianInstaller("debian", "stretch")
+		installer, err = newTarInstaller("debian-systemd", "stretch")
 	} else if "debian-systemd" == image {
 		installer, err = newDebianInstaller("debian-systemd", "stretch")
 	} else {
@@ -203,8 +229,6 @@ func isSystemdBased(image string) bool {
 
 // newCentosInstaller returns an instance of the Centos installer
 func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error) {
-	isSystemd := isSystemdBased(image)
-
 	service := image
 	profile := FleetProfileName
 
@@ -213,11 +237,7 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 	version := agentVersion
 	os := "linux"
 	arch := "x86_64"
-
-	extension := "tar.gz"
-	if isSystemd {
-		extension = "rpm"
-	}
+	extension := "rpm"
 
 	binaryName, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension)
 	if err != nil {
@@ -232,6 +252,10 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		return ElasticAgentInstaller{}, err
 	}
 
+	installFn := func() error {
+		cmds := []string{"yum", "localinstall", "/" + binaryName, "-y"}
+		return extractPackage(profile, image, service, cmds)
+	}
 	postInstallFn := func() error {
 		return systemctlRun(profile, image, service, "enable")
 	}
@@ -248,7 +272,7 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		commitFile:        ".elastic-agent.active.commit",
 		homeDir:           "/etc/elastic-agent/",
 		image:             image,
-		InstallCmds:       []string{"yum", "localinstall", "/" + binaryName, "-y"},
+		InstallFn:         installFn,
 		logDir:            binDir + "logs/",
 		logFile:           "elastic-agent-json.log",
 		name:              binaryName,
@@ -263,8 +287,6 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 
 // newDebianInstaller returns an instance of the Debian installer
 func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error) {
-	isSystemd := isSystemdBased(image)
-
 	service := image
 	profile := FleetProfileName
 
@@ -273,11 +295,7 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 	version := agentVersion
 	os := "linux"
 	arch := "amd64"
-
-	extension := "tar.gz"
-	if isSystemd {
-		extension = "deb"
-	}
+	extension := "deb"
 
 	binaryName, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension)
 	if err != nil {
@@ -292,6 +310,10 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		return ElasticAgentInstaller{}, err
 	}
 
+	installFn := func() error {
+		cmds := []string{"apt", "install", "/" + binaryName, "-y"}
+		return extractPackage(profile, image, service, cmds)
+	}
 	postInstallFn := func() error {
 		return systemctlRun(profile, image, service, "enable")
 	}
@@ -308,7 +330,7 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		commitFile:        ".elastic-agent.active.commit",
 		homeDir:           "/etc/elastic-agent/",
 		image:             image,
-		InstallCmds:       []string{"apt", "install", "/" + binaryName, "-y"},
+		InstallFn:         installFn,
 		logDir:            binDir + "logs/",
 		logFile:           "elastic-agent-json.log",
 		name:              binaryName,
@@ -319,6 +341,127 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		service:           service,
 		tag:               tag,
 	}, nil
+}
+
+// newTarInstaller returns an instance of the Debian installer
+func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
+	service := image
+	profile := IngestManagerProfileName
+
+	// extract the agent in the box, as it's mounted as a volume
+	artifact := "elastic-agent"
+	version := agentVersion
+	os := "linux"
+	arch := "x86_64"
+	extension := "tar.gz"
+
+	tarFile, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"artifact":  artifact,
+			"version":   version,
+			"os":        os,
+			"arch":      arch,
+			"extension": extension,
+			"error":     err,
+		}).Error("Could not download the binary for the agent")
+		return ElasticAgentInstaller{}, err
+	}
+
+	commitFile := ".elastic-agent.active.commit"
+	homeDir := "/elastic-agent/"
+	binDir := "/usr/bin/"
+
+	installFn := func() error {
+		commitFile := homeDir + commitFile
+		return installFromTar(profile, image, service, tarFile, commitFile, artifact, version, os, arch)
+	}
+	postInstallFn := func() error {
+		return nil
+	}
+
+	return ElasticAgentInstaller{
+		artifactArch:      arch,
+		artifactExtension: extension,
+		artifactName:      artifact,
+		artifactOS:        os,
+		artifactVersion:   version,
+		binDir:            binDir,
+		commitFile:        commitFile,
+		homeDir:           homeDir,
+		image:             image,
+		InstallFn:         installFn,
+		logDir:            "/opt/Elastic/Agent/logs/",
+		logFile:           "elastic-agent-json.log",
+		name:              tarFile,
+		path:              binaryPath,
+		PostInstallFn:     postInstallFn,
+		processName:       ElasticAgentProcessName,
+		profile:           profile,
+		service:           service,
+		tag:               tag,
+	}, nil
+}
+
+func extractPackage(profile string, image string, service string, cmds []string) error {
+	err := execCommandInService(profile, image, service, cmds, false)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmds,
+			"error":   err,
+			"image":   image,
+			"service": service,
+		}).Error("Could not extract agent package in the box")
+
+		return err
+	}
+
+	return nil
+}
+
+func installFromTar(profile string, image string, service string, tarFile string, commitFile string, artifact string, version string, OS string, arch string) error {
+	err := extractPackage(profile, image, service, []string{"tar", "-xvf", "/" + tarFile})
+	if err != nil {
+		return err
+	}
+
+	// simplify layout
+	cmds := []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, version, OS, arch), "/elastic-agent"}
+	err = execCommandInService(profile, image, service, cmds, false)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmds,
+			"error":   err,
+			"image":   image,
+			"service": service,
+		}).Error("Could not extract agent package in the box")
+
+		return err
+	}
+
+	baseImage := strings.ReplaceAll(image, "-systemd", "")
+	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, baseImage, ElasticAgentServiceName, 1) // name of the container
+
+	hash, err := getElasticAgentHash(containerName, commitFile)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"containerName": containerName,
+			"error":         err,
+		}).Error("Could not get agent hash in the container")
+
+		return err
+	}
+
+	// install the elastic-agent to /usr/bin/elastic-agent
+	binary := fmt.Sprintf("/elastic-agent/data/elastic-agent-%s/", hash) + artifact
+	cmds = []string{binary, "install", "-f"}
+
+	err = execCommandInService(profile, image, service, cmds, false)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func systemctlRun(profile string, image string, service string, command string) error {
