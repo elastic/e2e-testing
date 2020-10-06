@@ -232,7 +232,7 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		return ElasticAgentInstaller{}, err
 	}
 
-	fn := func() error {
+	postInstallFn := func() error {
 		return systemctlRun(profile, image, service, "enable")
 	}
 
@@ -253,7 +253,7 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		logFile:           "elastic-agent-json.log",
 		name:              binaryName,
 		path:              binaryPath,
-		PostInstallFn:     fn,
+		PostInstallFn:     postInstallFn,
 		processName:       ElasticAgentProcessName,
 		profile:           profile,
 		service:           service,
@@ -292,7 +292,7 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		return ElasticAgentInstaller{}, err
 	}
 
-	fn := func() error {
+	postInstallFn := func() error {
 		return systemctlRun(profile, image, service, "enable")
 	}
 
@@ -313,7 +313,7 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		logFile:           "elastic-agent-json.log",
 		name:              binaryName,
 		path:              binaryPath,
-		PostInstallFn:     fn,
+		PostInstallFn:     postInstallFn,
 		processName:       ElasticAgentProcessName,
 		profile:           profile,
 		service:           service,
