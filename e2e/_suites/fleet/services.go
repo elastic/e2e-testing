@@ -19,6 +19,11 @@ const agentVersionBase = "8.0.0-SNAPSHOT"
 // It can be overriden by ELASTIC_AGENT_VERSION env var
 var agentVersion = agentVersionBase
 
+// to avoid downloading the same artifacts, we are adding this map to cache the URL of the downloaded binaries, using as key
+// the URL of the artifact. If another installer is trying to download the same URL, it will return the location of the
+// already downloaded artifact.
+var binariesCache = map[string]string{}
+
 func init() {
 	config.Init()
 
@@ -144,10 +149,27 @@ func (i *ElasticAgentInstaller) run(command string, arguments []string) error {
 func downloadAgentBinary(artifact string, version string, OS string, arch string, extension string) (string, string, error) {
 	fileName := fmt.Sprintf("%s-%s-%s.%s", artifact, version, arch, extension)
 
-	if downloadURL, exists := os.LookupEnv("ELASTIC_AGENT_DOWNLOAD_URL"); exists {
-		filePath, err := e2e.DownloadFile(downloadURL)
+	handleDownload := func(URL string, fileName string) (string, string, error) {
+		if val, ok := binariesCache[URL]; ok {
+			log.WithFields(log.Fields{
+				"URL":  URL,
+				"path": val,
+			}).Debug("Retrieving binary from local cache")
+			return fileName, val, nil
+		}
 
-		return fileName, filePath, err
+		filePath, err := e2e.DownloadFile(URL)
+		if err != nil {
+			return fileName, filePath, err
+		}
+
+		binariesCache[URL] = filePath
+
+		return fileName, filePath, nil
+	}
+
+	if downloadURL, exists := os.LookupEnv("ELASTIC_AGENT_DOWNLOAD_URL"); exists {
+		return handleDownload(downloadURL, fileName)
 	}
 
 	var downloadURL string
@@ -178,9 +200,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 			return "", "", err
 		}
 
-		filePath, err := e2e.DownloadFile(downloadURL)
-
-		return fileName, filePath, err
+		return handleDownload(downloadURL, fileName)
 	}
 
 	downloadURL, err = e2e.GetElasticArtifactURL(artifact, agentVersionBase, OS, arch, extension)
@@ -188,9 +208,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 		return "", "", err
 	}
 
-	filePath, err := e2e.DownloadFile(downloadURL)
-
-	return fileName, filePath, err
+	return handleDownload(downloadURL, fileName)
 }
 
 // GetElasticAgentInstaller returns an installer from a docker image
