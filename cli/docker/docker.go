@@ -102,6 +102,19 @@ func ExecCommandIntoContainer(ctx context.Context, containerName string, user st
 
 	output = strings.ReplaceAll(output, "\n", "")
 
+	patterns := []string{
+		"\x01\x00\x00\x00\x00\x00\x00\r",
+		"\x01\x00\x00\x00\x00\x00\x00)",
+	}
+	for _, pattern := range patterns {
+		if strings.HasPrefix(output, pattern) {
+			output = strings.ReplaceAll(output, pattern, "")
+			log.WithFields(log.Fields{
+				"output": output,
+			}).Trace("Output name has been sanitized")
+		}
+	}
+
 	return output, nil
 }
 

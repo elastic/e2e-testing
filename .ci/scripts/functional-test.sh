@@ -11,13 +11,13 @@ set -euxo pipefail
 #
 # Parameters:
 #   - SUITE - that's the suite to be tested. Default '' which means all of them.
-#   - FEATURE - that's the feature to be tested. Default '' which means all of them.
+#   - TAGS - that's the tags to be tested. Default '' which means all of them.
 #   - STACK_VERSION - that's the version of the stack to be tested. Default '8.0.0-SNAPSHOT'.
 #   - METRICBEAT_VERSION - that's the version of the metricbeat to be tested. Default '8.0.0-SNAPSHOT'.
 #
 
 SUITE=${1:-''}
-FEATURE=${2:-''}
+TAGS=${2:-''}
 STACK_VERSION=${3:-'8.0.0-SNAPSHOT'}
 METRICBEAT_VERSION=${4:-'8.0.0-SNAPSHOT'}
 TARGET_OS=${GOOS:-linux}
@@ -26,19 +26,16 @@ TARGET_ARCH=${GOARCH:-amd64}
 rm -rf outputs || true
 mkdir -p outputs
 
-## Parse FEATURE if not ALL then enable the flags to be passed to the functional-test wrapper
-REPORT=''
-if [ "${FEATURE}" != "" ] && [ "${FEATURE}" != "all" ] ; then
-  REPORT=outputs/TEST-${SUITE}-${FEATURE}
-else
-  FEATURE=''
-  REPORT=outputs/TEST-functional-tests
+## Parse TAGS if not empty then enable the flags to be passed to the functional-test wrapper
+REPORT=outputs/TEST-${SUITE}
+if [ "${TAGS}" != "" ] ; then
+  REPORT=outputs/TEST-${SUITE}-${TAGS}
 fi
 
 ## Generate test report even if make failed.
 set +e
 exit_status=0
-if ! SUITE=${SUITE} FEATURE=${FEATURE} FORMAT=junit STACK_VERSION=${STACK_VERSION} METRICBEAT_VERSION=${METRICBEAT_VERSION} make --no-print-directory -C e2e functional-test | tee ${REPORT}  ; then
+if ! SUITE=${SUITE} TAGS="${TAGS}" FORMAT=junit STACK_VERSION=${STACK_VERSION} METRICBEAT_VERSION=${METRICBEAT_VERSION} make --no-print-directory -C e2e functional-test | tee ${REPORT}  ; then
   echo 'ERROR: functional-test failed'
   exit_status=1
 fi
