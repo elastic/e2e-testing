@@ -9,8 +9,8 @@
     - "cli/**/*.*"
   - "helm":
     - "e2e/_suites/helm/**/*.*"
-  - "ingest-manager":
-    - "e2e/_suites/ingest-manager/**/*.*"
+  - "Team: Ingest Management":
+    - "e2e/_suites/fleet/**/*.*"
   - "licenses":
     - "notice/**/*.*"
     - "**/go.mod"

@@ -191,7 +191,7 @@ func (k *KibanaClient) GetMetadataFromSecurityApp() (string, error) {
 	return body, err
 }
 
-// InstallIntegrationAssets sends a POST request to Ingest Manager installing the assets for an integration
+// InstallIntegrationAssets sends a POST request to Fleet installing the assets for an integration
 func (k *KibanaClient) InstallIntegrationAssets(integration string, version string) (string, error) {
 	k.withURL(fmt.Sprintf(ingestManagerIntegrationURL, integration, version))
 
@@ -210,7 +210,7 @@ func (k *KibanaClient) InstallIntegrationAssets(integration string, version stri
 	return body, err
 }
 
-// UpdateIntegrationPackageConfig sends a PUT request to Ingest Manager updating integration
+// UpdateIntegrationPackageConfig sends a PUT request to Fleet updating integration
 // configuration
 func (k *KibanaClient) UpdateIntegrationPackageConfig(packageConfigID string, payload string) (string, error) {
 	k.withURL(fmt.Sprintf(ingestManagerIntegrationPolicyURL, packageConfigID))

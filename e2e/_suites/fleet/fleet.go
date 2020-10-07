@@ -63,7 +63,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	}
 
 	if !developerMode {
-		_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
+		_ = serviceManager.RemoveServicesFromCompose(FleetProfileName, []string{serviceName}, profileEnv)
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
@@ -190,7 +190,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
 }
 
 func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state string) error {
-	profile := IngestManagerProfileName
+	profile := FleetProfileName
 	image := fts.Image
 
 	installer := fts.Installers[fts.Image]

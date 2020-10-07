@@ -1,8 +1,8 @@
-# Ingest Manager End-To-End tests
+# Fleet End-To-End tests
 
 ## Motivation
 
-Our goal is for the Ingest Manager team to execute this automated e2e test suite while developing the product. The tests in this folder assert that the use cases (or scenarios) defined in the `features` directory are behaving as expected.
+Our goal is for the Fleet team to execute this automated e2e test suite while developing the product. The tests in this folder assert that the use cases (or scenarios) defined in the `features` directory are behaving as expected.
 
 ## How do the tests work?
 
@@ -12,7 +12,7 @@ The provisining of services is accomplish using Docker Compose and the [testcont
 
 The tests will follow this general high-level approach:
 
-1. Install runtime dependencies as Docker containers via Docker Compose, happening at before the test suite runs. These runtime dependencies are defined in a specific `profile` for Ingest Manager, in the form of a `docker-compose.yml` file.
+1. Install runtime dependencies as Docker containers via Docker Compose, happening at before the test suite runs. These runtime dependencies are defined in a specific `profile` for Fleet, in the form of a `docker-compose.yml` file.
 1. Execute BDD steps representing each scenario. Each step will return an Error if the behavior is not satisfied, marking the step and the scenario as failed, or will return `nil`.
 
 ## Known Limitations
@@ -79,7 +79,7 @@ This is an example of the optional configuration:
    ```
 
    ```shell
-   cd e2e/_suites/ingest-manager
+   cd e2e/_suites/fleet
    OP_LOG_LEVEL=DEBUG godog
    ```
 
@@ -117,7 +117,7 @@ this happened, look at your terminal log in DEBUG mode. If a `docker-compose.yml
 rm -fr ~/.op/compose
 ```
 
-Note what you find and file a bug in the `elastic/e2e-testing` repository, requiring a fix to the ingest-manager suite to properly configure and start the product.
+Note what you find and file a bug in the `elastic/e2e-testing` repository, requiring a fix to the Fleet suite to properly configure and start the product.
 
 ### I cannot move on
 
