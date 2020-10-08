@@ -29,7 +29,7 @@ var developerMode = false
 
 // metricbeatVersion is the version of the metricbeat to use
 // It can be overriden by METRICBEAT_VERSION env var
-var metricbeatVersion = "7.9.0"
+var metricbeatVersion = "7.9.2"
 
 // timeoutFactor a multiplier for the max timeout when doing backoff retries.
 // It can be overriden by TIMEOUT_FACTOR env var
@@ -39,7 +39,7 @@ var serviceManager services.ServiceManager
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
-var stackVersion = "7.9.0"
+var stackVersion = "7.9.2"
 
 func init() {
 	config.Init()
