@@ -33,7 +33,7 @@ For that reason, we are going to use Pact to get notified whenever the contracts
 1. Create unit tests mocking the HTTP requests/responses for Fleet APIs. As we all know, this approach will always work, as we predefine the mocks, but on the other hand we won't get notified if/when the provider changes, so we must be reactively checking for updates.
 1. Create a contract/pact for the consumer (the e2e tests), with the behaviours we expect from Fleet. The result will be a JSON file with the specs.
 1. Store the contract in some place that is accesible by the provider. In this case, we are using the file system to store them, but Pact recommends using a [Broker](https://github.com/pact-foundation/pact_broker).
-1. Verify the contract/pact from the provider side. The provider is able to check if a change breaks all its consumers by itself, as it has access to the contracts they provided (via file system or the afore mentioned Broker).
+1. Verify the contract/pact from the provider side. The provider is able to check if a change breaks all its consumers by itself, as it has access to the contracts they provided (via file system or the aforementioned Broker).
 
 >Ideally, the provider project should be the one responsible of the verification but, for simplification, we are creating that verification in this project. Kibana should implement a way to verify contracts/pacts from its own build system, so any engineer is able to check if he/she breaks the consumers.
 
