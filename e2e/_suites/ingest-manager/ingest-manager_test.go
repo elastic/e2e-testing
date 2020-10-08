@@ -38,7 +38,7 @@ const IngestManagerProfileName = "ingest-manager"
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
-var stackVersion = "7.9.1"
+var stackVersion = "7.9.2"
 
 // profileEnv is the environment to be applied to any execution
 // affecting the runtime dependencies (or profile)
@@ -110,7 +110,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
 
-		healthyKibana, err := e2e.WaitForKibana(minutesToBeHealthy)
+		healthyKibana, err := kibanaClient.WaitForKibana(minutesToBeHealthy)
 		if !healthyKibana {
 			log.WithFields(log.Fields{
 				"error":   err,
