@@ -113,8 +113,15 @@ Sometimes the tests could fail to configure or start a product such as Metricbea
 this happened, look at your terminal log in DEBUG mode. If a `docker-compose.yml` file is not present please execute this command:
 
 ```shell
-## Will remove tool's existing default files and will update them with the bundled ones
-rm -fr ~/.op/compose
+## Will remove tool's existing default files and will update them with the bundled ones.
+make clean-workspace
+```
+
+If you see the docker images are outdated, please execute this command:
+
+```shell
+## Will refresh stack images
+make clean-docker
 ```
 
 Note what you find and file a bug in the `elastic/e2e-testing` repository, requiring a fix to the Fleet suite to properly configure and start the product.
