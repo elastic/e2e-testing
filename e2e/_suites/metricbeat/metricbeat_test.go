@@ -245,7 +245,7 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 	mts.Version = metricbeatVersion
 	mts.setIndexName()
 
-	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + metricbeatVersion + "/metricbeat/" + configuration + ".yml"
+	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/v" + metricbeatVersion + "/metricbeat/" + configuration + ".yml"
 
 	configurationFilePath, err := e2e.DownloadFile(configurationFileURL)
 	if err != nil {
