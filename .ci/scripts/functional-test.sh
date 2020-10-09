@@ -18,8 +18,8 @@ set -euxo pipefail
 
 SUITE=${1:-''}
 TAGS=${2:-''}
-STACK_VERSION=${3:-'7.9.0'}
-METRICBEAT_VERSION=${4:-'7.9.0'}
+STACK_VERSION=${3:-'7.9.2'}
+METRICBEAT_VERSION=${4:-'7.9.2'}
 TARGET_OS=${GOOS:-linux}
 TARGET_ARCH=${GOARCH:-amd64}
 
