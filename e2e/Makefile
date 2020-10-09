@@ -50,7 +50,7 @@ functional-test: install-godog
 	METRICBEAT_VERSION=${METRICBEAT_VERSION} \
 	STACK_VERSION=${STACK_VERSION} \
 	DEVELOPER_MODE=${DEVELOPER_MODE} \
-	godog --format=${FORMAT} ${TAGS_FLAG} ${TAGS}
+	godog --format=${FORMAT} ${TAGS_FLAG} "${TAGS}"
 
 .PHONY: lint
 lint:
