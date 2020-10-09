@@ -14,7 +14,7 @@ services:
     ]
     environment:
       - BEAT_STRICT_PERMS=${beatStricPerms:-false}
-    image: "docker.elastic.co/observability-ci/metricbeat:${metricbeatTag:-8.0.0-SNAPSHOT}"
+    image: "docker.elastic.co/observability-ci/metricbeat:${metricbeatTag:-7.9.2}"
     labels:
       co.elastic.logs/module: "${serviceName}"
     volumes:
