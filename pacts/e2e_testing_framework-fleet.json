@@ -11,7 +11,7 @@
       "providerState": "There are integration in the package registry",
       "request": {
         "method": "GET",
-        "path": "/api/ingest_manager/epm/packages?experimental=true&category=",
+        "path": "/api/fleet/epm/packages?experimental=true&category=",
         "headers": {
           "Authorization": "Basic ZWxhc3RpYzpjaGFuZ2VtZQ==",
           "Content-Type": "application/json; charset=utf-8",
@@ -76,7 +76,7 @@
       "providerState": "Integration endpoint-0.13.0 exists",
       "request": {
         "method": "GET",
-        "path": "/api/ingest_manager/epm/packages/endpoint-0.13.0",
+        "path": "/api/fleet/epm/packages/endpoint-0.13.0",
         "headers": {
           "Authorization": "Basic ZWxhc3RpYzpjaGFuZ2VtZQ==",
           "Content-Type": "application/json; charset=utf-8",
@@ -85,7 +85,7 @@
         "matchingRules": {
           "$.path": {
             "match": "regex",
-            "regex": "\\/api\\/ingest_manager\\/epm\\/packages\\/([a-zA-Z]+)-(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)"
+            "regex": "\\/api\\/fleet\\/epm\\/packages\\/([a-zA-Z]+)-(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)"
           },
           "$.headers.Authorization": {
             "match": "regex",
@@ -118,7 +118,7 @@
       "providerState": "Integration Foo-1.0.0 does not exist",
       "request": {
         "method": "GET",
-        "path": "/api/ingest_manager/epm/packages/foo-1.0.0",
+        "path": "/api/fleet/epm/packages/foo-1.0.0",
         "headers": {
           "Authorization": "Basic ZWxhc3RpYzpjaGFuZ2VtZQ==",
           "Content-Type": "application/json; charset=utf-8",
@@ -127,7 +127,7 @@
         "matchingRules": {
           "$.path": {
             "match": "regex",
-            "regex": "\\/api\\/ingest_manager\\/epm\\/packages\\/([a-zA-Z]+)-(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)"
+            "regex": "\\/api\\/fleet\\/epm\\/packages\\/([a-zA-Z]+)-(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)"
           },
           "$.headers.Authorization": {
             "match": "regex",
