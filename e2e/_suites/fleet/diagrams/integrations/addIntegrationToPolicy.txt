@@ -9,7 +9,7 @@ activate E2E tests
 E2E tests->Fleet:addIntegrationToPolicy(package, policyID)
 
 activate Fleet
-note left of Fleet:POST /api/ingest_manager/package_policies\n\n{\n   "name": package.name,\n   "description": package.title,\n   "namespace": "default",\n   "policy_id": policyID,\n   "enabled": true,\n   "output_id": blank,\n   "inputs": [],\n   "package": {\n       "name": integrationPackage.name,\n        "title": package.title,\n        "version": integrationPackage.version\n    }\n}
+note left of Fleet:POST /api/fleet/package_policies\n\n{\n   "name": package.name,\n   "description": package.title,\n   "namespace": "default",\n   "policy_id": policyID,\n   "enabled": true,\n   "output_id": blank,\n   "inputs": [],\n   "package": {\n       "name": integrationPackage.name,\n        "title": package.title,\n        "version": integrationPackage.version\n    }\n}
 Fleet-->E2E tests:Get payload, but interested only in the new item ID
 deactivate Fleet
 

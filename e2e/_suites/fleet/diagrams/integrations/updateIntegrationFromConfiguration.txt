@@ -16,7 +16,7 @@ E2E tests<<-E2E tests:Update mode values for config policies (Linux not supporte
 
 E2E tests->Fleet:updateIntegrationPackageConfig(packageConfigId, payload)
 activate Fleet
-note left of Fleet:POST /api/ingest_manager/package_policies/{:packageConfigId}
+note left of Fleet:POST /api/fleet/package_policies/{:packageConfigId}
 Fleet-->E2E tests:updateIntegrationPackageConfig(packageConfigId, payload)
 deactivate Fleet
 

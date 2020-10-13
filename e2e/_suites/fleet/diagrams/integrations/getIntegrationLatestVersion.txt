@@ -9,7 +9,7 @@ activate E2E tests
 E2E tests->Fleet:getIntegrationLatestVersion(title)
 
 activate Fleet
-note left of Fleet:GET /api/ingest_manager/epm/packages?experimental=true&category=
+note left of Fleet:GET /api/fleet/epm/packages?experimental=true&category=
 Fleet-->E2E tests:Get payload, but interested only in the one with the desired title
 deactivate Fleet
 

@@ -9,7 +9,7 @@ activate E2E tests
 E2E tests->Fleet:getIntegrationFromAgentPolicy(package, agentPolicyID)
 
 activate Fleet
-note left of Fleet:GET /api/ingest_manager/agent_policies/{:agentPolicyID}
+note left of Fleet:GET /api/fleet/agent_policies/{:agentPolicyID}
 Fleet-->E2E tests:Get payload, but interested only in the one with the desired title
 deactivate Fleet
 

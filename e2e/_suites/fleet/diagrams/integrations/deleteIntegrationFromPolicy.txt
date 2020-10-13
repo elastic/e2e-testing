@@ -9,7 +9,7 @@ activate E2E tests
 E2E tests->Fleet:deleteIntegrationFromPolicy(package)
 
 activate Fleet
-note left of Fleet:POST /api/ingest_manager/package_policies/delete\n\n{\n   "packagePolicyIds": [package.policyID],\n}
+note left of Fleet:POST /api/fleet/package_policies/delete\n\n{\n   "packagePolicyIds": [package.policyID],\n}
 E2E tests<--Fleet:payload
 deactivate Fleet
 

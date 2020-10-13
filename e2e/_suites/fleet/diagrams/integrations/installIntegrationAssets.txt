@@ -9,7 +9,7 @@ activate E2E tests
 E2E tests->Fleet:installIntegrationAssets(integration, version)
 
 activate Fleet
-note left of Fleet:POST /api/ingest_manager/epm/packages/{:name}-{:version}
+note left of Fleet:POST /api/fleet/epm/packages/{:name}-{:version}
 Fleet-->E2E tests:Assets where installed, being interested in the first element: response[0]
 deactivate Fleet
 
