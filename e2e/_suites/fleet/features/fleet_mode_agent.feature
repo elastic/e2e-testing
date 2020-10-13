@@ -1,6 +1,6 @@
 @fleet_mode
 Feature: Fleet Mode Agent
-  Scenarios for the Agent in Fleet mode connecting to Ingest Manager application.
+  Scenarios for the Agent in Fleet mode connecting to Fleet application.
 
 @enroll
 Scenario Outline: Deploying the <os> agent

@@ -23,7 +23,7 @@ type IntegrationPackage struct {
 	json            *gabs.Container // json representation of the integration
 }
 
-// addIntegrationToPolicy sends a POST request to Ingest Manager adding an integration to a configuration
+// addIntegrationToPolicy sends a POST request to Fleet adding an integration to a configuration
 func addIntegrationToPolicy(integrationPackage IntegrationPackage, policyID string) (string, error) {
 	name := integrationPackage.name + "-test-name"
 	description := integrationPackage.title + "-test-description"
@@ -54,7 +54,7 @@ func addIntegrationToPolicy(integrationPackage IntegrationPackage, policyID stri
 	return integrationConfigurationID, nil
 }
 
-// deleteIntegrationFromPolicy sends a POST request to Ingest Manager deleting an integration from a configuration
+// deleteIntegrationFromPolicy sends a POST request to Fleet deleting an integration from a configuration
 func deleteIntegrationFromPolicy(integrationPackage IntegrationPackage, policyID string) error {
 	_, err := kibanaClient.DeleteIntegrationFromPolicy(integrationPackage.packageConfigID)
 	if err != nil {
@@ -138,7 +138,7 @@ func getIntegrationFromAgentPolicy(packageName string, agentPolicyID string) (In
 	return IntegrationPackage{}, fmt.Errorf("%s package policy not found in the configuration", packageName)
 }
 
-// getIntegrationLatestVersion sends a GET request to Ingest Manager for the existing integrations
+// getIntegrationLatestVersion sends a GET request to Fleet for the existing integrations
 // checking if the desired integration exists in the package registry. If so, it will
 // return name and version (latest) of the integration
 func getIntegrationLatestVersion(integrationName string) (string, string, error) {
@@ -206,7 +206,7 @@ func getMetadataFromSecurityApp() (*gabs.Container, error) {
 	return hosts, nil
 }
 
-// installIntegration sends a POST request to Ingest Manager installing the assets for an integration
+// installIntegration sends a POST request to Fleet installing the assets for an integration
 func installIntegrationAssets(integration string, version string) (IntegrationPackage, error) {
 	body, err := kibanaClient.InstallIntegrationAssets(integration, version)
 	if err != nil {
@@ -319,7 +319,7 @@ func isPolicyResponseListedInSecurityApp(agentID string) (bool, error) {
 	return false, nil
 }
 
-// updateIntegrationPackageConfig sends a PUT request to Ingest Manager updating integration
+// updateIntegrationPackageConfig sends a PUT request to Fleet updating integration
 // configuration
 func updateIntegrationPackageConfig(packageConfigID string, payload string) (*gabs.Container, error) {
 	body, err := kibanaClient.UpdateIntegrationPackageConfig(packageConfigID, payload)

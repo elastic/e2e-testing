@@ -5,7 +5,7 @@
     description: Run E2E Fleet test suite daily, including maintenance branches
     view: E2E
     project-type: multibranch
-    script-path: .ci/e2eTestingIngestManagerDaily.groovy
+    script-path: .ci/e2eTestingFleetDaily.groovy
     scm:
       - github:
           branch-discovery: no-pr

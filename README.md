@@ -10,7 +10,7 @@ This repository contains:
         - APM Server
         - Filebeat
         - Metricbeat
-    - [Ingest Manager](./e2e/_suites/ingest-manager)
+    - [Fleet](./e2e/_suites/fleet)
         - Stand-Alone mode
         - Fleet mode
     - [Metricbeat Integrations](./e2e/_suites/metricbeat)
