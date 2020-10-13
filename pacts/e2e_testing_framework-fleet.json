@@ -72,11 +72,11 @@
       }
     },
     {
-      "description": "A request to get the Elastic Endpoint integration on its 0.13.0 version",
-      "providerState": "Integration endpoint-0.13.0 exists",
+      "description": "A request to get the Elastic Endpoint integration on its 0.16.0 version",
+      "providerState": "Integration endpoint-0.16.0 exists",
       "request": {
         "method": "GET",
-        "path": "/api/fleet/epm/packages/endpoint-0.13.0",
+        "path": "/api/fleet/epm/packages/endpoint-0.16.0",
         "headers": {
           "Authorization": "Basic ZWxhc3RpYzpjaGFuZ2VtZQ==",
           "Content-Type": "application/json; charset=utf-8",

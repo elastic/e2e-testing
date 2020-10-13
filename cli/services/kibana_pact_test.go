@@ -106,12 +106,12 @@ func TestPactConsumer_GetIntegrations(t *testing.T) {
 
 	t.Run("the integration exists", func(t *testing.T) {
 		packageName := "endpoint"
-		version := "0.13.0"
+		version := "0.16.0"
 
 		pact.
 			AddInteraction().
-			Given("Integration endpoint-0.13.0 exists").
-			UponReceiving("A request to get the Elastic Endpoint integration on its 0.13.0 version").
+			Given("Integration " + packageName + "-" + version + " exists").
+			UponReceiving("A request to get the Elastic Endpoint integration on its " + version + " version").
 			WithRequest(request{
 				Method:  "GET",
 				Path:    term(fmt.Sprintf(ingestManagerIntegrationURL, packageName, version), fmt.Sprintf(ingestManagerIntegrationURL, packageNameRegex, semverRegex)),
