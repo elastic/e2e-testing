@@ -6,7 +6,7 @@ export PATH
 TIMEOUT_FACTOR?=1
 WAIT_SECONDS = $(shell expr 30 \* $(TIMEOUT_FACTOR))
 
-FLEET_KIBANA_CONFIG := $(PWD)/e2e/_suites/ingest-manager/configurations/kibana.config.yml
+FLEET_KIBANA_CONFIG := $(PWD)/e2e/_suites/fleet/configurations/kibana.config.yml
 
 .PHONY: clean
 clean: clean-workspace clean-docker
@@ -39,13 +39,13 @@ pact-consumer: install-pact
 .PHONY: destroy-pact-provider-deps
 destroy-pact-provider-deps:
 	@echo "--- 🚒 Stopping Fleet dependencies"
-	cd cli && go run main.go stop profile ingest-manager
+	cd cli && go run main.go stop profile fleet
 
 .PHONY: prepare-pact-provider-deps
 prepare-pact-provider-deps: install-pact
 	@rm -fr ~/.op/compose
 	@echo "--- 🚄 Starting Fleet dependencies"
-	cd cli && kibanaConfigPath="$(FLEET_KIBANA_CONFIG)" go run main.go run profile ingest-manager
+	cd cli && kibanaConfigPath="$(FLEET_KIBANA_CONFIG)" go run main.go run profile fleet
 
 .PHONY: pact-provider
 pact-provider: prepare-pact-provider-deps
