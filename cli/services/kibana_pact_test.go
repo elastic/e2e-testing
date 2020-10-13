@@ -137,7 +137,7 @@ func TestPactConsumer_GetIntegrations(t *testing.T) {
 	t.Run("the integration does not exist", func(t *testing.T) {
 		packageName := "foo"
 		version := "1.0.0"
-		expectedHTTPErrorCode := 404 // return a 404 HTTP not found error
+		expectedHTTPErrorCode := 502 // return a 404 HTTP not found error
 
 		pact.
 			AddInteraction().

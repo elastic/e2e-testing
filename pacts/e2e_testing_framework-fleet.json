@@ -143,7 +143,7 @@
         }
       },
       "response": {
-        "status": 404,
+        "status": 502,
         "headers": {
           "Content-Type": "application/json; charset=utf-8"
         },
