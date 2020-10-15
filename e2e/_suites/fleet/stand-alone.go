@@ -24,7 +24,7 @@ const standAloneVersionBase = "8.0.0-SNAPSHOT"
 
 // standAloneVersion is the version of the agent to use
 // It can be overriden by ELASTIC_AGENT_VERSION env var
-var standAloneVersion = "8.0.0-SNAPSHOT"
+var standAloneVersion = standAloneVersionBase
 
 func init() {
 	config.Init()
