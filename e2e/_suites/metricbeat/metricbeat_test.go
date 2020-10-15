@@ -287,10 +287,15 @@ func (mts *MetricbeatTestSuite) runsForSeconds(seconds string) error {
 func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	serviceManager := services.NewServiceManager()
 
+	logLevel := log.GetLevel().String()
+	if log.GetLevel() == log.TraceLevel {
+		logLevel = log.DebugLevel.String()
+	}
+
 	env := map[string]string{
 		"BEAT_STRICT_PERMS":     "false",
 		"indexName":             mts.getIndexName(),
-		"logLevel":              log.GetLevel().String(),
+		"logLevel":              logLevel,
 		"metricbeatConfigFile":  mts.configurationFile,
 		"metricbeatTag":         mts.Version,
 		"stackVersion":          stackVersion,
