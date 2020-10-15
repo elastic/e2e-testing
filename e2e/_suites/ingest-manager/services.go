@@ -15,7 +15,7 @@ const agentVersionBase = "7.9.2"
 
 // agentVersion is the version of the agent to use
 // It can be overriden by ELASTIC_AGENT_VERSION env var
-var agentVersion = "7.9.2"
+var agentVersion = agentVersionBase
 
 func init() {
 	config.Init()
