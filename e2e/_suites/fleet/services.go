@@ -49,6 +49,7 @@ type ElasticAgentInstaller struct {
 	processName       string // name of the elastic-agent process
 	profile           string // parent docker-compose file
 	PostInstallFn     func() error
+	PreInstallFn      func() error
 	service           string // name of the service
 	tag               string // docker tag
 }
@@ -301,7 +302,7 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		return ElasticAgentInstaller{}, err
 	}
 
-	installFn := func() error {
+	preInstallFn := func() error {
 		cmds := []string{"yum", "localinstall", "/" + binaryName, "-y"}
 		return extractPackage(profile, image, service, cmds)
 	}
@@ -321,12 +322,12 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		commitFile:        ".elastic-agent.active.commit",
 		homeDir:           "/etc/elastic-agent/",
 		image:             image,
-		InstallFn:         installFn,
 		logDir:            binDir + "logs/",
 		logFile:           "elastic-agent-json.log",
 		name:              binaryName,
 		path:              binaryPath,
 		PostInstallFn:     postInstallFn,
+		PreInstallFn:      preInstallFn,
 		processName:       ElasticAgentProcessName,
 		profile:           profile,
 		service:           service,
@@ -360,7 +361,7 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		return ElasticAgentInstaller{}, err
 	}
 
-	installFn := func() error {
+	preInstallFn := func() error {
 		cmds := []string{"apt", "install", "/" + binaryName, "-y"}
 		return extractPackage(profile, image, service, cmds)
 	}
@@ -380,12 +381,12 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		commitFile:        ".elastic-agent.active.commit",
 		homeDir:           "/etc/elastic-agent/",
 		image:             image,
-		InstallFn:         installFn,
 		logDir:            binDir + "logs/",
 		logFile:           "elastic-agent-json.log",
 		name:              binaryName,
 		path:              binaryPath,
 		PostInstallFn:     postInstallFn,
+		PreInstallFn:      preInstallFn,
 		processName:       ElasticAgentProcessName,
 		profile:           profile,
 		service:           service,
@@ -423,7 +424,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 	homeDir := "/elastic-agent/"
 	binDir := "/usr/bin/"
 
-	installFn := func() error {
+	preInstallFn := func() error {
 		commitFile := homeDir + commitFile
 		return installFromTar(profile, image, service, tarFile, commitFile, artifact, version, os, arch)
 	}
@@ -441,12 +442,12 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		commitFile:        commitFile,
 		homeDir:           homeDir,
 		image:             image,
-		InstallFn:         installFn,
 		logDir:            "/opt/Elastic/Agent/logs/",
 		logFile:           "elastic-agent-json.log",
 		name:              tarFile,
 		path:              binaryPath,
 		PostInstallFn:     postInstallFn,
+		PreInstallFn:      preInstallFn,
 		processName:       ElasticAgentProcessName,
 		profile:           profile,
 		service:           service,

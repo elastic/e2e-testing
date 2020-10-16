@@ -1120,7 +1120,7 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string) e
 		return err
 	}
 
-	err = installer.InstallFn()
+	err = installer.PreInstallFn()
 	if err != nil {
 		return err
 	}
