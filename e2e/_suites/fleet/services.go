@@ -364,7 +364,7 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 // newTarInstaller returns an instance of the Debian installer
 func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 	service := image
-	profile := IngestManagerProfileName
+	profile := FleetProfileName
 
 	// extract the agent in the box, as it's mounted as a volume
 	artifact := "elastic-agent"
