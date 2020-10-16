@@ -169,7 +169,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 	fts.CurrentToken = tokenJSONObject.Path("api_key").Data().(string)
 	fts.CurrentTokenID = tokenJSONObject.Path("id").Data().(string)
 
-	err = deployAgentToFleet(installer, containerName)
+	err = deployAgentToFleet(installer, containerName, fts.CurrentToken)
 	fts.Cleanup = true
 	if err != nil {
 		return err
@@ -181,16 +181,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 		return err
 	}
 	fts.Hostname = hostname
-
-	err = installer.enrollAgent(fts.CurrentToken)
-	if err != nil {
-		return err
-	}
-
-	err = systemctlRun(profile, installer.image, installer.service, "start")
-	if err != nil {
-		return err
-	}
 
 	return err
 }
@@ -426,7 +416,7 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 
 	installer := fts.getInstaller()
 
-	err := installer.enrollAgent(installer, fts.CurrentToken)
+	err := installer.EnrollFn(fts.CurrentToken)
 	if err != nil {
 		return err
 	}
@@ -843,12 +833,12 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image, service, 2) // name of the new container
 
-	err := deployAgentToFleet(installer, containerName)
+	err := deployAgentToFleet(installer, containerName, fts.CurrentToken)
 	if err != nil {
 		return err
 	}
 
-	err = installer.enrollAgent(fts.CurrentToken)
+	err = installer.EnrollFn(fts.CurrentToken)
 	if err == nil {
 		err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
 
@@ -1094,7 +1084,7 @@ func createFleetToken(name string, policyID string) (*gabs.Container, error) {
 	return tokenItem, nil
 }
 
-func deployAgentToFleet(installer ElasticAgentInstaller, containerName string) error {
+func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, token string) error {
 	profile := installer.profile // name of the runtime dependencies compose file
 	service := installer.service // name of the service
 	serviceTag := installer.tag  // docker tag of the service
@@ -1123,6 +1113,19 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string) e
 	err = installer.PreInstallFn()
 	if err != nil {
 		return err
+	}
+
+	err = installer.InstallFn(token)
+	if err != nil {
+		return err
+	}
+
+	// the installation process for TAR includes the enrollment
+	if installer.installerType != "tar" {
+		err = installer.EnrollFn(token)
+		if err != nil {
+			return err
+		}
 	}
 
 	return installer.PostInstallFn()

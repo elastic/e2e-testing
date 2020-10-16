@@ -39,9 +39,11 @@ type ElasticAgentInstaller struct {
 	artifactVersion   string // version of the artifact
 	binDir            string // location of the binary
 	commitFile        string // elastic agent commit file
+	EnrollFn          func(token string) error
 	homeDir           string // elastic agent home dir
 	image             string // docker image
-	InstallFn         func() error
+	installerType     string
+	InstallFn         func(token string) error
 	logDir            string // location of the log file
 	logFile           string // the name of the log file
 	name              string // the name for the binary
@@ -52,31 +54,6 @@ type ElasticAgentInstaller struct {
 	PreInstallFn      func() error
 	service           string // name of the service
 	tag               string // docker tag
-}
-
-// enrollAgent executes the enrollment of an agent using a token. The Kibana URL is the related to the docker-compose
-// service
-func (i *ElasticAgentInstaller) enrollAgent(token string) error {
-	image := i.image     // image of the service
-	service := i.service // name of the service
-	serviceTag := i.tag  // tag of the service
-
-	cmd := []string{i.processName, "enroll", "http://kibana:5601", token, "-f", "--insecure"}
-	err := execCommandInService(i.profile, image, service, cmd, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"image":   image,
-			"service": service,
-			"tag":     serviceTag,
-			"token":   token,
-		}).Error("Could not enroll the agent with the token")
-
-		return err
-	}
-
-	return nil
 }
 
 // getElasticAgentHash uses Elastic Agent's home dir to read the file with agent's build hash
@@ -144,19 +121,19 @@ func (i *ElasticAgentInstaller) getElasticAgentLogs(hostname string) error {
 	return nil
 }
 
-// run runs a command for the elastic-agent
-func (i *ElasticAgentInstaller) run(command string, arguments []string) error {
+// runElasticAgentCommand runs a command for the elastic-agent
+func runElasticAgentCommand(profile string, image string, service string, process string, command string, arguments []string) error {
 	cmds := []string{
-		i.processName, command,
+		process, command,
 	}
 	cmds = append(cmds, arguments...)
 
-	err := execCommandInService(i.profile, i.image, i.service, cmds, false)
+	err := execCommandInService(profile, image, service, cmds, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmds,
-			"profile": i.profile,
-			"service": i.service,
+			"profile": profile,
+			"service": service,
 			"error":   err,
 		}).Error("Could not run agent command in the box")
 
@@ -303,11 +280,24 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 	}
 
 	preInstallFn := func() error {
+		log.Trace("No preinstall commands for Centos + systemd")
+		return nil
+	}
+	installFn := func(token string) error {
 		cmds := []string{"yum", "localinstall", "/" + binaryName, "-y"}
 		return extractPackage(profile, image, service, cmds)
 	}
+	enrollFn := func(token string) error {
+		args := []string{"http://kibana:5601", token, "-f", "--insecure"}
+
+		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", args)
+	}
 	postInstallFn := func() error {
-		return systemctlRun(profile, image, service, "enable")
+		err = systemctlRun(profile, image, service, "enable")
+		if err != nil {
+			return err
+		}
+		return systemctlRun(profile, image, service, "start")
 	}
 
 	binDir := "/var/lib/elastic-agent/data/elastic-agent-%s/"
@@ -320,8 +310,11 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		artifactVersion:   version,
 		binDir:            binDir,
 		commitFile:        ".elastic-agent.active.commit",
+		EnrollFn:          enrollFn,
 		homeDir:           "/etc/elastic-agent/",
 		image:             image,
+		InstallFn:         installFn,
+		installerType:     "rpm",
 		logDir:            binDir + "logs/",
 		logFile:           "elastic-agent-json.log",
 		name:              binaryName,
@@ -362,11 +355,24 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 	}
 
 	preInstallFn := func() error {
+		log.Trace("No preinstall commands for Debian + systemd")
+		return nil
+	}
+	installFn := func(token string) error {
 		cmds := []string{"apt", "install", "/" + binaryName, "-y"}
 		return extractPackage(profile, image, service, cmds)
 	}
+	enrollFn := func(token string) error {
+		args := []string{"http://kibana:5601", token, "-f", "--insecure"}
+
+		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", args)
+	}
 	postInstallFn := func() error {
-		return systemctlRun(profile, image, service, "enable")
+		err = systemctlRun(profile, image, service, "enable")
+		if err != nil {
+			return err
+		}
+		return systemctlRun(profile, image, service, "start")
 	}
 
 	binDir := "/var/lib/elastic-agent/data/elastic-agent-%s/"
@@ -379,8 +385,11 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		artifactVersion:   version,
 		binDir:            binDir,
 		commitFile:        ".elastic-agent.active.commit",
+		EnrollFn:          enrollFn,
 		homeDir:           "/etc/elastic-agent/",
 		image:             image,
+		InstallFn:         installFn,
+		installerType:     "deb",
 		logDir:            binDir + "logs/",
 		logFile:           "elastic-agent-json.log",
 		name:              binaryName,
@@ -428,7 +437,33 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		commitFile := homeDir + commitFile
 		return installFromTar(profile, image, service, tarFile, commitFile, artifact, version, os, arch)
 	}
+	installFn := func(token string) error {
+		baseImage := strings.ReplaceAll(image, "-systemd", "")
+		containerName := fmt.Sprintf("%s_%s_%s_%d", profile, baseImage, ElasticAgentServiceName, 1) // name of the container
+
+		hash, err := getElasticAgentHash(containerName, homeDir+commitFile)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"containerName": containerName,
+				"error":         err,
+			}).Error("Could not get agent hash in the container")
+
+			return err
+		}
+
+		// install the elastic-agent to /usr/bin/elastic-agent using command
+		binary := fmt.Sprintf("/elastic-agent/data/elastic-agent-%s/", hash) + artifact
+		args := []string{"--force", "--insecure", "--enrollment-token", token, "--kibana-url", "http://kibana:5601"}
+
+		return runElasticAgentCommand(profile, image, service, binary, "install", args)
+	}
+	enrollFn := func(token string) error {
+		args := []string{"http://kibana:5601", token, "-f", "--insecure"}
+
+		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", args)
+	}
 	postInstallFn := func() error {
+		log.Trace("No postinstall commands for TAR installer")
 		return nil
 	}
 
@@ -440,8 +475,11 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		artifactVersion:   version,
 		binDir:            binDir,
 		commitFile:        commitFile,
+		EnrollFn:          enrollFn,
 		homeDir:           homeDir,
 		image:             image,
+		InstallFn:         installFn,
+		installerType:     "tar",
 		logDir:            "/opt/Elastic/Agent/logs/",
 		logFile:           "elastic-agent-json.log",
 		name:              tarFile,
@@ -488,28 +526,6 @@ func installFromTar(profile string, image string, service string, tarFile string
 			"service": service,
 		}).Error("Could not extract agent package in the box")
 
-		return err
-	}
-
-	baseImage := strings.ReplaceAll(image, "-systemd", "")
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, baseImage, ElasticAgentServiceName, 1) // name of the container
-
-	hash, err := getElasticAgentHash(containerName, commitFile)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"containerName": containerName,
-			"error":         err,
-		}).Error("Could not get agent hash in the container")
-
-		return err
-	}
-
-	// install the elastic-agent to /usr/bin/elastic-agent
-	binary := fmt.Sprintf("/elastic-agent/data/elastic-agent-%s/", hash) + artifact
-	cmds = []string{binary, "install", "-f"}
-
-	err = execCommandInService(profile, image, service, cmds, false)
-	if err != nil {
 		return err
 	}
 
