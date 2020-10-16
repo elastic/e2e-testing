@@ -175,6 +175,14 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 		return err
 	}
 
+	// the installation process for TAR includes the enrollment
+	if installer.installerType != "tar" {
+		err = installer.EnrollFn(fts.CurrentToken)
+		if err != nil {
+			return err
+		}
+	}
+
 	// get container hostname once
 	hostname, err := getContainerHostname(containerName)
 	if err != nil {
@@ -1118,14 +1126,6 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 	err = installer.InstallFn(token)
 	if err != nil {
 		return err
-	}
-
-	// the installation process for TAR includes the enrollment
-	if installer.installerType != "tar" {
-		err = installer.EnrollFn(token)
-		if err != nil {
-			return err
-		}
 	}
 
 	return installer.PostInstallFn()
