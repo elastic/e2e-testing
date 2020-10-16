@@ -182,7 +182,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 	}
 	fts.Hostname = hostname
 
-	err = enrollAgent(installer, fts.CurrentToken)
+	err = installer.enrollAgent(fts.CurrentToken)
 	if err != nil {
 		return err
 	}
@@ -426,7 +426,7 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 
 	installer := fts.getInstaller()
 
-	err := enrollAgent(installer, fts.CurrentToken)
+	err := installer.enrollAgent(installer, fts.CurrentToken)
 	if err != nil {
 		return err
 	}
@@ -848,7 +848,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 		return err
 	}
 
-	err = enrollAgent(installer, fts.CurrentToken)
+	err = installer.enrollAgent(fts.CurrentToken)
 	if err == nil {
 		err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
 
@@ -1126,30 +1126,6 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string) e
 	}
 
 	return installer.PostInstallFn()
-}
-
-func enrollAgent(installer ElasticAgentInstaller, token string) error {
-	profile := installer.profile // name of the runtime dependencies compose file
-	image := installer.image     // image of the service
-	service := installer.service // name of the service
-	serviceTag := installer.tag  // tag of the service
-
-	cmd := []string{installer.processName, "enroll", "http://kibana:5601", token, "-f", "--insecure"}
-	err := execCommandInService(profile, image, service, cmd, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmd,
-			"error":   err,
-			"image":   image,
-			"service": service,
-			"tag":     serviceTag,
-			"token":   token,
-		}).Error("Could not enroll the agent with the token")
-
-		return err
-	}
-
-	return nil
 }
 
 // getAgentDefaultPolicy sends a GET request to Fleet for the existing default policy

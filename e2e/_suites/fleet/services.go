@@ -53,6 +53,31 @@ type ElasticAgentInstaller struct {
 	tag               string // docker tag
 }
 
+// enrollAgent executes the enrollment of an agent using a token. The Kibana URL is the related to the docker-compose
+// service
+func (i *ElasticAgentInstaller) enrollAgent(token string) error {
+	image := i.image     // image of the service
+	service := i.service // name of the service
+	serviceTag := i.tag  // tag of the service
+
+	cmd := []string{i.processName, "enroll", "http://kibana:5601", token, "-f", "--insecure"}
+	err := execCommandInService(i.profile, image, service, cmd, false)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmd,
+			"error":   err,
+			"image":   image,
+			"service": service,
+			"tag":     serviceTag,
+			"token":   token,
+		}).Error("Could not enroll the agent with the token")
+
+		return err
+	}
+
+	return nil
+}
+
 // getElasticAgentHash uses Elastic Agent's home dir to read the file with agent's build hash
 // it will return the first six characters of the hash (short hash)
 func (i *ElasticAgentInstaller) getElasticAgentHash(containerName string) (string, error) {
