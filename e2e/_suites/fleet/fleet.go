@@ -15,6 +15,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/services"
 	curl "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -158,7 +159,17 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 	serviceName := ElasticAgentServiceName                                          // name of the service
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image, serviceName, 1) // name of the container
 
-	err := deployAgentToFleet(installer, containerName)
+	uuid := uuid.New().String()
+
+	// enroll the agent with a new token
+	tokenJSONObject, err := createFleetToken("Test token for "+uuid, fts.PolicyID)
+	if err != nil {
+		return err
+	}
+	fts.CurrentToken = tokenJSONObject.Path("api_key").Data().(string)
+	fts.CurrentTokenID = tokenJSONObject.Path("id").Data().(string)
+
+	err = deployAgentToFleet(installer, containerName)
 	fts.Cleanup = true
 	if err != nil {
 		return err
@@ -170,14 +181,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 		return err
 	}
 	fts.Hostname = hostname
-
-	// enroll the agent with a new token
-	tokenJSONObject, err := createFleetToken("Test token for "+hostname, fts.PolicyID)
-	if err != nil {
-		return err
-	}
-	fts.CurrentToken = tokenJSONObject.Path("api_key").Data().(string)
-	fts.CurrentTokenID = tokenJSONObject.Path("id").Data().(string)
 
 	err = enrollAgent(installer, fts.CurrentToken)
 	if err != nil {
