@@ -212,30 +212,35 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 }
 
 // GetElasticAgentInstaller returns an installer from a docker image
-func GetElasticAgentInstaller(image string) ElasticAgentInstaller {
+func GetElasticAgentInstaller(image string, installerType string) ElasticAgentInstaller {
 	log.WithFields(log.Fields{
-		"image": image,
+		"image":     image,
+		"installer": installerType,
 	}).Debug("Configuring installer for the agent")
 
 	var installer ElasticAgentInstaller
 	var err error
-	if "centos" == image {
-		installer, err = newTarInstaller("centos-systemd", "latest")
-	} else if "centos-systemd" == image {
-		installer, err = newCentosInstaller("centos-systemd", "latest")
-	} else if "debian" == image {
-		installer, err = newTarInstaller("debian-systemd", "stretch")
-	} else if "debian-systemd" == image {
-		installer, err = newDebianInstaller("debian-systemd", "stretch")
+	if "centos" == image && "tar" == installerType {
+		installer, err = newTarInstaller("centos", "latest")
+	} else if "centos" == image && "systemd" == installerType {
+		installer, err = newCentosInstaller("centos", "latest")
+	} else if "debian" == image && "tar" == installerType {
+		installer, err = newTarInstaller("debian", "stretch")
+	} else if "debian" == image && "systemd" == installerType {
+		installer, err = newDebianInstaller("debian", "stretch")
 	} else {
-		log.WithField("image", image).Fatal("Sorry, we currently do not support this installer")
+		log.WithFields(log.Fields{
+			"image":     image,
+			"installer": installerType,
+		}).Fatal("Sorry, we currently do not support this installer")
 		return ElasticAgentInstaller{}
 	}
 
 	if err != nil {
 		log.WithFields(log.Fields{
-			"error": err,
-			"image": image,
+			"error":     err,
+			"image":     image,
+			"installer": installerType,
 		}).Fatal("Sorry, we could not download the installer")
 	}
 	return installer
@@ -247,6 +252,7 @@ func isSystemdBased(image string) bool {
 
 // newCentosInstaller returns an instance of the Centos installer
 func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error) {
+	image = image + "-systemd" // we want to consume systemd boxes
 	service := image
 	profile := FleetProfileName
 
@@ -305,6 +311,7 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 
 // newDebianInstaller returns an instance of the Debian installer
 func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error) {
+	image = image + "-systemd" // we want to consume systemd boxes
 	service := image
 	profile := FleetProfileName
 
@@ -363,6 +370,7 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 
 // newTarInstaller returns an instance of the Debian installer
 func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
+	image = image + "-systemd" // we want to consume systemd boxes
 	service := image
 	profile := FleetProfileName
 

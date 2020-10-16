@@ -32,6 +32,7 @@ const actionREMOVED = "removed"
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
 	Image          string // base image used to install the agent
+	InstallerType  string
 	Installers     map[string]ElasticAgentInstaller
 	Cleanup        bool
 	PolicyID       string // will be used to manage tokens
@@ -50,7 +51,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	serviceName := fts.Image
 
 	if log.IsLevelEnabled(log.DebugLevel) {
-		installer := fts.Installers[fts.Image]
+		installer := fts.getInstaller()
 		_ = installer.getElasticAgentLogs(fts.Hostname)
 	}
 
@@ -118,8 +119,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
-	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
-	s.Step(`^a "([^"]*)" agent is deployed to Fleet with install command$`, fts.anAgentIsDeployedToFleetWithInstallCommand)
+	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
@@ -135,22 +135,23 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the "([^"]*)" datasource is shown in the policy as added$`, fts.thePolicyShowsTheDatasourceAdded)
 	s.Step(`^the host name is shown in the Administration view in the Security App as "([^"]*)"$`, fts.theHostNameIsShownInTheAdminViewInTheSecurityApp)
 	s.Step(`^the host name is not shown in the Administration view in the Security App$`, fts.theHostNameIsNotShownInTheAdminViewInTheSecurityApp)
-	s.Step(`^an Endpoint is successfully deployed with a "([^"]*)" Agent$`, fts.anEndpointIsSuccessfullyDeployedWithAgent)
+	s.Step(`^an Endpoint is successfully deployed with a "([^"]*)" Agent using "([^"]*)" installer$`, fts.anEndpointIsSuccessfullyDeployedWithAgentAndInstalller)
 	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
 	s.Step(`^the policy is updated to have "([^"]*)" in "([^"]*)" mode$`, fts.thePolicyIsUpdatedToHaveMode)
 	s.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
 }
 
-func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
-	image = image + "-systemd" // we want to consume systemd boxes
-
+// supported installers: tar, systemd
+func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, installerType string) error {
 	log.WithFields(log.Fields{
-		"image": image,
+		"image":     image,
+		"installer": installerType,
 	}).Trace("Deploying an agent to Fleet with base image")
 
 	fts.Image = image
+	fts.InstallerType = installerType
 
-	installer := fts.Installers[fts.Image]
+	installer := fts.getInstaller()
 
 	profile := installer.profile // name of the runtime dependencies compose file
 
@@ -183,7 +184,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
 		return err
 	}
 
-	err = systemctlRun(profile, image, image, "start")
+	err = systemctlRun(profile, installer.image, installer.service, "start")
 	if err != nil {
 		return err
 	}
@@ -191,54 +192,19 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
 	return err
 }
 
-func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallCommand(image string) error {
-	log.WithFields(log.Fields{
-		"image": image,
-	}).Trace("Deploying an agent to Fleet with base image")
-
-	fts.Image = image
-
-	installer := fts.Installers[fts.Image]
-
-	profile := installer.profile // name of the runtime dependencies compose file
-
-	serviceName := ElasticAgentServiceName                                          // name of the service
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image, serviceName, 1) // name of the container
-
-	// enroll the agent with a new token
-	tokenJSONObject, err := createFleetToken("Test token for "+containerName, fts.PolicyID)
-	if err != nil {
-		return err
-	}
-	fts.CurrentToken = tokenJSONObject.Path("api_key").Data().(string)
-	fts.CurrentTokenID = tokenJSONObject.Path("id").Data().(string)
-
-	err = deployAgentToFleetWithInstallCommand(installer, containerName, fts.CurrentToken)
-	fts.Cleanup = true
-	if err != nil {
-		return err
-	}
-
-	// get container hostname once
-	hostname, err := getContainerHostname(containerName)
-	if err != nil {
-		return err
-	}
-	fts.Hostname = hostname
-
-	return err
+func (fts *FleetTestSuite) getInstaller() ElasticAgentInstaller {
+	return fts.Installers[fts.Image+"-"+fts.InstallerType]
 }
 
 func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state string) error {
 	profile := FleetProfileName
-	image := fts.Image
 
-	installer := fts.Installers[fts.Image]
+	installer := fts.getInstaller()
 
 	serviceName := installer.service // name of the service
 
 	if state == "started" {
-		return systemctlRun(profile, image, serviceName, "start")
+		return systemctlRun(profile, installer.image, serviceName, "start")
 	} else if state != "stopped" {
 		return godog.ErrPending
 	}
@@ -248,7 +214,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		"process": process,
 	}).Trace("Stopping process on the service")
 
-	err := systemctlRun(profile, image, serviceName, "stop")
+	err := systemctlRun(profile, installer.image, serviceName, "stop")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"action":  state,
@@ -361,7 +327,7 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 func (fts *FleetTestSuite) theHostIsRestarted() error {
 	serviceManager := services.NewServiceManager()
 
-	installer := fts.Installers[fts.Image]
+	installer := fts.getInstaller()
 
 	profile := installer.profile // name of the runtime dependencies compose file
 	image := installer.image     // image of the service
@@ -455,7 +421,7 @@ func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
 func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 	log.Trace("Re-enrolling the agent on the host with same token")
 
-	installer := fts.Installers[fts.Image]
+	installer := fts.getInstaller()
 
 	err := enrollAgent(installer, fts.CurrentToken)
 	if err != nil {
@@ -691,8 +657,8 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(stat
 	return nil
 }
 
-func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgent(image string) error {
-	err := fts.anAgentIsDeployedToFleet(image)
+func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgentAndInstalller(image string, installer string) error {
+	err := fts.anAgentIsDeployedToFleetWithInstaller(image, installer)
 	if err != nil {
 		return err
 	}
@@ -867,7 +833,7 @@ func (fts *FleetTestSuite) theVersionOfThePackageIsInstalled(version string, pac
 func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	log.Trace("Enrolling a new agent with an revoked token")
 
-	installer := fts.Installers[fts.Image]
+	installer := fts.getInstaller()
 
 	profile := installer.profile // name of the runtime dependencies compose file
 	service := installer.service // name of the service
@@ -1152,49 +1118,6 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string) e
 	}
 
 	err = installer.InstallFn()
-	if err != nil {
-		return err
-	}
-
-	return installer.PostInstallFn()
-}
-
-func deployAgentToFleetWithInstallCommand(installer ElasticAgentInstaller, containerName string, token string) error {
-	profile := installer.profile // name of the runtime dependencies compose file
-	service := installer.service // name of the service
-	serviceTag := installer.tag  // docker tag of the service
-
-	envVarsPrefix := strings.ReplaceAll(service, "-", "_")
-
-	// let's start with Centos 7
-	profileEnv[envVarsPrefix+"Tag"] = serviceTag
-	// we are setting the container name because Centos service could be reused by any other test suite
-	profileEnv[envVarsPrefix+"ContainerName"] = containerName
-	// define paths where the binary will be mounted
-	profileEnv[envVarsPrefix+"AgentBinarySrcPath"] = installer.path
-	profileEnv[envVarsPrefix+"AgentBinaryTargetPath"] = "/" + installer.name
-
-	serviceManager := services.NewServiceManager()
-
-	err := serviceManager.AddServicesToCompose(profile, []string{service}, profileEnv)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"service": service,
-			"tag":     serviceTag,
-		}).Error("Could not run the target box")
-		return err
-	}
-
-	err = installer.InstallFn()
-	if err != nil {
-		return err
-	}
-
-	args := []string{
-		"http://kibana:5601", token, "--insecure", "-f",
-	}
-
-	err = installer.run("enroll", args)
 	if err != nil {
 		return err
 	}
