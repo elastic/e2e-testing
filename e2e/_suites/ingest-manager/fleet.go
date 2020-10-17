@@ -1232,7 +1232,7 @@ func getAgentEvents(applicationName string, agentID string, packageConfiguration
 
 		matches := (strings.Contains(message, applicationName) &&
 			strings.Contains(message, "["+agentID+"]: State changed to") &&
-			strings.Contains(message, "Protecting with config {"+packageConfigurationID+"}"))
+			strings.Contains(message, "Protecting with policy {"+packageConfigurationID+"}"))
 
 		if matches && timestamp > updatedAt {
 			log.WithFields(log.Fields{
