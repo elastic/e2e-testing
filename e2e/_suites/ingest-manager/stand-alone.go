@@ -18,7 +18,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const standAloneVersionBase = "7.9.2"
+const standAloneVersionBase = "7.9-SNAPSHOT"
 
 // standAloneVersion is the version of the agent to use
 // It can be overriden by ELASTIC_AGENT_VERSION env var
@@ -79,7 +79,9 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 	serviceName := ElasticAgentServiceName
 	containerName := fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
 
-	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/v" + standAloneVersion + "/x-pack/elastic-agent/elastic-agent.docker.yml"
+	branch := strings.ReplaceAll(standAloneVersion, "-SNAPSHOT", "")
+
+	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + branch + "/x-pack/elastic-agent/elastic-agent.docker.yml"
 
 	configurationFilePath, err := e2e.DownloadFile(configurationFileURL)
 	if err != nil {

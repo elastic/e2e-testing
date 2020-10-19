@@ -27,7 +27,7 @@ import (
 // It can be overriden by the DEVELOPER_MODE env var
 var developerMode = false
 
-const metricbeatVersionBase = "7.9.3"
+const metricbeatVersionBase = "7.9-SNAPSHOT"
 
 // metricbeatVersion is the version of the metricbeat to use
 // It can be overriden by METRICBEAT_VERSION env var
@@ -251,7 +251,9 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 	mts.Version = metricbeatVersion
 	mts.setIndexName()
 
-	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/v" + metricbeatVersion + "/metricbeat/" + configuration + ".yml"
+	branch := strings.ReplaceAll(metricbeatVersion, "-SNAPSHOT", "")
+
+	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + branch + "/metricbeat/" + configuration + ".yml"
 
 	configurationFilePath, err := e2e.DownloadFile(configurationFileURL)
 	if err != nil {
