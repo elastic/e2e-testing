@@ -55,8 +55,8 @@ func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOf
 // on the desired OS, architecture and file extension:
 // 1. Observability CI Storage bucket
 // 2. Elastic's artifact repository, building the JSON path query based
-// i.e. GetElasticArtifactURL("elastic-agent", "7.9.2", "x86_64", "rpm")
-// i.e. GetElasticArtifactURL("elastic-agent", "7.9.2", "amd64", "deb")
+// i.e. GetElasticArtifactURL("elastic-agent", "7.9-SNAPSHOT", "x86_64", "rpm")
+// i.e. GetElasticArtifactURL("elastic-agent", "7.9-SNAPSHOT", "amd64", "deb")
 func GetElasticArtifactURL(artifact string, version string, OS string, arch string, extension string) (string, error) {
 	exp := GetExponentialBackOff(time.Minute)
 
