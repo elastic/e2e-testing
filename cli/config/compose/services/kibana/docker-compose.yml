@@ -5,6 +5,6 @@ services:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=changeme
-    image: "docker.elastic.co/observability-ci/kibana:${kibanaTag}"
+    image: "docker.elastic.co/kibana/kibana:${kibanaTag}"
     ports:
       - "5601:5601"

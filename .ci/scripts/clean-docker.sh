@@ -18,10 +18,6 @@ docker.elastic.co/beats/elastic-agent:${VERSION}
 docker.elastic.co/beats/elastic-agent-ubi8:${VERSION}
 docker.elastic.co/elasticsearch/elasticsearch:${VERSION}
 docker.elastic.co/kibana/kibana:${VERSION}
-docker.elastic.co/observability-ci/elastic-agent:${VERSION}
-docker.elastic.co/observability-ci/elastic-agent-ubi8:${VERSION}
-docker.elastic.co/observability-ci/elasticsearch:${VERSION}
-docker.elastic.co/observability-ci/kibana:${VERSION}
 EOF
 
   pull_images "$(cat .tmp_images)"
