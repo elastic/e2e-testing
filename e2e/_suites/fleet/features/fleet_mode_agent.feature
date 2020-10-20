@@ -12,6 +12,8 @@ Scenario Outline: Deploying the <os> agent
     And system package dashboards are listed in Fleet
 Examples:
 | os     | installer |
+| centos | tar       |
+| debian | tar       |
 | centos | systemd   |
 | debian | systemd   |
 
