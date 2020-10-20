@@ -87,19 +87,10 @@ func (fts *FleetTestSuite) afterScenario() {
 		}).Warn("The integration could not be deleted from the configuration")
 	}
 
-	err = fts.removePolicy()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err":      err,
-			"policyID": fts.PolicyID,
-		}).Warn("The policy could not be deleted")
-	}
-
 	// clean up fields
 	fts.CurrentTokenID = ""
 	fts.Image = ""
 	fts.Hostname = ""
-	fts.PolicyID = ""
 }
 
 // beforeScenario creates the state needed by a scenario
@@ -107,16 +98,16 @@ func (fts *FleetTestSuite) beforeScenario() {
 	fts.Cleanup = false
 
 	// create policy with system monitoring enabled
-	newPolicy, err := createFleetPolicy(true)
+	defaultPolicy, err := getAgentDefaultPolicy()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,
-		}).Warn("The policy could not be created")
+		}).Warn("The default policy could not be obtained")
 
 		return
 	}
 
-	fts.PolicyID = newPolicy.Path("id").Data().(string)
+	fts.PolicyID = defaultPolicy.Path("id").Data().(string)
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
@@ -865,29 +856,6 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	return nil
 }
 
-func (fts *FleetTestSuite) removePolicy() error {
-	removePolicyURL := ingestManagerAgentPoliciesURL + "/delete"
-	postReq := createDefaultHTTPRequest(removePolicyURL)
-	postReq.Payload = `{"agentPolicyId":"` + fts.PolicyID + `"}`
-
-	body, err := curl.Post(postReq)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"policyID": fts.PolicyID,
-			"body":     body,
-			"error":    err,
-			"url":      removePolicyURL,
-		}).Error("Could not delete policy")
-		return err
-	}
-
-	log.WithFields(log.Fields{
-		"policyID": fts.PolicyID,
-	}).Debug("The policy was deleted")
-
-	return nil
-}
-
 func (fts *FleetTestSuite) removeToken() error {
 	revokeTokenURL := fleetEnrollmentTokenURL + "/" + fts.CurrentTokenID
 	deleteReq := createDefaultHTTPRequest(revokeTokenURL)
@@ -1013,46 +981,6 @@ func createDefaultHTTPRequest(url string) curl.HTTPRequest {
 		},
 		URL: url,
 	}
-}
-
-// createFleetPolicy() sends a POST request to Fleet creating a new test policy
-func createFleetPolicy(sysMonitoring bool) (*gabs.Container, error) {
-	name := e2e.RandomString(8)
-	url := fmt.Sprintf(ingestManagerAgentPoliciesURL+"?sys_monitoring=%t", sysMonitoring)
-	postReq := createDefaultHTTPRequest(url)
-	postReq.Payload = `{
-		"description": "Test policy ` + name + `",
-		"namespace": "default",
-		"monitoring_enabled": ["logs", "metrics"],
-		"name": "test-policy-` + name + `"
-	}`
-
-	body, err := curl.Post(postReq)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"body":  body,
-			"error": err,
-			"url":   url,
-		}).Error("Could not create Fleet policy")
-		return nil, err
-	}
-
-	jsonParsed, err := gabs.ParseJSON([]byte(body))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":        err,
-			"responseBody": body,
-		}).Error("Could not parse response into JSON")
-		return nil, err
-	}
-
-	policyItem := jsonParsed.Path("item")
-
-	log.WithFields(log.Fields{
-		"id": policyItem.Path("id").Data().(string),
-	}).Debug("Fleet policy created")
-
-	return policyItem, nil
 }
 
 // createFleetToken sends a POST request to Fleet creating a new token with a name
