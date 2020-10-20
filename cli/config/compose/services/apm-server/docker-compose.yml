@@ -13,7 +13,7 @@ services:
       - setup.kibana.host=http://kibana:5601
       - setup.template.settings.index.number_of_replicas=0
       - xpack.monitoring.elasticsearch=true
-    image: "docker.elastic.co/observability-ci/apm-server:${apmServerTag}"
+    image: "docker.elastic.co/apm/apm-server:${apmServerTag}"
     ports:
       - "6060:6060"
       - "8200:8200"
