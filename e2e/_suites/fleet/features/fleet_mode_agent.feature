@@ -39,6 +39,8 @@ Scenario Outline: Restarting the <os> host with persistent agent restarts backen
     And the "metricbeat" process is in the "started" state on the host
 Examples:
 | os     | installer |
+| centos | tar       |
+| debian | tar       |
 | centos | systemd   |
 | debian | systemd   |
 

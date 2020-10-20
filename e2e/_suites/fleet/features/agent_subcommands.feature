@@ -2,18 +2,6 @@
 Feature: Agent subcommands
   Scenarios for the Agent to test the various subcommands connecting it to Fleet.
 
-@restart-host
-Scenario Outline: Restarting the installed <os> host restarts backend processes
-  Given a "<os>" agent is deployed to Fleet with "tar" installer
-  When the host is restarted
-  Then the "elastic-agent" process is in the "started" state on the host
-    And the "filebeat" process is in the "started" state on the host
-    And the "metricbeat" process is in the "started" state on the host
-Examples:
-| os     |
-| centos |
-| debian |
-
 @unenroll-host
 Scenario Outline: Un-enrolling the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
