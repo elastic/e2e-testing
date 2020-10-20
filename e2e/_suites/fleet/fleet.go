@@ -65,7 +65,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	}
 
 	if !developerMode {
-		_ = serviceManager.RemoveServicesFromCompose(FleetProfileName, []string{serviceName}, profileEnv)
+		_ = serviceManager.RemoveServicesFromCompose(FleetProfileName, []string{serviceName + "-systemd"}, profileEnv)
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
