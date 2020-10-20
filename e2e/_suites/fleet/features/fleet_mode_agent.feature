@@ -50,8 +50,12 @@ Scenario Outline: Un-enrolling the <os> agent
   When the agent is un-enrolled
   Then the "elastic-agent" process is in the "started" state on the host
     And the agent is listed in Fleet as "inactive"
+    And the "filebeat" process is in the "stopped" state on the host
+    And the "metricbeat" process is in the "stopped" state on the host
 Examples:
 | os     | installer |
+| centos | tar       |
+| debian | tar       |
 | centos | systemd   |
 | debian | systemd   |
 
