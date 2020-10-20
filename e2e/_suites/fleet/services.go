@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
 	"strings"
 
 	"github.com/elastic/e2e-testing/cli/config"
@@ -119,14 +118,10 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 	fileName := fmt.Sprintf("%s-%s-%s.%s", artifact, version, arch, extension)
 
 	if downloadURL, exists := os.LookupEnv("ELASTIC_AGENT_DOWNLOAD_URL"); exists {
-		log.Error("tu som")
-		// replace tar gz with correct extension
-		downloadURL = path.Join(downloadURL, fileName)
 		filePath, err := e2e.DownloadFile(downloadURL)
 
 		return fileName, filePath, err
 	}
-	log.Error("tu som 2 ")
 
 	var downloadURL string
 	var err error

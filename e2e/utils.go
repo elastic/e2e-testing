@@ -233,14 +233,6 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 // It writes to the destination file as it downloads it, without
 // loading the entire file into memory.
 func DownloadFile(url string) (string, error) {
-	var filepath string
-
-	if strings.HasPrefix(url, "file:") {
-		log.Error("tu som 3", url)
-		return strings.TrimPrefix(url, "file://"), nil
-	}
-	log.Error("tu som 4", url)
-
 	tempFile, err := ioutil.TempFile(os.TempDir(), path.Base(url))
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -251,7 +243,7 @@ func DownloadFile(url string) (string, error) {
 	}
 	defer tempFile.Close()
 
-	filepath = tempFile.Name()
+	filepath := tempFile.Name()
 
 	exp := GetExponentialBackOff(3)
 
