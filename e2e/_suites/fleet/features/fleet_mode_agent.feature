@@ -69,6 +69,8 @@ Scenario Outline: Re-enrolling the <os> agent
   Then the agent is listed in Fleet as "online"
 Examples:
 | os     | installer |
+| centos | tar       |
+| debian | tar       |
 | centos | systemd   |
 | debian | systemd   |
 
