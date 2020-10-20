@@ -2,17 +2,6 @@
 Feature: Agent subcommands
   Scenarios for the Agent to test the various subcommands connecting it to Fleet.
 
-@stop-agent
-Scenario Outline: Stopping an 'installed' <os> agent stops backend processes
-  Given a "<os>" agent is deployed to Fleet with "tar" installer
-  When the "elastic-agent" process is "stopped" on the host
-  Then the "filebeat" process is in the "stopped" state on the host
-    And the "metricbeat" process is in the "stopped" state on the host
-Examples:
-| os     |
-| centos |
-| debian |
-
 @restart-host
 Scenario Outline: Restarting the installed <os> host restarts backend processes
   Given a "<os>" agent is deployed to Fleet with "tar" installer

@@ -25,6 +25,8 @@ Scenario Outline: Stopping the <os> agent stops backend processes
     And the "metricbeat" process is in the "stopped" state on the host
 Examples:
 | os     | installer |
+| centos | tar       |
+| debian | tar       |
 | centos | systemd   |
 | debian | systemd   |
 
