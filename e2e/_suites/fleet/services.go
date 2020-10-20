@@ -105,6 +105,11 @@ func (i *ElasticAgentInstaller) getElasticAgentLogs(hostname string) error {
 	cmd := []string{
 		"cat", fmt.Sprintf(logFile, hash),
 	}
+	if i.installerType == "tar" {
+		cmd = []string{
+			"cat", logFile,
+		}
+	}
 
 	err = execCommandInService(i.profile, i.image, i.service, cmd, false)
 	if err != nil {
@@ -480,8 +485,8 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		image:             image,
 		InstallFn:         installFn,
 		installerType:     "tar",
-		logDir:            "/opt/Elastic/Agent/logs/",
-		logFile:           "elastic-agent-json.log",
+		logDir:            "/opt/Elastic/Agent/",
+		logFile:           "elastic-agent.log",
 		name:              tarFile,
 		path:              binaryPath,
 		PostInstallFn:     postInstallFn,
