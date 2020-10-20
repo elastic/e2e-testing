@@ -18,13 +18,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const fleetAgentsURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents"
-const fleetAgentEventsURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents/%s/events"
-const fleetAgentsUnEnrollURL = kibanaBaseURL + "/api/ingest_manager/fleet/agents/%s/unenroll"
-const fleetEnrollmentTokenURL = kibanaBaseURL + "/api/ingest_manager/fleet/enrollment-api-keys"
-const fleetSetupURL = kibanaBaseURL + "/api/ingest_manager/fleet/setup"
-const ingestManagerAgentPoliciesURL = kibanaBaseURL + "/api/ingest_manager/agent_policies"
-const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/ingest_manager/data_streams"
+const fleetAgentsURL = kibanaBaseURL + "/api/fleet/agents"
+const fleetAgentEventsURL = kibanaBaseURL + "/api/fleet/agents/%s/events"
+const fleetAgentsUnEnrollURL = kibanaBaseURL + "/api/fleet/agents/%s/unenroll"
+const fleetEnrollmentTokenURL = kibanaBaseURL + "/api/fleet/enrollment-api-keys"
+const fleetSetupURL = kibanaBaseURL + "/api/fleet/agents/setup"
+const ingestManagerAgentPoliciesURL = kibanaBaseURL + "/api/fleet/agent_policies"
+const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/fleet/data_streams"
 
 const actionADDED = "added"
 const actionREMOVED = "removed"
