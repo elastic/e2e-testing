@@ -4,7 +4,7 @@ Feature: Agent Endpoint Integration
 
 @deploy-endpoint-with-agent
 Scenario: Adding the Endpoint Integration to an Agent makes the host to show in Security App
-  Given a "centos" agent is deployed to Fleet with "systemd" installer
+  Given a "centos" agent is deployed to Fleet with "tar" installer
     And the agent is listed in Fleet as "online"
   When the "Elastic Endpoint Security" integration is "added" in the policy
   Then the "Elastic Endpoint Security" datasource is shown in the policy as added
@@ -12,18 +12,18 @@ Scenario: Adding the Endpoint Integration to an Agent makes the host to show in 
 
 @endpoint-policy-check
 Scenario: Deploying an Endpoint makes policies to appear in the Security App
-  When an Endpoint is successfully deployed with a "centos" Agent using "systemd" installer
+  When an Endpoint is successfully deployed with a "centos" Agent using "tar" installer
   Then the policy response will be shown in the Security App
 
 @set-policy-and-check-changes
 Scenario: Changing an Agent policy is reflected in the Security App
-  Given an Endpoint is successfully deployed with a "centos" Agent using "systemd" installer
+  Given an Endpoint is successfully deployed with a "centos" Agent using "tar" installer
   When the policy is updated to have "malware" in "detect" mode
   Then the policy will reflect the change in the Security App
 
 @deploy-endpoint-then-unenroll-agent
 Scenario: Un-enrolling Elastic Agent stops Elastic Endpoint
-  Given an Endpoint is successfully deployed with a "centos" Agent using "systemd" installer
+  Given an Endpoint is successfully deployed with a "centos" Agent using "tar" installer
   When the agent is un-enrolled
   Then the agent is listed in Fleet as "inactive"
     And the host name is not shown in the Administration view in the Security App
@@ -31,7 +31,7 @@ Scenario: Un-enrolling Elastic Agent stops Elastic Endpoint
 
 @deploy-endpoint-then-remove-it-from-policy
 Scenario: Removing Endpoint from Agent policy stops the connected Endpoint
-  Given an Endpoint is successfully deployed with a "centos" Agent using "systemd" installer
+  Given an Endpoint is successfully deployed with a "centos" Agent using "tar" installer
   When the "Elastic Endpoint Security" integration is "removed" in the policy
   Then the agent is listed in Fleet as "online"
     But the host name is not shown in the Administration view in the Security App
