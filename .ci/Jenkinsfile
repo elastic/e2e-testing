@@ -9,7 +9,7 @@ pipeline {
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
     NOTIFY_TO = credentials('notify-to')
     JOB_GCS_BUCKET = credentials('gcs-bucket')
-    JOB_GIT_CREDENTIALS = "f6c7695a-671e-4f4f-a331-acdce44ff9ba"
+    JOB_GIT_CREDENTIALS = "2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken"
     DOCKER_ELASTIC_SECRET = 'secret/observability-team/ci/docker-registry/prod'
     DOCKER_REGISTRY = 'docker.elastic.co'
   }
@@ -33,11 +33,11 @@ pipeline {
     booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify with green builds.")
     string(name: 'SLACK_CHANNEL', defaultValue: 'observablt-bots', description: 'The Slack channel where errors will be posted')
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
-    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stand-alone elastic-agent to be used for Ingest Manager tests. You can use here the tag of your PR to test your changes')
+    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stand-alone elastic-agent to be used for Fleet tests. You can use here the tag of your PR to test your changes')
     booleanParam(name: "ELASTIC_AGENT_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the binary snapshots produced by Beats CI instead of the official releases")
     choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'INFO'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['3', '5', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
-    string(name: 'INGEST_MANAGER_STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for Ingest Manager tests.')
+    string(name: 'FLEET_STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for Fleet tests.')
     string(name: 'METRICBEAT_STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for Metricbeat tests.')
     string(name: 'METRICBEAT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the metricbeat to be used.')
     string(name: 'HELM_CHART_VERSION', defaultValue: '7.6.1', description: 'SemVer version of Helm chart to be used.')
@@ -60,7 +60,7 @@ pipeline {
         ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
         ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
         ELASTIC_AGENT_USE_CI_SNAPSHOTS = "${params.ELASTIC_AGENT_USE_CI_SNAPSHOTS}"
-        INGEST_MANAGER_STACK_VERSION = "${params.INGEST_MANAGER_STACK_VERSION.trim()}"
+        FLEET_STACK_VERSION = "${params.FLEET_STACK_VERSION.trim()}"
         METRICBEAT_VERSION = "${params.METRICBEAT_VERSION.trim()}"
         METRICBEAT_STACK_VERSION = "${params.METRICBEAT_STACK_VERSION.trim()}"
         FORCE_SKIP_GIT_CHECKS = "${params.forceSkipGitChecks}"
@@ -80,11 +80,9 @@ pipeline {
             gitCheckout(basedir: BASE_DIR, githubNotifyFirstTimeContributor: true)
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
             setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
-            script {
-              dir("${BASE_DIR}"){
-                // Skip all the test stages for PR's with markdown changes only
-                env.SKIP_TESTS = isGitRegionMatch(patterns: [ '.*\\.md' ], shouldMatchAll: true)
-              }
+            dir("${BASE_DIR}"){
+              // Skip all the test stages for PR's with markdown changes only
+              setEnvVar("SKIP_TESTS", isGitRegionMatch(patterns: [ '.*\\.md' ], shouldMatchAll: true))
             }
           }
         }

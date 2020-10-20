@@ -33,8 +33,8 @@ const ElasticAgentProcessName = "elastic-agent"
 // ElasticAgentServiceName the name of the service for the Elastic Agent
 const ElasticAgentServiceName = "elastic-agent"
 
-// IngestManagerProfileName the name of the profile to run the runtime, backend services
-const IngestManagerProfileName = "ingest-manager"
+// FleetProfileName the name of the profile to run the runtime, backend services
+const FleetProfileName = "fleet"
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
@@ -85,7 +85,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	imts.StandAlone.contributeSteps(s)
 
 	s.BeforeSuite(func() {
-		log.Trace("Installing ingest-manager runtime dependencies")
+		log.Trace("Installing Fleet runtime dependencies")
 
 		workDir, _ := os.Getwd()
 		profileEnv = map[string]string{
@@ -93,7 +93,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 			"kibanaConfigPath": path.Join(workDir, "configurations", "kibana.config.yml"),
 		}
 
-		profile := IngestManagerProfileName
+		profile := FleetProfileName
 		err := serviceManager.RunCompose(true, []string{profile}, profileEnv)
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -123,7 +123,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		imts.StandAlone.RuntimeDependenciesStartDate = time.Now().UTC()
 	})
 	s.BeforeScenario(func(*messages.Pickle) {
-		log.Trace("Before Ingest Manager scenario")
+		log.Trace("Before Fleet scenario")
 
 		imts.StandAlone.Cleanup = false
 
@@ -131,8 +131,8 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	})
 	s.AfterSuite(func() {
 		if !developerMode {
-			log.Debug("Destroying ingest-manager runtime dependencies")
-			profile := IngestManagerProfileName
+			log.Debug("Destroying Fleet runtime dependencies")
+			profile := FleetProfileName
 
 			err := serviceManager.StopCompose(true, []string{profile})
 			if err != nil {
@@ -164,7 +164,7 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		}
 	})
 	s.AfterScenario(func(*messages.Pickle, error) {
-		log.Trace("After Ingest Manager scenario")
+		log.Trace("After Fleet scenario")
 
 		if imts.StandAlone.Cleanup {
 			imts.StandAlone.afterScenario()
@@ -183,7 +183,7 @@ type IngestManagerTestSuite struct {
 }
 
 func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
-	profile := IngestManagerProfileName
+	profile := FleetProfileName
 	serviceName := ElasticAgentServiceName
 
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, imts.Fleet.Image, serviceName, 1)

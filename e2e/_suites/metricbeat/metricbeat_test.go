@@ -27,9 +27,11 @@ import (
 // It can be overriden by the DEVELOPER_MODE env var
 var developerMode = false
 
+const metricbeatVersionBase = "8.0.0-SNAPSHOT"
+
 // metricbeatVersion is the version of the metricbeat to use
 // It can be overriden by METRICBEAT_VERSION env var
-var metricbeatVersion = "8.0.0-SNAPSHOT"
+var metricbeatVersion = metricbeatVersionBase
 
 // timeoutFactor a multiplier for the max timeout when doing backoff retries.
 // It can be overriden by TIMEOUT_FACTOR env var
@@ -241,6 +243,10 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForVariantModule(serviceVa
 }
 
 func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string) error {
+	if strings.HasPrefix(metricbeatVersion, "pr-") {
+		metricbeatVersion = metricbeatVersionBase
+	}
+
 	// at this point we have everything to define the index name
 	mts.Version = metricbeatVersion
 	mts.setIndexName()
@@ -281,10 +287,15 @@ func (mts *MetricbeatTestSuite) runsForSeconds(seconds string) error {
 func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	serviceManager := services.NewServiceManager()
 
+	logLevel := log.GetLevel().String()
+	if log.GetLevel() == log.TraceLevel {
+		logLevel = log.DebugLevel.String()
+	}
+
 	env := map[string]string{
 		"BEAT_STRICT_PERMS":     "false",
 		"indexName":             mts.getIndexName(),
-		"logLevel":              log.GetLevel().String(),
+		"logLevel":              logLevel,
 		"metricbeatConfigFile":  mts.configurationFile,
 		"metricbeatTag":         mts.Version,
 		"stackVersion":          stackVersion,

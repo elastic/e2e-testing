@@ -18,7 +18,7 @@ const agentVersionBase = "8.0.0-SNAPSHOT"
 
 // agentVersion is the version of the agent to use
 // It can be overriden by ELASTIC_AGENT_VERSION env var
-var agentVersion = "8.0.0-SNAPSHOT"
+var agentVersion = agentVersionBase
 
 func init() {
 	config.Init()
@@ -200,7 +200,7 @@ func GetElasticAgentInstaller(image string) ElasticAgentInstaller {
 // newCentosInstaller returns an instance of the Centos installer
 func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 	service := image
-	profile := IngestManagerProfileName
+	profile := FleetProfileName
 
 	// extract the agent in the box, as it's mounted as a volume
 	artifact := "elastic-agent"
@@ -253,7 +253,7 @@ func newDebianInstaller() (ElasticAgentInstaller, error) {
 	image := "debian-systemd"
 	service := image
 	tag := "stretch"
-	profile := IngestManagerProfileName
+	profile := FleetProfileName
 
 	// extract the agent in the box, as it's mounted as a volume
 	artifact := "elastic-agent"
