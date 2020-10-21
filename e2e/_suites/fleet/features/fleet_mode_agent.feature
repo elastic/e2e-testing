@@ -94,7 +94,7 @@ Scenario Outline: Un-installing the installed <os> agent
     And the "filebeat" process is in the "stopped" state on the host
     And the "metricbeat" process is in the "stopped" state on the host
     And the file system Agent folder is empty
-    And the agent is listed in Fleet as "inactive"
+    And the agent is listed in Fleet as "offline"
 Examples:
 | os     | installer |
 | centos | tar       |
