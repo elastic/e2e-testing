@@ -202,6 +202,8 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 
 	if state == "started" {
 		return systemctlRun(profile, installer.image, serviceName, "start")
+	} else if state == "restarted" {
+		return systemctlRun(profile, installer.image, serviceName, "restart")
 	} else if state == "uninstalled" {
 		return installer.UninstallFn()
 	} else if state != "stopped" {
