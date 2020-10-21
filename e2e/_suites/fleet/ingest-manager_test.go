@@ -71,8 +71,10 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 	imts := IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			Installers: map[string]ElasticAgentInstaller{
-				"centos-systemd": GetElasticAgentInstaller("centos-systemd"),
-				"debian-systemd": GetElasticAgentInstaller("debian-systemd"),
+				"centos-systemd": GetElasticAgentInstaller("centos", "systemd"),
+				"centos-tar":     GetElasticAgentInstaller("centos", "tar"),
+				"debian-systemd": GetElasticAgentInstaller("debian", "systemd"),
+				"debian-tar":     GetElasticAgentInstaller("debian", "tar"),
 			},
 		},
 		StandAlone: &StandAloneTestSuite{},
@@ -186,7 +188,7 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	profile := FleetProfileName
 	serviceName := ElasticAgentServiceName
 
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, imts.Fleet.Image, serviceName, 1)
+	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, imts.Fleet.Image+"-systemd", serviceName, 1)
 	if imts.StandAlone.Hostname != "" {
 		containerName = fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
 	}
