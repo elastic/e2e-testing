@@ -26,6 +26,18 @@ Examples:
 | centos | tar       |
 | debian | tar       |
 
+@restart-agent
+Scenario Outline: Restarting the installed <os> agent
+  Given a "<os>" agent is deployed to Fleet with "<installer>" installer
+  When the "elastic-agent" process is "restarted" on the host
+    And the "filebeat" process is in the "started" state on the host
+    And the "metricbeat" process is in the "started" state on the host
+    And the agent is listed in Fleet as "online"
+Examples:
+| os     | installer |
+| centos | tar       |
+| debian | tar       |
+
 @restart-host
 Scenario Outline: Restarting the <os> host with persistent agent restarts backend processes
   Given a "<os>" agent is deployed to Fleet with "<installer>" installer
@@ -69,6 +81,20 @@ Scenario Outline: Revoking the enrollment token for the <os> agent
   Given a "<os>" agent is deployed to Fleet with "<installer>" installer
   When the enrollment token is revoked
   Then an attempt to enroll a new agent fails
+Examples:
+| os     | installer |
+| centos | tar       |
+| debian | tar       |
+
+@uninstall-host
+Scenario Outline: Un-installing the installed <os> agent
+  Given a "<os>" agent is deployed to Fleet with "<installer>" installer
+  When the "elastic-agent" process is "uninstalled" on the host
+  Then the "elastic-agent" process is in the "stopped" state on the host
+    And the "filebeat" process is in the "stopped" state on the host
+    And the "metricbeat" process is in the "stopped" state on the host
+    And the file system Agent folder is empty
+    And the agent is listed in Fleet as "inactive"
 Examples:
 | os     | installer |
 | centos | tar       |
