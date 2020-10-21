@@ -858,27 +858,42 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", ElasticAgentServiceName, 2) // name of the new container
 
 	err := deployAgentToFleet(installer, containerName, fts.CurrentToken)
-	if err != nil {
-		return err
-	}
+	// the installation process for TAR includes the enrollment
+	if installer.installerType != "tar" {
+		if err != nil {
+			return err
+		}
 
-	err = installer.EnrollFn(fts.CurrentToken)
-	if err == nil {
-		err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
+		err = installer.EnrollFn(fts.CurrentToken)
+		if err == nil {
+			err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
+
+			log.WithFields(log.Fields{
+				"tokenID": fts.CurrentTokenID,
+				"error":   err,
+			}).Error(err.Error())
+
+			return err
+		}
 
 		log.WithFields(log.Fields{
-			"tokenID": fts.CurrentTokenID,
-			"error":   err,
-		}).Error(err.Error())
-
-		return err
+			"err":   err,
+			"token": fts.CurrentToken,
+		}).Debug("As expected, it's not possible to enroll an agent with a revoked token")
+		return nil
 	}
 
-	log.WithFields(log.Fields{
-		"err":   err,
-		"token": fts.CurrentToken,
-	}).Debug("As expected, it's not possible to enroll an agent with a revoked token")
-	return nil
+	// checking the error message produced by the install command in TAR installer
+	// to distinguish from other install errors
+	if err != nil && strings.HasPrefix(err.Error(), "Failed to install the agent with subcommand:") {
+		log.WithFields(log.Fields{
+			"err":   err,
+			"token": fts.CurrentToken,
+		}).Debug("As expected, it's not possible to enroll an agent with a revoked token")
+		return nil
+	}
+
+	return err
 }
 
 func (fts *FleetTestSuite) removeToken() error {

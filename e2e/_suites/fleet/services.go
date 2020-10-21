@@ -488,7 +488,11 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		binary := fmt.Sprintf("/elastic-agent/data/elastic-agent-%s/", hash) + artifact
 		args := []string{"--force", "--insecure", "--enrollment-token", token, "--kibana-url", "http://kibana:5601"}
 
-		return runElasticAgentCommand(profile, image, service, binary, "install", args)
+		err = runElasticAgentCommand(profile, image, service, binary, "install", args)
+		if err != nil {
+			return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
+		}
+		return nil
 	}
 	enrollFn := func(token string) error {
 		args := []string{"http://kibana:5601", token, "-f", "--insecure"}
