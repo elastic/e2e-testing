@@ -14,8 +14,6 @@ Examples:
 | os     | installer |
 | centos | tar       |
 | debian | tar       |
-| centos | systemd   |
-| debian | systemd   |
 
 @stop-agent
 Scenario Outline: Stopping the <os> agent stops backend processes
@@ -27,8 +25,6 @@ Examples:
 | os     | installer |
 | centos | tar       |
 | debian | tar       |
-| centos | systemd   |
-| debian | systemd   |
 
 @restart-host
 Scenario Outline: Restarting the <os> host with persistent agent restarts backend processes
@@ -41,8 +37,6 @@ Examples:
 | os     | installer |
 | centos | tar       |
 | debian | tar       |
-| centos | systemd   |
-| debian | systemd   |
 
 @unenroll
 Scenario Outline: Un-enrolling the <os> agent
@@ -56,8 +50,6 @@ Examples:
 | os     | installer |
 | centos | tar       |
 | debian | tar       |
-| centos | systemd   |
-| debian | systemd   |
 
 @reenroll
 Scenario Outline: Re-enrolling the <os> agent
@@ -71,8 +63,6 @@ Examples:
 | os     | installer |
 | centos | tar       |
 | debian | tar       |
-| centos | systemd   |
-| debian | systemd   |
 
 @revoke-token
 Scenario Outline: Revoking the enrollment token for the <os> agent
@@ -81,5 +71,5 @@ Scenario Outline: Revoking the enrollment token for the <os> agent
   Then an attempt to enroll a new agent fails
 Examples:
 | os     | installer |
-| centos | systemd   |
-| debian | systemd   |
+| centos | tar       |
+| debian | tar       |
