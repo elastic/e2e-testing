@@ -45,6 +45,7 @@ type ElasticAgentInstaller struct {
 	installerType     string
 	InstallFn         func(containerName string, token string) error
 	logFile           string // the name of the log file
+	logsDir           string // location of the logs
 	name              string // the name for the binary
 	path              string // the local path where the agent for the binary is located
 	processName       string // name of the elastic-agent process
@@ -122,14 +123,9 @@ func (i *ElasticAgentInstaller) getElasticAgentLogs(hostname string) error {
 		return err
 	}
 
-	logFile := i.workingDir + i.logFile
+	logFile := i.logsDir + i.logFile
 	cmd := []string{
 		"cat", fmt.Sprintf(logFile, hash),
-	}
-	if i.installerType == "tar" {
-		cmd = []string{
-			"cat", logFile,
-		}
 	}
 
 	err = execCommandInService(i.profile, i.image, i.service, cmd, false)
@@ -346,6 +342,7 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		InstallFn:         installFn,
 		installerType:     "rpm",
 		logFile:           "elastic-agent-json.log",
+		logsDir:           binDir + "logs/",
 		name:              binaryName,
 		path:              binaryPath,
 		PostInstallFn:     postInstallFn,
@@ -355,7 +352,7 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		service:           service,
 		tag:               tag,
 		UninstallFn:       unInstallFn,
-		workingDir:        binDir + "logs/",
+		workingDir:        "/var/lib/elastic-agent",
 	}, nil
 }
 
@@ -426,6 +423,7 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		InstallFn:         installFn,
 		installerType:     "deb",
 		logFile:           "elastic-agent-json.log",
+		logsDir:           binDir + "logs/",
 		name:              binaryName,
 		path:              binaryPath,
 		PostInstallFn:     postInstallFn,
@@ -435,7 +433,7 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		service:           service,
 		tag:               tag,
 		UninstallFn:       unInstallFn,
-		workingDir:        binDir + "logs/",
+		workingDir:        "/var/lib/elastic-agent",
 	}, nil
 }
 
@@ -474,18 +472,8 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		return installFromTar(profile, image, service, tarFile, commitFile, artifact, version, os, arch)
 	}
 	installFn := func(containerName string, token string) error {
-		hash, err := getElasticAgentHash(containerName, homeDir+commitFile)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"containerName": containerName,
-				"error":         err,
-			}).Error("Could not get agent hash in the container")
-
-			return err
-		}
-
 		// install the elastic-agent to /usr/bin/elastic-agent using command
-		binary := fmt.Sprintf("/elastic-agent/data/elastic-agent-%s/", hash) + artifact
+		binary := fmt.Sprintf("/elastic-agent/%s", artifact)
 		args := []string{"--force", "--insecure", "--enrollment-token", token, "--kibana-url", "http://kibana:5601"}
 
 		err = runElasticAgentCommand(profile, image, service, binary, "install", args)
@@ -523,6 +511,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		InstallFn:         installFn,
 		installerType:     "tar",
 		logFile:           "elastic-agent.log",
+		logsDir:           "/opt/Elastic/Agent/data/elastic-agent-%s/logs/",
 		name:              tarFile,
 		path:              binaryPath,
 		PostInstallFn:     postInstallFn,
