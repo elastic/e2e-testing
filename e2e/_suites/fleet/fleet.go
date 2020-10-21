@@ -268,7 +268,7 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 
 		if agentID == "" {
 			// the agent is not listed in Fleet
-			if desiredStatus == "offline" {
+			if desiredStatus == "offline" || desiredStatus == "inactive" {
 				log.WithFields(log.Fields{
 					"isAgentInStatus": isAgentInStatus,
 					"elapsedTime":     exp.GetElapsedTime(),
