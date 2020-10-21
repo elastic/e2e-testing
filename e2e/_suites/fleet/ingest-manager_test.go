@@ -188,7 +188,7 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	profile := FleetProfileName
 	serviceName := ElasticAgentServiceName
 
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, imts.Fleet.Image, serviceName, 1)
+	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, imts.Fleet.Image+"-systemd", serviceName, 1)
 	if imts.StandAlone.Hostname != "" {
 		containerName = fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
 	}

@@ -43,7 +43,7 @@ type ElasticAgentInstaller struct {
 	homeDir           string // elastic agent home dir
 	image             string // docker image
 	installerType     string
-	InstallFn         func(token string) error
+	InstallFn         func(containerName string, token string) error
 	logFile           string // the name of the log file
 	name              string // the name for the binary
 	path              string // the local path where the agent for the binary is located
@@ -309,7 +309,7 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		log.Trace("No preinstall commands for Centos + systemd")
 		return nil
 	}
-	installFn := func(token string) error {
+	installFn := func(containerName string, token string) error {
 		cmds := []string{"yum", "localinstall", "/" + binaryName, "-y"}
 		return extractPackage(profile, image, service, cmds)
 	}
@@ -389,7 +389,7 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		log.Trace("No preinstall commands for Debian + systemd")
 		return nil
 	}
-	installFn := func(token string) error {
+	installFn := func(containerName string, token string) error {
 		cmds := []string{"apt", "install", "/" + binaryName, "-y"}
 		return extractPackage(profile, image, service, cmds)
 	}
@@ -473,10 +473,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		commitFile := homeDir + commitFile
 		return installFromTar(profile, image, service, tarFile, commitFile, artifact, version, os, arch)
 	}
-	installFn := func(token string) error {
-		baseImage := strings.ReplaceAll(image, "-systemd", "")
-		containerName := fmt.Sprintf("%s_%s_%s_%d", profile, baseImage, ElasticAgentServiceName, 1) // name of the container
-
+	installFn := func(containerName string, token string) error {
 		hash, err := getElasticAgentHash(containerName, homeDir+commitFile)
 		if err != nil {
 			log.WithFields(log.Fields{

@@ -152,8 +152,8 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 
 	profile := installer.profile // name of the runtime dependencies compose file
 
-	serviceName := ElasticAgentServiceName                                          // name of the service
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image, serviceName, 1) // name of the container
+	serviceName := ElasticAgentServiceName                                                     // name of the service
+	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", serviceName, 1) // name of the container
 
 	uuid := uuid.New().String()
 
@@ -229,7 +229,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	// we are using the Docker client instead of docker-compose
 	// because it does not support returning the output of a
 	// command: it simply returns error level
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image, ElasticAgentServiceName, 1)
+	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", ElasticAgentServiceName, 1)
 	return checkProcessStateOnTheHost(containerName, process, "stopped")
 }
 
@@ -328,7 +328,7 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 	// we are using the Docker client instead of docker-compose
 	// because it does not support returning the output of a
 	// command: it simply returns error level
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image, ElasticAgentServiceName, 1)
+	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", ElasticAgentServiceName, 1)
 
 	content, err := installer.listElasticAgentWorkingDirContent(containerName)
 	if err != nil {
@@ -854,9 +854,8 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	installer := fts.getInstaller()
 
 	profile := installer.profile // name of the runtime dependencies compose file
-	service := installer.service // name of the service
 
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image, service, 2) // name of the new container
+	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", ElasticAgentServiceName, 2) // name of the new container
 
 	err := deployAgentToFleet(installer, containerName, fts.CurrentToken)
 	if err != nil {
@@ -1077,7 +1076,7 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 		return err
 	}
 
-	err = installer.InstallFn(token)
+	err = installer.InstallFn(containerName, token)
 	if err != nil {
 		return err
 	}
