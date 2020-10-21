@@ -54,6 +54,11 @@ func (fts *FleetTestSuite) afterScenario() {
 	if log.IsLevelEnabled(log.DebugLevel) {
 		installer := fts.getInstaller()
 		_ = installer.getElasticAgentLogs(fts.Hostname)
+
+		err := installer.UninstallFn()
+		if err != nil {
+			log.Error("Could not uninstall the agent")
+		}
 	}
 
 	err := fts.unenrollHostname(true)
@@ -197,6 +202,8 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 
 	if state == "started" {
 		return systemctlRun(profile, installer.image, serviceName, "start")
+	} else if state == "uninstalled" {
+		return installer.UninstallFn()
 	} else if state != "stopped" {
 		return godog.ErrPending
 	}
@@ -313,7 +320,26 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 }
 
 func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
-	return godog.ErrPending
+	installer := fts.getInstaller()
+
+	profile := installer.profile // name of the runtime dependencies compose file
+
+	// name of the container for the service:
+	// we are using the Docker client instead of docker-compose
+	// because it does not support returning the output of a
+	// command: it simply returns error level
+	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image, ElasticAgentServiceName, 1)
+
+	content, err := installer.listElasticAgentWorkingDirContent(containerName)
+	if err != nil {
+		return err
+	}
+
+	if strings.Contains(content, "No such file or directory") {
+		return nil
+	}
+
+	return fmt.Errorf("The file system directory is not empty")
 }
 
 func (fts *FleetTestSuite) theHostIsRestarted() error {
