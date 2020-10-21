@@ -12,7 +12,7 @@ import (
 // This value could change depending on the version of the package registry
 // We are using the title because the feature files have to be super readable
 // and the title is more readable than the name
-const elasticEnpointIntegrationTitle = "Elastic Endpoint Security"
+const elasticEnpointIntegrationTitle = "Endpoint Security"
 
 // IntegrationPackage used to share information about a integration
 type IntegrationPackage struct {
