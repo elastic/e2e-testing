@@ -254,7 +254,7 @@ func (fts *FleetTestSuite) setup() error {
 func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
 	log.Tracef("Checking if agent is listed in Fleet as %s", desiredStatus)
 
-	maxTimeout := time.Duration(timeoutFactor) * time.Minute
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute * 2
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
