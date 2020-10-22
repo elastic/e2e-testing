@@ -269,7 +269,8 @@ def doNotify(String color, boolean notify) {
     testsSuites = "All suites"
   }
 
-  notifyBuildResult(prComment: true, slackHeader: "*Suite*: ${testSuites}", slackChannel: "${env.SLACK_CHANNEL}", slackComment: true, slackNotify: notify)
+  def header = "*Test Suite*: " + testSuites
+  notifyBuildResult(prComment: true, slackHeader: header, slackChannel: "${env.SLACK_CHANNEL}", slackComment: true, slackNotify: notify)
 }
 
 
