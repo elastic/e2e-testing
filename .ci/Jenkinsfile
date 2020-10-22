@@ -237,12 +237,12 @@ pipeline {
     }
     success {
       whenTrue(!isPR() && params.notifyOnGreenBuilds) {
-        doSlackSend('good')
+        doNotify('good', (!isPR() && params.notifyOnGreenBuilds))
       }
     }
     unsuccessful {
       whenFalse(isPR()) {
-        doSlackSend('danger')
+        doNotify('danger', !isPR())
       }
     }
   }
@@ -258,7 +258,7 @@ def checkTestSuite(Map parallelTasks = [:], String suite, String tags) {
   }
 }
 
-def doSlackSend(String color) {
+def doNotify(String color, boolean notify) {
   def buildStatus = "Failed"
   if (color == "good") {
     buildStatus = "Passed"
@@ -269,9 +269,8 @@ def doSlackSend(String color) {
     testsSuites = "All suites"
   }
 
-  def message = "*[${testsSuites}]* Build `${buildStatus}`: ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.RUN_DISPLAY_URL}|Open>)."
-
-  slackSend(channel: "#${env.SLACK_CHANNEL}", color: "${color}", message: "${message}",tokenCredentialId: 'jenkins-slack-integration-token')
+  def header = "*Test Suite*: " + testSuites
+  notifyBuildResult(prComment: true, slackHeader: header, slackChannel: "${env.SLACK_CHANNEL}", slackComment: true, slackNotify: notify)
 }
 
 
