@@ -125,7 +125,7 @@ func (sm *DockerServiceManager) StopCompose(isProfile bool, composeNames []strin
 	}
 	persistedEnv := state.Recover(ID, config.Op.Workspace)
 
-	err := executeCompose(sm, isProfile, composeNames, []string{"down"}, persistedEnv)
+	err := executeCompose(sm, isProfile, composeNames, []string{"down", "--remove-orphans"}, persistedEnv)
 	if err != nil {
 		return fmt.Errorf("Could not stop compose file: %v - %v", composeFilePaths, err)
 	}
