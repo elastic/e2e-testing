@@ -469,7 +469,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 
 	preInstallFn := func() error {
 		commitFile := homeDir + commitFile
-		return installFromTar(profile, image, service, tarFile, commitFile, artifact, version, os, arch)
+		return installFromTar(profile, image, service, tarFile, commitFile, artifact, agentVersionBase, os, arch)
 	}
 	installFn := func(containerName string, token string) error {
 		// install the elastic-agent to /usr/bin/elastic-agent using command
