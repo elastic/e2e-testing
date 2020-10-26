@@ -66,7 +66,7 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 
 	apiStatus := func() error {
 		r := curl.HTTPRequest{
-			URL: fmt.Sprintf("https://artifacts-api.elastic.co/v1/search/%s/%s", version, artifact),
+			URL: fmt.Sprintf("https://artifacts-api.elastic.co/v1/search/%s/%s?x-elastic-no-kpi=true", version, artifact),
 		}
 
 		response, err := curl.Get(r)
