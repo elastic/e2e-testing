@@ -27,7 +27,7 @@ import (
 // It can be overriden by the DEVELOPER_MODE env var
 var developerMode = false
 
-const metricbeatVersionBase = "8.0.0-SNAPSHOT"
+const metricbeatVersionBase = "7.10-SNAPSHOT"
 
 // metricbeatVersion is the version of the metricbeat to use
 // It can be overriden by METRICBEAT_VERSION env var
@@ -41,7 +41,7 @@ var serviceManager services.ServiceManager
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
-var stackVersion = "8.0.0-SNAPSHOT"
+var stackVersion = "7.10-SNAPSHOT"
 
 func init() {
 	config.Init()

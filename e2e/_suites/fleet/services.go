@@ -13,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const agentVersionBase = "8.0.0-SNAPSHOT"
+const agentVersionBase = "7.10.0"
 
 // agentVersion is the version of the agent to use
 // It can be overriden by ELASTIC_AGENT_VERSION env var
@@ -209,8 +209,8 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 		object := fmt.Sprintf("snapshots/%s", fileName)
 
 		// we are setting a version from a pull request: the version of the artifact will be kept as the base one
-		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm
-		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-amd64.deb
+		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.10-SNAPSHOT-x86_64.rpm
+		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.10-SNAPSHOT-amd64.deb
 		if strings.HasPrefix(version, "pr-") {
 			fileName = fmt.Sprintf("%s-%s-%s.%s", artifact, agentVersionBase, arch, extension)
 			log.WithFields(log.Fields{
@@ -469,7 +469,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 
 	preInstallFn := func() error {
 		commitFile := homeDir + commitFile
-		return installFromTar(profile, image, service, tarFile, commitFile, artifact, version, os, arch)
+		return installFromTar(profile, image, service, tarFile, commitFile, artifact, agentVersionBase, os, arch)
 	}
 	installFn := func(containerName string, token string) error {
 		// install the elastic-agent to /usr/bin/elastic-agent using command
