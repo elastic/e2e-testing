@@ -44,8 +44,9 @@ pipeline {
           parameters: [
             booleanParam(name: 'forceSkipGitChecks', value: true),
             booleanParam(name: 'forceSkipPresubmit', value: true),
+            booleanParam(name: 'notifyOnGreenBuilds', value: true),
             string(name: 'runTestsSuites', value: 'metricbeat'),
-            string(name: 'SLACK_CHANNEL', value: "integrations"),
+            string(name: 'SLACK_CHANNEL', value: "beats-build"),
           ],
           propagate: false,
           wait: false
