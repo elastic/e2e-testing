@@ -282,6 +282,10 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 
 // runMetricbeatService runs a metricbeat service entity for a service to monitor it
 func (mts *MetricbeatTestSuite) runMetricbeatService() error {
+	// this is needed because, in general, the target service (apache, mysql, redis) does not have a healthcheck
+	waitForService := time.Duration(timeoutFactor) * 10
+	e2e.Sleep(fmt.Sprintf("%d", waitForService))
+
 	serviceManager := services.NewServiceManager()
 
 	logLevel := log.GetLevel().String()
