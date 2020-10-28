@@ -4,9 +4,7 @@ Feature: Redis
 
 Scenario Outline: Redis-<redis_version> sends metrics to Elasticsearch without errors
   Given Redis "<redis_version>" is running for metricbeat
-    And metricbeat is installed and configured for Redis module
-    And metricbeat waits "20" seconds for the service
-  When metricbeat runs for "20" seconds
+  When metricbeat is installed and configured for Redis module
   Then there are "Redis" events in the index
     And there are no errors in the index
 Examples:

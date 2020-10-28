@@ -4,9 +4,7 @@ Feature: vSphere
 
 Scenario Outline: vSphere-<vsphere_version> sends metrics to Elasticsearch without errors
   Given vSphere "<vsphere_version>" is running for metricbeat
-    And metricbeat is installed and configured for vSphere module
-    And metricbeat waits "120" seconds for the service
-  When metricbeat runs for "20" seconds
+  When metricbeat is installed and configured for vSphere module
   Then there are "vSphere" events in the index
     And there are no errors in the index
 Examples:
