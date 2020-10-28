@@ -157,8 +157,6 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 	s.Step(`^"([^"]*)" v([^"]*), variant of "([^"]*)", is running for metricbeat$`, testSuite.serviceVariantIsRunningForMetricbeat)
 	s.Step(`^metricbeat is installed and configured for ([^"]*) module$`, testSuite.installedAndConfiguredForModule)
 	s.Step(`^metricbeat is installed and configured for "([^"]*)", variant of the "([^"]*)" module$`, testSuite.installedAndConfiguredForVariantModule)
-	s.Step(`^metricbeat waits "([^"]*)" seconds for the service$`, testSuite.waitsSeconds)
-	s.Step(`^metricbeat runs for "([^"]*)" seconds$`, testSuite.runsForSeconds)
 	s.Step(`^there are no errors in the index$`, testSuite.thereAreNoErrorsInTheIndex)
 	s.Step(`^there are "([^"]*)" events in the index$`, testSuite.thereAreEventsInTheIndex)
 
@@ -227,6 +225,11 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 	mts.setEventModule(mts.ServiceType)
 	mts.setServiceVersion(mts.Version)
 
+	err := mts.runMetricbeatService()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -269,22 +272,20 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 	mts.setEventModule("system")
 	mts.setServiceVersion(mts.Version)
 
-	return nil
-}
-
-// runsForSeconds waits for a number of seconds so that metricbeat gets
-// an acceptable number of metrics
-func (mts *MetricbeatTestSuite) runsForSeconds(seconds string) error {
-	err := mts.runMetricbeatService()
+	err = mts.runMetricbeatService()
 	if err != nil {
 		return err
 	}
 
-	return e2e.Sleep(seconds)
+	return nil
 }
 
 // runMetricbeatService runs a metricbeat service entity for a service to monitor it
 func (mts *MetricbeatTestSuite) runMetricbeatService() error {
+	// this is needed because, in general, the target service (apache, mysql, redis) does not have a healthcheck
+	waitForService := time.Duration(timeoutFactor) * 10
+	e2e.Sleep(fmt.Sprintf("%d", waitForService))
+
 	serviceManager := services.NewServiceManager()
 
 	logLevel := log.GetLevel().String()
@@ -463,9 +464,4 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 	}
 
 	return e2e.AssertHitsDoNotContainErrors(result, mts.Query)
-}
-
-// waitsSeconds waits for a number of seconds before the next step
-func (mts *MetricbeatTestSuite) waitsSeconds(seconds string) error {
-	return e2e.Sleep(seconds)
 }
