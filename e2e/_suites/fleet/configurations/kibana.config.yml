@@ -2,6 +2,8 @@
 server.name: kibana
 server.host: "0"
 
+telemetry.enabled: false
+
 elasticsearch.hosts: [ "http://elasticsearch:9200" ]
 elasticsearch.username: elastic
 elasticsearch.password: changeme
