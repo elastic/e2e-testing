@@ -273,11 +273,7 @@ def doNotify(String color, boolean notify) {
   }
 
   def header = "*Test Suite*: " + testsSuites
-  channels.split(',').each { channel ->
-    channel = channel.trim()
-    log(level: 'DEBUG', text: "Sending '${buildStatus}' slack message to '${channel}'")  
-    notifyBuildResult(prComment: true, slackHeader: header, slackChannel: "${channel}", slackComment: true, slackNotify: notify)
-  }
+  notifyBuildResult(prComment: true, slackHeader: header, slackChannel: "${channels}", slackComment: true, slackNotify: notify)
 }
 
 
