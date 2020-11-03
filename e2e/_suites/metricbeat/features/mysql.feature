@@ -4,9 +4,7 @@ Feature: Mysql
 
 Scenario Outline: <variant>-<version> sends metrics to Elasticsearch without errors
   Given "<variant>" v<version>, variant of "MySQL", is running for metricbeat
-    And metricbeat is installed and configured for "<variant>", variant of the "MySQL" module
-    And metricbeat waits "20" seconds for the service
-  When metricbeat runs for "20" seconds
+  When metricbeat is installed and configured for "<variant>", variant of the "MySQL" module
   Then there are "<variant>" events in the index
     And there are no errors in the index
 Examples:

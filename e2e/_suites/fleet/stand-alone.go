@@ -24,7 +24,7 @@ const standAloneVersionBase = "8.0.0-SNAPSHOT"
 
 // standAloneVersion is the version of the agent to use
 // It can be overriden by ELASTIC_AGENT_VERSION env var
-var standAloneVersion = "8.0.0-SNAPSHOT"
+var standAloneVersion = standAloneVersionBase
 
 func init() {
 	config.Init()
@@ -53,7 +53,7 @@ func (sats *StandAloneTestSuite) afterScenario() {
 	}
 
 	if !developerMode {
-		_ = serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
+		_ = serviceManager.RemoveServicesFromCompose(FleetProfileName, []string{serviceName}, profileEnv)
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
@@ -78,15 +78,12 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 
 	serviceManager := services.NewServiceManager()
 
-	profile := IngestManagerProfileName
-	serviceName := ElasticAgentServiceName
-
 	profileEnv["elasticAgentDockerImageSuffix"] = ""
 	if image != "default" {
 		profileEnv["elasticAgentDockerImageSuffix"] = "-" + image
 	}
 
-	containerName := fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
+	containerName := fmt.Sprintf("%s_%s_%d", FleetProfileName, ElasticAgentServiceName, 1)
 
 	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/master/x-pack/elastic-agent/elastic-agent.docker.yml"
 
@@ -100,7 +97,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 	profileEnv["elasticAgentConfigFile"] = sats.AgentConfigFilePath
 	profileEnv["elasticAgentTag"] = standAloneVersion
 
-	err = serviceManager.AddServicesToCompose(profile, []string{serviceName}, profileEnv)
+	err = serviceManager.AddServicesToCompose(FleetProfileName, []string{ElasticAgentServiceName}, profileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err
@@ -127,7 +124,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 func (sats *StandAloneTestSuite) getContainerLogs() error {
 	serviceManager := services.NewServiceManager()
 
-	profile := IngestManagerProfileName
+	profile := FleetProfileName
 	serviceName := ElasticAgentServiceName
 
 	composes := []string{
@@ -197,7 +194,7 @@ func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 func (sats *StandAloneTestSuite) theDockerContainerIsStopped(serviceName string) error {
 	serviceManager := services.NewServiceManager()
 
-	err := serviceManager.RemoveServicesFromCompose(IngestManagerProfileName, []string{serviceName}, profileEnv)
+	err := serviceManager.RemoveServicesFromCompose(FleetProfileName, []string{serviceName}, profileEnv)
 	if err != nil {
 		return err
 	}
@@ -300,7 +297,7 @@ func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int,
 		},
 	}
 
-	indexName := "logs-elastic.agent-default"
+	indexName := "logs-elastic_agent-default"
 
 	result, err := e2e.WaitForNumberOfHits(indexName, esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {

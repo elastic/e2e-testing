@@ -4,9 +4,7 @@ Feature: Apache
 
 Scenario Outline: Apache-<apache_version> sends metrics to Elasticsearch without errors
   Given Apache "<apache_version>" is running for metricbeat
-    And metricbeat is installed and configured for Apache module
-    And metricbeat waits "20" seconds for the service
-  When metricbeat runs for "20" seconds 
+  When metricbeat is installed and configured for Apache module
   Then there are "Apache" events in the index
     And there are no errors in the index
 Examples:
