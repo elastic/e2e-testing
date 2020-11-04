@@ -32,6 +32,11 @@ func CheckInstalledSoftware(binaries []string) {
 // - command: represents the name of the binary to execute
 // - args: represents the arguments to be passed to the command
 func Execute(workspace string, command string, args ...string) (string, error) {
+	log.WithFields(log.Fields{
+		"command": command,
+		"args":    args,
+	}).Trace("Executing command")
+
 	cmd := exec.Command(command, args[0:]...)
 
 	cmd.Dir = workspace
@@ -54,7 +59,13 @@ func Execute(workspace string, command string, args ...string) (string, error) {
 		return "", err
 	}
 
-	return strings.Trim(out.String(), "\n"), nil
+	trimmedOutput := strings.Trim(out.String(), "\n")
+
+	log.WithFields(log.Fields{
+		"output": trimmedOutput,
+	}).Trace("Output")
+
+	return trimmedOutput, nil
 }
 
 // GetEnv returns an environment variable as string
