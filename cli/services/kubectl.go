@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/elastic/e2e-testing/cli/shell"
-	"gopkg.in/yaml.v2"
 )
 
 // Resource hide the real type of the enum
@@ -39,14 +38,14 @@ var ResourceTypes = &resourceList{
 type Kubectl struct {
 }
 
-// Describe Use kubecontrol describe command to get the description of a resource identified by a selector, return the resource in a map[string]interface{}.
-func (k *Kubectl) Describe(resourceType, selector string) (map[string]interface{}, error) {
-	output, err := k.Run("describe", resourceType, "--selector", selector)
+// GetStringResourcesBySelector Use kubectl to get a resource identified by a selector, return the resource in a string.
+func (k *Kubectl) GetStringResourcesBySelector(resourceType, selector string) (string, error) {
+	output, err := k.Run("get", resourceType, "--selector", selector, "-o", "json")
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return yamlToObj(output)
+	return output, nil
 }
 
 // GetResourcesBySelector Use kubectl to get a resource identified by a selector, return the resource in a map[string]interface{}.
@@ -98,17 +97,6 @@ func (k *Kubectl) Run(args ...string) (string, error) {
 func jsonToObj(jsonValue string) (map[string]interface{}, error) {
 	var obj map[string]interface{}
 	err := json.Unmarshal([]byte(jsonValue), &obj)
-	if err != nil {
-		return nil, err
-	}
-
-	return obj, nil
-}
-
-// yamlToObj Convert a YAML string to a map[string]interface{}.
-func yamlToObj(yamlValue string) (map[string]interface{}, error) {
-	var obj map[string]interface{}
-	err := yaml.Unmarshal([]byte(yamlValue), &obj)
 	if err != nil {
 		return nil, err
 	}
