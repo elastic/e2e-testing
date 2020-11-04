@@ -8,10 +8,14 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/Jeffail/gabs/v2"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/config"
 	k8s "github.com/elastic/e2e-testing/cli/services"
 	shell "github.com/elastic/e2e-testing/cli/shell"
+	"github.com/elastic/e2e-testing/e2e"
 
 	"github.com/cucumber/godog"
 	messages "github.com/cucumber/messages-go/v10"
@@ -37,7 +41,7 @@ func init() {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
 
-	helmVersion := "2.x"
+	helmVersion := "3.x"
 	if value, exists := os.LookupEnv("HELM_VERSION"); exists {
 		helmVersion = value
 	}
@@ -128,20 +132,69 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 		return err
 	}
 
-	describe, err := kubectl.Describe(resourceType, selector)
+	exp := e2e.GetExponentialBackOff(time.Minute)
+	retryCount := 1
+
+	checkEndpointsFn := func() error {
+		output, err := kubectl.GetStringResourcesBySelector("endpoints", selector)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"error":       err,
+				"selector":    selector,
+				"resource":    "endpoints",
+				"retry":       retryCount,
+			}).Warn("Could not inspect resource with kubectl")
+
+			retryCount++
+
+			return err
+		}
+
+		jsonParsed, err := gabs.ParseJSON([]byte(output))
+		if err != nil {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"error":       err,
+				"output":      output,
+				"selector":    selector,
+				"resource":    "endpoints",
+				"retry":       retryCount,
+			}).Warn("Could not parse JSON")
+
+			retryCount++
+
+			return err
+		}
+
+		subsets := jsonParsed.Path("items.0.subsets")
+		if len(subsets.Children()) == 0 {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"resource":    "endpoints",
+				"retry":       retryCount,
+				"selector":    selector,
+			}).Warn("Enpdoints not present yet")
+
+			retryCount++
+
+			return fmt.Errorf("Error there are no Endpoint subsets for the %s with the selector %s", resourceType, selector)
+		}
+
+		log.WithFields(log.Fields{
+			"elapsedTime": exp.GetElapsedTime(),
+			"resource":    "endpoints",
+			"retry":       retryCount,
+			"selector":    selector,
+		}).Info("Enpdoints found")
+
+		return nil
+	}
+
+	err = backoff.Retry(checkEndpointsFn, exp)
 	if err != nil {
 		return err
 	}
-
-	endpoints := strings.SplitN(describe["Endpoints"].(string), ",", -1)
-	if len(endpoints) == 0 {
-		return fmt.Errorf("Error there are not Enpoints for the %s with the selector %s", resourceType, selector)
-	}
-
-	log.WithFields(log.Fields{
-		"name":     ts.Name,
-		"describe": describe,
-	}).Trace("Checking the configmap")
 
 	return nil
 }
@@ -199,15 +252,7 @@ func (ts *HelmChartTestSuite) createCluster(k8sVersion string) error {
 		"output":     output,
 	}).Info("Cluster created")
 
-	// initialise Helm after the cluster is created
-	// For Helm v2.x.x we have to initialise Tiller
-	// right after the k8s cluster
-	err = helm.Init()
-	if err != nil {
-		log.WithField("error", err).Error("Could not initiase Helm")
-	}
-
-	return err
+	return nil
 }
 
 func (ts *HelmChartTestSuite) deleteChart() {
@@ -298,7 +343,7 @@ func (ts *HelmChartTestSuite) install(chart string) error {
 		}).Info("Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes installed")
 
 		log.Debug("Applying workaround to use Rancher's local-path storage class for Elasticsearch volumes")
-		flags = []string{"--wait", "--timeout=900", "--values", "https://raw.githubusercontent.com/elastic/helm-charts/master/elasticsearch/examples/kubernetes-kind/values.yaml"}
+		flags = []string{"--wait", "--timeout=900s", "--values", "https://raw.githubusercontent.com/elastic/helm-charts/master/elasticsearch/examples/kubernetes-kind/values.yaml"}
 	}
 
 	return helm.InstallChart(ts.Name, elasticChart, ts.Version, flags)
@@ -522,8 +567,8 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	s.Step(`^the "([^"]*)" strategy can be used for "([^"]*)" during updates$`, testSuite.strategyCanBeUsedForResourceDuringUpdates)
 	s.Step(`^resource "([^"]*)" are applied$`, testSuite.resourceConstraintsAreApplied)
 
-	s.Step(`^a "([^"]*)" which will manage the pods$`, testSuite.aResourceWillManagePods)
-	s.Step(`^a "([^"]*)" which will expose the pods as network services internal to the k8s cluster$`, testSuite.aResourceWillExposePods)
+	s.Step(`^a "([^"]*)" will manage the pods$`, testSuite.aResourceWillManagePods)
+	s.Step(`^a "([^"]*)" will expose the pods as network services internal to the k8s cluster$`, testSuite.aResourceWillExposePods)
 
 	s.BeforeSuite(func() {
 		log.Trace("Before Suite...")
