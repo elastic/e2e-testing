@@ -268,7 +268,7 @@ def doNotify(String color, boolean notify) {
   }
 
   def channels = "${env.SLACK_CHANNEL}"
-  if (channels?.trim()) {
+  if (channels?.trim() == "") {
     channels = "observablt-bots"
   }
 
