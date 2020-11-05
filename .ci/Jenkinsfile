@@ -263,7 +263,7 @@ def doNotify(String color, boolean notify) {
   }
 
   def testsSuites = "${params.runTestsSuites}"
-  if (testsSuites == "") {
+  if (testsSuites?.trim() == "") {
     testsSuites = "All suites"
   }
 
