@@ -237,12 +237,12 @@ pipeline {
     }
     success {
       whenTrue(!isPR() && params.notifyOnGreenBuilds) {
-        doNotify('good', (!isPR() && params.notifyOnGreenBuilds))
+        doNotify((!isPR() && params.notifyOnGreenBuilds))
       }
     }
     unsuccessful {
       whenFalse(isPR()) {
-        doNotify('danger', !isPR())
+        doNotify(!isPR())
       }
     }
   }
@@ -258,19 +258,14 @@ def checkTestSuite(Map parallelTasks = [:], String suite, String tags) {
   }
 }
 
-def doNotify(String color, boolean notify) {
-  def buildStatus = "Failed"
-  if (color == "good") {
-    buildStatus = "Passed"
-  }
-
+def doNotify(boolean notify) {
   def testsSuites = "${params.runTestsSuites}"
-  if (testsSuites == "") {
+  if (testsSuites?.trim() == "") {
     testsSuites = "All suites"
   }
 
   def channels = "${env.SLACK_CHANNEL}"
-  if (channels?.trim()) {
+  if (channels?.trim() == "") {
     channels = "observablt-bots"
   }
 
