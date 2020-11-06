@@ -6,29 +6,16 @@ import (
 	"os"
 	"strings"
 
-	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
 
-const agentVersionBase = "8.0.0-SNAPSHOT"
-
-// agentVersion is the version of the agent to use
-// It can be overriden by ELASTIC_AGENT_VERSION env var
-var agentVersion = agentVersionBase
-
 // to avoid downloading the same artifacts, we are adding this map to cache the URL of the downloaded binaries, using as key
 // the URL of the artifact. If another installer is trying to download the same URL, it will return the location of the
 // already downloaded artifact.
 var binariesCache = map[string]string{}
-
-func init() {
-	config.Init()
-
-	agentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", agentVersionBase)
-}
 
 // ElasticAgentInstaller represents how to install an agent, depending of the box type
 type ElasticAgentInstaller struct {

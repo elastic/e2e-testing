@@ -36,6 +36,12 @@ const ElasticAgentServiceName = "elastic-agent"
 // FleetProfileName the name of the profile to run the runtime, backend services
 const FleetProfileName = "fleet"
 
+const agentVersionBase = "8.0.0-SNAPSHOT"
+
+// agentVersion is the version of the agent to use
+// It can be overriden by ELASTIC_AGENT_VERSION env var
+var agentVersion = agentVersionBase
+
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
 var stackVersion = "8.0.0-SNAPSHOT"
@@ -64,10 +70,13 @@ func init() {
 	}
 
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
+	agentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", agentVersionBase)
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 }
 
 func IngestManagerFeatureContext(s *godog.Suite) {
+	agentVersionBase = e2e.GetElasticArtifactVersion(agentVersionBase)
+
 	imts := IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			Installers: map[string]ElasticAgentInstaller{
