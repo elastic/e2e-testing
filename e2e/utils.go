@@ -54,7 +54,7 @@ func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOf
 // GetElasticArtifactVersion returns the current version:
 // 1. Elastic's artifact repository, building the JSON path query based
 // i.e. GetElasticArtifactVersion("8.0.0-SNAPSHOT")
-func GetElasticArtifactVersion(version string) (string, error) {
+func GetElasticArtifactVersion(version string) string {
 	exp := GetExponentialBackOff(time.Minute)
 
 	retryCount := 1
