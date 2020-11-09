@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 
-_sdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
 # shellcheck disable=SC1091
 source /usr/local/bin/bash_standard_lib.sh
 
-readonly GO_VERSION=$(cat ${_sdir}/../.go-version)
+readonly GO_VERSION=$(cat .go-version)
 
 DOCKER_IMAGES="docker.elastic.co/observability-ci/picklesdoc:2.20.1
 golang:${GO_VERSION}-stretch
