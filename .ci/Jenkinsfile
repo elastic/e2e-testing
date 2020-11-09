@@ -166,6 +166,7 @@ pipeline {
           }
         }
         stage('End-To-End Tests') {
+          failFast true
           options { skipDefaultCheckout() }
           environment {
             GO111MODULE = 'on'
