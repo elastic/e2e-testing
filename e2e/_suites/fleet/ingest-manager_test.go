@@ -44,7 +44,7 @@ var agentVersion = agentVersionBase
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
-var stackVersion string
+var stackVersion = agentVersionBase
 
 // profileEnv is the environment to be applied to any execution
 // affecting the runtime dependencies (or profile)
@@ -71,7 +71,7 @@ func init() {
 
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 	agentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", agentVersionBase)
-	stackVersion = shell.GetEnv("STACK_VERSION", agentVersionBase)
+	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 }
 
 func IngestManagerFeatureContext(s *godog.Suite) {
