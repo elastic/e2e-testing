@@ -7,6 +7,7 @@
     "multipleCommits": true,
     "prTitle": "{commitMessages} backport for {targetBranch}",
     "targetBranchChoices": [
+        { "name": "7.x", "checked": true },
         { "name": "7.10.x", "checked": true },
         { "name": "7.9.x", "checked": true }
     ],
