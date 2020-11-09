@@ -41,7 +41,7 @@ var serviceManager services.ServiceManager
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
-var stackVersion = "8.0.0-SNAPSHOT"
+var stackVersion string
 
 func init() {
 	config.Init()
@@ -53,7 +53,7 @@ func init() {
 
 	metricbeatVersion = shell.GetEnv("METRICBEAT_VERSION", metricbeatVersion)
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
-	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
+	stackVersion = shell.GetEnv("STACK_VERSION", metricbeatVersionBase)
 
 	serviceManager = services.NewServiceManager()
 }

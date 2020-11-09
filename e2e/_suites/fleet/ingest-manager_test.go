@@ -71,7 +71,7 @@ func init() {
 
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 	agentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", agentVersionBase)
-	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
+	stackVersion = shell.GetEnv("STACK_VERSION", agentVersionBase)
 }
 
 func IngestManagerFeatureContext(s *godog.Suite) {
