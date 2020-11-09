@@ -65,7 +65,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed() error {
 	serviceName := ElasticAgentServiceName
 	containerName := fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
 
-	branch := strings.ReplaceAll(standAloneVersion, "-SNAPSHOT", "")
+	branch := strings.ReplaceAll(agentVersion, "-SNAPSHOT", "")
 
 	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + branch + "/x-pack/elastic-agent/elastic-agent.docker.yml"
 
