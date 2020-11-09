@@ -51,6 +51,77 @@ func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOf
 	return exp
 }
 
+// GetElasticArtifactVersion returns the current version:
+// 1. Elastic's artifact repository, building the JSON path query based
+// i.e. GetElasticArtifactVersion("8.0.0-SNAPSHOT")
+func GetElasticArtifactVersion(version string) string {
+	exp := GetExponentialBackOff(time.Minute)
+
+	retryCount := 1
+
+	body := ""
+
+	apiStatus := func() error {
+		r := curl.HTTPRequest{
+			URL: fmt.Sprintf("https://artifacts-api.elastic.co/v1/versions/%s/?x-elastic-no-kpi=true", version),
+		}
+
+		response, err := curl.Get(r)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"version":        version,
+				"error":          err,
+				"retry":          retryCount,
+				"statusEndpoint": r.URL,
+				"elapsedTime":    exp.GetElapsedTime(),
+			}).Warn("The Elastic artifacts API is not available yet")
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"retries":        retryCount,
+			"statusEndpoint": r.URL,
+			"elapsedTime":    exp.GetElapsedTime(),
+		}).Debug("The Elastic artifacts API is available")
+
+		body = response
+		return nil
+	}
+
+	err := backoff.Retry(apiStatus, exp)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": version,
+		}).Fatal("Failed to get version, aborting")
+		return ""
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": version,
+		}).Fatal("Could not parse the response body to retrieve the version, aborting")
+		return ""
+	}
+
+	builds := jsonParsed.Path("version.builds")
+
+	lastBuild := builds.Children()[0]
+	latestVersion := lastBuild.Path("version").Data().(string)
+
+	log.WithFields(log.Fields{
+		"alias":   version,
+		"version": latestVersion,
+	}).Debug("Latest version for current version obtained")
+
+	return latestVersion
+}
+
 // GetElasticArtifactURL returns the URL of a released artifact from two possible sources
 // on the desired OS, architecture and file extension:
 // 1. Observability CI Storage bucket
