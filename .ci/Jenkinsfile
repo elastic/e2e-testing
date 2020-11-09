@@ -164,7 +164,10 @@ pipeline {
           }
         }
         stage('End-To-End Tests') {
-          options { skipDefaultCheckout() }
+          options {
+            skipDefaultCheckout()
+            parallelsAlwaysFailFast()
+          }
           environment {
             GO111MODULE = 'on'
             PATH = "${env.HOME}/bin:${env.WORKSPACE}/${env.BASE_DIR}/bin:${HOME}/go/bin:${env.PATH}"
