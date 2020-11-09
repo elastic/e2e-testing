@@ -41,7 +41,7 @@ var serviceManager services.ServiceManager
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
-var stackVersion = "7.9-SNAPSHOT"
+var stackVersion = metricbeatVersionBase
 
 func init() {
 	config.Init()
