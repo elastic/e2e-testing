@@ -44,7 +44,7 @@ var agentVersion = agentVersionBase
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
-var stackVersion = "8.0.0-SNAPSHOT"
+var stackVersion string
 
 // profileEnv is the environment to be applied to any execution
 // affecting the runtime dependencies (or profile)
