@@ -9,7 +9,7 @@ set -euxo pipefail
 # Build and test the app using the install and test make goals.
 #
 
-readonly VERSION="8.0.0-SNAPSHOT"
+readonly VERSION="7.x-SNAPSHOT"
 
 main() {
   # refresh docker images

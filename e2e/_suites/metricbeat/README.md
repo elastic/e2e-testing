@@ -45,8 +45,8 @@ This is an example of the optional configuration:
 
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch, kibana, package registry)
-   export STACK_VERSION="8.0.0-SNAPSHOT"
-   export METRICBEAT_VERSION="8.0.0-SNAPSHOT"
+   export STACK_VERSION="7.x-SNAPSHOT"
+   export METRICBEAT_VERSION="7.x-SNAPSHOT"
    ```
 
 3. Define the proper Docker images to be used in tests (Optional).

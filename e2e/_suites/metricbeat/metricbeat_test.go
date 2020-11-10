@@ -27,7 +27,7 @@ import (
 // It can be overriden by the DEVELOPER_MODE env var
 var developerMode = false
 
-const metricbeatVersionBase = "8.0.0-SNAPSHOT"
+const metricbeatVersionBase = "7.x-SNAPSHOT"
 
 // metricbeatVersion is the version of the metricbeat to use
 // It can be overriden by METRICBEAT_VERSION env var
