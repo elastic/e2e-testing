@@ -1,8 +1,8 @@
-@fleet_mode
+@fleet_mode_agent
 Feature: Fleet Mode Agent
   Scenarios for the Agent in Fleet mode connecting to Fleet application.
 
-@enroll
+@install
 Scenario Outline: Deploying the <os> agent
   When a "<os>" agent is deployed to Fleet with "<installer>" installer
   Then the "elastic-agent" process is in the "started" state on the host
@@ -14,6 +14,19 @@ Examples:
 | os     | installer |
 | centos | tar       |
 | debian | tar       |
+
+@enroll
+Scenario Outline: Deploying the <os> agent with enroll and run on rpm and deb
+  When a "<os>" agent is deployed to Fleet with "<installer>" installer
+  Then the "elastic-agent" process is in the "started" state on the host
+    And the "filebeat" process is in the "started" state on the host
+    And the "metricbeat" process is in the "started" state on the host
+    And the agent is listed in Fleet as "online"
+    And system package dashboards are listed in Fleet
+Examples:
+| os     | installer |
+| centos | systemd   |
+| debian | systemd   |
 
 @stop-agent
 Scenario Outline: Stopping the <os> agent stops backend processes
