@@ -16,7 +16,7 @@ Examples:
 | debian | tar       |
 
 @enroll
-Scenario Outline: Deploying the <os> agent with enroll and run on rpm and deb
+Scenario Outline: Deploying the <os> agent with enroll and then run on rpm and deb
   When a "<os>" agent is deployed to Fleet with "<installer>" installer
   Then the "elastic-agent" process is in the "started" state on the host
     And the "filebeat" process is in the "started" state on the host
