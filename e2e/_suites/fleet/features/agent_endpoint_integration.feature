@@ -36,3 +36,34 @@ Scenario: Removing Endpoint from Agent policy stops the connected Endpoint
   Then the agent is listed in Fleet as "online"
     But the host name is not shown in the Administration view in the Security App
     And the "elastic-endpoint" process is in the "stopped" state on the host
+
+@stop-agent-and-endpoint
+Scenario Outline: Stopping the agent deployed with Endpoint stops all backend processes
+  Given an Endpoint is successfully deployed with a "centos" Agent using "tar" installer
+  When the "elastic-agent" process is "stopped" on the host
+  Then the "elastic-endpoint" process is in the "stopped" state on the host
+
+@restart-host-with-endpoint-deployed
+Scenario Outline: Restarting the host with persistent agent with Endpoint restarts backend processes
+  Given an Endpoint is successfully deployed with a "centos" Agent using "tar" installer
+  When the host is restarted
+  Then the "elastic-agent" process is in the "started" state on the host
+    And the "elastic-endpoint" process is in the "started" state on the host
+
+@unenroll-with-deployed-endpoint
+Scenario Outline: Un-enrolling the agent with Endpoint
+  Given an Endpoint is successfully deployed with a "centos" Agent using "tar" installer
+  When the agent is un-enrolled
+  Then the "elastic-agent" process is in the "started" state on the host
+    And the agent is listed in Fleet as "inactive"
+    And the "elastic-endpoint" process is in the "stopped" state on the host
+
+@reenroll-with-deployed-endpoint
+Scenario Outline: Re-enrolling the agent with Endpoint
+  Given an Endpoint is successfully deployed with a "centos" Agent using "tar" installer
+    And the agent is un-enrolled
+    And the "elastic-agent" process is "stopped" on the host
+  When the agent is re-enrolled on the host
+    And the "elastic-agent" process is "started" on the host
+  Then the agent is listed in Fleet as "online"
+    And the "elastic-endpoint" process is in the "started" state on the host
