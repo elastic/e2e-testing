@@ -5,15 +5,11 @@ Feature: Agent Endpoint Integration
 @deploy-endpoint-with-agent
 Scenario: Adding the Endpoint Integration to an Agent makes the host to show in Security App
   Given a "centos" agent is deployed to Fleet with "tar" installer
-    And the agent is listed in Fleet as "online"
-  When the "Endpoint Security" integration is "added" in the policy
-  Then the "Endpoint Security" datasource is shown in the policy as added
+  When the agent is listed in Fleet as "online"
+  Then the "Endpoint Security" integration is "added" in the policy
+    And the "Endpoint Security" datasource is shown in the policy as added
+    And the policy response will be shown in the Security App
     And the host name is shown in the Administration view in the Security App as "online"
-
-@endpoint-policy-check
-Scenario: Deploying an Endpoint makes policies to appear in the Security App
-  When an Endpoint is successfully deployed with a "centos" Agent using "tar" installer
-  Then the policy response will be shown in the Security App
 
 @set-policy-and-check-changes
 Scenario: Changing an Agent policy is reflected in the Security App
