@@ -1,6 +1,6 @@
 module github.com/elastic/e2e-testing/cli
 
-go 1.13
+go 1.14
 
 require (
 	github.com/Flaque/filet v0.0.0-20190209224823-fc4d33cfcf93
