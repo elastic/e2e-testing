@@ -98,6 +98,7 @@ pipeline {
               agent { label 'ubuntu-18.04 && immutable && docker' }
               environment {
                 PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.PATH}"
+                GO111MODULE = 'auto'
               }
               options { skipDefaultCheckout() }
               steps {
