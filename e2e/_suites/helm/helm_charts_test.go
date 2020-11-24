@@ -544,7 +544,7 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	testSuite := HelmChartTestSuite{
 		ClusterName:       "helm-charts-test-suite",
 		KubernetesVersion: "1.18.2",
-		Version:           "7.6.1",
+		Version:           "7.10.0",
 	}
 
 	if value, exists := os.LookupEnv("HELM_CHART_VERSION"); exists {
