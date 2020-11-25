@@ -174,7 +174,7 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 				"resource":    "endpoints",
 				"retry":       retryCount,
 				"selector":    selector,
-			}).Warn("Enpdoints not present yet")
+			}).Warn("Endpoints not present yet")
 
 			retryCount++
 
@@ -186,7 +186,7 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 			"resource":    "endpoints",
 			"retry":       retryCount,
 			"selector":    selector,
-		}).Info("Enpdoints found")
+		}).Info("Endpoints found")
 
 		return nil
 	}
