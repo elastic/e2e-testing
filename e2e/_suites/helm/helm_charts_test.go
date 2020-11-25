@@ -30,6 +30,10 @@ var developerMode = false
 
 var helm k8s.HelmManager
 
+// timeoutFactor a multiplier for the max timeout when doing backoff retries.
+// It can be overriden by TIMEOUT_FACTOR env var
+var timeoutFactor = 2
+
 //nolint:unused
 var kubectl k8s.Kubectl
 
@@ -45,6 +49,8 @@ func init() {
 	if value, exists := os.LookupEnv("HELM_VERSION"); exists {
 		helmVersion = value
 	}
+
+	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 
 	h, err := k8s.HelmFactory(helmVersion)
 	if err != nil {
@@ -132,7 +138,9 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 		return err
 	}
 
-	exp := e2e.GetExponentialBackOff(time.Minute)
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute
+
+	exp := e2e.GetExponentialBackOff(maxTimeout)
 	retryCount := 1
 
 	checkEndpointsFn := func() error {
@@ -174,7 +182,7 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 				"resource":    "endpoints",
 				"retry":       retryCount,
 				"selector":    selector,
-			}).Warn("Enpdoints not present yet")
+			}).Warn("Endpoints not present yet")
 
 			retryCount++
 
@@ -186,7 +194,7 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 			"resource":    "endpoints",
 			"retry":       retryCount,
 			"selector":    selector,
-		}).Info("Enpdoints found")
+		}).Info("Endpoints found")
 
 		return nil
 	}
@@ -345,8 +353,10 @@ func (ts *HelmChartTestSuite) install(chart string) error {
 			"chart": ts.Name,
 		}).Info("Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes installed")
 
+		maxTimeout := timeoutFactor * 100
+
 		log.Debug("Applying workaround to use Rancher's local-path storage class for Elasticsearch volumes")
-		flags = []string{"--wait", "--timeout=900s", "--values", "https://raw.githubusercontent.com/elastic/helm-charts/master/elasticsearch/examples/kubernetes-kind/values.yaml"}
+		flags = []string{"--wait", fmt.Sprintf("--timeout=%ds", maxTimeout), "--values", "https://raw.githubusercontent.com/elastic/helm-charts/master/elasticsearch/examples/kubernetes-kind/values.yaml"}
 	}
 
 	return helm.InstallChart(ts.Name, elasticChart, ts.Version, flags)
