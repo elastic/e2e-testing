@@ -75,13 +75,6 @@ pipeline {
       stages {
         stage('Checkout') {
           steps {
-            whenTrue(isBranch()) {
-              setEnvVar("REPORTER_SUFFIX", env.BRANCH_NAME)
-            }
-            whenTrue(isPR()) {
-              setEnvVar("REPORTER_SUFFIX", env.CHANGE_TARGET)
-            }
-
             pipelineManager([ cancelPreviousRunningBuilds: [ when: 'PR' ] ])
             deleteDir()
             gitCheckout(basedir: BASE_DIR, githubNotifyFirstTimeContributor: true)
@@ -242,6 +235,12 @@ pipeline {
   post {
     cleanup {
       githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
+      whenTrue(isBranch()) {
+         setEnvVar("REPORTER_SUFFIX", env.BRANCH_NAME)
+      }
+      whenTrue(isPR()) {
+         setEnvVar("REPORTER_SUFFIX", env.CHANGE_TARGET)
+      }
       notifyBuildResult(analyzeFlakey: true, flakyReportIdx: "reporter-e2e-tests-end-2-end-tests-pipeline-${env.REPORTER_SUFFIX}", prComment: true)
     }
     success {
