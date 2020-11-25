@@ -32,7 +32,7 @@ var helm k8s.HelmManager
 
 // timeoutFactor a multiplier for the max timeout when doing backoff retries.
 // It can be overriden by TIMEOUT_FACTOR env var
-var timeoutFactor = 1
+var timeoutFactor = 2
 
 //nolint:unused
 var kubectl k8s.Kubectl
