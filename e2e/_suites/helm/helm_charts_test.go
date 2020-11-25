@@ -353,8 +353,10 @@ func (ts *HelmChartTestSuite) install(chart string) error {
 			"chart": ts.Name,
 		}).Info("Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes installed")
 
+		maxTimeout := timeoutFactor * 450
+
 		log.Debug("Applying workaround to use Rancher's local-path storage class for Elasticsearch volumes")
-		flags = []string{"--wait", "--timeout=900s", "--values", "https://raw.githubusercontent.com/elastic/helm-charts/master/elasticsearch/examples/kubernetes-kind/values.yaml"}
+		flags = []string{"--wait", fmt.Sprintf("--timeout=%ds", maxTimeout), "--values", "https://raw.githubusercontent.com/elastic/helm-charts/master/elasticsearch/examples/kubernetes-kind/values.yaml"}
 	}
 
 	return helm.InstallChart(ts.Name, elasticChart, ts.Version, flags)
