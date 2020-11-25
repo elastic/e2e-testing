@@ -128,7 +128,7 @@ func GetElasticArtifactVersion(version string) string {
 // 2. Elastic's artifact repository, building the JSON path query based
 // i.e. GetElasticArtifactURL("elastic-agent", "7.9-SNAPSHOT", "x86_64", "rpm")
 // i.e. GetElasticArtifactURL("elastic-agent", "7.9-SNAPSHOT", "amd64", "deb")
-func GetElasticArtifactURL(artifact string, version string, OS string, arch string, extension string) (string, error) {
+func GetElasticArtifactURL(artifact string, version string, operativeSystem string, arch string, extension string) (string, error) {
 	exp := GetExponentialBackOff(time.Minute)
 
 	retryCount := 1
@@ -145,7 +145,7 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 			log.WithFields(log.Fields{
 				"artifact":       artifact,
 				"version":        version,
-				"os":             OS,
+				"os":             operativeSystem,
 				"arch":           arch,
 				"extension":      extension,
 				"error":          err,
@@ -179,14 +179,14 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
 			"version":   version,
-			"os":        OS,
+			"os":        operativeSystem,
 			"arch":      arch,
 			"extension": extension,
 		}).Error("Could not parse the response body for the artifact")
 		return "", err
 	}
 
-	artifactPath := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
+	artifactPath := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, operativeSystem, arch, extension)
 	if extension == "deb" || extension == "rpm" {
 		// elastic-agent-7.9.2-x86_64.rpm
 		// elastic-agent-7.9.2-amd64.deb
