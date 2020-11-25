@@ -74,7 +74,7 @@ func (k *Kubectl) GetResourceSelector(resourceType, resource string) (string, er
 		return "", err
 	}
 
-	output, err = k.Run("get", "--raw", strings.Replace(output, "'", "", -1)+"/scale")
+	output, err = k.Run("get", "--raw", strings.ReplaceAll(output, "'", "")+"/scale")
 	if err != nil {
 		return "", err
 	}
