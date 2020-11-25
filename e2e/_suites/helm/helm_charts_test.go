@@ -310,6 +310,9 @@ func (ts *HelmChartTestSuite) getResourceName(resource string) string {
 	} else if resource == k8s.ResourceTypes.ClusterRoleBinding {
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role-binding")
 	} else if resource == k8s.ResourceTypes.ConfigMap {
+		if ts.Name == "metricbeat" {
+			return strings.ToLower(ts.Name + "-" + ts.Name + "-daemonset-config")
+		}
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-config")
 	} else if resource == k8s.ResourceTypes.Daemonset {
 		return strings.ToLower(ts.Name + "-" + ts.Name)
@@ -544,7 +547,7 @@ func HelmChartFeatureContext(s *godog.Suite) {
 	testSuite := HelmChartTestSuite{
 		ClusterName:       "helm-charts-test-suite",
 		KubernetesVersion: "1.18.2",
-		Version:           "7.6.1",
+		Version:           "7.10.0",
 	}
 
 	if value, exists := os.LookupEnv("HELM_CHART_VERSION"); exists {
