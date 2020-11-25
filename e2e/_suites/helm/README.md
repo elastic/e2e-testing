@@ -33,14 +33,14 @@ This is an example of the optional configuration:
 
    ```shell
    # Depending on the versions used, 
-   export HELM_VERSION="3.2.4"
-   export HELM_CHART_VERSION="7.6.1"  # version of the Elastic's Observability Helm charts
+   export HELM_VERSION="3.4.1"
+   export HELM_CHART_VERSION="7.10.0"  # version of the Elastic's Observability Helm charts
    export HELM_KUBERNETES_VERSION="1.18.2" # version of the cluster to be passed to kind
    ```
 
 3. Install dependencies.
 
-   - Install Helm 3.2.4
+   - Install Helm 3.4.1
    - Install Kind 0.8.1
    - Install Go: `https://golang.org/doc/install` _(The CI uses [GVM](https://github.com/andrewkroh/gvm))_
    - Install godog (from project's root directory): `make -C e2e install-godog`
@@ -50,7 +50,7 @@ This is an example of the optional configuration:
    If you want to run the tests in Developer mode, which means reusing bakend services between test runs, please set this environment variable first:
 
    ```shell
-   # It won't tear down the backend services (k8s cluster) after a test suite. 
+   # It won't tear down the backend services (k8s cluster) after a test suite.
    export DEVELOPER_MODE=true
    ```
 
@@ -85,7 +85,7 @@ Example:
 
 ### Setup failures
 
-Sometimes the tests could fail to configure or start the kubernetes cluster, etc. To determine why 
+Sometimes the tests could fail to configure or start the kubernetes cluster, etc. To determine why
 this happened, look at your terminal log in DEBUG mode. make sure there is not another test cluster:
 
 ```shell
