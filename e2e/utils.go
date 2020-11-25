@@ -129,7 +129,7 @@ func GetElasticArtifactVersion(version string) string {
 // i.e. GetElasticArtifactURL("elastic-agent", "7.x-SNAPSHOT", "linux", "x86_64", "tar.gz")
 // i.e. GetElasticArtifactURL("elastic-agent", "7.x-SNAPSHOT", "x86_64", "rpm")
 // i.e. GetElasticArtifactURL("elastic-agent", "7.x-SNAPSHOT", "amd64", "deb")
-func GetElasticArtifactURL(artifact string, version string, OS string, arch string, extension string) (string, error) {
+func GetElasticArtifactURL(artifact string, version string, operativeSystem string, arch string, extension string) (string, error) {
 	exp := GetExponentialBackOff(time.Minute)
 
 	retryCount := 1
@@ -146,7 +146,7 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 			log.WithFields(log.Fields{
 				"artifact":       artifact,
 				"version":        version,
-				"os":             OS,
+				"os":             operativeSystem,
 				"arch":           arch,
 				"extension":      extension,
 				"error":          err,
@@ -180,7 +180,7 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
 			"version":   version,
-			"os":        OS,
+			"os":        operativeSystem,
 			"arch":      arch,
 			"extension": extension,
 		}).Error("Could not parse the response body for the artifact")
@@ -188,7 +188,7 @@ func GetElasticArtifactURL(artifact string, version string, OS string, arch stri
 	}
 
 	// elastic-agent-7.11.0-SNAPSHOT-linux-x86_64.tar.gz
-	artifactPath := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
+	artifactPath := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, operativeSystem, arch, extension)
 	if extension == "deb" || extension == "rpm" {
 		// elastic-agent-7.11.0-SNAPSHOT-x86_64.rpm
 		// elastic-agent-7.11.0-SNAPSHOT-amd64.deb
