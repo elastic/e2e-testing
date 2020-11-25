@@ -30,6 +30,10 @@ var developerMode = false
 
 var helm k8s.HelmManager
 
+// timeoutFactor a multiplier for the max timeout when doing backoff retries.
+// It can be overriden by TIMEOUT_FACTOR env var
+var timeoutFactor = 1
+
 //nolint:unused
 var kubectl k8s.Kubectl
 
@@ -45,6 +49,8 @@ func init() {
 	if value, exists := os.LookupEnv("HELM_VERSION"); exists {
 		helmVersion = value
 	}
+
+	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 
 	h, err := k8s.HelmFactory(helmVersion)
 	if err != nil {
@@ -132,7 +138,9 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 		return err
 	}
 
-	exp := e2e.GetExponentialBackOff(time.Minute)
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute
+
+	exp := e2e.GetExponentialBackOff(maxTimeout)
 	retryCount := 1
 
 	checkEndpointsFn := func() error {
