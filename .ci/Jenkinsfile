@@ -76,10 +76,14 @@ pipeline {
         stage('Checkout') {
           steps {
             whenTrue(isBranch()) {
-              setEnvVar("REPORTER_SUFFIX", env.BRANCH_NAME)
+              script {
+                env.REPORTER_SUFFIX = env.BRANCH_NAME
+              }
             }
             whenTrue(isPR()) {
-              setEnvVar("REPORTER_SUFFIX", env.CHANGE_TARGET)
+              script {
+                env.REPORTER_SUFFIX = env.CHANGE_TARGET
+              }
             }
 
             pipelineManager([ cancelPreviousRunningBuilds: [ when: 'PR' ] ])
