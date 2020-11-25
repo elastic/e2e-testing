@@ -29,16 +29,17 @@ func TestGetEnvBool(t *testing.T) {
 
 		val, err := GetEnvBool(test.key)
 
-		if test.key == "should_be_empty" {
+		switch test.key {
+		case "should_be_empty":
 			assert.NotNil(t, err)
 			assert.False(t, val)
-		} else if test.key == "should_be_not_empty" {
+		case "should_be_not_empty":
 			assert.Nil(t, err)
 			assert.False(t, val)
-		} else if test.key == "should_be_true" {
+		case "should_be_true":
 			assert.Nil(t, err)
 			assert.True(t, val)
-		} else if test.key == "should_be_false" {
+		case "should_be_false":
 			assert.Nil(t, err)
 			assert.False(t, val)
 		}
