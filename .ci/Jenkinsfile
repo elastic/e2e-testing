@@ -233,7 +233,7 @@ pipeline {
   post {
     cleanup {
       githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
-      notifyBuildResult(analyzeFlakey: true, flakyReportIdx: "reporter-e2e-tests-end-2-end-tests-pipeline-master", prComment: true)
+      notifyBuildResult(analyzeFlakey: true, flakyReportIdx: "reporter-e2e-tests-end-2-end-tests-pipeline-7.10.x", prComment: true)
     }
     success {
       whenTrue(!isPR() && params.notifyOnGreenBuilds) {
