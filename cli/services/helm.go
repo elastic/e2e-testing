@@ -39,10 +39,10 @@ type helm3X struct {
 	helm
 }
 
-func (h *helm3X) AddRepo(repo string, URL string) error {
+func (h *helm3X) AddRepo(repo string, url string) error {
 	// use chart as application name
 	args := []string{
-		"repo", "add", repo, URL,
+		"repo", "add", repo, url,
 	}
 
 	output, err := helmExecute(args...)
@@ -53,7 +53,7 @@ func (h *helm3X) AddRepo(repo string, URL string) error {
 	log.WithFields(log.Fields{
 		"output": output,
 		"name":   repo,
-		"url":    URL,
+		"url":    url,
 	}).Debug(repo + " Helm charts added")
 	return nil
 }
