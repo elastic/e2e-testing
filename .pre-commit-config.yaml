@@ -33,14 +33,12 @@ repos:
     -   id: check-unicode-non-breaking-spaces
         exclude: >
             (?x)^(
-                **/*.gif|
-                **/*.png
+                .*/?\.*.(gif|jpg|png)
             )$
     -   id: remove-unicode-non-breaking-spaces
         exclude: >
             (?x)^(
-                **/*.gif|
-                **/*.png
+                .*/?\.*.(gif|jpg|png)
             )$
     -   id: check-en-dashes
     -   id: remove-en-dashes
