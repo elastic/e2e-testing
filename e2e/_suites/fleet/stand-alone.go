@@ -164,7 +164,7 @@ func (sats *StandAloneTestSuite) installTestTools(containerName string) error {
 }
 
 func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
-	maxTimeout := time.Duration(timeoutFactor) * time.Minute
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute * 2
 	minimumHitsCount := 50
 
 	result, err := searchAgentData(sats.Hostname, sats.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
