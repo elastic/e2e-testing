@@ -222,7 +222,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 		return handleDownload(downloadURL, fileName)
 	}
 
-	downloadURL, err = e2e.GetElasticArtifactURL(artifact, agentVersionBase, OS, arch, extension)
+	downloadURL, err = e2e.GetElasticArtifactURL(artifact, checkElasticAgentVersion(version), OS, arch, extension)
 	if err != nil {
 		return "", "", err
 	}
@@ -463,7 +463,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 
 	preInstallFn := func() error {
 		commitFile := homeDir + commitFile
-		return installFromTar(profile, image, service, tarFile, commitFile, artifact, agentVersionBase, os, arch)
+		return installFromTar(profile, image, service, tarFile, commitFile, artifact, checkElasticAgentVersion(version), os, arch)
 	}
 	installFn := func(containerName string, token string) error {
 		// install the elastic-agent to /usr/bin/elastic-agent using command
