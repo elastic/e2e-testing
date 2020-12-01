@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/shell"
@@ -211,7 +212,9 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 			object = fmt.Sprintf("pull-requests/%s/%s/%s", version, artifact, fileName)
 		}
 
-		downloadURL, err = e2e.GetObjectURLFromBucket(bucket, object)
+		maxTimeout := time.Minute
+
+		downloadURL, err = e2e.GetObjectURLFromBucket(bucket, object, maxTimeout)
 		if err != nil {
 			return "", "", err
 		}
