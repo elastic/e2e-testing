@@ -216,7 +216,7 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 
 	storageAPI := func() error {
 		r := curl.HTTPRequest{
-			URL: fmt.Sprintf("https://storage.googleapis.com/storage/v1/b/%s/o%s", bucket, pageTokenQueryParam),
+			URL: fmt.Sprintf("https://storage.googleapis.com/storage/v1/b/%s/o?prefix=pull-requests%s", bucket, pageTokenQueryParam),
 		}
 
 		response, err := curl.Get(r)
@@ -279,7 +279,7 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 		}
 
 		nextPageToken := jsonParsed.Path("nextPageToken").Data().(string)
-		pageTokenQueryParam = "?pageToken=" + nextPageToken
+		pageTokenQueryParam = "&pageToken=" + nextPageToken
 		currentPage++
 
 		log.WithFields(log.Fields{
