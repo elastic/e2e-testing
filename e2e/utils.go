@@ -254,18 +254,38 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 			return err
 		}
 
-		for _, item := range jsonParsed.Path("items").Children() {
+		items := jsonParsed.Path("items").Children()
+
+		log.WithFields(log.Fields{
+			"bucket":      bucket,
+			"elapsedTime": exp.GetElapsedTime(),
+			"objects":     len(items),
+			"retries":     retryCount,
+		}).Debug("Objects found")
+
+		for _, item := range items {
 			itemID := item.Path("id").Data().(string)
 			objectPath := bucket + "/" + object + "/"
 			if strings.HasPrefix(itemID, objectPath) {
 				mediaLink = item.Path("mediaLink").Data().(string)
 
 				log.WithFields(log.Fields{
-					"bucket": bucket,
-					"object": object,
+					"bucket":      bucket,
+					"elapsedTime": exp.GetElapsedTime(),
+					"medialink":   mediaLink,
+					"object":      object,
+					"retries":     retryCount,
 				}).Debug("Media link found for the object")
 				return nil
 			}
+
+			log.WithFields(log.Fields{
+				"bucket":      bucket,
+				"elapsedTime": exp.GetElapsedTime(),
+				"object":      object,
+				"itemID":      itemID,
+				"retries":     retryCount,
+			}).Trace("Media link not found")
 		}
 
 		if jsonParsed.Path("nextPageToken") == nil {
@@ -285,7 +305,9 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 		log.WithFields(log.Fields{
 			"currentPage": currentPage,
 			"bucket":      bucket,
+			"elapsedTime": exp.GetElapsedTime(),
 			"object":      object,
+			"retries":     retryCount,
 		}).Warn("Object not found in current page. Continuing")
 
 		return fmt.Errorf("The %s object could not be found in the current page (%d) the %s bucket", object, currentPage, bucket)
