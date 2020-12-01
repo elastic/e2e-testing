@@ -212,7 +212,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 			object = fmt.Sprintf("pull-requests/%s/%s/%s", version, artifact, fileName)
 		}
 
-		maxTimeout := time.Minute
+		maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
 		downloadURL, err = e2e.GetObjectURLFromBucket(bucket, object, maxTimeout)
 		if err != nil {
