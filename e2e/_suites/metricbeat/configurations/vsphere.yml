@@ -1,0 +1,12 @@
+-metricbeat.modules:
+  - module: vsphere
+    metricsets:
+      - datastore
+      - host
+      - virtualmachine
+    enabled: true
+    period: 5s
+    hosts: ["https://vsphere:443/sdk"]
+    username: "user"
+    password: "pass"
+    insecure: true
