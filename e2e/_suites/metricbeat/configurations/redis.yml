@@ -1,8 +1,0 @@
-metricbeat.modules:
-- module: redis
-  metricsets: ["info"]
-  period: 10s
-  enabled: true
-
-  # Redis hosts
-  hosts: ["http://redis:6379"]
