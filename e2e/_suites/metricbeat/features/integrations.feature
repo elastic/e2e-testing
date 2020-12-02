@@ -42,6 +42,15 @@ Examples: HAProxy
 | haproxy     | 1.7.12  |
 | haproxy     | 1.6.15  |
 
+@kafka
+Examples: Kafka
+| integration | version  |
+| kafka       | 2.2.2    |
+| kafka       | 2.1.1    |
+| kafka       | 2.0.0    |
+| kafka       | 1.1.0    |
+| kafka       | 0.10.2.2 |
+
 @redis
 Examples: Redis
 | integration | version |

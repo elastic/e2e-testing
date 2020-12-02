@@ -23,6 +23,8 @@ SUITES:
   - suite: "metricbeat"
     tags: "integrations && haproxy"
   - suite: "metricbeat"
+    tags: "integrations && kafka"
+  - suite: "metricbeat"
     tags: "metricbeat"
   - suite: "metricbeat"
     tags: "integrations && mysql"
