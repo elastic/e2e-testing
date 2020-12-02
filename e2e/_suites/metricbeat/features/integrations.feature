@@ -14,6 +14,13 @@ Examples: Apache
 | apache      | 2.4.12  |
 | apache      | 2.4.20  |
 
+@dropwizard
+Examples: Dropwizard
+| integration | version |
+| dropwizard  | 4.1.2   |
+| dropwizard  | 4.0.0   |
+| dropwizard  | 3.2.6   |
+
 @haproxy
 Examples: HAProxy
 | integration | version |
