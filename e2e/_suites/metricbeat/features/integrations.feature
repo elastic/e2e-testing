@@ -21,6 +21,12 @@ Examples: Dropwizard
 | dropwizard  | 4.0.0   |
 | dropwizard  | 3.2.6   |
 
+@envoyproxy
+Examples: EnvoyProxy
+| integration | version |
+| envoyproxy  | 1.7.0   |
+| envoyproxy  | 1.12.0  |
+
 @haproxy
 Examples: HAProxy
 | integration | version |

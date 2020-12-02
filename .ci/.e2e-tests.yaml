@@ -17,6 +17,8 @@ SUITES:
   - suite: "metricbeat"
     tags: "integrations && dropwizard"
   - suite: "metricbeat"
+    tags: "integrations && envoyproxy"
+  - suite: "metricbeat"
     tags: "integrations && haproxy"
   - suite: "metricbeat"
     tags: "metricbeat"
