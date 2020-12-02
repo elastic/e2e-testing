@@ -217,15 +217,35 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 	mts.setIndexName()
 	mts.ServiceType = serviceType
 
-	// look up configurations under workspace's configurations directory
+	// look up configurations under workspace's configurations directory. If does not exist, look up tool's workspace
 	dir, _ := os.Getwd()
-	mts.configurationFile = path.Join(dir, "configurations", mts.ServiceName+".yml")
+	configFile := path.Join(dir, "configurations", mts.ServiceName+".yml")
+	found, err := config.FileExists(configFile)
+	if !found || err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"path":    configFile,
+			"service": mts.ServiceName,
+		}).Debug("Could not retrieve configuration file under test workspace. Looking up tool's workspace")
+
+		configFile = path.Join(config.Op.Workspace, "compose", "services", mts.ServiceName, "_meta", "config.yml")
+		ok, err := config.FileExists(configFile)
+		if !ok {
+			return fmt.Errorf("The configuration file for %s does not exist", mts.ServiceName)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	mts.configurationFile = configFile
+
 	_ = os.Chmod(mts.configurationFile, 0666)
 
 	mts.setEventModule(mts.ServiceType)
 	mts.setServiceVersion(mts.Version)
 
-	err := mts.runMetricbeatService()
+	err = mts.runMetricbeatService()
 	if err != nil {
 		return err
 	}
