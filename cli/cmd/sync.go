@@ -265,6 +265,7 @@ func sanitizeConfigurationFile(serviceName string, configFilePath string) error 
 
 	// replace local IP with service name, because it will be discovered under Docker Compose network
 	content := strings.ReplaceAll(string(bytes), "127.0.0.1", serviceName)
+	content = strings.ReplaceAll(string(bytes), "localhost", serviceName)
 	// prepend modules header
 	content = "metricbeat.modules:\n" + content
 
