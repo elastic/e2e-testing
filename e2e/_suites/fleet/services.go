@@ -505,7 +505,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		image:             image,
 		InstallFn:         installFn,
 		installerType:     "tar",
-		logFile:           "elastic-agent-json.log",
+		logFile:           "elastic-agent.log",
 		logsDir:           "/opt/Elastic/Agent/data/elastic-agent-%s/",
 		name:              tarFile,
 		path:              binaryPath,
