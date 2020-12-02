@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/shell"
@@ -201,8 +202,12 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 		// we are setting a version from a pull request: the version of the artifact will be kept as the base one
 		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm
 		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-amd64.deb
+		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz
 		if strings.HasPrefix(strings.ToLower(version), "pr-") {
 			fileName = fmt.Sprintf("%s-%s-%s.%s", artifact, agentVersionBase, arch, extension)
+			if extension == "tar.gz" {
+				fileName = fmt.Sprintf("%s-%s-%s-%s.%s", artifact, agentVersionBase, OS, arch, extension)
+			}
 			log.WithFields(log.Fields{
 				"agentVersion": agentVersionBase,
 				"PR":           version,
@@ -210,7 +215,9 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 			object = fmt.Sprintf("pull-requests/%s/%s/%s", version, artifact, fileName)
 		}
 
-		downloadURL, err = e2e.GetObjectURLFromBucket(bucket, object)
+		maxTimeout := time.Duration(timeoutFactor) * time.Minute
+
+		downloadURL, err = e2e.GetObjectURLFromBucket(bucket, object, maxTimeout)
 		if err != nil {
 			return "", "", err
 		}
