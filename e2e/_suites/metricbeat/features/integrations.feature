@@ -9,19 +9,19 @@ Scenario Outline: <integration>-<version> sends metrics to Elasticsearch without
     And there are no errors in the index
 
 @apache
-Examples:
+Examples: Apache
 | integration | version |
 | apache      | 2.4.12  |
 | apache      | 2.4.20  |
 
 @redis
-Examples:
+Examples: Redis
 | integration | version |
 | redis       | 3.2.12  |
 | redis       | 4.0.11  |
 | redis       | 5.0.5   |
 
 @vsphere
-Examples:
+Examples: vSphere
 | integration | version |
 | vsphere     | latest  |
