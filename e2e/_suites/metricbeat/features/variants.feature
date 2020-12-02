@@ -10,7 +10,7 @@ Scenario Outline: <integration>-<variant>-<version> sends metrics to Elasticsear
     And there are no errors in the index
 
 @mysql
-Examples:
+Examples: MySQL
 | integration | variant | version  |
 | mysql       | MariaDB | 10.2.23  |
 | mysql       | MariaDB | 10.3.14  |
