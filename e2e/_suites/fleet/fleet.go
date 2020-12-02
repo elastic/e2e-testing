@@ -238,7 +238,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedAndIsOnline(image string, installerT
 	}
 	fts.Hostname = hostname
 
-	// here
 	errIfNotOnline := confirmTheAgentIsListedInFleetWithStatus("online", fts.Hostname)
 	if errIfNotOnline != nil {
 		return errIfNotOnline
@@ -310,68 +309,7 @@ func (fts *FleetTestSuite) setup() error {
 }
 
 func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
-	log.Tracef("Checking if agent is listed in Fleet as %s", desiredStatus)
-
-	maxTimeout := time.Duration(timeoutFactor) * time.Minute * 2
-	retryCount := 1
-
-	exp := e2e.GetExponentialBackOff(maxTimeout)
-
-	agentOnlineFn := func() error {
-		agentID, err := getAgentID(fts.Hostname)
-		if err != nil {
-			retryCount++
-			return err
-		}
-
-		if agentID == "" {
-			// the agent is not listed in Fleet
-			if desiredStatus == "offline" || desiredStatus == "inactive" {
-				log.WithFields(log.Fields{
-					"isAgentInStatus": isAgentInStatus,
-					"elapsedTime":     exp.GetElapsedTime(),
-					"hostname":        fts.Hostname,
-					"retries":         retryCount,
-					"status":          desiredStatus,
-				}).Info("The Agent is not present in Fleet, as expected")
-				return nil
-			} else if desiredStatus == "online" {
-				retryCount++
-				return fmt.Errorf("The agent is not present in Fleet, but it should")
-			}
-		}
-
-		isAgentInStatus, err := isAgentInStatus(agentID, desiredStatus)
-		if err != nil || !isAgentInStatus {
-			if err == nil {
-				err = fmt.Errorf("The Agent is not in the %s status yet", desiredStatus)
-			}
-
-			log.WithFields(log.Fields{
-				"agentID":         agentID,
-				"isAgentInStatus": isAgentInStatus,
-				"elapsedTime":     exp.GetElapsedTime(),
-				"hostname":        fts.Hostname,
-				"retry":           retryCount,
-				"status":          desiredStatus,
-			}).Warn(err.Error())
-
-			retryCount++
-
-			return err
-		}
-
-		log.WithFields(log.Fields{
-			"isAgentInStatus": isAgentInStatus,
-			"elapsedTime":     exp.GetElapsedTime(),
-			"hostname":        fts.Hostname,
-			"retries":         retryCount,
-			"status":          desiredStatus,
-		}).Info("The Agent is in the desired status")
-		return nil
-	}
-
-	err := backoff.Retry(agentOnlineFn, exp)
+	err := confirmTheAgentIsListedInFleetWithStatus(desiredStatus, fts.Hostname)
 	if err != nil {
 		return err
 	}

@@ -52,13 +52,3 @@ Scenario Outline: Un-enrolling the agent with Endpoint
   Then the "elastic-agent" process is in the "started" state on the host
     And the agent is listed in Fleet as "inactive"
     And the "elastic-endpoint" process is in the "stopped" state on the host
-
-@reenroll-with-deployed-endpoint
-Scenario Outline: Re-enrolling the agent with Endpoint
-  Given an Endpoint is successfully deployed with a "centos" Agent using "tar" installer
-  When the agent is un-enrolled
-  Then the "elastic-agent" process is "stopped" on the host
-    And the agent is re-enrolled on the host
-    And the "elastic-agent" process is "started" on the host
-    And the agent is listed in Fleet as "online"
-    And the "elastic-endpoint" process is in the "started" state on the host
