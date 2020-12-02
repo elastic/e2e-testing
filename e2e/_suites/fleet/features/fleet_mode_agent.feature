@@ -32,7 +32,6 @@ Scenario Outline: Upgrading the installed <os> agent
   When agent is upgraded to version "latest"
   Then wait for "2m"
     And agent is in version "latest"
-    And the agent is listed in Fleet as "online"
 Examples:
 | os     | installer |
 | debian | tar       |  
