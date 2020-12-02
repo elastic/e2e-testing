@@ -46,8 +46,8 @@ Scenario Outline: Upgrading the installed <os> agent
   Then wait for "2m"
     And agent is in version "latest"
 Examples:
-| os     | installer |
-| debian | tar       |  
+| os     | 
+| debian | 
 
 @restart-agent
 Scenario Outline: Restarting the installed <os> agent
