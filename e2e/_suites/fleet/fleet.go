@@ -178,15 +178,6 @@ func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
 		desiredVersion = agentVersion
 	}
 
-	// prepare installer for stale version
-	// installerType := fts.InstallerType
-	// if desiredVersion != agentVersion {
-	// 	fts.InstallerType = fmt.Sprintf("%s-%s", installerType, desiredVersion)
-	// }
-
-	// installer := fts.getInstaller()
-	// defer func() { fts.InstallerType = installerType }()
-
 	return fts.upgradeAgent(desiredVersion)
 }
 
@@ -1057,7 +1048,7 @@ func (fts *FleetTestSuite) upgradeAgent(version string) error {
 			"kbn-xsrf":     "true",
 		},
 		URL:     fmt.Sprintf(fleetAgentUpgradeURL, agentID),
-		Payload: `{"version":"` + version + `"}`,
+		Payload: `{"version":"` + version + `", "force": true}`,
 	}
 
 	if content, err := curl.Post(upgradeReq); err != nil {
