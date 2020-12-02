@@ -26,11 +26,7 @@ TARGET_ARCH=${GOARCH:-amd64}
 rm -rf outputs || true
 mkdir -p outputs
 
-## Parse TAGS if not empty then enable the flags to be passed to the functional-test wrapper
-REPORT=outputs/TEST-${SUITE}
-if [ "${TAGS}" != "" ] ; then
-  REPORT=outputs/TEST-${SUITE}-${TAGS}
-fi
+REPORT="outputs/TEST-${SUITE}"
 
 ## Generate test report even if make failed.
 set +e
