@@ -198,7 +198,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 		// we are setting a version from a pull request: the version of the artifact will be kept as the base one
 		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm
 		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-amd64.deb
-		if strings.HasPrefix(version, "pr-") {
+		if strings.HasPrefix(strings.ToLower(version), "pr-") {
 			fileName = fmt.Sprintf("%s-%s-%s.%s", artifact, agentVersionBase, arch, extension)
 			log.WithFields(log.Fields{
 				"agentVersion": agentVersionBase,
@@ -215,7 +215,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 		return handleDownload(downloadURL, fileName)
 	}
 
-	downloadURL, err = e2e.GetElasticArtifactURL(artifact, agentVersionBase, OS, arch, extension)
+	downloadURL, err = e2e.GetElasticArtifactURL(artifact, checkElasticAgentVersion(version), OS, arch, extension)
 	if err != nil {
 		return "", "", err
 	}
@@ -456,7 +456,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 
 	preInstallFn := func() error {
 		commitFile := homeDir + commitFile
-		return installFromTar(profile, image, service, tarFile, commitFile, artifact, agentVersionBase, os, arch)
+		return installFromTar(profile, image, service, tarFile, commitFile, artifact, checkElasticAgentVersion(version), os, arch)
 	}
 	installFn := func(containerName string, token string) error {
 		// install the elastic-agent to /usr/bin/elastic-agent using command
@@ -498,7 +498,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		InstallFn:         installFn,
 		installerType:     "tar",
 		logFile:           "elastic-agent.log",
-		logsDir:           "/opt/Elastic/Agent/data/elastic-agent-%s/logs/",
+		logsDir:           "/opt/Elastic/Agent/data/elastic-agent-%s/",
 		name:              tarFile,
 		path:              binaryPath,
 		PostInstallFn:     postInstallFn,

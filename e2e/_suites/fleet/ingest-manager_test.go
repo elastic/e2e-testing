@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
@@ -203,6 +204,21 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	}
 
 	return checkProcessStateOnTheHost(containerName, process, state)
+}
+
+// checkElasticAgentVersion returns a fallback version (agentVersionBase) if the version set by the environment is empty
+func checkElasticAgentVersion(version string) string {
+	environmentVersion := os.Getenv("ELASTIC_AGENT_VERSION")
+
+	if environmentVersion == "" {
+		return agentVersionBase
+	}
+
+	if strings.HasPrefix(strings.ToLower(environmentVersion), "pr-") {
+		return agentVersionBase
+	}
+
+	return version
 }
 
 // name of the container for the service:
