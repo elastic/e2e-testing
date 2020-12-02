@@ -479,7 +479,6 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		return nil
 	}
 	unInstallFn := func() error {
-		return nil
 		args := []string{"-f"}
 
 		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "uninstall", args)
