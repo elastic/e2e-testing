@@ -205,8 +205,8 @@ func GetElasticArtifactURL(artifact string, version string, operativeSystem stri
 
 // GetObjectURLFromBucket extracts the media URL for the desired artifact from the
 // Google Cloud Storage bucket used by the CI to push snapshots
-func GetObjectURLFromBucket(bucket string, object string) (string, error) {
-	exp := GetExponentialBackOff(time.Minute)
+func GetObjectURLFromBucket(bucket string, object string, maxtimeout time.Duration) (string, error) {
+	exp := GetExponentialBackOff(maxtimeout)
 
 	retryCount := 1
 
@@ -216,7 +216,7 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 
 	storageAPI := func() error {
 		r := curl.HTTPRequest{
-			URL: fmt.Sprintf("https://storage.googleapis.com/storage/v1/b/%s/o%s", bucket, pageTokenQueryParam),
+			URL: fmt.Sprintf("https://storage.googleapis.com/storage/v1/b/%s/o?prefix=pull-requests%s", bucket, pageTokenQueryParam),
 		}
 
 		response, err := curl.Get(r)
@@ -254,18 +254,38 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 			return err
 		}
 
-		for _, item := range jsonParsed.Path("items").Children() {
+		items := jsonParsed.Path("items").Children()
+
+		log.WithFields(log.Fields{
+			"bucket":      bucket,
+			"elapsedTime": exp.GetElapsedTime(),
+			"objects":     len(items),
+			"retries":     retryCount,
+		}).Debug("Objects found")
+
+		for _, item := range items {
 			itemID := item.Path("id").Data().(string)
 			objectPath := bucket + "/" + object + "/"
 			if strings.HasPrefix(itemID, objectPath) {
 				mediaLink = item.Path("mediaLink").Data().(string)
 
 				log.WithFields(log.Fields{
-					"bucket": bucket,
-					"object": object,
+					"bucket":      bucket,
+					"elapsedTime": exp.GetElapsedTime(),
+					"medialink":   mediaLink,
+					"object":      object,
+					"retries":     retryCount,
 				}).Debug("Media link found for the object")
 				return nil
 			}
+
+			log.WithFields(log.Fields{
+				"bucket":      bucket,
+				"elapsedTime": exp.GetElapsedTime(),
+				"object":      object,
+				"itemID":      itemID,
+				"retries":     retryCount,
+			}).Trace("Media link not found")
 		}
 
 		if jsonParsed.Path("nextPageToken") == nil {
@@ -279,13 +299,15 @@ func GetObjectURLFromBucket(bucket string, object string) (string, error) {
 		}
 
 		nextPageToken := jsonParsed.Path("nextPageToken").Data().(string)
-		pageTokenQueryParam = "?pageToken=" + nextPageToken
+		pageTokenQueryParam = "&pageToken=" + nextPageToken
 		currentPage++
 
 		log.WithFields(log.Fields{
 			"currentPage": currentPage,
 			"bucket":      bucket,
+			"elapsedTime": exp.GetElapsedTime(),
 			"object":      object,
+			"retries":     retryCount,
 		}).Warn("Object not found in current page. Continuing")
 
 		return fmt.Errorf("The %s object could not be found in the current page (%d) the %s bucket", object, currentPage, bucket)
