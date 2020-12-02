@@ -486,6 +486,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		return nil
 	}
 	unInstallFn := func() error {
+		return nil
 		args := []string{"-f"}
 
 		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "uninstall", args)
@@ -504,7 +505,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		image:             image,
 		InstallFn:         installFn,
 		installerType:     "tar",
-		logFile:           "elastic-agent.log",
+		logFile:           "elastic-agent-json.log",
 		logsDir:           "/opt/Elastic/Agent/data/elastic-agent-%s/",
 		name:              tarFile,
 		path:              binaryPath,
