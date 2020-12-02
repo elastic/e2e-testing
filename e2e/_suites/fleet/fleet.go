@@ -117,6 +117,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
+	s.Step(`^a "([^"]*)" agent is deployed via "([^"]*)" and is online$`, fts.anAgentIsDeployedAndIsOnline)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
@@ -127,7 +128,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
 
-	// endpoint steps
+	// endpoint and package integration related steps
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)
 	s.Step(`^the "([^"]*)" datasource is shown in the policy as added$`, fts.thePolicyShowsTheDatasourceAdded)
 	s.Step(`^the host name is shown in the Administration view in the Security App as "([^"]*)"$`, fts.theHostNameIsShownInTheAdminViewInTheSecurityApp)
@@ -185,6 +186,63 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 		return err
 	}
 	fts.Hostname = hostname
+
+	return err
+}
+
+// supported installers: tar, systemd
+func (fts *FleetTestSuite) anAgentIsDeployedAndIsOnline(image string, installerType string) error {
+	log.WithFields(log.Fields{
+		"image":     image,
+		"installer": installerType,
+	}).Trace("Deploying an agent to Fleet with base image")
+
+	fts.Image = image
+	fts.InstallerType = installerType
+
+	installer := fts.getInstaller()
+
+	profile := installer.profile // name of the runtime dependencies compose file
+
+	serviceName := ElasticAgentServiceName                                                     // name of the service
+	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", serviceName, 1) // name of the container
+
+	uuid := uuid.New().String()
+
+	// enroll the agent with a new token
+	tokenJSONObject, err := createFleetToken("Test token for "+uuid, fts.PolicyID)
+	if err != nil {
+		return err
+	}
+	fts.CurrentToken = tokenJSONObject.Path("api_key").Data().(string)
+	fts.CurrentTokenID = tokenJSONObject.Path("id").Data().(string)
+
+	err = deployAgentToFleet(installer, containerName, fts.CurrentToken)
+	fts.Cleanup = true
+	if err != nil {
+		return err
+	}
+
+	// the installation process for TAR includes the enrollment
+	if installer.installerType != "tar" {
+		err = installer.EnrollFn(fts.CurrentToken)
+		if err != nil {
+			return err
+		}
+	}
+
+	// get container hostname once
+	hostname, err := getContainerHostname(containerName)
+	if err != nil {
+		return err
+	}
+	fts.Hostname = hostname
+
+	// here
+	errIfNotOnline := confirmTheAgentIsListedInFleetWithStatus("online", fts.Hostname)
+	if errIfNotOnline != nil {
+		return errIfNotOnline
+	}
 
 	return err
 }
@@ -1338,6 +1396,77 @@ func unenrollAgent(agentID string, force bool) error {
 	log.WithFields(log.Fields{
 		"agentID": agentID,
 	}).Debug("Fleet agent was unenrolled")
+
+	return nil
+}
+
+
+func confirmTheAgentIsListedInFleetWithStatus(desiredStatus string, hostname string) (error) {
+	log.Tracef("Checking if agent is listed in Fleet as %s", desiredStatus)
+
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute * 2
+	retryCount := 1
+
+	exp := e2e.GetExponentialBackOff(maxTimeout)
+
+	agentOnlineFn := func() error {
+		agentID, err := getAgentID(hostname)
+		if err != nil {
+			retryCount++
+			return err
+		}
+
+		if agentID == "" {
+			// the agent is not listed in Fleet
+			if desiredStatus == "offline" || desiredStatus == "inactive" {
+				log.WithFields(log.Fields{
+					"isAgentInStatus": isAgentInStatus,
+					"elapsedTime":     exp.GetElapsedTime(),
+					"hostname":        hostname,
+					"retries":         retryCount,
+					"status":          desiredStatus,
+				}).Info("The Agent is not present in Fleet, as expected")
+				return nil
+			} else if desiredStatus == "online" {
+				retryCount++
+				return fmt.Errorf("The agent is not present in Fleet, but it should")
+			}
+		}
+
+		isAgentInStatus, err := isAgentInStatus(agentID, desiredStatus)
+		if err != nil || !isAgentInStatus {
+			if err == nil {
+				err = fmt.Errorf("The Agent is not in the %s status yet", desiredStatus)
+			}
+
+			log.WithFields(log.Fields{
+				"agentID":         agentID,
+				"isAgentInStatus": isAgentInStatus,
+				"elapsedTime":     exp.GetElapsedTime(),
+				"hostname":        hostname,
+				"retry":           retryCount,
+				"status":          desiredStatus,
+			}).Warn(err.Error())
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"isAgentInStatus": isAgentInStatus,
+			"elapsedTime":     exp.GetElapsedTime(),
+			"hostname":        hostname,
+			"retries":         retryCount,
+			"status":          desiredStatus,
+		}).Info("The Agent is in the desired status")
+		return nil
+	}
+
+	err := backoff.Retry(agentOnlineFn, exp)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

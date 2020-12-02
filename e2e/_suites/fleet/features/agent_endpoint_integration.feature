@@ -4,10 +4,9 @@ Feature: Agent Endpoint Integration
 
 @deploy-endpoint-with-agent
 Scenario: Adding the Endpoint Integration to an Agent makes the host to show in Security App
-  Given a "centos" agent is deployed to Fleet with "tar" installer
-  When the agent is listed in Fleet as "online"
-  Then the "Endpoint Security" integration is "added" in the policy
-    And the "Endpoint Security" datasource is shown in the policy as added
+  Given a "centos" agent is deployed via "tar" and is online
+  When the "Endpoint Security" integration is "added" in the policy
+  Then the "Endpoint Security" datasource is shown in the policy as added
     And the policy response will be shown in the Security App
     And the host name is shown in the Administration view in the Security App as "online"
 
@@ -57,9 +56,9 @@ Scenario Outline: Un-enrolling the agent with Endpoint
 @reenroll-with-deployed-endpoint
 Scenario Outline: Re-enrolling the agent with Endpoint
   Given an Endpoint is successfully deployed with a "centos" Agent using "tar" installer
-    And the agent is un-enrolled
-    And the "elastic-agent" process is "stopped" on the host
-  When the agent is re-enrolled on the host
+  When the agent is un-enrolled
+  Then the "elastic-agent" process is "stopped" on the host
+    And the agent is re-enrolled on the host
     And the "elastic-agent" process is "started" on the host
-  Then the agent is listed in Fleet as "online"
+    And the agent is listed in Fleet as "online"
     And the "elastic-endpoint" process is in the "started" state on the host
