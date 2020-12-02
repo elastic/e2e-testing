@@ -27,6 +27,12 @@ Examples: EnvoyProxy
 | envoyproxy  | 1.7.0   |
 | envoyproxy  | 1.12.0  |
 
+@etcd
+Examples: Etcd
+| integration | version |
+| etcd        | 3.2.25  |
+| etcd        | 3.3.10  |
+
 @haproxy
 Examples: HAProxy
 | integration | version |
