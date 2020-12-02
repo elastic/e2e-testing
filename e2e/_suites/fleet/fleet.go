@@ -187,8 +187,6 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 		version = agentStaleVersion
 	case "latest":
 		version = agentVersion
-	case "stack":
-		version = stackVersion
 	}
 
 	agentID, err := getAgentID(fts.Hostname)
@@ -210,7 +208,7 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	jsonResponse, err := gabs.ParseJSON([]byte(body))
 
 	retrievedVersion := jsonResponse.Path("item.local_metadata.elastic.agent.version").Data().(string)
-	if isSnapshot := jsonResponse.Path("item.local_metadata.elastic.agent.version").Data().(string); isSnapshot == "true" {
+	if isSnapshot := jsonResponse.Path("item.local_metadata.elastic.agent.snapshot").Data().(bool); isSnapshot {
 		retrievedVersion += "-SNAPSHOT"
 	}
 
