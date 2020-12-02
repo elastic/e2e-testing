@@ -29,7 +29,8 @@ mkdir -p outputs
 ## Parse TAGS if not empty then enable the flags to be passed to the functional-test wrapper
 REPORT=outputs/TEST-${SUITE}
 if [ "${TAGS}" != "" ] ; then
-  REPORT=outputs/TEST-${SUITE}-${TAGS}
+  # remove tag operators and whitespaces
+  REPORT=outputs/TEST-${SUITE}-${TAGS//[ ~&|/}
 fi
 
 ## Generate test report even if make failed.
