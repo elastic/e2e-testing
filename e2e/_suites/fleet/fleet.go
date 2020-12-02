@@ -131,6 +131,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
+	s.Step(`^wait for "([^"]*)"$`, fts.waitForTime)
 
 	// endpoint steps
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)
@@ -166,6 +167,16 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 	}
 
 	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
+}
+
+func (fts *FleetTestSuite) waitForTime(durationString string) error {
+	duration, err := time.ParseDuration(durationString)
+	if err != nil {
+		return err
+	}
+
+	<-time.After(duration)
+	return nil
 }
 
 func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
@@ -213,7 +224,7 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	}
 
 	if retrievedVersion != version {
-		return fmt.Errorf("version mismatch required '%s' desired '%s'", version, retrievedVersion)
+		return fmt.Errorf("version mismatch required '%s' retrieved '%s'", version, retrievedVersion)
 	}
 
 	return nil
