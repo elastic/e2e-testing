@@ -1,4 +1,4 @@
-@stand_alone_agent
+@stand_alone_mode
 Feature: Stand-alone Agent
   Scenarios for a standalone mode Elastic Agent in Fleet, where an Elasticseach
   and a Kibana instances are already provisioned, so that the Agent is able to communicate
