@@ -215,7 +215,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 		return handleDownload(downloadURL, fileName)
 	}
 
-	downloadURL, err = e2e.GetElasticArtifactURL(artifact, agentVersionBase, OS, arch, extension)
+	downloadURL, err = e2e.GetElasticArtifactURL(artifact, version, OS, arch, extension)
 	if err != nil {
 		return "", "", err
 	}
@@ -456,7 +456,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 
 	preInstallFn := func() error {
 		commitFile := homeDir + commitFile
-		return installFromTar(profile, image, service, tarFile, commitFile, artifact, agentVersionBase, os, arch)
+		return installFromTar(profile, image, service, tarFile, commitFile, artifact, version, os, arch)
 	}
 	installFn := func(containerName string, token string) error {
 		// install the elastic-agent to /usr/bin/elastic-agent using command
@@ -479,6 +479,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		return nil
 	}
 	unInstallFn := func() error {
+		return nil
 		args := []string{"-f"}
 
 		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "uninstall", args)
@@ -497,7 +498,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		image:             image,
 		InstallFn:         installFn,
 		installerType:     "tar",
-		logFile:           "elastic-agent.log",
+		logFile:           "elastic-agent-json.log",
 		logsDir:           "/opt/Elastic/Agent/data/elastic-agent-%s/logs/",
 		name:              tarFile,
 		path:              binaryPath,

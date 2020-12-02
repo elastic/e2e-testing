@@ -26,6 +26,16 @@ Examples:
 | centos | tar       |
 | debian | tar       |
 
+@upgrade-agent
+Scenario Outline: Upgrading the installed <os> agent
+  Given a "<os>" agent "stale" is deployed to Fleet with "<installer>" installer
+  When agent is upgraded to version "latest"
+  Then agent is in version "stack"
+    And the agent is listed in Fleet as "online"
+Examples:
+| os     | installer |
+| debian | tar       |  
+
 @restart-agent
 Scenario Outline: Restarting the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with "<installer>" installer
