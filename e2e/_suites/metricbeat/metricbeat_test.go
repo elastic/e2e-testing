@@ -153,9 +153,9 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 		Query: e2e.ElasticsearchQuery{},
 	}
 
-	s.Step(`^([^"]*) "([^"]*)" is running for metricbeat$`, testSuite.serviceIsRunningForMetricbeat)
+	s.Step(`^"([^"]*)" "([^"]*)" is running for metricbeat$`, testSuite.serviceIsRunningForMetricbeat)
 	s.Step(`^"([^"]*)" v([^"]*), variant of "([^"]*)", is running for metricbeat$`, testSuite.serviceVariantIsRunningForMetricbeat)
-	s.Step(`^metricbeat is installed and configured for ([^"]*) module$`, testSuite.installedAndConfiguredForModule)
+	s.Step(`^metricbeat is installed and configured for "([^"]*)" module$`, testSuite.installedAndConfiguredForModule)
 	s.Step(`^metricbeat is installed and configured for "([^"]*)", variant of the "([^"]*)" module$`, testSuite.installedAndConfiguredForVariantModule)
 	s.Step(`^there are no errors in the index$`, testSuite.thereAreNoErrorsInTheIndex)
 	s.Step(`^there are "([^"]*)" events in the index$`, testSuite.thereAreEventsInTheIndex)
