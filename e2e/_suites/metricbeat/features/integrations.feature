@@ -14,6 +14,15 @@ Examples: Apache
 | apache      | 2.4.12  |
 | apache      | 2.4.20  |
 
+@haproxy
+Examples: HAProxy
+| integration | version |
+| haproxy     | 2.0.9   |
+| haproxy     | 1.9.12  |
+| haproxy     | 1.8.22  |
+| haproxy     | 1.7.12  |
+| haproxy     | 1.6.15  |
+
 @redis
 Examples: Redis
 | integration | version |
