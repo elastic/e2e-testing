@@ -15,7 +15,8 @@ Examples:
 | centos |
 | debian |
 
-@skip // reset the following tag when unskipping: enroll
+# reset the following tag when unskipping: enroll
+@skip
 Scenario Outline: Deploying the <os> agent with enroll and then run on rpm and deb
   Given a "<os>" agent is deployed to Fleet with "systemd" installer
   When the "elastic-agent" process is in the "started" state on the host
