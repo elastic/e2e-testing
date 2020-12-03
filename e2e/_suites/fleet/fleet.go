@@ -132,6 +132,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
 	s.Step(`^wait for "([^"]*)"$`, fts.waitForTime)
+	s.Step(`^certs for "([^"]*)" are installed$`, fts.installCerts)
 
 	// endpoint steps
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)
@@ -167,6 +168,37 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 	}
 
 	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
+}
+
+func (fts *FleetTestSuite) installCerts(targetOS string) error {
+	service := targetOS + "-systemd"
+	image := targetOS + "-systemd"
+	if targetOS == "debian" {
+		if err := execCommandInService(FleetProfileName, image, service, []string{"apt-get", "update"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(FleetProfileName, image, service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(FleetProfileName, image, service, []string{"update-ca-certificates"}, false); err != nil {
+			return err
+		}
+	}
+	if targetOS == "centos" {
+		if err := execCommandInService(FleetProfileName, image, service, []string{"yum", "check-update"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(FleetProfileName, image, service, []string{"yum", "install", "ca-certificates", "-y"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(FleetProfileName, image, service, []string{"update-ca-trust", "force-enable"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(FleetProfileName, image, service, []string{"update-ca-trust", "extract"}, false); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (fts *FleetTestSuite) waitForTime(durationString string) error {
