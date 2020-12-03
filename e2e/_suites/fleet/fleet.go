@@ -131,7 +131,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
-	s.Step(`^wait for "([^"]*)"$`, fts.waitForTime)
+	s.Step(`^process waits for "([^"]*)"$`, fts.waitForTime)
 	s.Step(`^certs for "([^"]*)" are installed$`, fts.installCerts)
 
 	// endpoint steps
