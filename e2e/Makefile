@@ -5,12 +5,18 @@ FORMAT?=pretty
 LOG_INCLUDE_TIMESTAMP?=TRUE
 LOG_LEVEL?=INFO
 TIMEOUT_FACTOR?=3
+#true by default, allowing developers to set SKIP_SCENARIOS=false
+SKIP_SCENARIOS?=true
 STACK_VERSION?=
 PICKLES_VERSION?="2.20.1"
 VERSION_VALUE=`cat ../cli/VERSION.txt`
 
 ifneq ($(TAGS),)
 TAGS_FLAG=--tags
+ifeq ($(SKIP_SCENARIOS),true)
+## We always want to skip scenarios tagged with @skip
+TAGS+= && ~skip
+endif
 endif
 
 GO_IMAGE_TAG?='stretch'
