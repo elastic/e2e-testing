@@ -1,4 +1,4 @@
--metricbeat.modules:
+metricbeat.modules:
   - module: vsphere
     metricsets:
       - datastore
