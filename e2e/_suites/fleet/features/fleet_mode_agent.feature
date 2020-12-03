@@ -43,8 +43,8 @@ Examples:
 Scenario Outline: Upgrading the installed <os> agent
   Given a "<os>" agent "stale" is deployed to Fleet with "<installer>" installer
   When agent is upgraded to version "latest"
-  Then wait for "2m"
-    And agent is in version "latest"
+    And wait for "2m"
+  Then agent is in version "latest"
 Examples:
 | os     | 
 | debian | 
