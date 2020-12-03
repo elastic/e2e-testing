@@ -43,6 +43,7 @@ Examples:
 @upgrade-agent
 Scenario Outline: Upgrading the installed <os> agent
   Given a "<os>" agent "stale" is deployed to Fleet with "tar" installer
+    And certs for "<os>" are installed
   When agent is upgraded to version "latest"
     And wait for "2m"
   Then agent is in version "latest"
