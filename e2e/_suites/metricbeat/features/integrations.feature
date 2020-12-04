@@ -43,6 +43,7 @@ Examples: HAProxy
 | haproxy     | 1.6.15  |
 
 @kafka
+@skip
 Examples: Kafka
 | integration | version  |
 | kafka       | 2.2.2    |
