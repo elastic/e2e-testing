@@ -20,6 +20,11 @@ endif
 
 # Double quote only if the tags are set
 TAGS_VALUE="$(TAGS)"
+else
+ifeq ($(SKIP_SCENARIOS),true)
+TAGS_FLAG=--tags
+TAGS_VALUE="~skip"
+endif
 endif
 
 GO_IMAGE_TAG?='stretch'
