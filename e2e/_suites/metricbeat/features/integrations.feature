@@ -14,6 +14,12 @@ Examples: Apache
 | apache      | 2.4.12  |
 | apache      | 2.4.20  |
 
+@ceph
+Examples: Ceph
+| integration | version                                 |
+| ceph        | master-6373c6a-jewel-centos-7-x86_64    |
+| ceph        | master-97985eb-nautilus-centos-7-x86_64 |
+
 @dropwizard
 Examples: Dropwizard
 | integration | version |

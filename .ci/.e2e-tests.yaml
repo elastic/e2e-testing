@@ -15,6 +15,8 @@ SUITES:
   - suite: "metricbeat"
     tags: "integrations && apache"
   - suite: "metricbeat"
+    tags: "integrations && ceph"
+  - suite: "metricbeat"
     tags: "integrations && dropwizard"
   - suite: "metricbeat"
     tags: "integrations && envoyproxy"
