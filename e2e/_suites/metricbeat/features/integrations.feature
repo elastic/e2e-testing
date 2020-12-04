@@ -72,6 +72,12 @@ Examples: Redis
 | redis       | 4.0.11  |
 | redis       | 5.0.5   |
 
+@redisenterprise
+@xpack
+Examples: Redis Enterprise
+| integration     | version   |
+| redisenterprise | 5.4.10-22 |
+
 @vsphere
 Examples: vSphere
 | integration | version |

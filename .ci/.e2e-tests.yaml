@@ -35,4 +35,6 @@ SUITES:
   - suite: "metricbeat"
     tags: "integrations && redis"
   - suite: "metricbeat"
+    tags: "integrations && redisenterprise"
+  - suite: "metricbeat"
     tags: "integrations && vsphere"
