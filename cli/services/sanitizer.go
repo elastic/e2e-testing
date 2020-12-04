@@ -16,6 +16,8 @@ type ConfigSanitizer interface {
 func GetConfigSanitizer(serviceType string) ConfigSanitizer {
 	if strings.ToLower(serviceType) == "dropwizard" {
 		return DropwizardSanitizer{}
+	} else if strings.ToLower(serviceType) == "mysql" {
+		return MySQLSanitizer{}
 	}
 
 	return DefaultSanitizer{}
@@ -37,4 +39,13 @@ type DropwizardSanitizer struct{}
 func (s DropwizardSanitizer) Sanitize(content string) string {
 	log.Debug("Sanitising dropwizard")
 	return strings.ReplaceAll(content, "metrics_path: /metrics/metrics", "metrics_path: /test/metrics")
+}
+
+// MySQLSanitizer represents a sanitizer for Dropwizard
+type MySQLSanitizer struct{}
+
+// Sanitize prepends test application context
+func (s MySQLSanitizer) Sanitize(content string) string {
+	log.Debug("Sanitising mysql")
+	return strings.ReplaceAll(content, "root:secret", "root:test")
 }

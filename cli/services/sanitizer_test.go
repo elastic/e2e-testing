@@ -22,6 +22,11 @@ func TestGetConfigSanitizer(t *testing.T) {
 			content:         ": /metrics",
 			expectedContent: ": /metrics",
 		},
+		{
+			service:         "mysql",
+			content:         `hosts: ["root:secret@tcp(mysql:3306)/"]`,
+			expectedContent: `hosts: ["root:test@tcp(mysql:3306)/"]`,
+		},
 	}
 
 	for _, tt := range tests {
