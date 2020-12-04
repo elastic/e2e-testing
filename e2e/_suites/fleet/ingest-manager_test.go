@@ -78,11 +78,9 @@ func init() {
 	agentVersionBase = e2e.GetElasticArtifactVersion(agentVersionBase)
 
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
-	agentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", agentVersionBase)
 
 	// check if version is an alias
 	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
-
 	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 }
