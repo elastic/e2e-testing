@@ -15,7 +15,6 @@ Examples: Apache
 | apache      | 2.4.20  |
 
 @dropwizard
-@skip
 Examples: Dropwizard
 | integration | version |
 | dropwizard  | 4.1.2   |
