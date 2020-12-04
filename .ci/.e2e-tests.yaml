@@ -13,6 +13,8 @@ SUITES:
   - suite: "fleet"
     tags: "fleet_mode_agent"
   - suite: "metricbeat"
+    tags: "integrations && activemq"
+  - suite: "metricbeat"
     tags: "integrations && apache"
   - suite: "metricbeat"
     tags: "integrations && ceph"

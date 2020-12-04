@@ -8,6 +8,13 @@ Scenario Outline: <integration>-<version> sends metrics to Elasticsearch without
   Then there are "<integration>" events in the index
     And there are no errors in the index
 
+@activemq
+@xpack
+Examples: ActiveMQ
+| integration | version |
+| activemq    | 5.13.0  |
+| activemq    | 5.15.9  |
+
 @apache
 Examples: Apache
 | integration | version |
