@@ -27,6 +27,7 @@ pipeline {
     issueCommentTrigger('(?i).*(?:jenkins\\W+)?run\\W+(?:the\\W+)?tests(?:\\W+please)?.*')
   }
   parameters {
+    booleanParam(name: "SKIP_SCENARIOS", defaultValue: true, description: "If it's needed to skip those scenarios marked as @skip. Default true")
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
     booleanParam(name: "forceSkipPresubmit", defaultValue: false, description: "If it's needed to execute the pre-submit tests: unit and precommit.")
@@ -57,6 +58,7 @@ pipeline {
         HOME = "${env.WORKSPACE}"
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
         GO111MODULE = 'on'
+        SKIP_SCENARIOS = "${params.SKIP_SCENARIOS}"
         SLACK_CHANNEL = "${params.SLACK_CHANNEL.trim()}"
         ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
         ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"

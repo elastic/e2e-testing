@@ -74,15 +74,23 @@ func init() {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
 
+	// check if base version is an alias
+	agentVersionBase = e2e.GetElasticArtifactVersion(agentVersionBase)
+
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 	agentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", agentVersionBase)
+<<<<<<< HEAD
 	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
+=======
+
+	// check if version is an alias
+	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
+
+>>>>>>> f98f8022fb70462227a4d5601d710f74b4042291
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 }
 
 func IngestManagerFeatureContext(s *godog.Suite) {
-	agentVersionBase = e2e.GetElasticArtifactVersion(agentVersionBase)
-
 	imts := IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			Installers: map[string]ElasticAgentInstaller{
