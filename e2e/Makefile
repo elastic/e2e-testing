@@ -17,6 +17,9 @@ ifeq ($(SKIP_SCENARIOS),true)
 ## We always want to skip scenarios tagged with @skip
 TAGS+= && ~skip
 endif
+
+# Double quote only if the tags are set
+TAGS_VALUE="$(TAGS)"
 endif
 
 GO_IMAGE_TAG?='stretch'
@@ -54,7 +57,7 @@ functional-test: install-godog
 	TIMEOUT_FACTOR=${TIMEOUT_FACTOR} \
 	STACK_VERSION=${STACK_VERSION} \
 	DEVELOPER_MODE=${DEVELOPER_MODE} \
-	godog --format=${FORMAT} ${TAGS_FLAG} "${TAGS}"
+	godog --format=${FORMAT} ${TAGS_FLAG} ${TAGS_VALUE}
 
 .PHONY: lint
 lint:
