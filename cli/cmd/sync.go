@@ -15,6 +15,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	git "github.com/elastic/e2e-testing/cli/internal"
 	io "github.com/elastic/e2e-testing/cli/internal"
+	"github.com/elastic/e2e-testing/cli/services"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -268,6 +269,9 @@ func sanitizeConfigurationFile(serviceName string, configFilePath string) error 
 	content = strings.ReplaceAll(content, "localhost", serviceName)
 	// prepend modules header
 	content = "metricbeat.modules:\n" + content
+
+	serviceSanitizer := services.GetConfigSanitizer(serviceName)
+	content = serviceSanitizer.Sanitize(content)
 
 	log.WithFields(log.Fields{
 		"config.reference.yml": configFilePath,
