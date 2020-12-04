@@ -81,7 +81,13 @@ var syncIntegrationsCmd = &cobra.Command{
 
 		git.Clone(BeatsRepo)
 
-		copyIntegrationsComposeFiles(BeatsRepo, workspace)
+		pattern := path.Join(
+			BeatsRepo.GetWorkspace(), "metricbeat", "module", "*", "_meta", "supported-versions.yml")
+		copyIntegrationsComposeFiles(BeatsRepo, pattern, workspace)
+
+		xPackPattern := path.Join(
+			BeatsRepo.GetWorkspace(), "x-pack", "metricbeat", "module", "*", "_meta", "supported-versions.yml")
+		copyIntegrationsComposeFiles(BeatsRepo, xPackPattern, workspace)
 	},
 }
 
@@ -101,10 +107,7 @@ func contains(a []string, x string) bool {
 // alongside the services. Besides that, the method will copy the _meta directory
 // for each service, also sanitising the compose files: it will remove the 'build'
 // blocks from the compose files.
-func copyIntegrationsComposeFiles(beats git.Project, target string) {
-	pattern := path.Join(
-		beats.GetWorkspace(), "metricbeat", "module", "*", "_meta", "supported-versions.yml")
-
+func copyIntegrationsComposeFiles(beats git.Project, pattern string, target string) {
 	files := io.FindFiles(pattern)
 
 	for _, file := range files {
