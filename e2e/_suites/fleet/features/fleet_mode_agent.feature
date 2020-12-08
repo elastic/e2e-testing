@@ -41,8 +41,8 @@ Examples:
 
 @upgrade-agent
 Scenario Outline: Upgrading the installed <os> agent
-  Given certs for "<os>" are installed
-    And a "<os>" agent "stale" is deployed to Fleet with "tar" installer
+  Given a "<os>" agent "stale" is deployed to Fleet with "tar" installer
+    And certs for "<os>" are installed
   When agent is upgraded to version "latest"
   Then agent is in version "latest"
 Examples:
