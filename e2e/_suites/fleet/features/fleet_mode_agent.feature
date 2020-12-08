@@ -41,11 +41,10 @@ Examples:
 
 @upgrade-agent
 Scenario Outline: Upgrading the installed <os> agent
-  Given a "<os>" agent "stale" is deployed to Fleet with "tar" installer
-    And certs for "<os>" are installed
+  Given certs for "<os>" are installed
+    And a "<os>" agent "stale" is deployed to Fleet with "tar" installer
   When agent is upgraded to version "latest"
-  Then process waits for "2m"
-    And agent is in version "latest"
+  Then agent is in version "latest"
 Examples:
 | os     | 
 | debian | 
