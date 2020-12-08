@@ -13,6 +13,11 @@ func TestGetConfigSanitizer(t *testing.T) {
 		expectedContent string
 	}{
 		{
+			service:         "compose",
+			content:         `version: "2.3"`,
+			expectedContent: `version: "3"`,
+		},
+		{
 			service:         "dropwizard",
 			content:         "metrics_path: /metrics/metrics",
 			expectedContent: "metrics_path: /test/metrics",

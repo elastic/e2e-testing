@@ -14,7 +14,9 @@ type ConfigSanitizer interface {
 // GetConfigSanitizer returns the sanitizer for the service configuration, returning default
 // if there is no sanitizer it will match sanitizers and services using service name
 func GetConfigSanitizer(serviceType string) ConfigSanitizer {
-	if strings.ToLower(serviceType) == "dropwizard" {
+	if strings.ToLower(serviceType) == "compose" {
+		return DockerComposeSanitizer{}
+	} else if strings.ToLower(serviceType) == "dropwizard" {
 		return DropwizardSanitizer{}
 	} else if strings.ToLower(serviceType) == "mysql" {
 		return MySQLSanitizer{}
@@ -30,6 +32,15 @@ type DefaultSanitizer struct{}
 func (s DefaultSanitizer) Sanitize(content string) string {
 	log.Debug("Sanitising with default sanitiser: NOOP")
 	return content
+}
+
+// DockerComposeSanitizer represents a sanitizer for Docker Compose
+type DockerComposeSanitizer struct{}
+
+// Sanitize upgrades compose versions to v3, because v2 does not support extends
+func (s DockerComposeSanitizer) Sanitize(content string) string {
+	log.Debug("Sanitising Docker Compose")
+	return strings.ReplaceAll(content, `version: "2.3"`, `version: "3"`)
 }
 
 // DropwizardSanitizer represents a sanitizer for Dropwizard

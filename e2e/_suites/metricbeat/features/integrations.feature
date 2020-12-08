@@ -65,6 +65,13 @@ Examples: Kafka
 | kafka       | 1.1.0    |
 | kafka       | 0.10.2.2 |
 
+@oracle
+@skip
+@xpack
+Examples: Oracle
+| integration | version  |
+| oracle      | 12.2.0.1 |
+
 @redis
 Examples: Redis
 | integration | version |

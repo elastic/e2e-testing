@@ -15,6 +15,7 @@ import (
 	"github.com/cucumber/godog"
 	messages "github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
@@ -300,6 +301,45 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 	return nil
 }
 
+func (mts *MetricbeatTestSuite) installOracleTools() error {
+	containerName := "metricbeat_oracle_1"
+
+	log.WithFields(log.Fields{
+		"containerName": containerName,
+	}).Trace("Installing Oracle tools")
+
+	// see https://oracle-base.com/articles/misc/oracle-instant-client-installation#yum
+	cmds := [][]string{
+		[]string{"yum", "install", "wget", "-y"},
+		[]string{"rm", "-f", "/etc/yum.repos.d/public-yum-ol7.repo"},
+		[]string{"wget", "https://yum.oracle.com/public-yum-ol7.repo", "-O", "/etc/yum.repos.d/public-yum-ol7.repo"},
+		[]string{"yum", "install", "yum-utils", "-y"},
+		[]string{"yum-config-manager", "--enable", "ol7_oracle_instantclient"},
+		[]string{"yum", "install", "oracle-release-el7", "-y"},
+		[]string{"/usr/bin/ol_yum_configure.sh"}, // transition to new Oracle Linux yum server repository
+		[]string{"yum", "install", "oracle-instantclient19.6-basic", "-y"},
+	}
+
+	for _, cmd := range cmds {
+		_, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"command":       cmd,
+				"containerName": containerName,
+				"error":         err,
+			}).Error("Could not install Oracle tools using the Docker client")
+			return err
+		}
+	}
+
+	log.WithFields(log.Fields{
+		"commands":      cmds,
+		"containerName": containerName,
+	}).Debug("Oracle tools installed")
+
+	return nil
+}
+
 // runMetricbeatService runs a metricbeat service entity for a service to monitor it
 func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	// this is needed because, in general, the target service (apache, mysql, redis) does not have a healthcheck
@@ -394,6 +434,10 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(serviceType string
 
 	mts.ServiceName = serviceType
 	mts.ServiceVersion = serviceVersion
+
+	if serviceType == "oracle" {
+		err = mts.installOracleTools()
+	}
 
 	return err
 }

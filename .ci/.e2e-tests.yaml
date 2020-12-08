@@ -33,6 +33,8 @@ SUITES:
   - suite: "metricbeat"
     tags: "integrations && mysql"
   - suite: "metricbeat"
+    tags: "integrations && oracle"
+  - suite: "metricbeat"
     tags: "integrations && redis"
   - suite: "metricbeat"
     tags: "integrations && redisenterprise"
