@@ -173,7 +173,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 func (fts *FleetTestSuite) installCerts(targetOS string) error {
 	installer := fts.getInstaller()
 	if installer.InstallCertsFn == nil {
-		return nil
+		return errors.New("no installer found")
 	}
 
 	return installer.InstallCertsFn()
