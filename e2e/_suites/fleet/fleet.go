@@ -131,7 +131,6 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
-	s.Step(`^process waits for "([^"]*)"$`, fts.waitForTime)
 	s.Step(`^certs for "([^"]*)" are installed$`, fts.installCerts)
 
 	// endpoint steps
@@ -177,16 +176,6 @@ func (fts *FleetTestSuite) installCerts(targetOS string) error {
 	}
 
 	return installer.InstallCertsFn()
-}
-
-func (fts *FleetTestSuite) waitForTime(durationString string) error {
-	duration, err := time.ParseDuration(durationString)
-	if err != nil {
-		return err
-	}
-
-	<-time.After(duration)
-	return nil
 }
 
 func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
