@@ -171,34 +171,12 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 }
 
 func (fts *FleetTestSuite) installCerts(targetOS string) error {
-	service := targetOS + "-systemd"
-	image := targetOS + "-systemd"
-	if targetOS == "debian" {
-		if err := execCommandInService(FleetProfileName, image, service, []string{"apt-get", "update"}, false); err != nil {
-			return err
-		}
-		if err := execCommandInService(FleetProfileName, image, service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
-			return err
-		}
-		if err := execCommandInService(FleetProfileName, image, service, []string{"update-ca-certificates"}, false); err != nil {
-			return err
-		}
+	installer := fts.getInstaller()
+	if installer.InstallCertsFn == nil {
+		return nil
 	}
-	if targetOS == "centos" {
-		if err := execCommandInService(FleetProfileName, image, service, []string{"yum", "check-update"}, false); err != nil {
-			return err
-		}
-		if err := execCommandInService(FleetProfileName, image, service, []string{"yum", "install", "ca-certificates", "-y"}, false); err != nil {
-			return err
-		}
-		if err := execCommandInService(FleetProfileName, image, service, []string{"update-ca-trust", "force-enable"}, false); err != nil {
-			return err
-		}
-		if err := execCommandInService(FleetProfileName, image, service, []string{"update-ca-trust", "extract"}, false); err != nil {
-			return err
-		}
-	}
-	return nil
+
+	return installer.InstallCertsFn()
 }
 
 func (fts *FleetTestSuite) waitForTime(durationString string) error {
@@ -232,34 +210,41 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 		version = agentVersion
 	}
 
-	agentID, err := getAgentID(fts.Hostname)
-	if err != nil {
-		return err
+	agentInVersionFn := func() error {
+		agentID, err := getAgentID(fts.Hostname)
+		if err != nil {
+			return err
+		}
+
+		r := createDefaultHTTPRequest(fleetAgentsURL + "/" + agentID)
+		body, err := curl.Get(r)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"body":  body,
+				"error": err,
+				"url":   r.GetURL(),
+			}).Error("Could not get agent in Fleet")
+			return err
+		}
+
+		jsonResponse, err := gabs.ParseJSON([]byte(body))
+
+		retrievedVersion := jsonResponse.Path("item.local_metadata.elastic.agent.version").Data().(string)
+		if isSnapshot := jsonResponse.Path("item.local_metadata.elastic.agent.snapshot").Data().(bool); isSnapshot {
+			retrievedVersion += "-SNAPSHOT"
+		}
+
+		if retrievedVersion != version {
+			return fmt.Errorf("version mismatch required '%s' retrieved '%s'", version, retrievedVersion)
+		}
+
+		return nil
 	}
 
-	r := createDefaultHTTPRequest(fleetAgentsURL + "/" + agentID)
-	body, err := curl.Get(r)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"body":  body,
-			"error": err,
-			"url":   r.GetURL(),
-		}).Error("Could not get agent in Fleet")
-		return err
-	}
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute * 2
+	exp := e2e.GetExponentialBackOff(maxTimeout)
 
-	jsonResponse, err := gabs.ParseJSON([]byte(body))
-
-	retrievedVersion := jsonResponse.Path("item.local_metadata.elastic.agent.version").Data().(string)
-	if isSnapshot := jsonResponse.Path("item.local_metadata.elastic.agent.snapshot").Data().(bool); isSnapshot {
-		retrievedVersion += "-SNAPSHOT"
-	}
-
-	if retrievedVersion != version {
-		return fmt.Errorf("version mismatch required '%s' retrieved '%s'", version, retrievedVersion)
-	}
-
-	return nil
+	return backoff.Retry(agentInVersionFn, exp)
 }
 
 // supported installers: tar, systemd
