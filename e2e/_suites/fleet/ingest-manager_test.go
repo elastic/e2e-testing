@@ -43,6 +43,10 @@ var agentVersionBase = "8.0.0-SNAPSHOT"
 // It can be overriden by ELASTIC_AGENT_VERSION env var
 var agentVersion = agentVersionBase
 
+// agentStaleVersion is the version of the agent to use as a base during upgrade
+// It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
+var agentStaleVersion = "7.10.0"
+
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
 var stackVersion = agentVersionBase
@@ -75,6 +79,7 @@ func init() {
 
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 	agentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", agentVersionBase)
+	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
 
 	// check if version is an alias
 	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
