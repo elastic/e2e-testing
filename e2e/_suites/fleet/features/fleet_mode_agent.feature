@@ -40,6 +40,17 @@ Examples:
 | centos |
 | debian |
 
+# @upgrade-agent
+@skip
+Scenario Outline: Upgrading the installed <os> agent
+  Given a "<os>" agent "stale" is deployed to Fleet with "tar" installer
+    And certs for "<os>" are installed
+  When agent is upgraded to version "latest"
+  Then agent is in version "latest"
+Examples:
+| os     | 
+| debian | 
+
 @restart-agent
 Scenario Outline: Restarting the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
