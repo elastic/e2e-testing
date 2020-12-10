@@ -39,7 +39,8 @@ Examples:
 | centos |
 | debian |
 
-@upgrade-agent
+# @upgrade-agent
+@skip
 Scenario Outline: Upgrading the installed <os> agent
   Given a "<os>" agent "stale" is deployed to Fleet with "tar" installer
     And certs for "<os>" are installed
