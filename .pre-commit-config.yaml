@@ -23,6 +23,7 @@ repos:
     -   id: go-lint
     -   id: validate-toml
     -   id: no-go-testing
+    -   id: golangci-lint
     -   id: go-critic
 
 -   repo: git@github.com:elastic/apm-pipeline-library
