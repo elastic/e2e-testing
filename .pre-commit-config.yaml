@@ -21,9 +21,9 @@ repos:
     hooks:
     -   id: go-fmt
     -   id: go-lint
-    -   id: validate-toml
+    -   id: go-vet
     -   id: no-go-testing
-    -   id: go-critic
+    -   id: golangci-lint
 
 -   repo: git@github.com:elastic/apm-pipeline-library
     rev: current
