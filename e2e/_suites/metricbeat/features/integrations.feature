@@ -80,6 +80,7 @@ Examples: Redis
 | redis       | 5.0.5   |
 
 @redisenterprise
+@skip
 @xpack
 Examples: Redis Enterprise
 | integration     | version   |
