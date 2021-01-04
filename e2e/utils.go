@@ -28,8 +28,7 @@ import (
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 //nolint:unused
-var seededRand *rand.Rand = rand.New(
-	rand.NewSource(time.Now().UnixNano()))
+var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // GetExponentialBackOff returns a preconfigured exponential backoff instance
 func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOff {
