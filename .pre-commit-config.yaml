@@ -21,6 +21,7 @@ repos:
     hooks:
     -   id: go-fmt
     -   id: go-lint
+    -   id: go-vet
     -   id: no-go-testing
     -   id: golangci-lint
 
