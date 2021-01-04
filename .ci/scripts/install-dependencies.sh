@@ -13,9 +13,6 @@ set -euxo pipefail
 curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.34.1
 
 go get -v golang.org/x/lint/golint
-go get -v github.com/go-lintpack/lintpack/...
-go get -v github.com/go-critic/go-critic/...
-lintpack build -o bin/gocritic -linter.version='v0.3.4' -linter.name='gocritic' github.com/go-critic/go-critic/checkers
 
 # Install project dependencies
 make -C cli install
