@@ -192,11 +192,11 @@ func GetElasticArtifactURL(artifact string, version string, operativeSystem stri
 		return "", err
 	}
 
-	// elastic-agent-7.11.0-SNAPSHOT-linux-x86_64.tar.gz
+	// elastic-agent-7.12.0-SNAPSHOT-linux-x86_64.tar.gz
 	artifactPath := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, operativeSystem, arch, extension)
 	if extension == "deb" || extension == "rpm" {
-		// elastic-agent-7.11.0-SNAPSHOT-x86_64.rpm
-		// elastic-agent-7.11.0-SNAPSHOT-amd64.deb
+		// elastic-agent-7.12.0-SNAPSHOT-x86_64.rpm
+		// elastic-agent-7.12.0-SNAPSHOT-amd64.deb
 		artifactPath = fmt.Sprintf("%s-%s-%s.%s", artifact, version, arch, extension)
 	}
 

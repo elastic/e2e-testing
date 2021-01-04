@@ -48,7 +48,7 @@ This is an example of the optional configuration:
    export STACK_VERSION=7.x-SNAPSHOT
    # (Fleet mode) This environment variable will use a fixed version of the Elastic agent binary, obtained from
    # https://artifacts-api.elastic.co/v1/search/7.x-SNAPSHOT/elastic-agent
-   export ELASTIC_AGENT_DOWNLOAD_URL="https://snapshots.elastic.co/7.11.0-d52afba4/downloads/beats/elastic-agent/elastic-agent-7.11.0-SNAPSHOT-linux-x86_64.tar.gz"
+   export ELASTIC_AGENT_DOWNLOAD_URL="https://snapshots.elastic.co/7.12.0-069dfaa4/downloads/beats/elastic-agent/elastic-agent-7.12.0-SNAPSHOT-linux-x86_64.tar.gz"
    # (Fleet mode) This environment variable will use the snapshots produced by Beats CI. If the above variable
    # is set, this variable will take no effect
    export ELASTIC_AGENT_USE_CI_SNAPSHOTS="true"
