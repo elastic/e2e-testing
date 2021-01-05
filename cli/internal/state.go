@@ -90,17 +90,13 @@ func Update(id string, workdir string, composeFilePaths []string, env map[string
 		}
 	}
 
-	args := []string{}
 	for i, f := range composeFilePaths {
-		args = append(args, "-f", f)
-
 		if i > 0 {
 			run.Services = append(run.Services, stateService{
 				Name: filepath.Base(filepath.Dir(f)),
 			})
 		}
 	}
-	args = append(args, "config")
 
 	bytes, err := yaml.Marshal(&run)
 	if err != nil {

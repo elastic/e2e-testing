@@ -10,10 +10,9 @@ set -euxo pipefail
 #
 
 # Prepare junit build context
-mkdir -p outputs
-export OUT_FILE="outputs/test-report.out"
+mkdir -p $(pwd)/outputs
 
-make -C cli install test | tee ${OUT_FILE}
+go get -v -u gotest.tools/gotestsum
 
-go get -v -u github.com/jstemmer/go-junit-report
-go-junit-report > outputs/TEST-unit.xml < ${OUT_FILE}
+# See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
+GOTESTSUM_JUNITFILE="$(pwd)/outputs/TEST-unit.xml" make -C cli install test
