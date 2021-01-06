@@ -14,6 +14,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
+	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
@@ -67,6 +68,12 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 	profileEnv["elasticAgentDockerImageSuffix"] = ""
 	if image != "default" {
 		profileEnv["elasticAgentDockerImageSuffix"] = "-" + image
+	}
+
+	profileEnv["elasticAgentDockerNamespace"] = "beats"
+	useCISnapshots, _ := shell.GetEnvBool("ELASTIC_AGENT_USE_CI_SNAPSHOTS")
+	if useCISnapshots {
+		profileEnv["elasticAgentDockerNamespace"] = "observability-ci"
 	}
 
 	containerName := fmt.Sprintf("%s_%s_%d", FleetProfileName, ElasticAgentServiceName, 1)
