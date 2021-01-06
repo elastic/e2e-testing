@@ -304,6 +304,12 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"serviceName":           mts.ServiceName,
 	}
 
+	env["metricbeatDockerNamespace"] = "beats"
+	useCISnapshots, _ := shell.GetEnvBool("ELASTIC_AGENT_USE_CI_SNAPSHOTS")
+	if useCISnapshots {
+		env["metricbeatDockerNamespace"] = "observability-ci"
+	}
+
 	err := serviceManager.AddServicesToCompose("metricbeat", []string{"metricbeat"}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
