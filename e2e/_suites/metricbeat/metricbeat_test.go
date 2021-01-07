@@ -246,13 +246,13 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForVariantModule(serviceVa
 }
 
 func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string) error {
-	if strings.HasPrefix(metricbeatVersion, "pr-") {
-		metricbeatVersion = metricbeatVersionBase
-	}
-
 	// at this point we have everything to define the index name
 	mts.Version = metricbeatVersion
 	mts.setIndexName()
+
+	if strings.HasPrefix(metricbeatVersion, "pr-") {
+		metricbeatVersion = metricbeatVersionBase
+	}
 
 	// use master branch for snapshots
 	tag := "v" + metricbeatVersion
@@ -304,11 +304,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"serviceName":           mts.ServiceName,
 	}
 
-	env["metricbeatDockerNamespace"] = "beats"
-	useCISnapshots, _ := shell.GetEnvBool("ELASTIC_AGENT_USE_CI_SNAPSHOTS")
-	if useCISnapshots {
-		env["metricbeatDockerNamespace"] = "observability-ci"
-	}
+	env["metricbeatDockerNamespace"] = e2e.GetDockerNamespaceEnvVar()
 
 	err := serviceManager.AddServicesToCompose("metricbeat", []string{"metricbeat"}, env)
 	if err != nil {
