@@ -246,6 +246,10 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForVariantModule(serviceVa
 }
 
 func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string) error {
+	// restore initial state
+	metricbeatVersionBackup := metricbeatVersion
+	defer func() { metricbeatVersion = metricbeatVersionBackup }()
+
 	// at this point we have everything to define the index name
 	mts.Version = metricbeatVersion
 	mts.setIndexName()
