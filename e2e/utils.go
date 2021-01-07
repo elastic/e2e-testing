@@ -441,7 +441,7 @@ func Sleep(seconds string) error {
 // GetDockerNamespaceEnvVar returns the Docker namespace whether we use the CI snapshots or not.
 // If an error occurred reading the environment, wil return 'beats' as fallback
 func GetDockerNamespaceEnvVar() string {
-	useCISnapshots, _ := shell.GetEnvBool("USE_CI_SNAPSHOTS")
+	useCISnapshots, _ := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	if useCISnapshots {
 		return "observability-ci"
 	}

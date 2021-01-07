@@ -49,7 +49,7 @@ This is an example of the optional configuration:
    export METRICBEAT_VERSION="8.0.0-SNAPSHOT"
    # or
    # This environment variable will use the snapshots produced by Beats CI
-   export USE_CI_SNAPSHOTS="true"
+   export BEATS_USE_CI_SNAPSHOTS="true"
    export METRICBEAT_VERSION="pr-20356"
    ```
 
