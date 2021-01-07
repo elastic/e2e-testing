@@ -305,7 +305,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	}
 
 	env["metricbeatDockerNamespace"] = "beats"
-	useCISnapshots, _ := shell.GetEnvBool("ELASTIC_AGENT_USE_CI_SNAPSHOTS")
+	useCISnapshots, _ := shell.GetEnvBool("USE_CI_SNAPSHOTS")
 	if useCISnapshots {
 		env["metricbeatDockerNamespace"] = "observability-ci"
 	}

@@ -51,7 +51,7 @@ This is an example of the optional configuration:
    export ELASTIC_AGENT_DOWNLOAD_URL="https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"
    # (Fleet mode) This environment variable will use the snapshots produced by Beats CI. If the above variable
    # is set, this variable will take no effect
-   export ELASTIC_AGENT_USE_CI_SNAPSHOTS="true"
+   export USE_CI_SNAPSHOTS="true"
    # (Stand-Alone mode) This environment variable will use the its value as the Docker tag produced by Beats CI (Please look up here: https://container-library.elastic.co/r/observability-ci/elastic-agent). Here you have two examples for tags:
    export ELASTIC_AGENT_VERSION="pr-20356"
    # or
