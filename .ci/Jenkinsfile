@@ -318,8 +318,10 @@ def generateFunctionalTestStep(Map args = [:]){
               sh script: """.ci/scripts/install-test-dependencies.sh "${suite}" """, label: "Install test dependencies for ${suite}:${tags}"
             }
           }
-          dir("${BASE_DIR}"){
-            sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${stackVersion}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
+          filebeat(workdir: "${env.WORKSPACE}"){
+            dir("${BASE_DIR}"){
+              sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${stackVersion}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
+            }
           }
         }
       } catch(e) {
