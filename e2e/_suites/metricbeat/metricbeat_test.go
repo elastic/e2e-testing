@@ -354,9 +354,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 					"metricbeatVersion": mts.Version,
 					"service":           mts.ServiceName,
 					"serviceVersion":    mts.ServiceVersion,
-				}).Error("Could not retrieve Metricbeat logs")
-
-				return err
+				}).Warn("Could not retrieve Metricbeat logs")
 			}
 		}
 	}
