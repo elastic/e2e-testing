@@ -65,6 +65,11 @@ func AvailableProfiles() map[string]Profile {
 	return Op.Profiles
 }
 
+// FileExists checks if a configuration file exists
+func FileExists(configFile string) (bool, error) {
+	return io.Exists(configFile)
+}
+
 // GetComposeFile returns the path of the compose file, looking up the
 // tool's workdir or in the static resources already packaged in the binary
 func GetComposeFile(isProfile bool, composeName string) (string, error) {
