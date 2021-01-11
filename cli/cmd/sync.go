@@ -15,6 +15,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	git "github.com/elastic/e2e-testing/cli/internal"
 	io "github.com/elastic/e2e-testing/cli/internal"
+	"github.com/elastic/e2e-testing/cli/services"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -80,7 +81,13 @@ var syncIntegrationsCmd = &cobra.Command{
 
 		git.Clone(BeatsRepo)
 
-		copyIntegrationsComposeFiles(BeatsRepo, workspace)
+		pattern := path.Join(
+			BeatsRepo.GetWorkspace(), "metricbeat", "module", "*", "_meta", "supported-versions.yml")
+		copyIntegrationsComposeFiles(BeatsRepo, pattern, workspace)
+
+		xPackPattern := path.Join(
+			BeatsRepo.GetWorkspace(), "x-pack", "metricbeat", "module", "*", "_meta", "supported-versions.yml")
+		copyIntegrationsComposeFiles(BeatsRepo, xPackPattern, workspace)
 	},
 }
 
@@ -100,10 +107,7 @@ func contains(a []string, x string) bool {
 // alongside the services. Besides that, the method will copy the _meta directory
 // for each service, also sanitising the compose files: it will remove the 'build'
 // blocks from the compose files.
-func copyIntegrationsComposeFiles(beats git.Project, target string) {
-	pattern := path.Join(
-		beats.GetWorkspace(), "metricbeat", "module", "*", "_meta", "supported-versions.yml")
-
+func copyIntegrationsComposeFiles(beats git.Project, pattern string, target string) {
 	files := io.FindFiles(pattern)
 
 	for _, file := range files {
@@ -112,8 +116,11 @@ func copyIntegrationsComposeFiles(beats git.Project, target string) {
 		service := filepath.Base(serviceDir)
 
 		composeFile := filepath.Join(serviceDir, "docker-compose.yml")
+		configFile := filepath.Join(serviceDir, "_meta", "config.yml")
 		targetFile := filepath.Join(
 			target, "compose", "services", service, "docker-compose.yml")
+		targetConfigFile := filepath.Join(
+			target, "compose", "services", service, "_meta", "config.yml")
 
 		err := io.MkdirAll(filepath.Dir(targetFile))
 		if err != nil {
@@ -128,7 +135,16 @@ func copyIntegrationsComposeFiles(beats git.Project, target string) {
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
-				"file":  file,
+				"file":  composeFile,
+			}).Warn("File was not copied")
+			continue
+		}
+
+		err = io.CopyFile(configFile, targetConfigFile, 10000)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"file":  configFile,
 			}).Warn("File was not copied")
 			continue
 		}
@@ -159,6 +175,19 @@ func copyIntegrationsComposeFiles(beats git.Project, target string) {
 			"file":       file,
 			"targetFile": targetFile,
 		}).Trace("Integration compose file copied")
+
+		err = sanitizeConfigurationFile(service, targetConfigFile)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"file":  targetFile,
+			}).Warn("Could not sanitize config file")
+			continue
+		}
+		log.WithFields(log.Fields{
+			"file":       file,
+			"targetFile": targetConfigFile,
+		}).Trace("Integration config file copied")
 	}
 
 	log.WithFields(log.Fields{
@@ -226,4 +255,30 @@ func sanitizeComposeFile(composeFilePath string) error {
 	}
 
 	return io.WriteFile(d, composeFilePath)
+}
+
+// sanitizeConfigurationFile replaces 127.0.0.1 with current service name
+func sanitizeConfigurationFile(serviceName string, configFilePath string) error {
+	bytes, err := io.ReadFile(configFilePath)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"config.yml": configFilePath,
+		}).Error("Could not read config.yml file")
+		return err
+	}
+
+	// replace local IP with service name, because it will be discovered under Docker Compose network
+	content := strings.ReplaceAll(string(bytes), "127.0.0.1", serviceName)
+	content = strings.ReplaceAll(content, "localhost", serviceName)
+	// prepend modules header
+	content = "metricbeat.modules:\n" + content
+
+	serviceSanitizer := services.GetConfigSanitizer(serviceName)
+	content = serviceSanitizer.Sanitize(content)
+
+	log.WithFields(log.Fields{
+		"config.reference.yml": configFilePath,
+	}).Trace("Config file sanitized")
+
+	return io.WriteFile([]byte(content), configFilePath)
 }
