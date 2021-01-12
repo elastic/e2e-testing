@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -45,11 +44,7 @@ func init() {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
 
-	helmVersion := "3.x"
-	if value, exists := os.LookupEnv("HELM_VERSION"); exists {
-		helmVersion = value
-	}
-
+	helmVersion := shell.GetEnv("HELM_VERSION", "3.x")
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 
 	h, err := k8s.HelmFactory(helmVersion)
@@ -554,17 +549,13 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 // HelmChartFeatureContext adds steps to the Godog test suite
 //nolint:deadcode,unused
 func HelmChartFeatureContext(s *godog.Suite) {
+	helmChartVersion := shell.GetEnv("HELM_CHART_VERSION", "7.10.0")
+	kubernetesVersion := shell.GetEnv("HELM_KUBERNETES_VERSION", "1.18.2")
+
 	testSuite := HelmChartTestSuite{
 		ClusterName:       "helm-charts-test-suite",
-		KubernetesVersion: "1.18.2",
-		Version:           "7.10.0",
-	}
-
-	if value, exists := os.LookupEnv("HELM_CHART_VERSION"); exists {
-		testSuite.Version = value
-	}
-	if value, exists := os.LookupEnv("HELM_KUBERNETES_VERSION"); exists {
-		testSuite.KubernetesVersion = value
+		KubernetesVersion: kubernetesVersion,
+		Version:           helmChartVersion,
 	}
 
 	s.Step(`^a cluster is running$`, testSuite.aClusterIsRunning)
