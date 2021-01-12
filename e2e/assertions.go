@@ -32,7 +32,10 @@ func AssertHitsAreNotPresent(hits map[string]interface{}) error {
 // AssertHitsDoNotContainErrors returns an error if any of the returned entries contains
 // an "error.message" field in the "_source" document
 func AssertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQuery) error {
-	for _, hit := range hits["hits"].(map[string]interface{})["hits"].([]interface{}) {
+	errors := []interface{}{}
+
+	iterableHits := hits["hits"].(map[string]interface{})["hits"].([]interface{})
+	for _, hit := range iterableHits {
 		source := hit.(map[string]interface{})["_source"]
 		if val, ok := source.(map[string]interface{})["error"]; ok {
 			if msg, exists := val.(map[string]interface{})["message"]; exists {
@@ -41,11 +44,15 @@ func AssertHitsDoNotContainErrors(hits map[string]interface{}, q ElasticsearchQu
 					"error.message": msg,
 				}).Error("Error Hit found")
 
-				return fmt.Errorf(
-					"There are errors for %s-%s on Metricbeat index %s",
-					q.EventModule, q.ServiceVersion, q.IndexName)
+				errors = append(errors, msg)
 			}
 		}
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf(
+			"Errors where found for %s-%s on Metricbeat's %s index: %d error/s out of %d",
+			q.EventModule, q.ServiceVersion, q.IndexName, len(errors), len(iterableHits))
 	}
 
 	return nil

@@ -1,5 +1,0 @@
-metricbeat.modules:
-  - module: mysql
-    hosts: ["root:test@tcp(mysql:3306)/"]
-    #username: root
-    #password: secret
