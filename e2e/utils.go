@@ -54,7 +54,7 @@ func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOf
 // GetElasticArtifactVersion returns the current version:
 // 1. Elastic's artifact repository, building the JSON path query based
 // If the version is a PR, then it will return the version without checking the artifacts API
-// i.e. GetElasticArtifactVersion("8.0.0-SNAPSHOT")
+// i.e. GetElasticArtifactVersion("6.8-SNAPSHOT)
 // i.e. GetElasticArtifactVersion("pr-22000")
 func GetElasticArtifactVersion(version string) string {
 	if strings.HasPrefix(strings.ToLower(version), "pr-") {
@@ -132,9 +132,9 @@ func GetElasticArtifactVersion(version string) string {
 // on the desired OS, architecture and file extension:
 // 1. Observability CI Storage bucket
 // 2. Elastic's artifact repository, building the JSON path query based
-// i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "linux", "x86_64", "tar.gz")
-// i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "x86_64", "rpm")
-// i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "amd64", "deb")
+// i.e. GetElasticArtifactURL("elastic-agent", "6.8-SNAPSHOT", "linux", "x86_64", "tar.gz")
+// i.e. GetElasticArtifactURL("elastic-agent", "6.8-SNAPSHOT", "x86_64", "rpm")
+// i.e. GetElasticArtifactURL("elastic-agent", "6.8-SNAPSHOT", "amd64", "deb")
 func GetElasticArtifactURL(artifact string, version string, operativeSystem string, arch string, extension string) (string, error) {
 	exp := GetExponentialBackOff(time.Minute)
 
@@ -193,11 +193,11 @@ func GetElasticArtifactURL(artifact string, version string, operativeSystem stri
 		return "", err
 	}
 
-	// elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz
+	// elastic-agent-6.8-SNAPSHOT-linux-x86_64.tar.gz
 	artifactPath := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, operativeSystem, arch, extension)
 	if extension == "deb" || extension == "rpm" {
-		// elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm
-		// elastic-agent-8.0.0-SNAPSHOT-amd64.deb
+		// elastic-agent-6.8-SNAPSHOT-x86_64.rpm
+		// elastic-agent-6.8-SNAPSHOT-amd64.deb
 		artifactPath = fmt.Sprintf("%s-%s-%s.%s", artifact, version, arch, extension)
 	}
 

@@ -9,17 +9,12 @@ set -euxo pipefail
 # Build and test the app using the install and test make goals.
 #
 
-readonly VERSION="8.0.0-SNAPSHOT"
+readonly VERSION="6.8-SNAPSHOT"
 
 main() {
   # refresh docker images
   cat <<EOF >.tmp_images
-docker.elastic.co/beats/elastic-agent:${VERSION}
-docker.elastic.co/beats/elastic-agent-ubi8:${VERSION}
 docker.elastic.co/elasticsearch/elasticsearch:${VERSION}
-docker.elastic.co/kibana/kibana:${VERSION}
-docker.elastic.co/observability-ci/elastic-agent:${VERSION}
-docker.elastic.co/observability-ci/elastic-agent-ubi8:${VERSION}
 docker.elastic.co/observability-ci/elasticsearch:${VERSION}
 docker.elastic.co/observability-ci/kibana:${VERSION}
 EOF

@@ -45,8 +45,8 @@ This is an example of the optional configuration:
 
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch, kibana, package registry)
-   export STACK_VERSION="8.0.0-SNAPSHOT"
-   export METRICBEAT_VERSION="8.0.0-SNAPSHOT"
+   export STACK_VERSION="6.8-SNAPSHOT"
+   export METRICBEAT_VERSION="6.8-SNAPSHOT"
    # or
    # This environment variable will use the snapshots produced by Beats CI
    export BEATS_USE_CI_SNAPSHOTS="true"
