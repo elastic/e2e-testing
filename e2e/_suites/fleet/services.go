@@ -32,6 +32,7 @@ type ElasticAgentInstaller struct {
 	image             string // docker image
 	installerType     string
 	InstallFn         func(containerName string, token string) error
+	InstallCertsFn    func() error
 	logFile           string // the name of the log file
 	logsDir           string // location of the logs
 	name              string // the name for the binary
@@ -112,8 +113,11 @@ func (i *ElasticAgentInstaller) getElasticAgentLogs(hostname string) error {
 	}
 
 	logFile := i.logsDir + i.logFile
+	if strings.Contains(logFile, "%s") {
+		logFile = fmt.Sprintf(logFile, hash)
+	}
 	cmd := []string{
-		"cat", fmt.Sprintf(logFile, hash),
+		"cat", logFile,
 	}
 
 	err = execCommandInService(i.profile, i.image, i.service, cmd, false)
@@ -319,6 +323,22 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		log.Trace("No uninstall commands for Centos + systemd")
 		return nil
 	}
+	installCertsFn := func() error {
+		if err := execCommandInService(profile, image, service, []string{"yum", "check-update"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(profile, image, service, []string{"yum", "install", "ca-certificates", "-y"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(profile, image, service, []string{"update-ca-trust", "force-enable"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(profile, image, service, []string{"update-ca-trust", "extract"}, false); err != nil {
+			return err
+		}
+
+		return nil
+	}
 
 	binDir := "/var/lib/elastic-agent/data/elastic-agent-%s/"
 
@@ -334,6 +354,7 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		homeDir:           "/etc/elastic-agent/",
 		image:             image,
 		InstallFn:         installFn,
+		InstallCertsFn:    installCertsFn,
 		installerType:     "rpm",
 		logFile:           "elastic-agent-json.log",
 		logsDir:           binDir + "logs/",
@@ -400,6 +421,18 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		log.Trace("No uninstall commands for Debian + systemd")
 		return nil
 	}
+	installCertsFn := func() error {
+		if err := execCommandInService(profile, image, service, []string{"apt-get", "update"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(profile, image, service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(profile, image, service, []string{"update-ca-certificates"}, false); err != nil {
+			return err
+		}
+		return nil
+	}
 
 	binDir := "/var/lib/elastic-agent/data/elastic-agent-%s/"
 
@@ -415,6 +448,7 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		homeDir:           "/etc/elastic-agent/",
 		image:             image,
 		InstallFn:         installFn,
+		InstallCertsFn:    installCertsFn,
 		installerType:     "deb",
 		logFile:           "elastic-agent-json.log",
 		logsDir:           binDir + "logs/",
@@ -490,6 +524,18 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 
 		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "uninstall", args)
 	}
+	installCertsFn := func() error {
+		if err := execCommandInService(profile, image, service, []string{"apt-get", "update"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(profile, image, service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(profile, image, service, []string{"update-ca-certificates"}, false); err != nil {
+			return err
+		}
+		return nil
+	}
 
 	return ElasticAgentInstaller{
 		artifactArch:      arch,
@@ -503,9 +549,10 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		homeDir:           homeDir,
 		image:             image,
 		InstallFn:         installFn,
+		InstallCertsFn:    installCertsFn,
 		installerType:     "tar",
 		logFile:           "elastic-agent.log",
-		logsDir:           "/opt/Elastic/Agent/data/elastic-agent-%s/",
+		logsDir:           "/opt/Elastic/Agent/",
 		name:              tarFile,
 		path:              binaryPath,
 		PostInstallFn:     postInstallFn,
