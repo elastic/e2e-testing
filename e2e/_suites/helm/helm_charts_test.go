@@ -36,6 +36,15 @@ var timeoutFactor = 2
 //nolint:unused
 var kubectl k8s.Kubectl
 
+// helmVersion represents the default version used for Helm
+var helmVersion = "3.x"
+
+// helmChartVersion represents the default version used for the Elastic Helm charts
+var helmChartVersion = "7.10.0"
+
+// kubernetesVersion represents the default version used for Kubernetes
+var kubernetesVersion = "1.18.2"
+
 func init() {
 	config.Init()
 
@@ -44,7 +53,9 @@ func init() {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
 
-	helmVersion := shell.GetEnv("HELM_VERSION", "3.x")
+	helmVersion = shell.GetEnv("HELM_VERSION", helmVersion)
+	helmChartVersion = shell.GetEnv("HELM_CHART_VERSION", helmChartVersion)
+	kubernetesVersion = shell.GetEnv("HELM_KUBERNETES_VERSION", kubernetesVersion)
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 
 	h, err := k8s.HelmFactory(helmVersion)
@@ -549,9 +560,6 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 // HelmChartFeatureContext adds steps to the Godog test suite
 //nolint:deadcode,unused
 func HelmChartFeatureContext(s *godog.Suite) {
-	helmChartVersion := shell.GetEnv("HELM_CHART_VERSION", "7.10.0")
-	kubernetesVersion := shell.GetEnv("HELM_KUBERNETES_VERSION", "1.18.2")
-
 	testSuite := HelmChartTestSuite{
 		ClusterName:       "helm-charts-test-suite",
 		KubernetesVersion: kubernetesVersion,
