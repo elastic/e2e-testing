@@ -83,4 +83,4 @@ notice:
 
 .PHONY: sync-integrations
 sync-integrations:
-	OP_LOG_LEVEL=${LOG_LEVEL} ./op sync integrations --delete
+	OP_LOG_LEVEL=${LOG_LEVEL} ./op sync integrations --delete --remote "elastic:6.8"
