@@ -201,9 +201,9 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 		object := fmt.Sprintf("snapshots/%s", fileName)
 
 		// we are setting a version from a pull request: the version of the artifact will be kept as the base one
-		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm
-		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-amd64.deb
-		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz
+		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.11.0-SNAPSHOT-x86_64.rpm
+		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.11.0-SNAPSHOT-amd64.deb
+		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.11.0-SNAPSHOT-linux-x86_64.tar.gz
 		if strings.HasPrefix(strings.ToLower(version), "pr-") {
 			fileName = fmt.Sprintf("%s-%s-%s.%s", artifact, agentVersionBase, arch, extension)
 			if extension == "tar.gz" {
