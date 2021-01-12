@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -37,6 +36,15 @@ var timeoutFactor = 2
 //nolint:unused
 var kubectl k8s.Kubectl
 
+// helmVersion represents the default version used for Helm
+var helmVersion = "3.x"
+
+// helmChartVersion represents the default version used for the Elastic Helm charts
+var helmChartVersion = "7.10.0"
+
+// kubernetesVersion represents the default version used for Kubernetes
+var kubernetesVersion = "1.18.2"
+
 func init() {
 	config.Init()
 
@@ -45,11 +53,9 @@ func init() {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
 
-	helmVersion := "3.x"
-	if value, exists := os.LookupEnv("HELM_VERSION"); exists {
-		helmVersion = value
-	}
-
+	helmVersion = shell.GetEnv("HELM_VERSION", helmVersion)
+	helmChartVersion = shell.GetEnv("HELM_CHART_VERSION", helmChartVersion)
+	kubernetesVersion = shell.GetEnv("HELM_KUBERNETES_VERSION", kubernetesVersion)
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 
 	h, err := k8s.HelmFactory(helmVersion)
@@ -556,15 +562,8 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 func HelmChartFeatureContext(s *godog.Suite) {
 	testSuite := HelmChartTestSuite{
 		ClusterName:       "helm-charts-test-suite",
-		KubernetesVersion: "1.18.2",
-		Version:           "7.10.0",
-	}
-
-	if value, exists := os.LookupEnv("HELM_CHART_VERSION"); exists {
-		testSuite.Version = value
-	}
-	if value, exists := os.LookupEnv("HELM_KUBERNETES_VERSION"); exists {
-		testSuite.KubernetesVersion = value
+		KubernetesVersion: kubernetesVersion,
+		Version:           helmChartVersion,
 	}
 
 	s.Step(`^a cluster is running$`, testSuite.aClusterIsRunning)
