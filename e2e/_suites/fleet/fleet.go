@@ -16,12 +16,14 @@ import (
 	curl "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
 const fleetAgentsURL = kibanaBaseURL + "/api/fleet/agents"
 const fleetAgentEventsURL = kibanaBaseURL + "/api/fleet/agents/%s/events"
 const fleetAgentsUnEnrollURL = kibanaBaseURL + "/api/fleet/agents/%s/unenroll"
+const fleetAgentUpgradeURL = kibanaBaseURL + "/api/fleet/agents/%s/upgrade"
 const fleetEnrollmentTokenURL = kibanaBaseURL + "/api/fleet/enrollment-api-keys"
 const fleetSetupURL = kibanaBaseURL + "/api/fleet/agents/setup"
 const ingestManagerAgentPoliciesURL = kibanaBaseURL + "/api/fleet/agent_policies"
@@ -117,6 +119,9 @@ func (fts *FleetTestSuite) beforeScenario() {
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
+	s.Step(`^a "([^"]*)" agent "([^"]*)" is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
+	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
+	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
@@ -126,6 +131,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
+	s.Step(`^certs for "([^"]*)" are installed$`, fts.installCerts)
 
 	// endpoint steps
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)
@@ -136,6 +142,98 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
 	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
 	s.Step(`^the policy is updated to have "([^"]*)" in "([^"]*)" mode$`, fts.thePolicyIsUpdatedToHaveMode)
 	s.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
+}
+
+func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, version, installerType string) error {
+	agentVersionBackup := agentVersion
+	defer func() { agentVersion = agentVersionBackup }()
+
+	switch version {
+	case "stale":
+		version = agentStaleVersion
+	case "latest":
+		version = agentVersion
+	default:
+		version = agentStaleVersion
+	}
+
+	agentVersion = version
+
+	// prepare installer for stale version
+	if agentVersion != agentVersionBackup {
+		i := GetElasticAgentInstaller(image, installerType)
+		installerType = fmt.Sprintf("%s-%s", installerType, version)
+		fts.Installers[fmt.Sprintf("%s-%s", image, installerType)] = i
+	}
+
+	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
+}
+
+func (fts *FleetTestSuite) installCerts(targetOS string) error {
+	installer := fts.getInstaller()
+	if installer.InstallCertsFn == nil {
+		return errors.New("no installer found")
+	}
+
+	return installer.InstallCertsFn()
+}
+
+func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
+	switch desiredVersion {
+	case "stale":
+		desiredVersion = agentStaleVersion
+	case "latest":
+		desiredVersion = agentVersion
+	default:
+		desiredVersion = agentVersion
+	}
+
+	return fts.upgradeAgent(desiredVersion)
+}
+
+func (fts *FleetTestSuite) agentInVersion(version string) error {
+	switch version {
+	case "stale":
+		version = agentStaleVersion
+	case "latest":
+		version = agentVersion
+	}
+
+	agentInVersionFn := func() error {
+		agentID, err := getAgentID(fts.Hostname)
+		if err != nil {
+			return err
+		}
+
+		r := createDefaultHTTPRequest(fleetAgentsURL + "/" + agentID)
+		body, err := curl.Get(r)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"body":  body,
+				"error": err,
+				"url":   r.GetURL(),
+			}).Error("Could not get agent in Fleet")
+			return err
+		}
+
+		jsonResponse, err := gabs.ParseJSON([]byte(body))
+
+		retrievedVersion := jsonResponse.Path("item.local_metadata.elastic.agent.version").Data().(string)
+		if isSnapshot := jsonResponse.Path("item.local_metadata.elastic.agent.snapshot").Data().(bool); isSnapshot {
+			retrievedVersion += "-SNAPSHOT"
+		}
+
+		if retrievedVersion != version {
+			return fmt.Errorf("version mismatch required '%s' retrieved '%s'", version, retrievedVersion)
+		}
+
+		return nil
+	}
+
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute * 2
+	exp := e2e.GetExponentialBackOff(maxTimeout)
+
+	return backoff.Retry(agentInVersionFn, exp)
 }
 
 // supported installers: tar, systemd
@@ -946,6 +1044,30 @@ func (fts *FleetTestSuite) unenrollHostname(force bool) error {
 				return err
 			}
 		}
+	}
+
+	return nil
+}
+
+func (fts *FleetTestSuite) upgradeAgent(version string) error {
+	agentID, err := getAgentID(fts.Hostname)
+	if err != nil {
+		return err
+	}
+
+	upgradeReq := curl.HTTPRequest{
+		BasicAuthUser:     "elastic",
+		BasicAuthPassword: "changeme",
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+			"kbn-xsrf":     "true",
+		},
+		URL:     fmt.Sprintf(fleetAgentUpgradeURL, agentID),
+		Payload: `{"version":"` + version + `", "force": true}`,
+	}
+
+	if content, err := curl.Post(upgradeReq); err != nil {
+		return errors.Wrap(err, content)
 	}
 
 	return nil
