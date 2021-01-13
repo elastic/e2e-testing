@@ -6,7 +6,6 @@ package shell
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
@@ -77,20 +76,20 @@ func GetEnv(envVar string, defaultValue string) string {
 	return defaultValue
 }
 
-// GetEnvBool returns an environment variable as boolean, returning also an error if
-// and only if the variable is not present
-func GetEnvBool(key string) (bool, error) {
+// GetEnvBool returns an environment variable as boolean.
+// If the variable is not present, returns false
+func GetEnvBool(key string) bool {
 	s := os.Getenv(key)
 	if s == "" {
-		return false, fmt.Errorf("The %s variable is not set", key)
+		return false
 	}
 
 	v, err := strconv.ParseBool(s)
 	if err != nil {
-		return false, nil
+		return false
 	}
 
-	return v, nil
+	return v
 }
 
 // GetEnvInteger returns an environment variable as integer, including a default value
