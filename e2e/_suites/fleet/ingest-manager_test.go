@@ -69,7 +69,7 @@ func init() {
 
 	kibanaClient = services.NewKibanaClient()
 
-	developerMode, _ = shell.GetEnvBool("DEVELOPER_MODE")
+	developerMode = shell.GetEnvBool("DEVELOPER_MODE")
 	if developerMode {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}

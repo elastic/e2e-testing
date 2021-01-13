@@ -46,7 +46,7 @@ var stackVersion = metricbeatVersionBase
 func init() {
 	config.Init()
 
-	developerMode, _ = shell.GetEnvBool("DEVELOPER_MODE")
+	developerMode = shell.GetEnvBool("DEVELOPER_MODE")
 	if developerMode {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
@@ -366,16 +366,16 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 			"metricbeat", // metricbeat service
 		}
 
-		err = serviceManager.RunCommand("metricbeat", composes, []string{"logs", "metricbeat"}, env)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error":             err,
-				"metricbeatVersion": mts.Version,
-				"service":           mts.ServiceName,
-				"serviceVersion":    mts.ServiceVersion,
-			}).Error("Could not retrieve Metricbeat logs")
-
-			return err
+		if developerMode {
+			err = serviceManager.RunCommand("metricbeat", composes, []string{"logs", "metricbeat"}, env)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"error":             err,
+					"metricbeatVersion": mts.Version,
+					"service":           mts.ServiceName,
+					"serviceVersion":    mts.ServiceVersion,
+				}).Warn("Could not retrieve Metricbeat logs")
+			}
 		}
 	}
 

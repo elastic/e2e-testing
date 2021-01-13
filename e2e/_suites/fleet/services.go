@@ -192,7 +192,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 	var downloadURL string
 	var err error
 
-	useCISnapshots, _ := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	if useCISnapshots {
 		log.Debug("Using CI snapshots for the Elastic Agent")
 
