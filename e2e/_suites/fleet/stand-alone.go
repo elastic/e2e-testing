@@ -69,6 +69,8 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 		profileEnv["elasticAgentDockerImageSuffix"] = "-" + image
 	}
 
+	profileEnv["elasticAgentDockerNamespace"] = e2e.GetDockerNamespaceEnvVar()
+
 	containerName := fmt.Sprintf("%s_%s_%d", FleetProfileName, ElasticAgentServiceName, 1)
 
 	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/master/x-pack/elastic-agent/elastic-agent.docker.yml"

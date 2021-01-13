@@ -46,7 +46,7 @@ var stackVersion = metricbeatVersionBase
 func init() {
 	config.Init()
 
-	developerMode, _ = shell.GetEnvBool("DEVELOPER_MODE")
+	developerMode = shell.GetEnvBool("DEVELOPER_MODE")
 	if developerMode {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
@@ -217,15 +217,35 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 	mts.setIndexName()
 	mts.ServiceType = serviceType
 
-	// look up configurations under workspace's configurations directory
+	// look up configurations under workspace's configurations directory. If does not exist, look up tool's workspace
 	dir, _ := os.Getwd()
-	mts.configurationFile = path.Join(dir, "configurations", mts.ServiceName+".yml")
+	configFile := path.Join(dir, "configurations", mts.ServiceName+".yml")
+	found, err := config.FileExists(configFile)
+	if !found || err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"path":    configFile,
+			"service": mts.ServiceName,
+		}).Debug("Could not retrieve configuration file under test workspace. Looking up tool's workspace")
+
+		configFile = path.Join(config.Op.Workspace, "compose", "services", mts.ServiceName, "_meta", "config.yml")
+		ok, err := config.FileExists(configFile)
+		if !ok {
+			return fmt.Errorf("The configuration file for %s does not exist", mts.ServiceName)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	mts.configurationFile = configFile
+
 	_ = os.Chmod(mts.configurationFile, 0666)
 
 	mts.setEventModule(mts.ServiceType)
 	mts.setServiceVersion(mts.Version)
 
-	err := mts.runMetricbeatService()
+	err = mts.runMetricbeatService()
 	if err != nil {
 		return err
 	}
@@ -246,13 +266,17 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForVariantModule(serviceVa
 }
 
 func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string) error {
-	if strings.HasPrefix(metricbeatVersion, "pr-") {
-		metricbeatVersion = metricbeatVersionBase
-	}
+	// restore initial state
+	metricbeatVersionBackup := metricbeatVersion
+	defer func() { metricbeatVersion = metricbeatVersionBackup }()
 
 	// at this point we have everything to define the index name
 	mts.Version = metricbeatVersion
 	mts.setIndexName()
+
+	if strings.HasPrefix(metricbeatVersion, "pr-") {
+		metricbeatVersion = metricbeatVersionBase
+	}
 
 	// use master branch for snapshots
 	tag := "v" + metricbeatVersion
@@ -304,6 +328,8 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"serviceName":           mts.ServiceName,
 	}
 
+	env["metricbeatDockerNamespace"] = e2e.GetDockerNamespaceEnvVar()
+
 	err := serviceManager.AddServicesToCompose("metricbeat", []string{"metricbeat"}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -340,16 +366,16 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 			"metricbeat", // metricbeat service
 		}
 
-		err = serviceManager.RunCommand("metricbeat", composes, []string{"logs", "metricbeat"}, env)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error":             err,
-				"metricbeatVersion": mts.Version,
-				"service":           mts.ServiceName,
-				"serviceVersion":    mts.ServiceVersion,
-			}).Error("Could not retrieve Metricbeat logs")
-
-			return err
+		if developerMode {
+			err = serviceManager.RunCommand("metricbeat", composes, []string{"logs", "metricbeat"}, env)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"error":             err,
+					"metricbeatVersion": mts.Version,
+					"service":           mts.ServiceName,
+					"serviceVersion":    mts.ServiceVersion,
+				}).Warn("Could not retrieve Metricbeat logs")
+			}
 		}
 	}
 

@@ -20,6 +20,7 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/docker"
+	"github.com/elastic/e2e-testing/cli/shell"
 	curl "github.com/elastic/e2e-testing/cli/shell"
 	log "github.com/sirupsen/logrus"
 )
@@ -28,8 +29,7 @@ import (
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 //nolint:unused
-var seededRand *rand.Rand = rand.New(
-	rand.NewSource(time.Now().UnixNano()))
+var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // GetExponentialBackOff returns a preconfigured exponential backoff instance
 func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOff {
@@ -436,6 +436,16 @@ func Sleep(seconds string) error {
 	time.Sleep(time.Duration(s) * time.Second)
 
 	return nil
+}
+
+// GetDockerNamespaceEnvVar returns the Docker namespace whether we use the CI snapshots or not.
+// If an error occurred reading the environment, wil return 'beats' as fallback
+func GetDockerNamespaceEnvVar() string {
+	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	if useCISnapshots {
+		return "observability-ci"
+	}
+	return "beats"
 }
 
 // WaitForProcess polls a container executing "ps" command until the process is in the desired state (present or not),

@@ -161,7 +161,7 @@ func runElasticAgentCommand(profile string, image string, service string, proces
 // into the installer struct, to be used else where
 // If the environment variable ELASTIC_AGENT_DOWNLOAD_URL exists, then the artifact to be downloaded will
 // be defined by that value
-// Else, if the environment variable ELASTIC_AGENT_USE_CI_SNAPSHOTS is set, then the artifact
+// Else, if the environment variable BEATS_USE_CI_SNAPSHOTS is set, then the artifact
 // to be downloaded will be defined by the latest snapshot produced by the Beats CI.
 func downloadAgentBinary(artifact string, version string, OS string, arch string, extension string) (string, string, error) {
 	fileName := fmt.Sprintf("%s-%s-%s.%s", artifact, version, arch, extension)
@@ -192,7 +192,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 	var downloadURL string
 	var err error
 
-	useCISnapshots, _ := shell.GetEnvBool("ELASTIC_AGENT_USE_CI_SNAPSHOTS")
+	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	if useCISnapshots {
 		log.Debug("Using CI snapshots for the Elastic Agent")
 

@@ -55,7 +55,10 @@ func (fts *FleetTestSuite) afterScenario() {
 
 	if log.IsLevelEnabled(log.DebugLevel) {
 		installer := fts.getInstaller()
-		_ = installer.getElasticAgentLogs(fts.Hostname)
+
+		if developerMode {
+			_ = installer.getElasticAgentLogs(fts.Hostname)
+		}
 
 		err := installer.UninstallFn()
 		if err != nil {
