@@ -64,6 +64,8 @@ const kibanaBaseURL = "http://localhost:5601"
 
 var kibanaClient *services.KibanaClient
 
+var imts IngestManagerTestSuite
+
 func init() {
 	config.Init()
 
@@ -83,10 +85,8 @@ func init() {
 	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
 	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
-}
 
-func IngestManagerFeatureContext(s *godog.Suite) {
-	imts := IngestManagerTestSuite{
+	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			Installers: map[string]ElasticAgentInstaller{
 				"centos-systemd": GetElasticAgentInstaller("centos", "systemd"),
@@ -97,14 +97,39 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 		},
 		StandAlone: &StandAloneTestSuite{},
 	}
+}
+
+func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
+	ctx.BeforeScenario(func(*messages.Pickle) {
+		log.Trace("Before Fleet scenario")
+
+		imts.StandAlone.Cleanup = false
+
+		imts.Fleet.beforeScenario()
+	})
+
+	ctx.AfterScenario(func(*messages.Pickle, error) {
+		log.Trace("After Fleet scenario")
+
+		if imts.StandAlone.Cleanup {
+			imts.StandAlone.afterScenario()
+		}
+
+		if imts.Fleet.Cleanup {
+			imts.Fleet.afterScenario()
+		}
+	})
+
+	ctx.Step(`^the "([^"]*)" process is in the "([^"]*)" state on the host$`, imts.processStateOnTheHost)
+
+	imts.Fleet.contributeSteps(ctx)
+	imts.StandAlone.contributeSteps(ctx)
+}
+
+func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 	serviceManager := services.NewServiceManager()
 
-	s.Step(`^the "([^"]*)" process is in the "([^"]*)" state on the host$`, imts.processStateOnTheHost)
-
-	imts.Fleet.contributeSteps(s)
-	imts.StandAlone.contributeSteps(s)
-
-	s.BeforeSuite(func() {
+	ctx.BeforeSuite(func() {
 		log.Trace("Installing Fleet runtime dependencies")
 
 		workDir, _ := os.Getwd()
@@ -142,14 +167,8 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 
 		imts.StandAlone.RuntimeDependenciesStartDate = time.Now().UTC()
 	})
-	s.BeforeScenario(func(*messages.Pickle) {
-		log.Trace("Before Fleet scenario")
 
-		imts.StandAlone.Cleanup = false
-
-		imts.Fleet.beforeScenario()
-	})
-	s.AfterSuite(func() {
+	ctx.AfterSuite(func() {
 		if !developerMode {
 			log.Debug("Destroying Fleet runtime dependencies")
 			profile := FleetProfileName
@@ -181,17 +200,6 @@ func IngestManagerFeatureContext(s *godog.Suite) {
 					}).Debug("Elastic Agent binary was removed.")
 				}
 			}
-		}
-	})
-	s.AfterScenario(func(*messages.Pickle, error) {
-		log.Trace("After Fleet scenario")
-
-		if imts.StandAlone.Cleanup {
-			imts.StandAlone.afterScenario()
-		}
-
-		if imts.Fleet.Cleanup {
-			imts.Fleet.afterScenario()
 		}
 	})
 }
