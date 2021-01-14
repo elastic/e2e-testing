@@ -31,7 +31,7 @@ REPORT="outputs/TEST-${SUITE}"
 ## Generate test report even if make failed.
 set +e
 exit_status=0
-if ! SUITE=${SUITE} TAGS="${TAGS}" FORMAT=junit:${REPORT}.xml STACK_VERSION=${STACK_VERSION} METRICBEAT_VERSION=${METRICBEAT_VERSION} make --no-print-directory -C e2e functional-test | tee ${REPORT}  ; then
+if ! SUITE=${SUITE} TAGS="${TAGS}" FORMAT=junit:${REPORT}.xml STACK_VERSION=${STACK_VERSION} METRICBEAT_VERSION=${METRICBEAT_VERSION} make --no-print-directory -C e2e functional-test ; then
   echo 'ERROR: functional-test failed'
   exit_status=1
 fi
