@@ -26,7 +26,7 @@ TARGET_ARCH=${GOARCH:-amd64}
 rm -rf outputs || true
 mkdir -p outputs
 
-REPORT="outputs/TEST-${SUITE}"
+REPORT="$(pwd)/outputs/TEST-${SUITE}"
 
 ## Generate test report even if make failed.
 set +e
