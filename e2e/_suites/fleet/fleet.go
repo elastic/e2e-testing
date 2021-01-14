@@ -120,7 +120,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 	fts.PolicyID = defaultPolicy.Path("id").Data().(string)
 }
 
-func (fts *FleetTestSuite) contributeSteps(s *godog.Suite) {
+func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
 	s.Step(`^a "([^"]*)" agent "([^"]*)" is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
 	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
