@@ -52,7 +52,7 @@ func (sats *StandAloneTestSuite) afterScenario() {
 	}
 }
 
-func (sats *StandAloneTestSuite) contributeSteps(s *godog.Suite) {
+func (sats *StandAloneTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed$`, sats.aStandaloneAgentIsDeployed)
 	s.Step(`^there is new data in the index from agent$`, sats.thereIsNewDataInTheIndexFromAgent)
 	s.Step(`^the "([^"]*)" docker container is stopped$`, sats.theDockerContainerIsStopped)
