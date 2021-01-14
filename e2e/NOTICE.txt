@@ -74,7 +74,7 @@ Version: v0.10.0
 Licence type (autodetected): MIT
 --------------------------------------------------------------------------------
 
-Contents of probable licence file $GOMODCACHE/github.com/cucumber/godog@v0.10.0/LICENSE:
+Contents of probable licence file $GOMODCACHE/github.com/cucumber/godog@v0.11.0/LICENSE:
 
 The MIT License (MIT)
 
