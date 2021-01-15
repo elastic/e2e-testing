@@ -198,7 +198,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 
 		// We will use the snapshots produced by Beats CI
 		bucket := "beats-ci-artifacts"
-		object := fmt.Sprintf("snapshots/%s", fileName)
+		object := fmt.Sprintf("snapshots/%s/%s", artifact, fileName)
 
 		// we are setting a version from a pull request: the version of the artifact will be kept as the base one
 		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.11.0-SNAPSHOT-x86_64.rpm
