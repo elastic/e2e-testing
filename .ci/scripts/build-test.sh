@@ -18,4 +18,4 @@ go get -v -u gotest.tools/gotestsum
 GOTESTSUM_JUNITFILE="$(pwd)/outputs/TEST-unit-cli.xml" make -C cli install test
 
 # See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
-GOTESTSUM_JUNITFILE="$(pwd)/outputs/TEST-unit-e2e.xml" make -C e2e install test
+GOTESTSUM_JUNITFILE="$(pwd)/outputs/TEST-unit-e2e.xml" make -C e2e unit-test
