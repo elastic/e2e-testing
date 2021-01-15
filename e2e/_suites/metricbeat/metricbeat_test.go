@@ -43,6 +43,8 @@ var serviceManager services.ServiceManager
 // It can be overriden by STACK_VERSION env var
 var stackVersion = metricbeatVersionBase
 
+var testSuite MetricbeatTestSuite
+
 func init() {
 	config.Init()
 
@@ -56,6 +58,10 @@ func init() {
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 
 	serviceManager = services.NewServiceManager()
+
+	testSuite = MetricbeatTestSuite{
+		Query: e2e.ElasticsearchQuery{},
+	}
 }
 
 // MetricbeatTestSuite represents a test suite, holding references to both metricbeat ant
@@ -146,23 +152,33 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	return err
 }
 
-// MetricbeatFeatureContext adds steps to the Godog test suite
+func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
+	ctx.BeforeScenario(func(*messages.Pickle) {
+		log.Trace("Before scenario...")
+	})
+
+	ctx.AfterScenario(func(*messages.Pickle, error) {
+		log.Trace("After scenario...")
+		err := testSuite.CleanUp()
+		if err != nil {
+			log.Errorf("CleanUp failed: %v", err)
+		}
+	})
+
+	ctx.Step(`^"([^"]*)" "([^"]*)" is running for metricbeat$`, testSuite.serviceIsRunningForMetricbeat)
+	ctx.Step(`^"([^"]*)" v([^"]*), variant of "([^"]*)", is running for metricbeat$`, testSuite.serviceVariantIsRunningForMetricbeat)
+	ctx.Step(`^metricbeat is installed and configured for "([^"]*)" module$`, testSuite.installedAndConfiguredForModule)
+	ctx.Step(`^metricbeat is installed and configured for "([^"]*)", variant of the "([^"]*)" module$`, testSuite.installedAndConfiguredForVariantModule)
+	ctx.Step(`^there are no errors in the index$`, testSuite.thereAreNoErrorsInTheIndex)
+	ctx.Step(`^there are "([^"]*)" events in the index$`, testSuite.thereAreEventsInTheIndex)
+
+	ctx.Step(`^metricbeat is installed using "([^"]*)" configuration$`, testSuite.installedUsingConfiguration)
+}
+
+// InitializeMetricbeatTestSuite adds steps to the Godog test suite
 //nolint:deadcode,unused
-func MetricbeatFeatureContext(s *godog.Suite) {
-	testSuite := MetricbeatTestSuite{
-		Query: e2e.ElasticsearchQuery{},
-	}
-
-	s.Step(`^"([^"]*)" "([^"]*)" is running for metricbeat$`, testSuite.serviceIsRunningForMetricbeat)
-	s.Step(`^"([^"]*)" v([^"]*), variant of "([^"]*)", is running for metricbeat$`, testSuite.serviceVariantIsRunningForMetricbeat)
-	s.Step(`^metricbeat is installed and configured for "([^"]*)" module$`, testSuite.installedAndConfiguredForModule)
-	s.Step(`^metricbeat is installed and configured for "([^"]*)", variant of the "([^"]*)" module$`, testSuite.installedAndConfiguredForVariantModule)
-	s.Step(`^there are no errors in the index$`, testSuite.thereAreNoErrorsInTheIndex)
-	s.Step(`^there are "([^"]*)" events in the index$`, testSuite.thereAreEventsInTheIndex)
-
-	s.Step(`^metricbeat is installed using "([^"]*)" configuration$`, testSuite.installedUsingConfiguration)
-
-	s.BeforeSuite(func() {
+func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
+	ctx.BeforeSuite(func() {
 		log.Trace("Before Metricbeat Suite...")
 		serviceManager := services.NewServiceManager()
 
@@ -186,10 +202,8 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
 	})
-	s.BeforeScenario(func(*messages.Pickle) {
-		log.Trace("Before scenario...")
-	})
-	s.AfterSuite(func() {
+
+	ctx.AfterSuite(func() {
 		if !developerMode {
 			serviceManager := services.NewServiceManager()
 			err := serviceManager.StopCompose(true, []string{"metricbeat"})
@@ -198,13 +212,6 @@ func MetricbeatFeatureContext(s *godog.Suite) {
 					"profile": "metricbeat",
 				}).Error("Could not stop the profile.")
 			}
-		}
-	})
-	s.AfterScenario(func(*messages.Pickle, error) {
-		log.Trace("After scenario...")
-		err := testSuite.CleanUp()
-		if err != nil {
-			log.Errorf("CleanUp failed: %v", err)
 		}
 	})
 }
