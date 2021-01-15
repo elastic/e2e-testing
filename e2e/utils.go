@@ -211,7 +211,7 @@ func GetElasticArtifactURL(artifact string, version string, operativeSystem stri
 
 // GetObjectURLFromBucket extracts the media URL for the desired artifact from the
 // Google Cloud Storage bucket used by the CI to push snapshots
-func GetObjectURLFromBucket(bucket string, object string, maxtimeout time.Duration) (string, error) {
+func GetObjectURLFromBucket(bucket string, folder string, object string, maxtimeout time.Duration) (string, error) {
 	exp := GetExponentialBackOff(maxtimeout)
 
 	retryCount := 1
@@ -222,7 +222,7 @@ func GetObjectURLFromBucket(bucket string, object string, maxtimeout time.Durati
 
 	storageAPI := func() error {
 		r := curl.HTTPRequest{
-			URL: fmt.Sprintf("https://storage.googleapis.com/storage/v1/b/%s/o?prefix=pull-requests%s", bucket, pageTokenQueryParam),
+			URL: fmt.Sprintf("https://storage.googleapis.com/storage/v1/b/%s/o?prefix=%s%s", bucket, folder, pageTokenQueryParam),
 		}
 
 		response, err := curl.Get(r)
@@ -230,6 +230,7 @@ func GetObjectURLFromBucket(bucket string, object string, maxtimeout time.Durati
 			log.WithFields(log.Fields{
 				"bucket":      bucket,
 				"elapsedTime": exp.GetElapsedTime(),
+				"folder":      folder,
 				"error":       err,
 				"object":      object,
 				"retry":       retryCount,
@@ -243,6 +244,7 @@ func GetObjectURLFromBucket(bucket string, object string, maxtimeout time.Durati
 		log.WithFields(log.Fields{
 			"bucket":      bucket,
 			"elapsedTime": exp.GetElapsedTime(),
+			"folder":      folder,
 			"object":      object,
 			"retries":     retryCount,
 			"url":         r.URL,
@@ -252,6 +254,7 @@ func GetObjectURLFromBucket(bucket string, object string, maxtimeout time.Durati
 		if err != nil {
 			log.WithFields(log.Fields{
 				"bucket": bucket,
+				"folder": folder,
 				"object": object,
 			}).Warn("Could not parse the response body for the object")
 
@@ -265,19 +268,21 @@ func GetObjectURLFromBucket(bucket string, object string, maxtimeout time.Durati
 		log.WithFields(log.Fields{
 			"bucket":      bucket,
 			"elapsedTime": exp.GetElapsedTime(),
+			"folder":      folder,
 			"objects":     len(items),
 			"retries":     retryCount,
 		}).Debug("Objects found")
 
 		for _, item := range items {
 			itemID := item.Path("id").Data().(string)
-			objectPath := bucket + "/" + object + "/"
+			objectPath := bucket + "/" + folder + "/" + object + "/"
 			if strings.HasPrefix(itemID, objectPath) {
 				mediaLink = item.Path("mediaLink").Data().(string)
 
 				log.WithFields(log.Fields{
 					"bucket":      bucket,
 					"elapsedTime": exp.GetElapsedTime(),
+					"folder":      folder,
 					"medialink":   mediaLink,
 					"object":      object,
 					"retries":     retryCount,
@@ -288,6 +293,7 @@ func GetObjectURLFromBucket(bucket string, object string, maxtimeout time.Durati
 			log.WithFields(log.Fields{
 				"bucket":      bucket,
 				"elapsedTime": exp.GetElapsedTime(),
+				"folder":      folder,
 				"object":      object,
 				"itemID":      itemID,
 				"retries":     retryCount,
@@ -298,6 +304,7 @@ func GetObjectURLFromBucket(bucket string, object string, maxtimeout time.Durati
 			log.WithFields(log.Fields{
 				"currentPage": currentPage,
 				"bucket":      bucket,
+				"folder":      folder,
 				"object":      object,
 			}).Warn("Reached the end of the pages and the object was not found")
 
@@ -312,11 +319,12 @@ func GetObjectURLFromBucket(bucket string, object string, maxtimeout time.Durati
 			"currentPage": currentPage,
 			"bucket":      bucket,
 			"elapsedTime": exp.GetElapsedTime(),
+			"folder":      folder,
 			"object":      object,
 			"retries":     retryCount,
 		}).Warn("Object not found in current page. Continuing")
 
-		return fmt.Errorf("The %s object could not be found in the current page (%d) the %s bucket", object, currentPage, bucket)
+		return fmt.Errorf("The %s object could not be found in the current page (%d) the %s bucket and %s folder", object, currentPage, bucket, folder)
 	}
 
 	err := backoff.Retry(storageAPI, exp)
@@ -324,7 +332,7 @@ func GetObjectURLFromBucket(bucket string, object string, maxtimeout time.Durati
 		return "", err
 	}
 	if mediaLink == "" {
-		return "", fmt.Errorf("Reached the end of the pages and the %s object was not found for the %s bucket", object, bucket)
+		return "", fmt.Errorf("Reached the end of the pages and the %s object was not found for the %s bucket and %s folder", object, bucket, folder)
 	}
 
 	return mediaLink, nil
