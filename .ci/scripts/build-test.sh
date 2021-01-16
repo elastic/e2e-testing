@@ -15,4 +15,7 @@ mkdir -p $(pwd)/outputs
 go get -v -u gotest.tools/gotestsum
 
 # See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
-GOTESTSUM_JUNITFILE="$(pwd)/outputs/TEST-unit.xml" make -C cli install test
+GOTESTSUM_JUNITFILE="$(pwd)/outputs/TEST-unit-cli.xml" make -C cli install test
+
+# See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
+GOTESTSUM_JUNITFILE="$(pwd)/outputs/TEST-unit-e2e.xml" make -C e2e unit-test
