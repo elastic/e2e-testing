@@ -197,8 +197,13 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 		log.Debug("Using CI snapshots for the Elastic Agent")
 
 		// We will use the snapshots produced by Beats CI
+		if extension == "tar.gz" {
+			fileName = fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
+		}
+
 		bucket := "beats-ci-artifacts"
-		object := fmt.Sprintf("snapshots/%s/%s", artifact, fileName)
+		prefix := fmt.Sprintf("snapshots/%s", artifact)
+		object := fileName
 
 		// we are setting a version from a pull request: the version of the artifact will be kept as the base one
 		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.x-SNAPSHOT-x86_64.rpm
@@ -213,12 +218,13 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 				"agentVersion": agentVersionBase,
 				"PR":           version,
 			}).Debug("Using CI snapshots for a pull request")
-			object = fmt.Sprintf("pull-requests/%s/%s/%s", version, artifact, fileName)
+			prefix = fmt.Sprintf("pull-requests/%s", version)
+			object = fmt.Sprintf("%s/%s", artifact, fileName)
 		}
 
 		maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
-		downloadURL, err = e2e.GetObjectURLFromBucket(bucket, object, maxTimeout)
+		downloadURL, err = e2e.GetObjectURLFromBucket(bucket, prefix, object, maxTimeout)
 		if err != nil {
 			return "", "", err
 		}
