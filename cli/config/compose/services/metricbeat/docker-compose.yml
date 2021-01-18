@@ -4,7 +4,8 @@ services:
     command: [
       "metricbeat", "-e",
       "-E", "logging.level=${logLevel}",
-      "-E", "setup.ilm.rollover_alias=${indexName}",
+      "-E", "output.elasticsearch.ilm.enabled=true",
+      "-E", "output.elasticsearch.ilm.rollover_alias=${indexName}",
       "-E", "output.elasticsearch.hosts=http://elasticsearch:9200",
       "-E", "output.elasticsearch.password=changeme",
       "-E", "output.elasticsearch.username=elastic",
