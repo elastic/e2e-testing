@@ -31,6 +31,8 @@ GO_IMAGE_TAG?='stretch'
 GOOS?='linux'
 GOARCH?='amd64'
 
+TEST_TIMEOUT?=5m
+
 .PHONT: build-docs
 build-docs:
 	rm -fr docs
@@ -84,3 +86,7 @@ notice:
 .PHONY: sync-integrations
 sync-integrations:
 	OP_LOG_LEVEL=${LOG_LEVEL} ./op sync integrations --delete --remote "elastic:7.6"
+
+.PHONY: unit-test
+unit-test:
+	gotestsum --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
