@@ -444,7 +444,7 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 				"must": []map[string]interface{}{
 					{
 						"match": map[string]interface{}{
-							"event.module": mts.Query.EventModule,
+							"event.dataset": "system.network",
 						},
 					},
 				},
@@ -480,7 +480,7 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 				"must": []map[string]interface{}{
 					{
 						"match": map[string]interface{}{
-							"event.module": mts.Query.EventModule,
+							"event.dataset": "system.network",
 						},
 					},
 				},
