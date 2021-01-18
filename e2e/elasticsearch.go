@@ -205,7 +205,7 @@ func search(indexName string, query map[string]interface{}) (SearchResult, error
 
 	log.WithFields(log.Fields{
 		"status": res.Status(),
-		"hits":   int(result["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64)),
+		"hits":   int(result["hits"].(map[string]interface{})["total"].(float64)),
 		"took":   int(result["took"].(float64)),
 	}).Debug("Response information")
 
