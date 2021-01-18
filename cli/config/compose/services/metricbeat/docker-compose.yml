@@ -19,4 +19,4 @@ services:
     labels:
       co.elastic.logs/module: "${serviceName}"
     volumes:
-      - "${metricbeatConfigFile}:/usr/share/metricbeat/metricbeat.yml"
+      - "${metricbeatConfigFile}:/etc/metricbeat/metricbeat.yml"
