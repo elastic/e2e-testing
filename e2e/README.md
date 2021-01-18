@@ -199,7 +199,7 @@ To do so:
 1. Select the base branch for the test code: 7.10.x, 7.11.x, 7.x or master.
 1. In the left menu, click on `Buid with Parameters`.
 1. In the input parameters form, set the Beat version **for Fleet and Metricbeat** with the ID of your pull request, using `pr-` as prefix. I.e. `pr-23456`. 
-1. In the input parameters form, keep the stack version (for Fleet and Metricbeat) as is, to use each branch' default version.
+1. In the input parameters form, keep the stack version (for Fleet and Metricbeat) as is, to use each branch's default version.
 1. In the input parameters form, set the `GITHUB_CHECK_NAME` to `E2E Tests`. This value will appear as the label for the Github check for the E2E tests.
 1. In the input parameters form, set the `GITHUB_CHECK_REPO` to `beats`.
 1. In the input parameters form, set the `GITHUB_CHECK_SHA1` to the `SHA1` of the last commit in your pull request. This value will allow us to modify the mergeable status of that commit with the Github check.
