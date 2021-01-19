@@ -315,6 +315,12 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	// this is needed because, in general, the target service (apache, mysql, redis) does not have a healthcheck
 	waitForService := time.Duration(timeoutFactor) * 10 * time.Second
+	if mts.ServiceName == "ceph" {
+		// see https://github.com/elastic/beats/blob/ef6274d0d1e36308a333cbed69846a1bd63528ae/metricbeat/module/ceph/mgr_osd_tree/mgr_osd_tree_integration_test.go#L35
+		// Ceph service needs more time to start up
+		waitForService = waitForService * 4
+	}
+
 	e2e.Sleep(waitForService)
 
 	serviceManager := services.NewServiceManager()
