@@ -9,7 +9,7 @@
             "program": "${workspaceFolder}/cli",
             "env": {
                 "GO111MODULE": "on",
-                "OP_LOG_LEVEL": "DEBUG",
+                "OP_LOG_LEVEL": "DEBUG"
             },
             "args": ["run", "-h"]
         },
@@ -21,7 +21,7 @@
             "program": "${workspaceFolder}/cli",
             "env": {
                 "GO111MODULE": "on",
-                "OP_LOG_LEVEL": "DEBUG",
+                "OP_LOG_LEVEL": "DEBUG"
             },
             "args": ["sync", "integrations", "--remote", "elastic:master"]
         },
@@ -33,7 +33,7 @@
             "program": "${workspaceFolder}/cli",
             "env": {
                 "GO111MODULE": "on",
-                "OP_LOG_LEVEL": "DEBUG",
+                "OP_LOG_LEVEL": "DEBUG"
             },
             "args": ["run", "service", "mysql", "--version", "5.6"]
         },
@@ -45,7 +45,7 @@
             "program": "${workspaceFolder}/cli",
             "env": {
                 "GO111MODULE": "on",
-                "OP_LOG_LEVEL": "DEBUG",
+                "OP_LOG_LEVEL": "DEBUG"
             },
             "args": ["stop", "service", "mysql", "--version", "5.6"]
         },
@@ -57,7 +57,7 @@
             "program": "${workspaceFolder}/cli",
             "env": {
                 "GO111MODULE": "on",
-                "OP_LOG_LEVEL": "DEBUG",
+                "OP_LOG_LEVEL": "DEBUG"
             },
             "args": ["deploy", "redis", "--version", "4.0.11", "--profile", "metricbeat"]
         },
@@ -69,7 +69,7 @@
             "program": "${workspaceFolder}/cli",
             "env": {
                 "GO111MODULE": "on",
-                "OP_LOG_LEVEL": "DEBUG",
+                "OP_LOG_LEVEL": "DEBUG"
             },
             "args": ["undeploy", "redis", "--profile", "metricbeat"]
         },
@@ -81,7 +81,7 @@
             "program": "${workspaceFolder}/cli",
             "env": {
                 "GO111MODULE": "on",
-                "OP_LOG_LEVEL": "DEBUG",
+                "OP_LOG_LEVEL": "DEBUG"
             },
             "args": ["run", "profile", "metricbeat", "-v", "7.5.0", "--withServices", "apache:2.2,redis:3.2.12"]
         },
@@ -93,7 +93,7 @@
             "program": "${workspaceFolder}/cli",
             "env": {
                 "GO111MODULE": "on",
-                "OP_LOG_LEVEL": "DEBUG",
+                "OP_LOG_LEVEL": "DEBUG"
             },
             "args": ["stop", "profile", "metricbeat"]
         },
@@ -105,7 +105,7 @@
             "program": "${file}",
             "env": {
                 "GO111MODULE": "on",
-                "OP_LOG_LEVEL": "DEBUG",
+                "OP_LOG_LEVEL": "DEBUG"
             },
             "args": ["--godog.format", "pretty", "metricbeat"]
         }
