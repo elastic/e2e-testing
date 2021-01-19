@@ -23,6 +23,7 @@ repos:
     -   id: go-lint
     -   id: no-go-testing
     -   id: golangci-lint
+        args: ["--fix", "--fast", "--new"]
 
 -   repo: git@github.com:elastic/apm-pipeline-library
     rev: current
