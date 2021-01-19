@@ -44,4 +44,7 @@ repos:
     -   id: remove-en-dashes
     -   id: check-jjbb
     -   id: check-gherkin-lint
-        args: ["--disable", "AvoidOutlineForSingleExample,TooClumsy,TooLongStep,TooManyDifferentTags,TooManySteps"]
+        args: [
+            "--disable", "AvoidOutlineForSingleExample,TooClumsy,TooLongStep,TooManyDifferentTags,TooManySteps",
+            "e2e/_suites/**/*.feature",
+        ]
