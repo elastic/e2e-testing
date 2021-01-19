@@ -17,13 +17,13 @@ repos:
             )$
 
 -   repo: git://github.com/dnephin/pre-commit-golang
-    rev: v0.3.4
+    rev: v0.3.5
     hooks:
     -   id: go-fmt
     -   id: go-lint
-    -   id: go-vet
     -   id: no-go-testing
     -   id: golangci-lint
+        args: ["--fix", "--fast", "--new"]
 
 -   repo: git@github.com:elastic/apm-pipeline-library
     rev: current
@@ -44,4 +44,7 @@ repos:
     -   id: remove-en-dashes
     -   id: check-jjbb
     -   id: check-gherkin-lint
-        args: ["--disable", "AvoidOutlineForSingleExample,TooClumsy,TooLongStep,TooManyDifferentTags,TooManySteps"]
+        args: [
+            "--disable", "AvoidOutlineForSingleExample,TooClumsy,TooLongStep,TooManyDifferentTags,TooManySteps",
+            "e2e/_suites/**/*.feature",
+        ]
