@@ -44,13 +44,13 @@ For this test framework, we have chosen Godog over any other test framework beca
 
 All the Gherkin (Cucumber) specifications are written in `.feature` files.
 
-A good example could be [this one](./_suites/metricbeat/features/mysql.feature).
+A good example could be [this one](./_suites/metricbeat/features/metricbeat.feature).
 
 ## Test Implementation
 
 We are using Godog + Cucumber to implement the tests, where we create connections to the `Given`, `When`, `Then`, `And`, etc. in a well-known file structure.
 
-As an example, the Golang implementation of the `./_suites/metricbeat/features/mysql.feature` is located under the [metricbeat_test.go](./_suites/metricbeat/metricbeat_test.go) file.
+As an example, the Golang implementation of the `./_suites/metricbeat/features/metricbeat.feature` is located under the [metricbeat_test.go](./_suites/metricbeat/metricbeat_test.go) file.
 
 Each module will define its own file for specificacions, adding specific feature context functions that will allow filtering the execution, if needed. 
 
