@@ -38,7 +38,7 @@ pipeline {
     string(name: 'ELASTIC_AGENT_STALE_VERSION', defaultValue: '7.10.1', description: 'SemVer version of the stale stand-alone elastic-agent to be used for Fleet upgrade tests.')
     booleanParam(name: "BEATS_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the binary snapshots produced by Beats CI instead of the official releases")
     choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'INFO'], description: 'Log level to be used')
-    choice(name: 'TIMEOUT_FACTOR', choices: ['3', '5', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
+    choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
     string(name: 'FLEET_STACK_VERSION', defaultValue: '7.10-SNAPSHOT', description: 'SemVer version of the stack to be used for Fleet tests.')
     string(name: 'METRICBEAT_STACK_VERSION', defaultValue: '7.10-SNAPSHOT', description: 'SemVer version of the stack to be used for Metricbeat tests.')
     string(name: 'METRICBEAT_VERSION', defaultValue: '7.10-SNAPSHOT', description: 'SemVer version of the metricbeat to be used.')
