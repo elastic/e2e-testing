@@ -163,7 +163,7 @@ func copyIntegrationsComposeFiles(beats git.Project, pattern string, target stri
 			"targetMeta": targetMetaDir,
 		}).Trace("Integration _meta directory copied")
 
-		err = sanitizeComposeFile(targetFile)
+		err = sanitizeComposeFile(targetFile, targetFile)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
@@ -203,7 +203,7 @@ type compose struct {
 }
 
 // removes non-needed blocks in the target compose file, such as the build context
-func sanitizeComposeFile(composeFilePath string) error {
+func sanitizeComposeFile(composeFilePath string, targetFilePath string) error {
 	bytes, err := io.ReadFile(composeFilePath)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -254,7 +254,7 @@ func sanitizeComposeFile(composeFilePath string) error {
 		return err
 	}
 
-	return io.WriteFile(d, composeFilePath)
+	return io.WriteFile(d, targetFilePath)
 }
 
 // sanitizeConfigurationFile replaces 127.0.0.1 with current service name
