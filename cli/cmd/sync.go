@@ -221,10 +221,10 @@ func sanitizeComposeFile(composeFilePath string) error {
 		return err
 	}
 
-	// we'll copy all fields but the excluded ones in this struct
-	output := make(map[string]service)
-
 	for k, srv := range c.Services {
+		// we'll copy all fields but the excluded ones in this struct
+		output := make(map[string]service)
+
 		switch i := srv.(type) {
 		case map[interface{}]interface{}:
 			log.WithFields(log.Fields{
