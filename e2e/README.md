@@ -44,7 +44,7 @@ For this test framework, we have chosen Godog over any other test framework beca
 
 All the Gherkin (Cucumber) specifications are written in `.feature` files.
 
-A good example could be [this one](./_suites/metricbeat/features/mysql.feature).
+A good example could be [this one](./_suites/metricbeat/features/metricbeat.feature).
 
 ## Test Implementation
 
