@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -33,6 +34,30 @@ func TestSanitizeComposeFile_Multiple(t *testing.T) {
 
 	assert.Equal(t, c.Version, "2.3")
 	assert.Equal(t, len(c.Services), 2)
+
+	// we know that both services have different number of ports
+	for k, srv := range c.Services {
+		switch i := srv.(type) {
+		case map[interface{}]interface{}:
+			for key, value := range i {
+				strKey := fmt.Sprintf("%v", key)
+
+				// does not contain the build context element
+				assert.NotEqual(t, strKey, "build")
+
+				// strKey == ports
+				if strKey == "ports" {
+					if k == "ceph" {
+						// ceph has 3 ports
+						assert.Equal(t, len(value.([]interface{})), 3)
+					} else if k == "ceph-api" {
+						// ceph-api has 1 port
+						assert.Equal(t, len(value.([]interface{})), 1)
+					}
+				}
+			}
+		}
+	}
 }
 
 func TestSanitizeComposeFile_Single(t *testing.T) {
