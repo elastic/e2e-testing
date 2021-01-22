@@ -22,6 +22,7 @@ Examples: Apache
 | apache      | 2.4.20  |
 
 @ceph
+@skip
 Examples: Ceph
 | integration | version                                 |
 | ceph        | master-6373c6a-jewel-centos-7-x86_64    |
