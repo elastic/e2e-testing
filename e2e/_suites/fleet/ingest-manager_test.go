@@ -66,7 +66,7 @@ var kibanaClient *services.KibanaClient
 
 var imts IngestManagerTestSuite
 
-func init() {
+func setUpSuite() {
 	config.Init()
 
 	kibanaClient = services.NewKibanaClient()
@@ -132,6 +132,8 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 	serviceManager := services.NewServiceManager()
 
 	ctx.BeforeSuite(func() {
+		setUpSuite()
+
 		log.Trace("Installing Fleet runtime dependencies")
 
 		workDir, _ := os.Getwd()
