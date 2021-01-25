@@ -19,6 +19,65 @@ type BasePackage struct {
 	service    string
 }
 
+// DEBPackage implements operations for a DEB installer
+type DEBPackage struct {
+	BasePackage
+}
+
+// NewDEBPackage creates an instance for the DEB installer
+func NewDEBPackage(binaryName string, profile string, image string, service string) *DEBPackage {
+	return &DEBPackage{
+		BasePackage{
+			binaryName: binaryName,
+			image:      image,
+			profile:    profile,
+			service:    service,
+		},
+	}
+}
+
+// Install installs a DEB package
+func (i *DEBPackage) Install(containerName string, token string) error {
+	cmds := []string{"apt", "install", "/" + i.binaryName, "-y"}
+	return extractPackage(i.profile, i.image, i.service, cmds)
+}
+
+// InstallCerts installs the certificates for a DEB package
+func (i *DEBPackage) InstallCerts() error {
+	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt-get", "update"}, false); err != nil {
+		return err
+	}
+	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
+		return err
+	}
+	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates"}, false); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Postinstall executes operations after installing a DEB package
+func (i *DEBPackage) Postinstall() error {
+	err := systemctlRun(i.profile, i.image, i.service, "enable")
+	if err != nil {
+		return err
+	}
+	return systemctlRun(i.profile, i.image, i.service, "start")
+}
+
+// Preinstall executes operations before installing a DEB package
+func (i *DEBPackage) Preinstall() error {
+	log.Trace("No preinstall commands for DEB packages")
+	return nil
+}
+
+// Uninstall uninstalls a DEB package
+func (i *DEBPackage) Uninstall() error {
+	log.Trace("No uninstall commands for DEB packages")
+	return nil
+}
+
 // RPMPackage implements operations for a RPM installer
 type RPMPackage struct {
 	BasePackage
