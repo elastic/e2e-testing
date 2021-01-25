@@ -458,7 +458,13 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", args)
 	}
 
-	installerPackage := NewTARPackage(tarFile, profile, image, service, artifact, version, os, arch, homeDir, commitFile)
+	installerPackage := NewTARPackage(tarFile, profile, image, service).
+		WithArch(arch).
+		WithArtifact(artifact).
+		WithCommitFile(commitFile).
+		WithHomeDir(homeDir).
+		WithOS(os).
+		WithVersion(version)
 
 	return ElasticAgentInstaller{
 		artifactArch:      arch,

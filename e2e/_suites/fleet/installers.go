@@ -40,7 +40,7 @@ type DEBPackage struct {
 // NewDEBPackage creates an instance for the DEB installer
 func NewDEBPackage(binaryName string, profile string, image string, service string) *DEBPackage {
 	return &DEBPackage{
-		BasePackage{
+		BasePackage: BasePackage{
 			binaryName: binaryName,
 			image:      image,
 			profile:    profile,
@@ -90,7 +90,7 @@ type RPMPackage struct {
 // NewRPMPackage creates an instance for the RPM installer
 func NewRPMPackage(binaryName string, profile string, image string, service string) *RPMPackage {
 	return &RPMPackage{
-		BasePackage{
+		BasePackage: BasePackage{
 			binaryName: binaryName,
 			image:      image,
 			profile:    profile,
@@ -148,7 +148,7 @@ type TARPackage struct {
 }
 
 // NewTARPackage creates an instance for the RPM installer
-func NewTARPackage(binaryName string, profile string, image string, service string, artifact string, version string, OS string, arch string, homeDir string, commitFile string) *TARPackage {
+func NewTARPackage(binaryName string, profile string, image string, service string) *TARPackage {
 	return &TARPackage{
 		BasePackage: BasePackage{
 			binaryName: binaryName,
@@ -156,12 +156,6 @@ func NewTARPackage(binaryName string, profile string, image string, service stri
 			profile:    profile,
 			service:    service,
 		},
-		arch:       arch,
-		artifact:   artifact,
-		commitFile: commitFile,
-		homeDir:    homeDir,
-		OS:         OS,
-		version:    version,
 	}
 }
 
@@ -211,4 +205,40 @@ func (i *TARPackage) Uninstall() error {
 	args := []string{"-f"}
 
 	return runElasticAgentCommand(i.profile, i.image, i.service, ElasticAgentProcessName, "uninstall", args)
+}
+
+// WithArch sets the architecture
+func (i *TARPackage) WithArch(arch string) *TARPackage {
+	i.arch = arch
+	return i
+}
+
+// WithArtifact sets the artifact
+func (i *TARPackage) WithArtifact(artifact string) *TARPackage {
+	i.artifact = artifact
+	return i
+}
+
+// WithCommitFile sets the commit file
+func (i *TARPackage) WithCommitFile(commitFile string) *TARPackage {
+	i.commitFile = commitFile
+	return i
+}
+
+// WithHomeDir sets the home dir
+func (i *TARPackage) WithHomeDir(homeDir string) *TARPackage {
+	i.homeDir = homeDir
+	return i
+}
+
+// WithOS sets the OS
+func (i *TARPackage) WithOS(OS string) *TARPackage {
+	i.OS = OS
+	return i
+}
+
+// WithVersion sets the version
+func (i *TARPackage) WithVersion(version string) *TARPackage {
+	i.version = version
+	return i
 }
