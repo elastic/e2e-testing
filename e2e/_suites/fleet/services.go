@@ -458,6 +458,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", args)
 	}
 
+	//
 	installerPackage := NewTARPackage(tarFile, profile, image, service).
 		WithArch(arch).
 		WithArtifact(artifact).
@@ -497,29 +498,6 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 
 func extractPackage(profile string, image string, service string, cmds []string) error {
 	err := execCommandInService(profile, image, service, cmds, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmds,
-			"error":   err,
-			"image":   image,
-			"service": service,
-		}).Error("Could not extract agent package in the box")
-
-		return err
-	}
-
-	return nil
-}
-
-func installFromTar(profile string, image string, service string, tarFile string, commitFile string, artifact string, version string, OS string, arch string) error {
-	err := extractPackage(profile, image, service, []string{"tar", "-xvf", "/" + tarFile})
-	if err != nil {
-		return err
-	}
-
-	// simplify layout
-	cmds := []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, version, OS, arch), "/elastic-agent"}
-	err = execCommandInService(profile, image, service, cmds, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmds,
