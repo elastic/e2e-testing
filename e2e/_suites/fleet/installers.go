@@ -23,6 +23,23 @@ type BasePackage struct {
 	service    string
 }
 
+// extractPackage depends on the underlying OS, so 'cmds' must contain the specific instructions for the OS
+func (i *BasePackage) extractPackage(cmds []string) error {
+	err := execCommandInService(i.profile, i.image, i.service, cmds, false)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmds,
+			"error":   err,
+			"image":   i.image,
+			"service": i.service,
+		}).Error("Could not extract agent package in the box")
+
+		return err
+	}
+
+	return nil
+}
+
 // Postinstall executes operations after installing a DEB package
 func (i *BasePackage) Postinstall() error {
 	err := systemctlRun(i.profile, i.image, i.service, "enable")
@@ -51,8 +68,7 @@ func NewDEBPackage(binaryName string, profile string, image string, service stri
 
 // Install installs a DEB package
 func (i *DEBPackage) Install(containerName string, token string) error {
-	cmds := []string{"apt", "install", "/" + i.binaryName, "-y"}
-	return extractPackage(i.profile, i.image, i.service, cmds)
+	return i.extractPackage([]string{"apt", "install", "/" + i.binaryName, "-y"})
 }
 
 // InstallCerts installs the certificates for a DEB package
@@ -101,8 +117,7 @@ func NewRPMPackage(binaryName string, profile string, image string, service stri
 
 // Install installs a RPM package
 func (i *RPMPackage) Install(containerName string, token string) error {
-	cmds := []string{"yum", "localinstall", "/" + i.binaryName, "-y"}
-	return extractPackage(i.profile, i.image, i.service, cmds)
+	return i.extractPackage([]string{"yum", "localinstall", "/" + i.binaryName, "-y"})
 }
 
 // InstallCerts installs the certificates for a RPM package
@@ -194,7 +209,7 @@ func (i *TARPackage) Postinstall() error {
 
 // Preinstall executes operations before installing a TAR package
 func (i *TARPackage) Preinstall() error {
-	err := extractPackage(i.profile, i.image, i.service, []string{"tar", "-xvf", "/" + i.binaryName})
+	err := i.extractPackage([]string{"tar", "-xvf", "/" + i.binaryName})
 	if err != nil {
 		return err
 	}

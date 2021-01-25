@@ -494,22 +494,6 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 	}, nil
 }
 
-func extractPackage(profile string, image string, service string, cmds []string) error {
-	err := execCommandInService(profile, image, service, cmds, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmds,
-			"error":   err,
-			"image":   image,
-			"service": service,
-		}).Error("Could not extract agent package in the box")
-
-		return err
-	}
-
-	return nil
-}
-
 func systemctlRun(profile string, image string, service string, command string) error {
 	cmd := []string{"systemctl", command, ElasticAgentProcessName}
 	err := execCommandInService(profile, image, service, cmd, false)
