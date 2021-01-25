@@ -452,47 +452,13 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 	homeDir := "/elastic-agent/"
 	binDir := "/usr/bin/"
 
-	preInstallFn := func() error {
-		commitFile := homeDir + commitFile
-		return installFromTar(profile, image, service, tarFile, commitFile, artifact, checkElasticAgentVersion(version), os, arch)
-	}
-	installFn := func(containerName string, token string) error {
-		// install the elastic-agent to /usr/bin/elastic-agent using command
-		binary := fmt.Sprintf("/elastic-agent/%s", artifact)
-		args := []string{"--force", "--insecure", "--enrollment-token", token, "--kibana-url", "http://kibana:5601"}
-
-		err = runElasticAgentCommand(profile, image, service, binary, "install", args)
-		if err != nil {
-			return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
-		}
-		return nil
-	}
 	enrollFn := func(token string) error {
 		args := []string{"http://kibana:5601", token, "-f", "--insecure"}
 
 		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", args)
 	}
-	postInstallFn := func() error {
-		log.Trace("No postinstall commands for TAR installer")
-		return nil
-	}
-	unInstallFn := func() error {
-		args := []string{"-f"}
 
-		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "uninstall", args)
-	}
-	installCertsFn := func() error {
-		if err := execCommandInService(profile, image, service, []string{"apt-get", "update"}, false); err != nil {
-			return err
-		}
-		if err := execCommandInService(profile, image, service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
-			return err
-		}
-		if err := execCommandInService(profile, image, service, []string{"update-ca-certificates"}, false); err != nil {
-			return err
-		}
-		return nil
-	}
+	installerPackage := NewTARPackage(tarFile, profile, image, service, artifact, version, os, arch, homeDir, commitFile)
 
 	return ElasticAgentInstaller{
 		artifactArch:      arch,
@@ -505,20 +471,20 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		EnrollFn:          enrollFn,
 		homeDir:           homeDir,
 		image:             image,
-		InstallFn:         installFn,
-		InstallCertsFn:    installCertsFn,
+		InstallFn:         installerPackage.Install,
+		InstallCertsFn:    installerPackage.InstallCerts,
 		installerType:     "tar",
 		logFile:           "elastic-agent.log",
 		logsDir:           "/opt/Elastic/Agent/",
 		name:              tarFile,
 		path:              binaryPath,
-		PostInstallFn:     postInstallFn,
-		PreInstallFn:      preInstallFn,
+		PostInstallFn:     installerPackage.Postinstall,
+		PreInstallFn:      installerPackage.Preinstall,
 		processName:       ElasticAgentProcessName,
 		profile:           profile,
 		service:           service,
 		tag:               tag,
-		UninstallFn:       unInstallFn,
+		UninstallFn:       installerPackage.Uninstall,
 		workingDir:        "/opt/Elastic/Agent/",
 	}, nil
 }

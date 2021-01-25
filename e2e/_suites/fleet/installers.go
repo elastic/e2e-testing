@@ -1,6 +1,10 @@
 package main
 
-import log "github.com/sirupsen/logrus"
+import (
+	"fmt"
+
+	log "github.com/sirupsen/logrus"
+)
 
 // InstallerPackage represents the operations that can be performed by an installer package type
 type InstallerPackage interface {
@@ -129,4 +133,82 @@ func (i *RPMPackage) Preinstall() error {
 func (i *RPMPackage) Uninstall() error {
 	log.Trace("No uninstall commands for RPM packages")
 	return nil
+}
+
+// TARPackage implements operations for a RPM installer
+type TARPackage struct {
+	BasePackage
+	// optional fields
+	arch       string
+	artifact   string
+	commitFile string
+	homeDir    string
+	OS         string
+	version    string
+}
+
+// NewTARPackage creates an instance for the RPM installer
+func NewTARPackage(binaryName string, profile string, image string, service string, artifact string, version string, OS string, arch string, homeDir string, commitFile string) *TARPackage {
+	return &TARPackage{
+		BasePackage: BasePackage{
+			binaryName: binaryName,
+			image:      image,
+			profile:    profile,
+			service:    service,
+		},
+		arch:       arch,
+		artifact:   artifact,
+		commitFile: commitFile,
+		homeDir:    homeDir,
+		OS:         OS,
+		version:    version,
+	}
+}
+
+// Install installs a TAR package
+func (i *TARPackage) Install(containerName string, token string) error {
+	// install the elastic-agent to /usr/bin/elastic-agent using command
+	binary := fmt.Sprintf("/elastic-agent/%s", i.artifact)
+	args := []string{"--force", "--insecure", "--enrollment-token", token, "--kibana-url", "http://kibana:5601"}
+
+	err := runElasticAgentCommand(i.profile, i.image, i.service, binary, "install", args)
+	if err != nil {
+		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
+	}
+
+	return nil
+}
+
+// InstallCerts installs the certificates for a TAR package
+func (i *TARPackage) InstallCerts() error {
+	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt-get", "update"}, false); err != nil {
+		return err
+	}
+	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
+		return err
+	}
+	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates"}, false); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Postinstall executes operations after installing a TAR package
+func (i *TARPackage) Postinstall() error {
+	log.Trace("No postinstall commands for TAR installer")
+	return nil
+}
+
+// Preinstall executes operations before installing a TAR package
+func (i *TARPackage) Preinstall() error {
+	commitFile := i.homeDir + i.commitFile
+	return installFromTar(i.profile, i.image, i.service, i.binaryName, commitFile, i.artifact, checkElasticAgentVersion(i.version), i.OS, i.arch)
+}
+
+// Uninstall uninstalls a TAR package
+func (i *TARPackage) Uninstall() error {
+	args := []string{"-f"}
+
+	return runElasticAgentCommand(i.profile, i.image, i.service, ElasticAgentProcessName, "uninstall", args)
 }
