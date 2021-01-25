@@ -19,6 +19,15 @@ type BasePackage struct {
 	service    string
 }
 
+// Postinstall executes operations after installing a DEB package
+func (i *BasePackage) Postinstall() error {
+	err := systemctlRun(i.profile, i.image, i.service, "enable")
+	if err != nil {
+		return err
+	}
+	return systemctlRun(i.profile, i.image, i.service, "start")
+}
+
 // DEBPackage implements operations for a DEB installer
 type DEBPackage struct {
 	BasePackage
@@ -55,15 +64,6 @@ func (i *DEBPackage) InstallCerts() error {
 	}
 
 	return nil
-}
-
-// Postinstall executes operations after installing a DEB package
-func (i *DEBPackage) Postinstall() error {
-	err := systemctlRun(i.profile, i.image, i.service, "enable")
-	if err != nil {
-		return err
-	}
-	return systemctlRun(i.profile, i.image, i.service, "start")
 }
 
 // Preinstall executes operations before installing a DEB package
@@ -117,15 +117,6 @@ func (i *RPMPackage) InstallCerts() error {
 	}
 
 	return nil
-}
-
-// Postinstall executes operations after installing a RPM package
-func (i *RPMPackage) Postinstall() error {
-	err := systemctlRun(i.profile, i.image, i.service, "enable")
-	if err != nil {
-		return err
-	}
-	return systemctlRun(i.profile, i.image, i.service, "start")
 }
 
 // Preinstall executes operations before installing a RPM package
