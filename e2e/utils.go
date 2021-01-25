@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 
@@ -444,20 +443,14 @@ func RandomString(length int) string {
 	return randomStringWithCharset(length, charset)
 }
 
-// Sleep sleeps a number of seconds, including logs
-func Sleep(seconds string) error {
+// Sleep sleeps a duration, including logs
+func Sleep(duration time.Duration) error {
 	fields := log.Fields{
-		"seconds": seconds,
+		"duration": duration,
 	}
 
-	s, err := strconv.Atoi(seconds)
-	if err != nil {
-		log.WithFields(fields).Errorf("Cannot convert %s to seconds", seconds)
-		return err
-	}
-
-	log.WithFields(fields).Tracef("Waiting %s seconds", seconds)
-	time.Sleep(time.Duration(s) * time.Second)
+	log.WithFields(fields).Tracef("Waiting %v", duration)
+	time.Sleep(duration)
 
 	return nil
 }

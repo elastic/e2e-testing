@@ -123,7 +123,7 @@ func RetrySearch(indexName string, esQuery map[string]interface{}, maxAttempts i
 				"retryAttempts": maxAttempts,
 				"retryTimeout":  retryTimeout,
 			}).Tracef("Waiting %d seconds for the index to be ready", retryTimeout)
-			time.Sleep(time.Duration(retryTimeout) * time.Second)
+			Sleep(time.Duration(retryTimeout) * time.Second)
 		}
 	}
 

@@ -30,4 +30,4 @@ $ pre-commit install
 pre-commit installed at .git/hooks/pre-commit
 ```
 
-To understand more about the hooks we use, please take a look at pre-commit's [configuration file](./.pre-commit-confifg.yml).
+To understand more about the hooks we use, please take a look at pre-commit's [configuration file](./.pre-commit-config.yml).
