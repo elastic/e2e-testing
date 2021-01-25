@@ -11,21 +11,28 @@ type InstallerPackage interface {
 	Uninstall() error
 }
 
-// RPMPackage implements operations for a RPM installer
-type RPMPackage struct {
+// BasePackage holds references to basic state for all installers
+type BasePackage struct {
 	binaryName string
 	image      string
 	profile    string
 	service    string
 }
 
+// RPMPackage implements operations for a RPM installer
+type RPMPackage struct {
+	BasePackage
+}
+
 // NewRPMPackage creates an instance for the RPM installer
 func NewRPMPackage(binaryName string, profile string, image string, service string) *RPMPackage {
 	return &RPMPackage{
-		binaryName: binaryName,
-		image:      image,
-		profile:    profile,
-		service:    service,
+		BasePackage{
+			binaryName: binaryName,
+			image:      image,
+			profile:    profile,
+			service:    service,
+		},
 	}
 }
 
