@@ -194,7 +194,28 @@ func (i *TARPackage) Postinstall() error {
 
 // Preinstall executes operations before installing a TAR package
 func (i *TARPackage) Preinstall() error {
-	return installFromTar(i.profile, i.image, i.service, i.binaryName, i.artifact, checkElasticAgentVersion(i.version), i.OS, i.arch)
+	err := extractPackage(i.profile, i.image, i.service, []string{"tar", "-xvf", "/" + i.binaryName})
+	if err != nil {
+		return err
+	}
+
+	version := checkElasticAgentVersion(i.version)
+
+	// simplify layout
+	cmds := []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", i.artifact, version, i.OS, i.arch), "/elastic-agent"}
+	err = execCommandInService(i.profile, i.image, i.service, cmds, false)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmds,
+			"error":   err,
+			"image":   i.image,
+			"service": i.service,
+		}).Error("Could not extract agent package in the box")
+
+		return err
+	}
+
+	return nil
 }
 
 // Uninstall uninstalls a TAR package
@@ -226,27 +247,4 @@ func (i *TARPackage) WithOS(OS string) *TARPackage {
 func (i *TARPackage) WithVersion(version string) *TARPackage {
 	i.version = version
 	return i
-}
-
-func installFromTar(profile string, image string, service string, tarFile string, artifact string, version string, OS string, arch string) error {
-	err := extractPackage(profile, image, service, []string{"tar", "-xvf", "/" + tarFile})
-	if err != nil {
-		return err
-	}
-
-	// simplify layout
-	cmds := []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, version, OS, arch), "/elastic-agent"}
-	err = execCommandInService(profile, image, service, cmds, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmds,
-			"error":   err,
-			"image":   image,
-			"service": service,
-		}).Error("Could not extract agent package in the box")
-
-		return err
-	}
-
-	return nil
 }
