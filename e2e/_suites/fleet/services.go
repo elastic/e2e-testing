@@ -196,31 +196,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 	if useCISnapshots {
 		log.Debug("Using CI snapshots for the Elastic Agent")
 
-		// We will use the snapshots produced by Beats CI
-		if extension == "tar.gz" {
-			fileName = fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
-		}
-
-		bucket := "beats-ci-artifacts"
-		prefix := fmt.Sprintf("snapshots/%s", artifact)
-		object := fileName
-
-		// we are setting a version from a pull request: the version of the artifact will be kept as the base one
-		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.x-SNAPSHOT-x86_64.rpm
-		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.x-SNAPSHOT-amd64.deb
-		// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.x-SNAPSHOT-linux-x86_64.tar.gz
-		if strings.HasPrefix(strings.ToLower(version), "pr-") {
-			fileName = fmt.Sprintf("%s-%s-%s.%s", artifact, agentVersionBase, arch, extension)
-			if extension == "tar.gz" {
-				fileName = fmt.Sprintf("%s-%s-%s-%s.%s", artifact, agentVersionBase, OS, arch, extension)
-			}
-			log.WithFields(log.Fields{
-				"agentVersion": agentVersionBase,
-				"PR":           version,
-			}).Debug("Using CI snapshots for a pull request")
-			prefix = fmt.Sprintf("pull-requests/%s", version)
-			object = fmt.Sprintf("%s/%s", artifact, fileName)
-		}
+		bucketFileName, bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, OS, arch, extension)
 
 		maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
@@ -229,7 +205,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 			return "", "", err
 		}
 
-		return handleDownload(downloadURL, fileName)
+		return handleDownload(downloadURL, bucketFileName)
 	}
 
 	downloadURL, err = e2e.GetElasticArtifactURL(artifact, checkElasticAgentVersion(version), OS, arch, extension)
@@ -273,6 +249,43 @@ func GetElasticAgentInstaller(image string, installerType string) ElasticAgentIn
 		}).Fatal("Sorry, we could not download the installer")
 	}
 	return installer
+}
+
+// getGCPBucketCoordinates it calculates the bucket path in GCP
+func getGCPBucketCoordinates(fileName string, artifact string, version string, OS string, arch string, extension string) (string, string, string, string) {
+	if extension == "tar.gz" {
+		fileName = fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
+	}
+
+	bucket := "beats-ci-artifacts"
+	prefix := fmt.Sprintf("snapshots/%s", artifact)
+	object := fileName
+	newFileName := fileName
+
+	// the commit SHA will identify univocally the artifact in the GCP storage bucket
+	commitSHA := shell.GetEnv("GITHUB_CHECK_SHA1", "")
+	if commitSHA != "" {
+		prefix = fmt.Sprintf("commits/%s", commitSHA)
+	}
+
+	// we are setting a version from a pull request: the version of the artifact will be kept as the base one
+	// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.x-SNAPSHOT-x86_64.rpm
+	// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.x-SNAPSHOT-amd64.deb
+	// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-7.x-SNAPSHOT-linux-x86_64.tar.gz
+	if strings.HasPrefix(strings.ToLower(version), "pr-") {
+		newFileName = fmt.Sprintf("%s-%s-%s.%s", artifact, agentVersionBase, arch, extension)
+		if extension == "tar.gz" {
+			newFileName = fmt.Sprintf("%s-%s-%s-%s.%s", artifact, agentVersionBase, OS, arch, extension)
+		}
+		log.WithFields(log.Fields{
+			"agentVersion": agentVersionBase,
+			"PR":           version,
+		}).Debug("Using CI snapshots for a pull request")
+		prefix = fmt.Sprintf("pull-requests/%s", version)
+		object = fmt.Sprintf("%s/%s", artifact, newFileName)
+	}
+
+	return newFileName, bucket, prefix, object
 }
 
 func isSystemdBased(image string) bool {
