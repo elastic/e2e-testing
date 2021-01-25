@@ -318,48 +318,15 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		return ElasticAgentInstaller{}, err
 	}
 
-	preInstallFn := func() error {
-		log.Trace("No preinstall commands for Centos + systemd")
-		return nil
-	}
-	installFn := func(containerName string, token string) error {
-		cmds := []string{"yum", "localinstall", "/" + binaryName, "-y"}
-		return extractPackage(profile, image, service, cmds)
-	}
 	enrollFn := func(token string) error {
 		args := []string{"http://kibana:5601", token, "-f", "--insecure"}
 
 		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", args)
 	}
-	postInstallFn := func() error {
-		err = systemctlRun(profile, image, service, "enable")
-		if err != nil {
-			return err
-		}
-		return systemctlRun(profile, image, service, "start")
-	}
-	unInstallFn := func() error {
-		log.Trace("No uninstall commands for Centos + systemd")
-		return nil
-	}
-	installCertsFn := func() error {
-		if err := execCommandInService(profile, image, service, []string{"yum", "check-update"}, false); err != nil {
-			return err
-		}
-		if err := execCommandInService(profile, image, service, []string{"yum", "install", "ca-certificates", "-y"}, false); err != nil {
-			return err
-		}
-		if err := execCommandInService(profile, image, service, []string{"update-ca-trust", "force-enable"}, false); err != nil {
-			return err
-		}
-		if err := execCommandInService(profile, image, service, []string{"update-ca-trust", "extract"}, false); err != nil {
-			return err
-		}
-
-		return nil
-	}
 
 	binDir := "/var/lib/elastic-agent/data/elastic-agent-%s/"
+
+	installerPackage := NewRPMPackage(binaryName, profile, image, service)
 
 	return ElasticAgentInstaller{
 		artifactArch:      arch,
@@ -372,20 +339,20 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		EnrollFn:          enrollFn,
 		homeDir:           "/etc/elastic-agent/",
 		image:             image,
-		InstallFn:         installFn,
-		InstallCertsFn:    installCertsFn,
+		InstallFn:         installerPackage.Install,
+		InstallCertsFn:    installerPackage.InstallCerts,
 		installerType:     "rpm",
 		logFile:           "elastic-agent-json.log",
 		logsDir:           binDir + "logs/",
 		name:              binaryName,
 		path:              binaryPath,
-		PostInstallFn:     postInstallFn,
-		PreInstallFn:      preInstallFn,
+		PostInstallFn:     installerPackage.Postinstall,
+		PreInstallFn:      installerPackage.Preinstall,
 		processName:       ElasticAgentProcessName,
 		profile:           profile,
 		service:           service,
 		tag:               tag,
-		UninstallFn:       unInstallFn,
+		UninstallFn:       installerPackage.Uninstall,
 		workingDir:        "/var/lib/elastic-agent",
 	}, nil
 }
