@@ -62,7 +62,7 @@ func (fts *FleetTestSuite) afterScenario() {
 
 		err := installer.UninstallFn()
 		if err != nil {
-			log.Warnf("Could not uninstall the agent after the scenario: %w", err)
+			log.Warnf("Could not uninstall the agent after the scenario: %v", err)
 		}
 	}
 
