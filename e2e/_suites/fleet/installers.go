@@ -139,12 +139,10 @@ func (i *RPMPackage) Uninstall() error {
 type TARPackage struct {
 	BasePackage
 	// optional fields
-	arch       string
-	artifact   string
-	commitFile string
-	homeDir    string
-	OS         string
-	version    string
+	arch     string
+	artifact string
+	OS       string
+	version  string
 }
 
 // NewTARPackage creates an instance for the RPM installer
@@ -196,8 +194,7 @@ func (i *TARPackage) Postinstall() error {
 
 // Preinstall executes operations before installing a TAR package
 func (i *TARPackage) Preinstall() error {
-	commitFile := i.homeDir + i.commitFile
-	return installFromTar(i.profile, i.image, i.service, i.binaryName, commitFile, i.artifact, checkElasticAgentVersion(i.version), i.OS, i.arch)
+	return installFromTar(i.profile, i.image, i.service, i.binaryName, i.artifact, checkElasticAgentVersion(i.version), i.OS, i.arch)
 }
 
 // Uninstall uninstalls a TAR package
@@ -219,18 +216,6 @@ func (i *TARPackage) WithArtifact(artifact string) *TARPackage {
 	return i
 }
 
-// WithCommitFile sets the commit file
-func (i *TARPackage) WithCommitFile(commitFile string) *TARPackage {
-	i.commitFile = commitFile
-	return i
-}
-
-// WithHomeDir sets the home dir
-func (i *TARPackage) WithHomeDir(homeDir string) *TARPackage {
-	i.homeDir = homeDir
-	return i
-}
-
 // WithOS sets the OS
 func (i *TARPackage) WithOS(OS string) *TARPackage {
 	i.OS = OS
@@ -243,7 +228,7 @@ func (i *TARPackage) WithVersion(version string) *TARPackage {
 	return i
 }
 
-func installFromTar(profile string, image string, service string, tarFile string, commitFile string, artifact string, version string, OS string, arch string) error {
+func installFromTar(profile string, image string, service string, tarFile string, artifact string, version string, OS string, arch string) error {
 	err := extractPackage(profile, image, service, []string{"tar", "-xvf", "/" + tarFile})
 	if err != nil {
 		return err

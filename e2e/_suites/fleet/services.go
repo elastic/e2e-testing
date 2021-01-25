@@ -462,8 +462,6 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 	installerPackage := NewTARPackage(tarFile, profile, image, service).
 		WithArch(arch).
 		WithArtifact(artifact).
-		WithCommitFile(commitFile).
-		WithHomeDir(homeDir).
 		WithOS(os).
 		WithVersion(version)
 
