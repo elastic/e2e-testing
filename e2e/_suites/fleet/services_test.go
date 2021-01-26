@@ -24,7 +24,7 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "commits/0123456789")
 		assert.Equal(t, newFileName, "elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm")
-		assert.Equal(t, object, "elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm")
+		assert.Equal(t, object, "elastic-agent/elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm")
 	})
 
 	t.Run("Fetching commits bucket for DEB package", func(t *testing.T) {
@@ -39,7 +39,7 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "commits/0123456789")
 		assert.Equal(t, newFileName, "elastic-agent-8.0.0-SNAPSHOT-amd64.deb")
-		assert.Equal(t, object, "elastic-agent-8.0.0-SNAPSHOT-amd64.deb")
+		assert.Equal(t, object, "elastic-agent/elastic-agent-8.0.0-SNAPSHOT-amd64.deb")
 	})
 
 	t.Run("Fetching commits bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
@@ -54,7 +54,7 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "commits/0123456789")
 		assert.Equal(t, newFileName, "elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz")
-		assert.Equal(t, object, "elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz")
+		assert.Equal(t, object, "elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz")
 	})
 }
 
