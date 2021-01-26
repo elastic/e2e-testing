@@ -31,6 +31,8 @@ GO_IMAGE_TAG?='stretch'
 GOOS?='linux'
 GOARCH?='amd64'
 
+TEST_TIMEOUT?=5m
+
 .PHONT: build-docs
 build-docs:
 	rm -fr docs
@@ -52,7 +54,7 @@ install:
 .PHONY: install-godog
 install-godog: export GO111MODULE := on
 install-godog:
-	go get -v github.com/cucumber/godog/cmd/godog@v0.10.0
+	go get -v github.com/cucumber/godog/cmd/godog@v0.11.0
 
 .PHONY: functional-test
 functional-test: install-godog
@@ -84,3 +86,8 @@ notice:
 .PHONY: sync-integrations
 sync-integrations:
 	OP_LOG_LEVEL=${LOG_LEVEL} ./op sync integrations --delete
+
+.PHONY: unit-test
+unit-test:
+	gotestsum --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
+	cd _suites && gotestsum --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...

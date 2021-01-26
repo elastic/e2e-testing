@@ -45,6 +45,8 @@ var helmChartVersion = "7.10.0"
 // kubernetesVersion represents the default version used for Kubernetes
 var kubernetesVersion = "1.18.2"
 
+var testSuite HelmChartTestSuite
+
 func init() {
 	config.Init()
 
@@ -63,6 +65,12 @@ func init() {
 		log.Fatalf("Helm could not be initialised: %v", err)
 	}
 	helm = h
+
+	testSuite = HelmChartTestSuite{
+		ClusterName:       "helm-charts-test-suite",
+		KubernetesVersion: kubernetesVersion,
+		Version:           helmChartVersion,
+	}
 }
 
 // HelmChartTestSuite represents a test suite for a helm chart
@@ -557,32 +565,35 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 	return nil
 }
 
-// HelmChartFeatureContext adds steps to the Godog test suite
-//nolint:deadcode,unused
-func HelmChartFeatureContext(s *godog.Suite) {
-	testSuite := HelmChartTestSuite{
-		ClusterName:       "helm-charts-test-suite",
-		KubernetesVersion: kubernetesVersion,
-		Version:           helmChartVersion,
-	}
+func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
+	ctx.BeforeScenario(func(*messages.Pickle) {
+		log.Trace("Before Helm scenario...")
+	})
 
-	s.Step(`^a cluster is running$`, testSuite.aClusterIsRunning)
-	s.Step(`^the "([^"]*)" Elastic\'s helm chart is installed$`, testSuite.elasticsHelmChartIsInstalled)
-	s.Step(`^a pod will be deployed on each node of the cluster by a DaemonSet$`, testSuite.podsManagedByDaemonSet)
-	s.Step(`^a "([^"]*)" will manage additional pods for metricsets querying internal services$`, testSuite.resourceWillManageAdditionalPodsForMetricsets)
-	s.Step(`^a "([^"]*)" chart will retrieve specific Kubernetes metrics$`, testSuite.willRetrieveSpecificMetrics)
-	s.Step(`^a "([^"]*)" resource contains the "([^"]*)" key$`, testSuite.aResourceContainsTheKey)
-	s.Step(`^a "([^"]*)" resource manages RBAC$`, testSuite.aResourceManagesRBAC)
-	s.Step(`^the "([^"]*)" volume is mounted at "([^"]*)" with subpath "([^"]*)"$`, testSuite.volumeMountedWithSubpath)
-	s.Step(`^the "([^"]*)" volume is mounted at "([^"]*)" with no subpath$`, testSuite.volumeMountedWithNoSubpath)
-	s.Step(`^the "([^"]*)" strategy can be used during updates$`, testSuite.strategyCanBeUsedDuringUpdates)
-	s.Step(`^the "([^"]*)" strategy can be used for "([^"]*)" during updates$`, testSuite.strategyCanBeUsedForResourceDuringUpdates)
-	s.Step(`^resource "([^"]*)" are applied$`, testSuite.resourceConstraintsAreApplied)
+	ctx.AfterScenario(func(*messages.Pickle, error) {
+		log.Trace("After Helm scenario...")
+		testSuite.deleteChart()
+	})
 
-	s.Step(`^a "([^"]*)" will manage the pods$`, testSuite.aResourceWillManagePods)
-	s.Step(`^a "([^"]*)" will expose the pods as network services internal to the k8s cluster$`, testSuite.aResourceWillExposePods)
+	ctx.Step(`^a cluster is running$`, testSuite.aClusterIsRunning)
+	ctx.Step(`^the "([^"]*)" Elastic\'s helm chart is installed$`, testSuite.elasticsHelmChartIsInstalled)
+	ctx.Step(`^a pod will be deployed on each node of the cluster by a DaemonSet$`, testSuite.podsManagedByDaemonSet)
+	ctx.Step(`^a "([^"]*)" will manage additional pods for metricsets querying internal services$`, testSuite.resourceWillManageAdditionalPodsForMetricsets)
+	ctx.Step(`^a "([^"]*)" chart will retrieve specific Kubernetes metrics$`, testSuite.willRetrieveSpecificMetrics)
+	ctx.Step(`^a "([^"]*)" resource contains the "([^"]*)" key$`, testSuite.aResourceContainsTheKey)
+	ctx.Step(`^a "([^"]*)" resource manages RBAC$`, testSuite.aResourceManagesRBAC)
+	ctx.Step(`^the "([^"]*)" volume is mounted at "([^"]*)" with subpath "([^"]*)"$`, testSuite.volumeMountedWithSubpath)
+	ctx.Step(`^the "([^"]*)" volume is mounted at "([^"]*)" with no subpath$`, testSuite.volumeMountedWithNoSubpath)
+	ctx.Step(`^the "([^"]*)" strategy can be used during updates$`, testSuite.strategyCanBeUsedDuringUpdates)
+	ctx.Step(`^the "([^"]*)" strategy can be used for "([^"]*)" during updates$`, testSuite.strategyCanBeUsedForResourceDuringUpdates)
+	ctx.Step(`^resource "([^"]*)" are applied$`, testSuite.resourceConstraintsAreApplied)
 
-	s.BeforeSuite(func() {
+	ctx.Step(`^a "([^"]*)" will manage the pods$`, testSuite.aResourceWillManagePods)
+	ctx.Step(`^a "([^"]*)" will expose the pods as network services internal to the k8s cluster$`, testSuite.aResourceWillExposePods)
+}
+
+func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
+	ctx.BeforeSuite(func() {
 		log.Trace("Before Suite...")
 		toolsAreInstalled()
 
@@ -599,10 +610,8 @@ func HelmChartFeatureContext(s *godog.Suite) {
 			return
 		}
 	})
-	s.BeforeScenario(func(*messages.Pickle) {
-		log.Trace("Before Helm scenario...")
-	})
-	s.AfterSuite(func() {
+
+	ctx.AfterSuite(func() {
 		if !developerMode {
 			log.Trace("After Suite...")
 			err := testSuite.destroyCluster()
@@ -611,10 +620,7 @@ func HelmChartFeatureContext(s *godog.Suite) {
 			}
 		}
 	})
-	s.AfterScenario(func(*messages.Pickle, error) {
-		log.Trace("After Helm scenario...")
-		testSuite.deleteChart()
-	})
+
 }
 
 //nolint:unused

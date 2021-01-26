@@ -44,13 +44,13 @@ For this test framework, we have chosen Godog over any other test framework beca
 
 All the Gherkin (Cucumber) specifications are written in `.feature` files.
 
-A good example could be [this one](./_suites/metricbeat/features/mysql.feature).
+A good example could be [this one](./_suites/metricbeat/features/metricbeat.feature).
 
 ## Test Implementation
 
 We are using Godog + Cucumber to implement the tests, where we create connections to the `Given`, `When`, `Then`, `And`, etc. in a well-known file structure.
 
-As an example, the Golang implementation of the `./_suites/metricbeat/features/mysql.feature` is located under the [metricbeat_test.go](./_suites/metricbeat/metricbeat_test.go) file.
+As an example, the Golang implementation of the `./_suites/metricbeat/features/metricbeat.feature` is located under the [metricbeat_test.go](./_suites/metricbeat/metricbeat_test.go) file.
 
 Each module will define its own file for specificacions, adding specific feature context functions that will allow filtering the execution, if needed. 
 
@@ -186,6 +186,24 @@ To do so:
 
 Here you have a video reproducing the same steps:
 ![](./regression-testing.gif)
+
+### Running tests for a Beats pull request
+Because we trigger the E2E tests for each Beats PR that is packaged, it's possible to manually trigger it using CI user interface. To achieve it we must navigate to Jenkins and run the tests in the specific branch the original Beats PR is targeting.
+
+>For further information about packaging Beats, please read [Beat's CI docs](https://github.com/elastic/beats/blob/1de27eed058dd074b58c71094c7678b3536251cb/README.md#ci).
+
+To do so:
+
+1. Navigate to Jenkins: https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-mbp/
+1. Login as a user
+1. Select the base branch for the test code: 7.10.x, 7.11.x, 7.x or master.
+1. In the left menu, click on `Buid with Parameters`.
+1. In the input parameters form, set the Beat version **for Fleet and Metricbeat** with the ID of your pull request, using `pr-` as prefix. I.e. `pr-23456`. 
+1. In the input parameters form, keep the stack version (for Fleet and Metricbeat) as is, to use each branch's default version.
+1. In the input parameters form, set the `GITHUB_CHECK_NAME` to `E2E Tests`. This value will appear as the label for the Github check for the E2E tests.
+1. In the input parameters form, set the `GITHUB_CHECK_REPO` to `beats`.
+1. In the input parameters form, set the `GITHUB_CHECK_SHA1` to the `SHA1` of the last commit in your pull request. This value will allow us to modify the mergeable status of that commit with the Github check.
+1. Click the `Build` button at the bottom of the parameters form.
 
 ## Noticing the test framework
 
