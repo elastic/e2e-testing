@@ -257,7 +257,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     def tags = scenario.tags
     def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
     if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
-      def platforms = scenario.platforms
+      def platforms = suite.platforms
       platforms.each { platform ->
         log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
         parallelTasks["${platform}_${suite}_${tags}"] = generateFunctionalTestStep(platform: "${platform}", suite: "${suite}", tags: "${tags}")
