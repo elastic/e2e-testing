@@ -194,13 +194,13 @@ pipeline {
                   if (suitesParam == "") {
                     log(level: 'DEBUG', text: "Iterate through existing test suites")
                     existingSuites['SUITES'].each { item ->
-                      checkTestSuite(parallelTasks, item.suite, item.tags)
+                      checkTestSuite(parallelTasks, item)
                     }
                   } else {
                     log(level: 'DEBUG', text: "Iterate through the comma-separated test suites (${suitesParam}), comparing with the existing test suites")
                     suitesParam.split(',').each { suiteParam ->
                       existingSuites['SUITES'].findAll { suiteParam.trim() == it.suite }.each { item ->
-                          checkTestSuite(parallelTasks, item.suite, item.tags)
+                        checkTestSuite(parallelTasks, item)
                       }
                     }
                   }
@@ -251,13 +251,20 @@ pipeline {
   }
 }
 
-def checkTestSuite(Map parallelTasks = [:], String suite, String tags) {
-  def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
-  if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
-    log(level: 'INFO', text: "Adding ${suite}:${tags} test suite to the build execution")
-    parallelTasks["${suite}_${tags}"] = generateFunctionalTestStep(suite: "${suite}", tags: "${tags}")
-  } else {
-    log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed because there are no modified files")
+def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
+  def suite = item.suite
+  def platforms = item.platforms
+  item.scenarios.each { scenario ->
+    def tags = scenario.tags
+    def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
+    if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
+      platforms.each { platform ->
+        log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
+        parallelTasks["${platform}_${suite}_${tags}"] = generateFunctionalTestStep(platform: "${platform}", suite: "${suite}", tags: "${tags}")
+      }
+    } else {
+      log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed because there are no modified files")
+    }
   }
 }
 
@@ -300,12 +307,13 @@ def generateStep(Map args = [:]){
 }
 
 def generateFunctionalTestStep(Map args = [:]){
+  def platform = args.get('platform')
   def suite = args.get('suite')
   def sneakCaseSuite = suite.toUpperCase().replaceAll("-", "_")
   def stackVersion = env."${sneakCaseSuite}_STACK_VERSION"
   def tags = args.get('tags')
   return {
-    node('ubuntu-18.04 && immutable && docker') {
+    node("${platform} && immutable && docker") {
       try {
         deleteDir()
         unstash 'source'
