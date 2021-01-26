@@ -7,6 +7,7 @@ pipeline {
   environment {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
+    NIGHTLY_TAG="@nightly"
     NOTIFY_TO = credentials('notify-to')
     JOB_GCS_BUCKET = credentials('gcs-bucket')
     JOB_GIT_CREDENTIALS = "2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken"
@@ -28,6 +29,7 @@ pipeline {
   }
   parameters {
     booleanParam(name: "SKIP_SCENARIOS", defaultValue: true, description: "If it's needed to skip those scenarios marked as @skip. Default true")
+    booleanParam(name: "NIGHTLY_SCENARIOS", defaultValue: false, description: "If it's needed to include the scenarios marked as @nightly in the test execution. Default false")
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
     booleanParam(name: "forceSkipPresubmit", defaultValue: false, description: "If it's needed to execute the pre-submit tests: unit and precommit.")
@@ -59,6 +61,7 @@ pipeline {
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
         GO111MODULE = 'on'
         SKIP_SCENARIOS = "${params.SKIP_SCENARIOS}"
+        NIGHTLY_SCENARIOS = "${params.NIGHTLY_SCENARIOS}"
         SLACK_CHANNEL = "${params.SLACK_CHANNEL.trim()}"
         ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
         ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
@@ -312,6 +315,16 @@ def generateFunctionalTestStep(Map args = [:]){
   def sneakCaseSuite = suite.toUpperCase().replaceAll("-", "_")
   def stackVersion = env."${sneakCaseSuite}_STACK_VERSION"
   def tags = args.get('tags')
+
+  // We will decide whether to include the nightly tests in the execution at CI time, only.
+  // On the other hand, the developers can use the TAGS environment variable locally.
+  // Finally, we positively know that tags are not empty, so we can use AND operator.
+  if ("${NIGHTLY_SCENARIOS}" == "true") {
+    tags + " && ${NIGHTLY_TAG}"
+  } else {
+    tags + " && ~${NIGHTLY_TAG}"
+  }
+
   return {
     node("${platform} && immutable && docker") {
       try {
