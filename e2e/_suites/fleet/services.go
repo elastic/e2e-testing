@@ -266,6 +266,7 @@ func getGCPBucketCoordinates(fileName string, artifact string, version string, O
 	commitSHA := shell.GetEnv("GITHUB_CHECK_SHA1", "")
 	if commitSHA != "" {
 		prefix = fmt.Sprintf("commits/%s", commitSHA)
+		object = artifact + "/" + fileName
 	}
 
 	// we are setting a version from a pull request: the version of the artifact will be kept as the base one
