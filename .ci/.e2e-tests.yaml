@@ -1,6 +1,8 @@
 ---
 SUITES:
   - suite: "helm"
+    platforms:
+      - "ubuntu-18.04"
     scenarios:
       - name: "APM Server"
         tags: "apm-server"
@@ -9,6 +11,8 @@ SUITES:
       - "Metricbeat":
         tags: "metricbeat"
   - suite: "fleet"
+    platforms:
+      - "ubuntu-18.04"
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode_agent"
@@ -17,6 +21,8 @@ SUITES:
       - name: "Stand-alone"
         tags: "stand_alone_agent"
   - suite: "metricbeat"
+    platforms:
+      - "ubuntu-18.04"
     scenarios:
       - name: "ActiveMQ"
         tags: "integrations && activeMQ"
