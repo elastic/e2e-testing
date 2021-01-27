@@ -319,11 +319,11 @@ def generateFunctionalTestStep(Map args = [:]){
   // We will decide whether to include the nightly tests in the execution at CI time, only.
   // On the other hand, the developers can use the TAGS environment variable locally.
   // Finally, we positively know that tags are not empty, so we can use AND operator.
+  def excludeNightlyTag = " && ~${NIGHTLY_TAG}"
   if ("${NIGHTLY_SCENARIOS}" == "true") {
-    tags + " && ${NIGHTLY_TAG}"
-  } else {
-    tags + " && ~${NIGHTLY_TAG}"
+    excludeNightlyTag = ""
   }
+  tags += excludeNightlyTag
 
   return {
     node("${platform} && immutable && docker") {
