@@ -83,6 +83,11 @@ func setUpSuite() {
 	agentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", agentVersionBase)
 	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
 
+	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	if useCISnapshots && !strings.HasSuffix(agentStaleVersion, "-SNAPSHOT") {
+		agentStaleVersion += "-SNAPSHOT"
+	}
+
 	// check if version is an alias
 	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
 
