@@ -42,6 +42,7 @@ type FleetTestSuite struct {
 	CurrentToken   string // current enrollment token
 	CurrentTokenID string // current enrollment tokenID
 	Hostname       string // the hostname of the container
+	Version        string // current elastic-agent version
 	// integrations
 	Integration     IntegrationPackage // the installed integration
 	PolicyUpdatedAt string             // the moment the policy was updated
@@ -107,6 +108,8 @@ func (fts *FleetTestSuite) afterScenario() {
 func (fts *FleetTestSuite) beforeScenario() {
 	fts.Cleanup = false
 
+	fts.Version = agentVersion
+
 	// create policy with system monitoring enabled
 	defaultPolicy, err := getAgentDefaultPolicy()
 	if err != nil {
@@ -148,8 +151,8 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 }
 
 func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, version, installerType string) error {
-	agentVersionBackup := agentVersion
-	defer func() { agentVersion = agentVersionBackup }()
+	agentVersionBackup := fts.Version
+	defer func() { fts.Version = agentVersionBackup }()
 
 	switch version {
 	case "stale":
@@ -160,7 +163,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 		version = agentStaleVersion
 	}
 
-	agentVersion = version
+	fts.Version = version
 
 	// prepare installer for stale version
 	if fts.Version != agentVersionBackup {
@@ -174,6 +177,12 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 func (fts *FleetTestSuite) installCerts(targetOS string) error {
 	installer := fts.getInstaller()
 	if installer.InstallCertsFn == nil {
+		log.WithFields(log.Fields{
+			"installer":         installer,
+			"version":           fts.Version,
+			"agentVersion":      agentVersion,
+			"agentStaleVersion": agentStaleVersion,
+		}).Error("No installer found")
 		return errors.New("no installer found")
 	}
 
