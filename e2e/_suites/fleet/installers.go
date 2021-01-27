@@ -215,7 +215,10 @@ func (i *TARPackage) Preinstall() error {
 		return err
 	}
 
-	version := checkElasticAgentVersion(i.version)
+	version := i.version
+	if !i.stale {
+		version = checkElasticAgentVersion(i.version)
+	}
 
 	// simplify layout
 	cmds := []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", i.artifact, version, i.OS, i.arch), "/elastic-agent"}
@@ -226,6 +229,7 @@ func (i *TARPackage) Preinstall() error {
 			"error":   err,
 			"image":   i.image,
 			"service": i.service,
+			"version": version,
 		}).Error("Could not extract agent package in the box")
 
 		return err

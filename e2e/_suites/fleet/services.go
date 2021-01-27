@@ -208,7 +208,12 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 		return handleDownload(downloadURL, bucketFileName)
 	}
 
-	downloadURL, err = e2e.GetElasticArtifactURL(artifact, checkElasticAgentVersion(version), OS, arch, extension)
+	downloadVersion := version
+	if !stale {
+		downloadVersion = checkElasticAgentVersion(version)
+	}
+
+	downloadURL, err = e2e.GetElasticArtifactURL(artifact, downloadVersion, OS, arch, extension)
 	if err != nil {
 		return "", "", err
 	}
