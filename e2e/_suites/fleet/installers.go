@@ -157,6 +157,7 @@ type TARPackage struct {
 	arch     string
 	artifact string
 	OS       string
+	stale    bool
 	version  string
 }
 
@@ -231,6 +232,12 @@ func (i *TARPackage) Preinstall() error {
 	}
 
 	return nil
+}
+
+// Stale sets the stale state
+func (i *TARPackage) Stale(stale bool) *TARPackage {
+	i.stale = stale
+	return i
 }
 
 // Uninstall uninstalls a TAR package

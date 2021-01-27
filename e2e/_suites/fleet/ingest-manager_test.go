@@ -91,10 +91,10 @@ func setUpSuite() {
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			Installers: map[string]ElasticAgentInstaller{
-				"centos-systemd": GetElasticAgentInstaller("centos", "systemd"),
-				"centos-tar":     GetElasticAgentInstaller("centos", "tar"),
-				"debian-systemd": GetElasticAgentInstaller("debian", "systemd"),
-				"debian-tar":     GetElasticAgentInstaller("debian", "tar"),
+				"centos-systemd-" + agentVersion: GetElasticAgentInstaller("centos", "systemd", agentVersion, false),
+				"centos-tar-" + agentVersion:     GetElasticAgentInstaller("centos", "tar", agentVersion, false),
+				"debian-systemd-" + agentVersion: GetElasticAgentInstaller("debian", "systemd", agentVersion, false),
+				"debian-tar-" + agentVersion:     GetElasticAgentInstaller("debian", "tar", agentVersion, false),
 			},
 		},
 		StandAlone: &StandAloneTestSuite{},

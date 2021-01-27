@@ -163,10 +163,9 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 	agentVersion = version
 
 	// prepare installer for stale version
-	if agentVersion != agentVersionBackup {
-		i := GetElasticAgentInstaller(image, installerType)
-		installerType = fmt.Sprintf("%s-%s", installerType, version)
-		fts.Installers[fmt.Sprintf("%s-%s", image, installerType)] = i
+	if fts.Version != agentVersionBackup {
+		i := GetElasticAgentInstaller(image, installerType, fts.Version, true)
+		fts.Installers[fmt.Sprintf("%s-%s-%s", image, installerType, version)] = i
 	}
 
 	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
@@ -291,7 +290,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 }
 
 func (fts *FleetTestSuite) getInstaller() ElasticAgentInstaller {
-	return fts.Installers[fts.Image+"-"+fts.InstallerType]
+	return fts.Installers[fts.Image+"-"+fts.InstallerType+"-"+fts.Version]
 }
 
 func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state string) error {
