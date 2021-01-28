@@ -236,7 +236,6 @@ pipeline {
   post {
     cleanup {
       githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
-      notifyBuildResult(analyzeFlakey: true, flakyReportIdx: "reporter-e2e-tests-end-2-end-tests-pipeline-master", prComment: true)
     }
     success {
       whenTrue(!isPR() && params.notifyOnGreenBuilds) {
@@ -280,7 +279,7 @@ def doNotify(boolean notify) {
   }
 
   def header = "*Test Suite*: " + testsSuites
-  notifyBuildResult(prComment: true, slackHeader: header, slackChannel: "${channels}", slackComment: true, slackNotify: notify)
+  notifyBuildResult(analyzeFlakey: true, flakyReportIdx: "reporter-e2e-tests-end-2-end-tests-pipeline-master", prComment: true, slackHeader: header, slackChannel: "${channels}", slackComment: true, slackNotify: notify)
 }
 
 
