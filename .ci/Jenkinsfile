@@ -235,7 +235,6 @@ pipeline {
   }
   post {
     cleanup {
-      githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
       doNotifyBuildResult(params.notifyOnGreenBuilds)
     }
   }
@@ -259,6 +258,8 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
 }
 
 def doNotifyBuildResult(boolean slackNotify) {
+  githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
+
   def testsSuites = "${params.runTestsSuites}"
   if (testsSuites?.trim() == "") {
     testsSuites = "All suites"
