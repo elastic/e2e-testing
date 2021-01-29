@@ -239,12 +239,12 @@ pipeline {
     }
     success {
       whenTrue(!isPR() && params.notifyOnGreenBuilds) {
-        doNotify((!isPR() && params.notifyOnGreenBuilds))
+        doNotifyBuildResult((!isPR() && params.notifyOnGreenBuilds))
       }
     }
     unsuccessful {
       whenFalse(isPR()) {
-        doNotify(!isPR())
+        doNotifyBuildResult(!isPR())
       }
     }
   }
@@ -267,7 +267,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   }
 }
 
-def doNotify(boolean notify) {
+def doNotifyBuildResult(boolean notify) {
   def testsSuites = "${params.runTestsSuites}"
   if (testsSuites?.trim() == "") {
     testsSuites = "All suites"
