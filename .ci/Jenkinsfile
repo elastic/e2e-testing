@@ -31,7 +31,7 @@ pipeline {
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
     booleanParam(name: "forceSkipPresubmit", defaultValue: false, description: "If it's needed to execute the pre-submit tests: unit and precommit.")
-    booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify with green builds.")
+    booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify to Slack with green builds.")
     string(name: 'SLACK_CHANNEL', defaultValue: 'observablt-bots', description: 'The Slack channel(s) where errors will be posted. For multiple channels, use a comma-separated list of channels')
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
     string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stand-alone elastic-agent to be used for Fleet tests. You can use here the tag of your PR to test your changes')
@@ -235,18 +235,7 @@ pipeline {
   }
   post {
     cleanup {
-      githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
-      notifyBuildResult(analyzeFlakey: true, flakyReportIdx: "reporter-e2e-tests-end-2-end-tests-pipeline-master", prComment: true)
-    }
-    success {
-      whenTrue(!isPR() && params.notifyOnGreenBuilds) {
-        doNotify((!isPR() && params.notifyOnGreenBuilds))
-      }
-    }
-    unsuccessful {
-      whenFalse(isPR()) {
-        doNotify(!isPR())
-      }
+      doNotifyBuildResult(params.notifyOnGreenBuilds)
     }
   }
 }
@@ -268,7 +257,9 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   }
 }
 
-def doNotify(boolean notify) {
+def doNotifyBuildResult(boolean slackNotify) {
+  githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
+
   def testsSuites = "${params.runTestsSuites}"
   if (testsSuites?.trim() == "") {
     testsSuites = "All suites"
@@ -280,7 +271,7 @@ def doNotify(boolean notify) {
   }
 
   def header = "*Test Suite*: " + testsSuites
-  notifyBuildResult(prComment: true, slackHeader: header, slackChannel: "${channels}", slackComment: true, slackNotify: notify)
+  notifyBuildResult(analyzeFlakey: true, flakyReportIdx: "reporter-e2e-tests-end-2-end-tests-pipeline-${env.JOB_BASE_NAME}", prComment: true, slackHeader: header, slackChannel: "${channels}", slackComment: true, slackNotify: slackNotify)
 }
 
 
