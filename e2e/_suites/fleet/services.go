@@ -178,7 +178,16 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 			fileName = fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
 		}
 
-		return fileName, path.Join(distributions, fileName), nil
+		fileNamePath := path.Join(distributions, fileName)
+		_, err := os.Stat(fileNamePath)
+		if err == nil {
+			return fileName, fileNamePath, nil
+		}
+		if os.IsNotExist(err) {
+			return fileName, fileNamePath, err
+		}
+
+		return fileName, fileNamePath, err
 	}
 
 	handleDownload := func(URL string, fileName string) (string, string, error) {
