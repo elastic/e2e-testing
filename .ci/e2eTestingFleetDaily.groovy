@@ -47,7 +47,7 @@ pipeline {
             booleanParam(name: 'notifyOnGreenBuilds', value: true),
             booleanParam(name: 'NIGHTLY_SCENARIOS', value: true),
             string(name: 'runTestsSuites', value: 'fleet'),
-            string(name: 'SLACK_CHANNEL', value: "ingest-management"),
+            string(name: 'SLACK_CHANNEL', value: "fleet"),
           ],
           propagate: false,
           wait: false
