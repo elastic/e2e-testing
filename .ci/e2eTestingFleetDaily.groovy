@@ -45,6 +45,7 @@ pipeline {
             booleanParam(name: 'forceSkipGitChecks', value: true),
             booleanParam(name: 'forceSkipPresubmit', value: true),
             booleanParam(name: 'notifyOnGreenBuilds', value: true),
+            booleanParam(name: 'NIGHTLY_SCENARIOS', value: true),
             string(name: 'runTestsSuites', value: 'fleet'),
             string(name: 'SLACK_CHANNEL', value: "ingest-management"),
           ],
