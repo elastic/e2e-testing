@@ -17,7 +17,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 	OS := "linux"
 	version := "8.0.0-SNAPSHOT"
 
-	t.Run("Fetching non-existent binary from local Beats dir", func(t *testing.T) {
+	t.Run("Fetching non-existent binary from local Beats dir throws an error", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
