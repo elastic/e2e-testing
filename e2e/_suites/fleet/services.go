@@ -213,7 +213,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 	if useCISnapshots {
 		log.Debug("Using CI snapshots for the Elastic Agent")
 
-		bucketFileName, bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
 
 		maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
@@ -222,7 +222,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 			return "", "", err
 		}
 
-		return handleDownload(downloadURL, bucketFileName)
+		return handleDownload(downloadURL, fileName)
 	}
 
 	downloadURL, err = e2e.GetElasticArtifactURL(artifact, checkElasticAgentVersion(version), OS, arch, extension, false)
@@ -269,11 +269,10 @@ func GetElasticAgentInstaller(image string, installerType string) ElasticAgentIn
 }
 
 // getGCPBucketCoordinates it calculates the bucket path in GCP
-func getGCPBucketCoordinates(fileName string, artifact string, version string) (string, string, string, string) {
+func getGCPBucketCoordinates(fileName string, artifact string, version string) (string, string, string) {
 	bucket := "beats-ci-artifacts"
 	prefix := fmt.Sprintf("snapshots/%s", artifact)
 	object := fileName
-	newFileName := fileName
 
 	// the commit SHA will identify univocally the artifact in the GCP storage bucket
 	commitSHA := shell.GetEnv("GITHUB_CHECK_SHA1", "")
@@ -292,10 +291,10 @@ func getGCPBucketCoordinates(fileName string, artifact string, version string) (
 			"PR":           version,
 		}).Debug("Using CI snapshots for a pull request")
 		prefix = fmt.Sprintf("pull-requests/%s", version)
-		object = fmt.Sprintf("%s/%s", artifact, newFileName)
+		object = fmt.Sprintf("%s/%s", artifact, fileName)
 	}
 
-	return newFileName, bucket, prefix, object
+	return bucket, prefix, object
 }
 
 func isSystemdBased(image string) bool {
