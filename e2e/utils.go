@@ -209,18 +209,7 @@ func GetElasticArtifactURL(artifact string, version string, operativeSystem stri
 		return "", err
 	}
 
-	dockerString := ""
-	if isDocker {
-		dockerString = ".docker"
-	}
-
-	// elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz
-	artifactPath := fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, version, operativeSystem, arch, dockerString, extension)
-	if extension == "deb" || extension == "rpm" {
-		// elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm
-		// elastic-agent-8.0.0-SNAPSHOT-amd64.deb
-		artifactPath = fmt.Sprintf("%s-%s-%s%s.%s", artifact, version, arch, dockerString, extension)
-	}
+	artifactPath := BuildArtifactName(artifact, version, operativeSystem, arch, extension, isDocker)
 
 	packagesObject := jsonParsed.Path("packages")
 	// we need to get keys with dots using Search instead of Path
