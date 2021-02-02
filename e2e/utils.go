@@ -37,9 +37,11 @@ func BuildArtifactName(artifact string, version string, OS string, arch string, 
 		dockerString = ".docker"
 	}
 
-	artifactName := fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, version, OS, arch, dockerString, extension)
-	if extension == "deb" || extension == "rpm" {
-		artifactName = fmt.Sprintf("%s-%s-%s%s.%s", artifact, version, arch, dockerString, extension)
+	lowerCaseExtension := strings.ToLower(extension)
+
+	artifactName := fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, version, OS, arch, dockerString, lowerCaseExtension)
+	if lowerCaseExtension == "deb" || lowerCaseExtension == "rpm" {
+		artifactName = fmt.Sprintf("%s-%s-%s%s.%s", artifact, version, arch, dockerString, lowerCaseExtension)
 	}
 
 	return artifactName
