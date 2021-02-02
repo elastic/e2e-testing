@@ -444,8 +444,8 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 	arch := "x86_64"
 	extension := "tar.gz"
 
-	tarFile := e2e.BuildArtifactName(artifact, version, os, arch, extension, false)
-	binaryPath, err := downloadAgentBinary(tarFile, artifact, version)
+	binaryName := e2e.BuildArtifactName(artifact, version, os, arch, extension, false)
+	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -469,7 +469,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 	}
 
 	//
-	installerPackage := NewTARPackage(tarFile, profile, image, service).
+	installerPackage := NewTARPackage(binaryName, profile, image, service).
 		WithArch(arch).
 		WithArtifact(artifact).
 		WithOS(os).
@@ -491,7 +491,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 		installerType:     "tar",
 		logFile:           "elastic-agent.log",
 		logsDir:           "/opt/Elastic/Agent/",
-		name:              tarFile,
+		name:              binaryName,
 		path:              binaryPath,
 		PostInstallFn:     installerPackage.Postinstall,
 		PreInstallFn:      installerPackage.Preinstall,
