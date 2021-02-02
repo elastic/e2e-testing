@@ -56,7 +56,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		assert.Equal(t, downloadedFilePath, path.Join(distributionsDir, expectedFileName))
 	})
 
-	t.Run("Fetching Docker image from local Beats dir", func(t *testing.T) {
+	t.Run("Fetching TAR binary from local Beats dir", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
