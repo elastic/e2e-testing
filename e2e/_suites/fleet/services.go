@@ -180,10 +180,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 
 		fileNamePath := path.Join(distributions, fileName)
 		_, err := os.Stat(fileNamePath)
-		if err == nil {
-			return fileName, fileNamePath, nil
-		}
-		if os.IsNotExist(err) {
+		if err != nil || os.IsNotExist(err) {
 			return fileName, fileNamePath, err
 		}
 
