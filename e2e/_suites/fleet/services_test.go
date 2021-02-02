@@ -14,17 +14,13 @@ func TestDownloadAgentBinary(t *testing.T) {
 	artifact := "elastic-agent"
 	beatsDir := path.Join("..", "..", "_testresources", "beats")
 	distributionsDir := path.Join(beatsDir, "x-pack", "elastic-agent", "build", "distributions")
-	OS := "linux"
 	version := "8.0.0-SNAPSHOT"
 
 	t.Run("Fetching non-existent binary from local Beats dir throws an error", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
-		arch := "foo_arch"
-		extension := "foo_ext"
-
-		_, _, err := downloadAgentBinary(artifact, version, OS, arch, extension)
+		_, err := downloadAgentBinary("foo_fileName", artifact, version)
 		assert.NotNil(t, err)
 	})
 
@@ -32,42 +28,33 @@ func TestDownloadAgentBinary(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
-		arch := "x86_64"
-		extension := "rpm"
-		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm"
+		artifactName := "elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm"
 
-		newFileName, downloadedFilePath, err := downloadAgentBinary(artifact, version, OS, arch, extension)
+		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
 		assert.Nil(t, err)
-		assert.Equal(t, newFileName, expectedFileName)
-		assert.Equal(t, downloadedFilePath, path.Join(distributionsDir, expectedFileName))
+		assert.Equal(t, downloadedFilePath, path.Join(distributionsDir, artifactName))
 	})
 
 	t.Run("Fetching DEB binary from local Beats dir", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
-		arch := "amd64"
-		extension := "deb"
-		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-amd64.deb"
+		artifactName := "elastic-agent-8.0.0-SNAPSHOT-amd64.deb"
 
-		newFileName, downloadedFilePath, err := downloadAgentBinary(artifact, version, OS, arch, extension)
+		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
 		assert.Nil(t, err)
-		assert.Equal(t, newFileName, expectedFileName)
-		assert.Equal(t, downloadedFilePath, path.Join(distributionsDir, expectedFileName))
+		assert.Equal(t, downloadedFilePath, path.Join(distributionsDir, artifactName))
 	})
 
 	t.Run("Fetching TAR binary from local Beats dir", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
-		arch := "amd64"
-		extension := "tar.gz"
-		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.tar.gz"
+		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.tar.gz"
 
-		newFileName, downloadedFilePath, err := downloadAgentBinary(artifact, version, OS, arch, extension)
+		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
 		assert.Nil(t, err)
-		assert.Equal(t, newFileName, expectedFileName)
-		assert.Equal(t, downloadedFilePath, path.Join(distributionsDir, expectedFileName))
+		assert.Equal(t, downloadedFilePath, path.Join(distributionsDir, artifactName))
 	})
 }
 

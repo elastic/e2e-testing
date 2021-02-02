@@ -68,7 +68,7 @@ func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOf
 // GetElasticArtifactVersion returns the current version:
 // 1. Elastic's artifact repository, building the JSON path query based
 // If the version is a PR, then it will return the version without checking the artifacts API
-// i.e. GetElasticArtifactVersion("8.0.0-SNAPSHOT")
+// i.e. GetElasticArtifactVersion("$VERSION")
 // i.e. GetElasticArtifactVersion("pr-22000")
 func GetElasticArtifactVersion(version string) string {
 	if strings.HasPrefix(strings.ToLower(version), "pr-") {
@@ -142,14 +142,12 @@ func GetElasticArtifactVersion(version string) string {
 	return latestVersion
 }
 
-// GetElasticArtifactURL returns the URL of a released artifact from two possible sources
-// on the desired OS, architecture and file extension:
-// 1. Observability CI Storage bucket
-// 2. Elastic's artifact repository, building the JSON path query based
-// i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "linux", "x86_64", "tar.gz")
-// i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "x86_64", "rpm")
-// i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "amd64", "deb")
-func GetElasticArtifactURL(artifact string, version string, operativeSystem string, arch string, extension string, isDocker bool) (string, error) {
+// GetElasticArtifactURL returns the URL of a released artifact, which its full name is defined in the first argument,
+// from Elastic's artifact repository, building the JSON path query based on the full name
+// i.e. GetElasticArtifactURL("elastic-agent-$VERSION-amd64.deb", "elastic-agent", "$VERSION")
+// i.e. GetElasticArtifactURL("elastic-agent-$VERSION-x86_64.rpm", "elastic-agent","$VERSION")
+// i.e. GetElasticArtifactURL("elastic-agent-$VERSION-linux-amd64.tar.gz", "elastic-agent","$VERSION")
+func GetElasticArtifactURL(artifactName string, artifact string, version string) (string, error) {
 	exp := GetExponentialBackOff(time.Minute)
 
 	retryCount := 1
@@ -165,12 +163,9 @@ func GetElasticArtifactURL(artifact string, version string, operativeSystem stri
 		if err != nil {
 			log.WithFields(log.Fields{
 				"artifact":       artifact,
+				"artifactName":   artifactName,
 				"version":        version,
-				"os":             operativeSystem,
-				"arch":           arch,
-				"extension":      extension,
 				"error":          err,
-				"isDocker":       isDocker,
 				"retry":          retryCount,
 				"statusEndpoint": r.URL,
 				"elapsedTime":    exp.GetElapsedTime(),
@@ -199,21 +194,16 @@ func GetElasticArtifactURL(artifact string, version string, operativeSystem stri
 	jsonParsed, err := gabs.ParseJSON([]byte(body))
 	if err != nil {
 		log.WithFields(log.Fields{
-			"artifact":  artifact,
-			"version":   version,
-			"os":        operativeSystem,
-			"isDocker":  isDocker,
-			"arch":      arch,
-			"extension": extension,
+			"artifact":     artifact,
+			"artifactName": artifactName,
+			"version":      version,
 		}).Error("Could not parse the response body for the artifact")
 		return "", err
 	}
 
-	artifactPath := BuildArtifactName(artifact, version, operativeSystem, arch, extension, isDocker)
-
 	packagesObject := jsonParsed.Path("packages")
 	// we need to get keys with dots using Search instead of Path
-	downloadObject := packagesObject.Search(artifactPath)
+	downloadObject := packagesObject.Search(artifactName)
 	downloadURL := downloadObject.Path("url").Data().(string)
 
 	return downloadURL, nil

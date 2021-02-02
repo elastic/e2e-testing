@@ -166,44 +166,42 @@ func runElasticAgentCommand(profile string, image string, service string, proces
 // to be used will be defined by the local snapshot produced by the local build.
 // Else, if the environment variable BEATS_USE_CI_SNAPSHOTS is set, then the artifact
 // to be downloaded will be defined by the latest snapshot produced by the Beats CI.
-func downloadAgentBinary(artifact string, version string, OS string, arch string, extension string) (string, string, error) {
-	fileName := e2e.BuildArtifactName(artifact, version, OS, arch, extension, false)
-
+func downloadAgentBinary(artifactName string, artifact string, version string) (string, error) {
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if beatsLocalPath != "" {
 		distributions := path.Join(beatsLocalPath, "x-pack", "elastic-agent", "build", "distributions")
 		log.Debugf("Using local snapshots for the Elastic Agent: %s", distributions)
 
-		fileNamePath := path.Join(distributions, fileName)
+		fileNamePath := path.Join(distributions, artifactName)
 		_, err := os.Stat(fileNamePath)
 		if err != nil || os.IsNotExist(err) {
-			return fileName, fileNamePath, err
+			return fileNamePath, err
 		}
 
-		return fileName, fileNamePath, err
+		return fileNamePath, err
 	}
 
-	handleDownload := func(URL string, fileName string) (string, string, error) {
+	handleDownload := func(URL string) (string, error) {
 		if val, ok := binariesCache[URL]; ok {
 			log.WithFields(log.Fields{
 				"URL":  URL,
 				"path": val,
 			}).Debug("Retrieving binary from local cache")
-			return fileName, val, nil
+			return val, nil
 		}
 
 		filePath, err := e2e.DownloadFile(URL)
 		if err != nil {
-			return fileName, filePath, err
+			return filePath, err
 		}
 
 		binariesCache[URL] = filePath
 
-		return fileName, filePath, nil
+		return filePath, nil
 	}
 
 	if downloadURL, exists := os.LookupEnv("ELASTIC_AGENT_DOWNLOAD_URL"); exists {
-		return handleDownload(downloadURL, fileName)
+		return handleDownload(downloadURL)
 	}
 
 	var downloadURL string
@@ -213,24 +211,24 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 	if useCISnapshots {
 		log.Debug("Using CI snapshots for the Elastic Agent")
 
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
+		bucket, prefix, object := getGCPBucketCoordinates(artifactName, artifact, version)
 
 		maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
 		downloadURL, err = e2e.GetObjectURLFromBucket(bucket, prefix, object, maxTimeout)
 		if err != nil {
-			return "", "", err
+			return "", err
 		}
 
-		return handleDownload(downloadURL, fileName)
+		return handleDownload(downloadURL)
 	}
 
-	downloadURL, err = e2e.GetElasticArtifactURL(artifact, checkElasticAgentVersion(version), OS, arch, extension, false)
+	downloadURL, err = e2e.GetElasticArtifactURL(artifactName, artifact, checkElasticAgentVersion(version))
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	return handleDownload(downloadURL, fileName)
+	return handleDownload(downloadURL)
 }
 
 // GetElasticAgentInstaller returns an installer from a docker image
@@ -314,7 +312,8 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 	arch := "x86_64"
 	extension := "rpm"
 
-	binaryName, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension)
+	binaryName := e2e.BuildArtifactName(artifact, version, os, arch, extension, false)
+	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -379,7 +378,8 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 	arch := "amd64"
 	extension := "deb"
 
-	binaryName, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension)
+	binaryName := e2e.BuildArtifactName(artifact, version, os, arch, extension, false)
+	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -444,7 +444,8 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 	arch := "x86_64"
 	extension := "tar.gz"
 
-	tarFile, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension)
+	tarFile := e2e.BuildArtifactName(artifact, version, os, arch, extension, false)
+	binaryPath, err := downloadAgentBinary(tarFile, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
