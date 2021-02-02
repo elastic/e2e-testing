@@ -167,16 +167,12 @@ func runElasticAgentCommand(profile string, image string, service string, proces
 // Else, if the environment variable BEATS_USE_CI_SNAPSHOTS is set, then the artifact
 // to be downloaded will be defined by the latest snapshot produced by the Beats CI.
 func downloadAgentBinary(artifact string, version string, OS string, arch string, extension string) (string, string, error) {
-	fileName := fmt.Sprintf("%s-%s-%s.%s", artifact, version, arch, extension)
+	fileName := e2e.BuildArtifactName(artifact, version, OS, arch, extension, false)
 
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if beatsLocalPath != "" {
 		distributions := path.Join(beatsLocalPath, "x-pack", "elastic-agent", "build", "distributions")
 		log.Debugf("Using local snapshots for the Elastic Agent: %s", distributions)
-
-		if extension == "tar.gz" {
-			fileName = fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
-		}
 
 		fileNamePath := path.Join(distributions, fileName)
 		_, err := os.Stat(fileNamePath)
@@ -229,7 +225,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 		return handleDownload(downloadURL, bucketFileName)
 	}
 
-	downloadURL, err = e2e.GetElasticArtifactURL(artifact, checkElasticAgentVersion(version), OS, arch, extension)
+	downloadURL, err = e2e.GetElasticArtifactURL(artifact, checkElasticAgentVersion(version), OS, arch, extension, false)
 	if err != nil {
 		return "", "", err
 	}
@@ -274,10 +270,6 @@ func GetElasticAgentInstaller(image string, installerType string) ElasticAgentIn
 
 // getGCPBucketCoordinates it calculates the bucket path in GCP
 func getGCPBucketCoordinates(fileName string, artifact string, version string, OS string, arch string, extension string) (string, string, string, string) {
-	if extension == "tar.gz" {
-		fileName = fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
-	}
-
 	bucket := "beats-ci-artifacts"
 	prefix := fmt.Sprintf("snapshots/%s", artifact)
 	object := fileName
@@ -295,10 +287,6 @@ func getGCPBucketCoordinates(fileName string, artifact string, version string, O
 	// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-amd64.deb
 	// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz
 	if strings.HasPrefix(strings.ToLower(version), "pr-") {
-		newFileName = fmt.Sprintf("%s-%s-%s.%s", artifact, agentVersionBase, arch, extension)
-		if extension == "tar.gz" {
-			newFileName = fmt.Sprintf("%s-%s-%s-%s.%s", artifact, agentVersionBase, OS, arch, extension)
-		}
 		log.WithFields(log.Fields{
 			"agentVersion": agentVersionBase,
 			"PR":           version,
