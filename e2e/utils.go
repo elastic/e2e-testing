@@ -30,6 +30,21 @@ const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 //nolint:unused
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
+// BuildArtifactName builds the artifact name from the different coordinates for the artifact
+func BuildArtifactName(artifact string, version string, OS string, arch string, extension string, isDocker bool) string {
+	dockerString := ""
+	if isDocker {
+		dockerString = ".docker"
+	}
+
+	artifactName := fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, version, OS, arch, dockerString, extension)
+	if extension == "deb" || extension == "rpm" {
+		artifactName = fmt.Sprintf("%s-%s-%s%s.%s", artifact, version, arch, dockerString, extension)
+	}
+
+	return artifactName
+}
+
 // GetExponentialBackOff returns a preconfigured exponential backoff instance
 func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOff {
 	var (
@@ -134,7 +149,7 @@ func GetElasticArtifactVersion(version string) string {
 // i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "linux", "x86_64", "tar.gz")
 // i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "x86_64", "rpm")
 // i.e. GetElasticArtifactURL("elastic-agent", "8.0.0-SNAPSHOT", "amd64", "deb")
-func GetElasticArtifactURL(artifact string, version string, operativeSystem string, arch string, extension string) (string, error) {
+func GetElasticArtifactURL(artifact string, version string, operativeSystem string, arch string, extension string, isDocker bool) (string, error) {
 	exp := GetExponentialBackOff(time.Minute)
 
 	retryCount := 1
@@ -155,6 +170,7 @@ func GetElasticArtifactURL(artifact string, version string, operativeSystem stri
 				"arch":           arch,
 				"extension":      extension,
 				"error":          err,
+				"isDocker":       isDocker,
 				"retry":          retryCount,
 				"statusEndpoint": r.URL,
 				"elapsedTime":    exp.GetElapsedTime(),
@@ -186,18 +202,24 @@ func GetElasticArtifactURL(artifact string, version string, operativeSystem stri
 			"artifact":  artifact,
 			"version":   version,
 			"os":        operativeSystem,
+			"isDocker":  isDocker,
 			"arch":      arch,
 			"extension": extension,
 		}).Error("Could not parse the response body for the artifact")
 		return "", err
 	}
 
+	dockerString := ""
+	if isDocker {
+		dockerString = ".docker"
+	}
+
 	// elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz
-	artifactPath := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, operativeSystem, arch, extension)
+	artifactPath := fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, version, operativeSystem, arch, dockerString, extension)
 	if extension == "deb" || extension == "rpm" {
 		// elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm
 		// elastic-agent-8.0.0-SNAPSHOT-amd64.deb
-		artifactPath = fmt.Sprintf("%s-%s-%s.%s", artifact, version, arch, extension)
+		artifactPath = fmt.Sprintf("%s-%s-%s%s.%s", artifact, version, arch, dockerString, extension)
 	}
 
 	packagesObject := jsonParsed.Path("packages")

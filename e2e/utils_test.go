@@ -38,6 +38,58 @@ func init() {
 	snapshotsJSON, _ = gabs.ParseJSON([]byte(snapshotsContent))
 }
 
+func TestBuildArtifactName(t *testing.T) {
+	artifact := "elastic-agent"
+	OS := "linux"
+	version := "8.0.0-SNAPSHOT"
+
+	t.Run("For RPM", func(t *testing.T) {
+		arch := "x86_64"
+		extension := "rpm"
+		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm"
+
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, false)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
+	t.Run("For DEB", func(t *testing.T) {
+		arch := "amd64"
+		extension := "deb"
+		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-amd64.deb"
+
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, false)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
+	t.Run("For TAR", func(t *testing.T) {
+		arch := "amd64"
+		extension := "tar.gz"
+		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.tar.gz"
+
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, false)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
+	t.Run("For Docker", func(t *testing.T) {
+		arch := "amd64"
+		extension := "tar.gz"
+		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
+
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
+	t.Run("For Docker UBI8", func(t *testing.T) {
+		artifact += "-ubi8"
+		arch := "amd64"
+		extension := "tar.gz"
+		expectedFileName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
+
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+}
+
 func TestGetBucketSearchNextPageParam_HasMorePages(t *testing.T) {
 	expectedParam := "&pageToken=foo"
 
