@@ -213,7 +213,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 	if useCISnapshots {
 		log.Debug("Using CI snapshots for the Elastic Agent")
 
-		bucketFileName, bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, OS, arch, extension)
+		bucketFileName, bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
 
 		maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
@@ -269,7 +269,7 @@ func GetElasticAgentInstaller(image string, installerType string) ElasticAgentIn
 }
 
 // getGCPBucketCoordinates it calculates the bucket path in GCP
-func getGCPBucketCoordinates(fileName string, artifact string, version string, OS string, arch string, extension string) (string, string, string, string) {
+func getGCPBucketCoordinates(fileName string, artifact string, version string) (string, string, string, string) {
 	bucket := "beats-ci-artifacts"
 	prefix := fmt.Sprintf("snapshots/%s", artifact)
 	object := fileName
