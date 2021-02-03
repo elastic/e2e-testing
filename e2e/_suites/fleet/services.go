@@ -252,6 +252,10 @@ func GetElasticAgentInstaller(image string, installerType string) ElasticAgentIn
 		installer, err = newTarInstaller("debian", "stretch")
 	} else if "debian" == image && "systemd" == installerType {
 		installer, err = newDebianInstaller("debian", "stretch")
+	} else if "docker" == image && "default" == installerType {
+		installer, err = newDockerInstaller(false)
+	} else if "docker" == image && "ubi8" == installerType {
+		installer, err = newDockerInstaller(true)
 	} else {
 		log.WithFields(log.Fields{
 			"image":     image,
@@ -432,6 +436,81 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 		tag:               tag,
 		UninstallFn:       installerPackage.Uninstall,
 		workingDir:        "/var/lib/elastic-agent",
+	}, nil
+}
+
+// newDockerInstaller returns an instance of the Docker installer
+func newDockerInstaller(ubi8 bool) (ElasticAgentInstaller, error) {
+	image := "elastic-agent"
+	service := image
+	profile := FleetProfileName
+
+	// extract the agent in the box, as it's mounted as a volume
+	artifact := "elastic-agent"
+
+	if ubi8 {
+		artifact = "elastic-agent-ubi8"
+	}
+
+	version := agentVersion
+	os := "linux"
+	arch := "amd64"
+	extension := "tar.gz"
+
+	binaryName := e2e.BuildArtifactName(artifact, version, os, arch, extension, true)
+	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"artifact":  artifact,
+			"version":   version,
+			"os":        os,
+			"arch":      arch,
+			"extension": extension,
+			"error":     err,
+		}).Error("Could not download the binary for the agent")
+		return ElasticAgentInstaller{}, err
+	}
+
+	commitFile := ".elastic-agent.active.commit"
+	homeDir := "/usr/share/elastic-agent"
+	binDir := "/usr/share/elastic-agent/data/elastic-agent-%s/"
+
+	enrollFn := func(token string) error {
+		return nil
+	}
+
+	installerPackage := NewDockerPackage(binaryName, profile, image, service, binaryPath, ubi8).
+		WithArch(arch).
+		WithArtifact(artifact).
+		WithOS(os).
+		WithVersion(version)
+
+	return ElasticAgentInstaller{
+		artifactArch:      arch,
+		artifactExtension: extension,
+		artifactName:      artifact,
+		artifactOS:        os,
+		artifactVersion:   version,
+		binDir:            binDir,
+		commitFile:        commitFile,
+		EnrollFn:          enrollFn,
+		homeDir:           homeDir,
+		image:             image,
+		InstallFn:         installerPackage.Install,
+		InstallCertsFn:    installerPackage.InstallCerts,
+		installerType:     "docker",
+		logFile:           "elastic-agent-json.log",
+		logsDir:           binDir + "logs/",
+		name:              binaryName,
+		path:              binaryPath,
+		PostInstallFn:     installerPackage.Postinstall,
+		PreInstallFn:      installerPackage.Preinstall,
+		processName:       ElasticAgentProcessName,
+		profile:           profile,
+		service:           service,
+		tag:               version,
+		UninstallFn:       installerPackage.Uninstall,
+		workingDir:        "/usr/share/elastic-agent/",
 	}, nil
 }
 

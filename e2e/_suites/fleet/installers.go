@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 
+	shell "github.com/elastic/e2e-testing/cli/shell"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -100,6 +101,97 @@ func (i *DEBPackage) Preinstall() error {
 func (i *DEBPackage) Uninstall() error {
 	log.Trace("No uninstall commands for DEB packages")
 	return nil
+}
+
+// DockerPackage implements operations for a DEB installer
+type DockerPackage struct {
+	BasePackage
+	installerPath string
+	ubi8          bool
+	// optional fields
+	arch     string
+	artifact string
+	OS       string
+	version  string
+}
+
+// NewDockerPackage creates an instance for the Docker installer
+func NewDockerPackage(binaryName string, profile string, image string, service string, installerPath string, ubi8 bool) *DockerPackage {
+	return &DockerPackage{
+		BasePackage: BasePackage{
+			binaryName: binaryName,
+			image:      image,
+			profile:    profile,
+			service:    service,
+		},
+		installerPath: installerPath,
+		ubi8:          ubi8,
+	}
+}
+
+// Install installs a Docker package
+func (i *DockerPackage) Install(containerName string, token string) error {
+	log.Trace("No install commands for Docker packages")
+	return nil
+}
+
+// InstallCerts installs the certificates for a Docker package
+func (i *DockerPackage) InstallCerts() error {
+	log.Trace("No install certs commands for Docker packages")
+	return nil
+}
+
+// Preinstall executes operations before installing a Docker package
+func (i *DockerPackage) Preinstall() error {
+	log.Trace("No preinstall commands for Docker packages")
+
+	args := []string{
+		"load", "-i", i.installerPath,
+	}
+
+	_, err := shell.Execute(".", "docker", args...)
+	if err != nil {
+		log.WithField("error", err).Error("Could not load the Docker image.")
+		return err
+	}
+
+	return nil
+}
+
+// Postinstall executes operations after installing a Docker package
+func (i *DockerPackage) Postinstall() error {
+	log.Trace("No postinstall commands for Docker packages")
+	return nil
+}
+
+// Uninstall uninstalls a Docker package
+func (i *DockerPackage) Uninstall() error {
+	log.Trace("No uninstall commands for Docker packages")
+	return nil
+}
+
+// WithArch sets the architecture
+func (i *DockerPackage) WithArch(arch string) *DockerPackage {
+	i.arch = arch
+	return i
+}
+
+// WithArtifact sets the artifact
+func (i *DockerPackage) WithArtifact(artifact string) *DockerPackage {
+	i.artifact = artifact
+	return i
+}
+
+// WithOS sets the OS
+func (i *DockerPackage) WithOS(OS string) *DockerPackage {
+	i.OS = OS
+	return i
+}
+
+// WithVersion sets the version
+func (i *DockerPackage) WithVersion(version string) *DockerPackage {
+	i.version = version
+	return i
 }
 
 // RPMPackage implements operations for a RPM installer
