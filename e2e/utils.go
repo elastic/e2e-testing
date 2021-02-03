@@ -44,6 +44,11 @@ func BuildArtifactName(artifact string, version string, OS string, arch string, 
 		artifactName = fmt.Sprintf("%s-%s-%s%s.%s", artifact, version, arch, dockerString, lowerCaseExtension)
 	}
 
+	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+	if beatsLocalPath != "" && isDocker {
+		return fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, version, OS, arch, dockerString, lowerCaseExtension)
+	}
+
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	// we detected that the docker name on CI is using a different structure
 	// CI snapshots on GCP: elastic-agent-$VERSION-linux-amd64.docker.tar.gz

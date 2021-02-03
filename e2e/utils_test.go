@@ -111,6 +111,38 @@ func TestBuildArtifactName(t *testing.T) {
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 
+	t.Run("For Docker from local repository", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", "/tmp")
+
+		artifact = "elastic-agent"
+		arch := "amd64"
+		extension := "tar.gz"
+		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
+
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
+	t.Run("For Docker UBI8 from local repository", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", "/tmp")
+
+		artifact = "elastic-agent-ubi8"
+		arch := "amd64"
+		extension := "tar.gz"
+		expectedFileName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
+
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
 	t.Run("For Docker from GCP", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
 		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "true")
