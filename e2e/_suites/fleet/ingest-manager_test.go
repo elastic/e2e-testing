@@ -96,7 +96,7 @@ func setUpSuite() {
 				"debian-systemd": GetElasticAgentInstaller("debian", "systemd"),
 				"debian-tar":     GetElasticAgentInstaller("debian", "tar"),
 				"docker-default": GetElasticAgentInstaller("docker", "default"),
-				"debian-ubi8":    GetElasticAgentInstaller("docker", "ubi8"),
+				"docker-ubi8":    GetElasticAgentInstaller("docker", "ubi8"),
 			},
 		},
 		StandAlone: &StandAloneTestSuite{},
