@@ -79,7 +79,43 @@ func TestBuildArtifactName(t *testing.T) {
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 
-	t.Run("For Docker", func(t *testing.T) {
+	t.Run("For Docker from Elastic's repository", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
+		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "false")
+
+		artifact = "elastic-agent"
+		arch := "amd64"
+		extension := "tar.gz"
+		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-docker-image-linux-amd64.tar.gz"
+
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
+	t.Run("For Docker UBI8 from Elastic's repository", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
+		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "false")
+
+		artifact = "elastic-agent-ubi8"
+		arch := "amd64"
+		extension := "tar.gz"
+		expectedFileName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-docker-image-linux-amd64.tar.gz"
+
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
+	t.Run("For Docker from GCP", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
+		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "true")
+
+		artifact = "elastic-agent"
 		arch := "amd64"
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
@@ -91,8 +127,11 @@ func TestBuildArtifactName(t *testing.T) {
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 
-	t.Run("For Docker UBI8", func(t *testing.T) {
-		artifact += "-ubi8"
+	t.Run("For Docker UBI8 from GCP", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
+		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "true")
+
+		artifact = "elastic-agent-ubi8"
 		arch := "amd64"
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"

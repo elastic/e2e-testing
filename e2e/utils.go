@@ -44,6 +44,15 @@ func BuildArtifactName(artifact string, version string, OS string, arch string, 
 		artifactName = fmt.Sprintf("%s-%s-%s%s.%s", artifact, version, arch, dockerString, lowerCaseExtension)
 	}
 
+	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	// we detected that the docker name on CI is using a different structure
+	// CI snapshots on GCP: elastic-agent-$VERSION-linux-amd64.docker.tar.gz
+	// Elastic's snapshots: elastic-agent-$VERSION-docker-image-linux-amd64.tar.gz
+	if !useCISnapshots && isDocker {
+		dockerString = "docker-image"
+		artifactName = fmt.Sprintf("%s-%s-%s-%s-%s.%s", artifact, version, dockerString, OS, arch, lowerCaseExtension)
+	}
+
 	return artifactName
 }
 
