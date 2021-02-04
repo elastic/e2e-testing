@@ -143,8 +143,6 @@ func (i *DockerPackage) InstallCerts() error {
 
 // Preinstall executes operations before installing a Docker package
 func (i *DockerPackage) Preinstall() error {
-	log.Trace("No preinstall commands for Docker packages")
-
 	args := []string{
 		"load", "-i", i.installerPath,
 	}
