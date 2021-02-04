@@ -7,6 +7,7 @@ pipeline {
   environment {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
+    NIGHTLY_TAG="@nightly"
     NOTIFY_TO = credentials('notify-to')
     JOB_GCS_BUCKET = credentials('gcs-bucket')
     JOB_GIT_CREDENTIALS = "2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken"
@@ -28,14 +29,15 @@ pipeline {
   }
   parameters {
     booleanParam(name: "SKIP_SCENARIOS", defaultValue: true, description: "If it's needed to skip those scenarios marked as @skip. Default true")
+    booleanParam(name: "NIGHTLY_SCENARIOS", defaultValue: false, description: "If it's needed to include the scenarios marked as @nightly in the test execution. Default false")
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
     booleanParam(name: "forceSkipPresubmit", defaultValue: false, description: "If it's needed to execute the pre-submit tests: unit and precommit.")
-    booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify with green builds.")
+    booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify to Slack with green builds.")
     string(name: 'SLACK_CHANNEL', defaultValue: 'observablt-bots', description: 'The Slack channel(s) where errors will be posted. For multiple channels, use a comma-separated list of channels')
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
     string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stand-alone elastic-agent to be used for Fleet tests. You can use here the tag of your PR to test your changes')
-    string(name: 'ELASTIC_AGENT_STALE_VERSION', defaultValue: '7.10.1', description: 'SemVer version of the stale stand-alone elastic-agent to be used for Fleet upgrade tests.')
+    string(name: 'ELASTIC_AGENT_STALE_VERSION', defaultValue: '7.10.2', description: 'SemVer version of the stale stand-alone elastic-agent to be used for Fleet upgrade tests.')
     booleanParam(name: "BEATS_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the binary snapshots produced by Beats CI instead of the official releases")
     choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'INFO'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
@@ -59,6 +61,7 @@ pipeline {
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
         GO111MODULE = 'on'
         SKIP_SCENARIOS = "${params.SKIP_SCENARIOS}"
+        NIGHTLY_SCENARIOS = "${params.NIGHTLY_SCENARIOS}"
         SLACK_CHANNEL = "${params.SLACK_CHANNEL.trim()}"
         ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
         ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
@@ -194,13 +197,13 @@ pipeline {
                   if (suitesParam == "") {
                     log(level: 'DEBUG', text: "Iterate through existing test suites")
                     existingSuites['SUITES'].each { item ->
-                      checkTestSuite(parallelTasks, item.suite, item.tags)
+                      checkTestSuite(parallelTasks, item)
                     }
                   } else {
                     log(level: 'DEBUG', text: "Iterate through the comma-separated test suites (${suitesParam}), comparing with the existing test suites")
                     suitesParam.split(',').each { suiteParam ->
                       existingSuites['SUITES'].findAll { suiteParam.trim() == it.suite }.each { item ->
-                          checkTestSuite(parallelTasks, item.suite, item.tags)
+                        checkTestSuite(parallelTasks, item)
                       }
                     }
                   }
@@ -235,33 +238,31 @@ pipeline {
   }
   post {
     cleanup {
-      githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
-      notifyBuildResult(analyzeFlakey: true, flakyReportIdx: "reporter-e2e-tests-end-2-end-tests-pipeline-master", prComment: true)
-    }
-    success {
-      whenTrue(!isPR() && params.notifyOnGreenBuilds) {
-        doNotify((!isPR() && params.notifyOnGreenBuilds))
-      }
-    }
-    unsuccessful {
-      whenFalse(isPR()) {
-        doNotify(!isPR())
-      }
+      doNotifyBuildResult(params.notifyOnGreenBuilds)
     }
   }
 }
 
-def checkTestSuite(Map parallelTasks = [:], String suite, String tags) {
-  def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
-  if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
-    log(level: 'INFO', text: "Adding ${suite}:${tags} test suite to the build execution")
-    parallelTasks["${suite}_${tags}"] = generateFunctionalTestStep(suite: "${suite}", tags: "${tags}")
-  } else {
-    log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed because there are no modified files")
+def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
+  def suite = item.suite
+  def platforms = item.platforms
+  item.scenarios.each { scenario ->
+    def tags = scenario.tags
+    def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
+    if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
+      platforms.each { platform ->
+        log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
+        parallelTasks["${platform}_${suite}_${tags}"] = generateFunctionalTestStep(platform: "${platform}", suite: "${suite}", tags: "${tags}")
+      }
+    } else {
+      log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed because there are no modified files")
+    }
   }
 }
 
-def doNotify(boolean notify) {
+def doNotifyBuildResult(boolean slackNotify) {
+  githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
+
   def testsSuites = "${params.runTestsSuites}"
   if (testsSuites?.trim() == "") {
     testsSuites = "All suites"
@@ -273,7 +274,7 @@ def doNotify(boolean notify) {
   }
 
   def header = "*Test Suite*: " + testsSuites
-  notifyBuildResult(prComment: true, slackHeader: header, slackChannel: "${channels}", slackComment: true, slackNotify: notify)
+  notifyBuildResult(analyzeFlakey: true, flakyReportIdx: "reporter-e2e-tests-end-2-end-tests-pipeline-${env.JOB_BASE_NAME}", prComment: true, slackHeader: header, slackChannel: "${channels}", slackComment: true, slackNotify: slackNotify)
 }
 
 
@@ -300,12 +301,23 @@ def generateStep(Map args = [:]){
 }
 
 def generateFunctionalTestStep(Map args = [:]){
+  def platform = args.get('platform')
   def suite = args.get('suite')
   def sneakCaseSuite = suite.toUpperCase().replaceAll("-", "_")
   def stackVersion = env."${sneakCaseSuite}_STACK_VERSION"
   def tags = args.get('tags')
+
+  // We will decide whether to include the nightly tests in the execution at CI time, only.
+  // On the other hand, the developers can use the TAGS environment variable locally.
+  // Finally, we positively know that tags are not empty, so we can use AND operator.
+  def excludeNightlyTag = " && ~${NIGHTLY_TAG}"
+  if ("${NIGHTLY_SCENARIOS}" == "true") {
+    excludeNightlyTag = ""
+  }
+  tags += excludeNightlyTag
+
   return {
-    node('ubuntu-18.04 && immutable && docker') {
+    node("${platform} && immutable && docker") {
       try {
         deleteDir()
         unstash 'source'
