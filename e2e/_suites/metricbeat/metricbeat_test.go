@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -313,6 +314,36 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 
 // runMetricbeatService runs a metricbeat service entity for a service to monitor it
 func (mts *MetricbeatTestSuite) runMetricbeatService() error {
+	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+	if beatsLocalPath != "" {
+		artifactName := e2e.BuildArtifactName("metricbeat", mts.Version, mts.Version, "linux", "amd64", "tar.gz", true)
+		distributions := path.Join(beatsLocalPath, "metricbeat", "build", "distributions")
+		log.Debugf("Using local snapshots for the Metricbeat: %s", distributions)
+
+		fileNamePath, err := filepath.Abs(path.Join(distributions, artifactName))
+		if err != nil {
+			return err
+		}
+
+		_, err = os.Stat(fileNamePath)
+		if err != nil || os.IsNotExist(err) {
+			return err
+		}
+
+		args := []string{
+			"load", "-i", fileNamePath,
+		}
+
+		_, err = shell.Execute(".", "docker", args...)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":        err,
+				"artifactName": artifactName,
+			}).Error("Could not load the Docker image.")
+			return err
+		}
+	}
+
 	// this is needed because, in general, the target service (apache, mysql, redis) does not have a healthcheck
 	waitForService := time.Duration(timeoutFactor) * 10 * time.Second
 	if mts.ServiceName == "ceph" {
