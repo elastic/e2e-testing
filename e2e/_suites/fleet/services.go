@@ -448,8 +448,9 @@ func newDockerInstaller(ubi8 bool) (ElasticAgentInstaller, error) {
 	// extract the agent in the box, as it's mounted as a volume
 	artifact := "elastic-agent"
 
+	artifactName := artifact
 	if ubi8 {
-		artifact = "elastic-agent-ubi8"
+		artifactName = "elastic-agent-ubi8"
 	}
 
 	version := agentVersion
