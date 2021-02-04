@@ -251,6 +251,7 @@ type TARPackage struct {
 	arch     string
 	artifact string
 	OS       string
+	stale    bool
 	version  string
 }
 
@@ -308,23 +309,38 @@ func (i *TARPackage) Preinstall() error {
 		return err
 	}
 
-	version := checkElasticAgentVersion(i.version)
+	version := i.version
+	if !i.stale {
+		version = checkElasticAgentVersion(i.version)
+	}
 
 	// simplify layout
-	cmds := []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", i.artifact, version, i.OS, i.arch), "/elastic-agent"}
-	err = execCommandInService(i.profile, i.image, i.service, cmds, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmds,
-			"error":   err,
-			"image":   i.image,
-			"service": i.service,
-		}).Error("Could not extract agent package in the box")
+	cmds := [][]string{
+		[]string{"rm", "-fr", "/elastic-agent"},
+		[]string{"mv", fmt.Sprintf("/%s-%s-%s-%s", i.artifact, version, i.OS, i.arch), "/elastic-agent"},
+	}
+	for _, cmd := range cmds {
+		err = execCommandInService(i.profile, i.image, i.service, cmd, false)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"command": cmd,
+				"error":   err,
+				"image":   i.image,
+				"service": i.service,
+				"version": version,
+			}).Error("Could not extract agent package in the box")
 
-		return err
+			return err
+		}
 	}
 
 	return nil
+}
+
+// Stale sets the stale state
+func (i *TARPackage) Stale(stale bool) *TARPackage {
+	i.stale = stale
+	return i
 }
 
 // Uninstall uninstalls a TAR package
