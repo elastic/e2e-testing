@@ -258,9 +258,9 @@ func GetElasticAgentInstaller(image string, installerType string, version string
 	} else if "debian" == image && "systemd" == installerType {
 		installer, err = newDebianInstaller("debian", "stretch", version, stale)
 	} else if "docker" == image && "default" == installerType {
-		installer, err = newDockerInstaller(false)
+		installer, err = newDockerInstaller(false, version)
 	} else if "docker" == image && "ubi8" == installerType {
-		installer, err = newDockerInstaller(true)
+		installer, err = newDockerInstaller(true, version)
 	} else {
 		log.WithFields(log.Fields{
 			"image":     image,
@@ -448,7 +448,7 @@ func newDebianInstaller(image string, tag string, version string, stale bool) (E
 }
 
 // newDockerInstaller returns an instance of the Docker installer
-func newDockerInstaller(ubi8 bool) (ElasticAgentInstaller, error) {
+func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error) {
 	image := "elastic-agent"
 	service := image
 	profile := FleetProfileName
@@ -461,7 +461,6 @@ func newDockerInstaller(ubi8 bool) (ElasticAgentInstaller, error) {
 		artifactName = "elastic-agent-ubi8"
 	}
 
-	version := agentVersion
 	os := "linux"
 	arch := "amd64"
 	extension := "tar.gz"
