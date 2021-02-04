@@ -60,6 +60,28 @@ func TestDownloadAgentBinary(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, path.Join(distributionsDir, artifactName))
 	})
+
+	t.Run("Fetching Docker binary from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
+
+		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, path.Join(distributionsDir, artifactName))
+	})
+
+	t.Run("Fetching ubi8 Docker binary from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
+
+		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, path.Join(distributionsDir, artifactName))
+	})
 }
 
 func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
