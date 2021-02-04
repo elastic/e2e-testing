@@ -7,11 +7,14 @@ package docker
 import (
 	"bytes"
 	"context"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/elastic/e2e-testing/cli/shell"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -170,6 +173,33 @@ func RemoveContainer(containerName string) error {
 	}).Info("Service has been removed")
 
 	return nil
+}
+
+// LoadImage loads a TAR file in the loall docker engine
+func LoadImage(imagePath string) error {
+	fileNamePath, err := filepath.Abs(imagePath)
+	if err != nil {
+		return err
+	}
+
+	_, err = os.Stat(fileNamePath)
+	if err != nil || os.IsNotExist(err) {
+		return err
+	}
+
+	args := []string{
+		"load", "-i", fileNamePath,
+	}
+
+	_, err = shell.Execute(".", "docker", args...)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"image": fileNamePath,
+		}).Error("Could not load the Docker image.")
+	}
+
+	return err
 }
 
 // RemoveDevNetwork removes the developer network

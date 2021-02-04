@@ -7,7 +7,7 @@ package main
 import (
 	"fmt"
 
-	shell "github.com/elastic/e2e-testing/cli/shell"
+	"github.com/elastic/e2e-testing/cli/docker"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -143,17 +143,7 @@ func (i *DockerPackage) InstallCerts() error {
 
 // Preinstall executes operations before installing a Docker package
 func (i *DockerPackage) Preinstall() error {
-	args := []string{
-		"load", "-i", i.installerPath,
-	}
-
-	_, err := shell.Execute(".", "docker", args...)
-	if err != nil {
-		log.WithField("error", err).Error("Could not load the Docker image.")
-		return err
-	}
-
-	return nil
+	return docker.LoadImage(i.installerPath)
 }
 
 // Postinstall executes operations after installing a Docker package

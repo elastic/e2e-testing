@@ -9,13 +9,13 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
 	messages "github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
@@ -320,26 +320,8 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		distributions := path.Join(beatsLocalPath, "metricbeat", "build", "distributions")
 		log.Debugf("Using local snapshots for the Metricbeat: %s", distributions)
 
-		fileNamePath, err := filepath.Abs(path.Join(distributions, artifactName))
+		err := docker.LoadImage(path.Join(distributions, artifactName))
 		if err != nil {
-			return err
-		}
-
-		_, err = os.Stat(fileNamePath)
-		if err != nil || os.IsNotExist(err) {
-			return err
-		}
-
-		args := []string{
-			"load", "-i", fileNamePath,
-		}
-
-		_, err = shell.Execute(".", "docker", args...)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error":        err,
-				"artifactName": artifactName,
-			}).Error("Could not load the Docker image.")
 			return err
 		}
 	}
