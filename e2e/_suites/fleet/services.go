@@ -166,7 +166,7 @@ func runElasticAgentCommand(profile string, image string, service string, proces
 // to be used will be defined by the local snapshot produced by the local build.
 // Else, if the environment variable BEATS_USE_CI_SNAPSHOTS is set, then the artifact
 // to be downloaded will be defined by the latest snapshot produced by the Beats CI.
-func downloadAgentBinary(artifact string, version string, OS string, arch string, extension string) (string, string, error) {
+func downloadAgentBinary(artifact string, version string, OS string, arch string, extension string, stale bool) (string, string, error) {
 	fileName := fmt.Sprintf("%s-%s-%s.%s", artifact, version, arch, extension)
 
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
@@ -217,7 +217,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 	if useCISnapshots {
 		log.Debug("Using CI snapshots for the Elastic Agent")
 
-		bucketFileName, bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, OS, arch, extension)
+		bucketFileName, bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, OS, arch, extension, stale)
 
 		maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
@@ -229,7 +229,12 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 		return handleDownload(downloadURL, bucketFileName)
 	}
 
-	downloadURL, err = e2e.GetElasticArtifactURL(artifact, checkElasticAgentVersion(version), OS, arch, extension)
+	downloadVersion := version
+	if !stale {
+		downloadVersion = checkElasticAgentVersion(version)
+	}
+
+	downloadURL, err = e2e.GetElasticArtifactURL(artifact, downloadVersion, OS, arch, extension)
 	if err != nil {
 		return "", "", err
 	}
@@ -238,7 +243,7 @@ func downloadAgentBinary(artifact string, version string, OS string, arch string
 }
 
 // GetElasticAgentInstaller returns an installer from a docker image
-func GetElasticAgentInstaller(image string, installerType string) ElasticAgentInstaller {
+func GetElasticAgentInstaller(image string, installerType string, version string, stale bool) ElasticAgentInstaller {
 	log.WithFields(log.Fields{
 		"image":     image,
 		"installer": installerType,
@@ -247,13 +252,13 @@ func GetElasticAgentInstaller(image string, installerType string) ElasticAgentIn
 	var installer ElasticAgentInstaller
 	var err error
 	if "centos" == image && "tar" == installerType {
-		installer, err = newTarInstaller("centos", "latest")
+		installer, err = newTarInstaller("centos", "latest", version, stale)
 	} else if "centos" == image && "systemd" == installerType {
-		installer, err = newCentosInstaller("centos", "latest")
+		installer, err = newCentosInstaller("centos", "latest", version, stale)
 	} else if "debian" == image && "tar" == installerType {
-		installer, err = newTarInstaller("debian", "stretch")
+		installer, err = newTarInstaller("debian", "stretch", version, stale)
 	} else if "debian" == image && "systemd" == installerType {
-		installer, err = newDebianInstaller("debian", "stretch")
+		installer, err = newDebianInstaller("debian", "stretch", version, stale)
 	} else {
 		log.WithFields(log.Fields{
 			"image":     image,
@@ -273,7 +278,7 @@ func GetElasticAgentInstaller(image string, installerType string) ElasticAgentIn
 }
 
 // getGCPBucketCoordinates it calculates the bucket path in GCP
-func getGCPBucketCoordinates(fileName string, artifact string, version string, OS string, arch string, extension string) (string, string, string, string) {
+func getGCPBucketCoordinates(fileName string, artifact string, version string, OS string, arch string, extension string, stale bool) (string, string, string, string) {
 	if extension == "tar.gz" {
 		fileName = fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, OS, arch, extension)
 	}
@@ -307,6 +312,11 @@ func getGCPBucketCoordinates(fileName string, artifact string, version string, O
 		object = fmt.Sprintf("%s/%s", artifact, newFileName)
 	}
 
+	if stale {
+		prefix = fmt.Sprintf("snapshots/%s", artifact)
+		object = newFileName
+	}
+
 	return newFileName, bucket, prefix, object
 }
 
@@ -314,20 +324,19 @@ func isSystemdBased(image string) bool {
 	return strings.HasSuffix(image, "-systemd")
 }
 
-// newCentosInstaller returns an instance of the Centos installer
-func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error) {
+// newCentosInstaller returns an instance of the Centos installer for a specific version
+func newCentosInstaller(image string, tag string, version string, stale bool) (ElasticAgentInstaller, error) {
 	image = image + "-systemd" // we want to consume systemd boxes
 	service := image
 	profile := FleetProfileName
 
 	// extract the agent in the box, as it's mounted as a volume
 	artifact := "elastic-agent"
-	version := agentVersion
 	os := "linux"
 	arch := "x86_64"
 	extension := "rpm"
 
-	binaryName, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension)
+	binaryName, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension, stale)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -379,20 +388,19 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 	}, nil
 }
 
-// newDebianInstaller returns an instance of the Debian installer
-func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error) {
+// newDebianInstaller returns an instance of the Debian installer for a specific version
+func newDebianInstaller(image string, tag string, version string, stale bool) (ElasticAgentInstaller, error) {
 	image = image + "-systemd" // we want to consume systemd boxes
 	service := image
 	profile := FleetProfileName
 
 	// extract the agent in the box, as it's mounted as a volume
 	artifact := "elastic-agent"
-	version := agentVersion
 	os := "linux"
 	arch := "amd64"
 	extension := "deb"
 
-	binaryName, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension)
+	binaryName, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension, stale)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -444,20 +452,19 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 	}, nil
 }
 
-// newTarInstaller returns an instance of the Debian installer
-func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
+// newTarInstaller returns an instance of the Debian installer for a specific version
+func newTarInstaller(image string, tag string, version string, stale bool) (ElasticAgentInstaller, error) {
 	image = image + "-systemd" // we want to consume systemd boxes
 	service := image
 	profile := FleetProfileName
 
 	// extract the agent in the box, as it's mounted as a volume
 	artifact := "elastic-agent"
-	version := agentVersion
 	os := "linux"
 	arch := "x86_64"
 	extension := "tar.gz"
 
-	tarFile, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension)
+	tarFile, binaryPath, err := downloadAgentBinary(artifact, version, os, arch, extension, stale)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -482,6 +489,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 
 	//
 	installerPackage := NewTARPackage(tarFile, profile, image, service).
+		Stale(stale).
 		WithArch(arch).
 		WithArtifact(artifact).
 		WithOS(os).

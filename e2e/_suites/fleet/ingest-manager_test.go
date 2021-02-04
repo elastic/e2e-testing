@@ -45,7 +45,7 @@ var agentVersion = agentVersionBase
 
 // agentStaleVersion is the version of the agent to use as a base during upgrade
 // It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var agentStaleVersion = "7.10.0"
+var agentStaleVersion = "7.10.2"
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
@@ -83,6 +83,11 @@ func setUpSuite() {
 	agentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", agentVersionBase)
 	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
 
+	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	if useCISnapshots && !strings.HasSuffix(agentStaleVersion, "-SNAPSHOT") {
+		agentStaleVersion += "-SNAPSHOT"
+	}
+
 	// check if version is an alias
 	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
 
@@ -91,10 +96,10 @@ func setUpSuite() {
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			Installers: map[string]ElasticAgentInstaller{
-				"centos-systemd": GetElasticAgentInstaller("centos", "systemd"),
-				"centos-tar":     GetElasticAgentInstaller("centos", "tar"),
-				"debian-systemd": GetElasticAgentInstaller("debian", "systemd"),
-				"debian-tar":     GetElasticAgentInstaller("debian", "tar"),
+				"centos-systemd-" + agentVersion: GetElasticAgentInstaller("centos", "systemd", agentVersion, false),
+				"centos-tar-" + agentVersion:     GetElasticAgentInstaller("centos", "tar", agentVersion, false),
+				"debian-systemd-" + agentVersion: GetElasticAgentInstaller("debian", "systemd", agentVersion, false),
+				"debian-tar-" + agentVersion:     GetElasticAgentInstaller("debian", "tar", agentVersion, false),
 			},
 		},
 		StandAlone: &StandAloneTestSuite{},
