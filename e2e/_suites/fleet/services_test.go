@@ -24,7 +24,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		arch := "foo_arch"
 		extension := "foo_ext"
 
-		_, _, err := downloadAgentBinary(artifact, version, OS, arch, extension)
+		_, _, err := downloadAgentBinary(artifact, version, OS, arch, extension, false)
 		assert.NotNil(t, err)
 	})
 
@@ -36,7 +36,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		extension := "rpm"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm"
 
-		newFileName, downloadedFilePath, err := downloadAgentBinary(artifact, version, OS, arch, extension)
+		newFileName, downloadedFilePath, err := downloadAgentBinary(artifact, version, OS, arch, extension, false)
 		assert.Nil(t, err)
 		assert.Equal(t, newFileName, expectedFileName)
 		assert.Equal(t, downloadedFilePath, path.Join(distributionsDir, expectedFileName))
@@ -50,7 +50,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		extension := "deb"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-amd64.deb"
 
-		newFileName, downloadedFilePath, err := downloadAgentBinary(artifact, version, OS, arch, extension)
+		newFileName, downloadedFilePath, err := downloadAgentBinary(artifact, version, OS, arch, extension, false)
 		assert.Nil(t, err)
 		assert.Equal(t, newFileName, expectedFileName)
 		assert.Equal(t, downloadedFilePath, path.Join(distributionsDir, expectedFileName))
@@ -64,7 +64,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.tar.gz"
 
-		newFileName, downloadedFilePath, err := downloadAgentBinary(artifact, version, OS, arch, extension)
+		newFileName, downloadedFilePath, err := downloadAgentBinary(artifact, version, OS, arch, extension, false)
 		assert.Nil(t, err)
 		assert.Equal(t, newFileName, expectedFileName)
 		assert.Equal(t, downloadedFilePath, path.Join(distributionsDir, expectedFileName))
