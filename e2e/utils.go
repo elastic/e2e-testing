@@ -31,22 +31,27 @@ const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // BuildArtifactName builds the artifact name from the different coordinates for the artifact
-func BuildArtifactName(artifact string, version string, OS string, arch string, extension string, isDocker bool) string {
+func BuildArtifactName(artifact string, version string, fallbackVersion string, OS string, arch string, extension string, isDocker bool) string {
 	dockerString := ""
 	if isDocker {
 		dockerString = ".docker"
 	}
 
+	artifactVersion := version
+	if strings.HasPrefix(strings.ToLower(version), "pr-") {
+		artifactVersion = fallbackVersion
+	}
+
 	lowerCaseExtension := strings.ToLower(extension)
 
-	artifactName := fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, version, OS, arch, dockerString, lowerCaseExtension)
+	artifactName := fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, artifactVersion, OS, arch, dockerString, lowerCaseExtension)
 	if lowerCaseExtension == "deb" || lowerCaseExtension == "rpm" {
-		artifactName = fmt.Sprintf("%s-%s-%s%s.%s", artifact, version, arch, dockerString, lowerCaseExtension)
+		artifactName = fmt.Sprintf("%s-%s-%s%s.%s", artifact, artifactVersion, arch, dockerString, lowerCaseExtension)
 	}
 
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if beatsLocalPath != "" && isDocker {
-		return fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, version, OS, arch, dockerString, lowerCaseExtension)
+		return fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, artifactVersion, OS, arch, dockerString, lowerCaseExtension)
 	}
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
@@ -55,7 +60,7 @@ func BuildArtifactName(artifact string, version string, OS string, arch string, 
 	// Elastic's snapshots: elastic-agent-$VERSION-docker-image-linux-amd64.tar.gz
 	if !useCISnapshots && isDocker {
 		dockerString = "docker-image"
-		artifactName = fmt.Sprintf("%s-%s-%s-%s-%s.%s", artifact, version, dockerString, OS, arch, lowerCaseExtension)
+		artifactName = fmt.Sprintf("%s-%s-%s-%s-%s.%s", artifact, artifactVersion, dockerString, OS, arch, lowerCaseExtension)
 	}
 
 	return artifactName

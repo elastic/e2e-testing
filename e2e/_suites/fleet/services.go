@@ -320,7 +320,7 @@ func newCentosInstaller(image string, tag string) (ElasticAgentInstaller, error)
 	arch := "x86_64"
 	extension := "rpm"
 
-	binaryName := e2e.BuildArtifactName(artifact, version, os, arch, extension, false)
+	binaryName := e2e.BuildArtifactName(artifact, version, agentVersionBase, os, arch, extension, false)
 	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -386,7 +386,7 @@ func newDebianInstaller(image string, tag string) (ElasticAgentInstaller, error)
 	arch := "amd64"
 	extension := "deb"
 
-	binaryName := e2e.BuildArtifactName(artifact, version, os, arch, extension, false)
+	binaryName := e2e.BuildArtifactName(artifact, version, agentVersionBase, os, arch, extension, false)
 	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -457,7 +457,7 @@ func newDockerInstaller(ubi8 bool) (ElasticAgentInstaller, error) {
 	arch := "amd64"
 	extension := "tar.gz"
 
-	binaryName := e2e.BuildArtifactName(artifact, version, os, arch, extension, true)
+	binaryName := e2e.BuildArtifactName(artifactName, version, agentVersionBase, os, arch, extension, true)
 	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -527,7 +527,7 @@ func newTarInstaller(image string, tag string) (ElasticAgentInstaller, error) {
 	arch := "x86_64"
 	extension := "tar.gz"
 
-	binaryName := e2e.BuildArtifactName(artifact, version, os, arch, extension, false)
+	binaryName := e2e.BuildArtifactName(artifact, version, agentVersionBase, os, arch, extension, false)
 	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
