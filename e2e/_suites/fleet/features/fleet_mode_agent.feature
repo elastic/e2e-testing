@@ -40,7 +40,7 @@ Examples:
 | debian |
 
 # @upgrade-agent
-@skip
+@nightly
 Scenario Outline: Upgrading the installed <os> agent
   Given a "<os>" agent "stale" is deployed to Fleet with "tar" installer
     And certs for "<os>" are installed
