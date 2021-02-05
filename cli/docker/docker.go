@@ -175,7 +175,7 @@ func RemoveContainer(containerName string) error {
 	return nil
 }
 
-// LoadImage loads a TAR file in the loall docker engine
+// LoadImage loads a TAR file in the local docker engine
 func LoadImage(imagePath string) error {
 	fileNamePath, err := filepath.Abs(imagePath)
 	if err != nil {
