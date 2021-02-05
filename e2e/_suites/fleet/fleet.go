@@ -379,11 +379,10 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 			// the agent is not listed in Fleet
 			if desiredStatus == "offline" || desiredStatus == "inactive" {
 				log.WithFields(log.Fields{
-					"isAgentInStatus": isAgentInStatus,
-					"elapsedTime":     exp.GetElapsedTime(),
-					"hostname":        fts.Hostname,
-					"retries":         retryCount,
-					"status":          desiredStatus,
+					"elapsedTime": exp.GetElapsedTime(),
+					"hostname":    fts.Hostname,
+					"retries":     retryCount,
+					"status":      desiredStatus,
 				}).Info("The Agent is not present in Fleet, as expected")
 				return nil
 			} else if desiredStatus == "online" {
