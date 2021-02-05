@@ -241,7 +241,6 @@ type TARPackage struct {
 	arch     string
 	artifact string
 	OS       string
-	stale    bool
 	version  string
 }
 
@@ -299,15 +298,10 @@ func (i *TARPackage) Preinstall() error {
 		return err
 	}
 
-	version := i.version
-	if !i.stale {
-		version = checkElasticAgentVersion(i.version)
-	}
-
 	// simplify layout
 	cmds := [][]string{
 		[]string{"rm", "-fr", "/elastic-agent"},
-		[]string{"mv", fmt.Sprintf("/%s-%s-%s-%s", i.artifact, version, i.OS, i.arch), "/elastic-agent"},
+		[]string{"mv", fmt.Sprintf("/%s-%s-%s-%s", i.artifact, i.version, i.OS, i.arch), "/elastic-agent"},
 	}
 	for _, cmd := range cmds {
 		err = execCommandInService(i.profile, i.image, i.service, cmd, false)
@@ -317,7 +311,7 @@ func (i *TARPackage) Preinstall() error {
 				"error":   err,
 				"image":   i.image,
 				"service": i.service,
-				"version": version,
+				"version": i.version,
 			}).Error("Could not extract agent package in the box")
 
 			return err
@@ -325,12 +319,6 @@ func (i *TARPackage) Preinstall() error {
 	}
 
 	return nil
-}
-
-// Stale sets the stale state
-func (i *TARPackage) Stale(stale bool) *TARPackage {
-	i.stale = stale
-	return i
 }
 
 // Uninstall uninstalls a TAR package
