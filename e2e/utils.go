@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -23,6 +24,11 @@ import (
 	curl "github.com/elastic/e2e-testing/cli/shell"
 	log "github.com/sirupsen/logrus"
 )
+
+// to avoid downloading the same artifacts, we are adding this map to cache the URL of the downloaded binaries, using as key
+// the URL of the artifact. If another installer is trying to download the same URL, it will return the location of the
+// already downloaded artifact.
+var binariesCache = map[string]string{}
 
 //nolint:unused
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -64,6 +70,105 @@ func BuildArtifactName(artifact string, version string, fallbackVersion string, 
 	}
 
 	return artifactName
+}
+
+// FetchBeatsBinary it downloads the binary and returns the location of the downloaded file
+// If the environment variable BEATS_LOCAL_PATH is set, then the artifact
+// to be used will be defined by the local snapshot produced by the local build.
+// Else, if the environment variable BEATS_USE_CI_SNAPSHOTS is set, then the artifact
+// to be downloaded will be defined by the latest snapshot produced by the Beats CI.
+func FetchBeatsBinary(artifactName string, artifact string, version string, fallbackVersion string, timeoutFactor int, xpack bool) (string, error) {
+	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+	if beatsLocalPath != "" {
+		distributions := path.Join(beatsLocalPath, artifact, "build", "distributions")
+		if xpack {
+			distributions = path.Join(beatsLocalPath, "x-pack", artifact, "build", "distributions")
+		}
+
+		log.Debugf("Using local snapshots for the %s: %s", artifact, distributions)
+
+		fileNamePath, _ := filepath.Abs(path.Join(distributions, artifactName))
+		_, err := os.Stat(fileNamePath)
+		if err != nil || os.IsNotExist(err) {
+			return fileNamePath, err
+		}
+
+		return fileNamePath, err
+	}
+
+	handleDownload := func(URL string) (string, error) {
+		if val, ok := binariesCache[URL]; ok {
+			log.WithFields(log.Fields{
+				"URL":  URL,
+				"path": val,
+			}).Debug("Retrieving binary from local cache")
+			return val, nil
+		}
+
+		filePath, err := DownloadFile(URL)
+		if err != nil {
+			return filePath, err
+		}
+
+		binariesCache[URL] = filePath
+
+		return filePath, nil
+	}
+
+	var downloadURL string
+	var err error
+
+	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	if useCISnapshots {
+		log.Debugf("Using CI snapshots for %s", artifact)
+
+		bucket, prefix, object := getGCPBucketCoordinates(artifactName, artifact, version, fallbackVersion)
+
+		maxTimeout := time.Duration(timeoutFactor) * time.Minute
+
+		downloadURL, err = GetObjectURLFromBucket(bucket, prefix, object, maxTimeout)
+		if err != nil {
+			return "", err
+		}
+
+		return handleDownload(downloadURL)
+	}
+
+	downloadURL, err = GetElasticArtifactURL(artifactName, artifact, version)
+	if err != nil {
+		return "", err
+	}
+
+	return handleDownload(downloadURL)
+}
+
+// getGCPBucketCoordinates it calculates the bucket path in GCP
+func getGCPBucketCoordinates(fileName string, artifact string, version string, fallbackVersion string) (string, string, string) {
+	bucket := "beats-ci-artifacts"
+	prefix := fmt.Sprintf("snapshots/%s", artifact)
+	object := fileName
+
+	// the commit SHA will identify univocally the artifact in the GCP storage bucket
+	commitSHA := shell.GetEnv("GITHUB_CHECK_SHA1", "")
+	if commitSHA != "" {
+		prefix = fmt.Sprintf("commits/%s", commitSHA)
+		object = artifact + "/" + fileName
+	}
+
+	// we are setting a version from a pull request: the version of the artifact will be kept as the base one
+	// i.e. /pull-requests/pr-21100/$THE_BEAT/$THE_BEAT-$VERSION-x86_64.rpm
+	// i.e. /pull-requests/pr-21100/$THE_BEAT/$THE_BEAT-$VERSION-amd64.deb
+	// i.e. /pull-requests/pr-21100/$THE_BEAT/$THE_BEAT-$VERSION-linux-x86_64.tar.gz
+	if strings.HasPrefix(strings.ToLower(version), "pr-") {
+		log.WithFields(log.Fields{
+			"version": fallbackVersion,
+			"PR":      version,
+		}).Debug("Using CI snapshots for a pull request")
+		prefix = fmt.Sprintf("pull-requests/%s", version)
+		object = fmt.Sprintf("%s/%s", artifact, fileName)
+	}
+
+	return bucket, prefix, object
 }
 
 // GetExponentialBackOff returns a preconfigured exponential backoff instance

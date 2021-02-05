@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -320,20 +319,12 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	if useCISnapshots || beatsLocalPath != "" {
 		artifactName := e2e.BuildArtifactName("metricbeat", mts.Version, metricbeatVersionBase, "linux", "amd64", "tar.gz", true)
 
-		imagePath := ""
-		if beatsLocalPath != "" {
-			log.Debugf("Using local snapshots for the Metricbeat: %s", artifactName)
-			imagePath = path.Join(beatsLocalPath, "metricbeat", "build", "distributions", artifactName)
-		} else if useCISnapshots {
-			log.Debugf("Using CI snapshots for the Metricbeat: %s", artifactName)
-			p, err := downloadMetricbeatBinary(artifactName, "metricbeat", mts.Version)
-			if err != nil {
-				return err
-			}
-			imagePath = p
+		imagePath, err := e2e.FetchBeatsBinary(artifactName, "metricbeat", mts.Version, metricbeatVersionBase, timeoutFactor, false)
+		if err != nil {
+			return err
 		}
 
-		err := docker.LoadImage(imagePath)
+		err = docker.LoadImage(imagePath)
 		if err != nil {
 			return err
 		}
@@ -529,89 +520,4 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 	}
 
 	return e2e.AssertHitsDoNotContainErrors(result, mts.Query)
-}
-
-// downloadMetricbeatBinary it downloads the binary and returns the location of the downloaded file
-// If the environment variable BEATS_LOCAL_PATH is set, then the artifact
-// to be used will be defined by the local snapshot produced by the local build.
-// Else, if the environment variable BEATS_USE_CI_SNAPSHOTS is set, then the artifact
-// to be downloaded will be defined by the latest snapshot produced by the Beats CI.
-func downloadMetricbeatBinary(artifactName string, artifact string, version string) (string, error) {
-	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
-	if beatsLocalPath != "" {
-		distributions := path.Join(beatsLocalPath, "metricbeat", "build", "distributions")
-		log.Debugf("Using local snapshots for the Metricbeat: %s", distributions)
-
-		fileNamePath, _ := filepath.Abs(path.Join(distributions, artifactName))
-		_, err := os.Stat(fileNamePath)
-		if err != nil || os.IsNotExist(err) {
-			return fileNamePath, err
-		}
-
-		return fileNamePath, err
-	}
-
-	handleDownload := func(URL string) (string, error) {
-		filePath, err := e2e.DownloadFile(URL)
-		if err != nil {
-			return filePath, err
-		}
-
-		return filePath, nil
-	}
-
-	var downloadURL string
-	var err error
-
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
-	if useCISnapshots {
-		log.Debug("Using CI snapshots for Metricbeat")
-
-		bucket, prefix, object := getGCPBucketCoordinates(artifactName, artifact, version)
-
-		maxTimeout := time.Duration(timeoutFactor) * time.Minute
-
-		downloadURL, err = e2e.GetObjectURLFromBucket(bucket, prefix, object, maxTimeout)
-		if err != nil {
-			return "", err
-		}
-
-		return handleDownload(downloadURL)
-	}
-
-	downloadURL, err = e2e.GetElasticArtifactURL(artifactName, artifact, version)
-	if err != nil {
-		return "", err
-	}
-
-	return handleDownload(downloadURL)
-}
-
-// getGCPBucketCoordinates it calculates the bucket path in GCP
-func getGCPBucketCoordinates(fileName string, artifact string, version string) (string, string, string) {
-	bucket := "beats-ci-artifacts"
-	prefix := fmt.Sprintf("snapshots/%s", artifact)
-	object := fileName
-
-	// the commit SHA will identify univocally the artifact in the GCP storage bucket
-	commitSHA := shell.GetEnv("GITHUB_CHECK_SHA1", "")
-	if commitSHA != "" {
-		prefix = fmt.Sprintf("commits/%s", commitSHA)
-		object = artifact + "/" + fileName
-	}
-
-	// we are setting a version from a pull request: the version of the artifact will be kept as the base one
-	// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm
-	// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-amd64.deb
-	// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz
-	if strings.HasPrefix(strings.ToLower(version), "pr-") {
-		log.WithFields(log.Fields{
-			"version": metricbeatVersionBase,
-			"PR":      version,
-		}).Debug("Using CI snapshots for a pull request")
-		prefix = fmt.Sprintf("pull-requests/%s", version)
-		object = fmt.Sprintf("%s/%s", artifact, fileName)
-	}
-
-	return bucket, prefix, object
 }

@@ -69,7 +69,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries
-		dockerInstaller := GetElasticAgentInstaller("docker", image, agentVersion, false)
+		dockerInstaller := GetElasticAgentInstaller("docker", image, agentVersion)
 
 		dockerInstaller.PreInstallFn()
 	}

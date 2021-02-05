@@ -7,21 +7,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
-	"path"
 	"strings"
-	"time"
 
 	"github.com/elastic/e2e-testing/cli/docker"
-	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
-
-// to avoid downloading the same artifacts, we are adding this map to cache the URL of the downloaded binaries, using as key
-// the URL of the artifact. If another installer is trying to download the same URL, it will return the location of the
-// already downloaded artifact.
-var binariesCache = map[string]string{}
 
 // ElasticAgentInstaller represents how to install an agent, depending of the box type
 type ElasticAgentInstaller struct {
@@ -170,78 +161,17 @@ func runElasticAgentCommand(profile string, image string, service string, proces
 // to be used will be defined by the local snapshot produced by the local build.
 // Else, if the environment variable BEATS_USE_CI_SNAPSHOTS is set, then the artifact
 // to be downloaded will be defined by the latest snapshot produced by the Beats CI.
-func downloadAgentBinary(artifactName string, artifact string, version string, stale bool) (string, error) {
-	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
-	if beatsLocalPath != "" {
-		distributions := path.Join(beatsLocalPath, "x-pack", "elastic-agent", "build", "distributions")
-		log.Debugf("Using local snapshots for the Elastic Agent: %s", distributions)
-
-		fileNamePath := path.Join(distributions, artifactName)
-		_, err := os.Stat(fileNamePath)
-		if err != nil || os.IsNotExist(err) {
-			return fileNamePath, err
-		}
-
-		return fileNamePath, err
-	}
-
-	handleDownload := func(URL string) (string, error) {
-		if val, ok := binariesCache[URL]; ok {
-			log.WithFields(log.Fields{
-				"URL":  URL,
-				"path": val,
-			}).Debug("Retrieving binary from local cache")
-			return val, nil
-		}
-
-		filePath, err := e2e.DownloadFile(URL)
-		if err != nil {
-			return filePath, err
-		}
-
-		binariesCache[URL] = filePath
-
-		return filePath, nil
-	}
-
-	if downloadURL, exists := os.LookupEnv("ELASTIC_AGENT_DOWNLOAD_URL"); exists {
-		return handleDownload(downloadURL)
-	}
-
-	var downloadURL string
-	var err error
-
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
-	if useCISnapshots {
-		log.Debug("Using CI snapshots for the Elastic Agent")
-
-		bucket, prefix, object := getGCPBucketCoordinates(artifactName, artifact, version, stale)
-
-		maxTimeout := time.Duration(timeoutFactor) * time.Minute
-
-		downloadURL, err = e2e.GetObjectURLFromBucket(bucket, prefix, object, maxTimeout)
-		if err != nil {
-			return "", err
-		}
-
-		return handleDownload(downloadURL)
-	}
-
-	downloadVersion := version
-	if !stale {
-		downloadVersion = checkElasticAgentVersion(version)
-	}
-
-	downloadURL, err = e2e.GetElasticArtifactURL(artifactName, artifact, downloadVersion)
+func downloadAgentBinary(artifactName string, artifact string, version string) (string, error) {
+	imagePath, err := e2e.FetchBeatsBinary(artifactName, artifact, version, agentVersionBase, timeoutFactor, true)
 	if err != nil {
 		return "", err
 	}
 
-	return handleDownload(downloadURL)
+	return imagePath, nil
 }
 
 // GetElasticAgentInstaller returns an installer from a docker image
-func GetElasticAgentInstaller(image string, installerType string, version string, stale bool) ElasticAgentInstaller {
+func GetElasticAgentInstaller(image string, installerType string, version string) ElasticAgentInstaller {
 	log.WithFields(log.Fields{
 		"image":     image,
 		"installer": installerType,
@@ -250,13 +180,13 @@ func GetElasticAgentInstaller(image string, installerType string, version string
 	var installer ElasticAgentInstaller
 	var err error
 	if "centos" == image && "tar" == installerType {
-		installer, err = newTarInstaller("centos", "latest", version, stale)
+		installer, err = newTarInstaller("centos", "latest", version)
 	} else if "centos" == image && "systemd" == installerType {
-		installer, err = newCentosInstaller("centos", "latest", version, stale)
+		installer, err = newCentosInstaller("centos", "latest", version)
 	} else if "debian" == image && "tar" == installerType {
-		installer, err = newTarInstaller("debian", "stretch", version, stale)
+		installer, err = newTarInstaller("debian", "stretch", version)
 	} else if "debian" == image && "systemd" == installerType {
-		installer, err = newDebianInstaller("debian", "stretch", version, stale)
+		installer, err = newDebianInstaller("debian", "stretch", version)
 	} else if "docker" == image && "default" == installerType {
 		installer, err = newDockerInstaller(false, version)
 	} else if "docker" == image && "ubi8" == installerType {
@@ -279,46 +209,12 @@ func GetElasticAgentInstaller(image string, installerType string, version string
 	return installer
 }
 
-// getGCPBucketCoordinates it calculates the bucket path in GCP
-func getGCPBucketCoordinates(fileName string, artifact string, version string, stale bool) (string, string, string) {
-	bucket := "beats-ci-artifacts"
-	prefix := fmt.Sprintf("snapshots/%s", artifact)
-	object := fileName
-
-	// the commit SHA will identify univocally the artifact in the GCP storage bucket
-	commitSHA := shell.GetEnv("GITHUB_CHECK_SHA1", "")
-	if commitSHA != "" {
-		prefix = fmt.Sprintf("commits/%s", commitSHA)
-		object = artifact + "/" + fileName
-	}
-
-	// we are setting a version from a pull request: the version of the artifact will be kept as the base one
-	// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm
-	// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-amd64.deb
-	// i.e. /pull-requests/pr-21100/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz
-	if strings.HasPrefix(strings.ToLower(version), "pr-") {
-		log.WithFields(log.Fields{
-			"agentVersion": agentVersionBase,
-			"PR":           version,
-		}).Debug("Using CI snapshots for a pull request")
-		prefix = fmt.Sprintf("pull-requests/%s", version)
-		object = fmt.Sprintf("%s/%s", artifact, fileName)
-	}
-
-	if stale {
-		prefix = fmt.Sprintf("snapshots/%s", artifact)
-		object = fileName
-	}
-
-	return bucket, prefix, object
-}
-
 func isSystemdBased(image string) bool {
 	return strings.HasSuffix(image, "-systemd")
 }
 
 // newCentosInstaller returns an instance of the Centos installer for a specific version
-func newCentosInstaller(image string, tag string, version string, stale bool) (ElasticAgentInstaller, error) {
+func newCentosInstaller(image string, tag string, version string) (ElasticAgentInstaller, error) {
 	image = image + "-systemd" // we want to consume systemd boxes
 	service := image
 	profile := FleetProfileName
@@ -330,7 +226,7 @@ func newCentosInstaller(image string, tag string, version string, stale bool) (E
 	extension := "rpm"
 
 	binaryName := e2e.BuildArtifactName(artifact, version, agentVersionBase, os, arch, extension, false)
-	binaryPath, err := downloadAgentBinary(binaryName, artifact, version, stale)
+	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -383,7 +279,7 @@ func newCentosInstaller(image string, tag string, version string, stale bool) (E
 }
 
 // newDebianInstaller returns an instance of the Debian installer for a specific version
-func newDebianInstaller(image string, tag string, version string, stale bool) (ElasticAgentInstaller, error) {
+func newDebianInstaller(image string, tag string, version string) (ElasticAgentInstaller, error) {
 	image = image + "-systemd" // we want to consume systemd boxes
 	service := image
 	profile := FleetProfileName
@@ -395,7 +291,7 @@ func newDebianInstaller(image string, tag string, version string, stale bool) (E
 	extension := "deb"
 
 	binaryName := e2e.BuildArtifactName(artifact, version, agentVersionBase, os, arch, extension, false)
-	binaryPath, err := downloadAgentBinary(binaryName, artifact, version, stale)
+	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -466,7 +362,7 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 	extension := "tar.gz"
 
 	binaryName := e2e.BuildArtifactName(artifactName, version, agentVersionBase, os, arch, extension, true)
-	binaryPath, err := downloadAgentBinary(binaryName, artifact, version, false)
+	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -523,7 +419,7 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 }
 
 // newTarInstaller returns an instance of the Debian installer for a specific version
-func newTarInstaller(image string, tag string, version string, stale bool) (ElasticAgentInstaller, error) {
+func newTarInstaller(image string, tag string, version string) (ElasticAgentInstaller, error) {
 	image = image + "-systemd" // we want to consume systemd boxes
 	service := image
 	profile := FleetProfileName
@@ -535,7 +431,7 @@ func newTarInstaller(image string, tag string, version string, stale bool) (Elas
 	extension := "tar.gz"
 
 	binaryName := e2e.BuildArtifactName(artifact, version, agentVersionBase, os, arch, extension, false)
-	binaryPath, err := downloadAgentBinary(binaryName, artifact, version, stale)
+	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -560,7 +456,6 @@ func newTarInstaller(image string, tag string, version string, stale bool) (Elas
 
 	//
 	installerPackage := NewTARPackage(binaryName, profile, image, service).
-		Stale(stale).
 		WithArch(arch).
 		WithArtifact(artifact).
 		WithOS(os).

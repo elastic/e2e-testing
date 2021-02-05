@@ -10,6 +10,8 @@ import (
 	gabs "github.com/Jeffail/gabs/v2"
 )
 
+var testVersion = "8.0.0-SNAPSHOT"
+
 const bucket = "beats-ci-artifacts"
 const pullRequests = "pull-requests"
 const snapshots = "snapshots"
@@ -204,6 +206,168 @@ func TestGetBucketSearchNextPageParam_HasNoMorePages(t *testing.T) {
 	// this JSON file does not contain the tokken field
 	param := getBucketSearchNextPageParam(pullRequestsJSON)
 	assert.True(t, param == "")
+}
+
+func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
+	artifact := "elastic-agent"
+	version := testVersion
+
+	t.Run("Fetching commits bucket for RPM package", func(t *testing.T) {
+		defer os.Unsetenv("GITHUB_CHECK_SHA1")
+		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+
+		fileName := "elastic-agent-" + testVersion + "-x86_64.rpm"
+
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		assert.Equal(t, bucket, "beats-ci-artifacts")
+		assert.Equal(t, prefix, "commits/0123456789")
+		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-x86_64.rpm")
+	})
+
+	t.Run("Fetching commits bucket for DEB package", func(t *testing.T) {
+		defer os.Unsetenv("GITHUB_CHECK_SHA1")
+		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+
+		fileName := "elastic-agent-" + testVersion + "-amd64.deb"
+
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		assert.Equal(t, bucket, "beats-ci-artifacts")
+		assert.Equal(t, prefix, "commits/0123456789")
+		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-amd64.deb")
+	})
+
+	t.Run("Fetching commits bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
+		defer os.Unsetenv("GITHUB_CHECK_SHA1")
+		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+
+		fileName := "elastic-agent-" + testVersion + "-linux-x86_64.tar.gz"
+
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		assert.Equal(t, bucket, "beats-ci-artifacts")
+		assert.Equal(t, prefix, "commits/0123456789")
+		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-linux-x86_64.tar.gz")
+	})
+}
+
+func TestGetGCPBucketCoordinates_CommitsForAPullRequest(t *testing.T) {
+	artifact := "elastic-agent"
+	version := "pr-23456"
+
+	t.Run("Fetching pull request bucket for RPM package", func(t *testing.T) {
+		defer os.Unsetenv("GITHUB_CHECK_SHA1")
+		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+
+		fileName := "elastic-agent-" + testVersion + "-x86_64.rpm"
+
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		assert.Equal(t, bucket, "beats-ci-artifacts")
+		assert.Equal(t, prefix, "pull-requests/pr-23456")
+		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-x86_64.rpm")
+	})
+
+	t.Run("Fetching pull request bucket for DEB package", func(t *testing.T) {
+		defer os.Unsetenv("GITHUB_CHECK_SHA1")
+		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+
+		fileName := "elastic-agent-" + testVersion + "-amd64.deb"
+
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		assert.Equal(t, bucket, "beats-ci-artifacts")
+		assert.Equal(t, prefix, "pull-requests/pr-23456")
+		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-amd64.deb")
+	})
+
+	t.Run("Fetching pull request bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
+		defer os.Unsetenv("GITHUB_CHECK_SHA1")
+		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+
+		fileName := "elastic-agent-" + testVersion + "-linux-x86_64.tar.gz"
+
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		assert.Equal(t, bucket, "beats-ci-artifacts")
+		assert.Equal(t, prefix, "pull-requests/pr-23456")
+		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-linux-x86_64.tar.gz")
+	})
+}
+
+func TestGetGCPBucketCoordinates_PullRequests(t *testing.T) {
+	artifact := "elastic-agent"
+	version := "pr-23456"
+
+	t.Run("Fetching pull request bucket for RPM package", func(t *testing.T) {
+		fileName := "elastic-agent-" + testVersion + "-x86_64.rpm"
+
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		assert.Equal(t, bucket, "beats-ci-artifacts")
+		assert.Equal(t, prefix, "pull-requests/pr-23456")
+		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-x86_64.rpm")
+	})
+
+	t.Run("Fetching pull request bucket for DEB package", func(t *testing.T) {
+		fileName := "elastic-agent-" + testVersion + "-amd64.deb"
+
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		assert.Equal(t, bucket, "beats-ci-artifacts")
+		assert.Equal(t, prefix, "pull-requests/pr-23456")
+		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-amd64.deb")
+	})
+
+	t.Run("Fetching pull request bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
+		fileName := "elastic-agent-" + testVersion + "-linux-x86_64.tar.gz"
+
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		assert.Equal(t, bucket, "beats-ci-artifacts")
+		assert.Equal(t, prefix, "pull-requests/pr-23456")
+		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-linux-x86_64.tar.gz")
+	})
+}
+
+func TestGetGCPBucketCoordinates_Snapshots(t *testing.T) {
+	artifact := "elastic-agent"
+	version := testVersion
+
+	t.Run("Fetching snapshots bucket for RPM package", func(t *testing.T) {
+		fileName := "elastic-agent-" + testVersion + "-x86_64.rpm"
+
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		assert.Equal(t, bucket, "beats-ci-artifacts")
+		assert.Equal(t, prefix, "snapshots/elastic-agent")
+		assert.Equal(t, object, "elastic-agent-"+testVersion+"-x86_64.rpm")
+	})
+
+	t.Run("Fetching snapshots bucket for DEB package", func(t *testing.T) {
+		fileName := "elastic-agent-" + testVersion + "-amd64.deb"
+
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		assert.Equal(t, bucket, "beats-ci-artifacts")
+		assert.Equal(t, prefix, "snapshots/elastic-agent")
+		assert.Equal(t, object, "elastic-agent-"+testVersion+"-amd64.deb")
+	})
+	t.Run("Fetching snapshots bucket for stale DEB package", func(t *testing.T) {
+		fileName := "elastic-agent-" + testVersion + "-amd64.deb"
+
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		assert.Equal(t, bucket, "beats-ci-artifacts")
+		assert.Equal(t, prefix, "snapshots/elastic-agent")
+		assert.Equal(t, object, "elastic-agent-"+testVersion+"-amd64.deb")
+	})
+
+	t.Run("Fetching snapshots bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
+		fileName := "elastic-agent-" + testVersion + "-linux-x86_64.tar.gz"
+
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		assert.Equal(t, bucket, "beats-ci-artifacts")
+		assert.Equal(t, prefix, "snapshots/elastic-agent")
+		assert.Equal(t, object, "elastic-agent-"+testVersion+"-linux-x86_64.tar.gz")
+	})
+	t.Run("Fetching snapshots bucket for stale TAR package adds OS to fileName and object", func(t *testing.T) {
+		fileName := "elastic-agent-" + testVersion + "-linux-x86_64.tar.gz"
+
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		assert.Equal(t, bucket, "beats-ci-artifacts")
+		assert.Equal(t, prefix, "snapshots/elastic-agent")
+		assert.Equal(t, object, "elastic-agent-"+testVersion+"-linux-x86_64.tar.gz")
+	})
 }
 
 func TestProcessBucketSearchPage_PullRequestsFound(t *testing.T) {
