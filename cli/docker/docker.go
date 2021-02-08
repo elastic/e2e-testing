@@ -6,6 +6,7 @@ package docker
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"os"
 	"path/filepath"
@@ -14,7 +15,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	"github.com/elastic/e2e-testing/cli/shell"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -187,19 +187,23 @@ func LoadImage(imagePath string) error {
 		return err
 	}
 
-	args := []string{
-		"load", "-i", fileNamePath,
-	}
+	dockerClient := getDockerClient()
+	file, err := os.Open(imagePath)
 
-	_, err = shell.Execute(".", "docker", args...)
+	input, err := gzip.NewReader(file)
+	imageLoadResponse, err := dockerClient.ImageLoad(context.Background(), input, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
 			"image": fileNamePath,
 		}).Error("Could not load the Docker image.")
+		return err
 	}
 
-	return err
+	log.WithFields(log.Fields{
+		"response": imageLoadResponse,
+	}).Debug("Docker image loaded successfully")
+	return nil
 }
 
 // RemoveDevNetwork removes the developer network
