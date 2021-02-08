@@ -387,7 +387,7 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 		WithArch(arch).
 		WithArtifact(artifact).
 		WithOS(os).
-		WithVersion(checkElasticAgentVersion(version)) // sanitize version
+		WithVersion(checkElasticAgentVersion(version, agentVersionBase)) // sanitize version
 
 	return ElasticAgentInstaller{
 		artifactArch:      arch,
@@ -459,7 +459,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 		WithArch(arch).
 		WithArtifact(artifact).
 		WithOS(os).
-		WithVersion(checkElasticAgentVersion(version)) // sanitize version
+		WithVersion(checkElasticAgentVersion(version, agentVersionBase)) // sanitize version
 
 	return ElasticAgentInstaller{
 		artifactArch:      arch,
