@@ -233,15 +233,6 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	return checkProcessStateOnTheHost(containerName, process, state)
 }
 
-// checkElasticAgentVersion returns a fallback version if the version set by the environment is empty
-func checkElasticAgentVersion(version string, fallbackVersion string) string {
-	if strings.HasPrefix(strings.ToLower(version), "pr-") {
-		return fallbackVersion
-	}
-
-	return version
-}
-
 // name of the container for the service:
 // we are using the Docker client instead of docker-compose
 // because it does not support returning the output of a

@@ -43,10 +43,7 @@ func BuildArtifactName(artifact string, version string, fallbackVersion string, 
 		dockerString = ".docker"
 	}
 
-	artifactVersion := version
-	if strings.HasPrefix(strings.ToLower(version), "pr-") {
-		artifactVersion = fallbackVersion
-	}
+	artifactVersion := CheckPRVersion(version, fallbackVersion)
 
 	lowerCaseExtension := strings.ToLower(extension)
 
@@ -70,6 +67,15 @@ func BuildArtifactName(artifact string, version string, fallbackVersion string, 
 	}
 
 	return artifactName
+}
+
+// CheckPRVersion returns a fallback version if the version comes from a Pull Request (PR)
+func CheckPRVersion(version string, fallbackVersion string) string {
+	if strings.HasPrefix(strings.ToLower(version), "pr-") {
+		return fallbackVersion
+	}
+
+	return version
 }
 
 // FetchBeatsBinary it downloads the binary and returns the location of the downloaded file

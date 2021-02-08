@@ -282,9 +282,7 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 	mts.Version = metricbeatVersion
 	mts.setIndexName()
 
-	if strings.HasPrefix(metricbeatVersion, "pr-") {
-		metricbeatVersion = metricbeatVersionBase
-	}
+	metricbeatVersion = e2e.CheckPRVersion(metricbeatVersion, metricbeatVersionBase)
 
 	// use master branch for snapshots
 	tag := "v" + metricbeatVersion
