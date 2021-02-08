@@ -199,7 +199,7 @@ func TestCheckPRVersion(t *testing.T) {
 	t.Run("Checking a version should return the version", func(t *testing.T) {
 		v := CheckPRVersion(testVersion, testVersion)
 
-		assert.Equal(t, "8.0.0-SNAPSHOT", v)
+		assert.Equal(t, testVersion, v)
 	})
 
 	t.Run("A PR should return base version", func(t *testing.T) {
