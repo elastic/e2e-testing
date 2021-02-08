@@ -17,7 +17,15 @@ SUITE=${1:?SUITE is not set}
 # execute specific test dependencies if it exists
 if [ -f .ci/scripts/install-${SUITE}-test-dependencies.sh ]
 then
-    source .ci/scripts/install-${SUITE}-test-dependencies.sh
+    ## Install the required dependencies with some retry
+    CI_UTILS=/usr/local/bin/bash_standard_lib.sh
+    if [ -e "${CI_UTILS}" ] ; then
+        # shellcheck disable=SC1090
+        source "${CI_UTILS}"
+        retry 3 source .ci/scripts/install-${SUITE}-test-dependencies.sh
+    else
+        source .ci/scripts/install-${SUITE}-test-dependencies.sh
+    fi
 else
     echo "Not installing test dependencies for ${SUITE}"
 fi
