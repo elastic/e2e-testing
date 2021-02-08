@@ -6,7 +6,10 @@ package docker
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -169,6 +172,37 @@ func RemoveContainer(containerName string) error {
 		"service": containerName,
 	}).Info("Service has been removed")
 
+	return nil
+}
+
+// LoadImage loads a TAR file in the local docker engine
+func LoadImage(imagePath string) error {
+	fileNamePath, err := filepath.Abs(imagePath)
+	if err != nil {
+		return err
+	}
+
+	_, err = os.Stat(fileNamePath)
+	if err != nil || os.IsNotExist(err) {
+		return err
+	}
+
+	dockerClient := getDockerClient()
+	file, err := os.Open(imagePath)
+
+	input, err := gzip.NewReader(file)
+	imageLoadResponse, err := dockerClient.ImageLoad(context.Background(), input, false)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"image": fileNamePath,
+		}).Error("Could not load the Docker image.")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"response": imageLoadResponse,
+	}).Debug("Docker image loaded successfully")
 	return nil
 }
 
