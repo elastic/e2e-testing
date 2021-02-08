@@ -1,8 +1,13 @@
+// Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+// or more contributor license agreements. Licensed under the Elastic License;
+// you may not use this file except in compliance with the Elastic License.
+
 package main
 
 import (
 	"fmt"
 
+	"github.com/elastic/e2e-testing/cli/docker"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -96,6 +101,85 @@ func (i *DEBPackage) Preinstall() error {
 func (i *DEBPackage) Uninstall() error {
 	log.Trace("No uninstall commands for DEB packages")
 	return nil
+}
+
+// DockerPackage implements operations for a DEB installer
+type DockerPackage struct {
+	BasePackage
+	installerPath string
+	ubi8          bool
+	// optional fields
+	arch     string
+	artifact string
+	OS       string
+	version  string
+}
+
+// NewDockerPackage creates an instance for the Docker installer
+func NewDockerPackage(binaryName string, profile string, image string, service string, installerPath string, ubi8 bool) *DockerPackage {
+	return &DockerPackage{
+		BasePackage: BasePackage{
+			binaryName: binaryName,
+			image:      image,
+			profile:    profile,
+			service:    service,
+		},
+		installerPath: installerPath,
+		ubi8:          ubi8,
+	}
+}
+
+// Install installs a Docker package
+func (i *DockerPackage) Install(containerName string, token string) error {
+	log.Trace("No install commands for Docker packages")
+	return nil
+}
+
+// InstallCerts installs the certificates for a Docker package
+func (i *DockerPackage) InstallCerts() error {
+	log.Trace("No install certs commands for Docker packages")
+	return nil
+}
+
+// Preinstall executes operations before installing a Docker package
+func (i *DockerPackage) Preinstall() error {
+	return docker.LoadImage(i.installerPath)
+}
+
+// Postinstall executes operations after installing a Docker package
+func (i *DockerPackage) Postinstall() error {
+	log.Trace("No postinstall commands for Docker packages")
+	return nil
+}
+
+// Uninstall uninstalls a Docker package
+func (i *DockerPackage) Uninstall() error {
+	log.Trace("No uninstall commands for Docker packages")
+	return nil
+}
+
+// WithArch sets the architecture
+func (i *DockerPackage) WithArch(arch string) *DockerPackage {
+	i.arch = arch
+	return i
+}
+
+// WithArtifact sets the artifact
+func (i *DockerPackage) WithArtifact(artifact string) *DockerPackage {
+	i.artifact = artifact
+	return i
+}
+
+// WithOS sets the OS
+func (i *DockerPackage) WithOS(OS string) *DockerPackage {
+	i.OS = OS
+	return i
+}
+
+// WithVersion sets the version
+func (i *DockerPackage) WithVersion(version string) *DockerPackage {
+	i.version = version
+	return i
 }
 
 // RPMPackage implements operations for a RPM installer
@@ -214,20 +298,24 @@ func (i *TARPackage) Preinstall() error {
 		return err
 	}
 
-	version := checkElasticAgentVersion(i.version)
-
 	// simplify layout
-	cmds := []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", i.artifact, version, i.OS, i.arch), "/elastic-agent"}
-	err = execCommandInService(i.profile, i.image, i.service, cmds, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmds,
-			"error":   err,
-			"image":   i.image,
-			"service": i.service,
-		}).Error("Could not extract agent package in the box")
+	cmds := [][]string{
+		[]string{"rm", "-fr", "/elastic-agent"},
+		[]string{"mv", fmt.Sprintf("/%s-%s-%s-%s", i.artifact, i.version, i.OS, i.arch), "/elastic-agent"},
+	}
+	for _, cmd := range cmds {
+		err = execCommandInService(i.profile, i.image, i.service, cmd, false)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"command": cmd,
+				"error":   err,
+				"image":   i.image,
+				"service": i.service,
+				"version": i.version,
+			}).Error("Could not extract agent package in the box")
 
-		return err
+			return err
+		}
 	}
 
 	return nil
