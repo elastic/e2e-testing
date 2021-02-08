@@ -13,8 +13,8 @@ set -euxo pipefail
 #   - METRICBEAT_VERSION - that's the version of the metricbeat to be tested. Default '8.0.0-SNAPSHOT'.
 #
 
-STACK_VERSION=${1:-'8.0.0-SNAPSHOT'}
-METRICBEAT_VERSION=${2:-'8.0.0-SNAPSHOT'}
+STACK_VERSION=${1:-'7.11.0-SNAPSHOT'}
+METRICBEAT_VERSION=${2:-'7.11.0-SNAPSHOT'}
 SUITE='metricbeat'
 
 .ci/scripts/functional-test.sh "${SUITE}" "" "${STACK_VERSION}" "${METRICBEAT_VERSION}"
