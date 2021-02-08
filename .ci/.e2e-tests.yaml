@@ -12,6 +12,7 @@ SUITES:
         tags: "metricbeat"
   - suite: "fleet"
     platforms:
+      - "arm"
       - "ubuntu-18.04"
     scenarios:
       - name: "Fleet"
@@ -22,6 +23,7 @@ SUITES:
         tags: "stand_alone_agent"
   - suite: "metricbeat"
     platforms:
+      - "arm"
       - "ubuntu-18.04"
     scenarios:
       - name: "ActiveMQ"
