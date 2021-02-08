@@ -14,6 +14,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
+	shell "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
@@ -61,6 +62,17 @@ func (sats *StandAloneTestSuite) contributeSteps(s *godog.ScenarioContext) {
 
 func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error {
 	log.Trace("Deploying an agent to Fleet")
+
+	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+	if useCISnapshots || beatsLocalPath != "" {
+		// load the docker images that were already:
+		// a. downloaded from the GCP bucket
+		// b. fetched from the local beats binaries
+		dockerInstaller := GetElasticAgentInstaller("docker", image, agentVersion)
+
+		dockerInstaller.PreInstallFn()
+	}
 
 	serviceManager := services.NewServiceManager()
 
