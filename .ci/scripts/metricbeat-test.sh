@@ -17,14 +17,4 @@ STACK_VERSION=${1:-'8.0.0-SNAPSHOT'}
 METRICBEAT_VERSION=${2:-'8.0.0-SNAPSHOT'}
 SUITE='metricbeat'
 
-## Install the required dependencies with some retry
-CI_UTILS=/usr/local/bin/bash_standard_lib.sh
-if [ -e "${CI_UTILS}" ] ; then
-    # shellcheck disable=SC1090
-    source "${CI_UTILS}"
-    retry 3 .ci/scripts/install-test-dependencies.sh "${SUITE}"
-else
-    .ci/scripts/install-test-dependencies.sh "${SUITE}"
-fi
-
 .ci/scripts/functional-test.sh "${SUITE}" "" "${STACK_VERSION}" "${METRICBEAT_VERSION}"
