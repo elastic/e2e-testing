@@ -235,13 +235,7 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 
 // checkElasticAgentVersion returns a fallback version if the version set by the environment is empty
 func checkElasticAgentVersion(version string, fallbackVersion string) string {
-	environmentVersion := os.Getenv("ELASTIC_AGENT_VERSION")
-
-	if environmentVersion == "" {
-		return fallbackVersion
-	}
-
-	if strings.HasPrefix(strings.ToLower(environmentVersion), "pr-") {
+	if strings.HasPrefix(strings.ToLower(version), "pr-") {
 		return fallbackVersion
 	}
 
