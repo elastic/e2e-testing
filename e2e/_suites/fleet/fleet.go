@@ -163,10 +163,9 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 	agentVersion = version
 
 	// prepare installer for stale version
-	if agentVersion != agentVersionBackup {
-		i := GetElasticAgentInstaller(image, installerType)
-		installerType = fmt.Sprintf("%s-%s", installerType, version)
-		fts.Installers[fmt.Sprintf("%s-%s", image, installerType)] = i
+	if fts.Version != agentVersionBackup {
+		i := GetElasticAgentInstaller(image, installerType, fts.Version)
+		fts.Installers[fmt.Sprintf("%s-%s-%s", image, installerType, version)] = i
 	}
 
 	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
@@ -371,11 +370,10 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 			// the agent is not listed in Fleet
 			if desiredStatus == "offline" || desiredStatus == "inactive" {
 				log.WithFields(log.Fields{
-					"isAgentInStatus": isAgentInStatus,
-					"elapsedTime":     exp.GetElapsedTime(),
-					"hostname":        fts.Hostname,
-					"retries":         retryCount,
-					"status":          desiredStatus,
+					"elapsedTime": exp.GetElapsedTime(),
+					"hostname":    fts.Hostname,
+					"retries":     retryCount,
+					"status":      desiredStatus,
 				}).Info("The Agent is not present in Fleet, as expected")
 				return nil
 			} else if desiredStatus == "online" {

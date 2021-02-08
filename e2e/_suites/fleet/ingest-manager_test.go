@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
@@ -91,10 +90,12 @@ func setUpSuite() {
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			Installers: map[string]ElasticAgentInstaller{
-				"centos-systemd": GetElasticAgentInstaller("centos", "systemd"),
-				"centos-tar":     GetElasticAgentInstaller("centos", "tar"),
-				"debian-systemd": GetElasticAgentInstaller("debian", "systemd"),
-				"debian-tar":     GetElasticAgentInstaller("debian", "tar"),
+				"centos-systemd-" + agentVersion: GetElasticAgentInstaller("centos", "systemd", agentVersion),
+				"centos-tar-" + agentVersion:     GetElasticAgentInstaller("centos", "tar", agentVersion),
+				"debian-systemd-" + agentVersion: GetElasticAgentInstaller("debian", "systemd", agentVersion),
+				"debian-tar-" + agentVersion:     GetElasticAgentInstaller("debian", "tar", agentVersion),
+				"docker-default-" + agentVersion: GetElasticAgentInstaller("docker", "default", agentVersion),
+				"docker-ubi8-" + agentVersion:    GetElasticAgentInstaller("docker", "ubi8", agentVersion),
 			},
 		},
 		StandAlone: &StandAloneTestSuite{},
@@ -224,21 +225,6 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	}
 
 	return checkProcessStateOnTheHost(containerName, process, state)
-}
-
-// checkElasticAgentVersion returns a fallback version (agentVersionBase) if the version set by the environment is empty
-func checkElasticAgentVersion(version string) string {
-	environmentVersion := os.Getenv("ELASTIC_AGENT_VERSION")
-
-	if environmentVersion == "" {
-		return agentVersionBase
-	}
-
-	if strings.HasPrefix(strings.ToLower(environmentVersion), "pr-") {
-		return agentVersionBase
-	}
-
-	return version
 }
 
 // name of the container for the service:
