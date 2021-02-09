@@ -20,6 +20,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // developerMode tears down the backend services (the elasticsearch instance)
@@ -27,6 +28,8 @@ import (
 // them running to speed up the development cycle.
 // It can be overriden by the DEVELOPER_MODE env var
 var developerMode = false
+
+var enableInstrumentation = false
 
 const metricbeatVersionBase = "8.0.0-SNAPSHOT"
 
@@ -52,6 +55,11 @@ func init() {
 	developerMode = shell.GetEnvBool("DEVELOPER_MODE")
 	if developerMode {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
+	}
+
+	enableInstrumentation = shell.GetEnvBool("ENABLE_INSTRUMENTATION")
+	if enableInstrumentation {
+		log.Info("Current execution will be instrumented 🛠")
 	}
 
 	metricbeatVersion = shell.GetEnv("METRICBEAT_VERSION", metricbeatVersion)
@@ -154,12 +162,27 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 }
 
 func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
-	ctx.BeforeScenario(func(*messages.Pickle) {
-		log.Trace("Before scenario...")
+	var span *apm.Span
+
+	ctx.BeforeScenario(func(p *messages.Pickle) {
+		log.Trace("Before Metricbeat scenario...")
+		if enableInstrumentation {
+			backgroundCtx := context.Background()
+			span, backgroundCtx = apm.StartSpan(backgroundCtx, p.GetName(), "test.godog.scenario")
+			log.Trace("Span started")
+		}
 	})
 
 	ctx.AfterScenario(func(*messages.Pickle, error) {
-		log.Trace("After scenario...")
+		if enableInstrumentation {
+			f := func() {
+				span.End()
+				log.Trace("Span ended")
+			}
+			defer f()
+		}
+
+		log.Trace("After Metricbeat scenario...")
 		err := testSuite.CleanUp()
 		if err != nil {
 			log.Errorf("CleanUp failed: %v", err)
@@ -179,8 +202,15 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 // InitializeMetricbeatTestSuite adds steps to the Godog test suite
 //nolint:deadcode,unused
 func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
+	var tx *apm.Transaction
+
 	ctx.BeforeSuite(func() {
 		log.Trace("Before Metricbeat Suite...")
+		if enableInstrumentation {
+			tx = apm.DefaultTracer.StartTransaction("Metricbeat Test Suite", "request")
+			log.Trace("Transaction started")
+		}
+
 		serviceManager := services.NewServiceManager()
 
 		env := map[string]string{
@@ -205,6 +235,14 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 	})
 
 	ctx.AfterSuite(func() {
+		if enableInstrumentation {
+			f := func() {
+				tx.End()
+				log.Trace("Transaction ended")
+			}
+			defer f()
+		}
+
 		if !developerMode {
 			serviceManager := services.NewServiceManager()
 			err := serviceManager.StopCompose(true, []string{"metricbeat"})
