@@ -14,10 +14,17 @@ VERSION_VALUE=`cat ../cli/VERSION.txt`
 APM_ENVIRONMENT?=local
 
 ifeq ($(ENABLE_INSTRUMENTATION),true)
+ifeq ($(APM_ENVIRONMENT),ci)
 export VAULT_TOKEN ?= $(shell cat $${HOME}/.vault-token)
 JENKINS_STATS_SECRET=secret/apm-team/ci/jenkins-stats
 export APM_SERVER_TOKEN=$(shell vault read -field apmServerToken "$(JENKINS_STATS_SECRET)")
 export APM_SERVER_URL=$(shell vault read -field apmServerUrl "$(JENKINS_STATS_SECRET)")
+endif
+
+ifeq ($(APM_ENVIRONMENT),local)
+export APM_SERVER_TOKEN=
+export APM_SERVER_URL=http://localhost:8200
+endif
 endif
 
 ifneq ($(TAGS),)

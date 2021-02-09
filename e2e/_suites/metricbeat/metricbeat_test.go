@@ -232,6 +232,25 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 				"minutes": minutesToBeHealthy,
 			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
+
+		if enableInstrumentation {
+			apmServerURL := shell.GetEnv("APM_SERVER_URL", "")
+			if strings.HasPrefix(apmServerURL, "http://localhost") {
+				log.WithFields(log.Fields{
+					"version": stackVersion,
+				}).Info("Starting local Kibana and APM Server for instrumentation")
+
+				env["kibanaTag"] = stackVersion
+				env["apmServerTag"] = stackVersion
+				err := serviceManager.AddServicesToCompose("metricbeat", []string{"kibana", "apm-server"}, env)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"error": err,
+						"env":   env,
+					}).Warn("The APM Server and Kibana could not be started, but they are not needed by the tests. Continuing")
+				}
+			}
+		}
 	})
 
 	ctx.AfterSuite(func() {
