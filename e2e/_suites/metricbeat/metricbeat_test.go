@@ -317,7 +317,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	if useCISnapshots || beatsLocalPath != "" {
 		artifactName := e2e.BuildArtifactName("metricbeat", mts.Version, metricbeatVersionBase, "linux", "amd64", "tar.gz", true)
 
-		imagePath, err := e2e.FetchBeatsBinary(artifactName, "metricbeat", mts.Version, metricbeatVersionBase, timeoutFactor, false)
+		imagePath, err := e2e.FetchBeatsBinary(artifactName, "metricbeat", mts.Version, metricbeatVersionBase, timeoutFactor, true)
 		if err != nil {
 			return err
 		}
