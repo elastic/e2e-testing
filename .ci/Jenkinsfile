@@ -325,11 +325,6 @@ def generateFunctionalTestStep(Map args = [:]){
           if(isInstalled(tool: 'docker', flag: '--version')) {
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
           }
-          retry(3){
-            dir("${BASE_DIR}"){
-              sh script: """.ci/scripts/install-test-dependencies.sh "${suite}" """, label: "Install test dependencies for ${suite}:${tags}"
-            }
-          }
           filebeat(output: "docker_logs_${suite}_${tags}.log", workdir: "${env.WORKSPACE}"){
             dir("${BASE_DIR}"){
               sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${stackVersion}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
