@@ -23,6 +23,9 @@ METRICBEAT_VERSION=${4:-'7.11.0-SNAPSHOT'}
 TARGET_OS=${GOOS:-linux}
 TARGET_ARCH=${GOARCH:-amd64}
 
+## Install the required dependencies for the given SUITE
+.ci/scripts/install-test-dependencies.sh "${SUITE}"
+
 rm -rf outputs || true
 mkdir -p outputs
 
