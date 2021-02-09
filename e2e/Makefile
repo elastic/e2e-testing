@@ -1,6 +1,7 @@
 SUITE?=metricbeat
 TAGS?=
 DEVELOPER_MODE?=false
+ENABLE_INSTRUMENTATION?=false
 FORMAT?=pretty
 LOG_INCLUDE_TIMESTAMP?=TRUE
 LOG_LEVEL?=INFO
@@ -10,6 +11,13 @@ SKIP_SCENARIOS?=true
 STACK_VERSION?=
 PICKLES_VERSION?="2.20.1"
 VERSION_VALUE=`cat ../cli/VERSION.txt`
+
+ifeq ($(ENABLE_INSTRUMENTATION),true)
+export VAULT_TOKEN ?= $(shell cat $${HOME}/.vault-token)
+JENKINS_STATS_SECRET=secret/apm-team/ci/jenkins-stats
+export APM_SERVER_TOKEN=$(shell vault read -field apmServerToken "$(JENKINS_STATS_SECRET)")
+export APM_SERVER_URL=$(shell vault read -field apmServerUrl "$(JENKINS_STATS_SECRET)")
+endif
 
 ifneq ($(TAGS),)
 TAGS_FLAG=--tags
@@ -64,6 +72,8 @@ functional-test: install-godog
 	TIMEOUT_FACTOR=${TIMEOUT_FACTOR} \
 	STACK_VERSION=${STACK_VERSION} \
 	DEVELOPER_MODE=${DEVELOPER_MODE} \
+	ELASTIC_APM_SERVER_TOKEN="${APM_SERVER_TOKEN}" \
+	ELASTIC_APM_SERVER_URL="${APM_SERVER_URL}" \
 	godog --format=${FORMAT} ${TAGS_FLAG} ${TAGS_VALUE}
 
 .PHONY: lint
