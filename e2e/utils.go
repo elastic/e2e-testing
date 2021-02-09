@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -24,11 +25,157 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// to avoid downloading the same artifacts, we are adding this map to cache the URL of the downloaded binaries, using as key
+// the URL of the artifact. If another installer is trying to download the same URL, it will return the location of the
+// already downloaded artifact.
+var binariesCache = map[string]string{}
+
 //nolint:unused
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 //nolint:unused
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+// BuildArtifactName builds the artifact name from the different coordinates for the artifact
+func BuildArtifactName(artifact string, version string, fallbackVersion string, OS string, arch string, extension string, isDocker bool) string {
+	dockerString := ""
+	if isDocker {
+		dockerString = ".docker"
+	}
+
+	artifactVersion := CheckPRVersion(version, fallbackVersion)
+
+	lowerCaseExtension := strings.ToLower(extension)
+
+	artifactName := fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, artifactVersion, OS, arch, dockerString, lowerCaseExtension)
+	if lowerCaseExtension == "deb" || lowerCaseExtension == "rpm" {
+		artifactName = fmt.Sprintf("%s-%s-%s%s.%s", artifact, artifactVersion, arch, dockerString, lowerCaseExtension)
+	}
+
+	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+	if beatsLocalPath != "" && isDocker {
+		return fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, artifactVersion, OS, arch, dockerString, lowerCaseExtension)
+	}
+
+	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	// we detected that the docker name on CI is using a different structure
+	// CI snapshots on GCP: elastic-agent-$VERSION-linux-amd64.docker.tar.gz
+	// Elastic's snapshots: elastic-agent-$VERSION-docker-image-linux-amd64.tar.gz
+	if !useCISnapshots && isDocker {
+		dockerString = "docker-image"
+		artifactName = fmt.Sprintf("%s-%s-%s-%s-%s.%s", artifact, artifactVersion, dockerString, OS, arch, lowerCaseExtension)
+	}
+
+	return artifactName
+}
+
+// CheckPRVersion returns a fallback version if the version comes from a Pull Request (PR)
+func CheckPRVersion(version string, fallbackVersion string) string {
+	if strings.HasPrefix(strings.ToLower(version), "pr-") {
+		return fallbackVersion
+	}
+
+	return version
+}
+
+// FetchBeatsBinary it downloads the binary and returns the location of the downloaded file
+// If the environment variable BEATS_LOCAL_PATH is set, then the artifact
+// to be used will be defined by the local snapshot produced by the local build.
+// Else, if the environment variable BEATS_USE_CI_SNAPSHOTS is set, then the artifact
+// to be downloaded will be defined by the latest snapshot produced by the Beats CI.
+func FetchBeatsBinary(artifactName string, artifact string, version string, fallbackVersion string, timeoutFactor int, xpack bool) (string, error) {
+	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+	if beatsLocalPath != "" {
+		distributions := path.Join(beatsLocalPath, artifact, "build", "distributions")
+		if xpack {
+			distributions = path.Join(beatsLocalPath, "x-pack", artifact, "build", "distributions")
+		}
+
+		log.Debugf("Using local snapshots for the %s: %s", artifact, distributions)
+
+		fileNamePath, _ := filepath.Abs(path.Join(distributions, artifactName))
+		_, err := os.Stat(fileNamePath)
+		if err != nil || os.IsNotExist(err) {
+			return fileNamePath, err
+		}
+
+		return fileNamePath, err
+	}
+
+	handleDownload := func(URL string) (string, error) {
+		if val, ok := binariesCache[URL]; ok {
+			log.WithFields(log.Fields{
+				"URL":  URL,
+				"path": val,
+			}).Debug("Retrieving binary from local cache")
+			return val, nil
+		}
+
+		filePath, err := DownloadFile(URL)
+		if err != nil {
+			return filePath, err
+		}
+
+		binariesCache[URL] = filePath
+
+		return filePath, nil
+	}
+
+	var downloadURL string
+	var err error
+
+	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	if useCISnapshots {
+		log.Debugf("Using CI snapshots for %s", artifact)
+
+		bucket, prefix, object := getGCPBucketCoordinates(artifactName, artifact, version, fallbackVersion)
+
+		maxTimeout := time.Duration(timeoutFactor) * time.Minute
+
+		downloadURL, err = GetObjectURLFromBucket(bucket, prefix, object, maxTimeout)
+		if err != nil {
+			return "", err
+		}
+
+		return handleDownload(downloadURL)
+	}
+
+	downloadURL, err = GetElasticArtifactURL(artifactName, artifact, version)
+	if err != nil {
+		return "", err
+	}
+
+	return handleDownload(downloadURL)
+}
+
+// getGCPBucketCoordinates it calculates the bucket path in GCP
+func getGCPBucketCoordinates(fileName string, artifact string, version string, fallbackVersion string) (string, string, string) {
+	bucket := "beats-ci-artifacts"
+	prefix := fmt.Sprintf("snapshots/%s", artifact)
+	object := fileName
+
+	// the commit SHA will identify univocally the artifact in the GCP storage bucket
+	commitSHA := shell.GetEnv("GITHUB_CHECK_SHA1", "")
+	if commitSHA != "" {
+		prefix = fmt.Sprintf("commits/%s", commitSHA)
+		object = artifact + "/" + fileName
+	}
+
+	// we are setting a version from a pull request: the version of the artifact will be kept as the base one
+	// i.e. /pull-requests/pr-21100/$THE_BEAT/$THE_BEAT-$VERSION-x86_64.rpm
+	// i.e. /pull-requests/pr-21100/$THE_BEAT/$THE_BEAT-$VERSION-amd64.deb
+	// i.e. /pull-requests/pr-21100/$THE_BEAT/$THE_BEAT-$VERSION-linux-x86_64.tar.gz
+	if strings.HasPrefix(strings.ToLower(version), "pr-") {
+		log.WithFields(log.Fields{
+			"version": fallbackVersion,
+			"PR":      version,
+		}).Debug("Using CI snapshots for a pull request")
+		prefix = fmt.Sprintf("pull-requests/%s", version)
+		object = fmt.Sprintf("%s/%s", artifact, fileName)
+	}
+
+	return bucket, prefix, object
+}
 
 // GetExponentialBackOff returns a preconfigured exponential backoff instance
 func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOff {
@@ -53,7 +200,7 @@ func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOf
 // GetElasticArtifactVersion returns the current version:
 // 1. Elastic's artifact repository, building the JSON path query based
 // If the version is a PR, then it will return the version without checking the artifacts API
-// i.e. GetElasticArtifactVersion("7.10.0-SNAPSHOT")
+// i.e. GetElasticArtifactVersion("$VERSION")
 // i.e. GetElasticArtifactVersion("pr-22000")
 func GetElasticArtifactVersion(version string) string {
 	if strings.HasPrefix(strings.ToLower(version), "pr-") {
@@ -127,14 +274,12 @@ func GetElasticArtifactVersion(version string) string {
 	return latestVersion
 }
 
-// GetElasticArtifactURL returns the URL of a released artifact from two possible sources
-// on the desired OS, architecture and file extension:
-// 1. Observability CI Storage bucket
-// 2. Elastic's artifact repository, building the JSON path query based
-// i.e. GetElasticArtifactURL("elastic-agent", "7.10-SNAPSHOT", "linux", "x86_64", "tar.gz")
-// i.e. GetElasticArtifactURL("elastic-agent", "7.10-SNAPSHOT", "x86_64", "rpm")
-// i.e. GetElasticArtifactURL("elastic-agent", "7.10-SNAPSHOT", "amd64", "deb")
-func GetElasticArtifactURL(artifact string, version string, operativeSystem string, arch string, extension string) (string, error) {
+// GetElasticArtifactURL returns the URL of a released artifact, which its full name is defined in the first argument,
+// from Elastic's artifact repository, building the JSON path query based on the full name
+// i.e. GetElasticArtifactURL("elastic-agent-$VERSION-amd64.deb", "elastic-agent", "$VERSION")
+// i.e. GetElasticArtifactURL("elastic-agent-$VERSION-x86_64.rpm", "elastic-agent","$VERSION")
+// i.e. GetElasticArtifactURL("elastic-agent-$VERSION-linux-amd64.tar.gz", "elastic-agent","$VERSION")
+func GetElasticArtifactURL(artifactName string, artifact string, version string) (string, error) {
 	exp := GetExponentialBackOff(time.Minute)
 
 	retryCount := 1
@@ -150,10 +295,8 @@ func GetElasticArtifactURL(artifact string, version string, operativeSystem stri
 		if err != nil {
 			log.WithFields(log.Fields{
 				"artifact":       artifact,
+				"artifactName":   artifactName,
 				"version":        version,
-				"os":             operativeSystem,
-				"arch":           arch,
-				"extension":      extension,
 				"error":          err,
 				"retry":          retryCount,
 				"statusEndpoint": r.URL,
@@ -183,26 +326,16 @@ func GetElasticArtifactURL(artifact string, version string, operativeSystem stri
 	jsonParsed, err := gabs.ParseJSON([]byte(body))
 	if err != nil {
 		log.WithFields(log.Fields{
-			"artifact":  artifact,
-			"version":   version,
-			"os":        operativeSystem,
-			"arch":      arch,
-			"extension": extension,
+			"artifact":     artifact,
+			"artifactName": artifactName,
+			"version":      version,
 		}).Error("Could not parse the response body for the artifact")
 		return "", err
 	}
 
-	// elastic-agent-7.10-SNAPSHOT-linux-x86_64.tar.gz
-	artifactPath := fmt.Sprintf("%s-%s-%s-%s.%s", artifact, version, operativeSystem, arch, extension)
-	if extension == "deb" || extension == "rpm" {
-		// elastic-agent-7.10-SNAPSHOT-x86_64.rpm
-		// elastic-agent-7.10-SNAPSHOT-amd64.deb
-		artifactPath = fmt.Sprintf("%s-%s-%s.%s", artifact, version, arch, extension)
-	}
-
 	packagesObject := jsonParsed.Path("packages")
 	// we need to get keys with dots using Search instead of Path
-	downloadObject := packagesObject.Search(artifactPath)
+	downloadObject := packagesObject.Search(artifactName)
 	downloadURL := downloadObject.Path("url").Data().(string)
 
 	return downloadURL, nil
