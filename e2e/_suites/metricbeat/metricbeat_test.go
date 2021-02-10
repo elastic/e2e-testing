@@ -180,6 +180,9 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 			f := func() {
 				span.End()
 				log.Trace("Span ended")
+
+				apm.DefaultTracer.Flush(nil)
+				log.Trace("Default tracer flushed")
 			}
 			defer f()
 		}
