@@ -263,6 +263,9 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 			f := func() {
 				tx.End()
 				log.Trace("Transaction ended")
+
+				apm.DefaultTracer.Flush(nil)
+				log.Trace("Default tracer flushed")
 			}
 			defer f()
 		}
