@@ -209,7 +209,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
 		log.Trace("Before Metricbeat Suite...")
 		if enableInstrumentation {
-			tx = apm.DefaultTracer.StartTransaction("Metricbeat Test Suite", "request")
+			tx = apm.DefaultTracer.StartTransaction("Metricbeat Test Suite", "suite")
 			log.Trace("Transaction started")
 		}
 
