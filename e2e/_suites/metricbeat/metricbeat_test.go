@@ -59,7 +59,9 @@ func init() {
 
 	enableInstrumentation = shell.GetEnvBool("ENABLE_INSTRUMENTATION")
 	if enableInstrumentation {
-		log.Info("Current execution will be instrumented 🛠")
+		log.WithFields(log.Fields{
+			"apm-environment": shell.GetEnv("APM_ENVIRONMENT", "local"),
+		}).Info("Current execution will be instrumented 🛠")
 	}
 
 	metricbeatVersion = shell.GetEnv("METRICBEAT_VERSION", metricbeatVersion)
