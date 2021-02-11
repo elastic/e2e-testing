@@ -171,6 +171,7 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 		log.Trace("Before Metricbeat scenario...")
 		if enableInstrumentation {
 			tx = apm.DefaultTracer.StartTransaction(p.GetName(), "scenario")
+			log.Trace("Transaction started")
 		}
 	})
 
@@ -223,9 +224,6 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
 		log.Trace("Before Metricbeat Suite...")
-		if enableInstrumentation {
-			log.Trace("Transaction started")
-		}
 
 		serviceManager := services.NewServiceManager()
 
