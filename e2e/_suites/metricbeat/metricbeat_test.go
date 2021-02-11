@@ -186,6 +186,8 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 		log.Trace("Before Metricbeat scenario...")
 		if enableInstrumentation {
 			tx = apm.DefaultTracer.StartTransaction(p.GetName(), "test.scenario")
+			tx.Context.SetLabel("suite", "metricbeat")
+
 			log.WithFields(log.Fields{
 				"tx": tx.Name,
 			}).Trace("Transaction started")
