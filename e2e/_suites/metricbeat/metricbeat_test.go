@@ -52,7 +52,7 @@ var testSuite MetricbeatTestSuite
 // tx represents the current APM transaction
 var tx *apm.Transaction
 
-func init() {
+func setupSuite() {
 	config.Init()
 
 	developerMode = shell.GetEnvBool("DEVELOPER_MODE")
@@ -224,6 +224,8 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
 		log.Trace("Before Metricbeat Suite...")
+
+		setupSuite()
 
 		serviceManager := services.NewServiceManager()
 
