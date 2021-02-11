@@ -16,12 +16,12 @@ APM_ENVIRONMENT?=local
 ifeq ($(ENABLE_INSTRUMENTATION),true)
 ifeq ($(APM_ENVIRONMENT),ci)
 JENKINS_STATS_SECRET?=secret/observability-team/ci/jenkins-stats
-export APM_SERVER_TOKEN?=$(shell vault read -field apmServerToken "$(JENKINS_STATS_SECRET)")
+export APM_SECRET_TOKEN?=$(shell vault read -field apmServerToken "$(JENKINS_STATS_SECRET)")
 export APM_SERVER_URL?=$(shell vault read -field apmServerUrl "$(JENKINS_STATS_SECRET)")
 endif
 
 ifeq ($(APM_ENVIRONMENT),local)
-export APM_SERVER_TOKEN?=
+export APM_SECRET_TOKEN?=
 export APM_SERVER_URL?=http://localhost:8200
 endif
 endif
@@ -83,7 +83,7 @@ functional-test: install-godog
 	ELASTIC_APM_CENTRAL_CONFIG="false" \
 	ELASTIC_APM_SERVICE_VERSION="${STACK_VERSION}" \
 	ELASTIC_APM_ENVIRONMENT="${APM_ENVIRONMENT}" \
-	ELASTIC_APM_SERVER_TOKEN="${APM_SERVER_TOKEN}" \
+	ELASTIC_APM_SECRET_TOKEN="${APM_SECRET_TOKEN}" \
 	ELASTIC_APM_SERVER_URL="${APM_SERVER_URL}" \
 	godog --format=${FORMAT} ${TAGS_FLAG} ${TAGS_VALUE}
 
