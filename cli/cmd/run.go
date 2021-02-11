@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"context"
 	"strings"
 
 	"github.com/elastic/e2e-testing/cli/config"
@@ -105,7 +106,7 @@ func buildRunProfileCommand(key string, profile config.Profile) *cobra.Command {
 					composeNames = append(composeNames, image)
 				}
 
-				err = serviceManager.AddServicesToCompose(key, composeNames, env)
+				err = serviceManager.AddServicesToCompose(context.Background(), key, composeNames, env)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"profile":  key,

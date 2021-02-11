@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -1211,7 +1212,7 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 
 	serviceManager := services.NewServiceManager()
 
-	err := serviceManager.AddServicesToCompose(profile, []string{service}, profileEnv)
+	err := serviceManager.AddServicesToCompose(context.Background(), profile, []string{service}, profileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": service,

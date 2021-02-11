@@ -5,6 +5,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 
@@ -17,7 +18,7 @@ import (
 
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
-	AddServicesToCompose(profile string, composeNames []string, env map[string]string) error
+	AddServicesToCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error
 	RemoveServicesFromCompose(profile string, composeNames []string, env map[string]string) error
 	RunCommand(profile string, composeNames []string, composeArgs []string, env map[string]string) error
 	RunCompose(isProfile bool, composeNames []string, env map[string]string) error
@@ -34,7 +35,7 @@ func NewServiceManager() ServiceManager {
 }
 
 // AddServicesToCompose adds services to a running docker compose
-func (sm *DockerServiceManager) AddServicesToCompose(profile string, composeNames []string, env map[string]string) error {
+func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error {
 	log.WithFields(log.Fields{
 		"profile":  profile,
 		"services": composeNames,

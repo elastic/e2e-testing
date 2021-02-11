@@ -266,7 +266,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 
 				env["kibanaTag"] = stackVersion
 				env["apmServerTag"] = stackVersion
-				err := serviceManager.AddServicesToCompose("metricbeat", []string{"kibana", "apm-server"}, env)
+				err := serviceManager.AddServicesToCompose(context.Background(), "metricbeat", []string{"kibana", "apm-server"}, env)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"error": err,
@@ -439,7 +439,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 
 	env["metricbeatDockerNamespace"] = e2e.GetDockerNamespaceEnvVar()
 
-	err := serviceManager.AddServicesToCompose("metricbeat", []string{"metricbeat"}, env)
+	err := serviceManager.AddServicesToCompose(context.Background(), "metricbeat", []string{"metricbeat"}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":             err,
@@ -499,7 +499,7 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(serviceType string
 	}
 	env = config.PutServiceEnvironment(env, serviceType, serviceVersion)
 
-	err := serviceManager.AddServicesToCompose("metricbeat", []string{serviceType}, env)
+	err := serviceManager.AddServicesToCompose(context.Background(), "metricbeat", []string{serviceType}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": serviceType,
@@ -524,7 +524,7 @@ func (mts *MetricbeatTestSuite) serviceVariantIsRunningForMetricbeat(
 	}
 	env = config.PutServiceVariantEnvironment(env, serviceType, serviceVariant, serviceVersion)
 
-	err := serviceManager.AddServicesToCompose("metricbeat", []string{serviceType}, env)
+	err := serviceManager.AddServicesToCompose(context.Background(), "metricbeat", []string{serviceType}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": serviceType,
