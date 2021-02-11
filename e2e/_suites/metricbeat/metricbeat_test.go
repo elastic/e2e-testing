@@ -49,9 +49,6 @@ var stackVersion = metricbeatVersionBase
 
 var testSuite MetricbeatTestSuite
 
-// tx represents the current APM transaction
-var tx *apm.Transaction
-
 func setupSuite() {
 	config.Init()
 
@@ -90,6 +87,9 @@ type MetricbeatTestSuite struct {
 	ServiceVersion    string                 // the version of the service to be monitored by metricbeat
 	Query             e2e.ElasticsearchQuery // the specs for the ES query
 	Version           string                 // the metricbeat version for the test
+	// instrumentation
+	tx       *apm.Transaction
+	stepSpan *apm.Span
 }
 
 // getIndexName returns the index to be used when querying Elasticsearch
@@ -170,7 +170,7 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Metricbeat scenario...")
 		if enableInstrumentation {
-			tx = apm.DefaultTracer.StartTransaction(p.GetName(), "scenario")
+			testSuite.tx = apm.DefaultTracer.StartTransaction(p.GetName(), "scenario")
 			log.Trace("Transaction started")
 		}
 	})
@@ -178,7 +178,7 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 	ctx.AfterScenario(func(*messages.Pickle, error) {
 		if enableInstrumentation {
 			f := func() {
-				tx.End()
+				testSuite.tx.End()
 				log.Trace("Transaction ended")
 
 				apm.DefaultTracer.Flush(nil)
@@ -194,18 +194,16 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 		}
 	})
 
-	var span *apm.Span
 	ctx.BeforeStep(func(step *godog.Step) {
 		if enableInstrumentation {
-			span = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
+			testSuite.stepSpan = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
 			log.Trace("Span started")
 		}
 	})
 	ctx.AfterStep(func(st *godog.Step, err error) {
-		if enableInstrumentation && span != nil {
-				span.End()
-				log.Trace("Span ended")
-			}
+		if enableInstrumentation && testSuite.stepSpan != nil {
+			testSuite.stepSpan.End()
+			log.Trace("Span ended")
 		}
 	})
 
