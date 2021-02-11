@@ -8,7 +8,7 @@ pipeline {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
     APM_ENVIRONMENT="ci"
-    ENABLE_INSTRUMENTATION="true"
+    ENABLE_INSTRUMENTATION="false"
     NIGHTLY_TAG="@nightly"
     NOTIFY_TO = credentials('notify-to')
     JOB_GCS_BUCKET = credentials('gcs-bucket')
