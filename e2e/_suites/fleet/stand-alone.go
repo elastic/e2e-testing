@@ -40,7 +40,7 @@ func (sats *StandAloneTestSuite) afterScenario() {
 	}
 
 	if !developerMode {
-		_ = serviceManager.RemoveServicesFromCompose(FleetProfileName, []string{serviceName}, profileEnv)
+		_ = serviceManager.RemoveServicesFromCompose(context.Background(), FleetProfileName, []string{serviceName}, profileEnv)
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
@@ -194,7 +194,7 @@ func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 func (sats *StandAloneTestSuite) theDockerContainerIsStopped(serviceName string) error {
 	serviceManager := services.NewServiceManager()
 
-	err := serviceManager.RemoveServicesFromCompose(FleetProfileName, []string{serviceName}, profileEnv)
+	err := serviceManager.RemoveServicesFromCompose(context.Background(), FleetProfileName, []string{serviceName}, profileEnv)
 	if err != nil {
 		return err
 	}

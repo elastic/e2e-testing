@@ -27,7 +27,7 @@ func init() {
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
 	AddServicesToCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error
-	RemoveServicesFromCompose(profile string, composeNames []string, env map[string]string) error
+	RemoveServicesFromCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error
 	RunCommand(profile string, composeNames []string, composeArgs []string, env map[string]string) error
 	RunCompose(isProfile bool, composeNames []string, env map[string]string) error
 	StopCompose(isProfile bool, composeNames []string) error
@@ -73,7 +73,14 @@ func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profil
 }
 
 // RemoveServicesFromCompose removes services from a running docker compose
-func (sm *DockerServiceManager) RemoveServicesFromCompose(profile string, composeNames []string, env map[string]string) error {
+func (sm *DockerServiceManager) RemoveServicesFromCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error {
+	if enableInstrumentation {
+		span, _ := apm.StartSpanOptions(ctx, "Remove services from Docker Compose", "docker-compose.service.remove", apm.SpanOptions{
+			Parent: apm.SpanFromContext(ctx).TraceContext(),
+		})
+		defer span.End()
+	}
+
 	log.WithFields(log.Fields{
 		"profile":  profile,
 		"services": composeNames,

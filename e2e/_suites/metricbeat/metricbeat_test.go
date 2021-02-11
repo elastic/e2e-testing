@@ -154,7 +154,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 		services = append(services, mts.ServiceName)
 	}
 
-	err := serviceManager.RemoveServicesFromCompose("metricbeat", services, env)
+	err := serviceManager.RemoveServicesFromCompose(context.Background(), "metricbeat", services, env)
 
 	if mts.cleanUpTmpFiles {
 		if _, err := os.Stat(mts.configurationFile); err == nil {
