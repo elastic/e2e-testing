@@ -88,8 +88,8 @@ type MetricbeatTestSuite struct {
 	Query             e2e.ElasticsearchQuery // the specs for the ES query
 	Version           string                 // the metricbeat version for the test
 	// instrumentation
-	tx       *apm.Transaction
-	stepSpan *apm.Span
+	tx           *apm.Transaction
+	scenarioSpan *apm.Span
 }
 
 // getIndexName returns the index to be used when querying Elasticsearch
@@ -170,19 +170,23 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Metricbeat scenario...")
 		if enableInstrumentation {
-			testSuite.tx = apm.DefaultTracer.StartTransaction(p.GetName(), "scenario")
-			log.Trace("Transaction started")
+			testSuite.scenarioSpan = testSuite.tx.StartSpan(p.GetName(), "test.scenario", nil)
+			log.WithFields(log.Fields{
+				"span": testSuite.scenarioSpan.Name,
+			}).Trace("Scenario span started")
 		}
 	})
 
 	ctx.AfterScenario(func(*messages.Pickle, error) {
 		if enableInstrumentation {
 			f := func() {
-				testSuite.tx.End()
-				log.Trace("Transaction ended")
+				log.WithFields(log.Fields{
+					"span": testSuite.scenarioSpan.Name,
+				}).Trace("Scenario span ended")
+				testSuite.scenarioSpan.End()
 
 				apm.DefaultTracer.Flush(nil)
-				log.Trace("Default tracer flushed")
+				log.Trace("Default tracer flushed after scenario")
 			}
 			defer f()
 		}
@@ -194,16 +198,21 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 		}
 	})
 
+	var stepSpan *apm.Span
 	ctx.BeforeStep(func(step *godog.Step) {
 		if enableInstrumentation {
-			testSuite.stepSpan = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
-			log.Trace("Span started")
+			stepSpan = testSuite.tx.StartSpan(step.GetText(), "test.scenario.step", testSuite.scenarioSpan)
+			log.WithFields(log.Fields{
+				"span": stepSpan.Name,
+			}).Trace("Step span started")
 		}
 	})
 	ctx.AfterStep(func(st *godog.Step, err error) {
-		if enableInstrumentation && testSuite.stepSpan != nil {
-			testSuite.stepSpan.End()
-			log.Trace("Span ended")
+		if enableInstrumentation && stepSpan != nil {
+			log.WithFields(log.Fields{
+				"span": stepSpan.Name,
+			}).Trace("Step span ended")
+			stepSpan.End()
 		}
 	})
 
@@ -221,9 +230,15 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 //nolint:deadcode,unused
 func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
+		setupSuite()
 		log.Trace("Before Metricbeat Suite...")
 
-		setupSuite()
+		if enableInstrumentation {
+			testSuite.tx = apm.DefaultTracer.StartTransaction("Metricbeat Test Suite", "scenario")
+			log.WithFields(log.Fields{
+				"tx": testSuite.tx.Name,
+			}).Trace("Transaction started")
+		}
 
 		serviceManager := services.NewServiceManager()
 
@@ -270,8 +285,13 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.AfterSuite(func() {
 		if enableInstrumentation {
 			f := func() {
+				log.WithFields(log.Fields{
+					"tx": testSuite.tx.Name,
+				}).Trace("Transaction ended")
+				testSuite.tx.End()
+
 				apm.DefaultTracer.Flush(nil)
-				log.Trace("Default tracer flushed")
+				log.Trace("Default tracer flushed after suite")
 			}
 			defer f()
 		}
