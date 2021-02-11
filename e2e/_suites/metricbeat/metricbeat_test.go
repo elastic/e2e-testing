@@ -49,6 +49,8 @@ var stackVersion = metricbeatVersionBase
 
 var testSuite MetricbeatTestSuite
 
+var stepSpan *apm.Span
+
 func setupSuite() {
 	config.Init()
 
@@ -197,7 +199,6 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 		}
 	})
 
-	var stepSpan *apm.Span
 	ctx.BeforeStep(func(step *godog.Step) {
 		if enableInstrumentation {
 			stepSpan = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
