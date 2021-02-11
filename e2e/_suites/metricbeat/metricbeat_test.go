@@ -134,14 +134,7 @@ func (mts *MetricbeatTestSuite) setServiceVersion(version string) {
 func (mts *MetricbeatTestSuite) CleanUp() error {
 	if enableInstrumentation {
 		span := tx.StartSpan("Clean up", "test.scenario.clean", nil)
-		log.WithFields(log.Fields{
-			"span": span.Name,
-		}).Trace("Step span started")
 		testSuite.currentContext = apm.ContextWithSpan(context.Background(), span)
-
-		log.WithFields(log.Fields{
-			"span": span.Name,
-		}).Trace("Step span ended")
 		defer span.End()
 	}
 
@@ -187,23 +180,15 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 		if enableInstrumentation {
 			tx = apm.DefaultTracer.StartTransaction(p.GetName(), "test.scenario")
 			tx.Context.SetLabel("suite", "metricbeat")
-
-			log.WithFields(log.Fields{
-				"tx": tx.Name,
-			}).Trace("Transaction started")
 		}
 	})
 
 	ctx.AfterScenario(func(*messages.Pickle, error) {
 		if enableInstrumentation {
 			f := func() {
-				log.WithFields(log.Fields{
-					"tx": tx.Name,
-				}).Trace("Transaction ended")
 				tx.End()
 
 				apm.DefaultTracer.Flush(nil)
-				log.Trace("Default tracer flushed after suite")
 			}
 			defer f()
 		}
@@ -218,17 +203,11 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 	ctx.BeforeStep(func(step *godog.Step) {
 		if enableInstrumentation {
 			stepSpan = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
-			log.WithFields(log.Fields{
-				"span": stepSpan.Name,
-			}).Trace("Step span started")
 			testSuite.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
 		}
 	})
 	ctx.AfterStep(func(st *godog.Step, err error) {
 		if enableInstrumentation && stepSpan != nil {
-			log.WithFields(log.Fields{
-				"span": stepSpan.Name,
-			}).Trace("Step span ended")
 			stepSpan.End()
 		}
 	})
@@ -258,15 +237,9 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 			defer apm.DefaultTracer.Flush(nil)
 
 			suiteTx = apm.DefaultTracer.StartTransaction("Initialise Metricbeat", "test.suite")
-			log.WithFields(log.Fields{
-				"tx": suiteTx.Name,
-			}).Trace("Transaction started")
 			defer suiteTx.End()
 
 			suiteParentSpan = suiteTx.StartSpan("Before Metricbeat test suite", "test.suite.before", nil)
-			log.WithFields(log.Fields{
-				"span": suiteParentSpan.Name,
-			}).Trace("Step span started")
 			suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 			defer suiteParentSpan.End()
 		}
@@ -317,7 +290,6 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		if enableInstrumentation {
 			f := func() {
 				apm.DefaultTracer.Flush(nil)
-				log.Trace("Default tracer flushed after suite")
 			}
 			defer f()
 		}

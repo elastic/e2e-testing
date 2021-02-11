@@ -9,6 +9,8 @@ pipeline {
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
     APM_ENVIRONMENT="ci"
     ENABLE_INSTRUMENTATION="true"
+    ELASTIC_APM_LOG_FILE="stderr"
+    ELASTIC_APM_LOG_LEVEL="debug"
     VAULT_INSTRUMENTATION_SECRET="secret/observability-team/ci/jenkins-stats"
     NIGHTLY_TAG="@nightly"
     NOTIFY_TO = credentials('notify-to')
