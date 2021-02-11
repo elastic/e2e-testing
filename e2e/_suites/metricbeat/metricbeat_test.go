@@ -132,6 +132,19 @@ func (mts *MetricbeatTestSuite) setServiceVersion(version string) {
 
 // CleanUp cleans up services in the test suite
 func (mts *MetricbeatTestSuite) CleanUp() error {
+	if enableInstrumentation {
+		span := tx.StartSpan("Clean up", "test.scenario.clean", nil)
+		log.WithFields(log.Fields{
+			"span": span.Name,
+		}).Trace("Step span started")
+		testSuite.currentContext = apm.ContextWithSpan(context.Background(), span)
+
+		log.WithFields(log.Fields{
+			"span": span.Name,
+		}).Trace("Step span ended")
+		defer span.End()
+	}
+
 	serviceManager := services.NewServiceManager()
 
 	fn := func(ctx context.Context) {
@@ -154,7 +167,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 		services = append(services, mts.ServiceName)
 	}
 
-	err := serviceManager.RemoveServicesFromCompose(context.Background(), "metricbeat", services, env)
+	err := serviceManager.RemoveServicesFromCompose(mts.currentContext, "metricbeat", services, env)
 
 	if mts.cleanUpTmpFiles {
 		if _, err := os.Stat(mts.configurationFile); err == nil {
