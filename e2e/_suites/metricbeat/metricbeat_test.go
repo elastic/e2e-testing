@@ -90,6 +90,8 @@ type MetricbeatTestSuite struct {
 	ServiceVersion    string                 // the version of the service to be monitored by metricbeat
 	Query             e2e.ElasticsearchQuery // the specs for the ES query
 	Version           string                 // the metricbeat version for the test
+	// instrumentation
+	currentContext context.Context
 }
 
 // getIndexName returns the index to be used when querying Elasticsearch
@@ -204,6 +206,7 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 			log.WithFields(log.Fields{
 				"span": stepSpan.Name,
 			}).Trace("Step span started")
+			testSuite.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
 		}
 	})
 	ctx.AfterStep(func(st *godog.Step, err error) {
@@ -554,7 +557,7 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 	minimumHitsCount := 5
 	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
-	result, err := e2e.WaitForNumberOfHits(context.Background(), mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
+	result, err := e2e.WaitForNumberOfHits(mts.currentContext, mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
 	}
@@ -590,7 +593,7 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 	minimumHitsCount := 5
 	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
-	result, err := e2e.WaitForNumberOfHits(context.Background(), mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
+	result, err := e2e.WaitForNumberOfHits(mts.currentContext, mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
 	}

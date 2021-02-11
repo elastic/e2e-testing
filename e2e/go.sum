@@ -395,6 +395,10 @@ github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 go.elastic.co/apm v1.11.0 h1:uJyt6nCW9880sZhfl1tB//Jy/5TadNoAd8edRUtgb3w=
 go.elastic.co/apm v1.11.0/go.mod h1:qoOSi09pnzJDh5fKnfY7bPmQgl8yl2tULdOu03xhui0=
+go.elastic.co/apm/module/apmelasticsearch v1.11.0 h1:HQowU2YPfJy6AQrh0nhwlu0vOkTadZ15zZzkMrSrmxg=
+go.elastic.co/apm/module/apmelasticsearch v1.11.0/go.mod h1:lthXqmpdql8Nh/3/m+1COX8Fr9rIKT0xyQ1f4rFiFj4=
+go.elastic.co/apm/module/apmhttp v1.11.0 h1:k/MjK0y2aLOXumoM8jcWXqxvIFlMS4U8Bn9cMUPdVX0=
+go.elastic.co/apm/module/apmhttp v1.11.0/go.mod h1:5JFMIxdeS4vJy+D1PPPjINuX6hZ3AHalZXoOgyqZAkk=
 go.elastic.co/fastjson v1.1.0 h1:3MrGBWWVIxe/xvsbpghtkFoPciPhOCmjsR/HfwEeQR4=
 go.elastic.co/fastjson v1.1.0/go.mod h1:boNGISWMjQsUPy/t6yqt2/1Wx4YNPSe+mZjlyw9vKKI=
 go.elastic.co/go-licence-detector v0.5.0 h1:YXPCyt9faKMdJ8uMrkcI4patk8WZ0ME5oaIhYBUsRU4=
