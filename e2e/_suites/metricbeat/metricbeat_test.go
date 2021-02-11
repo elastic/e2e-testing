@@ -554,7 +554,7 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 	minimumHitsCount := 5
 	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
-	result, err := e2e.WaitForNumberOfHits(mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
+	result, err := e2e.WaitForNumberOfHits(context.Background(), mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
 	}
@@ -590,7 +590,7 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 	minimumHitsCount := 5
 	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
-	result, err := e2e.WaitForNumberOfHits(mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
+	result, err := e2e.WaitForNumberOfHits(context.Background(), mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
 	}

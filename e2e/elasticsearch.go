@@ -307,7 +307,7 @@ func WaitForIndices() (string, error) {
 
 // WaitForNumberOfHits waits for an elasticsearch query to return more than a number of hits,
 // returning false if the query does not reach that number in a defined number of time.
-func WaitForNumberOfHits(indexName string, query map[string]interface{}, desiredHits int, maxTimeout time.Duration) (SearchResult, error) {
+func WaitForNumberOfHits(ctx context.Context, indexName string, query map[string]interface{}, desiredHits int, maxTimeout time.Duration) (SearchResult, error) {
 	exp := GetExponentialBackOff(maxTimeout)
 
 	retryCount := 1
