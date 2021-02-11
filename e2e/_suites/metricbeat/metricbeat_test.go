@@ -167,8 +167,6 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 }
 
 func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
-	var span *apm.Span
-
 	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Metricbeat scenario...")
 		if enableInstrumentation {
@@ -192,6 +190,21 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 		err := testSuite.CleanUp()
 		if err != nil {
 			log.Errorf("CleanUp failed: %v", err)
+		}
+	})
+
+	var span *apm.Span
+	ctx.BeforeStep(func(step *godog.Step) {
+		if enableInstrumentation {
+			span = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
+			log.Trace("Span started")
+		}
+	})
+	ctx.AfterStep(func(st *godog.Step, err error) {
+		if enableInstrumentation && span != nil {
+				span.End()
+				log.Trace("Span ended")
+			}
 		}
 	})
 
