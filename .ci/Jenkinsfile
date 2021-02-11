@@ -9,7 +9,7 @@ pipeline {
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
     APM_ENVIRONMENT="ci"
     ENABLE_INSTRUMENTATION="false"
-    VAULT_INSTRUMENTATION_SECRET="secret/apm-team/ci/jenkins-stats"
+    VAULT_INSTRUMENTATION_SECRET="secret/observability-team/ci/jenkins-stats"
     NIGHTLY_TAG="@nightly"
     NOTIFY_TO = credentials('notify-to')
     JOB_GCS_BUCKET = credentials('gcs-bucket')

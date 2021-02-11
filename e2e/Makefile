@@ -16,7 +16,7 @@ APM_ENVIRONMENT?=local
 ifeq ($(ENABLE_INSTRUMENTATION),true)
 ifeq ($(APM_ENVIRONMENT),ci)
 export VAULT_TOKEN?=$(shell cat $${HOME}/.vault-token)
-JENKINS_STATS_SECRET?=secret/apm-team/ci/jenkins-stats
+JENKINS_STATS_SECRET?=secret/observability-team/ci/jenkins-stats
 export APM_SERVER_TOKEN?=$(shell vault read -field apmServerToken "$(JENKINS_STATS_SECRET)")
 export APM_SERVER_URL?=$(shell vault read -field apmServerUrl "$(JENKINS_STATS_SECRET)")
 endif
