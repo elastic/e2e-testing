@@ -49,6 +49,9 @@ var stackVersion = metricbeatVersionBase
 
 var testSuite MetricbeatTestSuite
 
+// tx represents the current APM transaction
+var tx *apm.Transaction
+
 func init() {
 	config.Init()
 
@@ -169,17 +172,15 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Metricbeat scenario...")
 		if enableInstrumentation {
-			backgroundCtx := context.Background()
-			span, backgroundCtx = apm.StartSpan(backgroundCtx, p.GetName(), "test.godog.scenario")
-			log.Trace("Span started")
+			tx = apm.DefaultTracer.StartTransaction(p.GetName(), "scenario")
 		}
 	})
 
 	ctx.AfterScenario(func(*messages.Pickle, error) {
 		if enableInstrumentation {
 			f := func() {
-				span.End()
-				log.Trace("Span ended")
+				tx.End()
+				log.Trace("Transaction ended")
 
 				apm.DefaultTracer.Flush(nil)
 				log.Trace("Default tracer flushed")
@@ -207,12 +208,9 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 // InitializeMetricbeatTestSuite adds steps to the Godog test suite
 //nolint:deadcode,unused
 func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
-	var tx *apm.Transaction
-
 	ctx.BeforeSuite(func() {
 		log.Trace("Before Metricbeat Suite...")
 		if enableInstrumentation {
-			tx = apm.DefaultTracer.StartTransaction("Metricbeat Test Suite", "suite")
 			log.Trace("Transaction started")
 		}
 
@@ -261,9 +259,6 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.AfterSuite(func() {
 		if enableInstrumentation {
 			f := func() {
-				tx.End()
-				log.Trace("Transaction ended")
-
 				apm.DefaultTracer.Flush(nil)
 				log.Trace("Default tracer flushed")
 			}
