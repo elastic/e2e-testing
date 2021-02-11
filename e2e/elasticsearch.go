@@ -118,42 +118,6 @@ func getElasticsearchClientFromHostPort(ctx context.Context, host string, port i
 	return esClient, nil
 }
 
-// RetrySearch executes a query over an inddex, with retry options
-func RetrySearch(indexName string, esQuery map[string]interface{}, maxAttempts int, retryTimeout int) (SearchResult, error) {
-	totalRetryTime := maxAttempts * retryTimeout
-
-	for attempt := maxAttempts; attempt > 0; attempt-- {
-		result, err := search(context.Background(), indexName, esQuery)
-		if err == nil {
-			return result, nil
-		}
-
-		if attempt > 1 {
-			log.WithFields(log.Fields{
-				"attempt":       attempt,
-				"errorCause":    err.Error(),
-				"index":         indexName,
-				"query":         esQuery,
-				"retryAttempts": maxAttempts,
-				"retryTimeout":  retryTimeout,
-			}).Tracef("Waiting %d seconds for the index to be ready", retryTimeout)
-			Sleep(time.Duration(retryTimeout) * time.Second)
-		}
-	}
-
-	err := fmt.Errorf("Could not send query to Elasticsearch in the specified time (%d seconds)", totalRetryTime)
-
-	log.WithFields(log.Fields{
-		"error":         err,
-		"index":         indexName,
-		"query":         esQuery,
-		"retryAttempts": maxAttempts,
-		"retryTimeout":  retryTimeout,
-	}).Error(err.Error())
-
-	return SearchResult{}, err
-}
-
 //nolint:unused
 func search(ctx context.Context, indexName string, query map[string]interface{}) (SearchResult, error) {
 	if enableInstrumentation {
