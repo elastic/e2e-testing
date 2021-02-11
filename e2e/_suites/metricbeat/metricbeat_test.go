@@ -49,6 +49,7 @@ var stackVersion = metricbeatVersionBase
 
 var testSuite MetricbeatTestSuite
 
+var tx *apm.Transaction
 var stepSpan *apm.Span
 
 func setupSuite() {
@@ -166,8 +167,6 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 }
 
 func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
-	var tx *apm.Transaction
-
 	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Metricbeat scenario...")
 		if enableInstrumentation {
