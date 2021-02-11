@@ -8,7 +8,7 @@ pipeline {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
     APM_ENVIRONMENT="ci"
-    ENABLE_INSTRUMENTATION="false"
+    ENABLE_INSTRUMENTATION="true"
     VAULT_INSTRUMENTATION_SECRET="secret/observability-team/ci/jenkins-stats"
     NIGHTLY_TAG="@nightly"
     NOTIFY_TO = credentials('notify-to')
