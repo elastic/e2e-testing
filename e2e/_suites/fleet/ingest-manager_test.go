@@ -95,6 +95,7 @@ func setUpSuite() {
 	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
 
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
+	stackVersion = e2e.GetElasticArtifactVersion(stackVersion)
 
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
