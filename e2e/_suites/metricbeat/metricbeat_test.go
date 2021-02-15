@@ -29,7 +29,7 @@ import (
 // It can be overriden by the DEVELOPER_MODE env var
 var developerMode = false
 
-var enableInstrumentation = false
+var elasticAPMActive = false
 
 const metricbeatVersionBase = "8.0.0-SNAPSHOT"
 
@@ -60,8 +60,8 @@ func setupSuite() {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
 
-	enableInstrumentation = shell.GetEnvBool("ENABLE_INSTRUMENTATION")
-	if enableInstrumentation {
+	elasticAPMActive = shell.GetEnvBool("ELASTIC_APM_ACTIVE")
+	if elasticAPMActive {
 		log.WithFields(log.Fields{
 			"apm-environment": shell.GetEnv("APM_ENVIRONMENT", "local"),
 		}).Info("Current execution will be instrumented 🛠")
@@ -132,11 +132,9 @@ func (mts *MetricbeatTestSuite) setServiceVersion(version string) {
 
 // CleanUp cleans up services in the test suite
 func (mts *MetricbeatTestSuite) CleanUp() error {
-	if enableInstrumentation {
-		span := tx.StartSpan("Clean up", "test.scenario.clean", nil)
-		testSuite.currentContext = apm.ContextWithSpan(context.Background(), span)
-		defer span.End()
-	}
+	span := tx.StartSpan("Clean up", "test.scenario.clean", nil)
+	testSuite.currentContext = apm.ContextWithSpan(context.Background(), span)
+	defer span.End()
 
 	serviceManager := services.NewServiceManager()
 
@@ -177,21 +175,18 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Metricbeat scenario...")
-		if enableInstrumentation {
-			tx = apm.DefaultTracer.StartTransaction(p.GetName(), "test.scenario")
-			tx.Context.SetLabel("suite", "metricbeat")
-		}
+
+		tx = apm.DefaultTracer.StartTransaction(p.GetName(), "test.scenario")
+		tx.Context.SetLabel("suite", "metricbeat")
 	})
 
 	ctx.AfterScenario(func(*messages.Pickle, error) {
-		if enableInstrumentation {
-			f := func() {
-				tx.End()
+		f := func() {
+			tx.End()
 
-				apm.DefaultTracer.Flush(nil)
-			}
-			defer f()
+			apm.DefaultTracer.Flush(nil)
 		}
+		defer f()
 
 		log.Trace("After Metricbeat scenario...")
 		err := testSuite.CleanUp()
@@ -201,13 +196,11 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 	})
 
 	ctx.BeforeStep(func(step *godog.Step) {
-		if enableInstrumentation {
-			stepSpan = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
-			testSuite.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
-		}
+		stepSpan = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
+		testSuite.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
 	})
 	ctx.AfterStep(func(st *godog.Step, err error) {
-		if enableInstrumentation && stepSpan != nil {
+		if stepSpan != nil {
 			stepSpan.End()
 		}
 	})
@@ -233,16 +226,13 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		var suiteParentSpan *apm.Span
 		var suiteContext = context.Background()
 
-		if enableInstrumentation {
-			defer apm.DefaultTracer.Flush(nil)
-
-			suiteTx = apm.DefaultTracer.StartTransaction("Initialise Metricbeat", "test.suite")
-			defer suiteTx.End()
-
-			suiteParentSpan = suiteTx.StartSpan("Before Metricbeat test suite", "test.suite.before", nil)
-			suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
-			defer suiteParentSpan.End()
-		}
+		// instrumentation
+		defer apm.DefaultTracer.Flush(nil)
+		suiteTx = apm.DefaultTracer.StartTransaction("Initialise Metricbeat", "test.suite")
+		defer suiteTx.End()
+		suiteParentSpan = suiteTx.StartSpan("Before Metricbeat test suite", "test.suite.before", nil)
+		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
+		defer suiteParentSpan.End()
 
 		serviceManager := services.NewServiceManager()
 
@@ -266,7 +256,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
 
-		if enableInstrumentation {
+		if elasticAPMActive {
 			apmServerURL := shell.GetEnv("APM_SERVER_URL", "")
 			if strings.HasPrefix(apmServerURL, "http://localhost") {
 				log.WithFields(log.Fields{
@@ -287,12 +277,10 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 	})
 
 	ctx.AfterSuite(func() {
-		if enableInstrumentation {
-			f := func() {
-				apm.DefaultTracer.Flush(nil)
-			}
-			defer f()
+		f := func() {
+			apm.DefaultTracer.Flush(nil)
 		}
+		defer f()
 
 		if !developerMode {
 			serviceManager := services.NewServiceManager()

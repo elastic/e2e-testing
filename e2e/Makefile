@@ -1,7 +1,7 @@
 SUITE?=metricbeat
 TAGS?=
 DEVELOPER_MODE?=false
-ENABLE_INSTRUMENTATION?=false
+ELASTIC_APM_ACTIVE?=false
 FORMAT?=pretty
 LOG_INCLUDE_TIMESTAMP?=TRUE
 LOG_LEVEL?=INFO
@@ -13,7 +13,7 @@ PICKLES_VERSION?="2.20.1"
 VERSION_VALUE=`cat ../cli/VERSION.txt`
 APM_ENVIRONMENT?=local
 
-ifeq ($(ENABLE_INSTRUMENTATION),true)
+ifeq ($(ELASTIC_APM_ACTIVE),true)
 ifeq ($(APM_ENVIRONMENT),ci)
 JENKINS_STATS_SECRET?=secret/observability-team/ci/jenkins-stats
 export APM_SECRET_TOKEN?=$(shell vault read -field apmServerToken "$(JENKINS_STATS_SECRET)")

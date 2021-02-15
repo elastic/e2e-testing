@@ -11,18 +11,11 @@ import (
 
 	"github.com/elastic/e2e-testing/cli/config"
 	state "github.com/elastic/e2e-testing/cli/internal"
-	"github.com/elastic/e2e-testing/cli/shell"
 	"go.elastic.co/apm"
 
 	log "github.com/sirupsen/logrus"
 	tc "github.com/testcontainers/testcontainers-go"
 )
-
-var enableInstrumentation bool
-
-func init() {
-	enableInstrumentation = shell.GetEnvBool("ENABLE_INSTRUMENTATION")
-}
 
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
@@ -44,12 +37,10 @@ func NewServiceManager() ServiceManager {
 
 // AddServicesToCompose adds services to a running docker compose
 func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error {
-	if enableInstrumentation {
-		span, _ := apm.StartSpanOptions(ctx, "Add services to Docker Compose", "docker-compose.service.add", apm.SpanOptions{
-			Parent: apm.SpanFromContext(ctx).TraceContext(),
-		})
-		defer span.End()
-	}
+	span, _ := apm.StartSpanOptions(ctx, "Add services to Docker Compose", "docker-compose.service.add", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
 
 	log.WithFields(log.Fields{
 		"profile":  profile,
@@ -74,12 +65,10 @@ func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profil
 
 // RemoveServicesFromCompose removes services from a running docker compose
 func (sm *DockerServiceManager) RemoveServicesFromCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error {
-	if enableInstrumentation {
-		span, _ := apm.StartSpanOptions(ctx, "Remove services from Docker Compose", "docker-compose.service.remove", apm.SpanOptions{
-			Parent: apm.SpanFromContext(ctx).TraceContext(),
-		})
-		defer span.End()
-	}
+	span, _ := apm.StartSpanOptions(ctx, "Remove services from Docker Compose", "docker-compose.service.remove", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
 
 	log.WithFields(log.Fields{
 		"profile":  profile,

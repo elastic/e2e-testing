@@ -21,12 +21,6 @@ import (
 	"go.elastic.co/apm/module/apmelasticsearch"
 )
 
-var enableInstrumentation bool
-
-func init() {
-	enableInstrumentation = shell.GetEnvBool("ENABLE_INSTRUMENTATION")
-}
-
 // ElasticsearchQuery a very reduced representation of an elasticsearch query, where
 // we want to simply override the event.module and service.version fields
 //nolint:unused
@@ -101,7 +95,9 @@ func getElasticsearchClientFromHostPort(ctx context.Context, host string, port i
 		Username:  "elastic",
 		Password:  "changeme",
 	}
-	if enableInstrumentation {
+
+	elasticAPMActive := shell.GetEnvBool("ELASTIC_APM_ACTIVE")
+	if elasticAPMActive {
 		cfg.Transport = apmelasticsearch.WrapRoundTripper(http.DefaultTransport)
 	}
 
@@ -120,12 +116,10 @@ func getElasticsearchClientFromHostPort(ctx context.Context, host string, port i
 
 //nolint:unused
 func search(ctx context.Context, indexName string, query map[string]interface{}) (SearchResult, error) {
-	if enableInstrumentation {
-		span, _ := apm.StartSpanOptions(ctx, "Search", "elasticsearch.search", apm.SpanOptions{
-			Parent: apm.SpanFromContext(ctx).TraceContext(),
-		})
-		defer span.End()
-	}
+	span, _ := apm.StartSpanOptions(ctx, "Search", "elasticsearch.search", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
 
 	result := SearchResult{}
 
