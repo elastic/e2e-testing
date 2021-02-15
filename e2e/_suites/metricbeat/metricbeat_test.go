@@ -63,7 +63,7 @@ func setupSuite() {
 	elasticAPMActive = shell.GetEnvBool("ELASTIC_APM_ACTIVE")
 	if elasticAPMActive {
 		log.WithFields(log.Fields{
-			"apm-environment": shell.GetEnv("APM_ENVIRONMENT", "local"),
+			"apm-environment": shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "local"),
 		}).Info("Current execution will be instrumented 🛠")
 	}
 
