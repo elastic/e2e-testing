@@ -45,7 +45,7 @@ var agentVersion = agentVersionBase
 
 // agentStaleVersion is the version of the agent to use as a base during upgrade
 // It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var agentStaleVersion = "7.10.2"
+var agentStaleVersion = "7.10-SNAPSHOT"
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
@@ -80,6 +80,11 @@ func setUpSuite() {
 	agentVersionBase = e2e.GetElasticArtifactVersion(agentVersionBase)
 
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
+	agentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", agentVersionBase)
+
+	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
+	// check if stale version is an alias
+	agentStaleVersion = e2e.GetElasticArtifactVersion(agentStaleVersion)
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	if useCISnapshots && !strings.HasSuffix(agentStaleVersion, "-SNAPSHOT") {
@@ -90,6 +95,7 @@ func setUpSuite() {
 	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
 	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
+	stackVersion = e2e.GetElasticArtifactVersion(stackVersion)
 
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
