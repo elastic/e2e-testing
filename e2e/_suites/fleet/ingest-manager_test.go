@@ -45,7 +45,7 @@ var agentVersion = agentVersionBase
 
 // agentStaleVersion is the version of the agent to use as a base during upgrade
 // It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var agentStaleVersion = "7.10.0"
+var agentStaleVersion = "7.10-SNAPSHOT"
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
