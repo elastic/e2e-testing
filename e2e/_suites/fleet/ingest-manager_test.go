@@ -45,7 +45,7 @@ var agentVersion = agentVersionBase
 
 // agentStaleVersion is the version of the agent to use as a base during upgrade
 // It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var agentStaleVersion = "7.10.2"
+var agentStaleVersion = "7.10-SNAPSHOT"
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
@@ -81,7 +81,10 @@ func setUpSuite() {
 
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 	agentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", agentVersionBase)
+
 	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
+	// check if stale version is an alias
+	agentStaleVersion = e2e.GetElasticArtifactVersion(agentStaleVersion)
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	if useCISnapshots && !strings.HasSuffix(agentStaleVersion, "-SNAPSHOT") {
@@ -92,14 +95,17 @@ func setUpSuite() {
 	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
 
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
+	stackVersion = e2e.GetElasticArtifactVersion(stackVersion)
 
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			Installers: map[string]ElasticAgentInstaller{
-				"centos-systemd-" + agentVersion: GetElasticAgentInstaller("centos", "systemd", agentVersion, false),
-				"centos-tar-" + agentVersion:     GetElasticAgentInstaller("centos", "tar", agentVersion, false),
-				"debian-systemd-" + agentVersion: GetElasticAgentInstaller("debian", "systemd", agentVersion, false),
-				"debian-tar-" + agentVersion:     GetElasticAgentInstaller("debian", "tar", agentVersion, false),
+				"centos-systemd-" + agentVersion: GetElasticAgentInstaller("centos", "systemd", agentVersion),
+				"centos-tar-" + agentVersion:     GetElasticAgentInstaller("centos", "tar", agentVersion),
+				"debian-systemd-" + agentVersion: GetElasticAgentInstaller("debian", "systemd", agentVersion),
+				"debian-tar-" + agentVersion:     GetElasticAgentInstaller("debian", "tar", agentVersion),
+				"docker-default-" + agentVersion: GetElasticAgentInstaller("docker", "default", agentVersion),
+				"docker-ubi8-" + agentVersion:    GetElasticAgentInstaller("docker", "ubi8", agentVersion),
 			},
 		},
 		StandAlone: &StandAloneTestSuite{},
@@ -229,21 +235,6 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	}
 
 	return checkProcessStateOnTheHost(containerName, process, state)
-}
-
-// checkElasticAgentVersion returns a fallback version (agentVersionBase) if the version set by the environment is empty
-func checkElasticAgentVersion(version string) string {
-	environmentVersion := os.Getenv("ELASTIC_AGENT_VERSION")
-
-	if environmentVersion == "" {
-		return agentVersionBase
-	}
-
-	if strings.HasPrefix(strings.ToLower(environmentVersion), "pr-") {
-		return agentVersionBase
-	}
-
-	return version
 }
 
 // name of the container for the service:

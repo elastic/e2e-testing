@@ -15,6 +15,7 @@ import (
 	"github.com/cucumber/godog"
 	messages "github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
@@ -55,7 +56,9 @@ func init() {
 
 	metricbeatVersion = shell.GetEnv("METRICBEAT_VERSION", metricbeatVersion)
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
+
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
+	stackVersion = e2e.GetElasticArtifactVersion(stackVersion)
 
 	serviceManager = services.NewServiceManager()
 
@@ -281,9 +284,7 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 	mts.Version = metricbeatVersion
 	mts.setIndexName()
 
-	if strings.HasPrefix(metricbeatVersion, "pr-") {
-		metricbeatVersion = metricbeatVersionBase
-	}
+	metricbeatVersion = e2e.CheckPRVersion(metricbeatVersion, metricbeatVersionBase)
 
 	// use master branch for snapshots
 	tag := "v" + metricbeatVersion
@@ -313,6 +314,22 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 
 // runMetricbeatService runs a metricbeat service entity for a service to monitor it
 func (mts *MetricbeatTestSuite) runMetricbeatService() error {
+	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+	if useCISnapshots || beatsLocalPath != "" {
+		artifactName := e2e.BuildArtifactName("metricbeat", mts.Version, metricbeatVersionBase, "linux", "amd64", "tar.gz", true)
+
+		imagePath, err := e2e.FetchBeatsBinary(artifactName, "metricbeat", mts.Version, metricbeatVersionBase, timeoutFactor, true)
+		if err != nil {
+			return err
+		}
+
+		err = docker.LoadImage(imagePath)
+		if err != nil {
+			return err
+		}
+	}
+
 	// this is needed because, in general, the target service (apache, mysql, redis) does not have a healthcheck
 	waitForService := time.Duration(timeoutFactor) * 10 * time.Second
 	if mts.ServiceName == "ceph" {
