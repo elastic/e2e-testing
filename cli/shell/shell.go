@@ -69,7 +69,8 @@ func Execute(workspace string, command string, args ...string) (string, error) {
 
 // GetEnv returns an environment variable as string
 func GetEnv(envVar string, defaultValue string) string {
-	if value, exists := os.LookupEnv(envVar); exists {
+	value, exists := os.LookupEnv(envVar)
+	if exists && value != "" {
 		return value
 	}
 
