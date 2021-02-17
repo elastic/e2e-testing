@@ -7,6 +7,11 @@ pipeline {
   environment {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
+    ELASTIC_APM_ACTIVE="true"
+    ELASTIC_APM_ENVIRONMENT="ci"
+    ELASTIC_APM_LOG_FILE="stderr"
+    ELASTIC_APM_LOG_LEVEL="debug"
+    VAULT_INSTRUMENTATION_SECRET="secret/observability-team/ci/jenkins-stats"
     NIGHTLY_TAG="@nightly"
     NOTIFY_TO = credentials('notify-to')
     JOB_GCS_BUCKET = credentials('gcs-bucket')
@@ -58,6 +63,7 @@ pipeline {
       options { skipDefaultCheckout() }
       environment {
         HOME = "${env.WORKSPACE}"
+        ELASTIC_APM_GLOBAL_LABELS="build_pr=${isPR()},build_id=${env.BUILD_ID}"
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
         GO111MODULE = 'on'
         SKIP_SCENARIOS = "${params.SKIP_SCENARIOS}"
@@ -327,7 +333,9 @@ def generateFunctionalTestStep(Map args = [:]){
           }
           filebeat(output: "docker_logs_${suite}_${tags}.log", workdir: "${env.WORKSPACE}"){
             dir("${BASE_DIR}"){
-              sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${stackVersion}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
+              withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL"){
+                sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${stackVersion}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
+              }
             }
           }
         }
