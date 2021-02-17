@@ -41,12 +41,6 @@ build-docs:
 	mv docs/.\\/index.html docs/index.html
 	rm -fr docs/.\\
 
-.PHONY: fetch-binary
-fetch-binary:
-	@$(MAKE) -C ../cli build
-	cp ../cli/.github/releases/download/$(VERSION_VALUE)/$(GOOS)$(subst amd,,$(GOARCH))-op ./op
-	chmod +x ./op
-
 .PHONY: install
 install:
 	go get -v -t ./...
