@@ -40,7 +40,7 @@ func (sats *StandAloneTestSuite) afterScenario() {
 	}
 
 	if !developerMode {
-		_ = serviceManager.RemoveServicesFromCompose(FleetProfileName, []string{serviceName}, profileEnv)
+		_ = serviceManager.RemoveServicesFromCompose(context.Background(), FleetProfileName, []string{serviceName}, profileEnv)
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
@@ -98,7 +98,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 	profileEnv["elasticAgentPlatform"] = "linux/amd64"
 	profileEnv["elasticAgentTag"] = agentVersion
 
-	err = serviceManager.AddServicesToCompose(FleetProfileName, []string{ElasticAgentServiceName}, profileEnv)
+	err = serviceManager.AddServicesToCompose(context.Background(), FleetProfileName, []string{ElasticAgentServiceName}, profileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err
@@ -195,7 +195,7 @@ func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 func (sats *StandAloneTestSuite) theDockerContainerIsStopped(serviceName string) error {
 	serviceManager := services.NewServiceManager()
 
-	err := serviceManager.RemoveServicesFromCompose(FleetProfileName, []string{serviceName}, profileEnv)
+	err := serviceManager.RemoveServicesFromCompose(context.Background(), FleetProfileName, []string{serviceName}, profileEnv)
 	if err != nil {
 		return err
 	}
@@ -300,7 +300,7 @@ func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int,
 
 	indexName := "logs-elastic_agent-default"
 
-	result, err := e2e.WaitForNumberOfHits(indexName, esQuery, minimumHitsCount, maxTimeout)
+	result, err := e2e.WaitForNumberOfHits(context.Background(), indexName, esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,

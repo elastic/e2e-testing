@@ -5,6 +5,10 @@ services:
       - apm-server.frontend.enabled=true
       - apm-server.frontend.rate_limit=100000
       - apm-server.host=0.0.0.0:8200
+      - apm-server.kibana.enabled=true
+      - apm-server.kibana.host=http://kibana:5601
+      - apm-server.kibana.username=elastic
+      - apm-server.kibana.password=changeme
       - apm-server.read_timeout=1m
       - apm-server.shutdown_timeout=2m
       - apm-server.write_timeout=1m
