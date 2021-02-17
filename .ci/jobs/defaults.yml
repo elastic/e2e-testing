@@ -9,7 +9,7 @@
 
 - job:
     logrotate:
-      numToKeep: 20
+      numToKeep: 50
     node: linux
     concurrent: true
     publishers:

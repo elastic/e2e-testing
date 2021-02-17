@@ -37,9 +37,9 @@ pipeline {
     string(name: 'SLACK_CHANNEL', defaultValue: 'observablt-bots', description: 'The Slack channel(s) where errors will be posted. For multiple channels, use a comma-separated list of channels')
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
     string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stand-alone elastic-agent to be used for Fleet tests. You can use here the tag of your PR to test your changes')
-    string(name: 'ELASTIC_AGENT_STALE_VERSION', defaultValue: '7.10.2', description: 'SemVer version of the stale stand-alone elastic-agent to be used for Fleet upgrade tests.')
+    string(name: 'ELASTIC_AGENT_STALE_VERSION', defaultValue: '7.10-SNAPSHOT', description: 'SemVer version of the stale stand-alone elastic-agent to be used for Fleet upgrade tests.')
     booleanParam(name: "BEATS_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the binary snapshots produced by Beats CI instead of the official releases")
-    choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'INFO'], description: 'Log level to be used')
+    choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'TRACE', 'INFO'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
     string(name: 'FLEET_STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for Fleet tests.')
     string(name: 'METRICBEAT_STACK_VERSION', defaultValue: '6.8-SNAPSHOT', description: 'SemVer version of the stack to be used for Metricbeat tests.')
@@ -111,7 +111,7 @@ pipeline {
                   unstash 'source'
                   withGoEnv(version: "${GO_VERSION}"){
                     dir(BASE_DIR){
-                      sh script: '.ci/scripts/install-dependencies.sh', label: 'Install dependencies'
+                      retryWithSleep(retries: 2, seconds: 5, backoff: true){ sh script: '.ci/scripts/install-dependencies.sh', label: 'Install dependencies' }
                       preCommit(commit: "${GIT_BASE_COMMIT}", junit: true)
                     }
                   }

@@ -1,4 +1,4 @@
-version: '2.3'
+version: '2.4'
 services:
   metricbeat:
     command: [
@@ -18,5 +18,6 @@ services:
     image: "docker.elastic.co/${metricbeatDockerNamespace:-beats}/metricbeat:${metricbeatTag:-6.8-SNAPSHOT}"
     labels:
       co.elastic.logs/module: "${serviceName}"
+    platform: ${metricbeatPlatform:-linux/amd64}
     volumes:
       - "${metricbeatConfigFile}:/etc/metricbeat/metricbeat.yml"

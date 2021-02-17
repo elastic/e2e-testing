@@ -56,7 +56,9 @@ func init() {
 
 	metricbeatVersion = shell.GetEnv("METRICBEAT_VERSION", metricbeatVersion)
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
+
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
+	stackVersion = e2e.GetElasticArtifactVersion(stackVersion)
 
 	serviceManager = services.NewServiceManager()
 
@@ -357,6 +359,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	}
 
 	env["metricbeatDockerNamespace"] = e2e.GetDockerNamespaceEnvVar()
+	env["metricbeatPlatform"] = "linux/amd64"
 
 	err := serviceManager.AddServicesToCompose("metricbeat", []string{"metricbeat"}, env)
 	if err != nil {

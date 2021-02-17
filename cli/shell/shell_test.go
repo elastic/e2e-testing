@@ -11,6 +11,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestGetEnv(t *testing.T) {
+	t.Run("Empty value should return fallback", func(t *testing.T) {
+		defer os.Unsetenv("test.key")
+		os.Setenv("test.key", "")
+
+		val := GetEnv("test.key", "fallback")
+		assert.Equal(t, "fallback", val)
+	})
+
+	t.Run("Non existing key should return fallback", func(t *testing.T) {
+		val := GetEnv("test.key", "fallback")
+		assert.Equal(t, "fallback", val)
+	})
+
+	t.Run("Value should return value", func(t *testing.T) {
+		defer os.Unsetenv("test.key")
+		os.Setenv("test.key", "value")
+
+		val := GetEnv("test.key", "fallback")
+		assert.Equal(t, "value", val)
+	})
+}
+
 func TestGetEnvBool(t *testing.T) {
 	type test struct {
 		key   string
