@@ -147,7 +147,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		}
 
 		profile := FleetProfileName
-		err := serviceManager.RunCompose(true, []string{profile}, profileEnv)
+		err := serviceManager.RunCompose(context.Background(), true, []string{profile}, profileEnv)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": profile,
@@ -181,7 +181,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			log.Debug("Destroying Fleet runtime dependencies")
 			profile := FleetProfileName
 
-			err := serviceManager.StopCompose(true, []string{profile})
+			err := serviceManager.StopCompose(context.Background(), true, []string{profile})
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error":   err,

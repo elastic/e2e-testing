@@ -245,7 +245,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 			"stackVersion": stackVersion,
 		}
 
-		err := serviceManager.RunCompose(true, []string{"metricbeat"}, env)
+		err := serviceManager.RunCompose(suiteContext, true, []string{"metricbeat"}, env)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": "metricbeat",
@@ -287,9 +287,20 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		}
 		defer f()
 
+		// instrumentation
+		var suiteTx *apm.Transaction
+		var suiteParentSpan *apm.Span
+		var suiteContext = context.Background()
+		defer apm.DefaultTracer.Flush(nil)
+		suiteTx = apm.DefaultTracer.StartTransaction("Tear Down Metricbeat", "test.suite")
+		defer suiteTx.End()
+		suiteParentSpan = suiteTx.StartSpan("After Metricbeat test suite", "test.suite.after", nil)
+		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
+		defer suiteParentSpan.End()
+
 		if !developerMode {
 			serviceManager := services.NewServiceManager()
-			err := serviceManager.StopCompose(true, []string{"metricbeat"})
+			err := serviceManager.StopCompose(suiteContext, true, []string{"metricbeat"})
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": "metricbeat",
