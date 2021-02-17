@@ -221,6 +221,9 @@ func sanitizeComposeFile(composeFilePath string, targetFilePath string) error {
 		return err
 	}
 
+	// sets version to 2.4 for testing purpose
+	c.Version = "2.4"
+
 	for k, srv := range c.Services {
 		// we'll copy all fields but the excluded ones in this struct
 		output := make(map[string]service)
