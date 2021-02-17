@@ -83,10 +83,6 @@ notice:
 		-noticeOut NOTICE.txt \
 		-depsOut ""
 
-.PHONY: sync-integrations
-sync-integrations:
-	OP_LOG_LEVEL=${LOG_LEVEL} ./op sync integrations --delete
-
 .PHONY: unit-test
 unit-test:
 	gotestsum --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
