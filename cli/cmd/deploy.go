@@ -5,6 +5,8 @@
 package cmd
 
 import (
+	"context"
+
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/cli/services"
 	log "github.com/sirupsen/logrus"
@@ -66,7 +68,7 @@ func buildDeployServiceCommand(srv string) *cobra.Command {
 			env := map[string]string{}
 			env = config.PutServiceEnvironment(env, srv, versionToRun)
 
-			err := serviceManager.AddServicesToCompose(deployToProfile, []string{srv}, env)
+			err := serviceManager.AddServicesToCompose(context.Background(), deployToProfile, []string{srv}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile":  deployToProfile,
@@ -88,7 +90,7 @@ func buildUndeployServiceCommand(srv string) *cobra.Command {
 			env := map[string]string{}
 			env = config.PutServiceEnvironment(env, srv, versionToRun)
 
-			err := serviceManager.RemoveServicesFromCompose(deployToProfile, []string{srv}, env)
+			err := serviceManager.RemoveServicesFromCompose(context.Background(), deployToProfile, []string{srv}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile":  deployToProfile,

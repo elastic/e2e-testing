@@ -20,6 +20,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // developerMode tears down the backend services (the elasticsearch instance)
@@ -27,6 +28,8 @@ import (
 // them running to speed up the development cycle.
 // It can be overriden by the DEVELOPER_MODE env var
 var developerMode = false
+
+var elasticAPMActive = false
 
 const metricbeatVersionBase = "8.0.0-SNAPSHOT"
 
@@ -46,12 +49,22 @@ var stackVersion = metricbeatVersionBase
 
 var testSuite MetricbeatTestSuite
 
-func init() {
+var tx *apm.Transaction
+var stepSpan *apm.Span
+
+func setupSuite() {
 	config.Init()
 
 	developerMode = shell.GetEnvBool("DEVELOPER_MODE")
 	if developerMode {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
+	}
+
+	elasticAPMActive = shell.GetEnvBool("ELASTIC_APM_ACTIVE")
+	if elasticAPMActive {
+		log.WithFields(log.Fields{
+			"apm-environment": shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "local"),
+		}).Info("Current execution will be instrumented 🛠")
 	}
 
 	metricbeatVersion = shell.GetEnv("METRICBEAT_VERSION", metricbeatVersion)
@@ -79,6 +92,8 @@ type MetricbeatTestSuite struct {
 	ServiceVersion    string                 // the version of the service to be monitored by metricbeat
 	Query             e2e.ElasticsearchQuery // the specs for the ES query
 	Version           string                 // the metricbeat version for the test
+	// instrumentation
+	currentContext context.Context
 }
 
 // getIndexName returns the index to be used when querying Elasticsearch
@@ -119,6 +134,10 @@ func (mts *MetricbeatTestSuite) setServiceVersion(version string) {
 
 // CleanUp cleans up services in the test suite
 func (mts *MetricbeatTestSuite) CleanUp() error {
+	span := tx.StartSpan("Clean up", "test.scenario.clean", nil)
+	testSuite.currentContext = apm.ContextWithSpan(context.Background(), span)
+	defer span.End()
+
 	serviceManager := services.NewServiceManager()
 
 	fn := func(ctx context.Context) {
@@ -141,7 +160,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 		services = append(services, mts.ServiceName)
 	}
 
-	err := serviceManager.RemoveServicesFromCompose("metricbeat", services, env)
+	err := serviceManager.RemoveServicesFromCompose(mts.currentContext, "metricbeat", services, env)
 
 	if mts.cleanUpTmpFiles {
 		if _, err := os.Stat(mts.configurationFile); err == nil {
@@ -156,15 +175,35 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 }
 
 func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
-	ctx.BeforeScenario(func(*messages.Pickle) {
-		log.Trace("Before scenario...")
+	ctx.BeforeScenario(func(p *messages.Pickle) {
+		log.Trace("Before Metricbeat scenario...")
+
+		tx = apm.DefaultTracer.StartTransaction(p.GetName(), "test.scenario")
+		tx.Context.SetLabel("suite", "metricbeat")
 	})
 
 	ctx.AfterScenario(func(*messages.Pickle, error) {
-		log.Trace("After scenario...")
+		f := func() {
+			tx.End()
+
+			apm.DefaultTracer.Flush(nil)
+		}
+		defer f()
+
+		log.Trace("After Metricbeat scenario...")
 		err := testSuite.CleanUp()
 		if err != nil {
 			log.Errorf("CleanUp failed: %v", err)
+		}
+	})
+
+	ctx.BeforeStep(func(step *godog.Step) {
+		stepSpan = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
+		testSuite.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
+	})
+	ctx.AfterStep(func(st *godog.Step, err error) {
+		if stepSpan != nil {
+			stepSpan.End()
 		}
 	})
 
@@ -182,7 +221,21 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 //nolint:deadcode,unused
 func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
+		setupSuite()
 		log.Trace("Before Metricbeat Suite...")
+
+		var suiteTx *apm.Transaction
+		var suiteParentSpan *apm.Span
+		var suiteContext = context.Background()
+
+		// instrumentation
+		defer apm.DefaultTracer.Flush(nil)
+		suiteTx = apm.DefaultTracer.StartTransaction("Initialise Metricbeat", "test.suite")
+		defer suiteTx.End()
+		suiteParentSpan = suiteTx.StartSpan("Before Metricbeat test suite", "test.suite.before", nil)
+		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
+		defer suiteParentSpan.End()
+
 		serviceManager := services.NewServiceManager()
 
 		env := map[string]string{
@@ -204,9 +257,33 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 				"minutes": minutesToBeHealthy,
 			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
+
+		if elasticAPMActive {
+			apmServerURL := shell.GetEnv("APM_SERVER_URL", "")
+			if strings.HasPrefix(apmServerURL, "http://localhost") {
+				log.WithFields(log.Fields{
+					"version": stackVersion,
+				}).Info("Starting local Kibana and APM Server for instrumentation")
+
+				env["kibanaTag"] = stackVersion
+				env["apmServerTag"] = stackVersion
+				err := serviceManager.AddServicesToCompose(suiteContext, "metricbeat", []string{"kibana", "apm-server"}, env)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"error": err,
+						"env":   env,
+					}).Warn("The APM Server and Kibana could not be started, but they are not needed by the tests. Continuing")
+				}
+			}
+		}
 	})
 
 	ctx.AfterSuite(func() {
+		f := func() {
+			apm.DefaultTracer.Flush(nil)
+		}
+		defer f()
+
 		if !developerMode {
 			serviceManager := services.NewServiceManager()
 			err := serviceManager.StopCompose(true, []string{"metricbeat"})
@@ -361,7 +438,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	env["metricbeatDockerNamespace"] = e2e.GetDockerNamespaceEnvVar()
 	env["metricbeatPlatform"] = "linux/amd64"
 
-	err := serviceManager.AddServicesToCompose("metricbeat", []string{"metricbeat"}, env)
+	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{"metricbeat"}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":             err,
@@ -421,7 +498,7 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(serviceType string
 	}
 	env = config.PutServiceEnvironment(env, serviceType, serviceVersion)
 
-	err := serviceManager.AddServicesToCompose("metricbeat", []string{serviceType}, env)
+	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{serviceType}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": serviceType,
@@ -446,7 +523,7 @@ func (mts *MetricbeatTestSuite) serviceVariantIsRunningForMetricbeat(
 	}
 	env = config.PutServiceVariantEnvironment(env, serviceType, serviceVariant, serviceVersion)
 
-	err := serviceManager.AddServicesToCompose("metricbeat", []string{serviceType}, env)
+	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{serviceType}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": serviceType,
@@ -479,7 +556,7 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 	minimumHitsCount := 5
 	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
-	result, err := e2e.WaitForNumberOfHits(mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
+	result, err := e2e.WaitForNumberOfHits(mts.currentContext, mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
 	}
@@ -515,7 +592,7 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 	minimumHitsCount := 5
 	maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
-	result, err := e2e.WaitForNumberOfHits(mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
+	result, err := e2e.WaitForNumberOfHits(mts.currentContext, mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
 	}
