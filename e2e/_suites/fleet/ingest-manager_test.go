@@ -163,7 +163,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
 
-		healthyKibana, err := kibanaClient.WaitForKibana(minutesToBeHealthy)
+		healthyKibana, err := kibanaClient.WaitForKibana(context.Background(), minutesToBeHealthy)
 		if !healthyKibana {
 			log.WithFields(log.Fields{
 				"error":   err,
