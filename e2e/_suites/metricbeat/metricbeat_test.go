@@ -19,6 +19,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
+	"github.com/elastic/e2e-testing/e2e/steps"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -262,22 +263,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		}
 
 		if elasticAPMActive {
-			apmServerURL := shell.GetEnv("APM_SERVER_URL", "")
-			if strings.HasPrefix(apmServerURL, "http://localhost") {
-				log.WithFields(log.Fields{
-					"version": stackVersion,
-				}).Info("Starting local Kibana and APM Server for instrumentation")
-
-				env["kibanaTag"] = stackVersion
-				env["apmServerTag"] = stackVersion
-				err := serviceManager.AddServicesToCompose(suiteContext, "metricbeat", []string{"kibana", "apm-server"}, env)
-				if err != nil {
-					log.WithFields(log.Fields{
-						"error": err,
-						"env":   env,
-					}).Warn("The APM Server and Kibana could not be started, but they are not needed by the tests. Continuing")
-				}
-			}
+			steps.AddAPMServicesForInstrumentation(suiteContext, "metricbeat", stackVersion, true, env)
 		}
 	})
 
