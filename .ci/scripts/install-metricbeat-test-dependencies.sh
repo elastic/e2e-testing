@@ -6,18 +6,9 @@
 
 set -euxo pipefail
 #
-# Install the dependencies using the install and test make goals.
+# Install the dependencies using the sync-integrations make goal.
 #
-# Parameters:
-#   - GOOS - that's the name of the O.S. used to build the binary
-#   - GOARCH - that's the name of the architecture of the O.S. used to build the binary.
 #
-
-TARGET_OS=${GOOS:-linux}
-TARGET_ARCH=${GOARCH:-amd64}
-
-# Build OP Binary
-GOOS=${TARGET_OS} GOARCH=${TARGET_ARCH} make -C e2e fetch-binary
 
 # Sync integrations
-make -C e2e sync-integrations
+make -C cli sync-integrations
