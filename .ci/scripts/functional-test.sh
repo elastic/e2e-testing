@@ -20,8 +20,6 @@ SUITE=${1:-''}
 TAGS=${2:-''}
 STACK_VERSION=${3:-'7.x-SNAPSHOT'}
 METRICBEAT_VERSION=${4:-'7.x-SNAPSHOT'}
-TARGET_OS=${GOOS:-linux}
-TARGET_ARCH=${GOARCH:-amd64}
 
 ## Install the required dependencies for the given SUITE
 .ci/scripts/install-test-dependencies.sh "${SUITE}"
