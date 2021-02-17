@@ -10,5 +10,6 @@ services:
         condition: service_healthy
     environment:
       - "KIBANA_HOST=http://${kibanaHost:-kibana}:${kibanaPort:-5601}"
+    platform: ${elasticAgentPlatform:linux/amd64}
     volumes:
       - "${elasticAgentConfigFile}:/usr/share/elastic-agent/elastic-agent.yml"
