@@ -32,7 +32,7 @@ func TestSanitizeComposeFile_Multiple(t *testing.T) {
 	err = yaml.Unmarshal(bytes, &c)
 	assert.Nil(t, err)
 
-	assert.Equal(t, c.Version, "2.3")
+	assert.Equal(t, c.Version, "2.4")
 	assert.Equal(t, len(c.Services), 2)
 
 	// we know that both services have different number of ports
@@ -77,6 +77,6 @@ func TestSanitizeComposeFile_Single(t *testing.T) {
 	err = yaml.Unmarshal(bytes, &c)
 	assert.Nil(t, err)
 
-	assert.Equal(t, c.Version, "2.3")
+	assert.Equal(t, c.Version, "2.4")
 	assert.Equal(t, len(c.Services), 1)
 }
