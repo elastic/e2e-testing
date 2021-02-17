@@ -37,7 +37,7 @@ const ElasticAgentServiceName = "elastic-agent"
 // FleetProfileName the name of the profile to run the runtime, backend services
 const FleetProfileName = "fleet"
 
-var agentVersionBase = "7.11.x-SNAPSHOT"
+var agentVersionBase = "7.11-SNAPSHOT"
 
 // agentVersion is the version of the agent to use
 // It can be overriden by ELASTIC_AGENT_VERSION env var
