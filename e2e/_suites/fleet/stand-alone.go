@@ -95,6 +95,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 
 	profileEnv["elasticAgentContainerName"] = containerName
 	profileEnv["elasticAgentConfigFile"] = sats.AgentConfigFilePath
+	profileEnv["elasticAgentPlatform"] = "linux/amd64"
 	profileEnv["elasticAgentTag"] = agentVersion
 
 	err = serviceManager.AddServicesToCompose(FleetProfileName, []string{ElasticAgentServiceName}, profileEnv)
