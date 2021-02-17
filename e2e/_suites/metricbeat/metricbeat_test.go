@@ -359,6 +359,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	}
 
 	env["metricbeatDockerNamespace"] = e2e.GetDockerNamespaceEnvVar()
+	env["metricbeatPlatform"] = "linux/amd64"
 
 	err := serviceManager.AddServicesToCompose("metricbeat", []string{"metricbeat"}, env)
 	if err != nil {
