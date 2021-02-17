@@ -4,10 +4,11 @@ ROOT_DIR:=$(CURDIR)
 TEST_TIMEOUT?=5m
 
 GO_IMAGE?='golang'
-GO_VERSION?='$(shell cat ../.go-version )'
+GO_VERSION='$(shell cat ../.go-version )'
 GO_IMAGE_TAG?='stretch'
 GOOS?='linux'
 GOARCH?='amd64'
+LOG_LEVEL?=INFO
 
 .PHONY: build
 build:
@@ -34,6 +35,10 @@ notice:
 		-noticeTemplate ../notice/NOTICE.txt.tmpl \
 		-noticeOut NOTICE.txt \
 		-depsOut ""
+
+.PHONY: sync-integrations
+sync-integrations:
+	OP_LOG_LEVEL=${LOG_LEVEL} go run main.go sync integrations --delete
 
 .PHONY: test
 test:
