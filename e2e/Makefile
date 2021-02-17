@@ -41,12 +41,6 @@ build-docs:
 	mv docs/.\\/index.html docs/index.html
 	rm -fr docs/.\\
 
-.PHONY: fetch-binary
-fetch-binary:
-	@$(MAKE) -C ../cli build
-	cp ../cli/.github/releases/download/$(VERSION_VALUE)/$(GOOS)$(subst amd,,$(GOARCH))-op ./op
-	chmod +x ./op
-
 .PHONY: install
 install:
 	go get -v -t ./...
@@ -82,10 +76,6 @@ notice:
 		-noticeTemplate ../notice/NOTICE.txt.tmpl \
 		-noticeOut NOTICE.txt \
 		-depsOut ""
-
-.PHONY: sync-integrations
-sync-integrations:
-	OP_LOG_LEVEL=${LOG_LEVEL} ./op sync integrations --delete
 
 .PHONY: unit-test
 unit-test:
