@@ -37,7 +37,7 @@ func NewServiceManager() ServiceManager {
 
 // AddServicesToCompose adds services to a running docker compose
 func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error {
-	span, _ := apm.StartSpanOptions(ctx, "Add services to Docker Compose", "docker-compose.service.add", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Add services to Docker Compose", "docker-compose.services.add", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
@@ -65,7 +65,7 @@ func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profil
 
 // RemoveServicesFromCompose removes services from a running docker compose
 func (sm *DockerServiceManager) RemoveServicesFromCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error {
-	span, _ := apm.StartSpanOptions(ctx, "Remove services from Docker Compose", "docker-compose.service.remove", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Remove services from Docker Compose", "docker-compose.services.remove", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
