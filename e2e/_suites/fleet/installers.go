@@ -84,7 +84,7 @@ func (i *DEBPackage) InstallCerts() error {
 	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates"}, false); err != nil {
+	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates", "f"}, false); err != nil {
 		return err
 	}
 
@@ -278,7 +278,7 @@ func (i *TARPackage) InstallCerts() error {
 	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates"}, false); err != nil {
+	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates", "-f"}, false); err != nil {
 		return err
 	}
 
