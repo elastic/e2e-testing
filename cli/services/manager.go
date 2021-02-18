@@ -112,7 +112,7 @@ func (sm *DockerServiceManager) RunCommand(profile string, composeNames []string
 
 // RunCompose runs a docker compose by its name
 func (sm *DockerServiceManager) RunCompose(ctx context.Context, isProfile bool, composeNames []string, env map[string]string) error {
-	span, _ := apm.StartSpanOptions(ctx, "Running Docker Compose files", "docker-compose.services.up", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Starting Docker Compose files", "docker-compose.services.up", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
