@@ -27,7 +27,7 @@ func AddAPMServicesForInstrumentation(ctx context.Context, profile string, stack
 		log.WithFields(log.Fields{
 			"services": apmServices,
 			"version":  stackVersion,
-		}).Info("Starting APM services for instrumentation")
+		}).Info("Starting local APM services for instrumentation")
 
 		env["apmServerTag"] = stackVersion
 		err := serviceManager.AddServicesToCompose(ctx, profile, apmServices, env)
@@ -35,7 +35,7 @@ func AddAPMServicesForInstrumentation(ctx context.Context, profile string, stack
 			log.WithFields(log.Fields{
 				"error": err,
 				"env":   env,
-			}).Warn("The APM Server and Kibana could not be started, but they are not needed by the tests. Continuing")
+			}).Warn("The local APM Server and Kibana could not be started, but they are not needed by the tests. Continuing")
 		}
 	}
 }
