@@ -387,7 +387,7 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 		WithArch(arch).
 		WithArtifact(artifact).
 		WithOS(os).
-		WithVersion(e2e.CheckPRVersion(version, agentVersionBase)) // sanitize version
+		WithVersion(version)
 
 	return ElasticAgentInstaller{
 		artifactArch:      arch,
