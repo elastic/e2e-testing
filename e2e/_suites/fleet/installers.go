@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/elastic/e2e-testing/cli/docker"
+	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -109,10 +110,11 @@ type DockerPackage struct {
 	installerPath string
 	ubi8          bool
 	// optional fields
-	arch     string
-	artifact string
-	OS       string
-	version  string
+	arch            string
+	artifact        string
+	originalVersion string
+	OS              string
+	version         string
 }
 
 // NewDockerPackage creates an instance for the Docker installer
@@ -143,7 +145,17 @@ func (i *DockerPackage) InstallCerts() error {
 
 // Preinstall executes operations before installing a Docker package
 func (i *DockerPackage) Preinstall() error {
-	return docker.LoadImage(i.installerPath)
+	err := docker.LoadImage(i.installerPath)
+	if err != nil {
+		return err
+	}
+
+	// we need to tag the loaded image because its tag relates to the target branch,
+	// and we want it to use the 'pr-12345' format.
+	return docker.TagImage(
+		"docker.elastic.co/beats/"+i.artifact+":"+agentVersionBase,
+		"docker.elastic.co/observability-ci/"+i.artifact+":"+i.originalVersion,
+	)
 }
 
 // Postinstall executes operations after installing a Docker package
@@ -178,7 +190,8 @@ func (i *DockerPackage) WithOS(OS string) *DockerPackage {
 
 // WithVersion sets the version
 func (i *DockerPackage) WithVersion(version string) *DockerPackage {
-	i.version = version
+	i.version = e2e.CheckPRVersion(version, agentVersionBase) // sanitize version
+	i.originalVersion = version
 	return i
 }
 
