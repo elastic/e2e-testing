@@ -405,6 +405,11 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		if err != nil {
 			return err
 		}
+
+		err = docker.TagImage(
+			"docker.elastic.co/beats/metricbeat:"+metricbeatVersionBase,
+			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version,
+		)
 	}
 
 	// this is needed because, in general, the target service (apache, mysql, redis) does not have a healthcheck
