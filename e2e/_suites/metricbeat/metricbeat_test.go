@@ -436,7 +436,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"metricbeatConfigFile":  mts.configurationFile,
 		"metricbeatTag":         mts.Version,
 		"stackVersion":          stackVersion,
-		mts.ServiceName + "Tag": mts.ServiceVersion,
+		mts.ServiceName + "Tag": mts.ServiceVersion + "-amd64",
 		"serviceName":           mts.ServiceName,
 	}
 
