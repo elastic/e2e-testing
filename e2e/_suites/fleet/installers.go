@@ -154,7 +154,7 @@ func (i *DockerPackage) Preinstall() error {
 	// and we want it to use the 'pr-12345' format.
 	return docker.TagImage(
 		"docker.elastic.co/beats/"+i.artifact+":"+agentVersionBase,
-		"docker.elastic.co/observability-ci/"+i.artifact+":"+i.originalVersion,
+		"docker.elastic.co/observability-ci/"+i.artifact+":"+i.originalVersion+"-amd64",
 	)
 }
 
