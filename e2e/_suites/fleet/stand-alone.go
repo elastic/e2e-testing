@@ -63,6 +63,8 @@ func (sats *StandAloneTestSuite) contributeSteps(s *godog.ScenarioContext) {
 func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error {
 	log.Trace("Deploying an agent to Fleet")
 
+	dockerImageTag := agentVersion
+
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if useCISnapshots || beatsLocalPath != "" {
@@ -72,6 +74,8 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 		dockerInstaller := GetElasticAgentInstaller("docker", image, agentVersion)
 
 		dockerInstaller.PreInstallFn()
+
+		dockerImageTag += "-amd64"
 	}
 
 	serviceManager := services.NewServiceManager()
@@ -96,7 +100,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 	profileEnv["elasticAgentContainerName"] = containerName
 	profileEnv["elasticAgentConfigFile"] = sats.AgentConfigFilePath
 	profileEnv["elasticAgentPlatform"] = "linux/amd64"
-	profileEnv["elasticAgentTag"] = agentVersion + "-amd64"
+	profileEnv["elasticAgentTag"] = dockerImageTag
 
 	err = serviceManager.AddServicesToCompose(context.Background(), FleetProfileName, []string{ElasticAgentServiceName}, profileEnv)
 	if err != nil {
