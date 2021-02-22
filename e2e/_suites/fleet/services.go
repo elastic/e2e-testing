@@ -355,6 +355,7 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 	artifactName := artifact
 	if ubi8 {
 		artifactName = "elastic-agent-ubi8"
+		image = "elastic-agent-ubi8"
 	}
 
 	os := "linux"
@@ -383,9 +384,9 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 		return nil
 	}
 
-	installerPackage := NewDockerPackage(binaryName, profile, image, service, binaryPath, ubi8).
+	installerPackage := NewDockerPackage(binaryName, profile, artifactName, service, binaryPath, ubi8).
 		WithArch(arch).
-		WithArtifact(artifact).
+		WithArtifact(artifactName).
 		WithOS(os).
 		WithVersion(version)
 
