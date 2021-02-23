@@ -150,11 +150,13 @@ func FetchBeatsBinary(artifactName string, artifact string, version string, fall
 
 // GetArchitecture retrieves if the underlying system platform is arm64 or amd64
 func GetArchitecture() string {
+	arch := "amd64"
 	if os.Getenv("GOARCH") == "arm64" {
-		return "arm64"
+		arch = "arm64"
 	}
 
-	return "amd64"
+	log.Debugf("Golang's architecture is %s", arch)
+	return arch
 }
 
 // getGCPBucketCoordinates it calculates the bucket path in GCP
