@@ -240,7 +240,7 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 	}
 
 	enrollFn := func(token string) error {
-		args := []string{"http://kibana:5601", token, "-f", "--insecure"}
+		args := []string{"--url=http://kibana:5601", "--enrollment-token=" + token, "-f", "--insecure"}
 
 		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", args)
 	}
@@ -305,7 +305,7 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 	}
 
 	enrollFn := func(token string) error {
-		args := []string{"http://kibana:5601", token, "-f", "--insecure"}
+		args := []string{"--url=http://kibana:5601", "--enrollment-token=" + token, "-f", "--insecure"}
 
 		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", args)
 	}
@@ -450,7 +450,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 	binDir := "/usr/bin/"
 
 	enrollFn := func(token string) error {
-		args := []string{"http://kibana:5601", token, "-f", "--insecure"}
+		args := []string{"--url=http://kibana:5601", "--enrollment-token=" + token, "-f", "--insecure"}
 
 		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", args)
 	}
