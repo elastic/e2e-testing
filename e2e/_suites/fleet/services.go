@@ -287,7 +287,7 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 	// extract the agent in the box, as it's mounted as a volume
 	artifact := "elastic-agent"
 	os := "linux"
-	arch := "amd64"
+	arch := e2e.GetArchitecture()
 	extension := "deb"
 
 	binaryName := e2e.BuildArtifactName(artifact, version, agentVersionBase, os, arch, extension, false)
@@ -359,7 +359,7 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 	}
 
 	os := "linux"
-	arch := "amd64"
+	arch := e2e.GetArchitecture()
 	extension := "tar.gz"
 
 	binaryName := e2e.BuildArtifactName(artifactName, version, agentVersionBase, os, arch, extension, true)

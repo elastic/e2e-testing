@@ -39,7 +39,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 
-	t.Run("Fetching DEB binary from local Beats dir", func(t *testing.T) {
+	t.Run("Fetching DEB binary (amd64) from local Beats dir", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
@@ -50,8 +50,19 @@ func TestDownloadAgentBinary(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
+	t.Run("Fetching DEB binary (arm64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
-	t.Run("Fetching TAR binary from local Beats dir", func(t *testing.T) {
+		artifactName := "elastic-agent-8.0.0-SNAPSHOT-arm64.deb"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+
+	t.Run("Fetching TAR binary (amd64) from local Beats dir", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
@@ -62,8 +73,19 @@ func TestDownloadAgentBinary(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
+	t.Run("Fetching TAR binary (arm64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
-	t.Run("Fetching Docker binary from local Beats dir", func(t *testing.T) {
+		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-arm64.tar.gz"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+
+	t.Run("Fetching Docker binary (amd64) from local Beats dir", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
@@ -74,12 +96,34 @@ func TestDownloadAgentBinary(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
+	t.Run("Fetching Docker binary (arm64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
-	t.Run("Fetching ubi8 Docker binary from local Beats dir", func(t *testing.T) {
+		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-arm64.docker.tar.gz"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+
+	t.Run("Fetching ubi8 Docker binary (amd64) from local Beats dir", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
 		artifactName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+	t.Run("Fetching ubi8 Docker binary (arm64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-arm64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)

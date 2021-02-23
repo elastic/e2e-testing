@@ -394,7 +394,8 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if useCISnapshots || beatsLocalPath != "" {
-		artifactName := e2e.BuildArtifactName("metricbeat", mts.Version, metricbeatVersionBase, "linux", "amd64", "tar.gz", true)
+		arch := e2e.GetArchitecture()
+		artifactName := e2e.BuildArtifactName("metricbeat", mts.Version, metricbeatVersionBase, "linux", arch, "tar.gz", true)
 
 		imagePath, err := e2e.FetchBeatsBinary(artifactName, "metricbeat", mts.Version, metricbeatVersionBase, timeoutFactor, true)
 		if err != nil {
@@ -408,7 +409,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 
 		err = docker.TagImage(
 			"docker.elastic.co/beats/metricbeat:"+metricbeatVersionBase,
-			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version+"-amd64",
+			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version+"-"+arch,
 		)
 	}
 
@@ -429,6 +430,8 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		logLevel = log.DebugLevel.String()
 	}
 
+	arch := e2e.GetArchitecture()
+
 	env := map[string]string{
 		"BEAT_STRICT_PERMS":     "false",
 		"indexName":             mts.getIndexName(),
@@ -436,12 +439,12 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"metricbeatConfigFile":  mts.configurationFile,
 		"metricbeatTag":         mts.Version,
 		"stackVersion":          stackVersion,
-		mts.ServiceName + "Tag": mts.ServiceVersion + "-amd64",
+		mts.ServiceName + "Tag": mts.ServiceVersion + "-" + arch,
 		"serviceName":           mts.ServiceName,
 	}
 
 	env["metricbeatDockerNamespace"] = e2e.GetDockerNamespaceEnvVar()
-	env["metricbeatPlatform"] = "linux/amd64"
+	env["metricbeatPlatform"] = "linux/" + arch
 
 	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{"metricbeat"}, env)
 	if err != nil {

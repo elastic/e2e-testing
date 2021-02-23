@@ -75,7 +75,8 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 
 		dockerInstaller.PreInstallFn()
 
-		dockerImageTag += "-amd64"
+		arch := e2e.GetArchitecture()
+		dockerImageTag += "-" + arch
 	}
 
 	serviceManager := services.NewServiceManager()
@@ -99,7 +100,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 
 	profileEnv["elasticAgentContainerName"] = containerName
 	profileEnv["elasticAgentConfigFile"] = sats.AgentConfigFilePath
-	profileEnv["elasticAgentPlatform"] = "linux/amd64"
+	profileEnv["elasticAgentPlatform"] = "linux/" + e2e.GetArchitecture()
 	profileEnv["elasticAgentTag"] = dockerImageTag
 
 	err = serviceManager.AddServicesToCompose(context.Background(), FleetProfileName, []string{ElasticAgentServiceName}, profileEnv)

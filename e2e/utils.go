@@ -59,8 +59,8 @@ func BuildArtifactName(artifact string, version string, fallbackVersion string, 
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	// we detected that the docker name on CI is using a different structure
-	// CI snapshots on GCP: elastic-agent-$VERSION-linux-amd64.docker.tar.gz
-	// Elastic's snapshots: elastic-agent-$VERSION-docker-image-linux-amd64.tar.gz
+	// CI snapshots on GCP: elastic-agent-$VERSION-linux-$ARCH.docker.tar.gz
+	// Elastic's snapshots: elastic-agent-$VERSION-docker-image-linux-$ARCH.tar.gz
 	if !useCISnapshots && isDocker {
 		dockerString = "docker-image"
 		artifactName = fmt.Sprintf("%s-%s-%s-%s-%s.%s", artifact, artifactVersion, dockerString, OS, arch, lowerCaseExtension)
@@ -148,6 +148,15 @@ func FetchBeatsBinary(artifactName string, artifact string, version string, fall
 	return handleDownload(downloadURL)
 }
 
+// GetArchitecture retrieves if the underlying system platform is arm64 or amd64
+func GetArchitecture() string {
+	if os.Getenv("GOARCH") == "arm64" {
+		return "arm64"
+	}
+
+	return "amd64"
+}
+
 // getGCPBucketCoordinates it calculates the bucket path in GCP
 func getGCPBucketCoordinates(fileName string, artifact string, version string, fallbackVersion string) (string, string, string) {
 	bucket := "beats-ci-artifacts"
@@ -163,7 +172,7 @@ func getGCPBucketCoordinates(fileName string, artifact string, version string, f
 
 	// we are setting a version from a pull request: the version of the artifact will be kept as the base one
 	// i.e. /pull-requests/pr-21100/$THE_BEAT/$THE_BEAT-$VERSION-x86_64.rpm
-	// i.e. /pull-requests/pr-21100/$THE_BEAT/$THE_BEAT-$VERSION-amd64.deb
+	// i.e. /pull-requests/pr-21100/$THE_BEAT/$THE_BEAT-$VERSION-$ARCH.deb
 	// i.e. /pull-requests/pr-21100/$THE_BEAT/$THE_BEAT-$VERSION-linux-x86_64.tar.gz
 	if strings.HasPrefix(strings.ToLower(version), "pr-") {
 		log.WithFields(log.Fields{
@@ -276,9 +285,9 @@ func GetElasticArtifactVersion(version string) string {
 
 // GetElasticArtifactURL returns the URL of a released artifact, which its full name is defined in the first argument,
 // from Elastic's artifact repository, building the JSON path query based on the full name
-// i.e. GetElasticArtifactURL("elastic-agent-$VERSION-amd64.deb", "elastic-agent", "$VERSION")
+// i.e. GetElasticArtifactURL("elastic-agent-$VERSION-$ARCH.deb", "elastic-agent", "$VERSION")
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-x86_64.rpm", "elastic-agent","$VERSION")
-// i.e. GetElasticArtifactURL("elastic-agent-$VERSION-linux-amd64.tar.gz", "elastic-agent","$VERSION")
+// i.e. GetElasticArtifactURL("elastic-agent-$VERSION-linux-$ARCH.tar.gz", "elastic-agent","$VERSION")
 func GetElasticArtifactURL(artifactName string, artifact string, version string) (string, error) {
 	exp := GetExponentialBackOff(time.Minute)
 
