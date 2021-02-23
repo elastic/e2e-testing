@@ -149,6 +149,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		workDir, _ := os.Getwd()
 		profileEnv = map[string]string{
+			"stackPlatform":    "linux/" + e2e.GetArchitecture(),
 			"stackVersion":     stackVersion,
 			"kibanaConfigPath": path.Join(workDir, "configurations", "kibana.config.yml"),
 		}

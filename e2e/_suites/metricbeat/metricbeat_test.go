@@ -239,7 +239,8 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		serviceManager := services.NewServiceManager()
 
 		env := map[string]string{
-			"stackVersion": stackVersion,
+			"stackPlatform": "linux/" + e2e.GetArchitecture(),
+			"stackVersion":  stackVersion,
 		}
 
 		err := serviceManager.RunCompose(true, []string{"metricbeat"}, env)
