@@ -44,6 +44,7 @@ Examples:
 Scenario Outline: Upgrading the installed <os> agent
   Given a "<os>" agent "stale" is deployed to Fleet with "tar" installer
     And certs for "<os>" are installed
+    And the "elastic-agent" process is "restarted" on the host
   When agent is upgraded to version "latest"
   Then agent is in version "latest"
 Examples:

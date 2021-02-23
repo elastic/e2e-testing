@@ -20,8 +20,9 @@ SUITE=${1:-''}
 TAGS=${2:-''}
 STACK_VERSION=${3:-'8.0.0-SNAPSHOT'}
 METRICBEAT_VERSION=${4:-'8.0.0-SNAPSHOT'}
-TARGET_OS=${GOOS:-linux}
-TARGET_ARCH=${GOARCH:-amd64}
+
+## Install the required dependencies for the given SUITE
+.ci/scripts/install-test-dependencies.sh "${SUITE}"
 
 rm -rf outputs || true
 mkdir -p outputs

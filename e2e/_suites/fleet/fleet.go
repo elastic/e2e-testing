@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -76,7 +77,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	}
 
 	if !developerMode {
-		_ = serviceManager.RemoveServicesFromCompose(FleetProfileName, []string{serviceName + "-systemd"}, profileEnv)
+		_ = serviceManager.RemoveServicesFromCompose(context.Background(), FleetProfileName, []string{serviceName + "-systemd"}, profileEnv)
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
@@ -167,7 +168,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 
 	// prepare installer for stale version
 	if fts.Version != agentVersionBackup {
-		i := GetElasticAgentInstaller(image, installerType, fts.Version, true)
+		i := GetElasticAgentInstaller(image, installerType, fts.Version)
 		fts.Installers[fmt.Sprintf("%s-%s-%s", image, installerType, version)] = i
 	}
 
@@ -379,11 +380,10 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 			// the agent is not listed in Fleet
 			if desiredStatus == "offline" || desiredStatus == "inactive" {
 				log.WithFields(log.Fields{
-					"isAgentInStatus": isAgentInStatus,
-					"elapsedTime":     exp.GetElapsedTime(),
-					"hostname":        fts.Hostname,
-					"retries":         retryCount,
-					"status":          desiredStatus,
+					"elapsedTime": exp.GetElapsedTime(),
+					"hostname":    fts.Hostname,
+					"retries":     retryCount,
+					"status":      desiredStatus,
 				}).Info("The Agent is not present in Fleet, as expected")
 				return nil
 			} else if desiredStatus == "online" {
@@ -1212,7 +1212,7 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 
 	serviceManager := services.NewServiceManager()
 
-	err := serviceManager.AddServicesToCompose(profile, []string{service}, profileEnv)
+	err := serviceManager.AddServicesToCompose(context.Background(), profile, []string{service}, profileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": service,

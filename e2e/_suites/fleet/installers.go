@@ -1,8 +1,15 @@
+// Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+// or more contributor license agreements. Licensed under the Elastic License;
+// you may not use this file except in compliance with the Elastic License.
+
 package main
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/elastic/e2e-testing/cli/docker"
+	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -79,7 +86,7 @@ func (i *DEBPackage) InstallCerts() error {
 	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates"}, false); err != nil {
+	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates", "-f"}, false); err != nil {
 		return err
 	}
 
@@ -96,6 +103,100 @@ func (i *DEBPackage) Preinstall() error {
 func (i *DEBPackage) Uninstall() error {
 	log.Trace("No uninstall commands for DEB packages")
 	return nil
+}
+
+// DockerPackage implements operations for a DEB installer
+type DockerPackage struct {
+	BasePackage
+	installerPath string
+	ubi8          bool
+	// optional fields
+	arch            string
+	artifact        string
+	originalVersion string
+	OS              string
+	version         string
+}
+
+// NewDockerPackage creates an instance for the Docker installer
+func NewDockerPackage(binaryName string, profile string, image string, service string, installerPath string, ubi8 bool) *DockerPackage {
+	return &DockerPackage{
+		BasePackage: BasePackage{
+			binaryName: binaryName,
+			image:      image,
+			profile:    profile,
+			service:    service,
+		},
+		installerPath: installerPath,
+		ubi8:          ubi8,
+	}
+}
+
+// Install installs a Docker package
+func (i *DockerPackage) Install(containerName string, token string) error {
+	log.Trace("No install commands for Docker packages")
+	return nil
+}
+
+// InstallCerts installs the certificates for a Docker package
+func (i *DockerPackage) InstallCerts() error {
+	log.Trace("No install certs commands for Docker packages")
+	return nil
+}
+
+// Preinstall executes operations before installing a Docker package
+func (i *DockerPackage) Preinstall() error {
+	err := docker.LoadImage(i.installerPath)
+	if err != nil {
+		return err
+	}
+
+	// wait for tagging to ensure the loaded image is present
+	e2e.Sleep(3 * time.Second)
+
+	// we need to tag the loaded image because its tag relates to the target branch,
+	// and we want it to use the 'pr-12345' format.
+	return docker.TagImage(
+		"docker.elastic.co/beats/"+i.artifact+":"+agentVersionBase,
+		"docker.elastic.co/observability-ci/"+i.artifact+":"+i.originalVersion+"-amd64",
+	)
+}
+
+// Postinstall executes operations after installing a Docker package
+func (i *DockerPackage) Postinstall() error {
+	log.Trace("No postinstall commands for Docker packages")
+	return nil
+}
+
+// Uninstall uninstalls a Docker package
+func (i *DockerPackage) Uninstall() error {
+	log.Trace("No uninstall commands for Docker packages")
+	return nil
+}
+
+// WithArch sets the architecture
+func (i *DockerPackage) WithArch(arch string) *DockerPackage {
+	i.arch = arch
+	return i
+}
+
+// WithArtifact sets the artifact
+func (i *DockerPackage) WithArtifact(artifact string) *DockerPackage {
+	i.artifact = artifact
+	return i
+}
+
+// WithOS sets the OS
+func (i *DockerPackage) WithOS(OS string) *DockerPackage {
+	i.OS = OS
+	return i
+}
+
+// WithVersion sets the version
+func (i *DockerPackage) WithVersion(version string) *DockerPackage {
+	i.version = e2e.CheckPRVersion(version, agentVersionBase) // sanitize version
+	i.originalVersion = version
+	return i
 }
 
 // RPMPackage implements operations for a RPM installer
@@ -157,7 +258,6 @@ type TARPackage struct {
 	arch     string
 	artifact string
 	OS       string
-	stale    bool
 	version  string
 }
 
@@ -195,7 +295,7 @@ func (i *TARPackage) InstallCerts() error {
 	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates"}, false); err != nil {
+	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates", "-f"}, false); err != nil {
 		return err
 	}
 
@@ -215,15 +315,10 @@ func (i *TARPackage) Preinstall() error {
 		return err
 	}
 
-	version := i.version
-	if !i.stale {
-		version = checkElasticAgentVersion(i.version)
-	}
-
 	// simplify layout
 	cmds := [][]string{
 		[]string{"rm", "-fr", "/elastic-agent"},
-		[]string{"mv", fmt.Sprintf("/%s-%s-%s-%s", i.artifact, version, i.OS, i.arch), "/elastic-agent"},
+		[]string{"mv", fmt.Sprintf("/%s-%s-%s-%s", i.artifact, i.version, i.OS, i.arch), "/elastic-agent"},
 	}
 	for _, cmd := range cmds {
 		err = execCommandInService(i.profile, i.image, i.service, cmd, false)
@@ -233,7 +328,7 @@ func (i *TARPackage) Preinstall() error {
 				"error":   err,
 				"image":   i.image,
 				"service": i.service,
-				"version": version,
+				"version": i.version,
 			}).Error("Could not extract agent package in the box")
 
 			return err
@@ -241,12 +336,6 @@ func (i *TARPackage) Preinstall() error {
 	}
 
 	return nil
-}
-
-// Stale sets the stale state
-func (i *TARPackage) Stale(stale bool) *TARPackage {
-	i.stale = stale
-	return i
 }
 
 // Uninstall uninstalls a TAR package
