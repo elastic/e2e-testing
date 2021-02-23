@@ -71,6 +71,10 @@ func (i *ElasticAgentInstaller) getElasticAgentHash(containerName string) (strin
 	return getElasticAgentHash(containerName, commitFile)
 }
 
+func buildEnrollmentFlags(token string) []string {
+	return []string{"--url=http://kibana:5601", "--enrollment-token=" + token, "-f", "--insecure"}
+}
+
 func getElasticAgentHash(containerName string, commitFile string) (string, error) {
 	cmd := []string{
 		"cat", commitFile,
@@ -240,9 +244,7 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 	}
 
 	enrollFn := func(token string) error {
-		args := []string{"--url=http://kibana:5601", "--enrollment-token=" + token, "-f", "--insecure"}
-
-		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", args)
+		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", buildEnrollmentFlags(token))
 	}
 
 	binDir := "/var/lib/elastic-agent/data/elastic-agent-%s/"
@@ -305,9 +307,7 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 	}
 
 	enrollFn := func(token string) error {
-		args := []string{"--url=http://kibana:5601", "--enrollment-token=" + token, "-f", "--insecure"}
-
-		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", args)
+		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", buildEnrollmentFlags(token))
 	}
 
 	binDir := "/var/lib/elastic-agent/data/elastic-agent-%s/"
@@ -450,9 +450,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 	binDir := "/usr/bin/"
 
 	enrollFn := func(token string) error {
-		args := []string{"--url=http://kibana:5601", "--enrollment-token=" + token, "-f", "--insecure"}
-
-		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", args)
+		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", buildEnrollmentFlags(token))
 	}
 
 	//
