@@ -99,14 +99,7 @@ func setUpSuite() {
 
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
-			Installers: map[string]ElasticAgentInstaller{
-				"centos-systemd-" + agentVersion: GetElasticAgentInstaller("centos", "systemd", agentVersion),
-				"centos-tar-" + agentVersion:     GetElasticAgentInstaller("centos", "tar", agentVersion),
-				"debian-systemd-" + agentVersion: GetElasticAgentInstaller("debian", "systemd", agentVersion),
-				"debian-tar-" + agentVersion:     GetElasticAgentInstaller("debian", "tar", agentVersion),
-				"docker-default-" + agentVersion: GetElasticAgentInstaller("docker", "default", agentVersion),
-				"docker-ubi8-" + agentVersion:    GetElasticAgentInstaller("docker", "ubi8", agentVersion),
-			},
+			Installers: map[string]ElasticAgentInstaller{}, // do not pre-initialise the map
 		},
 		StandAlone: &StandAloneTestSuite{},
 	}
