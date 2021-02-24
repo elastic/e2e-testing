@@ -187,7 +187,20 @@ func (fts *FleetTestSuite) installCerts(targetOS string) error {
 		return errors.New("no installer found")
 	}
 
-	return installer.InstallCertsFn()
+	err := installer.InstallCertsFn()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"agentVersion":      agentVersion,
+			"agentStaleVersion": agentStaleVersion,
+			"error":             err,
+			"installer":         installer,
+			"targetOS":          targetOS,
+			"version":           fts.Version,
+		}).Error("Could not install the certificates")
+		return err
+	}
+
+	return nil
 }
 
 func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
