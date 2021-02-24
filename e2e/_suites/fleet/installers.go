@@ -255,10 +255,11 @@ func (i *RPMPackage) Uninstall() error {
 type TARPackage struct {
 	BasePackage
 	// optional fields
-	arch     string
-	artifact string
-	OS       string
-	version  string
+	arch      string
+	artifact  string
+	OS        string
+	OSFlavour string // at this moment, centos or debian
+	version   string
 }
 
 // NewTARPackage creates an instance for the RPM installer
@@ -360,6 +361,12 @@ func (i *TARPackage) WithArtifact(artifact string) *TARPackage {
 // WithOS sets the OS
 func (i *TARPackage) WithOS(OS string) *TARPackage {
 	i.OS = OS
+	return i
+}
+
+// WithOSFlavour sets the OS flavour, at this moment centos or debian
+func (i *TARPackage) WithOSFlavour(OSFlavour string) *TARPackage {
+	i.OSFlavour = OSFlavour
 	return i
 }
 
