@@ -312,7 +312,17 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 }
 
 func (fts *FleetTestSuite) getInstaller() ElasticAgentInstaller {
-	return fts.Installers[fts.Image+"-"+fts.InstallerType+"-"+fts.Version]
+	// check if the agent is already cached
+	if i, exists := fts.Installers[fts.Image+"-"+fts.InstallerType+"-"+fts.Version]; exists {
+		return i
+	}
+
+	installer := GetElasticAgentInstaller(fts.Image, fts.InstallerType, fts.Version)
+
+	// cache the new installer
+	fts.Installers[fts.Image+"-"+fts.InstallerType+"-"+fts.Version] = installer
+
+	return installer
 }
 
 func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state string) error {
