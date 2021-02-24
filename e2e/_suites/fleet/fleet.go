@@ -138,7 +138,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
-	s.Step(`^certs for "([^"]*)" are installed$`, fts.installCerts)
+	s.Step(`^certs are installed$`, fts.installCerts)
 
 	// endpoint steps
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)
@@ -175,7 +175,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
 }
 
-func (fts *FleetTestSuite) installCerts(targetOS string) error {
+func (fts *FleetTestSuite) installCerts() error {
 	installer := fts.getInstaller()
 	if installer.InstallCertsFn == nil {
 		log.WithFields(log.Fields{
@@ -194,7 +194,6 @@ func (fts *FleetTestSuite) installCerts(targetOS string) error {
 			"agentStaleVersion": agentStaleVersion,
 			"error":             err,
 			"installer":         installer,
-			"targetOS":          targetOS,
 			"version":           fts.Version,
 		}).Error("Could not install the certificates")
 		return err
