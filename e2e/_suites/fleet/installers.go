@@ -300,6 +300,12 @@ func (i *TARPackage) InstallCerts() error {
 		return installCertsForDebian(i.profile, i.image, i.service)
 	}
 
+	log.WithFields(log.Fields{
+		"arch":      i.arch,
+		"OS":        i.OS,
+		"OSFlavour": i.OSFlavour,
+	}).Debug("Installation of certificates was skipped because of unknown OS flavour")
+
 	return nil
 }
 
