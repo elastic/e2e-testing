@@ -79,16 +79,18 @@ func (i *DEBPackage) Install(containerName string, token string) error {
 
 // InstallCerts installs the certificates for a DEB package
 func (i *DEBPackage) InstallCerts() error {
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt-get", "update"}, false); err != nil {
+	return installCertsForDebian(i.profile, i.image, i.service)
+}
+func installCertsForDebian(profile string, image string, service string) error {
+	if err := execCommandInService(profile, image, service, []string{"apt-get", "update"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
+	if err := execCommandInService(profile, image, service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates", "-f"}, false); err != nil {
+	if err := execCommandInService(profile, image, service, []string{"update-ca-certificates", "-f"}, false); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -219,19 +221,21 @@ func (i *RPMPackage) Install(containerName string, token string) error {
 
 // InstallCerts installs the certificates for a RPM package
 func (i *RPMPackage) InstallCerts() error {
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"yum", "check-update"}, false); err != nil {
+	return installCertsForCentos(i.profile, i.image, i.service)
+}
+func installCertsForCentos(profile string, image string, service string) error {
+	if err := execCommandInService(profile, image, service, []string{"yum", "check-update"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"yum", "install", "ca-certificates", "-y"}, false); err != nil {
+	if err := execCommandInService(profile, image, service, []string{"yum", "install", "ca-certificates", "-y"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-trust", "force-enable"}, false); err != nil {
+	if err := execCommandInService(profile, image, service, []string{"update-ca-trust", "force-enable"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-trust", "extract"}, false); err != nil {
+	if err := execCommandInService(profile, image, service, []string{"update-ca-trust", "extract"}, false); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -251,10 +255,11 @@ func (i *RPMPackage) Uninstall() error {
 type TARPackage struct {
 	BasePackage
 	// optional fields
-	arch     string
-	artifact string
-	OS       string
-	version  string
+	arch      string
+	artifact  string
+	OS        string
+	OSFlavour string // at this moment, centos or debian
+	version   string
 }
 
 // NewTARPackage creates an instance for the RPM installer
@@ -283,17 +288,19 @@ func (i *TARPackage) Install(containerName string, token string) error {
 	return nil
 }
 
-// InstallCerts installs the certificates for a TAR package
+// InstallCerts installs the certificates for a TAR package, using the right OS package manager
 func (i *TARPackage) InstallCerts() error {
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt-get", "update"}, false); err != nil {
-		return err
+	if i.OSFlavour == "centos" {
+		return installCertsForCentos(i.profile, i.image, i.service)
+	} else if i.OSFlavour == "debian" {
+		return installCertsForDebian(i.profile, i.image, i.service)
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
-		return err
-	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates", "-f"}, false); err != nil {
-		return err
-	}
+
+	log.WithFields(log.Fields{
+		"arch":      i.arch,
+		"OS":        i.OS,
+		"OSFlavour": i.OSFlavour,
+	}).Debug("Installation of certificates was skipped because of unknown OS flavour")
 
 	return nil
 }
@@ -356,6 +363,12 @@ func (i *TARPackage) WithArtifact(artifact string) *TARPackage {
 // WithOS sets the OS
 func (i *TARPackage) WithOS(OS string) *TARPackage {
 	i.OS = OS
+	return i
+}
+
+// WithOSFlavour sets the OS flavour, at this moment centos or debian
+func (i *TARPackage) WithOSFlavour(OSFlavour string) *TARPackage {
+	i.OSFlavour = OSFlavour
 	return i
 }
 
