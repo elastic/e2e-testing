@@ -80,16 +80,18 @@ func (i *DEBPackage) Install(containerName string, token string) error {
 
 // InstallCerts installs the certificates for a DEB package
 func (i *DEBPackage) InstallCerts() error {
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt-get", "update"}, false); err != nil {
+	return installCertsForDebian(i.profile, i.image, i.service)
+}
+func installCertsForDebian(profile string, image string, service string) error {
+	if err := execCommandInService(profile, image, service, []string{"apt-get", "update"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
+	if err := execCommandInService(profile, image, service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates", "-f"}, false); err != nil {
+	if err := execCommandInService(profile, image, service, []string{"update-ca-certificates", "-f"}, false); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -223,19 +225,21 @@ func (i *RPMPackage) Install(containerName string, token string) error {
 
 // InstallCerts installs the certificates for a RPM package
 func (i *RPMPackage) InstallCerts() error {
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"yum", "check-update"}, false); err != nil {
+	return installCertsForCentos(i.profile, i.image, i.service)
+}
+func installCertsForCentos(profile string, image string, service string) error {
+	if err := execCommandInService(profile, image, service, []string{"yum", "check-update"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"yum", "install", "ca-certificates", "-y"}, false); err != nil {
+	if err := execCommandInService(profile, image, service, []string{"yum", "install", "ca-certificates", "-y"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-trust", "force-enable"}, false); err != nil {
+	if err := execCommandInService(profile, image, service, []string{"update-ca-trust", "force-enable"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-trust", "extract"}, false); err != nil {
+	if err := execCommandInService(profile, image, service, []string{"update-ca-trust", "extract"}, false); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -291,28 +295,9 @@ func (i *TARPackage) Install(containerName string, token string) error {
 // InstallCerts installs the certificates for a TAR package, using the right OS package manager
 func (i *TARPackage) InstallCerts() error {
 	if i.OSFlavour == "centos" {
-		if err := execCommandInService(i.profile, i.image, i.service, []string{"yum", "check-update"}, false); err != nil {
-			return err
-		}
-		if err := execCommandInService(i.profile, i.image, i.service, []string{"yum", "install", "ca-certificates", "-y"}, false); err != nil {
-			return err
-		}
-		if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-trust", "force-enable"}, false); err != nil {
-			return err
-		}
-		if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-trust", "extract"}, false); err != nil {
-			return err
-		}
+		return installCertsForCentos(i.profile, i.image, i.service)
 	} else if i.OSFlavour == "debian" {
-		if err := execCommandInService(i.profile, i.image, i.service, []string{"apt-get", "update"}, false); err != nil {
-			return err
-		}
-		if err := execCommandInService(i.profile, i.image, i.service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
-			return err
-		}
-		if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates", "-f"}, false); err != nil {
-			return err
-		}
+		return installCertsForDebian(i.profile, i.image, i.service)
 	}
 
 	return nil
