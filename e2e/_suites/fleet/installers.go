@@ -288,16 +288,31 @@ func (i *TARPackage) Install(containerName string, token string) error {
 	return nil
 }
 
-// InstallCerts installs the certificates for a TAR package
+// InstallCerts installs the certificates for a TAR package, using the right OS package manager
 func (i *TARPackage) InstallCerts() error {
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt-get", "update"}, false); err != nil {
-		return err
-	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
-		return err
-	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates", "-f"}, false); err != nil {
-		return err
+	if i.OSFlavour == "centos" {
+		if err := execCommandInService(i.profile, i.image, i.service, []string{"yum", "check-update"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(i.profile, i.image, i.service, []string{"yum", "install", "ca-certificates", "-y"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-trust", "force-enable"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-trust", "extract"}, false); err != nil {
+			return err
+		}
+	} else if i.OSFlavour == "debian" {
+		if err := execCommandInService(i.profile, i.image, i.service, []string{"apt-get", "update"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(i.profile, i.image, i.service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
+			return err
+		}
+		if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates", "-f"}, false); err != nil {
+			return err
+		}
 	}
 
 	return nil
