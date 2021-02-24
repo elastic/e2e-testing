@@ -421,8 +421,8 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 
 // newTarInstaller returns an instance of the Debian installer for a specific version
 func newTarInstaller(image string, tag string, version string) (ElasticAgentInstaller, error) {
-	image = image + "-systemd" // we want to consume systemd boxes
-	service := image
+	dockerImage := image + "-systemd" // we want to consume systemd boxes
+	service := dockerImage
 	profile := FleetProfileName
 
 	// extract the agent in the box, as it's mounted as a volume
@@ -450,14 +450,15 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 	binDir := "/usr/bin/"
 
 	enrollFn := func(token string) error {
-		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", buildEnrollmentFlags(token))
+		return runElasticAgentCommand(profile, dockerImage, service, ElasticAgentProcessName, "enroll", buildEnrollmentFlags(token))
 	}
 
 	//
-	installerPackage := NewTARPackage(binaryName, profile, image, service).
+	installerPackage := NewTARPackage(binaryName, profile, dockerImage, service).
 		WithArch(arch).
 		WithArtifact(artifact).
 		WithOS(os).
+		WithOSFlavour(image).
 		WithVersion(e2e.CheckPRVersion(version, agentVersionBase)) // sanitize version
 
 	return ElasticAgentInstaller{
@@ -470,7 +471,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 		commitFile:        commitFile,
 		EnrollFn:          enrollFn,
 		homeDir:           homeDir,
-		image:             image,
+		image:             dockerImage,
 		InstallFn:         installerPackage.Install,
 		InstallCertsFn:    installerPackage.InstallCerts,
 		installerType:     "tar",
