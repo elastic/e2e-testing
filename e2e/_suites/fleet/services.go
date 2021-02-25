@@ -28,7 +28,6 @@ type ElasticAgentInstaller struct {
 	InstallFn         func(containerName string, token string) error
 	InstallCertsFn    func() error
 	logFile           string // the name of the log file
-	logsDir           string // location of the logs
 	name              string // the name for the binary
 	path              string // the local path where the agent for the binary is located
 	processName       string // name of the elastic-agent process
@@ -205,7 +204,6 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 		InstallCertsFn:    installerPackage.InstallCerts,
 		installerType:     "rpm",
 		logFile:           logFileName,
-		logsDir:           logsDir,
 		name:              binaryName,
 		path:              binaryPath,
 		PostInstallFn:     installerPackage.Postinstall,
@@ -277,7 +275,6 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 		InstallCertsFn:    installerPackage.InstallCerts,
 		installerType:     "deb",
 		logFile:           logFileName,
-		logsDir:           logsDir,
 		name:              binaryName,
 		path:              binaryPath,
 		PostInstallFn:     installerPackage.Postinstall,
@@ -360,7 +357,6 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 		InstallCertsFn:    installerPackage.InstallCerts,
 		installerType:     "docker",
 		logFile:           logFileName,
-		logsDir:           logsDir,
 		name:              binaryName,
 		path:              binaryPath,
 		PostInstallFn:     installerPackage.Postinstall,
@@ -438,7 +434,6 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 		InstallCertsFn:    installerPackage.InstallCerts,
 		installerType:     "tar",
 		logFile:           logFileName,
-		logsDir:           logsDir,
 		name:              binaryName,
 		path:              binaryPath,
 		PostInstallFn:     installerPackage.Postinstall,
