@@ -63,46 +63,16 @@ func (i *ElasticAgentInstaller) listElasticAgentWorkingDirContent(containerName 
 	return content, nil
 }
 
-// getElasticAgentHash uses Elastic Agent's home dir to read the file with agent's build hash
-// it will return the first six characters of the hash (short hash)
-func (i *ElasticAgentInstaller) getElasticAgentHash(containerName string) (string, error) {
-	commitFile := i.homeDir + i.commitFile
-
-	return getElasticAgentHash(containerName, commitFile)
-}
-
 func buildEnrollmentFlags(token string) []string {
 	return []string{"--url=http://kibana:5601", "--enrollment-token=" + token, "-f", "--insecure"}
-}
-
-func getElasticAgentHash(containerName string, commitFile string) (string, error) {
-	cmd := []string{
-		"cat", commitFile,
-	}
-
-	fullHash, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
-	if err != nil {
-		return "", err
-	}
-
-	runes := []rune(fullHash)
-	shortHash := string(runes[0:6])
-
-	log.WithFields(log.Fields{
-		"commitFile":    commitFile,
-		"containerName": containerName,
-		"hash":          fullHash,
-		"shortHash":     shortHash,
-	}).Debug("Agent build hash found")
-
-	return shortHash, nil
 }
 
 // getElasticAgentLogs uses elastic-agent log dir to read the entire log file
 func (i *ElasticAgentInstaller) getElasticAgentLogs(hostname string) error {
 	containerName := hostname // name of the container, which matches the hostname
+	commitFile := i.homeDir + i.commitFile
 
-	hash, err := i.getElasticAgentHash(containerName)
+	hash, err := getElasticAgentHash(containerName, commitFile)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"containerName": containerName,
