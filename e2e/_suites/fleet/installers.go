@@ -63,30 +63,30 @@ func (i *BasePackage) Postinstall() error {
 
 // PrintLogs prints logs for the agent
 func (i *BasePackage) PrintLogs(containerName string) error {
-	hash, err := getElasticAgentHash(containerName, i.commitFile)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"containerName": containerName,
-			"error":         err,
-		}).Error("Could not get agent hash in the container")
-
-		return err
-	}
-
 	if strings.Contains(i.logFile, "%s") {
+		hash, err := getElasticAgentHash(containerName, i.commitFile)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"containerName": containerName,
+				"error":         err,
+			}).Error("Could not get agent hash in the container")
+
+			return err
+		}
+
 		i.logFile = fmt.Sprintf(i.logFile, hash)
 	}
 	cmd := []string{
 		"cat", i.logFile,
 	}
 
-	err = execCommandInService(i.profile, i.image, i.service, cmd, false)
+	err := execCommandInService(i.profile, i.image, i.service, cmd, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"containerName": containerName,
 			"command":       cmd,
 			"error":         err,
-			"hash":          hash,
+			"logFile":       i.logFile,
 		}).Error("Could not get agent logs in the container")
 
 		return err
