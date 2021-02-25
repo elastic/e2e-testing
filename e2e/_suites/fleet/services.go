@@ -21,7 +21,6 @@ type ElasticAgentInstaller struct {
 	artifactOS        string // OS of the artifact
 	artifactVersion   string // version of the artifact
 	binDir            string // location of the binary
-	commitFile        string // elastic agent commit file
 	EnrollFn          func(token string) error
 	homeDir           string // elastic agent home dir
 	image             string // docker image
@@ -199,7 +198,6 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 		artifactOS:        os,
 		artifactVersion:   version,
 		binDir:            binDir,
-		commitFile:        commitFileName,
 		EnrollFn:          enrollFn,
 		homeDir:           homeDir,
 		image:             image,
@@ -272,7 +270,6 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 		artifactOS:        os,
 		artifactVersion:   version,
 		binDir:            binDir,
-		commitFile:        commitFileName,
 		EnrollFn:          enrollFn,
 		homeDir:           homeDir,
 		image:             image,
@@ -356,7 +353,6 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 		artifactOS:        os,
 		artifactVersion:   version,
 		binDir:            binDir,
-		commitFile:        commitFile,
 		EnrollFn:          enrollFn,
 		homeDir:           homeDir,
 		image:             image,
@@ -435,7 +431,6 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 		artifactOS:        os,
 		artifactVersion:   version,
 		binDir:            binDir,
-		commitFile:        commitFile,
 		EnrollFn:          enrollFn,
 		homeDir:           homeDir,
 		image:             dockerImage,
