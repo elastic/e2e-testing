@@ -60,7 +60,7 @@ func (fts *FleetTestSuite) afterScenario() {
 		installer := fts.getInstaller()
 
 		if developerMode {
-			_ = installer.getElasticAgentLogs(fts.Hostname)
+			_ = installer.PrintLogsFn(fts.Hostname)
 		}
 
 		// only call it when the elastic-agent is present
