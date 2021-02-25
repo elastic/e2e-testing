@@ -395,8 +395,8 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 
 	commitFile := homeDir + commitFileName
 
-	logsDir := "/opt/Elastic/Agent/"
-	logFileName := "elastic-agent.log"
+	logsDir := workingDir + "/data/elastic-agent-%s/logs/"
+	logFileName := "elastic-agent-json.log"
 	logFile := logsDir + "/" + logFileName
 
 	enrollFn := func(token string) error {
