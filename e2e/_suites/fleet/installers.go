@@ -63,6 +63,33 @@ func (i *BasePackage) Postinstall() error {
 
 // PrintLogs prints logs for the agent
 func (i *BasePackage) PrintLogs(containerName string) error {
+	err := i.resolveLogFile(containerName)
+	if err != nil {
+		return fmt.Errorf("Could not resolve log file: %v", err)
+	}
+
+	cmd := []string{
+		"cat", i.logFile,
+	}
+
+	err = execCommandInService(i.profile, i.image, i.service, cmd, false)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"containerName": containerName,
+			"command":       cmd,
+			"error":         err,
+			"logFile":       i.logFile,
+		}).Error("Could not get agent logs in the container")
+
+		return err
+	}
+
+	return nil
+}
+
+// resolveLogFile retrieves the full path of the log file in the underlying Docker container
+// calculating the hash commit if necessary
+func (i *BasePackage) resolveLogFile(containerName string) error {
 	if strings.Contains(i.logFile, "%s") {
 		hash, err := getElasticAgentHash(containerName, i.commitFile)
 		if err != nil {
@@ -75,21 +102,6 @@ func (i *BasePackage) PrintLogs(containerName string) error {
 		}
 
 		i.logFile = fmt.Sprintf(i.logFile, hash)
-	}
-	cmd := []string{
-		"cat", i.logFile,
-	}
-
-	err := execCommandInService(i.profile, i.image, i.service, cmd, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"containerName": containerName,
-			"command":       cmd,
-			"error":         err,
-			"logFile":       i.logFile,
-		}).Error("Could not get agent logs in the container")
-
-		return err
 	}
 
 	return nil
