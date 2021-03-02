@@ -81,3 +81,15 @@ Examples:
 | os     |
 | centos |
 | debian |
+
+@uninstall-host
+Scenario Outline: Un-installing the installed <os> agent
+  Given a "<os>" agent is deployed to Fleet with "tar" installer
+  When the "elastic-agent" process is "uninstalled" on the host
+  Then the "elastic-agent" process is in the "stopped" state on the host
+    And the "filebeat" process is in the "stopped" state on the host
+    And the "metricbeat" process is in the "stopped" state on the host
+Examples:
+| os     |
+| centos |
+| debian |
