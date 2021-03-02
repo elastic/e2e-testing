@@ -34,7 +34,7 @@ var elasticAPMActive = false
 var metricbeatVersionBase = "8.0.0-SNAPSHOT"
 
 // metricbeatVersion is the version of the metricbeat to use
-// It can be overriden by METRICBEAT_VERSION env var
+// It can be overriden by BEAT_VERSION env var
 var metricbeatVersion = metricbeatVersionBase
 
 // timeoutFactor a multiplier for the max timeout when doing backoff retries.
@@ -70,7 +70,7 @@ func setupSuite() {
 	// check if base version is an alias
 	metricbeatVersionBase = e2e.GetElasticArtifactVersion(metricbeatVersionBase)
 
-	metricbeatVersion = shell.GetEnv("METRICBEAT_VERSION", metricbeatVersionBase)
+	metricbeatVersion = shell.GetEnv("BEAT_VERSION", metricbeatVersionBase)
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
