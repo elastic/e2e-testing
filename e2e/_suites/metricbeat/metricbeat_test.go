@@ -70,7 +70,7 @@ func setupSuite() {
 	// check if base version is an alias
 	metricbeatVersionBase = e2e.GetElasticArtifactVersion(metricbeatVersionBase)
 
-	metricbeatVersion = shell.GetEnv("METRICBEAT_VERSION", metricbeatVersion)
+	metricbeatVersion = shell.GetEnv("METRICBEAT_VERSION", metricbeatVersionBase)
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
