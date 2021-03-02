@@ -17,9 +17,7 @@ Examples:
 Scenario Outline: Deploying the <os> agent with enroll and then run on rpm and deb
   Given a "<os>" agent is deployed to Fleet with "systemd" installer
   When the "elastic-agent" process is in the "started" state on the host
-  Then the "filebeat" process is in the "started" state on the host
-    And the "metricbeat" process is in the "started" state on the host
-    And the agent is listed in Fleet as "online"
+  Then the agent is listed in Fleet as "online"
     And system package dashboards are listed in Fleet
 Examples:
 | os     |
