@@ -50,10 +50,7 @@ Examples:
 Scenario Outline: Un-enrolling the <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the agent is un-enrolled
-  Then the "elastic-agent" process is in the "started" state on the host
-    And the agent is listed in Fleet as "inactive"
-    And the "filebeat" process is in the "stopped" state on the host
-    And the "metricbeat" process is in the "stopped" state on the host
+  Then the agent is listed in Fleet as "inactive"
 Examples:
 | os     |
 | centos |

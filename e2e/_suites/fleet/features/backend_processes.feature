@@ -57,3 +57,15 @@ Examples:
 | os     |
 | centos |
 | debian |
+
+@unenroll
+Scenario Outline: Un-enrolling the <os> agent
+  Given a "<os>" agent is deployed to Fleet with "tar" installer
+  When the agent is un-enrolled
+  Then the "elastic-agent" process is in the "started" state on the host
+    And the "filebeat" process is in the "stopped" state on the host
+    And the "metricbeat" process is in the "stopped" state on the host
+Examples:
+| os     |
+| centos |
+| debian |
