@@ -62,8 +62,7 @@ Scenario Outline: Re-enrolling the <os> agent
     And the agent is un-enrolled
     And the "elastic-agent" process is "stopped" on the host
   When the agent is re-enrolled on the host
-  Then the "elastic-agent" process is "started" on the host
-    And the agent is listed in Fleet as "online"
+  Then the agent is listed in Fleet as "online"
 Examples:
 | os     |
 | centos |
