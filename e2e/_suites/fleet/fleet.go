@@ -35,15 +35,16 @@ const actionREMOVED = "removed"
 
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
-	Image          string // base image used to install the agent
-	InstallerType  string
-	Installers     map[string]ElasticAgentInstaller
-	Cleanup        bool
-	PolicyID       string // will be used to manage tokens
-	CurrentToken   string // current enrollment token
-	CurrentTokenID string // current enrollment tokenID
-	Hostname       string // the hostname of the container
-	Version        string // current elastic-agent version
+	Image               string // base image used to install the agent
+	InstallerType       string
+	Installers          map[string]ElasticAgentInstaller
+	Cleanup             bool
+	ElasticAgentStopped bool   // will be used to signal when the agent process can be called again in the tear-down stage
+	PolicyID            string // will be used to manage tokens
+	CurrentToken        string // current enrollment token
+	CurrentTokenID      string // current enrollment tokenID
+	Hostname            string // the hostname of the container
+	Version             string // current elastic-agent version
 	// integrations
 	Integration     IntegrationPackage // the installed integration
 	PolicyUpdatedAt string             // the moment the policy was updated
@@ -58,13 +59,14 @@ func (fts *FleetTestSuite) afterScenario() {
 	if log.IsLevelEnabled(log.DebugLevel) {
 		installer := fts.getInstaller()
 
-		if developerMode {
-			_ = installer.getElasticAgentLogs(fts.Hostname)
-		}
+		_ = installer.PrintLogsFn(fts.Hostname)
 
-		err := installer.UninstallFn()
-		if err != nil {
-			log.Warnf("Could not uninstall the agent after the scenario: %v", err)
+		// only call it when the elastic-agent is present
+		if !fts.ElasticAgentStopped {
+			err := installer.UninstallFn()
+			if err != nil {
+				log.Warnf("Could not uninstall the agent after the scenario: %v", err)
+			}
 		}
 	}
 
@@ -108,6 +110,7 @@ func (fts *FleetTestSuite) afterScenario() {
 // beforeScenario creates the state needed by a scenario
 func (fts *FleetTestSuite) beforeScenario() {
 	fts.Cleanup = false
+	fts.ElasticAgentStopped = false
 
 	fts.Version = agentVersion
 
@@ -337,7 +340,17 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	} else if state == "restarted" {
 		return systemctlRun(profile, installer.image, serviceName, "restart")
 	} else if state == "uninstalled" {
-		return installer.UninstallFn()
+		err := installer.UninstallFn()
+		if err != nil {
+			return err
+		}
+
+		// signal that the elastic-agent was uninstalled
+		if process == ElasticAgentProcessName {
+			fts.ElasticAgentStopped = true
+		}
+
+		return nil
 	} else if state != "stopped" {
 		return godog.ErrPending
 	}
