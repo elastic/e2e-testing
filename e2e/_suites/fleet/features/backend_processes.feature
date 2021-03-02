@@ -34,3 +34,14 @@ Examples:
 | os     |
 | centos |
 | debian |
+
+@restart-agent
+Scenario Outline: Restarting the installed <os> agent
+  Given a "<os>" agent is deployed to Fleet with "tar" installer
+  When the "elastic-agent" process is "restarted" on the host
+  Then the "filebeat" process is in the "started" state on the host
+    And the "metricbeat" process is in the "started" state on the host
+Examples:
+| os     |
+| centos |
+| debian |
