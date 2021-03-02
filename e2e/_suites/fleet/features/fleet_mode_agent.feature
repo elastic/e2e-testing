@@ -57,7 +57,7 @@ Examples:
 | debian |
 
 @reenroll
-Scenario Outline: Re-enrolling the <os> agent
+Scenario Outline: Re-enrolling the <os> agent activates the agent in Fleet
   Given a "<os>" agent is deployed to Fleet with "tar" installer
     And the agent is un-enrolled
     And the "elastic-agent" process is "stopped" on the host
