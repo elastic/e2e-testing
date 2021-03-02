@@ -59,7 +59,7 @@ Examples:
 | debian |
 
 @unenroll
-Scenario Outline: Un-enrolling the <os> agent
+Scenario Outline: Un-enrolling the <os> agent stops backend processes
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the agent is un-enrolled
   Then the "elastic-agent" process is in the "started" state on the host

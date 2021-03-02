@@ -47,7 +47,7 @@ Examples:
 | debian |
 
 @unenroll
-Scenario Outline: Un-enrolling the <os> agent
+Scenario Outline: Un-enrolling the <os> agent deactivates the agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the agent is un-enrolled
   Then the agent is listed in Fleet as "inactive"
