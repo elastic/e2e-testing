@@ -46,8 +46,7 @@ pipeline {
     booleanParam(name: "BEATS_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the binary snapshots produced by Beats CI instead of the official releases")
     choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'TRACE', 'INFO'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
-    string(name: 'FLEET_STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for Fleet tests.')
-    string(name: 'METRICBEAT_STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for Metricbeat tests.')
+    string(name: 'STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
     string(name: 'METRICBEAT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the metricbeat to be used.')
     string(name: 'HELM_CHART_VERSION', defaultValue: '7.10.0', description: 'SemVer version of Helm chart to be used.')
     string(name: 'HELM_VERSION', defaultValue: '3.4.1', description: 'SemVer version of Helm to be used.')
@@ -72,9 +71,8 @@ pipeline {
         ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
         ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
         BEATS_USE_CI_SNAPSHOTS = "${params.BEATS_USE_CI_SNAPSHOTS}"
-        FLEET_STACK_VERSION = "${params.FLEET_STACK_VERSION.trim()}"
         METRICBEAT_VERSION = "${params.METRICBEAT_VERSION.trim()}"
-        METRICBEAT_STACK_VERSION = "${params.METRICBEAT_STACK_VERSION.trim()}"
+        STACK_VERSION = "${params.STACK_VERSION.trim()}"
         FORCE_SKIP_GIT_CHECKS = "${params.forceSkipGitChecks}"
         FORCE_SKIP_PRESUBMIT = "${params.forceSkipPresubmit}"
         HELM_CHART_VERSION = "${params.HELM_CHART_VERSION.trim()}"
@@ -310,8 +308,7 @@ def generateStep(Map args = [:]){
 def generateFunctionalTestStep(Map args = [:]){
   def platform = args.get('platform')
   def suite = args.get('suite')
-  def sneakCaseSuite = suite.toUpperCase().replaceAll("-", "_")
-  def stackVersion = env."${sneakCaseSuite}_STACK_VERSION"
+  def stackVersion = env."STACK_VERSION"
   def tags = args.get('tags')
 
   // We will decide whether to include the nightly tests in the execution at CI time, only.
