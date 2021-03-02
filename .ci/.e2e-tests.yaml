@@ -20,6 +20,8 @@ SUITES:
         tags: "agent_endpoint_integration"
       - name: "Stand-alone"
         tags: "stand_alone_agent"
+      - name: "Backend Processes"
+        tags: "backend_processes"
   - suite: "metricbeat"
     platforms:
       - "ubuntu-18.04"
