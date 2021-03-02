@@ -6,9 +6,9 @@ SUITES:
     scenarios:
       - name: "APM Server"
         tags: "apm-server"
-      - "Filebeat":
+      - name: "Filebeat"
         tags: "filebeat"
-      - "Metricbeat":
+      - name: "Metricbeat"
         tags: "metricbeat"
   - suite: "fleet"
     platforms:
