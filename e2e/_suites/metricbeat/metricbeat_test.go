@@ -408,7 +408,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 
 		err = docker.TagImage(
 			"docker.elastic.co/beats/metricbeat:"+metricbeatVersionBase,
-			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version,
+			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version+"-amd64",
 		)
 	}
 
@@ -436,7 +436,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"metricbeatConfigFile":  mts.configurationFile,
 		"metricbeatTag":         mts.Version,
 		"stackVersion":          stackVersion,
-		mts.ServiceName + "Tag": mts.ServiceVersion,
+		mts.ServiceName + "Tag": mts.ServiceVersion + "-amd64",
 		"serviceName":           mts.ServiceName,
 	}
 
