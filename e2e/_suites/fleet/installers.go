@@ -5,7 +5,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/elastic/e2e-testing/cli/docker"
@@ -17,6 +19,7 @@ import (
 type InstallerPackage interface {
 	Install(containerName string, token string) error
 	InstallCerts() error
+	PrintLogs(containerName string) error
 	Postinstall() error
 	Preinstall() error
 	Uninstall() error
@@ -25,7 +28,9 @@ type InstallerPackage interface {
 // BasePackage holds references to basic state for all installers
 type BasePackage struct {
 	binaryName string
+	commitFile string
 	image      string
+	logFile    string
 	profile    string
 	service    string
 }
@@ -56,16 +61,63 @@ func (i *BasePackage) Postinstall() error {
 	return systemctlRun(i.profile, i.image, i.service, "start")
 }
 
+// PrintLogs prints logs for the agent
+func (i *BasePackage) PrintLogs(containerName string) error {
+	err := i.resolveLogFile(containerName)
+	if err != nil {
+		return fmt.Errorf("Could not resolve log file: %v", err)
+	}
+
+	cmd := []string{
+		"cat", i.logFile,
+	}
+
+	err = execCommandInService(i.profile, i.image, i.service, cmd, false)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"containerName": containerName,
+			"command":       cmd,
+			"error":         err,
+			"logFile":       i.logFile,
+		}).Error("Could not get agent logs in the container")
+
+		return err
+	}
+
+	return nil
+}
+
+// resolveLogFile retrieves the full path of the log file in the underlying Docker container
+// calculating the hash commit if necessary
+func (i *BasePackage) resolveLogFile(containerName string) error {
+	if strings.Contains(i.logFile, "%s") {
+		hash, err := getElasticAgentHash(containerName, i.commitFile)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"containerName": containerName,
+				"error":         err,
+			}).Error("Could not get agent hash in the container")
+
+			return err
+		}
+
+		i.logFile = fmt.Sprintf(i.logFile, hash)
+	}
+
+	return nil
+}
+
 // DEBPackage implements operations for a DEB installer
 type DEBPackage struct {
 	BasePackage
 }
 
 // NewDEBPackage creates an instance for the DEB installer
-func NewDEBPackage(binaryName string, profile string, image string, service string) *DEBPackage {
+func NewDEBPackage(binaryName string, profile string, image string, service string, commitFile string, logFile string) *DEBPackage {
 	return &DEBPackage{
 		BasePackage: BasePackage{
 			binaryName: binaryName,
+			commitFile: commitFile,
 			image:      image,
 			profile:    profile,
 			service:    service,
@@ -121,11 +173,13 @@ type DockerPackage struct {
 }
 
 // NewDockerPackage creates an instance for the Docker installer
-func NewDockerPackage(binaryName string, profile string, image string, service string, installerPath string, ubi8 bool) *DockerPackage {
+func NewDockerPackage(binaryName string, profile string, image string, service string, installerPath string, ubi8 bool, commitFile string, logFile string) *DockerPackage {
 	return &DockerPackage{
 		BasePackage: BasePackage{
 			binaryName: binaryName,
+			commitFile: commitFile,
 			image:      image,
+			logFile:    logFile,
 			profile:    profile,
 			service:    service,
 		},
@@ -207,11 +261,13 @@ type RPMPackage struct {
 }
 
 // NewRPMPackage creates an instance for the RPM installer
-func NewRPMPackage(binaryName string, profile string, image string, service string) *RPMPackage {
+func NewRPMPackage(binaryName string, profile string, image string, service string, commitFile string, logFile string) *RPMPackage {
 	return &RPMPackage{
 		BasePackage: BasePackage{
 			binaryName: binaryName,
+			commitFile: commitFile,
 			image:      image,
+			logFile:    logFile,
 			profile:    profile,
 			service:    service,
 		},
@@ -267,11 +323,13 @@ type TARPackage struct {
 }
 
 // NewTARPackage creates an instance for the RPM installer
-func NewTARPackage(binaryName string, profile string, image string, service string) *TARPackage {
+func NewTARPackage(binaryName string, profile string, image string, service string, commitFile string, logFile string) *TARPackage {
 	return &TARPackage{
 		BasePackage: BasePackage{
 			binaryName: binaryName,
+			commitFile: commitFile,
 			image:      image,
+			logFile:    logFile,
 			profile:    profile,
 			service:    service,
 		},
@@ -380,4 +438,29 @@ func (i *TARPackage) WithOSFlavour(OSFlavour string) *TARPackage {
 func (i *TARPackage) WithVersion(version string) *TARPackage {
 	i.version = version
 	return i
+}
+
+// getElasticAgentHash uses Elastic Agent's home dir to read the file with agent's build hash
+// it will return the first six characters of the hash (short hash)
+func getElasticAgentHash(containerName string, commitFile string) (string, error) {
+	cmd := []string{
+		"cat", commitFile,
+	}
+
+	fullHash, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
+	if err != nil {
+		return "", err
+	}
+
+	runes := []rune(fullHash)
+	shortHash := string(runes[0:6])
+
+	log.WithFields(log.Fields{
+		"commitFile":    commitFile,
+		"containerName": containerName,
+		"hash":          fullHash,
+		"shortHash":     shortHash,
+	}).Debug("Agent build hash found")
+
+	return shortHash, nil
 }
