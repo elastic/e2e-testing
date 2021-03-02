@@ -74,13 +74,6 @@ func (i *BasePackage) PrintLogs(containerName string) error {
 
 	err = execCommandInService(i.profile, i.image, i.service, cmd, false)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"containerName": containerName,
-			"command":       cmd,
-			"error":         err,
-			"logFile":       i.logFile,
-		}).Error("Could not get agent logs in the container")
-
 		return err
 	}
 

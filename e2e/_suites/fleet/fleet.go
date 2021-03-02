@@ -59,7 +59,13 @@ func (fts *FleetTestSuite) afterScenario() {
 	if log.IsLevelEnabled(log.DebugLevel) {
 		installer := fts.getInstaller()
 
-		_ = installer.PrintLogsFn(fts.Hostname)
+		err := installer.PrintLogsFn(fts.Hostname)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"containerName": fts.Hostname,
+				"error":         err,
+			}).Warn("Could not get agent logs in the container")
+		}
 
 		// only call it when the elastic-agent is present
 		if !fts.ElasticAgentStopped {
