@@ -24,17 +24,6 @@ Examples:
 | centos |
 | debian |
 
-@stop-agent
-Scenario Outline: Stopping the <os> agent stops backend processes
-  Given a "<os>" agent is deployed to Fleet with "tar" installer
-  When the "elastic-agent" process is "stopped" on the host
-  Then the "filebeat" process is in the "stopped" state on the host
-    And the "metricbeat" process is in the "stopped" state on the host
-Examples:
-| os     |
-| centos |
-| debian |
-
 # @upgrade-agent
 @nightly
 Scenario Outline: Upgrading the installed <os> agent
