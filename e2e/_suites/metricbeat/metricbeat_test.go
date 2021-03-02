@@ -31,7 +31,7 @@ var developerMode = false
 
 var elasticAPMActive = false
 
-const metricbeatVersionBase = "8.0.0-SNAPSHOT"
+var metricbeatVersionBase = "8.0.0-SNAPSHOT"
 
 // metricbeatVersion is the version of the metricbeat to use
 // It can be overriden by METRICBEAT_VERSION env var
@@ -66,6 +66,9 @@ func setupSuite() {
 			"apm-environment": shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "local"),
 		}).Info("Current execution will be instrumented 🛠")
 	}
+
+	// check if base version is an alias
+	metricbeatVersionBase = e2e.GetElasticArtifactVersion(metricbeatVersionBase)
 
 	metricbeatVersion = shell.GetEnv("METRICBEAT_VERSION", metricbeatVersion)
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
