@@ -41,14 +41,12 @@ pipeline {
     booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify to Slack with green builds.")
     string(name: 'SLACK_CHANNEL', defaultValue: 'observablt-bots', description: 'The Slack channel where errors will be posted. For multiple channels, use a comma-separated list of channels')
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/7.10.0-9362413a/downloads/beats/elastic-agent/elastic-agent-7.10.0-SNAPSHOT-linux-x86_64.tar.gz')
-    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '7.10-SNAPSHOT', description: 'SemVer version of the stand-alone elastic-agent to be used for Fleet tests. You can use here the tag of your PR to test your changes')
+    string(name: 'BEAT_VERSION', defaultValue: '7.10-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
     string(name: 'ELASTIC_AGENT_STALE_VERSION', defaultValue: '7.10-SNAPSHOT', description: 'SemVer version of the stale stand-alone elastic-agent to be used for Fleet upgrade tests.')
     booleanParam(name: "BEATS_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the binary snapshots produced by Beats CI instead of the official releases")
     choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'TRACE', 'INFO'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
-    string(name: 'FLEET_STACK_VERSION', defaultValue: '7.10-SNAPSHOT', description: 'SemVer version of the stack to be used for Fleet tests.')
-    string(name: 'METRICBEAT_STACK_VERSION', defaultValue: '7.10-SNAPSHOT', description: 'SemVer version of the stack to be used for Metricbeat tests.')
-    string(name: 'METRICBEAT_VERSION', defaultValue: '7.10-SNAPSHOT', description: 'SemVer version of the metricbeat to be used.')
+    string(name: 'STACK_VERSION', defaultValue: '7.10-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
     string(name: 'HELM_CHART_VERSION', defaultValue: '7.10.0', description: 'SemVer version of Helm chart to be used.')
     string(name: 'HELM_VERSION', defaultValue: '3.4.1', description: 'SemVer version of Helm to be used.')
     string(name: 'HELM_KIND_VERSION', defaultValue: '0.8.1', description: 'SemVer version of Kind to be used.')
@@ -70,11 +68,9 @@ pipeline {
         NIGHTLY_SCENARIOS = "${params.NIGHTLY_SCENARIOS}"
         SLACK_CHANNEL = "${params.SLACK_CHANNEL.trim()}"
         ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
-        ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
+        BEAT_VERSION = "${params.BEAT_VERSION.trim()}"
         BEATS_USE_CI_SNAPSHOTS = "${params.BEATS_USE_CI_SNAPSHOTS}"
-        FLEET_STACK_VERSION = "${params.FLEET_STACK_VERSION.trim()}"
-        METRICBEAT_VERSION = "${params.METRICBEAT_VERSION.trim()}"
-        METRICBEAT_STACK_VERSION = "${params.METRICBEAT_STACK_VERSION.trim()}"
+        STACK_VERSION = "${params.STACK_VERSION.trim()}"
         FORCE_SKIP_GIT_CHECKS = "${params.forceSkipGitChecks}"
         FORCE_SKIP_PRESUBMIT = "${params.forceSkipPresubmit}"
         HELM_CHART_VERSION = "${params.HELM_CHART_VERSION.trim()}"
@@ -310,8 +306,6 @@ def generateStep(Map args = [:]){
 def generateFunctionalTestStep(Map args = [:]){
   def platform = args.get('platform')
   def suite = args.get('suite')
-  def sneakCaseSuite = suite.toUpperCase().replaceAll("-", "_")
-  def stackVersion = env."${sneakCaseSuite}_STACK_VERSION"
   def tags = args.get('tags')
 
   // We will decide whether to include the nightly tests in the execution at CI time, only.
@@ -335,7 +329,7 @@ def generateFunctionalTestStep(Map args = [:]){
           filebeat(output: "docker_logs_${suite}_${tags}.log", workdir: "${env.WORKSPACE}"){
             dir("${BASE_DIR}"){
               withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL"){
-                sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${stackVersion}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
+                sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
               }
             }
           }
