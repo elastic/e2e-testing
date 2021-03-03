@@ -37,9 +37,9 @@ pipeline {
       steps {
         dir("${BASE_DIR}") {
           sh '.ci/scripts/metrics.sh'
-          archiveArtifacts(allowEmptyArchive: true, artifacts: "*.json")
+          archiveArtifacts(allowEmptyArchive: true, artifacts: "metrics/*")
           script {
-            def bulkFile = 'report-bulk.json'
+            def bulkFile = 'metrics/report-bulk.json'
             if (fileExists(bulkFile)) {
               datafile = readFile(file: bulkFile)
               def secret = 'secret/observability-team/ci/jenkins-stats-cloud'

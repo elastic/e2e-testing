@@ -12,6 +12,9 @@ PREFIX_NUMBER='metrics_number_build_'
 PREFIX_TRANSFORMED='metrics_transformed_'
 OUTPUT_FILE='metrics_document.json'
 BULK_REPORT='report-bulk.json'
+FOLDER='metrics'
+
+mkdir -p $FOLDER
 
 collectBuilds() {
     find /var/lib/jenkins/jobs \
@@ -19,28 +22,28 @@ collectBuilds() {
         -type f \
         -name log \
         -mtime -1 \
-        -not -path "*PR-*" | xargs grep beats-ci-immutable | grep 'Running on' > $FILE_BRANCHES
+        -not -path "*PR-*" | xargs grep beats-ci-immutable > ${FOLDER}/$FILE_BRANCHES
 
     find /var/lib/jenkins/jobs \
         -maxdepth 9 \
         -type f \
         -name log \
         -mtime -1 \
-        -not -path "*PR-*" | wc -l > $PREFIX_NUMBER$FILE_BRANCHES
+        -not -path "*PR-*" | wc -l > ${FOLDER}/$PREFIX_NUMBER$FILE_BRANCHES
 
     find /var/lib/jenkins/jobs \
         -maxdepth 9 \
         -type f \
         -name log \
         -mtime -1 \
-        -path "*PR-*" | xargs grep beats-ci-immutable > $FILE_PRS
+        -path "*PR-*" | xargs grep beats-ci-immutable > ${FOLDER}/$FILE_PRS
 
     find /var/lib/jenkins/jobs \
         -maxdepth 9 \
         -type f \
         -name log \
         -mtime -1 \
-        -path "*PR-*" | wc -l > $PREFIX_NUMBER$FILE_PRS
+        -path "*PR-*" | wc -l > ${FOLDER}/$PREFIX_NUMBER$FILE_PRS
 }
 
 transform() {
@@ -78,16 +81,16 @@ getValue() {
 ##### MAIN
 echo "1. Collect builds in the last day for branches/tags with ephemeral workers"
 collectBuilds
-totalBranch=$(cat $PREFIX_NUMBER$FILE_BRANCHES)
-totalPR=$(cat $PREFIX_NUMBER$FILE_PRS)
+totalBranch=$(cat ${FOLDER}/$PREFIX_NUMBER$FILE_BRANCHES)
+totalPR=$(cat ${FOLDER}/$PREFIX_NUMBER$FILE_PRS)
 
 echo "2. Gather ephemeral workers for PRs"
-transform $FILE_BRANCHES $PREFIX_TRANSFORMED$FILE_BRANCHES
-transform $FILE_PRS $PREFIX_TRANSFORMED$FILE_PRS
+transform ${FOLDER}/$FILE_BRANCHES ${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES
+transform ${FOLDER}/$FILE_PRS ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS
 
 echo '3. Number of builds with reused workers'
-reusedWorkersBranch=$(lookForReusedWorkers $PREFIX_TRANSFORMED$FILE_BRANCHES)
-reusedWorkersPR=$(lookForReusedWorkers $PREFIX_TRANSFORMED$FILE_PRS)
+reusedWorkersBranch=$(lookForReusedWorkers ${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES)
+reusedWorkersPR=$(lookForReusedWorkers ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS)
 
 timestamp=$(date '+%Y-%m-%dT%H:%M:%S%z')
 cat > $OUTPUT_FILE <<EOF
@@ -105,7 +108,7 @@ cat > $OUTPUT_FILE <<EOF
 EOF
 
 echo "4. Look for each build with an immutable worker"
-[ -e "${BULK_REPORT}" ] && rm "${BULK_REPORT}" || true
+[ -e "${FOLDER}/${BULK_REPORT}" ] && rm "${FOLDER}/${BULK_REPORT}" || true
 find /var/lib/jenkins/jobs \
         -maxdepth 9 \
         -type f \
@@ -117,16 +120,18 @@ find /var/lib/jenkins/jobs \
         echo "   processing $line ... "
         result=$(getValue "$line" "result")
         startTime=$(getValue "$line" "startTime")
-        if [ $(grep -c "$line" "$PREFIX_TRANSFORMED$FILE_BRANCHES") -gt 1 ] ; then
+        if [ $(grep -c "$line" "${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES") -gt 1 ] ; then
+          grep "$line" "${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES"
           reuse=1
         else
-          if [ $(grep -c "$line" "$PREFIX_TRANSFORMED$FILE_PRS") -gt 1 ] ; then
+          if [ $(grep -c "$line" "${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS") -gt 1 ] ; then
+            grep "$line" "${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS"
             reuse=1
           else
             reuse=0
           fi
         fi
         json="{ \"file\": \"$line\", \"result\": \"${result}\", \"startTime\": \"${startTime}\", \"reuseWorker\": \"${reuse}\" }"
-        echo "{ \"index\":{} }" >> "${BULK_REPORT}"
-        echo "${json}" >> "${BULK_REPORT}"
+        echo "{ \"index\":{} }" >> "${FOLDER}/${BULK_REPORT}"
+        echo "${json}" >> "${FOLDER}/${BULK_REPORT}"
       done
