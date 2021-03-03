@@ -61,7 +61,7 @@ transform() {
         -e 's# 5.*##g' \
         -e 's# docker .*##g' \
         -e 's# immutable .*##g' \
-        -e 's#/var/lib.*##g' \
+        -e 's#\/var.*##2g' \
         -e 's#C:.*##g' \
         -e 's#: java.lang.InterruptedException.*##g' \
         -e 's# to send.*##g' \
