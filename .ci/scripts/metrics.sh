@@ -55,6 +55,18 @@ transform() {
         -e 's#log:.*Running#log: Running#g' \
         -e 's#Running on.*beats-ci#Running on beats-ci#g' \
         -e 's# in .*##g' \
+        -e 's#.*Running on beats-ci-immutable$##g' \
+        -e 's#Running on .*beats-ci-#log: Running on beats-ci-#g' \
+        -e 's# 4.*##g' \
+        -e 's# 5.*##g' \
+        -e 's# docker .*##g' \
+        -e 's# immutable .*##g' \
+        -e 's#/var/lib.*##g' \
+        -e 's#C:.*##g' \
+        -e 's#: java.lang.InterruptedException.*##g' \
+        -e 's# to send.*##g' \
+        -e 's# was marked offline.*##g' \
+        -e 's# . The agent.*##g' \
         -e 's#.c.elastic.*##g' "$1" | grep 'Running on' > "$2"
 }
 
@@ -101,7 +113,7 @@ reusedWorkersBranch=$(lookForReusedWorkers ${FOLDER}/$PREFIX_TRANSFORMED$FILE_BR
 reusedWorkersPR=$(lookForReusedWorkers ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS)
 
 timestamp=$(date '+%Y-%m-%dT%H:%M:%S%z')
-cat > $OUTPUT_FILE <<EOF
+cat > ${FOLDER}/$OUTPUT_FILE <<EOF
 {
   "branch": {
     "total": "${totalBranch}",
