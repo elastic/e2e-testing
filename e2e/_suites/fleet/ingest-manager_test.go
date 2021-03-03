@@ -40,7 +40,7 @@ const FleetProfileName = "fleet"
 var agentVersionBase = "8.0.0-SNAPSHOT"
 
 // agentVersion is the version of the agent to use
-// It can be overriden by ELASTIC_AGENT_VERSION env var
+// It can be overriden by BEAT_VERSION env var
 var agentVersion = agentVersionBase
 
 // agentStaleVersion is the version of the agent to use as a base during upgrade
@@ -80,7 +80,7 @@ func setUpSuite() {
 	agentVersionBase = e2e.GetElasticArtifactVersion(agentVersionBase)
 
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
-	agentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", agentVersionBase)
+	agentVersion = shell.GetEnv("BEAT_VERSION", agentVersionBase)
 
 	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
 	// check if stale version is an alias
@@ -99,14 +99,7 @@ func setUpSuite() {
 
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
-			Installers: map[string]ElasticAgentInstaller{
-				"centos-systemd-" + agentVersion: GetElasticAgentInstaller("centos", "systemd", agentVersion),
-				"centos-tar-" + agentVersion:     GetElasticAgentInstaller("centos", "tar", agentVersion),
-				"debian-systemd-" + agentVersion: GetElasticAgentInstaller("debian", "systemd", agentVersion),
-				"debian-tar-" + agentVersion:     GetElasticAgentInstaller("debian", "tar", agentVersion),
-				"docker-default-" + agentVersion: GetElasticAgentInstaller("docker", "default", agentVersion),
-				"docker-ubi8-" + agentVersion:    GetElasticAgentInstaller("docker", "ubi8", agentVersion),
-			},
+			Installers: map[string]ElasticAgentInstaller{}, // do not pre-initialise the map
 		},
 		StandAlone: &StandAloneTestSuite{},
 	}

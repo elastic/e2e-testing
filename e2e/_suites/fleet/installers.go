@@ -5,7 +5,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/elastic/e2e-testing/cli/docker"
@@ -17,6 +19,7 @@ import (
 type InstallerPackage interface {
 	Install(containerName string, token string) error
 	InstallCerts() error
+	PrintLogs(containerName string) error
 	Postinstall() error
 	Preinstall() error
 	Uninstall() error
@@ -25,7 +28,9 @@ type InstallerPackage interface {
 // BasePackage holds references to basic state for all installers
 type BasePackage struct {
 	binaryName string
+	commitFile string
 	image      string
+	logFile    string
 	profile    string
 	service    string
 }
@@ -56,16 +61,56 @@ func (i *BasePackage) Postinstall() error {
 	return systemctlRun(i.profile, i.image, i.service, "start")
 }
 
+// PrintLogs prints logs for the agent
+func (i *BasePackage) PrintLogs(containerName string) error {
+	err := i.resolveLogFile(containerName)
+	if err != nil {
+		return fmt.Errorf("Could not resolve log file: %v", err)
+	}
+
+	cmd := []string{
+		"cat", i.logFile,
+	}
+
+	err = execCommandInService(i.profile, i.image, i.service, cmd, false)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// resolveLogFile retrieves the full path of the log file in the underlying Docker container
+// calculating the hash commit if necessary
+func (i *BasePackage) resolveLogFile(containerName string) error {
+	if strings.Contains(i.logFile, "%s") {
+		hash, err := getElasticAgentHash(containerName, i.commitFile)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"containerName": containerName,
+				"error":         err,
+			}).Error("Could not get agent hash in the container")
+
+			return err
+		}
+
+		i.logFile = fmt.Sprintf(i.logFile, hash)
+	}
+
+	return nil
+}
+
 // DEBPackage implements operations for a DEB installer
 type DEBPackage struct {
 	BasePackage
 }
 
 // NewDEBPackage creates an instance for the DEB installer
-func NewDEBPackage(binaryName string, profile string, image string, service string) *DEBPackage {
+func NewDEBPackage(binaryName string, profile string, image string, service string, commitFile string, logFile string) *DEBPackage {
 	return &DEBPackage{
 		BasePackage: BasePackage{
 			binaryName: binaryName,
+			commitFile: commitFile,
 			image:      image,
 			profile:    profile,
 			service:    service,
@@ -80,16 +125,18 @@ func (i *DEBPackage) Install(containerName string, token string) error {
 
 // InstallCerts installs the certificates for a DEB package
 func (i *DEBPackage) InstallCerts() error {
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt-get", "update"}, false); err != nil {
+	return installCertsForDebian(i.profile, i.image, i.service)
+}
+func installCertsForDebian(profile string, image string, service string) error {
+	if err := execCommandInService(profile, image, service, []string{"apt-get", "update"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
+	if err := execCommandInService(profile, image, service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates", "f"}, false); err != nil {
+	if err := execCommandInService(profile, image, service, []string{"update-ca-certificates", "-f"}, false); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -119,11 +166,13 @@ type DockerPackage struct {
 }
 
 // NewDockerPackage creates an instance for the Docker installer
-func NewDockerPackage(binaryName string, profile string, image string, service string, installerPath string, ubi8 bool) *DockerPackage {
+func NewDockerPackage(binaryName string, profile string, image string, service string, installerPath string, ubi8 bool, commitFile string, logFile string) *DockerPackage {
 	return &DockerPackage{
 		BasePackage: BasePackage{
 			binaryName: binaryName,
+			commitFile: commitFile,
 			image:      image,
+			logFile:    logFile,
 			profile:    profile,
 			service:    service,
 		},
@@ -205,11 +254,13 @@ type RPMPackage struct {
 }
 
 // NewRPMPackage creates an instance for the RPM installer
-func NewRPMPackage(binaryName string, profile string, image string, service string) *RPMPackage {
+func NewRPMPackage(binaryName string, profile string, image string, service string, commitFile string, logFile string) *RPMPackage {
 	return &RPMPackage{
 		BasePackage: BasePackage{
 			binaryName: binaryName,
+			commitFile: commitFile,
 			image:      image,
+			logFile:    logFile,
 			profile:    profile,
 			service:    service,
 		},
@@ -223,19 +274,21 @@ func (i *RPMPackage) Install(containerName string, token string) error {
 
 // InstallCerts installs the certificates for a RPM package
 func (i *RPMPackage) InstallCerts() error {
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"yum", "check-update"}, false); err != nil {
+	return installCertsForCentos(i.profile, i.image, i.service)
+}
+func installCertsForCentos(profile string, image string, service string) error {
+	if err := execCommandInService(profile, image, service, []string{"yum", "check-update"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"yum", "install", "ca-certificates", "-y"}, false); err != nil {
+	if err := execCommandInService(profile, image, service, []string{"yum", "install", "ca-certificates", "-y"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-trust", "force-enable"}, false); err != nil {
+	if err := execCommandInService(profile, image, service, []string{"update-ca-trust", "force-enable"}, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-trust", "extract"}, false); err != nil {
+	if err := execCommandInService(profile, image, service, []string{"update-ca-trust", "extract"}, false); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -255,18 +308,21 @@ func (i *RPMPackage) Uninstall() error {
 type TARPackage struct {
 	BasePackage
 	// optional fields
-	arch     string
-	artifact string
-	OS       string
-	version  string
+	arch      string
+	artifact  string
+	OS        string
+	OSFlavour string // at this moment, centos or debian
+	version   string
 }
 
 // NewTARPackage creates an instance for the RPM installer
-func NewTARPackage(binaryName string, profile string, image string, service string) *TARPackage {
+func NewTARPackage(binaryName string, profile string, image string, service string, commitFile string, logFile string) *TARPackage {
 	return &TARPackage{
 		BasePackage: BasePackage{
 			binaryName: binaryName,
+			commitFile: commitFile,
 			image:      image,
+			logFile:    logFile,
 			profile:    profile,
 			service:    service,
 		},
@@ -287,17 +343,19 @@ func (i *TARPackage) Install(containerName string, token string) error {
 	return nil
 }
 
-// InstallCerts installs the certificates for a TAR package
+// InstallCerts installs the certificates for a TAR package, using the right OS package manager
 func (i *TARPackage) InstallCerts() error {
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt-get", "update"}, false); err != nil {
-		return err
+	if i.OSFlavour == "centos" {
+		return installCertsForCentos(i.profile, i.image, i.service)
+	} else if i.OSFlavour == "debian" {
+		return installCertsForDebian(i.profile, i.image, i.service)
 	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
-		return err
-	}
-	if err := execCommandInService(i.profile, i.image, i.service, []string{"update-ca-certificates", "-f"}, false); err != nil {
-		return err
-	}
+
+	log.WithFields(log.Fields{
+		"arch":      i.arch,
+		"OS":        i.OS,
+		"OSFlavour": i.OSFlavour,
+	}).Debug("Installation of certificates was skipped because of unknown OS flavour")
 
 	return nil
 }
@@ -363,8 +421,39 @@ func (i *TARPackage) WithOS(OS string) *TARPackage {
 	return i
 }
 
+// WithOSFlavour sets the OS flavour, at this moment centos or debian
+func (i *TARPackage) WithOSFlavour(OSFlavour string) *TARPackage {
+	i.OSFlavour = OSFlavour
+	return i
+}
+
 // WithVersion sets the version
 func (i *TARPackage) WithVersion(version string) *TARPackage {
 	i.version = version
 	return i
+}
+
+// getElasticAgentHash uses Elastic Agent's home dir to read the file with agent's build hash
+// it will return the first six characters of the hash (short hash)
+func getElasticAgentHash(containerName string, commitFile string) (string, error) {
+	cmd := []string{
+		"cat", commitFile,
+	}
+
+	fullHash, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
+	if err != nil {
+		return "", err
+	}
+
+	runes := []rune(fullHash)
+	shortHash := string(runes[0:6])
+
+	log.WithFields(log.Fields{
+		"commitFile":    commitFile,
+		"containerName": containerName,
+		"hash":          fullHash,
+		"shortHash":     shortHash,
+	}).Debug("Agent build hash found")
+
+	return shortHash, nil
 }

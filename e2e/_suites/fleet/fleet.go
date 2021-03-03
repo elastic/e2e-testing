@@ -35,15 +35,16 @@ const actionREMOVED = "removed"
 
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
-	Image          string // base image used to install the agent
-	InstallerType  string
-	Installers     map[string]ElasticAgentInstaller
-	Cleanup        bool
-	PolicyID       string // will be used to manage tokens
-	CurrentToken   string // current enrollment token
-	CurrentTokenID string // current enrollment tokenID
-	Hostname       string // the hostname of the container
-	Version        string // current elastic-agent version
+	Image               string // base image used to install the agent
+	InstallerType       string
+	Installers          map[string]ElasticAgentInstaller
+	Cleanup             bool
+	ElasticAgentStopped bool   // will be used to signal when the agent process can be called again in the tear-down stage
+	PolicyID            string // will be used to manage tokens
+	CurrentToken        string // current enrollment token
+	CurrentTokenID      string // current enrollment tokenID
+	Hostname            string // the hostname of the container
+	Version             string // current elastic-agent version
 	// integrations
 	Integration     IntegrationPackage // the installed integration
 	PolicyUpdatedAt string             // the moment the policy was updated
@@ -58,13 +59,20 @@ func (fts *FleetTestSuite) afterScenario() {
 	if log.IsLevelEnabled(log.DebugLevel) {
 		installer := fts.getInstaller()
 
-		if developerMode {
-			_ = installer.getElasticAgentLogs(fts.Hostname)
+		err := installer.PrintLogsFn(fts.Hostname)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"containerName": fts.Hostname,
+				"error":         err,
+			}).Warn("Could not get agent logs in the container")
 		}
 
-		err := installer.UninstallFn()
-		if err != nil {
-			log.Warnf("Could not uninstall the agent after the scenario: %v", err)
+		// only call it when the elastic-agent is present
+		if !fts.ElasticAgentStopped {
+			err := installer.UninstallFn()
+			if err != nil {
+				log.Warnf("Could not uninstall the agent after the scenario: %v", err)
+			}
 		}
 	}
 
@@ -108,6 +116,7 @@ func (fts *FleetTestSuite) afterScenario() {
 // beforeScenario creates the state needed by a scenario
 func (fts *FleetTestSuite) beforeScenario() {
 	fts.Cleanup = false
+	fts.ElasticAgentStopped = false
 
 	fts.Version = agentVersion
 
@@ -138,7 +147,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
-	s.Step(`^certs for "([^"]*)" are installed$`, fts.installCerts)
+	s.Step(`^certs are installed$`, fts.installCerts)
 
 	// endpoint steps
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)
@@ -175,7 +184,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
 }
 
-func (fts *FleetTestSuite) installCerts(targetOS string) error {
+func (fts *FleetTestSuite) installCerts() error {
 	installer := fts.getInstaller()
 	if installer.InstallCertsFn == nil {
 		log.WithFields(log.Fields{
@@ -187,7 +196,19 @@ func (fts *FleetTestSuite) installCerts(targetOS string) error {
 		return errors.New("no installer found")
 	}
 
-	return installer.InstallCertsFn()
+	err := installer.InstallCertsFn()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"agentVersion":      agentVersion,
+			"agentStaleVersion": agentStaleVersion,
+			"error":             err,
+			"installer":         installer,
+			"version":           fts.Version,
+		}).Error("Could not install the certificates")
+		return err
+	}
+
+	return nil
 }
 
 func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
@@ -300,7 +321,17 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 }
 
 func (fts *FleetTestSuite) getInstaller() ElasticAgentInstaller {
-	return fts.Installers[fts.Image+"-"+fts.InstallerType+"-"+fts.Version]
+	// check if the agent is already cached
+	if i, exists := fts.Installers[fts.Image+"-"+fts.InstallerType+"-"+fts.Version]; exists {
+		return i
+	}
+
+	installer := GetElasticAgentInstaller(fts.Image, fts.InstallerType, fts.Version)
+
+	// cache the new installer
+	fts.Installers[fts.Image+"-"+fts.InstallerType+"-"+fts.Version] = installer
+
+	return installer
 }
 
 func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state string) error {
@@ -315,7 +346,17 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	} else if state == "restarted" {
 		return systemctlRun(profile, installer.image, serviceName, "restart")
 	} else if state == "uninstalled" {
-		return installer.UninstallFn()
+		err := installer.UninstallFn()
+		if err != nil {
+			return err
+		}
+
+		// signal that the elastic-agent was uninstalled
+		if process == ElasticAgentProcessName {
+			fts.ElasticAgentStopped = true
+		}
+
+		return nil
 	} else if state != "stopped" {
 		return godog.ErrPending
 	}
