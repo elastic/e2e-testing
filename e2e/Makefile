@@ -117,7 +117,7 @@ fleet-fleet-ci-snapshots:
 
 .PHONY: fleet-fleet-pr-ci-snapshots
 fleet-fleet-pr-ci-snapshots:
-	SUITE="fleet" TAGS="fleet_mode_agent" TIMEOUT_FACTOR=3 LOG_LEVEL=TRACE BEATS_USE_CI_SNAPSHOTS=true DEVELOPER_MODE=true ELASTIC_AGENT_VERSION=pr-14954 $(MAKE) functional-test
+	SUITE="fleet" TAGS="fleet_mode_agent" TIMEOUT_FACTOR=3 LOG_LEVEL=TRACE BEATS_USE_CI_SNAPSHOTS=true DEVELOPER_MODE=true BEAT_VERSION=pr-14954 $(MAKE) functional-test
 
 .PHONY: fleet-nightly
 fleet-nightly:
