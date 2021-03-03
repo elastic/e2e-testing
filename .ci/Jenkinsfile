@@ -36,7 +36,7 @@ pipeline {
       options { skipDefaultCheckout() }
       steps {
         dir("${BASE_DIR}") {
-          sh '.ci/scrips/metrics.sh'
+          sh '.ci/scripts/metrics.sh'
           archiveArtifacts(allowEmptyArchive: true, artifacts: "document.json")
           echo 'TODO: upload data to ES'
         }
