@@ -37,7 +37,7 @@ const ElasticAgentServiceName = "elastic-agent"
 // FleetProfileName the name of the profile to run the runtime, backend services
 const FleetProfileName = "fleet"
 
-var agentVersionBase = "8.0.0-SNAPSHOT"
+var agentVersionBase = "7.12-SNAPSHOT"
 
 // agentVersion is the version of the agent to use
 // It can be overriden by BEAT_VERSION env var
@@ -45,7 +45,7 @@ var agentVersion = agentVersionBase
 
 // agentStaleVersion is the version of the agent to use as a base during upgrade
 // It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var agentStaleVersion = "7.10-SNAPSHOT"
+var agentStaleVersion = "7.11-SNAPSHOT"
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var

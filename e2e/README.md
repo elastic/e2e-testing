@@ -103,8 +103,8 @@ In order to debug the `godog` tests, 1) you must have the `runner_test.go` file 
 ## Regression testing
 We have built the project and the CI job in a manner that it is possible to override different parameters about projects versions, so that we can set i.e. the version of the Elastic Stack to be used, or the version of the Elastic Agent. There also exist maintenance branches where we set the specific versions used for the tests:
 
-- **7.10.x**: will use `7.10.x` alias for the Elastic Stack, the Agent and Metricbeat
 - **7.11.x**: will use `7.11.x` alias for the Elastic Stack, the Agent and Metricbeat
+- **7.12.x**: will use `7.12.x` alias for the Elastic Stack, the Agent and Metricbeat
 - **7.x**: will use `7.x` alias for the Elastic Stack, the Agent and Metricbeat
 - **master**: will use `8.0.0-SNAPSHOT` for the Elastic Stack, the Agent and Metricbeat, representing the current development version of the different products under test.
 

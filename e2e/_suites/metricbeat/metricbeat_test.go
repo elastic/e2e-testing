@@ -31,7 +31,7 @@ var developerMode = false
 
 var elasticAPMActive = false
 
-var metricbeatVersionBase = "8.0.0-SNAPSHOT"
+var metricbeatVersionBase = "7.12-SNAPSHOT"
 
 // metricbeatVersion is the version of the metricbeat to use
 // It can be overriden by BEAT_VERSION env var
