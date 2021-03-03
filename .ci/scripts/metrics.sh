@@ -54,7 +54,7 @@ transform() {
         -e 's#.*Also:.*##g' \
         -e 's#log:.*Running#log: Running#g' \
         -e 's#Running on.*beats-ci#Running on beats-ci#g' \
-        -e 's# in ##g' \
+        -e 's# in .*##g' \
         -e 's#.c.elastic.*##g' "$1" | grep 'Running on' > "$2"
 }
 
@@ -67,6 +67,14 @@ lookForReusedWorkers() {
         | cut -d' ' -f2 \
         | sort -u \
         | wc -l
+}
+
+isReused() {
+  cat "$1" \
+        | sort \
+        | uniq -c \
+        | grep -v '   1' \
+        | grep $2
 }
 
 getValue() {
@@ -120,12 +128,10 @@ find /var/lib/jenkins/jobs \
         echo "   processing $line ... "
         result=$(getValue "$line" "result")
         startTime=$(getValue "$line" "startTime")
-        if [ $(grep -c "$line" "${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES") -gt 1 ] ; then
-          grep "$line" "${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES"
+        if isReused ${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES "$line" ; then
           reuse=1
         else
-          if [ $(grep -c "$line" "${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS") -gt 1 ] ; then
-            grep "$line" "${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS"
+          if isReused ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS "$line" ; then
             reuse=1
           else
             reuse=0
