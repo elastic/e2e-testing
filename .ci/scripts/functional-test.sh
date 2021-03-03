@@ -13,13 +13,13 @@ set -euxo pipefail
 #   - SUITE - that's the suite to be tested. Default '' which means all of them.
 #   - TAGS - that's the tags to be tested. Default '' which means all of them.
 #   - STACK_VERSION - that's the version of the stack to be tested. Default '7.11.0-SNAPSHOT'.
-#   - METRICBEAT_VERSION - that's the version of the metricbeat to be tested. Default '7.11.0-SNAPSHOT'.
+#   - BEAT_VERSION - that's the version of the metricbeat to be tested. Default '7.11.0-SNAPSHOT'.
 #
 
 SUITE=${1:-''}
 TAGS=${2:-''}
 STACK_VERSION=${3:-'7.11.0-SNAPSHOT'}
-METRICBEAT_VERSION=${4:-'7.11.0-SNAPSHOT'}
+BEAT_VERSION=${4:-'7.11.0-SNAPSHOT'}
 
 ## Install the required dependencies for the given SUITE
 .ci/scripts/install-test-dependencies.sh "${SUITE}"
@@ -29,4 +29,4 @@ mkdir -p outputs
 
 REPORT="$(pwd)/outputs/TEST-${SUITE}"
 
-SUITE=${SUITE} TAGS="${TAGS}" FORMAT=junit:${REPORT}.xml STACK_VERSION=${STACK_VERSION} METRICBEAT_VERSION=${METRICBEAT_VERSION} make --no-print-directory -C e2e functional-test
+SUITE=${SUITE} TAGS="${TAGS}" FORMAT=junit:${REPORT}.xml STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} make --no-print-directory -C e2e functional-test
