@@ -37,8 +37,16 @@ pipeline {
       steps {
         dir("${BASE_DIR}") {
           sh '.ci/scripts/metrics.sh'
-          archiveArtifacts(allowEmptyArchive: true, artifacts: "document.json")
-          echo 'TODO: upload data to ES'
+          archiveArtifacts(allowEmptyArchive: true, artifacts: "*.json")
+          script {
+            def bulkFile = 'report-bulk.json'
+            if (fileExists(bulkFile)) {
+              datafile = readFile(file: bulkFile)
+              def secret = 'secret/observability-team/ci/jenkins-stats-cloud'
+              def es = getVaultSecret(secret: secret)?.data.url
+              sendDataToElasticsearch(es: es, secret: secret, data: datafile, restCall: '/reuse/_bulk/')
+            }
+          }
         }
       }
     }
