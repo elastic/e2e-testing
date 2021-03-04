@@ -44,7 +44,8 @@ pipeline {
               datafile = readFile(file: bulkFile)
               def secret = 'secret/observability-team/ci/jenkins-stats-cloud'
               def es = getVaultSecret(secret: secret)?.data.url
-              sendDataToElasticsearch(es: es, secret: secret, data: datafile, restCall: '/reuse/_bulk/')
+              def response = sendDataToElasticsearch(es: es, secret: secret, data: datafile, restCall: '/reuse/_bulk/')
+              log(level: 'DEBUG', text: "sendDataToElasticsearch: ${response}")
             }
           }
         }
