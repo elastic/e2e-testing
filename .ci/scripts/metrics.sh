@@ -172,7 +172,8 @@ find /var/lib/jenkins/jobs \
 while IFS= read -r line; do
   echo "   processing $line ... "
   result=$(getValue "$line" "result")
-  timestamp=$(stat "$line" -c "%z")
+  access=$(stat "$line" -c "%z")
+  timestamp=$(date --date="$access" -Iseconds)
   if echo "$line" | grep -q 'PR-*' ; then
     reuse=$(isReused ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS "$line")
     reuseWindows=$(isReusedWindows ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS "$line")
