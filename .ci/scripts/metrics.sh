@@ -4,7 +4,7 @@
 ## or more contributor license agreements. Licensed under the Elastic License;
 ## you may not use this file except in compliance with the Elastic License.
 
-set -xe
+set -e
 
 FILE_BRANCHES='branches.txt'
 FILE_PRS='prs.txt'
