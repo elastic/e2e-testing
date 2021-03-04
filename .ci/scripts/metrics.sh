@@ -82,11 +82,43 @@ lookForReusedWorkers() {
 }
 
 isReused() {
-  cat "$1" \
+  if cat "$1" \
         | sort \
         | uniq -c \
         | grep -v '   1' \
-        | grep $2
+        | grep $2 ; then
+    echo 1
+  else
+    echo 0
+  fi
+}
+
+isReusedWindows() {
+  if cat "$1" \
+        | sort \
+        | uniq -c \
+        | grep -v '   1' \
+        | grep 'beats-ci-immutable' \
+        | grep '-windows' \
+        | grep $2 ; then
+    echo 1
+  else
+    echo 0
+  fi
+}
+
+isReusedLinux() {
+  if cat "$1" \
+        | sort \
+        | uniq -c \
+        | grep -v '   1' \
+        | grep 'beats-ci-immutable' \
+        | grep -v '-windows' \
+        | grep $2 ; then
+    echo 1
+  else
+    echo 0
+  fi
 }
 
 getValue() {
@@ -139,17 +171,17 @@ find /var/lib/jenkins/jobs \
       | while IFS= read -r line; do
         echo "   processing $line ... "
         result=$(getValue "$line" "result")
-        startTime=$(getValue "$line" "startTime")
-        if isReused ${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES "$line" ; then
-          reuse=1
+        timestamp=$(stat "$line" -c "%z")
+        if echo "$line" | grep -q 'PR-*' ; then
+          reuse=$(isReused ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS "$line")
+          reuseWindows=$(isReusedWindows ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS "$line")
+          reuseLinux=$(isReusedLinux ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS "$line")
         else
-          if isReused ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS "$line" ; then
-            reuse=1
-          else
-            reuse=0
-          fi
+          reuse=$(isReused ${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES "$line")
+          reuseWindows=$(isReusedWindows ${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES "$line")
+          reuseLinux=$(isReusedLinux ${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES "$line")
         fi
-        json="{ \"file\": \"$line\", \"result\": \"${result}\", \"startTime\": \"${startTime}\", \"reuseWorker\": \"${reuse}\" }"
+        json="{ \"file\": \"$line\", \"result\": \"${result}\", \"startTime\": \"${timestamp}\", \"reuseWorker\": \"${reuse}\", \"reuseLinux\": \"${reuseLinux}\", \"reuseWindows\": \"${reuseWindows}\" }"
         echo "{ \"index\":{} }" >> "${FOLDER}/${BULK_REPORT}"
         echo "${json}" >> "${FOLDER}/${BULK_REPORT}"
       done
