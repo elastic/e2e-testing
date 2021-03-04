@@ -7,8 +7,8 @@ pipeline {
   environment {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
-    NIGHTLY_TAG="@nightly"
     NOTIFY_TO = credentials('notify-to')
+    PIPELINE_LOG_LEVEL='DEBUG'
   }
   options {
     timeout(time: 1, unit: 'HOURS')
