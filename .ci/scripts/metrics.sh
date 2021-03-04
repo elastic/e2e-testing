@@ -86,7 +86,7 @@ isReused() {
         | sort \
         | uniq -c \
         | grep -v '   1' \
-        | grep $2 ; then
+        | grep -q $2 ; then
     echo 1
   else
     echo 0
@@ -99,8 +99,8 @@ isReusedWindows() {
         | uniq -c \
         | grep -v '   1' \
         | grep 'beats-ci-immutable' \
-        | grep '-windows' \
-        | grep $2 ; then
+        | grep 'windows' \
+        | grep -q $2 ; then
     echo 1
   else
     echo 0
@@ -113,8 +113,8 @@ isReusedLinux() {
         | uniq -c \
         | grep -v '   1' \
         | grep 'beats-ci-immutable' \
-        | grep -v '-windows' \
-        | grep $2 ; then
+        | grep -v 'windows' \
+        | grep -q $2 ; then
     echo 1
   else
     echo 0
@@ -124,7 +124,7 @@ isReusedLinux() {
 getValue() {
     folder=$(dirname "$1")
     if [ -e "${folder}/build.xml" ] ; then
-      grep "<$2>" "${folder}/build.xml" \
+      grep --text "<$2>" "${folder}/build.xml" \
                     | head -n1 \
                     | sed -e "s#.*<$2>##g" -e 's#<.*##g'
     fi
@@ -166,22 +166,23 @@ find /var/lib/jenkins/jobs \
         -type f \
         -name log \
         -mtime -1 \
-      | xargs grep beats-ci-immutable \
-      | cut -d":" -f1 | sort -u \
-      | while IFS= read -r line; do
-        echo "   processing $line ... "
-        result=$(getValue "$line" "result")
-        timestamp=$(stat "$line" -c "%z")
-        if echo "$line" | grep -q 'PR-*' ; then
-          reuse=$(isReused ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS "$line")
-          reuseWindows=$(isReusedWindows ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS "$line")
-          reuseLinux=$(isReusedLinux ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS "$line")
-        else
-          reuse=$(isReused ${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES "$line")
-          reuseWindows=$(isReusedWindows ${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES "$line")
-          reuseLinux=$(isReusedLinux ${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES "$line")
-        fi
-        json="{ \"file\": \"$line\", \"result\": \"${result}\", \"startTime\": \"${timestamp}\", \"reuseWorker\": \"${reuse}\", \"reuseLinux\": \"${reuseLinux}\", \"reuseWindows\": \"${reuseWindows}\" }"
-        echo "{ \"index\":{} }" >> "${FOLDER}/${BULK_REPORT}"
-        echo "${json}" >> "${FOLDER}/${BULK_REPORT}"
-      done
+      | xargs grep --text beats-ci-immutable \
+      | cut -d":" -f1 | sort -u > builds.tmp
+
+while IFS= read -r line; do
+  echo "   processing $line ... "
+  result=$(getValue "$line" "result")
+  timestamp=$(stat "$line" -c "%z")
+  if echo "$line" | grep -q 'PR-*' ; then
+    reuse=$(isReused ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS "$line")
+    reuseWindows=$(isReusedWindows ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS "$line")
+    reuseLinux=$(isReusedLinux ${FOLDER}/$PREFIX_TRANSFORMED$FILE_PRS "$line")
+  else
+    reuse=$(isReused ${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES "$line")
+    reuseWindows=$(isReusedWindows ${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES "$line")
+    reuseLinux=$(isReusedLinux ${FOLDER}/$PREFIX_TRANSFORMED$FILE_BRANCHES "$line")
+  fi
+  json="{ \"file\": \"$line\", \"result\": \"${result}\", \"startTime\": \"${timestamp}\", \"reuseWorker\": \"${reuse}\", \"reuseLinux\": \"${reuseLinux}\", \"reuseWindows\": \"${reuseWindows}\" }"
+  echo "{ \"index\":{} }" >> "${FOLDER}/${BULK_REPORT}"
+  echo "${json}" >> "${FOLDER}/${BULK_REPORT}"
+done < builds.tmp
