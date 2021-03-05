@@ -290,8 +290,8 @@ func TestBuildArtifactName(t *testing.T) {
 	})
 
 	t.Run("For Docker for a Pull Request (amd64)", func(t *testing.T) {
-		defer os.Unsetenv("ELASTIC_AGENT_VERSION")
-		os.Setenv("ELASTIC_AGENT_VERSION", "pr-12345")
+		defer os.Unsetenv("BEAT_VERSION")
+		os.Setenv("BEAT_VERSION", "pr-12345")
 
 		artifact = "elastic-agent"
 		arch := "amd64"

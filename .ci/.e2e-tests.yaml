@@ -6,9 +6,9 @@ SUITES:
     scenarios:
       - name: "APM Server"
         tags: "apm-server"
-      - "Filebeat":
+      - name: "Filebeat"
         tags: "filebeat"
-      - "Metricbeat":
+      - name: "Metricbeat"
         tags: "metricbeat"
   - suite: "fleet"
     platforms:
@@ -21,6 +21,8 @@ SUITES:
         tags: "agent_endpoint_integration"
       - name: "Stand-alone"
         tags: "stand_alone_agent"
+      - name: "Backend Processes"
+        tags: "backend_processes"
   - suite: "metricbeat"
     platforms:
       - "arm"
