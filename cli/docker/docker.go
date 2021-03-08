@@ -201,6 +201,7 @@ func LoadImage(imagePath string) error {
 	}
 
 	log.WithFields(log.Fields{
+		"image":    fileNamePath,
 		"response": imageLoadResponse,
 	}).Debug("Docker image loaded successfully")
 	return nil

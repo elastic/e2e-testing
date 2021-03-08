@@ -5,6 +5,8 @@
 package cmd
 
 import (
+	"context"
+
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/cli/services"
 	log "github.com/sirupsen/logrus"
@@ -55,7 +57,7 @@ func buildStopServiceCommand(srv string) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
-			err := serviceManager.StopCompose(false, []string{srv})
+			err := serviceManager.StopCompose(context.Background(), false, []string{srv})
 			if err != nil {
 				log.WithFields(log.Fields{
 					"service": srv,
@@ -73,7 +75,7 @@ func buildStopProfileCommand(key string, profile config.Profile) *cobra.Command 
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := services.NewServiceManager()
 
-			err := serviceManager.StopCompose(true, []string{key})
+			err := serviceManager.StopCompose(context.Background(), true, []string{key})
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": key,
