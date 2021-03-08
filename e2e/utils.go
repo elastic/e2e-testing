@@ -151,11 +151,13 @@ func FetchBeatsBinary(artifactName string, artifact string, version string, fall
 // GetArchitecture retrieves if the underlying system platform is arm64 or amd64
 func GetArchitecture() string {
 	arch := "amd64"
-	if os.Getenv("GOARCH") == "arm64" {
+
+	envArch := os.Getenv("GOARCH")
+	if envArch == "arm64" {
 		arch = "arm64"
 	}
 
-	log.Debugf("Golang's architecture is %s", arch)
+	log.Debugf("Golang's architecture is %s (%s)", arch, envArch)
 	return arch
 }
 
