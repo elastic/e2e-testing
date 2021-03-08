@@ -6,6 +6,7 @@ package shell
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"os/exec"
 	"strconv"
@@ -30,7 +31,7 @@ func CheckInstalledSoftware(binaries []string) {
 // - workspace: represents the location where to execute the command
 // - command: represents the name of the binary to execute
 // - args: represents the arguments to be passed to the command
-func Execute(workspace string, command string, args ...string) (string, error) {
+func Execute(ctx context.Context, workspace string, command string, args ...string) (string, error) {
 	log.WithFields(log.Fields{
 		"command": command,
 		"args":    args,

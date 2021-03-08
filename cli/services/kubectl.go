@@ -5,6 +5,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 
@@ -90,7 +91,7 @@ func (k *Kubectl) GetResourceSelector(resourceType, resource string) (string, er
 
 // Run a kubectl command and return the output
 func (k *Kubectl) Run(args ...string) (string, error) {
-	return shell.Execute(".", "kubectl", args...)
+	return shell.Execute(context.Background(), ".", "kubectl", args...)
 }
 
 // jsonToObj Converts a JSON string to a map[string]interface{}.

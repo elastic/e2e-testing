@@ -5,6 +5,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"strings"
 
@@ -45,7 +46,7 @@ func (h *helm3X) AddRepo(repo string, url string) error {
 		"repo", "add", repo, url,
 	}
 
-	output, err := helmExecute(args...)
+	output, err := helmExecute(context.Background(), args...)
 	if err != nil {
 		return err
 	}
@@ -63,7 +64,7 @@ func (h *helm3X) DeleteChart(chart string) error {
 		"delete", chart,
 	}
 
-	output, err := helmExecute(args...)
+	output, err := helmExecute(context.Background(), args...)
 	if err != nil {
 		return err
 	}
@@ -81,7 +82,7 @@ func (h *helm3X) InstallChart(name string, chart string, version string, flags [
 	}
 	args = append(args, flags...)
 
-	output, err := helmExecute(args...)
+	output, err := helmExecute(context.Background(), args...)
 	if err != nil {
 		return err
 	}
@@ -95,8 +96,8 @@ func (h *helm3X) InstallChart(name string, chart string, version string, flags [
 	return nil
 }
 
-func helmExecute(args ...string) (string, error) {
-	output, err := shell.Execute(".", "helm", args...)
+func helmExecute(ctx context.Context, args ...string) (string, error) {
+	output, err := shell.Execute(ctx, ".", "helm", args...)
 	if err != nil {
 		return "", err
 	}
