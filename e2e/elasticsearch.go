@@ -193,13 +193,13 @@ func search(ctx context.Context, indexName string, query map[string]interface{})
 
 // WaitForElasticsearch waits for elasticsearch running in localhost:9200 to be healthy, returning false
 // if elasticsearch does not get healthy status in a defined number of minutes.
-func WaitForElasticsearch(maxTimeoutMinutes time.Duration) (bool, error) {
-	return WaitForElasticsearchFromHostPort("localhost", 9200, maxTimeoutMinutes)
+func WaitForElasticsearch(ctx context.Context, maxTimeoutMinutes time.Duration) (bool, error) {
+	return WaitForElasticsearchFromHostPort(ctx, "localhost", 9200, maxTimeoutMinutes)
 }
 
 // WaitForElasticsearchFromHostPort waits for an elasticsearch running in a host:port to be healthy, returning false
 // if elasticsearch does not get healthy status in a defined number of minutes.
-func WaitForElasticsearchFromHostPort(host string, port int, maxTimeoutMinutes time.Duration) (bool, error) {
+func WaitForElasticsearchFromHostPort(ctx context.Context, host string, port int, maxTimeoutMinutes time.Duration) (bool, error) {
 	exp := GetExponentialBackOff(maxTimeoutMinutes)
 
 	retryCount := 1
@@ -213,6 +213,11 @@ func WaitForElasticsearchFromHostPort(host string, port int, maxTimeoutMinutes t
 
 			return err
 		}
+
+		span, _ := apm.StartSpanOptions(ctx, "Health", "elasticsearch.health", apm.SpanOptions{
+			Parent: apm.SpanFromContext(ctx).TraceContext(),
+		})
+		defer span.End()
 
 		if _, err := esClient.Cluster.Health(); err != nil {
 			log.WithFields(log.Fields{
