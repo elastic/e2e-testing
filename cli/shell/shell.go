@@ -6,12 +6,14 @@ package shell
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // CheckInstalledSoftware checks that the required software is present
@@ -30,7 +32,12 @@ func CheckInstalledSoftware(binaries []string) {
 // - workspace: represents the location where to execute the command
 // - command: represents the name of the binary to execute
 // - args: represents the arguments to be passed to the command
-func Execute(workspace string, command string, args ...string) (string, error) {
+func Execute(ctx context.Context, workspace string, command string, args ...string) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Executing shell command", "shell.command.execute", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	log.WithFields(log.Fields{
 		"command": command,
 		"args":    args,
