@@ -21,28 +21,28 @@ collectBuilds() {
         -maxdepth 9 \
         -type f \
         -name log \
-        -mtime -1 \
+        -mtime -0.5 \
         -not -path "*PR-*" | xargs grep beats-ci-immutable > ${FOLDER}/$FILE_BRANCHES
 
     find /var/lib/jenkins/jobs \
         -maxdepth 9 \
         -type f \
         -name log \
-        -mtime -1 \
+        -mtime -0.5 \
         -not -path "*PR-*" | wc -l > ${FOLDER}/$PREFIX_NUMBER$FILE_BRANCHES
 
     find /var/lib/jenkins/jobs \
         -maxdepth 9 \
         -type f \
         -name log \
-        -mtime -1 \
+        -mtime -0.5 \
         -path "*PR-*" | xargs grep beats-ci-immutable > ${FOLDER}/$FILE_PRS
 
     find /var/lib/jenkins/jobs \
         -maxdepth 9 \
         -type f \
         -name log \
-        -mtime -1 \
+        -mtime -0.5 \
         -path "*PR-*" | wc -l > ${FOLDER}/$PREFIX_NUMBER$FILE_PRS
 }
 
@@ -165,7 +165,7 @@ find /var/lib/jenkins/jobs \
         -maxdepth 9 \
         -type f \
         -name log \
-        -mtime -1 \
+        -mtime -0.5 \
       | xargs grep --text beats-ci-immutable \
       | cut -d":" -f1 | sort -u > builds.tmp
 
