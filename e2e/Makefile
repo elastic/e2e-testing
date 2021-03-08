@@ -43,9 +43,9 @@ TAGS_VALUE="~skip"
 endif
 endif
 
-GO_IMAGE_TAG?='stretch'
-GOOS?='linux'
-GOARCH?='amd64'
+GO_IMAGE_TAG?=stretch
+GOOS?=linux
+GOARCH?=amd64
 
 TEST_TIMEOUT?=5m
 
