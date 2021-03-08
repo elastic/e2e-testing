@@ -393,7 +393,7 @@ func (ts *HelmChartTestSuite) install(ctx context.Context, chart string) error {
 		defer span.End()
 
 		// Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes
-		_, err := kubectl.Run(ts.currentContext, "apply", "-f", "https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml")
+		_, err := kubectl.Run(ctx, "apply", "-f", "https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml")
 		if err != nil {
 			log.Errorf("Could not apply Rancher Local Path Provisioner: %v", err)
 			return err
