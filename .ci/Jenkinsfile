@@ -341,6 +341,7 @@ def generateFunctionalTestStep(Map args = [:]){
               withEnv(["GOARCH=${goArch}"]) {
                 withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL"){
                   whenTrue(goArch == 'arm64'){
+                    sh script: "docker-compose --version", label: "Check compose version"
                     // defensive programming: clean up test-framework workspace and docker state on arm64
                     sh script: "make clean", label: "Clean state for non-immutable arm workers"
                   }
