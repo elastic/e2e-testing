@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/elastic/e2e-testing/cli/services"
 	"strings"
 	"time"
 
@@ -456,4 +457,32 @@ func getElasticAgentHash(containerName string, commitFile string) (string, error
 	}).Debug("Agent build hash found")
 
 	return shortHash, nil
+}
+
+func execCommandInService(profile string, image string, serviceName string, cmds []string, detach bool) error {
+	serviceManager := services.NewServiceManager()
+
+	composes := []string{
+		profile, // profile name
+		image,   // image for the service
+	}
+	composeArgs := []string{"exec", "-T"}
+	if detach {
+		composeArgs = append(composeArgs, "-d")
+	}
+	composeArgs = append(composeArgs, serviceName)
+	composeArgs = append(composeArgs, cmds...)
+
+	err := serviceManager.RunCommand(profile, composes, composeArgs, profileEnv)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command": cmds,
+			"error":   err,
+			"service": serviceName,
+		}).Error("Could not execute command in container")
+
+		return err
+	}
+
+	return nil
 }
