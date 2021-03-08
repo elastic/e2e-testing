@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/elastic/e2e-testing/cli/shell"
+	"go.elastic.co/apm"
 )
 
 // Resource hide the real type of the enum
@@ -40,8 +41,13 @@ type Kubectl struct {
 }
 
 // GetStringResourcesBySelector Use kubectl to get a resource identified by a selector, return the resource in a string.
-func (k *Kubectl) GetStringResourcesBySelector(resourceType, selector string) (string, error) {
-	output, err := k.Run("get", resourceType, "--selector", selector, "-o", "json")
+func (k *Kubectl) GetStringResourcesBySelector(ctx context.Context, resourceType, selector string) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Getting String resource by selector", "kubectl.stringResources.getBySelector", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	output, err := k.Run(ctx, "get", resourceType, "--selector", selector, "-o", "json")
 	if err != nil {
 		return "", err
 	}
@@ -50,8 +56,13 @@ func (k *Kubectl) GetStringResourcesBySelector(resourceType, selector string) (s
 }
 
 // GetResourcesBySelector Use kubectl to get a resource identified by a selector, return the resource in a map[string]interface{}.
-func (k *Kubectl) GetResourcesBySelector(resourceType, selector string) (map[string]interface{}, error) {
-	output, err := k.Run("get", resourceType, "--selector", selector, "-o", "json")
+func (k *Kubectl) GetResourcesBySelector(ctx context.Context, resourceType, selector string) (map[string]interface{}, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Getting resource by selector", "kubectl.resources.getBySelector", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	output, err := k.Run(ctx, "get", resourceType, "--selector", selector, "-o", "json")
 	if err != nil {
 		return nil, err
 	}
@@ -60,8 +71,13 @@ func (k *Kubectl) GetResourcesBySelector(resourceType, selector string) (map[str
 }
 
 // GetResourceJSONPath use kubectl to get a resource by type and name, and a jsonpath, and return the definition of the resource in JSON.
-func (k *Kubectl) GetResourceJSONPath(resourceType, resource, jsonPath string) (string, error) {
-	output, err := k.Run("get", resourceType, resource, "-o", "jsonpath='"+jsonPath+"'")
+func (k *Kubectl) GetResourceJSONPath(ctx context.Context, resourceType, resource, jsonPath string) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Getting resource by JSON path", "kubectl.resources.getByJSONPath", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	output, err := k.Run(ctx, "get", resourceType, resource, "-o", "jsonpath='"+jsonPath+"'")
 	if err != nil {
 		return "{}", err
 	}
@@ -69,13 +85,18 @@ func (k *Kubectl) GetResourceJSONPath(resourceType, resource, jsonPath string) (
 }
 
 // GetResourceSelector use kubectl to get the selector for a resource identified by type and name.
-func (k *Kubectl) GetResourceSelector(resourceType, resource string) (string, error) {
-	output, err := k.GetResourceJSONPath(resourceType, resource, "{.metadata.selfLink}")
+func (k *Kubectl) GetResourceSelector(ctx context.Context, resourceType, resource string) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Getting resource selector", "kubectl.resources.getSelector", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	output, err := k.GetResourceJSONPath(ctx, resourceType, resource, "{.metadata.selfLink}")
 	if err != nil {
 		return "", err
 	}
 
-	output, err = k.Run("get", "--raw", strings.ReplaceAll(output, "'", "")+"/scale")
+	output, err = k.Run(ctx, "get", "--raw", strings.ReplaceAll(output, "'", "")+"/scale")
 	if err != nil {
 		return "", err
 	}
@@ -90,8 +111,8 @@ func (k *Kubectl) GetResourceSelector(resourceType, resource string) (string, er
 }
 
 // Run a kubectl command and return the output
-func (k *Kubectl) Run(args ...string) (string, error) {
-	return shell.Execute(context.Background(), ".", "kubectl", args...)
+func (k *Kubectl) Run(ctx context.Context, args ...string) (string, error) {
+	return shell.Execute(ctx, ".", "kubectl", args...)
 }
 
 // jsonToObj Converts a JSON string to a map[string]interface{}.
