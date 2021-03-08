@@ -322,7 +322,7 @@ def generateFunctionalTestStep(Map args = [:]){
   if (platform == "arm64") {
     goArch = "arm64"
     // ARM is not ready as immutable workers
-    workerLabels = "${platform} && docker"
+    workerLabels = "arm && docker"
   }
 
   return {
