@@ -256,7 +256,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
       platforms.each { platform ->
         log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
-        parallelTasks["${platform}_${suite}_${tags}"] = generateFunctionalTestStep(name: ${name}, platform: "${platform}", suite: "${suite}", tags: "${tags}")
+        parallelTasks["${platform}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: "${platform}", suite: "${suite}", tags: "${tags}")
       }
     } else {
       log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed because there are no modified files")
