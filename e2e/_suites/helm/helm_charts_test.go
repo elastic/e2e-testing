@@ -47,7 +47,7 @@ var kubernetesVersion = "1.18.2"
 
 var testSuite HelmChartTestSuite
 
-func init() {
+func setupSuite() {
 	config.Init()
 
 	developerMode = shell.GetEnvBool("DEVELOPER_MODE")
@@ -594,6 +594,7 @@ func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 
 func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
+		setupSuite()
 		log.Trace("Before Suite...")
 		toolsAreInstalled()
 
