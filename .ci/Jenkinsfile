@@ -326,6 +326,8 @@ def generateFunctionalTestStep(Map args = [:]){
   }
   workerLabels += " && docker"
 
+  log(level: 'INFO', text: "Requesting a node from '${workerLabels}' pool")
+
   return {
     node("${workerLabels}") {
       try {
