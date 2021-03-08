@@ -318,7 +318,7 @@ def generateFunctionalTestStep(Map args = [:]){
   tags += excludeNightlyTag
 
   def goArch = "arm64"
-  workerLabels = "${platform}"
+  def workerLabels = "${platform}"
   if (platform != "arm") {
     // ARM is not ready as immutable workers
     workerLabels += " && immutable"
