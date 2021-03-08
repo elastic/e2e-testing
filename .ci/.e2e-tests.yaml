@@ -12,7 +12,7 @@ SUITES:
         tags: "metricbeat"
   - suite: "fleet"
     platforms:
-      - "arm"
+      - "arm64"
       - "ubuntu-18.04"
     scenarios:
       - name: "Fleet"
@@ -25,7 +25,7 @@ SUITES:
         tags: "backend_processes"
   - suite: "metricbeat"
     platforms:
-      - "arm"
+      - "arm64"
       - "ubuntu-18.04"
     scenarios:
       - name: "ActiveMQ"

@@ -317,16 +317,13 @@ def generateFunctionalTestStep(Map args = [:]){
   }
   tags += excludeNightlyTag
 
-  def goArch = "arm64"
-  def workerLabels = "${platform}"
-  if (platform != "arm") {
+  def goArch = "amd64"
+  def workerLabels = "${platform} && immutable && docker"
+  if (platform == "arm64") {
+    goArch = "arm64"
     // ARM is not ready as immutable workers
-    workerLabels += " && immutable"
-    goArch = "amd64"
+    workerLabels = "${platform} && docker"
   }
-  workerLabels += " && docker"
-
-  log(level: 'INFO', text: "Requesting a node from '${workerLabels}' pool")
 
   return {
     node("${workerLabels}") {
