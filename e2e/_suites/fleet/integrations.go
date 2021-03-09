@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/elastic/e2e-testing/cli/services"
 	"strings"
 
 	"github.com/Jeffail/gabs/v2"
@@ -14,8 +13,6 @@ import (
 // We are using the title because the feature files have to be super readable
 // and the title is more readable than the name
 const elasticEnpointIntegrationTitle = "Endpoint Security"
-
-var kibanaClient *services.KibanaClient
 
 // IntegrationPackage used to share information about a integration
 type IntegrationPackage struct {
