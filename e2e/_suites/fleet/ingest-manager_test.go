@@ -148,7 +148,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		}
 
 		profile := FleetProfileName
-		err := serviceManager.RunCompose(true, []string{profile}, profileEnv)
+		err := serviceManager.RunCompose(context.Background(), true, []string{profile}, profileEnv)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": profile,
@@ -156,7 +156,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		}
 
 		minutesToBeHealthy := time.Duration(timeoutFactor) * time.Minute
-		healthy, err := e2e.WaitForElasticsearch(minutesToBeHealthy)
+		healthy, err := e2e.WaitForElasticsearch(context.Background(), minutesToBeHealthy)
 		if !healthy {
 			log.WithFields(log.Fields{
 				"error":   err,
@@ -164,7 +164,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
 
-		healthyKibana, err := kibanaClient.WaitForKibana(minutesToBeHealthy)
+		healthyKibana, err := kibanaClient.WaitForKibana(context.Background(), minutesToBeHealthy)
 		if !healthyKibana {
 			log.WithFields(log.Fields{
 				"error":   err,
@@ -182,7 +182,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			log.Debug("Destroying Fleet runtime dependencies")
 			profile := FleetProfileName
 
-			err := serviceManager.StopCompose(true, []string{profile})
+			err := serviceManager.StopCompose(context.Background(), true, []string{profile})
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error":   err,

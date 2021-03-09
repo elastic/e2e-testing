@@ -5,6 +5,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	backoff "github.com/cenkalti/backoff/v4"
 	curl "github.com/elastic/e2e-testing/cli/shell"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // KibanaBaseURL All URLs running on localhost as Kibana is expected to be exposed there
@@ -238,7 +240,7 @@ func (k *KibanaClient) UpdateIntegrationPackageConfig(packageConfigID string, pa
 
 // WaitForKibana waits for kibana running in localhost:5601 to be healthy, returning false
 // if kibana does not get healthy status in a defined number of minutes.
-func (k *KibanaClient) WaitForKibana(maxTimeoutMinutes time.Duration) (bool, error) {
+func (k *KibanaClient) WaitForKibana(ctx context.Context, maxTimeoutMinutes time.Duration) (bool, error) {
 	k.withURL("/status")
 
 	var (
@@ -259,6 +261,11 @@ func (k *KibanaClient) WaitForKibana(maxTimeoutMinutes time.Duration) (bool, err
 	retryCount := 1
 
 	kibanaStatus := func() error {
+		span, _ := apm.StartSpanOptions(ctx, "Health", "kibana.health", apm.SpanOptions{
+			Parent: apm.SpanFromContext(ctx).TraceContext(),
+		})
+		defer span.End()
+
 		r := curl.HTTPRequest{
 			BasicAuthUser:     "elastic",
 			BasicAuthPassword: "changeme",
