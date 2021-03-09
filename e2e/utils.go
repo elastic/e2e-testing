@@ -69,9 +69,14 @@ func BuildArtifactName(artifact string, version string, fallbackVersion string, 
 	return artifactName
 }
 
-// CheckPRVersion returns a fallback version if the version comes from a Pull Request (PR)
+// CheckPRVersion returns a fallback version if the version comes from a Pull Request (PR) or for a commit
 func CheckPRVersion(version string, fallbackVersion string) string {
 	if strings.HasPrefix(strings.ToLower(version), "pr-") {
+		return fallbackVersion
+	}
+
+	commitSHA := shell.GetEnv("GITHUB_CHECK_SHA1", "")
+	if commitSHA != "" {
 		return fallbackVersion
 	}
 

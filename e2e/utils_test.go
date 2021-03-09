@@ -208,6 +208,15 @@ func TestCheckPRVersion(t *testing.T) {
 
 		assert.Equal(t, testVersion, v)
 	})
+
+	t.Run("A Commit-based version should return base version", func(t *testing.T) {
+		defer os.Unsetenv("GITHUB_CHECK_SHA1")
+		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+
+		v := CheckPRVersion(testVersion, testVersion)
+
+		assert.Equal(t, testVersion, v)
+	})
 }
 
 func TestGetBucketSearchNextPageParam_HasMorePages(t *testing.T) {
