@@ -13,7 +13,7 @@ readonly VERSION="8.0.0-SNAPSHOT"
 
 main() {
   # remove running containers
-  docker container rm -fv $(docker container ls -a --quiet)
+  docker container rm -fv $(docker container ls -a --quiet) || true
 
   # refresh docker images
   cat <<EOF >.tmp_images
