@@ -45,10 +45,21 @@ func TestBuildArtifactName(t *testing.T) {
 	OS := "linux"
 	version := "8.0.0-SNAPSHOT"
 
-	t.Run("For RPM", func(t *testing.T) {
+	t.Run("For RPM (amd64)", func(t *testing.T) {
 		arch := "x86_64"
 		extension := "rpm"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm"
+
+		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "RPM", false)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+	t.Run("For RPM (arm64)", func(t *testing.T) {
+		arch := "aarch64"
+		extension := "rpm"
+		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-aarch64.rpm"
 
 		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -81,9 +92,9 @@ func TestBuildArtifactName(t *testing.T) {
 	})
 
 	t.Run("For TAR (amd64)", func(t *testing.T) {
-		arch := "amd64"
+		arch := "x86_64"
 		extension := "tar.gz"
-		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.tar.gz"
+		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"
 
 		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
