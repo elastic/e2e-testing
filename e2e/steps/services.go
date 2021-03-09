@@ -5,6 +5,9 @@
 package steps
 
 import (
+	"context"
+
+	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
 	log "github.com/sirupsen/logrus"
 )
@@ -36,4 +39,27 @@ func ExecCommandInService(profile string, image string, serviceName string, cmds
 	}
 
 	return nil
+}
+
+// GetContainerHostname we need the container name because we use the Docker Client instead of Docker Compose
+func GetContainerHostname(containerName string) (string, error) {
+	log.WithFields(log.Fields{
+		"containerName": containerName,
+	}).Trace("Retrieving container name from the Docker client")
+
+	hostname, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"cat", "/etc/hostname"})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"containerName": containerName,
+			"error":         err,
+		}).Error("Could not retrieve container name from the Docker client")
+		return "", err
+	}
+
+	log.WithFields(log.Fields{
+		"containerName": containerName,
+		"hostname":      hostname,
+	}).Info("Hostname retrieved from the Docker client")
+
+	return hostname, nil
 }

@@ -312,7 +312,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 	}
 
 	// get container hostname once
-	hostname, err := getContainerHostname(containerName)
+	hostname, err := steps.GetContainerHostname(containerName)
 	if err != nil {
 		return err
 	}

@@ -15,7 +15,6 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
@@ -187,27 +186,4 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	}
 
 	return steps.CheckProcessStateOnTheHost(containerName, process, state, timeoutFactor)
-}
-
-// we need the container name because we use the Docker Client instead of Docker Compose
-func getContainerHostname(containerName string) (string, error) {
-	log.WithFields(log.Fields{
-		"containerName": containerName,
-	}).Trace("Retrieving container name from the Docker client")
-
-	hostname, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"cat", "/etc/hostname"})
-	if err != nil {
-		log.WithFields(log.Fields{
-			"containerName": containerName,
-			"error":         err,
-		}).Error("Could not retrieve container name from the Docker client")
-		return "", err
-	}
-
-	log.WithFields(log.Fields{
-		"containerName": containerName,
-		"hostname":      hostname,
-	}).Info("Hostname retrieved from the Docker client")
-
-	return hostname, nil
 }
