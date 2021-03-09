@@ -155,6 +155,9 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 	artifact := "elastic-agent"
 	os := "linux"
 	arch := "x86_64"
+	if e2e.GetArchitecture() == "arm64" {
+		arch = "aarch64"
+	}
 	extension := "rpm"
 
 	binaryName := e2e.BuildArtifactName(artifact, version, agentVersionBase, os, arch, extension, false)
