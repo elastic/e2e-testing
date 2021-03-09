@@ -27,11 +27,22 @@ func TestDownloadAgentBinary(t *testing.T) {
 		assert.NotNil(t, err)
 	})
 
-	t.Run("Fetching RPM binary from local Beats dir", func(t *testing.T) {
+	t.Run("Fetching RPM binary (amd64) from local Beats dir", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+	t.Run("Fetching RPM binary (arm64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-8.0.0-SNAPSHOT-aarch64.rpm"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
@@ -67,6 +78,17 @@ func TestDownloadAgentBinary(t *testing.T) {
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.tar.gz"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+	t.Run("Fetching TAR binary (x86_64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
