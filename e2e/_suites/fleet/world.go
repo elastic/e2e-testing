@@ -4,7 +4,12 @@
 
 package main
 
-import "github.com/elastic/e2e-testing/cli/services"
+import (
+	"fmt"
+
+	"github.com/elastic/e2e-testing/cli/services"
+	"github.com/elastic/e2e-testing/e2e/steps"
+)
 
 // developerMode tears down the backend services (ES, Kibana, Package Registry)
 // after a test suite. This is the desired behavior, but when developing, we maybe want to keep
@@ -47,3 +52,21 @@ var timeoutFactor = 3
 const kibanaBaseURL = "http://localhost:5601"
 
 var kibanaClient *services.KibanaClient
+
+// IngestManagerTestSuite represents a test suite, holding references to the pieces needed to run the tests
+type IngestManagerTestSuite struct {
+	Fleet      *FleetTestSuite
+	StandAlone *StandAloneTestSuite
+}
+
+func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
+	profile := FleetProfileName
+	serviceName := ElasticAgentServiceName
+
+	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, imts.Fleet.Image+"-systemd", serviceName, 1)
+	if imts.StandAlone.Hostname != "" {
+		containerName = fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
+	}
+
+	return steps.CheckProcessStateOnTheHost(containerName, process, state, timeoutFactor)
+}

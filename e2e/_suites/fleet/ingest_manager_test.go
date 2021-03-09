@@ -6,7 +6,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -18,7 +17,6 @@ import (
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
-	"github.com/elastic/e2e-testing/e2e/steps"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -168,22 +166,4 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			}
 		}
 	})
-}
-
-// IngestManagerTestSuite represents a test suite, holding references to the pieces needed to run the tests
-type IngestManagerTestSuite struct {
-	Fleet      *FleetTestSuite
-	StandAlone *StandAloneTestSuite
-}
-
-func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
-	profile := FleetProfileName
-	serviceName := ElasticAgentServiceName
-
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, imts.Fleet.Image+"-systemd", serviceName, 1)
-	if imts.StandAlone.Hostname != "" {
-		containerName = fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
-	}
-
-	return steps.CheckProcessStateOnTheHost(containerName, process, state, timeoutFactor)
 }
