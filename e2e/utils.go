@@ -346,6 +346,14 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 		return "", err
 	}
 
+	log.WithFields(log.Fields{
+		"retries":      retryCount,
+		"artifact":     artifact,
+		"artifactName": artifactName,
+		"elapsedTime":  exp.GetElapsedTime(),
+		"version":      version,
+	}).Trace("Artifact found")
+
 	packagesObject := jsonParsed.Path("packages")
 	// we need to get keys with dots using Search instead of Path
 	downloadObject := packagesObject.Search(artifactName)
