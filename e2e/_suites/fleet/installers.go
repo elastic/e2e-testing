@@ -12,6 +12,7 @@ import (
 
 	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/e2e"
+	"github.com/elastic/e2e-testing/e2e/steps"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -37,7 +38,7 @@ type BasePackage struct {
 
 // extractPackage depends on the underlying OS, so 'cmds' must contain the specific instructions for the OS
 func (i *BasePackage) extractPackage(cmds []string) error {
-	err := execCommandInService(i.profile, i.image, i.service, cmds, false)
+	err := steps.ExecCommandInService(i.profile, i.image, i.service, cmds, profileEnv, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmds,
@@ -72,7 +73,7 @@ func (i *BasePackage) PrintLogs(containerName string) error {
 		"cat", i.logFile,
 	}
 
-	err = execCommandInService(i.profile, i.image, i.service, cmd, false)
+	err = steps.ExecCommandInService(i.profile, i.image, i.service, cmd, profileEnv, false)
 	if err != nil {
 		return err
 	}
@@ -128,13 +129,13 @@ func (i *DEBPackage) InstallCerts() error {
 	return installCertsForDebian(i.profile, i.image, i.service)
 }
 func installCertsForDebian(profile string, image string, service string) error {
-	if err := execCommandInService(profile, image, service, []string{"apt-get", "update"}, false); err != nil {
+	if err := steps.ExecCommandInService(profile, image, service, []string{"apt-get", "update"}, profileEnv, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(profile, image, service, []string{"apt", "install", "ca-certificates", "-y"}, false); err != nil {
+	if err := steps.ExecCommandInService(profile, image, service, []string{"apt", "install", "ca-certificates", "-y"}, profileEnv, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(profile, image, service, []string{"update-ca-certificates", "-f"}, false); err != nil {
+	if err := steps.ExecCommandInService(profile, image, service, []string{"update-ca-certificates", "-f"}, profileEnv, false); err != nil {
 		return err
 	}
 	return nil
@@ -277,16 +278,16 @@ func (i *RPMPackage) InstallCerts() error {
 	return installCertsForCentos(i.profile, i.image, i.service)
 }
 func installCertsForCentos(profile string, image string, service string) error {
-	if err := execCommandInService(profile, image, service, []string{"yum", "check-update"}, false); err != nil {
+	if err := steps.ExecCommandInService(profile, image, service, []string{"yum", "check-update"}, profileEnv, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(profile, image, service, []string{"yum", "install", "ca-certificates", "-y"}, false); err != nil {
+	if err := steps.ExecCommandInService(profile, image, service, []string{"yum", "install", "ca-certificates", "-y"}, profileEnv, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(profile, image, service, []string{"update-ca-trust", "force-enable"}, false); err != nil {
+	if err := steps.ExecCommandInService(profile, image, service, []string{"update-ca-trust", "force-enable"}, profileEnv, false); err != nil {
 		return err
 	}
-	if err := execCommandInService(profile, image, service, []string{"update-ca-trust", "extract"}, false); err != nil {
+	if err := steps.ExecCommandInService(profile, image, service, []string{"update-ca-trust", "extract"}, profileEnv, false); err != nil {
 		return err
 	}
 	return nil
@@ -379,7 +380,7 @@ func (i *TARPackage) Preinstall() error {
 		[]string{"mv", fmt.Sprintf("/%s-%s-%s-%s", i.artifact, i.version, i.OS, i.arch), "/elastic-agent"},
 	}
 	for _, cmd := range cmds {
-		err = execCommandInService(i.profile, i.image, i.service, cmd, false)
+		err = steps.ExecCommandInService(i.profile, i.image, i.service, cmd, profileEnv, false)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"command": cmd,

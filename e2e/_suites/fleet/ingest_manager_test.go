@@ -189,34 +189,6 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 	return steps.CheckProcessStateOnTheHost(containerName, process, state, timeoutFactor)
 }
 
-func execCommandInService(profile string, image string, serviceName string, cmds []string, detach bool) error {
-	serviceManager := services.NewServiceManager()
-
-	composes := []string{
-		profile, // profile name
-		image,   // image for the service
-	}
-	composeArgs := []string{"exec", "-T"}
-	if detach {
-		composeArgs = append(composeArgs, "-d")
-	}
-	composeArgs = append(composeArgs, serviceName)
-	composeArgs = append(composeArgs, cmds...)
-
-	err := serviceManager.RunCommand(profile, composes, composeArgs, profileEnv)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmds,
-			"error":   err,
-			"service": serviceName,
-		}).Error("Could not execute command in container")
-
-		return err
-	}
-
-	return nil
-}
-
 // we need the container name because we use the Docker Client instead of Docker Compose
 func getContainerHostname(containerName string) (string, error) {
 	log.WithFields(log.Fields{
