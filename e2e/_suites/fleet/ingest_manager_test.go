@@ -61,7 +61,7 @@ func setUpSuite() {
 	}
 }
 
-func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
+func initializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(*messages.Pickle) {
 		log.Trace("Before Fleet scenario")
 
@@ -88,7 +88,7 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	imts.StandAlone.contributeSteps(ctx)
 }
 
-func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
+func initializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 	serviceManager := services.NewServiceManager()
 
 	ctx.BeforeSuite(func() {
