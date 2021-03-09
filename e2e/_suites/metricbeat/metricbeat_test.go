@@ -178,7 +178,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	return err
 }
 
-func initializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
+func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Metricbeat scenario...")
 
@@ -221,9 +221,9 @@ func initializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 	ctx.Step(`^metricbeat is installed using "([^"]*)" configuration$`, testSuite.installedUsingConfiguration)
 }
 
-// initializeMetricbeatTestSuite adds steps to the Godog test suite
+// InitializeMetricbeatTestSuite adds steps to the Godog test suite
 //nolint:deadcode,unused
-func initializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
+func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
 		setupSuite()
 		log.Trace("Before Metricbeat Suite...")
