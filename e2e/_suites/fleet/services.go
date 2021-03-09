@@ -375,7 +375,10 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 	// extract the agent in the box, as it's mounted as a volume
 	artifact := "elastic-agent"
 	os := "linux"
-	arch := e2e.GetArchitecture()
+	arch := "x86_64"
+	if e2e.GetArchitecture() == "arm64" {
+		arch = "arm64"
+	}
 	extension := "tar.gz"
 
 	binaryName := e2e.BuildArtifactName(artifact, version, agentVersionBase, os, arch, extension, false)
