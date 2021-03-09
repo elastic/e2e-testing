@@ -600,7 +600,7 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 	return nil
 }
 
-func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
+func initializeHelmChartScenario(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Helm scenario...")
 
@@ -647,7 +647,7 @@ func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^a "([^"]*)" will expose the pods as network services internal to the k8s cluster$`, testSuite.aResourceWillExposePods)
 }
 
-func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
+func initializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
 		setupSuite()
 		log.Trace("Before Suite...")
