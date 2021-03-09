@@ -19,6 +19,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
+	"github.com/elastic/e2e-testing/e2e/steps"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -227,36 +228,7 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 		containerName = fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
 	}
 
-	return checkProcessStateOnTheHost(containerName, process, state)
-}
-
-// name of the container for the service:
-// we are using the Docker client instead of docker-compose
-// because it does not support returning the output of a
-// command: it simply returns error level
-func checkProcessStateOnTheHost(containerName string, process string, state string) error {
-	timeout := time.Duration(timeoutFactor) * time.Minute
-
-	err := e2e.WaitForProcess(containerName, process, state, timeout)
-	if err != nil {
-		if state == "started" {
-			log.WithFields(log.Fields{
-				"container ": containerName,
-				"error":      err,
-				"timeout":    timeout,
-			}).Error("The process was not found but should be present")
-		} else {
-			log.WithFields(log.Fields{
-				"container": containerName,
-				"error":     err,
-				"timeout":   timeout,
-			}).Error("The process was found but shouldn't be present")
-		}
-
-		return err
-	}
-
-	return nil
+	return steps.CheckProcessStateOnTheHost(containerName, process, state, timeoutFactor)
 }
 
 func execCommandInService(profile string, image string, serviceName string, cmds []string, detach bool) error {
