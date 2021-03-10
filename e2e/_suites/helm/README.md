@@ -41,7 +41,7 @@ This is an example of the optional configuration:
 3. Install dependencies.
 
    - Install Helm 3.5.2
-   - Install Kind 0.8.1
+   - Install Kind 0.10.0
    - Install Go: `https://golang.org/doc/install` _(The CI uses [GVM](https://github.com/andrewkroh/gvm))_
    - Install godog (from project's root directory): `make -C e2e install-godog`
 
