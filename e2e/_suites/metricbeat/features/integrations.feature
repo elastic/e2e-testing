@@ -104,6 +104,7 @@ Examples: MySQL (latest versions)
 | integration | variant | version  |
 | mysql       | MariaDB | 10.4.4   |
 | mysql       | MySQL   | 8.0.13   |
+| mysql       | MySQL   | 5.7.12   |
 | mysql       | Percona | 8.0.13-4 |
 
 @old_versions
@@ -111,5 +112,4 @@ Examples: MySQL (old versions)
 | integration | variant | version  |
 | mysql       | MariaDB | 10.2.23  |
 | mysql       | MariaDB | 10.3.14  |
-| mysql       | MySQL   | 5.7.12   |
 | mysql       | Percona | 5.7.24   |
