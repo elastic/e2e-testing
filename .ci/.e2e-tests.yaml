@@ -48,6 +48,7 @@ SUITES:
       - name: "Metricbeat"
         tags: "metricbeat"
       - name: "MySQL"
+        pullRequestFilter: " && ~old_versions"
         tags: "integrations && mysql"
       - name: "Oracle"
         tags: "integrations && oracle"

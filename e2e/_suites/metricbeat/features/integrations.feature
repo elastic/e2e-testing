@@ -99,13 +99,14 @@ Scenario Outline: <integration>-<variant>-<version> sends metrics to Elasticsear
   Then there are "<variant>" events in the index
     And there are no errors in the index
 
+@latest_versions
 Examples: MySQL (latest versions)
 | integration | variant | version  |
 | mysql       | MariaDB | 10.4.4   |
 | mysql       | MySQL   | 8.0.13   |
 | mysql       | Percona | 8.0.13-4 |
 
-@nightly
+@old_versions
 Examples: MySQL (old versions)
 | integration | variant | version  |
 | mysql       | MariaDB | 10.2.23  |
