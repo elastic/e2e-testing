@@ -60,7 +60,7 @@ func (i *ElasticAgentInstaller) listElasticAgentWorkingDirContent(containerName 
 }
 
 func buildEnrollmentFlags(token string) []string {
-	return []string{"--url=http://kibana:5601", "--enrollment-token=" + token, "-f", "--insecure"}
+	return []string{"--kibana-url=http://kibana:5601", "--enrollment-token=" + token, "-f", "--insecure"}
 }
 
 // runElasticAgentCommand runs a command for the elastic-agent
