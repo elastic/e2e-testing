@@ -34,7 +34,7 @@ This is an example of the optional configuration:
    ```shell
    # Depending on the versions used,
    export HELM_VERSION="3.4.1"        # Helm version: for Helm v2.x.x we have to initialise Tiller right after the k8s cluster
-   export HELM_CHART_VERSION="7.10.0"  # version of the Elastic's Observability Helm charts
+   export HELM_CHART_VERSION="7.11.1"  # version of the Elastic's Observability Helm charts
    export HELM_KUBERNETES_VERSION="1.18.2" # version of the cluster to be passed to kind
    ```
 

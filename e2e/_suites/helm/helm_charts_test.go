@@ -46,7 +46,7 @@ var kubectl k8s.Kubectl
 var helmVersion = "3.x"
 
 // helmChartVersion represents the default version used for the Elastic Helm charts
-var helmChartVersion = "7.10.0"
+var helmChartVersion = "7.11.1"
 
 // kubernetesVersion represents the default version used for Kubernetes
 var kubernetesVersion = "1.18.2"
