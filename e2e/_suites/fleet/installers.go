@@ -332,7 +332,7 @@ func NewTARPackage(binaryName string, profile string, image string, service stri
 func (i *TARPackage) Install(containerName string, token string) error {
 	// install the elastic-agent to /usr/bin/elastic-agent using command
 	binary := fmt.Sprintf("/elastic-agent/%s", i.artifact)
-	args := []string{"--force", "--insecure", "--enrollment-token", token, "--kibana-url", "http://kibana:5601"}
+	args := []string{"--force", "--insecure", "--enrollment-token=" + token, "--kibana-url", "http://kibana:5601"}
 
 	err := runElasticAgentCommand(i.profile, i.image, i.service, binary, "install", args)
 	if err != nil {
