@@ -20,6 +20,7 @@ SUITES:
       - name: "Endpoint Integration"
         tags: "agent_endpoint_integration"
       - name: "Stand-alone"
+        pullRequestFilter: "&& default"
         tags: "stand_alone_agent"
       - name: "Backend Processes"
         pullRequestFilter: "&& centos"
