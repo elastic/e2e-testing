@@ -250,7 +250,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   def suite = item.suite
   def platforms = item.platforms
   item.scenarios.each { scenario ->
-    def pullRequestFilter = scenario.pullRequestFilter
+    def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
     def tags = scenario.tags
     def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
     if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
