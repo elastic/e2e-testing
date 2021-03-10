@@ -15,15 +15,15 @@ SUITES:
       - "ubuntu-18.04"
     scenarios:
       - name: "Fleet"
-        pullRequestFilter: "&& ~debian"
+        pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent"
       - name: "Endpoint Integration"
         tags: "agent_endpoint_integration"
       - name: "Stand-alone"
-        pullRequestFilter: "&& ~ubi8"
+        pullRequestFilter: " && ~ubi8"
         tags: "stand_alone_agent"
       - name: "Backend Processes"
-        pullRequestFilter: "&& ~debian"
+        pullRequestFilter: " && ~debian"
         tags: "backend_processes"
   - suite: "metricbeat"
     platforms:
