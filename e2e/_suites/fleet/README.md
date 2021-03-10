@@ -53,7 +53,6 @@ This is an example of the optional configuration:
    # is set, this variable will take no effect
    export BEATS_USE_CI_SNAPSHOTS="true"
    # (Stand-Alone mode) This environment variable will use the its value as the Docker tag produced by Beats CI (Please look up Google Cloud Storage CI bucket).
-   # or
    export BEAT_VERSION="78a762c76080aafa34c52386341b590dac24e2df"
    ```
 
