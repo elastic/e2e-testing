@@ -362,7 +362,7 @@ func (ts *HelmChartTestSuite) getResourceName(resource string) string {
 	} else if resource == k8s.ResourceTypes.ClusterRoleBinding {
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role-binding")
 	} else if resource == k8s.ResourceTypes.ConfigMap {
-		if ts.Name == "metricbeat" {
+		if ts.Name == "filebeat" || ts.Name == "metricbeat" {
 			return strings.ToLower(ts.Name + "-" + ts.Name + "-daemonset-config")
 		}
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-config")
