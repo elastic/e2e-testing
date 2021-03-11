@@ -204,8 +204,7 @@ func (i *DockerPackage) Preinstall() error {
 	// wait for tagging to ensure the loaded image is present
 	e2e.Sleep(3 * time.Second)
 
-	// we need to tag the loaded image because its tag relates to the target branch,
-	// and we want it to use the 'pr-12345' format.
+	// we need to tag the loaded image because its tag relates to the target branch
 	return docker.TagImage(
 		"docker.elastic.co/beats/"+i.artifact+":"+agentVersionBase,
 		"docker.elastic.co/observability-ci/"+i.artifact+":"+i.originalVersion+"-amd64",
