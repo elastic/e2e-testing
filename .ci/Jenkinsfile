@@ -7,6 +7,11 @@ pipeline {
   environment {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
+    ELASTIC_APM_ACTIVE="true"
+    ELASTIC_APM_ENVIRONMENT="ci"
+    ELASTIC_APM_LOG_FILE="stderr"
+    ELASTIC_APM_LOG_LEVEL="debug"
+    VAULT_INSTRUMENTATION_SECRET="secret/observability-team/ci/jenkins-stats"
     NIGHTLY_TAG="@nightly"
     NOTIFY_TO = credentials('notify-to')
     JOB_GCS_BUCKET = credentials('gcs-bucket')
@@ -35,15 +40,11 @@ pipeline {
     booleanParam(name: "forceSkipPresubmit", defaultValue: false, description: "If it's needed to execute the pre-submit tests: unit and precommit.")
     booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify to Slack with green builds.")
     string(name: 'SLACK_CHANNEL', defaultValue: 'observablt-bots', description: 'The Slack channel(s) where errors will be posted. For multiple channels, use a comma-separated list of channels')
-    string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
-    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stand-alone elastic-agent to be used for Fleet tests. You can use here the tag of your PR to test your changes')
-    string(name: 'ELASTIC_AGENT_STALE_VERSION', defaultValue: '7.10-SNAPSHOT', description: 'SemVer version of the stale stand-alone elastic-agent to be used for Fleet upgrade tests.')
+    string(name: 'BEAT_VERSION', defaultValue: '6.8-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
     booleanParam(name: "BEATS_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the binary snapshots produced by Beats CI instead of the official releases")
     choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'TRACE', 'INFO'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
-    string(name: 'FLEET_STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for Fleet tests.')
-    string(name: 'METRICBEAT_STACK_VERSION', defaultValue: '6.8-SNAPSHOT', description: 'SemVer version of the stack to be used for Metricbeat tests.')
-    string(name: 'METRICBEAT_VERSION', defaultValue: '6.8-SNAPSHOT', description: 'SemVer version of the metricbeat to be used.')
+    string(name: 'STACK_VERSION', defaultValue: '6.8-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
     string(name: 'HELM_CHART_VERSION', defaultValue: '7.10.0', description: 'SemVer version of Helm chart to be used.')
     string(name: 'HELM_VERSION', defaultValue: '3.4.1', description: 'SemVer version of Helm to be used.')
     string(name: 'HELM_KIND_VERSION', defaultValue: '0.8.1', description: 'SemVer version of Kind to be used.')
@@ -58,17 +59,16 @@ pipeline {
       options { skipDefaultCheckout() }
       environment {
         HOME = "${env.WORKSPACE}"
+        ELASTIC_APM_GLOBAL_LABELS="build_pr=${isPR()},build_id=${env.BUILD_ID}"
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
         GO111MODULE = 'on'
         SKIP_SCENARIOS = "${params.SKIP_SCENARIOS}"
         NIGHTLY_SCENARIOS = "${params.NIGHTLY_SCENARIOS}"
         SLACK_CHANNEL = "${params.SLACK_CHANNEL.trim()}"
         ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
-        ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
+        BEAT_VERSION = "${params.BEAT_VERSION.trim()}"
         BEATS_USE_CI_SNAPSHOTS = "${params.BEATS_USE_CI_SNAPSHOTS}"
-        FLEET_STACK_VERSION = "${params.FLEET_STACK_VERSION.trim()}"
-        METRICBEAT_VERSION = "${params.METRICBEAT_VERSION.trim()}"
-        METRICBEAT_STACK_VERSION = "${params.METRICBEAT_STACK_VERSION.trim()}"
+        STACK_VERSION = "${params.STACK_VERSION.trim()}"
         FORCE_SKIP_GIT_CHECKS = "${params.forceSkipGitChecks}"
         FORCE_SKIP_PRESUBMIT = "${params.forceSkipPresubmit}"
         HELM_CHART_VERSION = "${params.HELM_CHART_VERSION.trim()}"
@@ -84,6 +84,7 @@ pipeline {
             pipelineManager([ cancelPreviousRunningBuilds: [ when: 'PR' ] ])
             deleteDir()
             gitCheckout(basedir: BASE_DIR, githubNotifyFirstTimeContributor: true)
+            githubCheckNotify('PENDING')  // we want to notify the upstream about the e2e the soonest
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
             setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
             dir("${BASE_DIR}"){
@@ -303,8 +304,6 @@ def generateStep(Map args = [:]){
 def generateFunctionalTestStep(Map args = [:]){
   def platform = args.get('platform')
   def suite = args.get('suite')
-  def sneakCaseSuite = suite.toUpperCase().replaceAll("-", "_")
-  def stackVersion = env."${sneakCaseSuite}_STACK_VERSION"
   def tags = args.get('tags')
 
   // We will decide whether to include the nightly tests in the execution at CI time, only.
@@ -327,7 +326,9 @@ def generateFunctionalTestStep(Map args = [:]){
           }
           filebeat(output: "docker_logs_${suite}_${tags}.log", workdir: "${env.WORKSPACE}"){
             dir("${BASE_DIR}"){
-              sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${stackVersion}" "${METRICBEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
+              withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL"){
+                sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
+              }
             }
           }
         }

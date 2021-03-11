@@ -5,11 +5,13 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 
 	"github.com/elastic/e2e-testing/cli/config"
 	state "github.com/elastic/e2e-testing/cli/internal"
+	"go.elastic.co/apm"
 
 	log "github.com/sirupsen/logrus"
 	tc "github.com/testcontainers/testcontainers-go"
@@ -17,11 +19,11 @@ import (
 
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
-	AddServicesToCompose(profile string, composeNames []string, env map[string]string) error
-	RemoveServicesFromCompose(profile string, composeNames []string, env map[string]string) error
+	AddServicesToCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error
+	RemoveServicesFromCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error
 	RunCommand(profile string, composeNames []string, composeArgs []string, env map[string]string) error
-	RunCompose(isProfile bool, composeNames []string, env map[string]string) error
-	StopCompose(isProfile bool, composeNames []string) error
+	RunCompose(ctx context.Context, isProfile bool, composeNames []string, env map[string]string) error
+	StopCompose(ctx context.Context, isProfile bool, composeNames []string) error
 }
 
 // DockerServiceManager implementation of the service manager interface
@@ -34,7 +36,12 @@ func NewServiceManager() ServiceManager {
 }
 
 // AddServicesToCompose adds services to a running docker compose
-func (sm *DockerServiceManager) AddServicesToCompose(profile string, composeNames []string, env map[string]string) error {
+func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Add services to Docker Compose", "docker-compose.services.add", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	log.WithFields(log.Fields{
 		"profile":  profile,
 		"services": composeNames,
@@ -57,7 +64,12 @@ func (sm *DockerServiceManager) AddServicesToCompose(profile string, composeName
 }
 
 // RemoveServicesFromCompose removes services from a running docker compose
-func (sm *DockerServiceManager) RemoveServicesFromCompose(profile string, composeNames []string, env map[string]string) error {
+func (sm *DockerServiceManager) RemoveServicesFromCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Remove services from Docker Compose", "docker-compose.services.remove", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	log.WithFields(log.Fields{
 		"profile":  profile,
 		"services": composeNames,
@@ -99,12 +111,22 @@ func (sm *DockerServiceManager) RunCommand(profile string, composeNames []string
 }
 
 // RunCompose runs a docker compose by its name
-func (sm *DockerServiceManager) RunCompose(isProfile bool, composeNames []string, env map[string]string) error {
+func (sm *DockerServiceManager) RunCompose(ctx context.Context, isProfile bool, composeNames []string, env map[string]string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Starting Docker Compose files", "docker-compose.services.up", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	return executeCompose(sm, isProfile, composeNames, []string{"up", "-d"}, env)
 }
 
 // StopCompose stops a docker compose by its name
-func (sm *DockerServiceManager) StopCompose(isProfile bool, composeNames []string) error {
+func (sm *DockerServiceManager) StopCompose(ctx context.Context, isProfile bool, composeNames []string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Stopping Docker Compose files", "docker-compose.services.down", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	composeFilePaths := make([]string, len(composeNames))
 	for i, composeName := range composeNames {
 		b := isProfile

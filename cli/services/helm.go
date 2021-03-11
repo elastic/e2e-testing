@@ -5,18 +5,20 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"strings"
 
 	"github.com/elastic/e2e-testing/cli/shell"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // HelmManager defines the operations for Helm
 type HelmManager interface {
-	AddRepo(repo string, URL string) error
-	DeleteChart(chart string) error
-	InstallChart(name string, chart string, version string, flags []string) error
+	AddRepo(ctx context.Context, repo string, URL string) error
+	DeleteChart(ctx context.Context, chart string) error
+	InstallChart(ctx context.Context, name string, chart string, version string, flags []string) error
 }
 
 // HelmFactory returns oone of the Helm supported versions, or an error
@@ -39,13 +41,18 @@ type helm3X struct {
 	helm
 }
 
-func (h *helm3X) AddRepo(repo string, url string) error {
+func (h *helm3X) AddRepo(ctx context.Context, repo string, url string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Adding Helm repository", "helm.repo.add", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	// use chart as application name
 	args := []string{
 		"repo", "add", repo, url,
 	}
 
-	output, err := helmExecute(args...)
+	output, err := helmExecute(ctx, args...)
 	if err != nil {
 		return err
 	}
@@ -58,12 +65,17 @@ func (h *helm3X) AddRepo(repo string, url string) error {
 	return nil
 }
 
-func (h *helm3X) DeleteChart(chart string) error {
+func (h *helm3X) DeleteChart(ctx context.Context, chart string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Deleting Helm chart", "helm.chart.delete", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	args := []string{
 		"delete", chart,
 	}
 
-	output, err := helmExecute(args...)
+	output, err := helmExecute(ctx, args...)
 	if err != nil {
 		return err
 	}
@@ -75,13 +87,18 @@ func (h *helm3X) DeleteChart(chart string) error {
 	return nil
 }
 
-func (h *helm3X) InstallChart(name string, chart string, version string, flags []string) error {
+func (h *helm3X) InstallChart(ctx context.Context, name string, chart string, version string, flags []string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Installing Helm chart", "helm.chart.install", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	args := []string{
 		"install", name, chart, "--version", version,
 	}
 	args = append(args, flags...)
 
-	output, err := helmExecute(args...)
+	output, err := helmExecute(ctx, args...)
 	if err != nil {
 		return err
 	}
@@ -95,8 +112,8 @@ func (h *helm3X) InstallChart(name string, chart string, version string, flags [
 	return nil
 }
 
-func helmExecute(args ...string) (string, error) {
-	output, err := shell.Execute(".", "helm", args...)
+func helmExecute(ctx context.Context, args ...string) (string, error) {
+	output, err := shell.Execute(ctx, ".", "helm", args...)
 	if err != nil {
 		return "", err
 	}
