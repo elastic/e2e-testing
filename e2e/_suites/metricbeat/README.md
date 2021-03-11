@@ -50,7 +50,7 @@ This is an example of the optional configuration:
    # or
    # This environment variable will use the snapshots produced by Beats CI
    export BEATS_USE_CI_SNAPSHOTS="true"
-   export BEAT_VERSION="pr-20356"
+   export GITHUB_CHECK_SHA1="01234567890"
    ```
 
 3. Define the proper Docker images to be used in tests (Optional).
