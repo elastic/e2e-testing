@@ -18,6 +18,7 @@ SUITES:
         pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent"
       - name: "Endpoint Integration"
+        pullRequestFilter: " && ~debian"
         tags: "agent_endpoint_integration"
       - name: "Stand-alone"
         pullRequestFilter: " && ~ubi8"
