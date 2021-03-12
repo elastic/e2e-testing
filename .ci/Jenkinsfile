@@ -319,7 +319,7 @@ def generateFunctionalTestStep(Map args = [:]){
   }
   tags += excludeNightlyTag
 
-  if (isPR() || isUpstreamTrigger('PR-')) {
+  if (isPR() || isUpstreamTrigger(filter: 'PR-')) {
     tags += pullRequestFilter
   }
 
