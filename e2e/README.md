@@ -56,6 +56,9 @@ Each module will define its own file for specificacions, adding specific feature
 
 ## Technology stack
 
+## Build system
+The test framework makes use of `Make` to prepare the environment to run the `godog` tests. Although it's still possible using the `godog` binary to run the test suites and scenarios, we recommend using the proper `Make` goals, in particular the [`functional-test` goal](https://github.com/elastic/e2e-testing/blob/70b1d3ddaf39567aeb4c322054b93ad7ce53e825/e2e/Makefile#L70). We also provide [a set of example goals](https://github.com/elastic/e2e-testing/blob/70b1d3ddaf39567aeb4c322054b93ad7ce53e825/e2e/Makefile#L108) with different use cases for running most common scenarios.
+
 ### Docker containers
 The services supported by some of the test suites in this framework will be started in the form of Docker containers. To manage the life cycle of those containers in test time we are going to use [`Testcontainers`](https://testcontainers.org), a set of libraries to simplify the usage of the Docker client, attaching container life cycles to the tests, so whenever the tests finish, the containers will stop in consequence.
 
