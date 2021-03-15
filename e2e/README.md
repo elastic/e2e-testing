@@ -135,6 +135,9 @@ We are going to enumerate the variables that will affect the product versions us
 The following environment variables affect how the tests are run in both the CI and a local machine.
 
 - `ELASTIC_APM_ACTIVE`: Set this environment variable to `true` if you want to send instrumentation data to our CI clusters. When the tests are run in our CI, this variable will always be enabled. Default value: `false`.
+
+>"ELASTIC_APM_ACTIVE" only affects Helm and Metricbeat test suites.
+
 - `ELASTIC_APM_ENVIRONMENT`: Set this environment variable to `ci` to send APM data to Elastic Cloud. Otherwise, the framework will spin up local APM Server and Kibana instances. For the CI, it will read credentials from Vault. Default value: `local`.
 - `SKIP_SCENARIOS`: Set this environment variable to `false` if it's needed to include the scenarios annotated as `@skip` in the current test execution. Default value: `true`.
 - `BEATS_LOCAL_PATH`: Set this environment variable to the base path to your local clone of Beats if it's needed to use the binary snapshots produced by your local build instead of the official releases. The snapshots will be fetched from the `${BEATS_LOCAL_PATH}/${THE_BEAT}/build/distributions` local directory. This variable is intended to be used by Beats developers, when testing locally the artifacts generated its own build. Default: empty.
