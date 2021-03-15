@@ -1304,10 +1304,16 @@ func getAgentDefaultPolicy() (*gabs.Container, error) {
 		"count": len(policies.Children()),
 	}).Trace("Fleet policies retrieved")
 
-	// TODO: perform a strong check to capture default policy
-	defaultPolicy := policies.Index(0)
+	for _, policy := range policies.Children() {
+		if policy.Path("is_default").Data().(bool) {
+			log.WithFields(log.Fields{
+				"policy": policy,
+			}).Trace("Default Policy was found")
+			return policy, nil
+		}
+	}
 
-	return defaultPolicy, nil
+	return nil, fmt.Errorf("Default policy was not found")
 }
 
 func getAgentEvents(applicationName string, agentID string, packagePolicyID string, updatedAt string) error {
