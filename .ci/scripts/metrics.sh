@@ -13,7 +13,7 @@ PREFIX_TRANSFORMED='metrics_transformed_'
 OUTPUT_FILE='metrics_document.json'
 BULK_REPORT='report-bulk.json'
 FOLDER='metrics'
-
+MTIME=4
 mkdir -p $FOLDER
 
 collectBuilds() {
@@ -21,28 +21,28 @@ collectBuilds() {
         -maxdepth 9 \
         -type f \
         -name log \
-        -mtime -0.5 \
+        -mtime -${MTIME} \
         -not -path "*PR-*" | xargs grep beats-ci-immutable > ${FOLDER}/$FILE_BRANCHES
 
     find /var/lib/jenkins/jobs \
         -maxdepth 9 \
         -type f \
         -name log \
-        -mtime -0.5 \
+        -mtime -${MTIME} \
         -not -path "*PR-*" | wc -l > ${FOLDER}/$PREFIX_NUMBER$FILE_BRANCHES
 
     find /var/lib/jenkins/jobs \
         -maxdepth 9 \
         -type f \
         -name log \
-        -mtime -0.5 \
+        -mtime -${MTIME} \
         -path "*PR-*" | xargs grep beats-ci-immutable > ${FOLDER}/$FILE_PRS
 
     find /var/lib/jenkins/jobs \
         -maxdepth 9 \
         -type f \
         -name log \
-        -mtime -0.5 \
+        -mtime -${MTIME} \
         -path "*PR-*" | wc -l > ${FOLDER}/$PREFIX_NUMBER$FILE_PRS
 }
 
@@ -165,7 +165,7 @@ find /var/lib/jenkins/jobs \
         -maxdepth 9 \
         -type f \
         -name log \
-        -mtime -0.5 \
+        -mtime -${MTIME} \
       | xargs grep --text beats-ci-immutable \
       | cut -d":" -f1 | sort -u > builds.tmp
 
