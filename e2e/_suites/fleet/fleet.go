@@ -1311,6 +1311,10 @@ func getAgentDefaultPolicy(defaultPolicyFieldName string) (*gabs.Container, erro
 	}).Trace("Fleet policies retrieved")
 
 	for _, policy := range policies.Children() {
+		if !policy.Exists(defaultPolicyFieldName) {
+			continue
+		}
+
 		if policy.Path(defaultPolicyFieldName).Data().(bool) {
 			log.WithFields(log.Fields{
 				"field":  defaultPolicyFieldName,
