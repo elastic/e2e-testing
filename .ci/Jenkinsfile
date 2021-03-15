@@ -326,10 +326,10 @@ def generateFunctionalTestStep(Map args = [:]){
 
   return {
     node("${workerLabels}") {
-      try {
-        deleteDir()
-        unstash 'source'
-        withGoEnv(version: "${GO_VERSION}"){
+      deleteDir()
+      unstash 'source'
+      withGoEnv(version: "${GO_VERSION}"){
+        try {
           if(isInstalled(tool: 'docker', flag: '--version')) {
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
           }
@@ -340,13 +340,11 @@ def generateFunctionalTestStep(Map args = [:]){
               }
             }
           }
+        } finally {
+          junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+          archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+          tearDown(labels: workerLabels)
         }
-      } catch(e) {
-        error(e.toString())
-      } finally {
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
-        tearDown(labels: workerLabels)
       }
     }
   }
