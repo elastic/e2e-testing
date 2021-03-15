@@ -203,8 +203,7 @@ func (i *DockerPackage) Preinstall() error {
 	// wait for tagging to ensure the loaded image is present
 	e2e.Sleep(3 * time.Second)
 
-	// we need to tag the loaded image because its tag relates to the target branch,
-	// and we want it to use the 'pr-12345' format.
+	// we need to tag the loaded image because its tag relates to the target branch
 	return docker.TagImage(
 		"docker.elastic.co/beats/"+i.artifact+":"+agentVersionBase,
 		"docker.elastic.co/observability-ci/"+i.artifact+":"+i.originalVersion+"-amd64",
@@ -333,7 +332,7 @@ func NewTARPackage(binaryName string, profile string, image string, service stri
 func (i *TARPackage) Install(containerName string, token string) error {
 	// install the elastic-agent to /usr/bin/elastic-agent using command
 	binary := fmt.Sprintf("/elastic-agent/%s", i.artifact)
-	args := []string{"--force", "--insecure", "--enrollment-token", token, "--kibana-url", "http://kibana:5601"}
+	args := []string{"--force", "--insecure", "--enrollment-token=" + token, "--kibana-url", "http://kibana:5601"}
 
 	err := runElasticAgentCommand(i.profile, i.image, i.service, binary, "install", args)
 	if err != nil {
