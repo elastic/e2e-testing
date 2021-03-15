@@ -304,7 +304,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 
 	// the installation process for TAR includes the enrollment
 	if installer.installerType != "tar" {
-		err = installer.EnrollFn(fts.CurrentToken)
+		err = installer.EnrollFn(NewFleetConfig(containerName, fts.CurrentToken))
 		if err != nil {
 			return err
 		}
@@ -593,7 +593,11 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 
 	installer := fts.getInstaller()
 
-	err := installer.EnrollFn(fts.CurrentToken)
+	profile := installer.profile                                                               // name of the runtime dependencies compose file
+	serviceName := ElasticAgentServiceName                                                     // name of the service
+	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", serviceName, 1) // name of the container
+
+	err := installer.EnrollFn(NewFleetConfig(containerName, fts.CurrentToken))
 	if err != nil {
 		return err
 	}
@@ -1016,7 +1020,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 			return err
 		}
 
-		err = installer.EnrollFn(fts.CurrentToken)
+		err = installer.EnrollFn(NewFleetConfig(containerName, fts.CurrentToken))
 		if err == nil {
 			err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
 

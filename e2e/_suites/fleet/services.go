@@ -20,7 +20,7 @@ type ElasticAgentInstaller struct {
 	artifactName      string // name of the artifact
 	artifactOS        string // OS of the artifact
 	artifactVersion   string // version of the artifact
-	EnrollFn          func(token string) error
+	EnrollFn          func(cfg *FleetConfig) error
 	homeDir           string // elastic agent home dir
 	image             string // docker image
 	installerType     string
@@ -57,10 +57,6 @@ func (i *ElasticAgentInstaller) listElasticAgentWorkingDirContent(containerName 
 	}).Debug("Agent working dir content")
 
 	return content, nil
-}
-
-func buildEnrollmentFlags(token string) []string {
-	return []string{"--kibana-url=http://kibana:5601", "--enrollment-token=" + token, "-f", "--insecure"}
 }
 
 // runElasticAgentCommand runs a command for the elastic-agent
@@ -171,8 +167,8 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 		return ElasticAgentInstaller{}, err
 	}
 
-	enrollFn := func(token string) error {
-		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", buildEnrollmentFlags(token))
+	enrollFn := func(cfg *FleetConfig) error {
+		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", cfg.flags())
 	}
 
 	workingDir := "/var/lib/elastic-agent"
@@ -240,8 +236,8 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 		return ElasticAgentInstaller{}, err
 	}
 
-	enrollFn := func(token string) error {
-		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", buildEnrollmentFlags(token))
+	enrollFn := func(cfg *FleetConfig) error {
+		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", cfg.flags())
 	}
 
 	workingDir := "/var/lib/elastic-agent"
@@ -327,7 +323,7 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 	logFileName := "elastic-agent-json.log"
 	logFile := logsDir + "/" + logFileName
 
-	enrollFn := func(token string) error {
+	enrollFn := func(cfg *FleetConfig) error {
 		return nil
 	}
 
@@ -399,8 +395,8 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 	logFileName := "elastic-agent-json.log"
 	logFile := logsDir + "/" + logFileName
 
-	enrollFn := func(token string) error {
-		return runElasticAgentCommand(profile, dockerImage, service, ElasticAgentProcessName, "enroll", buildEnrollmentFlags(token))
+	enrollFn := func(cfg *FleetConfig) error {
+		return runElasticAgentCommand(profile, dockerImage, service, ElasticAgentProcessName, "enroll", cfg.flags())
 	}
 
 	//
