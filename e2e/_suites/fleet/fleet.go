@@ -121,7 +121,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 	fts.Version = agentVersion
 
 	// create policy with system monitoring enabled
-	defaultPolicy, err := getAgentDefaultPolicy()
+	defaultPolicy, err := getAgentDefaultPolicy("is_default")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,
@@ -638,7 +638,7 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 	fts.Integration = integration
 
 	configurationIsPresentFn := func() error {
-		defaultPolicy, err := getAgentDefaultPolicy()
+		defaultPolicy, err := getAgentDefaultPolicy("is_default")
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":    err,
@@ -1275,8 +1275,10 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 	return installer.PostInstallFn()
 }
 
-// getAgentDefaultPolicy sends a GET request to Fleet for the existing default policy
-func getAgentDefaultPolicy() (*gabs.Container, error) {
+// getAgentDefaultPolicy sends a GET request to Fleet for the existing default policy, using the
+// "defaultPolicyFieldName" passed as parameter as field to be used to find the policy in list
+// of fleet policies
+func getAgentDefaultPolicy(defaultPolicyFieldName string) (*gabs.Container, error) {
 	r := createDefaultHTTPRequest(ingestManagerAgentPoliciesURL)
 	body, err := curl.Get(r)
 	if err != nil {
@@ -1305,15 +1307,16 @@ func getAgentDefaultPolicy() (*gabs.Container, error) {
 	}).Trace("Fleet policies retrieved")
 
 	for _, policy := range policies.Children() {
-		if policy.Path("is_default").Data().(bool) {
+		if policy.Path(defaultPolicyFieldName).Data().(bool) {
 			log.WithFields(log.Fields{
+				"field":  defaultPolicyFieldName,
 				"policy": policy,
 			}).Trace("Default Policy was found")
 			return policy, nil
 		}
 	}
 
-	return nil, fmt.Errorf("Default policy was not found")
+	return nil, fmt.Errorf("Default policy was not found with '%s' field equals to 'true'", defaultPolicyFieldName)
 }
 
 func getAgentEvents(applicationName string, agentID string, packagePolicyID string, updatedAt string) error {
