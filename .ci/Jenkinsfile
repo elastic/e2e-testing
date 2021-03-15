@@ -360,7 +360,7 @@ def tearDown(Map args = [:]){
     dir("${BASE_DIR}"){
       sh(label: 'Remove the entire module cache', script: 'go clean -modcache', returnStatus: true)
     }
-    if (isStaticWorker(labels: args.workerLabels)) {
+    if (isStaticWorker(labels: args.labels)) {
       dir("${WORKSPACE}") {
         deleteDir()
       }
