@@ -317,12 +317,17 @@ def generateFunctionalTestStep(Map args = [:]){
   }
   tags += excludeNightlyTag
 
+  if (isPR() || isUpstreamTrigger(filter: 'PR-')) {
+    tags += pullRequestFilter
+  }
+  def workerLabels = "${platform} && immutable && docker"
+
   return {
-    node("${platform} && immutable && docker") {
-      try {
-        deleteDir()
-        unstash 'source'
-        withGoEnv(version: "${GO_VERSION}"){
+    node("${workerLabels}") {
+      deleteDir()
+      unstash 'source'
+      withGoEnv(version: "${GO_VERSION}"){
+        try {
           if(isInstalled(tool: 'docker', flag: '--version')) {
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
           }
@@ -333,12 +338,27 @@ def generateFunctionalTestStep(Map args = [:]){
               }
             }
           }
-        }
-      } catch(e) {
-        error(e.toString())
-      } finally {
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+        } finally {
+          junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
           archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+          tearDown(labels: workerLabels)
+        }
+      }
+    }
+  }
+}
+
+/**
+* Tear down the setup for the static workers.
+*/
+def tearDown(Map args = [:]){
+  catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+    dir("${BASE_DIR}"){
+      sh(label: 'Remove the entire module cache', script: 'go clean -modcache', returnStatus: true)
+    }
+    if (isStaticWorker(labels: args.labels)) {
+      dir("${WORKSPACE}") {
+        deleteDir()
       }
     }
   }
