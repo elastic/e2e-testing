@@ -322,9 +322,10 @@ def generateFunctionalTestStep(Map args = [:]){
   if (isPR() || isUpstreamTrigger(filter: 'PR-')) {
     tags += pullRequestFilter
   }
+  def workerLabels = "${platform} && immutable && docker"
 
   return {
-    node("${platform} && immutable && docker") {
+    node("${workerLabels}") {
       try {
         deleteDir()
         unstash 'source'
@@ -344,7 +345,24 @@ def generateFunctionalTestStep(Map args = [:]){
         error(e.toString())
       } finally {
         junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-          archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+        tearDown(labels: workerLabels)
+      }
+    }
+  }
+}
+
+/**
+* Tear down the setup for the static workers.
+*/
+def tearDown(Map args = [:]){
+  catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+    dir("${BASE_DIR}"){
+      sh(label: 'Remove the entire module cache', script: 'go clean -modcache', returnStatus: true)
+    }
+    if (isStaticWorker(labels: args.workerLabels)) {
+      dir("${WORKSPACE}") {
+        deleteDir()
       }
     }
   }
