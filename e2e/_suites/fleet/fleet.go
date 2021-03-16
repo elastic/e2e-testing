@@ -271,10 +271,15 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 
 // supported installers: tar, systemd
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, installerType string) error {
+	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType, false)
+}
+
+func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(image string, installerType string, isFleetServer bool) error {
 	log.WithFields(log.Fields{
-		"image":     image,
-		"installer": installerType,
-	}).Trace("Deploying an agent to Fleet with base image")
+		"fleetServer": isFleetServer,
+		"image":       image,
+		"installer":   installerType,
+	}).Trace("Deploying an agent to Fleet with base image and fleet server")
 
 	fts.Image = image
 	fts.InstallerType = installerType
@@ -296,7 +301,8 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 	fts.CurrentToken = tokenJSONObject.Path("api_key").Data().(string)
 	fts.CurrentTokenID = tokenJSONObject.Path("id").Data().(string)
 
-	err = deployAgentToFleet(installer, containerName, fts.CurrentToken)
+	var fleetConfig *FleetConfig
+	fleetConfig, err = deployAgentToFleet(installer, containerName, fts.CurrentToken, isFleetServer)
 	fts.Cleanup = true
 	if err != nil {
 		return err
@@ -304,7 +310,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 
 	// the installation process for TAR includes the enrollment
 	if installer.installerType != "tar" {
-		err = installer.EnrollFn(NewFleetConfig(containerName, fts.CurrentToken))
+		err = installer.EnrollFn(fleetConfig)
 		if err != nil {
 			return err
 		}
@@ -593,11 +599,7 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 
 	installer := fts.getInstaller()
 
-	profile := installer.profile                                                               // name of the runtime dependencies compose file
-	serviceName := ElasticAgentServiceName                                                     // name of the service
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", serviceName, 1) // name of the container
-
-	err := installer.EnrollFn(NewFleetConfig(containerName, fts.CurrentToken))
+	err := installer.EnrollFn(NewFleetConfig(fts.CurrentToken))
 	if err != nil {
 		return err
 	}
@@ -1013,14 +1015,14 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", ElasticAgentServiceName, 2) // name of the new container
 
-	err := deployAgentToFleet(installer, containerName, fts.CurrentToken)
+	fleetConfig, err := deployAgentToFleet(installer, containerName, fts.CurrentToken, false)
 	// the installation process for TAR includes the enrollment
 	if installer.installerType != "tar" {
 		if err != nil {
 			return err
 		}
 
-		err = installer.EnrollFn(NewFleetConfig(containerName, fts.CurrentToken))
+		err = installer.EnrollFn(fleetConfig)
 		if err == nil {
 			err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
 
@@ -1240,7 +1242,7 @@ func createFleetToken(name string, policyID string) (*gabs.Container, error) {
 	return tokenItem, nil
 }
 
-func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, token string) error {
+func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, token string, isFleetServer bool) (*FleetConfig, error) {
 	profile := installer.profile // name of the runtime dependencies compose file
 	service := installer.service // name of the service
 	serviceTag := installer.tag  // docker tag of the service
@@ -1263,20 +1265,32 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 			"service": service,
 			"tag":     serviceTag,
 		}).Error("Could not run the target box")
-		return err
+		return nil, err
 	}
 
 	err = installer.PreInstallFn()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = installer.InstallFn(containerName, token)
+	var fleetConfig *FleetConfig
+	if isFleetServer {
+		cfg, cfgError := NewFleetServerConfig(token)
+		if cfgError != nil {
+			return nil, cfgError
+		}
+		fleetConfig = cfg
+	} else {
+		fleetConfig = NewFleetConfig(token)
+	}
+
+	err = installer.InstallFn(fleetConfig)
+
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return installer.PostInstallFn()
+	return fleetConfig, installer.PostInstallFn()
 }
 
 // getAgentDefaultPolicy sends a GET request to Fleet for the existing default policy, using the

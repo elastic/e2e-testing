@@ -6,32 +6,58 @@ package main
 
 import (
 	"fmt"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // FleetConfig represents the configuration for Fleet Server when building the enrollment command
 type FleetConfig struct {
-	ContainerName   string
-	EnrollmentToken string
+	EnrollmentToken          string
+	ElasticsearchPort        int
+	ElasticsearchURI         string
+	ElasticsearchCredentials string
 	// server
-	ServerCredentials string
-	ServerPolicyID    string
-	ServerPort        int
+	ServerPolicyID string
 }
 
-// NewFleetConfig builds a new configuration for the fleet server agent, defaulting credentials and port
-func NewFleetConfig(containerName string, token string) *FleetConfig {
+// NewFleetConfig builds a new configuration for the fleet agent, defaulting ES credentials, URI and port
+func NewFleetConfig(token string) *FleetConfig {
 	return &FleetConfig{
-		ContainerName:     containerName,
-		EnrollmentToken:   token,
-		ServerCredentials: "elastic:changeme",
-		ServerPort:        9200,
+		EnrollmentToken:          token,
+		ElasticsearchCredentials: "elastic:changeme",
+		ElasticsearchPort:        9200,
+		ElasticsearchURI:         "elasticsearch",
 	}
+}
+
+// NewFleetServerConfig builds a new configuration for the fleet server agent, defaulting credentials and port,
+// also retrieving the default policy ID for fleet server
+func NewFleetServerConfig(token string) (*FleetConfig, error) {
+	cfg := NewFleetConfig(token)
+
+	defaultFleetServerPolicy, err := getAgentDefaultPolicy("is_default_fleet_server")
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.ServerPolicyID = defaultFleetServerPolicy.Path("id").Data().(string)
+
+	log.WithFields(log.Fields{
+		"elasticsearch":     cfg.ElasticsearchURI,
+		"elasticsearchPort": cfg.ElasticsearchPort,
+		"policyID":          cfg.ServerPolicyID,
+		"token":             cfg.EnrollmentToken,
+	}).Debug("Fleet Server config created")
+
+	return cfg, nil
 }
 
 func (cfg FleetConfig) flags() []string {
+	baseFlags := []string{"--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken}
+
 	if cfg.ServerPolicyID != "" {
-		return []string{"--fleet-server", fmt.Sprintf("http://%s@%s:%d", cfg.ServerCredentials, cfg.ContainerName, cfg.ServerPort), "--enrollment-token", cfg.EnrollmentToken, "--fleet-server-policy", cfg.ServerPolicyID}
+		return append(baseFlags, "--fleet-server", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.ElasticsearchURI, cfg.ElasticsearchPort), "--fleet-server-policy", cfg.ServerPolicyID)
 	}
 
-	return []string{"--kibana-url=http://kibana:5601", "--enrollment-token=" + cfg.EnrollmentToken, "-f", "--insecure"}
+	return append(baseFlags, "--kibana-url", "http://kibana:5601")
 }

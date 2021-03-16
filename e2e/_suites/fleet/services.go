@@ -24,7 +24,7 @@ type ElasticAgentInstaller struct {
 	homeDir           string // elastic agent home dir
 	image             string // docker image
 	installerType     string
-	InstallFn         func(containerName string, token string) error
+	InstallFn         func(cfg *FleetConfig) error
 	InstallCertsFn    func() error
 	name              string // the name for the binary
 	path              string // the local path where the agent for the binary is located

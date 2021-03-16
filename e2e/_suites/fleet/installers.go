@@ -17,7 +17,7 @@ import (
 
 // InstallerPackage represents the operations that can be performed by an installer package type
 type InstallerPackage interface {
-	Install(containerName string, token string) error
+	Install(cfg *FleetConfig) error
 	InstallCerts() error
 	PrintLogs(containerName string) error
 	Postinstall() error
@@ -119,7 +119,7 @@ func NewDEBPackage(binaryName string, profile string, image string, service stri
 }
 
 // Install installs a DEB package
-func (i *DEBPackage) Install(containerName string, token string) error {
+func (i *DEBPackage) Install(cfg *FleetConfig) error {
 	return i.extractPackage([]string{"apt", "install", "/" + i.binaryName, "-y"})
 }
 
@@ -182,7 +182,7 @@ func NewDockerPackage(binaryName string, profile string, image string, service s
 }
 
 // Install installs a Docker package
-func (i *DockerPackage) Install(containerName string, token string) error {
+func (i *DockerPackage) Install(cfg *FleetConfig) error {
 	log.Trace("No install commands for Docker packages")
 	return nil
 }
@@ -267,7 +267,7 @@ func NewRPMPackage(binaryName string, profile string, image string, service stri
 }
 
 // Install installs a RPM package
-func (i *RPMPackage) Install(containerName string, token string) error {
+func (i *RPMPackage) Install(cfg *FleetConfig) error {
 	return i.extractPackage([]string{"yum", "localinstall", "/" + i.binaryName, "-y"})
 }
 
@@ -329,10 +329,11 @@ func NewTARPackage(binaryName string, profile string, image string, service stri
 }
 
 // Install installs a TAR package
-func (i *TARPackage) Install(containerName string, token string) error {
+func (i *TARPackage) Install(cfg *FleetConfig) error {
 	// install the elastic-agent to /usr/bin/elastic-agent using command
 	binary := fmt.Sprintf("/elastic-agent/%s", i.artifact)
-	args := []string{"--force", "--insecure", "--enrollment-token=" + token, "--kibana-url", "http://kibana:5601"}
+
+	args := cfg.flags()
 
 	err := runElasticAgentCommand(i.profile, i.image, i.service, binary, "install", args)
 	if err != nil {
