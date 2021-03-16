@@ -85,7 +85,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 		profileEnv["elasticAgentDockerImageSuffix"] = "-" + image
 	}
 
-	profileEnv["elasticAgentDockerNamespace"] = e2e.GetDockerNamespaceEnvVar()
+	profileEnv["elasticAgentDockerNamespace"] = e2e.GetDockerNamespaceEnvVar("beats")
 
 	containerName := fmt.Sprintf("%s_%s_%d", FleetProfileName, ElasticAgentServiceName, 1)
 

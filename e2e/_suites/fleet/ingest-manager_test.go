@@ -146,6 +146,8 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			"kibanaConfigPath": path.Join(workDir, "configurations", "kibana.config.yml"),
 		}
 
+		profileEnv["kibanaDockerNamespace"] = e2e.GetDockerNamespaceEnvVar("kibana")
+
 		profile := FleetProfileName
 		err := serviceManager.RunCompose(context.Background(), true, []string{profile}, profileEnv)
 		if err != nil {
