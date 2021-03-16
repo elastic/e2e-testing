@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/cucumber/godog"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -60,4 +61,14 @@ func (cfg FleetConfig) flags() []string {
 	}
 
 	return append(baseFlags, "--kibana-url", "http://kibana:5601")
+}
+
+func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerInFleetMode(image string, installerType string) error {
+	fts.ElasticAgentStopped = true
+	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType, true)
+}
+
+func (fts *FleetTestSuite) fleetServerIsEnabled() error {
+	log.Debug("Fleet server is enabled")
+	return godog.ErrPending
 }
