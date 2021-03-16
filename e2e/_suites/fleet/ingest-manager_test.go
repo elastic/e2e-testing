@@ -47,6 +47,10 @@ var agentVersion = agentVersionBase
 // It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
 var agentStaleVersion = "7.10-SNAPSHOT"
 
+// kibanaVersion is the version of the kibana to use
+// It can be overriden by KIBANA_VERSION env var
+var kibanaVersion = agentVersionBase
+
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
 var stackVersion = agentVersionBase
@@ -93,6 +97,12 @@ func setUpSuite() {
 
 	// check if version is an alias
 	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
+
+	kibanaVersion = shell.GetEnv("KIBANA_VERSION", kibanaVersion)
+	if !strings.HasPrefix(kibanaVersion, "pr") {
+		// we want to deploy a released version for Kibana
+		kibanaVersion = e2e.GetElasticArtifactVersion(kibanaVersion)
+	}
 
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 	stackVersion = e2e.GetElasticArtifactVersion(stackVersion)
@@ -142,6 +152,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		workDir, _ := os.Getwd()
 		profileEnv = map[string]string{
+			"kibanaVersion":    kibanaVersion,
 			"stackVersion":     stackVersion,
 			"kibanaConfigPath": path.Join(workDir, "configurations", "kibana.config.yml"),
 		}
