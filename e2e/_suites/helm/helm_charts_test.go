@@ -46,7 +46,7 @@ var kubectl k8s.Kubectl
 var helmVersion = "3.x"
 
 // helmChartVersion represents the default version used for the Elastic Helm charts
-var helmChartVersion = "7.10.0"
+var helmChartVersion = "7.11.2"
 
 // kubernetesVersion represents the default version used for Kubernetes
 var kubernetesVersion = "1.18.2"
@@ -362,7 +362,7 @@ func (ts *HelmChartTestSuite) getResourceName(resource string) string {
 	} else if resource == k8s.ResourceTypes.ClusterRoleBinding {
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role-binding")
 	} else if resource == k8s.ResourceTypes.ConfigMap {
-		if ts.Name == "metricbeat" {
+		if ts.Name == "filebeat" || ts.Name == "metricbeat" {
 			return strings.ToLower(ts.Name + "-" + ts.Name + "-daemonset-config")
 		}
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-config")
