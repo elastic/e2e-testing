@@ -25,7 +25,7 @@ pipeline {
     cron('H 4,16 * * *')
   }
   parameters {
-    string(name: 'MTIME_FILTER', defaultValue: '1.5', description: 'filter for the find mtime')
+    string(name: 'MTIME_FILTER', defaultValue: '0.5', description: 'filter for the find mtime')
   }
   stages {
     stage('Checkout') {
