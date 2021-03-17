@@ -1,3 +1,5 @@
+include ../commons.mk
+
 SUITE?=metricbeat
 TAGS?=
 DEVELOPER_MODE?=false
@@ -101,12 +103,7 @@ notice:
 		-depsOut ""
 
 .PHONY: unit-test
-unit-test: unit-test-report-setup unit-test-e2e unit-test-suite-fleet unit-test-suite-helm unit-test-suite-metricbeat
-
-# Prepare junit build context
-.PHONY: unit-test-report-setup
-unit-test-report-setup:
-	mkdir -p $(PWD)/outputs
+unit-test: test-report-setup unit-test-e2e unit-test-suite-fleet unit-test-suite-helm unit-test-suite-metricbeat
 
 # See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
 .PHONY: unit-test-e2e

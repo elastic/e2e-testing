@@ -1,6 +1,8 @@
 # Get current directory of a Makefile: https://stackoverflow.com/a/23324703
 ROOT_DIR:=$(CURDIR)
 
+include ../commons.mk
+
 TEST_TIMEOUT?=5m
 
 GO_IMAGE?='golang'
@@ -39,11 +41,6 @@ notice:
 .PHONY: sync-integrations
 sync-integrations:
 	OP_LOG_LEVEL=${LOG_LEVEL} go run main.go sync integrations --delete
-
-# Prepare junit build context
-.PHONY: test-report-setup
-test-report-setup:
-	mkdir -p $(PWD)/outputs
 
 .PHONY: test
 test: test-report-setup
