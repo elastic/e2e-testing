@@ -101,9 +101,22 @@ notice:
 		-depsOut ""
 
 .PHONY: unit-test
-unit-test:
-	gotestsum --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
-	cd _suites && gotestsum --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
+unit-test: unit-test-report-setup unit-test-e2e unit-test-suite-fleet unit-test-suite-helm unit-test-suite-metricbeat
+
+# Prepare junit build context
+.PHONY: unit-test-report-setup
+unit-test-report-setup:
+	mkdir -p $(PWD)/outputs
+
+# See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
+.PHONY: unit-test-e2e
+unit-test-e2e:
+	gotestsum --junitfile "$(PWD)/outputs/TEST-unit-e2e.xml" --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
+
+# See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
+.PHONY: unit-test-suite-%
+unit-test-suite-%:
+	cd _suites/$* && gotestsum --junitfile "$(PWD)/outputs/TEST-unit-e2e-$*.xml" --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
 
 ## Test examples
 

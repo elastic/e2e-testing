@@ -40,6 +40,11 @@ notice:
 sync-integrations:
 	OP_LOG_LEVEL=${LOG_LEVEL} go run main.go sync integrations --delete
 
+# Prepare junit build context
+.PHONY: test-report-setup
+test-report-setup:
+	mkdir -p $(PWD)/outputs
+
 .PHONY: test
-test:
-	gotestsum --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
+test: test-report-setup
+	gotestsum --junitfile "$(PWD)/outputs/TEST-unit-cli.xml" --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
