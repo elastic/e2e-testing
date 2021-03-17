@@ -9,6 +9,7 @@ pipeline {
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
     NOTIFY_TO = credentials('notify-to')
     PIPELINE_LOG_LEVEL='DEBUG'
+    MTIME_FILTER = "${params.MTIME_FILTER}"
   }
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -23,6 +24,9 @@ pipeline {
   triggers {
     cron('H 4,16 * * *')
   }
+  parameters {
+    string(name: 'MTIME_FILTER', defaultValue: '1.5', description: 'filter for the find mtime')
+  }
   stages {
     stage('Checkout') {
       steps {
@@ -36,7 +40,7 @@ pipeline {
       options { skipDefaultCheckout() }
       steps {
         dir("${BASE_DIR}") {
-          sh '.ci/scripts/metrics.sh'
+          sh '.ci/scripts/metrics.sh "${MTIME_FILTER}"'
           archiveArtifacts(allowEmptyArchive: true, artifacts: "metrics/*")
           script {
             def bulkFile = 'metrics/report-bulk.json'

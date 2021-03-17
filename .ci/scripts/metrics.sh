@@ -13,7 +13,7 @@ PREFIX_TRANSFORMED='metrics_transformed_'
 OUTPUT_FILE='metrics_document.json'
 BULK_REPORT='report-bulk.json'
 FOLDER='metrics'
-MTIME=0.5
+MTIME=${1:-'0.5'}
 mkdir -p $FOLDER
 
 collectBuilds() {
