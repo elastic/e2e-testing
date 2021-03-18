@@ -161,7 +161,6 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 
 	// fleet server steps
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer in fleet-server mode$`, fts.anAgentIsDeployedToFleetWithInstallerInFleetMode)
-	s.Step(`^Fleet server is enabled$`, fts.fleetServerIsEnabled)
 }
 
 func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, version, installerType string) error {
