@@ -16,6 +16,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/services"
 	curl "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
+	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -311,7 +312,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 	}
 
 	// get container hostname once
-	hostname, err := getContainerHostname(containerName)
+	hostname, err := steps.GetContainerHostname(containerName)
 	if err != nil {
 		return err
 	}
@@ -383,7 +384,8 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	// because it does not support returning the output of a
 	// command: it simply returns error level
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", ElasticAgentServiceName, 1)
-	return checkProcessStateOnTheHost(containerName, process, "stopped")
+
+	return steps.CheckProcessStateOnTheHost(containerName, process, "stopped", timeoutFactor)
 }
 
 func (fts *FleetTestSuite) setup() error {
