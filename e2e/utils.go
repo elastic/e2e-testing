@@ -69,9 +69,10 @@ func BuildArtifactName(artifact string, version string, fallbackVersion string, 
 	return artifactName
 }
 
-// CheckPRVersion returns a fallback version if the version comes from a Pull Request (PR)
+// CheckPRVersion returns a fallback version if the version comes from a commit
 func CheckPRVersion(version string, fallbackVersion string) string {
-	if strings.HasPrefix(strings.ToLower(version), "pr-") {
+	commitSHA := shell.GetEnv("GITHUB_CHECK_SHA1", "")
+	if commitSHA != "" {
 		return fallbackVersion
 	}
 
@@ -170,21 +171,13 @@ func getGCPBucketCoordinates(fileName string, artifact string, version string, f
 	// the commit SHA will identify univocally the artifact in the GCP storage bucket
 	commitSHA := shell.GetEnv("GITHUB_CHECK_SHA1", "")
 	if commitSHA != "" {
+		log.WithFields(log.Fields{
+			"commit":  commitSHA,
+			"PR":      version,
+			"version": fallbackVersion,
+		}).Debug("Using CI snapshots for a commit")
 		prefix = fmt.Sprintf("commits/%s", commitSHA)
 		object = artifact + "/" + fileName
-	}
-
-	// we are setting a version from a pull request: the version of the artifact will be kept as the base one
-	// i.e. /pull-requests/pr-21100/$THE_BEAT/$THE_BEAT-$VERSION-x86_64.rpm
-	// i.e. /pull-requests/pr-21100/$THE_BEAT/$THE_BEAT-$VERSION-$ARCH.deb
-	// i.e. /pull-requests/pr-21100/$THE_BEAT/$THE_BEAT-$VERSION-linux-x86_64.tar.gz
-	if strings.HasPrefix(strings.ToLower(version), "pr-") {
-		log.WithFields(log.Fields{
-			"version": fallbackVersion,
-			"PR":      version,
-		}).Debug("Using CI snapshots for a pull request")
-		prefix = fmt.Sprintf("pull-requests/%s", version)
-		object = fmt.Sprintf("%s/%s", artifact, fileName)
 	}
 
 	return bucket, prefix, object
@@ -214,12 +207,7 @@ func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOf
 // 1. Elastic's artifact repository, building the JSON path query based
 // If the version is a PR, then it will return the version without checking the artifacts API
 // i.e. GetElasticArtifactVersion("$VERSION")
-// i.e. GetElasticArtifactVersion("pr-22000")
 func GetElasticArtifactVersion(version string) string {
-	if strings.HasPrefix(strings.ToLower(version), "pr-") {
-		return version
-	}
-
 	exp := GetExponentialBackOff(time.Minute)
 
 	retryCount := 1

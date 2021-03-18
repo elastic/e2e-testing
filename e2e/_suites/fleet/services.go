@@ -10,6 +10,7 @@ import (
 
 	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/e2e"
+	"github.com/elastic/e2e-testing/e2e/steps"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -70,7 +71,7 @@ func runElasticAgentCommand(profile string, image string, service string, proces
 	}
 	cmds = append(cmds, arguments...)
 
-	err := execCommandInService(profile, image, service, cmds, false)
+	err := steps.ExecCommandInService(profile, image, service, cmds, profileEnv, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmds,
@@ -445,7 +446,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 
 func systemctlRun(profile string, image string, service string, command string) error {
 	cmd := []string{"systemctl", command, ElasticAgentProcessName}
-	err := execCommandInService(profile, image, service, cmd, false)
+	err := steps.ExecCommandInService(profile, image, service, cmd, profileEnv, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd,

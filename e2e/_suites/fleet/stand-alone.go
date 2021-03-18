@@ -16,6 +16,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/services"
 	shell "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
+	"github.com/elastic/e2e-testing/e2e/steps"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -110,7 +111,7 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 	}
 
 	// get container hostname once
-	hostname, err := getContainerHostname(containerName)
+	hostname, err := steps.GetContainerHostname(containerName)
 	if err != nil {
 		return err
 	}

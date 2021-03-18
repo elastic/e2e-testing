@@ -1,3 +1,5 @@
+include ../commons.mk
+
 SUITE?=metricbeat
 TAGS?=
 DEVELOPER_MODE?=false
@@ -101,9 +103,17 @@ notice:
 		-depsOut ""
 
 .PHONY: unit-test
-unit-test:
-	gotestsum --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
-	cd _suites && gotestsum --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
+unit-test: test-report-setup unit-test-e2e unit-test-suite-fleet unit-test-suite-helm unit-test-suite-metricbeat
+
+# See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
+.PHONY: unit-test-e2e
+unit-test-e2e:
+	gotestsum --junitfile "$(PWD)/outputs/TEST-unit-e2e.xml" --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
+
+# See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
+.PHONY: unit-test-suite-%
+unit-test-suite-%:
+	cd _suites/$* && gotestsum --junitfile "$(PWD)/outputs/TEST-unit-e2e-$*.xml" --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
 
 ## Test examples
 
@@ -114,10 +124,6 @@ fleet-fleet:
 .PHONY: fleet-fleet-ci-snapshots
 fleet-fleet-ci-snapshots:
 	SUITE="fleet" TAGS="fleet_mode_agent" TIMEOUT_FACTOR=3 LOG_LEVEL=TRACE BEATS_USE_CI_SNAPSHOTS=true DEVELOPER_MODE=true GITHUB_CHECK_SHA1=a1962c8864016010adcde9f35bd8378debb4fbf7 $(MAKE) functional-test
-
-.PHONY: fleet-fleet-pr-ci-snapshots
-fleet-fleet-pr-ci-snapshots:
-	SUITE="fleet" TAGS="fleet_mode_agent" TIMEOUT_FACTOR=3 LOG_LEVEL=TRACE BEATS_USE_CI_SNAPSHOTS=true DEVELOPER_MODE=true BEAT_VERSION=pr-14954 $(MAKE) functional-test
 
 .PHONY: fleet-nightly
 fleet-nightly:
