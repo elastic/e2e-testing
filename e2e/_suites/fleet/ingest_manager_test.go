@@ -6,7 +6,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -15,54 +14,11 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
-
-// developerMode tears down the backend services (ES, Kibana, Package Registry)
-// after a test suite. This is the desired behavior, but when developing, we maybe want to keep
-// them running to speed up the development cycle.
-// It can be overriden by the DEVELOPER_MODE env var
-var developerMode = false
-
-// ElasticAgentProcessName the name of the process for the Elastic Agent
-const ElasticAgentProcessName = "elastic-agent"
-
-// ElasticAgentServiceName the name of the service for the Elastic Agent
-const ElasticAgentServiceName = "elastic-agent"
-
-// FleetProfileName the name of the profile to run the runtime, backend services
-const FleetProfileName = "fleet"
-
-var agentVersionBase = "7.11-SNAPSHOT"
-
-// agentVersion is the version of the agent to use
-// It can be overriden by BEAT_VERSION env var
-var agentVersion = agentVersionBase
-
-// agentStaleVersion is the version of the agent to use as a base during upgrade
-// It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var agentStaleVersion = "7.10-SNAPSHOT"
-
-// stackVersion is the version of the stack to use
-// It can be overriden by STACK_VERSION env var
-var stackVersion = agentVersionBase
-
-// profileEnv is the environment to be applied to any execution
-// affecting the runtime dependencies (or profile)
-var profileEnv map[string]string
-
-// timeoutFactor a multiplier for the max timeout when doing backoff retries.
-// It can be overriden by TIMEOUT_FACTOR env var
-var timeoutFactor = 3
-
-// All URLs running on localhost as Kibana is expected to be exposed there
-const kibanaBaseURL = "http://localhost:5601"
-
-var kibanaClient *services.KibanaClient
 
 var imts IngestManagerTestSuite
 
@@ -210,102 +166,4 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			}
 		}
 	})
-}
-
-// IngestManagerTestSuite represents a test suite, holding references to the pieces needed to run the tests
-type IngestManagerTestSuite struct {
-	Fleet      *FleetTestSuite
-	StandAlone *StandAloneTestSuite
-}
-
-func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
-	profile := FleetProfileName
-	serviceName := ElasticAgentServiceName
-
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, imts.Fleet.Image+"-systemd", serviceName, 1)
-	if imts.StandAlone.Hostname != "" {
-		containerName = fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
-	}
-
-	return checkProcessStateOnTheHost(containerName, process, state)
-}
-
-// name of the container for the service:
-// we are using the Docker client instead of docker-compose
-// because it does not support returning the output of a
-// command: it simply returns error level
-func checkProcessStateOnTheHost(containerName string, process string, state string) error {
-	timeout := time.Duration(timeoutFactor) * time.Minute
-
-	err := e2e.WaitForProcess(containerName, process, state, timeout)
-	if err != nil {
-		if state == "started" {
-			log.WithFields(log.Fields{
-				"container ": containerName,
-				"error":      err,
-				"timeout":    timeout,
-			}).Error("The process was not found but should be present")
-		} else {
-			log.WithFields(log.Fields{
-				"container": containerName,
-				"error":     err,
-				"timeout":   timeout,
-			}).Error("The process was found but shouldn't be present")
-		}
-
-		return err
-	}
-
-	return nil
-}
-
-func execCommandInService(profile string, image string, serviceName string, cmds []string, detach bool) error {
-	serviceManager := services.NewServiceManager()
-
-	composes := []string{
-		profile, // profile name
-		image,   // image for the service
-	}
-	composeArgs := []string{"exec", "-T"}
-	if detach {
-		composeArgs = append(composeArgs, "-d")
-	}
-	composeArgs = append(composeArgs, serviceName)
-	composeArgs = append(composeArgs, cmds...)
-
-	err := serviceManager.RunCommand(profile, composes, composeArgs, profileEnv)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command": cmds,
-			"error":   err,
-			"service": serviceName,
-		}).Error("Could not execute command in container")
-
-		return err
-	}
-
-	return nil
-}
-
-// we need the container name because we use the Docker Client instead of Docker Compose
-func getContainerHostname(containerName string) (string, error) {
-	log.WithFields(log.Fields{
-		"containerName": containerName,
-	}).Trace("Retrieving container name from the Docker client")
-
-	hostname, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"cat", "/etc/hostname"})
-	if err != nil {
-		log.WithFields(log.Fields{
-			"containerName": containerName,
-			"error":         err,
-		}).Error("Could not retrieve container name from the Docker client")
-		return "", err
-	}
-
-	log.WithFields(log.Fields{
-		"containerName": containerName,
-		"hostname":      hostname,
-	}).Info("Hostname retrieved from the Docker client")
-
-	return hostname, nil
 }
