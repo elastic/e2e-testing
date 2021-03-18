@@ -4,9 +4,9 @@ Feature: Fleet Server
   so that the Agent is able to communicate with them
 
 @start-fleet-server
-Scenario Outline: Deploying the <os> fleet-server agent
+Scenario Outline: Deploying the <os> fleet-server agent enables Fleet Server
   When a "<os>" agent is deployed to Fleet with "tar" installer in fleet-server mode
-  Then Fleet server is enabled
+  Then the agent is listed in Fleet as "online"
 
 @centos
 Examples: Centos
