@@ -436,10 +436,10 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 					"status":      desiredStatus,
 				}).Info("The Agent is not present in Fleet, as expected")
 				return nil
-			} else if desiredStatus == "online" {
-				retryCount++
-				return fmt.Errorf("The agent is not present in Fleet, but it should")
 			}
+
+			retryCount++
+			return fmt.Errorf("The agent is not present in Fleet in the '%s' status, but it should", desiredStatus)
 		}
 
 		isAgentInStatus, err := isAgentInStatus(agentID, desiredStatus)
@@ -1516,6 +1516,11 @@ func isAgentInStatus(agentID string, desiredStatus string) (bool, error) {
 	}
 
 	jsonResponse, err := gabs.ParseJSON([]byte(body))
+
+	log.WithFields(log.Fields{
+		"agentID":       agentID,
+		"desiredStatus": desiredStatus,
+	}).Info(jsonResponse)
 
 	agentStatus := jsonResponse.Path("item.status").Data().(string)
 
