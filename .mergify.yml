@@ -20,7 +20,7 @@ pull_request_rules:
     actions:
       backport:
         branches:
-          - 7.x
+          - "7.x"
   - name: backport patches to 7.12 branch
     conditions:
       - base=master
@@ -28,7 +28,7 @@ pull_request_rules:
     actions:
       backport:
         branches:
-          - 7.12.x
+          - "7.12.x"
   - name: backport patches to 7.11 branch
     conditions:
       - base=master
@@ -36,4 +36,4 @@ pull_request_rules:
     actions:
       backport:
         branches:
-          - 7.11.x
+          - "7.11.x"
