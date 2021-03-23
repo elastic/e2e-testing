@@ -34,12 +34,12 @@ To understand more about the hooks we use, please take a look at pre-commit's [c
 
 ## Backports
 
-This project requires to backport to the existing active branches, those branches are defined in the `.backportrc.json` and `.mergify.yml` files. In order to do so,
+This project requires backports to the existing active branches. Those branches are defined in the `.backportrc.json` and `.mergify.yml` files. In order to do so,
 there are two different approaches:
 
 ### Mergify 🥇
 
-This is the preferred approach, backports are created automatically as long as the rules defined in [.mergify.yml](.mergify.yml) are fulfilled. From the user's point of
+This is the preferred approach. Backports are created automatically as long as the rules defined in [.mergify.yml](.mergify.yml) are fulfilled. From the user's point of
 view it's required only to attach a labels to the pull request that should be backported, and once it gets merged the automation happens under the hood.
 
 ### Backportrc 👴
