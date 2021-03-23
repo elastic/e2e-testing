@@ -36,7 +36,7 @@ pipeline {
       genericHeaderVariables: [
         [key: 'x-github-event', regexpFilter: '']
       ],
-      causeString: "Triggered on ${repo_name}#${pr_id}: ${pr_title} (${pr_author})",
+      causeString: "Triggered on ${repo_name}#${pr_id}: ${pr_title} (${pr_author}). Commit SHA: ${pr_head_sha}",
       //Allow to use a credential as a secret to trigger the webhook
       //tokenCredentialId: '',
       printContributedVariables: true,
