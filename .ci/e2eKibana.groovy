@@ -49,6 +49,7 @@ pipeline {
     stage('Process GitHub Event') {
       when {
         beforeAgent true
+        expression { env.repo_name == 'kibana' }
         anyOf {
           expression { env.action == "edited" }
           expression { env.action == "opened" }
