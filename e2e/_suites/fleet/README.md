@@ -65,6 +65,7 @@ This is an example of the optional configuration:
 4. Install dependencies.
 
    - Install Go: `https://golang.org/doc/install` _(The CI uses [GVM](https://github.com/andrewkroh/gvm))_
+   - Install integrations `make -C e2e sync-integrations`
    - Install godog (from project's root directory): `make -C e2e install-godog`
 
 5. Run the tests.
