@@ -30,12 +30,13 @@ pipeline {
         [key: 'pr_head_ref', value: '$.pull_request.head.ref'],
         [key: 'pr_head_sha', value: '$.pull_request.head.sha'],
         [key: 'pr_title', value: '$.pull_request.title'],
+        [key: 'pr_author', value: '$.pull_request.user.login'],
         [key: 'repo_name', value: '$.repository.name'],
       ],
       genericHeaderVariables: [
         [key: 'x-github-event', regexpFilter: '']
       ],
-      causeString: "Triggered on ${repo_name}#${pr_id}: ${pr_title}",
+      causeString: "Triggered on ${repo_name}#${pr_id}: ${pr_title} (${pr_author})",
       //Allow to use a credential as a secret to trigger the webhook
       //tokenCredentialId: '',
       printContributedVariables: true,
