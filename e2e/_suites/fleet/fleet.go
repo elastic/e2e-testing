@@ -1291,7 +1291,7 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 		return nil, err
 	}
 
-	return fleetConfig, installer.PostInstallFn()
+	return cfg, installer.PostInstallFn()
 }
 
 // getAgentDefaultPolicy sends a GET request to Fleet for the existing default policy, using the
