@@ -1127,8 +1127,7 @@ func (fts *FleetTestSuite) upgradeAgent(version string) error {
 	return nil
 }
 
-func (tfs *FleetTestSuite) checkDataStream() error {
-
+func (fts *FleetTestSuite) checkDataStream() error {
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{

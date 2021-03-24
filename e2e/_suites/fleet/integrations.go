@@ -24,6 +24,7 @@ type IntegrationPackage struct {
 	json            *gabs.Container // json representation of the integration
 }
 
+// Policy is a policy
 type Policy struct {
 	ID            string             `json:"id,omitempty"`
 	Name          string             `json:"name"`
@@ -32,17 +33,19 @@ type Policy struct {
 	Enabled       bool               `json:"enabled"`
 	AgentPolicyID string             `json:"policy_id"`
 	OutputID      string             `json:"output_id"`
-	Inputs        []PolicyInput      `json:"inputs"`
+	Inputs        []Input            `json:"inputs"`
 	Package       IntegrationPackage `json:"package"`
 }
 
-type PolicyInput struct {
+// Input is a policy input
+type Input struct {
 	Type    string         `json:"type"`
 	Enabled bool           `json:"enabled"`
 	Streams []interface{}  `json:"streams"`
 	Vars    map[string]Var `json:"vars,omitempty"`
 }
 
+// Var is an input var
 type Var struct {
 	Value interface{} `json:"value"`
 	Type  string      `json:"type"`
@@ -53,15 +56,16 @@ func addIntegrationToPolicy(integrationPackage IntegrationPackage, policyID stri
 
 	policy := Policy{
 		AgentPolicyID: policyID,
-		Name:          integrationPackage.Name + "-test-" + "-" + policyID,
+		Name:          integrationPackage.Name + "-test-name",
 		Description:   integrationPackage.Title + "-test-description",
 		Namespace:     "default",
 		Enabled:       true,
 		Package:       integrationPackage,
+		Inputs:        []Input{},
 	}
 
 	if policy.Package.Name == "linux" {
-		policy.Inputs = []PolicyInput{
+		policy.Inputs = []Input{
 			{
 				Type:    "linux/metrics",
 				Enabled: true,
