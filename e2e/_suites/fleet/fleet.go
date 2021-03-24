@@ -149,6 +149,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
 	s.Step(`^certs are installed$`, fts.installCerts)
+	s.Step(`^a Linux data stream exists with some data$`, fts.checkDataStream)
 
 	// endpoint steps
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)
@@ -698,11 +699,10 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 			return err
 		}
 
-		integration, err := getIntegration(name, version)
+		fts.Integration, err = getIntegration(name, version)
 		if err != nil {
 			return err
 		}
-		fts.Integration = integration
 
 		integrationPolicyID, err := addIntegrationToPolicy(fts.Integration, fts.PolicyID)
 		if err != nil {
@@ -1125,6 +1125,80 @@ func (fts *FleetTestSuite) upgradeAgent(version string) error {
 	}
 
 	return nil
+}
+
+func (fts *FleetTestSuite) checkDataStream() error {
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"filter": []interface{}{
+					map[string]interface{}{
+						"exists": map[string]interface{}{
+							"field": "linux.memory.page_stats",
+						},
+					},
+					map[string]interface{}{
+						"exists": map[string]interface{}{
+							"field": "elastic_agent",
+						},
+					},
+					map[string]interface{}{
+						"range": map[string]interface{}{
+							"@timestamp": map[string]interface{}{
+								"gte": "now-1m",
+							},
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"data_stream.type": "metrics",
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"data_stream.dataset": "linux.memory",
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"data_stream.namespace": "default",
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"event.dataset": "linux.memory",
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"agent.type": "metricbeat",
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"metricset.period": 1000,
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"service.type": "linux",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	indexName := "metrics-linux.memory-default"
+
+	_, err := e2e.WaitForNumberOfHits(context.Background(), indexName, query, 1, time.Minute)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Warn(e2e.WaitForIndices())
+	}
+
+	return err
 }
 
 // checkFleetConfiguration checks that Fleet configuration is not missing

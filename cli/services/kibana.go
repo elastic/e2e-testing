@@ -5,7 +5,9 @@
 package services
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -59,22 +61,12 @@ func (k *KibanaClient) withURL(path string) *KibanaClient {
 }
 
 // AddIntegrationToPolicy sends a POST request to add an integration to a policy
-func (k *KibanaClient) AddIntegrationToPolicy(packageName string, name string, title string, description string, version string, policyID string) (string, error) {
-	payload := `{
-		"name":"` + name + `",
-		"description":"` + description + `",
-		"namespace":"default",
-		"policy_id":"` + policyID + `",
-		"enabled":true,
-		"output_id":"",
-		"inputs":[],
-		"package":{
-			"name":"` + packageName + `",
-			"title":"` + title + `",
-			"version":"` + version + `"
-		}
-	}`
-
+func (k *KibanaClient) AddIntegrationToPolicy(policy interface{}) (string, error) {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(&policy); err != nil {
+		return "", err
+	}
+	payload := buf.String()
 	k.withURL(ingestManagerIntegrationPoliciesURL)
 
 	postReq := createDefaultHTTPRequest(k.getURL())
@@ -87,6 +79,7 @@ func (k *KibanaClient) AddIntegrationToPolicy(packageName string, name string, t
 			"error":   err,
 			"url":     k.getURL(),
 			"payload": payload,
+			"policy":  policy,
 		}).Error("Could not add integration to configuration")
 		return "", err
 	}
