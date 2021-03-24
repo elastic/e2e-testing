@@ -602,7 +602,12 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 
 	installer := fts.getInstaller()
 
-	err := installer.EnrollFn(NewFleetConfig(fts.CurrentToken))
+	cfg, err := NewFleetConfig(fts.CurrentToken, false)
+	if err != nil {
+		return err
+	}
+
+	err = installer.EnrollFn(cfg)
 	if err != nil {
 		return err
 	}
@@ -1276,19 +1281,12 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 		return nil, err
 	}
 
-	var fleetConfig *FleetConfig
-	if isFleetServer {
-		cfg, cfgError := NewFleetServerConfig(token)
-		if cfgError != nil {
-			return nil, cfgError
-		}
-		fleetConfig = cfg
-	} else {
-		fleetConfig = NewFleetConfig(token)
+	cfg, cfgError := NewFleetConfig(token, isFleetServer)
+	if cfgError != nil {
+		return nil, cfgError
 	}
 
-	err = installer.InstallFn(fleetConfig)
-
+	err = installer.InstallFn(cfg)
 	if err != nil {
 		return nil, err
 	}

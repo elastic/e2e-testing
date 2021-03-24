@@ -20,34 +20,31 @@ type FleetConfig struct {
 	ServerPolicyID string
 }
 
-// NewFleetConfig builds a new configuration for the fleet agent, defaulting ES credentials, URI and port
-func NewFleetConfig(token string) *FleetConfig {
-	return &FleetConfig{
+// NewFleetConfig builds a new configuration for the fleet agent, defaulting ES credentials, URI and port.
+// If the 'fleetServerMode' flag is true, the it will also retrieve the default policy ID for fleet server
+func NewFleetConfig(token string, fleetServerMode bool) (*FleetConfig, error) {
+	cfg := &FleetConfig{
 		EnrollmentToken:          token,
 		ElasticsearchCredentials: "elastic:changeme",
 		ElasticsearchPort:        9200,
 		ElasticsearchURI:         "elasticsearch",
 	}
-}
 
-// NewFleetServerConfig builds a new configuration for the fleet server agent, defaulting credentials and port,
-// also retrieving the default policy ID for fleet server
-func NewFleetServerConfig(token string) (*FleetConfig, error) {
-	cfg := NewFleetConfig(token)
+	if fleetServerMode {
+		defaultFleetServerPolicy, err := getAgentDefaultPolicy("is_default_fleet_server")
+		if err != nil {
+			return nil, err
+		}
 
-	defaultFleetServerPolicy, err := getAgentDefaultPolicy("is_default_fleet_server")
-	if err != nil {
-		return nil, err
+		cfg.ServerPolicyID = defaultFleetServerPolicy.Path("id").Data().(string)
+
+		log.WithFields(log.Fields{
+			"elasticsearch":     cfg.ElasticsearchURI,
+			"elasticsearchPort": cfg.ElasticsearchPort,
+			"policyID":          cfg.ServerPolicyID,
+			"token":             cfg.EnrollmentToken,
+		}).Debug("Fleet Server config created")
 	}
-
-	cfg.ServerPolicyID = defaultFleetServerPolicy.Path("id").Data().(string)
-
-	log.WithFields(log.Fields{
-		"elasticsearch":     cfg.ElasticsearchURI,
-		"elasticsearchPort": cfg.ElasticsearchPort,
-		"policyID":          cfg.ServerPolicyID,
-		"token":             cfg.EnrollmentToken,
-	}).Debug("Fleet Server config created")
 
 	return cfg, nil
 }
