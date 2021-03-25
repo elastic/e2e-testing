@@ -98,8 +98,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		workDir, _ := os.Getwd()
 		profileEnv = map[string]string{
-			"stackVersion":     stackVersion,
-			"kibanaConfigPath": path.Join(workDir, "configurations", "kibana.config.yml"),
+			"stackVersion": stackVersion,
 		}
 
 		profile := FleetProfileName

@@ -6,6 +6,7 @@ package config
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -96,7 +97,6 @@ func GetComposeFile(isProfile bool, composeName string) (string, error) {
 		"type":            serviceType,
 	}).Trace("Compose file not found at workdir. Extracting from binary resources")
 
-	composeBytes, err := opComposeBox.Find(path.Join(serviceType, composeName, composeFileName))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"composeFileName": composeFileName,
@@ -107,23 +107,6 @@ func GetComposeFile(isProfile bool, composeName string) (string, error) {
 
 		return "", err
 	}
-
-	// create parent directory for the compose file
-	err = io.MkdirAll(filepath.Dir(composeFilePath))
-	if err != nil {
-		return composeFilePath, err
-	}
-
-	err = io.WriteFile(composeBytes, composeFilePath)
-	if err != nil {
-		return composeFilePath, err
-	}
-
-	log.WithFields(log.Fields{
-		"composeFilePath": composeFilePath,
-		"isProfile":       isProfile,
-		"type":            serviceType,
-	}).Trace("Compose file generated at workdir.")
 
 	return composeFilePath, nil
 }
@@ -296,13 +279,16 @@ func newConfig(workspace string) {
 	}
 	Op = &opConfig
 
-	box := packComposeFiles(Op)
+	box := packFiles(Op)
 	if box == nil {
 		log.WithFields(log.Fields{
 			"workspace": workspace,
 		}).Error("Could not get packaged compose files")
 		return
 	}
+
+	// initialize included profiles/services
+	extractProfileServiceConfig(Op, box)
 
 	// add file system services and profiles
 	readFilesFromFileSystem("services")
@@ -311,38 +297,48 @@ func newConfig(workspace string) {
 	opComposeBox = box
 }
 
-func packComposeFiles(op *OpConfig) *packr.Box {
-	box := packr.New("Compose Files", "./compose")
-
-	err := box.Walk(func(boxedPath string, f packr.File) error {
-		// there must be three tokens: i.e. 'services/aerospike/docker-compose.yml'
-		tokens := strings.Split(boxedPath, string(os.PathSeparator))
-		composeType := tokens[0]
-		composeName := tokens[1]
-
-		log.WithFields(log.Fields{
-			"service": composeName,
-			"path":    boxedPath,
-		}).Trace("Boxed file")
-
-		if composeType == "profiles" {
-			op.Profiles[composeName] = Profile{
-				Name: composeName,
-				Path: boxedPath,
-			}
-		} else if composeType == "services" {
-			op.Services[composeName] = Service{
-				Name: composeName,
-				Path: boxedPath,
+// Extract packaged profiles and services for use with cli runner
+// all default configs/profiles/services will be overwritten. In order to customize
+// the default deployments, create a new directory and copy the existing files over.
+func extractProfileServiceConfig(op *OpConfig, box *packr.Box) error {
+	var walkFn = func(s string, file packr.File) error {
+		p := filepath.Join(op.Workspace, "compose", s)
+		dir := filepath.Dir(p)
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			err := os.MkdirAll(dir, 0755)
+			if err != nil {
+				return err
 			}
 		}
-
-		return nil
-	})
-	if err != nil {
-		return nil
+		return ioutil.WriteFile(p, []byte(file.String()), 0644)
 	}
 
+	if err := box.Walk(walkFn); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Packs all files required for starting profiles/services
+// if a configurations directory exists within the parent directory for each compose file
+// it will be included in the package binary but skipped in determining the correct paths
+// for each compose file
+//
+// Directory format for profiles/services are as follows:
+// compose/
+//  profiles/
+//    fleet/
+//      configurations/
+//      docker-compose.yml
+//  services/
+//    apache/
+//      configurations/
+//      docker-compose.yml
+//
+// configurations/ directory is optional and only needed if docker-compose.yml needs to reference
+// any filelike object within its parent directory
+func packFiles(op *OpConfig) *packr.Box {
+	box := packr.New("Compose Files", "./compose")
 	return box
 }
 
