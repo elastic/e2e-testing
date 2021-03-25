@@ -406,10 +406,18 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 			return err
 		}
 
+		mts.Version = mts.Version + "-amd64"
+
+		// wait for tagging to ensure the loaded image is present
+		e2e.Sleep(3 * time.Second)
+
 		err = docker.TagImage(
 			"docker.elastic.co/beats/metricbeat:"+metricbeatVersionBase,
-			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version+"-amd64",
+			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version,
 		)
+		if err != nil {
+			return err
+		}
 	}
 
 	// this is needed because, in general, the target service (apache, mysql, redis) does not have a healthcheck
@@ -436,7 +444,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"metricbeatConfigFile":  mts.configurationFile,
 		"metricbeatTag":         mts.Version,
 		"stackVersion":          stackVersion,
-		mts.ServiceName + "Tag": mts.ServiceVersion + "-amd64",
+		mts.ServiceName + "Tag": mts.ServiceVersion,
 		"serviceName":           mts.ServiceName,
 	}
 
