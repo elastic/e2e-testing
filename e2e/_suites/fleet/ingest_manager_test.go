@@ -7,7 +7,6 @@ package main
 import (
 	"context"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -96,7 +95,6 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		log.Trace("Installing Fleet runtime dependencies")
 
-		workDir, _ := os.Getwd()
 		profileEnv = map[string]string{
 			"stackVersion": stackVersion,
 		}
