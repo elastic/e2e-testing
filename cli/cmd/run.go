@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"context"
 	"strings"
 
 	"github.com/elastic/e2e-testing/cli/config"
@@ -63,7 +64,7 @@ func buildRunServiceCommand(srv string) *cobra.Command {
 
 			env := config.PutServiceEnvironment(map[string]string{}, srv, versionToRun)
 
-			err := serviceManager.RunCompose(false, []string{srv}, env)
+			err := serviceManager.RunCompose(context.Background(), false, []string{srv}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"service": srv,
@@ -85,7 +86,7 @@ func buildRunProfileCommand(key string, profile config.Profile) *cobra.Command {
 				"profileVersion": versionToRun,
 			}
 
-			err := serviceManager.RunCompose(true, []string{key}, env)
+			err := serviceManager.RunCompose(context.Background(), true, []string{key}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": key,
@@ -105,7 +106,7 @@ func buildRunProfileCommand(key string, profile config.Profile) *cobra.Command {
 					composeNames = append(composeNames, image)
 				}
 
-				err = serviceManager.AddServicesToCompose(key, composeNames, env)
+				err = serviceManager.AddServicesToCompose(context.Background(), key, composeNames, env)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"profile":  key,

@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/services"
 	curl "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
+	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -34,15 +36,16 @@ const actionREMOVED = "removed"
 
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
-	Image          string // base image used to install the agent
-	InstallerType  string
-	Installers     map[string]ElasticAgentInstaller
-	Cleanup        bool
-	PolicyID       string // will be used to manage tokens
-	CurrentToken   string // current enrollment token
-	CurrentTokenID string // current enrollment tokenID
-	Hostname       string // the hostname of the container
-	Version        string // current elastic-agent version
+	Image               string // base image used to install the agent
+	InstallerType       string
+	Installers          map[string]ElasticAgentInstaller
+	Cleanup             bool
+	ElasticAgentStopped bool   // will be used to signal when the agent process can be called again in the tear-down stage
+	PolicyID            string // will be used to manage tokens
+	CurrentToken        string // current enrollment token
+	CurrentTokenID      string // current enrollment tokenID
+	Hostname            string // the hostname of the container
+	Version             string // current elastic-agent version
 	// integrations
 	Integration     IntegrationPackage // the installed integration
 	PolicyUpdatedAt string             // the moment the policy was updated
@@ -57,13 +60,20 @@ func (fts *FleetTestSuite) afterScenario() {
 	if log.IsLevelEnabled(log.DebugLevel) {
 		installer := fts.getInstaller()
 
-		if developerMode {
-			_ = installer.getElasticAgentLogs(fts.Hostname)
+		err := installer.PrintLogsFn(fts.Hostname)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"containerName": fts.Hostname,
+				"error":         err,
+			}).Warn("Could not get agent logs in the container")
 		}
 
-		err := installer.UninstallFn()
-		if err != nil {
-			log.Warnf("Could not uninstall the agent after the scenario: %v", err)
+		// only call it when the elastic-agent is present
+		if !fts.ElasticAgentStopped {
+			err := installer.UninstallFn()
+			if err != nil {
+				log.Warnf("Could not uninstall the agent after the scenario: %v", err)
+			}
 		}
 	}
 
@@ -76,7 +86,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	}
 
 	if !developerMode {
-		_ = serviceManager.RemoveServicesFromCompose(FleetProfileName, []string{serviceName + "-systemd"}, profileEnv)
+		_ = serviceManager.RemoveServicesFromCompose(context.Background(), FleetProfileName, []string{serviceName + "-systemd"}, profileEnv)
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
@@ -107,6 +117,7 @@ func (fts *FleetTestSuite) afterScenario() {
 // beforeScenario creates the state needed by a scenario
 func (fts *FleetTestSuite) beforeScenario() {
 	fts.Cleanup = false
+	fts.ElasticAgentStopped = false
 
 	fts.Version = agentVersion
 
@@ -138,7 +149,8 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
-	s.Step(`^certs for "([^"]*)" are installed$`, fts.installCerts)
+	s.Step(`^certs are installed$`, fts.installCerts)
+	s.Step(`^a Linux data stream exists with some data$`, fts.checkDataStream)
 
 	// endpoint and package integration related steps
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)
@@ -175,7 +187,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
 }
 
-func (fts *FleetTestSuite) installCerts(targetOS string) error {
+func (fts *FleetTestSuite) installCerts() error {
 	installer := fts.getInstaller()
 	if installer.InstallCertsFn == nil {
 		log.WithFields(log.Fields{
@@ -187,7 +199,19 @@ func (fts *FleetTestSuite) installCerts(targetOS string) error {
 		return errors.New("no installer found")
 	}
 
-	return installer.InstallCertsFn()
+	err := installer.InstallCertsFn()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"agentVersion":      agentVersion,
+			"agentStaleVersion": agentStaleVersion,
+			"error":             err,
+			"installer":         installer,
+			"version":           fts.Version,
+		}).Error("Could not install the certificates")
+		return err
+	}
+
+	return nil
 }
 
 func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
@@ -290,7 +314,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 	}
 
 	// get container hostname once
-	hostname, err := getContainerHostname(containerName)
+	hostname, err := steps.GetContainerHostname(containerName)
 	if err != nil {
 		return err
 	}
@@ -356,7 +380,17 @@ func (fts *FleetTestSuite) anAgentIsDeployedAndIsOnline(image string, installerT
 }
 
 func (fts *FleetTestSuite) getInstaller() ElasticAgentInstaller {
-	return fts.Installers[fts.Image+"-"+fts.InstallerType+"-"+fts.Version]
+	// check if the agent is already cached
+	if i, exists := fts.Installers[fts.Image+"-"+fts.InstallerType+"-"+fts.Version]; exists {
+		return i
+	}
+
+	installer := GetElasticAgentInstaller(fts.Image, fts.InstallerType, fts.Version)
+
+	// cache the new installer
+	fts.Installers[fts.Image+"-"+fts.InstallerType+"-"+fts.Version] = installer
+
+	return installer
 }
 
 func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state string) error {
@@ -371,7 +405,17 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	} else if state == "restarted" {
 		return systemctlRun(profile, installer.image, serviceName, "restart")
 	} else if state == "uninstalled" {
-		return installer.UninstallFn()
+		err := installer.UninstallFn()
+		if err != nil {
+			return err
+		}
+
+		// signal that the elastic-agent was uninstalled
+		if process == ElasticAgentProcessName {
+			fts.ElasticAgentStopped = true
+		}
+
+		return nil
 	} else if state != "stopped" {
 		return godog.ErrPending
 	}
@@ -398,7 +442,8 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	// because it does not support returning the output of a
 	// command: it simply returns error level
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", ElasticAgentServiceName, 1)
-	return checkProcessStateOnTheHost(containerName, process, "stopped")
+
+	return steps.CheckProcessStateOnTheHost(containerName, process, "stopped", timeoutFactor)
 }
 
 func (fts *FleetTestSuite) setup() error {
@@ -712,11 +757,10 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 			return err
 		}
 
-		integration, err := getIntegration(name, version)
+		fts.Integration, err = getIntegration(name, version)
 		if err != nil {
 			return err
 		}
-		fts.Integration = integration
 
 		integrationPolicyID, err := addIntegrationToPolicy(fts.Integration, fts.PolicyID)
 		if err != nil {
@@ -1141,6 +1185,80 @@ func (fts *FleetTestSuite) upgradeAgent(version string) error {
 	return nil
 }
 
+func (fts *FleetTestSuite) checkDataStream() error {
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"filter": []interface{}{
+					map[string]interface{}{
+						"exists": map[string]interface{}{
+							"field": "linux.memory.page_stats",
+						},
+					},
+					map[string]interface{}{
+						"exists": map[string]interface{}{
+							"field": "elastic_agent",
+						},
+					},
+					map[string]interface{}{
+						"range": map[string]interface{}{
+							"@timestamp": map[string]interface{}{
+								"gte": "now-1m",
+							},
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"data_stream.type": "metrics",
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"data_stream.dataset": "linux.memory",
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"data_stream.namespace": "default",
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"event.dataset": "linux.memory",
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"agent.type": "metricbeat",
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"metricset.period": 1000,
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"service.type": "linux",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	indexName := "metrics-linux.memory-default"
+
+	_, err := e2e.WaitForNumberOfHits(context.Background(), indexName, query, 1, time.Minute)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Warn(e2e.WaitForIndices())
+	}
+
+	return err
+}
+
 // checkFleetConfiguration checks that Fleet configuration is not missing
 // any requirements and is read. To achieve it, a GET request is executed
 func checkFleetConfiguration() error {
@@ -1269,7 +1387,7 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 
 	serviceManager := services.NewServiceManager()
 
-	err := serviceManager.AddServicesToCompose(profile, []string{service}, profileEnv)
+	err := serviceManager.AddServicesToCompose(context.Background(), profile, []string{service}, profileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": service,

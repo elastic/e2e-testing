@@ -5,6 +5,9 @@
 package services
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -12,6 +15,7 @@ import (
 	backoff "github.com/cenkalti/backoff/v4"
 	curl "github.com/elastic/e2e-testing/cli/shell"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // KibanaBaseURL All URLs running on localhost as Kibana is expected to be exposed there
@@ -57,22 +61,12 @@ func (k *KibanaClient) withURL(path string) *KibanaClient {
 }
 
 // AddIntegrationToPolicy sends a POST request to add an integration to a policy
-func (k *KibanaClient) AddIntegrationToPolicy(packageName string, name string, title string, description string, version string, policyID string) (string, error) {
-	payload := `{
-		"name":"` + name + `",
-		"description":"` + description + `",
-		"namespace":"default",
-		"policy_id":"` + policyID + `",
-		"enabled":true,
-		"output_id":"",
-		"inputs":[],
-		"package":{
-			"name":"` + packageName + `",
-			"title":"` + title + `",
-			"version":"` + version + `"
-		}
-	}`
-
+func (k *KibanaClient) AddIntegrationToPolicy(policy interface{}) (string, error) {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(&policy); err != nil {
+		return "", err
+	}
+	payload := buf.String()
 	k.withURL(ingestManagerIntegrationPoliciesURL)
 
 	postReq := createDefaultHTTPRequest(k.getURL())
@@ -85,6 +79,7 @@ func (k *KibanaClient) AddIntegrationToPolicy(packageName string, name string, t
 			"error":   err,
 			"url":     k.getURL(),
 			"payload": payload,
+			"policy":  policy,
 		}).Error("Could not add integration to configuration")
 		return "", err
 	}
@@ -238,7 +233,7 @@ func (k *KibanaClient) UpdateIntegrationPackageConfig(packageConfigID string, pa
 
 // WaitForKibana waits for kibana running in localhost:5601 to be healthy, returning false
 // if kibana does not get healthy status in a defined number of minutes.
-func (k *KibanaClient) WaitForKibana(maxTimeoutMinutes time.Duration) (bool, error) {
+func (k *KibanaClient) WaitForKibana(ctx context.Context, maxTimeoutMinutes time.Duration) (bool, error) {
 	k.withURL("/status")
 
 	var (
@@ -259,6 +254,11 @@ func (k *KibanaClient) WaitForKibana(maxTimeoutMinutes time.Duration) (bool, err
 	retryCount := 1
 
 	kibanaStatus := func() error {
+		span, _ := apm.StartSpanOptions(ctx, "Health", "kibana.health", apm.SpanOptions{
+			Parent: apm.SpanFromContext(ctx).TraceContext(),
+		})
+		defer span.End()
+
 		r := curl.HTTPRequest{
 			BasicAuthUser:     "elastic",
 			BasicAuthPassword: "changeme",

@@ -1,10 +1,14 @@
-version: '2.3'
+version: '2.4'
 services:
   kibana:
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=changeme
-    image: "docker.elastic.co/observability-ci/kibana:${kibanaTag}"
+    healthcheck:
+      test: "curl -f http://localhost:5601/login | grep kbn-injected-metadata 2>&1 >/dev/null"
+      retries: 600
+      interval: 1s
+    image: "docker.elastic.co/kibana/kibana:${kibanaTag:-8.0.0-SNAPSHOT}"
     ports:
       - "5601:5601"

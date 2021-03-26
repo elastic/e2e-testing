@@ -6,20 +6,26 @@ SUITES:
     scenarios:
       - name: "APM Server"
         tags: "apm-server"
-      - "Filebeat":
+      - name: "Filebeat"
         tags: "filebeat"
-      - "Metricbeat":
+      - name: "Metricbeat"
         tags: "metricbeat"
   - suite: "fleet"
     platforms:
       - "ubuntu-18.04"
     scenarios:
       - name: "Fleet"
+        pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent"
       - name: "Endpoint Integration"
+        pullRequestFilter: " && ~debian"
         tags: "agent_endpoint_integration"
       - name: "Stand-alone"
+        pullRequestFilter: " && ~ubi8"
         tags: "stand_alone_agent"
+      - name: "Backend Processes"
+        pullRequestFilter: " && ~debian"
+        tags: "backend_processes"
   - suite: "metricbeat"
     platforms:
       - "ubuntu-18.04"
@@ -43,6 +49,7 @@ SUITES:
       - name: "Metricbeat"
         tags: "metricbeat"
       - name: "MySQL"
+        pullRequestFilter: " && ~old_versions"
         tags: "integrations && mysql"
       - name: "Oracle"
         tags: "integrations && oracle"

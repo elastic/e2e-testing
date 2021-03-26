@@ -1,6 +1,9 @@
+include ../commons.mk
+
 SUITE?=metricbeat
 TAGS?=
 DEVELOPER_MODE?=false
+ELASTIC_APM_ACTIVE?=false
 FORMAT?=pretty
 LOG_INCLUDE_TIMESTAMP?=TRUE
 LOG_LEVEL?=INFO
@@ -10,6 +13,21 @@ SKIP_SCENARIOS?=true
 STACK_VERSION?=
 PICKLES_VERSION?="2.20.1"
 VERSION_VALUE=`cat ../cli/VERSION.txt`
+ELASTIC_APM_ENVIRONMENT?=local
+
+ifeq ($(ELASTIC_APM_ACTIVE),true)
+ifeq ($(ELASTIC_APM_ENVIRONMENT),ci)
+JENKINS_STATS_SECRET?=secret/observability-team/ci/jenkins-stats
+export APM_SECRET_TOKEN?=$(shell vault read -field apmServerToken "$(JENKINS_STATS_SECRET)")
+export APM_SERVER_URL?=$(shell vault read -field apmServerUrl "$(JENKINS_STATS_SECRET)")
+endif
+
+ifeq ($(ELASTIC_APM_ENVIRONMENT),local)
+export APM_SECRET_TOKEN?=
+export APM_SERVER_URL?=http://localhost:8200
+export ELASTIC_APM_GLOBAL_LABELS?=
+endif
+endif
 
 ifneq ($(TAGS),)
 TAGS_FLAG=--tags
@@ -41,12 +59,6 @@ build-docs:
 	mv docs/.\\/index.html docs/index.html
 	rm -fr docs/.\\
 
-.PHONY: fetch-binary
-fetch-binary:
-	@$(MAKE) -C ../cli build
-	cp ../cli/.github/releases/download/$(VERSION_VALUE)/$(GOOS)$(subst amd,,$(GOARCH))-op ./op
-	chmod +x ./op
-
 .PHONY: install
 install:
 	go get -v -t ./...
@@ -64,6 +76,13 @@ functional-test: install-godog
 	TIMEOUT_FACTOR=${TIMEOUT_FACTOR} \
 	STACK_VERSION=${STACK_VERSION} \
 	DEVELOPER_MODE=${DEVELOPER_MODE} \
+	ELASTIC_APM_SERVICE_NAME="E2E Tests" \
+	ELASTIC_APM_CENTRAL_CONFIG="false" \
+	ELASTIC_APM_GLOBAL_LABELS=${ELASTIC_APM_GLOBAL_LABELS} \
+	ELASTIC_APM_SERVICE_VERSION="${STACK_VERSION}" \
+	ELASTIC_APM_ENVIRONMENT="${ELASTIC_APM_ENVIRONMENT}" \
+	ELASTIC_APM_SECRET_TOKEN="${APM_SECRET_TOKEN}" \
+	ELASTIC_APM_SERVER_URL="${APM_SERVER_URL}" \
 	godog --format=${FORMAT} ${TAGS_FLAG} ${TAGS_VALUE}
 
 .PHONY: lint
@@ -83,14 +102,18 @@ notice:
 		-noticeOut NOTICE.txt \
 		-depsOut ""
 
-.PHONY: sync-integrations
-sync-integrations:
-	OP_LOG_LEVEL=${LOG_LEVEL} ./op sync integrations --delete
-
 .PHONY: unit-test
-unit-test:
-	gotestsum --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
-	cd _suites && gotestsum --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
+unit-test: test-report-setup unit-test-e2e unit-test-suite-fleet unit-test-suite-helm unit-test-suite-metricbeat
+
+# See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
+.PHONY: unit-test-e2e
+unit-test-e2e:
+	gotestsum --junitfile "$(PWD)/outputs/TEST-unit-e2e.xml" --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
+
+# See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
+.PHONY: unit-test-suite-%
+unit-test-suite-%:
+	cd _suites/$* && gotestsum --junitfile "$(PWD)/outputs/TEST-unit-e2e-$*.xml" --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
 
 ## Test examples
 
@@ -101,10 +124,6 @@ fleet-fleet:
 .PHONY: fleet-fleet-ci-snapshots
 fleet-fleet-ci-snapshots:
 	SUITE="fleet" TAGS="fleet_mode_agent" TIMEOUT_FACTOR=3 LOG_LEVEL=TRACE BEATS_USE_CI_SNAPSHOTS=true DEVELOPER_MODE=true GITHUB_CHECK_SHA1=a1962c8864016010adcde9f35bd8378debb4fbf7 $(MAKE) functional-test
-
-.PHONY: fleet-fleet-pr-ci-snapshots
-fleet-fleet-pr-ci-snapshots:
-	SUITE="fleet" TAGS="fleet_mode_agent" TIMEOUT_FACTOR=3 LOG_LEVEL=TRACE BEATS_USE_CI_SNAPSHOTS=true DEVELOPER_MODE=true ELASTIC_AGENT_VERSION=pr-14954 $(MAKE) functional-test
 
 .PHONY: fleet-nightly
 fleet-nightly:

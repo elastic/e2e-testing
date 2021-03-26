@@ -201,8 +201,30 @@ func LoadImage(imagePath string) error {
 	}
 
 	log.WithFields(log.Fields{
+		"image":    fileNamePath,
 		"response": imageLoadResponse,
 	}).Debug("Docker image loaded successfully")
+	return nil
+}
+
+// TagImage tags an existing src image into a target one
+func TagImage(src string, target string) error {
+	dockerClient := getDockerClient()
+
+	err := dockerClient.ImageTag(context.Background(), src, target)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":  err,
+			"src":    src,
+			"target": target,
+		}).Error("Could not tag the Docker image.")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"src":    src,
+		"target": target,
+	}).Debug("Docker image tagged successfully")
 	return nil
 }
 

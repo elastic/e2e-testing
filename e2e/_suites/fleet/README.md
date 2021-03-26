@@ -52,10 +52,8 @@ This is an example of the optional configuration:
    # (Fleet mode) This environment variable will use the snapshots produced by Beats CI. If the above variable
    # is set, this variable will take no effect
    export BEATS_USE_CI_SNAPSHOTS="true"
-   # (Stand-Alone mode) This environment variable will use the its value as the Docker tag produced by Beats CI (Please look up here: https://container-library.elastic.co/r/observability-ci/elastic-agent). Here you have two examples for tags:
-   export ELASTIC_AGENT_VERSION="pr-20356"
-   # or
-   export ELASTIC_AGENT_VERSION="78a762c76080aafa34c52386341b590dac24e2df"
+   # (Stand-Alone mode) This environment variable will use the its value as the Docker tag produced by Beats CI (Please look up Google Cloud Storage CI bucket).
+   export BEAT_VERSION="78a762c76080aafa34c52386341b590dac24e2df"
    ```
 
 3. Define the proper Docker images to be used in tests (Optional).
@@ -67,6 +65,7 @@ This is an example of the optional configuration:
 4. Install dependencies.
 
    - Install Go: `https://golang.org/doc/install` _(The CI uses [GVM](https://github.com/andrewkroh/gvm))_
+   - Install integrations `make -C e2e sync-integrations`
    - Install godog (from project's root directory): `make -C e2e install-godog`
 
 5. Run the tests.
