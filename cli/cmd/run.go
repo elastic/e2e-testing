@@ -19,7 +19,7 @@ var servicesToRun string
 var versionToRun string
 
 func init() {
-	config.InitConfig()
+	config.Init()
 
 	rootCmd.AddCommand(runCmd)
 

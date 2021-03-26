@@ -118,6 +118,10 @@ func GetServiceConfig(service string) (Service, bool) {
 
 // Init creates this tool workspace under user's home, in a hidden directory named ".op"
 func Init() {
+	if Op != nil {
+		return
+	}
+
 	configureLogger()
 
 	binaries := []string{

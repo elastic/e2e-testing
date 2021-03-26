@@ -17,7 +17,7 @@ import (
 var versionToStop string
 
 func init() {
-	config.InitConfig()
+	config.Init()
 
 	rootCmd.AddCommand(stopCmd)
 

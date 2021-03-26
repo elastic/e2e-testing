@@ -27,7 +27,7 @@ var excludedBlocks = []string{"build"}
 var remote = "elastic:master"
 
 func init() {
-	config.InitConfig()
+	config.Init()
 
 	syncIntegrationsCmd.Flags().BoolVarP(&deleteRepository, "delete", "d", false, "Will delete the existing Beats repository before cloning it again (default false)")
 	syncIntegrationsCmd.Flags().StringVarP(&remote, "remote", "r", "elastic:master", "Sets the remote for Beats, using 'user:branch' as format (i.e. elastic:master)")
