@@ -118,6 +118,10 @@ func GetServiceConfig(service string) (Service, bool) {
 
 // Init creates this tool workspace under user's home, in a hidden directory named ".op"
 func Init() {
+	if Op != nil {
+		return
+	}
+
 	configureLogger()
 
 	binaries := []string{
@@ -310,6 +314,12 @@ func extractProfileServiceConfig(op *OpConfig, box *packr.Box) error {
 				return err
 			}
 		}
+
+		log.WithFields(log.Fields{
+			"file": p,
+			"dir":  dir,
+		}).Trace("Extracting boxed file")
+
 		return ioutil.WriteFile(p, []byte(file.String()), 0644)
 	}
 
