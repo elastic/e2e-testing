@@ -134,7 +134,7 @@ Examples: Debian
 
 @unenroll-with-deployed-endpoint
 Scenario Outline: Un-enrolling the agent with Endpoint
-  Given an Endpoint is successfully deployed with a "centos" Agent using "tar" installer
+  Given an Endpoint is successfully deployed with a "<os>" Agent using "tar" installer
     And the agent is listed in Fleet as "online"
     And the host name is shown in the Administration view in the Security App as "online"
   When the agent is un-enrolled
