@@ -314,6 +314,12 @@ func extractProfileServiceConfig(op *OpConfig, box *packr.Box) error {
 				return err
 			}
 		}
+
+		log.WithFields(log.Fields{
+			"file": p,
+			"dir":  dir,
+		}).Trace("Extracting boxed file")
+
 		return ioutil.WriteFile(p, []byte(file.String()), 0644)
 	}
 
