@@ -91,6 +91,12 @@ func GetComposeFile(isProfile bool, composeName string) (string, error) {
 		return composeFilePath, nil
 	}
 
+	log.WithFields(log.Fields{
+		"composeFilePath": composeFilePath,
+		"error":           err,
+		"type":            serviceType,
+	}).Tracef("Compose file not found at %s. Please make sure the file exists at the %s location", filepath.Dir(composeFilePath), composeFilePath)
+
 	if err != nil {
 		log.WithFields(log.Fields{
 			"composeFileName": composeFileName,
