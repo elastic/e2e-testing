@@ -72,7 +72,7 @@ func FileExists(configFile string) (bool, error) {
 }
 
 // GetComposeFile returns the path of the compose file, looking up the
-// tool's workdir or in the static resources already packaged in the binary
+// tool's workdir
 func GetComposeFile(isProfile bool, composeName string) (string, error) {
 	composeFileName := "docker-compose.yml"
 	serviceType := "services"
@@ -90,12 +90,6 @@ func GetComposeFile(isProfile bool, composeName string) (string, error) {
 
 		return composeFilePath, nil
 	}
-
-	log.WithFields(log.Fields{
-		"composeFilePath": composeFilePath,
-		"error":           err,
-		"type":            serviceType,
-	}).Trace("Compose file not found at workdir. Extracting from binary resources")
 
 	if err != nil {
 		log.WithFields(log.Fields{
