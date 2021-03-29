@@ -174,11 +174,11 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 
 				log.WithFields(log.Fields{
 					"path": mts.configurationFile,
-				}).Debug("Metricbeat configuration file removed.")
+				}).Trace("Metricbeat configuration file removed.")
 			} else {
 				log.WithFields(log.Fields{
 					"path": mts.configurationFile,
-				}).Debug("Metricbeat configuration file not removed because it's part of a repository.")
+				}).Trace("Metricbeat configuration file not removed because it's part of a repository.")
 			}
 		}
 	}

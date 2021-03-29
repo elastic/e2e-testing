@@ -54,11 +54,11 @@ func (sats *StandAloneTestSuite) afterScenario() {
 
 			log.WithFields(log.Fields{
 				"path": sats.AgentConfigFilePath,
-			}).Debug("Elastic Agent configuration file removed.")
+			}).Trace("Elastic Agent configuration file removed.")
 		} else {
 			log.WithFields(log.Fields{
 				"path": mts.configurationFile,
-			}).Debug("Elastic Agent configuration file not removed because it's part of a repository.")
+			}).Trace("Elastic Agent configuration file not removed because it's part of a repository.")
 		}
 	}
 }
