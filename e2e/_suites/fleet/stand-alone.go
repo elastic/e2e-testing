@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -91,15 +90,9 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 		dockerImageTag += "-amd64"
 	}
 
-	var configurationFilePath string
-	if beatsLocalPath != "" {
-		configurationFilePath = path.Join(beatsLocalPath, "x-pack", "elastic-agent", "elastic-agent.docker.yml")
-	} else {
-		p, downloadError := e2e.DownloadFile(configurationFileURL)
-		if downloadError != nil {
-			return downloadError
-		}
-		configurationFilePath = p
+	configurationFilePath, err := steps.FetchBeatConfiguration(true, "elastic-agent", "elastic-agent.docker.yml")
+	if err != nil {
+		return err
 	}
 
 	serviceManager := services.NewServiceManager()

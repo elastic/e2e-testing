@@ -371,32 +371,9 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 
 	metricbeatVersion = e2e.CheckPRVersion(metricbeatVersion, metricbeatVersionBase)
 
-	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
-	var configurationFilePath string
-	if beatsLocalPath != "" {
-		configurationFilePath = path.Join(beatsLocalPath, "metricbeat", configuration+".yml")
-		log.WithFields(log.Fields{
-			"file": configurationFilePath,
-		}).Trace("Reading configuration file from local path")
-	} else {
-		// use master branch for snapshots
-		tag := "v" + metricbeatVersion
-		if strings.Contains(metricbeatVersion, "SNAPSHOT") {
-			tag = "master"
-		}
-
-		tag = shell.GetEnv("GITHUB_CHECK_SHA1", tag)
-		configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + tag + "/metricbeat/" + configuration + ".yml"
-
-		p, downloadError := e2e.DownloadFile(configurationFileURL)
-		if downloadError != nil {
-			return downloadError
-		}
-		log.WithFields(log.Fields{
-			"URL": configurationFilePath,
-		}).Trace("Configuration file downloaded from Github")
-
-		configurationFilePath = p
+	configurationFilePath, err := steps.FetchBeatConfiguration(false, "metricbeat", configuration+".yml")
+	if err != nil {
+		return err
 	}
 
 	mts.configurationFile = configurationFilePath
@@ -405,7 +382,7 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 	mts.setEventModule("system")
 	mts.setServiceVersion(mts.Version)
 
-	err := mts.runMetricbeatService()
+	err = mts.runMetricbeatService()
 	if err != nil {
 		return err
 	}
