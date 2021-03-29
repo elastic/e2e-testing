@@ -168,10 +168,18 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 
 	if mts.cleanUpTmpFiles {
 		if _, err := os.Stat(mts.configurationFile); err == nil {
-			os.Remove(mts.configurationFile)
-			log.WithFields(log.Fields{
-				"path": mts.configurationFile,
-			}).Debug("Metricbeat configuration file removed.")
+			beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+			if beatsLocalPath == "" {
+				os.Remove(mts.configurationFile)
+
+				log.WithFields(log.Fields{
+					"path": mts.configurationFile,
+				}).Debug("Metricbeat configuration file removed.")
+			} else {
+				log.WithFields(log.Fields{
+					"path": mts.configurationFile,
+				}).Debug("Metricbeat configuration file not removed because it's part of a repository.")
+			}
 		}
 	}
 
@@ -363,25 +371,41 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 
 	metricbeatVersion = e2e.CheckPRVersion(metricbeatVersion, metricbeatVersionBase)
 
-	// use master branch for snapshots
-	tag := "v" + metricbeatVersion
-	if strings.Contains(metricbeatVersion, "SNAPSHOT") {
-		tag = "master"
+	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+	var configurationFilePath string
+	if beatsLocalPath != "" {
+		configurationFilePath = path.Join(beatsLocalPath, "metricbeat", configuration+".yml")
+		log.WithFields(log.Fields{
+			"file": configurationFilePath,
+		}).Trace("Reading configuration file from local path")
+	} else {
+		// use master branch for snapshots
+		tag := "v" + metricbeatVersion
+		if strings.Contains(metricbeatVersion, "SNAPSHOT") {
+			tag = "master"
+		}
+
+		tag = shell.GetEnv("GITHUB_CHECK_SHA1", tag)
+		configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + tag + "/metricbeat/" + configuration + ".yml"
+
+		p, downloadError := e2e.DownloadFile(configurationFileURL)
+		if downloadError != nil {
+			return downloadError
+		}
+		log.WithFields(log.Fields{
+			"URL": configurationFilePath,
+		}).Trace("Configuration file downloaded from Github")
+
+		configurationFilePath = p
 	}
 
-	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + tag + "/metricbeat/" + configuration + ".yml"
-
-	configurationFilePath, err := e2e.DownloadFile(configurationFileURL)
-	if err != nil {
-		return err
-	}
 	mts.configurationFile = configurationFilePath
 	mts.cleanUpTmpFiles = true
 
 	mts.setEventModule("system")
 	mts.setServiceVersion(mts.Version)
 
-	err = mts.runMetricbeatService()
+	err := mts.runMetricbeatService()
 	if err != nil {
 		return err
 	}
