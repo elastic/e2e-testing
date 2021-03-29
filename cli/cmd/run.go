@@ -20,7 +20,7 @@ var versionToRun string
 var environmentItems map[string]string
 
 func init() {
-	config.InitConfig()
+	config.Init()
 
 	rootCmd.AddCommand(runCmd)
 
