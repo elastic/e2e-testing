@@ -56,7 +56,7 @@ func (sats *StandAloneTestSuite) afterScenario() {
 			}).Trace("Elastic Agent configuration file removed.")
 		} else {
 			log.WithFields(log.Fields{
-				"path": mts.configurationFile,
+				"path": sats.AgentConfigFilePath,
 			}).Trace("Elastic Agent configuration file not removed because it's part of a repository.")
 		}
 	}
@@ -73,9 +73,6 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 	log.Trace("Deploying an agent to Fleet")
 
 	dockerImageTag := agentVersion
-
-	descriptorLocation := shell.Getenv("GITHUB_CHECK_SHA1", "master")
-	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + descriptorLocation + "/x-pack/elastic-agent/elastic-agent.docker.yml"
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
