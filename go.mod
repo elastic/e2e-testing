@@ -1,4 +1,4 @@
-module github.com/elasticsearch/e2e-testing
+module github.com/elastic/e2e-testing
 
 go 1.14
 
