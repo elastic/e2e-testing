@@ -408,9 +408,6 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 
 		mts.Version = mts.Version + "-amd64"
 
-		// wait for tagging to ensure the loaded image is present
-		e2e.Sleep(3 * time.Second)
-
 		err = docker.TagImage(
 			"docker.elastic.co/beats/metricbeat:"+metricbeatVersionBase,
 			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version,
