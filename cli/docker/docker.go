@@ -11,7 +11,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
@@ -211,21 +213,48 @@ func LoadImage(imagePath string) error {
 func TagImage(src string, target string) error {
 	dockerClient := getDockerClient()
 
-	err := dockerClient.ImageTag(context.Background(), src, target)
-	if err != nil {
+	maxTimeout := 15 * time.Second
+	retryCount := 0
+	var (
+		initialInterval     = 500 * time.Millisecond
+		randomizationFactor = 0.5
+		multiplier          = 2.0
+		maxInterval         = 5 * time.Second
+		maxElapsedTime      = maxTimeout
+	)
+
+	exp := backoff.NewExponentialBackOff()
+	exp.InitialInterval = initialInterval
+	exp.RandomizationFactor = randomizationFactor
+	exp.Multiplier = multiplier
+	exp.MaxInterval = maxInterval
+	exp.MaxElapsedTime = maxElapsedTime
+
+	tagImageFn := func() error {
+		retryCount++
+
+		err := dockerClient.ImageTag(context.Background(), src, target)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":       err,
+				"src":         src,
+				"target":      target,
+				"elapsedTime": exp.GetElapsedTime(),
+				"retries":     retryCount,
+			}).Warn("Could not tag the Docker image.")
+			return err
+		}
+
 		log.WithFields(log.Fields{
-			"error":  err,
-			"src":    src,
-			"target": target,
-		}).Error("Could not tag the Docker image.")
-		return err
+			"src":         src,
+			"target":      target,
+			"elapsedTime": exp.GetElapsedTime(),
+			"retries":     retryCount,
+		}).Debug("Docker image tagged successfully")
+		return nil
 	}
 
-	log.WithFields(log.Fields{
-		"src":    src,
-		"target": target,
-	}).Debug("Docker image tagged successfully")
-	return nil
+	return backoff.Retry(tagImageFn, exp)
 }
 
 // RemoveDevNetwork removes the developer network
