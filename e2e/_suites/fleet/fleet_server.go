@@ -16,6 +16,8 @@ type FleetConfig struct {
 	ElasticsearchPort        int
 	ElasticsearchURI         string
 	ElasticsearchCredentials string
+	KibanaPort               int
+	KibanaURI                string
 	// server
 	ServerPolicyID string
 }
@@ -28,6 +30,8 @@ func NewFleetConfig(token string, fleetServerMode bool) (*FleetConfig, error) {
 		ElasticsearchCredentials: "elastic:changeme",
 		ElasticsearchPort:        9200,
 		ElasticsearchURI:         "elasticsearch",
+		KibanaPort:               5601,
+		KibanaURI:                "kibana",
 	}
 
 	if fleetServerMode {
@@ -50,13 +54,13 @@ func NewFleetConfig(token string, fleetServerMode bool) (*FleetConfig, error) {
 }
 
 func (cfg FleetConfig) flags() []string {
-	baseFlags := []string{"--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken}
+	baseFlags := []string{"-e", "-v", "--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken}
 
 	if cfg.ServerPolicyID != "" {
-		return append(baseFlags, "--fleet-server", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.ElasticsearchURI, cfg.ElasticsearchPort), "--fleet-server-policy", cfg.ServerPolicyID)
+		baseFlags = append(baseFlags, "--fleet-server-insecure-http", "--fleet-server", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.ElasticsearchURI, cfg.ElasticsearchPort), "--fleet-server-host=http://0.0.0.0", "--fleet-server-policy", cfg.ServerPolicyID)
 	}
 
-	return append(baseFlags, "--kibana-url", "http://kibana:5601")
+	return append(baseFlags, "--kibana-url", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.KibanaURI, cfg.KibanaPort))
 }
 
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerInFleetMode(image string, installerType string) error {
