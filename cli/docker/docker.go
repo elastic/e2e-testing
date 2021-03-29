@@ -241,7 +241,7 @@ func TagImage(src string, target string) error {
 				"target":      target,
 				"elapsedTime": exp.GetElapsedTime(),
 				"retries":     retryCount,
-			}).Error("Could not tag the Docker image.")
+			}).Warn("Could not tag the Docker image.")
 			return err
 		}
 
