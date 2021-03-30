@@ -35,7 +35,7 @@ func FetchBeatConfiguration(xpack bool, beat string, configFileName string) (str
 		return configurationFilePath, nil
 	}
 
-	refspec := shell.GetEnv("GITHUB_CHECK_SHA1", "master")
+	refspec := shell.GetEnv("GITHUB_CHECK_SHA1", "7.12")
 
 	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + refspec
 	if xpack {
