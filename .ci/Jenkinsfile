@@ -46,7 +46,7 @@ pipeline {
     booleanParam(name: "BEATS_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the binary snapshots produced by Beats CI instead of the official releases")
     choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'TRACE', 'INFO'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
-    string(name: 'KIBANA_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the kibana to be used for the tests.')
+    string(name: 'KIBANA_VERSION', defaultValue: '', description: 'Docker tag of the kibana to be used for the tests. It will refer to an image related to a Kibana PR, under the Observability-CI namespace')
     string(name: 'STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
     string(name: 'HELM_CHART_VERSION', defaultValue: '7.11.2', description: 'SemVer version of Helm chart to be used.')
     string(name: 'HELM_VERSION', defaultValue: '3.5.2', description: 'SemVer version of Helm to be used.')
