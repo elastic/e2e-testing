@@ -1324,7 +1324,7 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 	// we are setting the container name because Centos service could be reused by any other test suite
 	profileEnv[envVarsPrefix+"ContainerName"] = containerName
 	// define paths where the binary will be mounted
-	profileEnv[envVarsPrefix+"AgentBinarySrcPath"] = installer.path
+	profileEnv[envVarsPrefix+"AgentBinarySrcPath"] = installer.binaryPath
 	profileEnv[envVarsPrefix+"AgentBinaryTargetPath"] = "/" + installer.name
 
 	serviceManager := services.NewServiceManager()
