@@ -47,10 +47,18 @@ func (sats *StandAloneTestSuite) afterScenario() {
 	}
 
 	if _, err := os.Stat(sats.AgentConfigFilePath); err == nil {
-		os.Remove(sats.AgentConfigFilePath)
-		log.WithFields(log.Fields{
-			"path": sats.AgentConfigFilePath,
-		}).Debug("Elastic Agent configuration file removed.")
+		beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+		if beatsLocalPath == "" {
+			os.Remove(sats.AgentConfigFilePath)
+
+			log.WithFields(log.Fields{
+				"path": sats.AgentConfigFilePath,
+			}).Trace("Elastic Agent configuration file removed.")
+		} else {
+			log.WithFields(log.Fields{
+				"path": sats.AgentConfigFilePath,
+			}).Trace("Elastic Agent configuration file not removed because it's part of a repository.")
+		}
 	}
 }
 
@@ -79,6 +87,11 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 		dockerImageTag += "-amd64"
 	}
 
+	configurationFilePath, err := steps.FetchBeatConfiguration(true, "elastic-agent", "elastic-agent.docker.yml")
+	if err != nil {
+		return err
+	}
+
 	serviceManager := services.NewServiceManager()
 
 	profileEnv["elasticAgentDockerImageSuffix"] = ""
@@ -90,12 +103,6 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 
 	containerName := fmt.Sprintf("%s_%s_%d", FleetProfileName, ElasticAgentServiceName, 1)
 
-	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/master/x-pack/elastic-agent/elastic-agent.docker.yml"
-
-	configurationFilePath, err := e2e.DownloadFile(configurationFileURL)
-	if err != nil {
-		return err
-	}
 	sats.AgentConfigFilePath = configurationFilePath
 
 	profileEnv["elasticAgentContainerName"] = containerName

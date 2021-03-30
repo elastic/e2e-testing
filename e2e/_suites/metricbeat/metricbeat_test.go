@@ -168,10 +168,18 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 
 	if mts.cleanUpTmpFiles {
 		if _, err := os.Stat(mts.configurationFile); err == nil {
-			os.Remove(mts.configurationFile)
-			log.WithFields(log.Fields{
-				"path": mts.configurationFile,
-			}).Debug("Metricbeat configuration file removed.")
+			beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+			if beatsLocalPath == "" {
+				os.Remove(mts.configurationFile)
+
+				log.WithFields(log.Fields{
+					"path": mts.configurationFile,
+				}).Trace("Metricbeat configuration file removed.")
+			} else {
+				log.WithFields(log.Fields{
+					"path": mts.configurationFile,
+				}).Trace("Metricbeat configuration file not removed because it's part of a repository.")
+			}
 		}
 	}
 
@@ -363,18 +371,11 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 
 	metricbeatVersion = e2e.CheckPRVersion(metricbeatVersion, metricbeatVersionBase)
 
-	// use master branch for snapshots
-	tag := "v" + metricbeatVersion
-	if strings.Contains(metricbeatVersion, "SNAPSHOT") {
-		tag = "master"
-	}
-
-	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + tag + "/metricbeat/" + configuration + ".yml"
-
-	configurationFilePath, err := e2e.DownloadFile(configurationFileURL)
+	configurationFilePath, err := steps.FetchBeatConfiguration(false, "metricbeat", configuration+".yml")
 	if err != nil {
 		return err
 	}
+
 	mts.configurationFile = configurationFilePath
 	mts.cleanUpTmpFiles = true
 
@@ -406,10 +407,15 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 			return err
 		}
 
+		mts.Version = mts.Version + "-amd64"
+
 		err = docker.TagImage(
 			"docker.elastic.co/beats/metricbeat:"+metricbeatVersionBase,
-			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version+"-amd64",
+			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version,
 		)
+		if err != nil {
+			return err
+		}
 	}
 
 	// this is needed because, in general, the target service (apache, mysql, redis) does not have a healthcheck
@@ -436,7 +442,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"metricbeatConfigFile":  mts.configurationFile,
 		"metricbeatTag":         mts.Version,
 		"stackVersion":          stackVersion,
-		mts.ServiceName + "Tag": mts.ServiceVersion + "-amd64",
+		mts.ServiceName + "Tag": mts.ServiceVersion,
 		"serviceName":           mts.ServiceName,
 	}
 
