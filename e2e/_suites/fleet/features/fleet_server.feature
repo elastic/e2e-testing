@@ -4,7 +4,7 @@ Feature: Fleet Server
   so that the Agent is able to communicate with them
 
 @start-fleet-server
-Scenario Outline: Deploying the <os> fleet-server agent enables Fleet Server
+Scenario Outline: Deploying an <os> Elastic Agent that starts Fleet Server
   When a "<os>" agent is deployed to Fleet with "tar" installer in fleet-server mode
   Then the agent is listed in Fleet as "online"
 
