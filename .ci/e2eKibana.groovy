@@ -43,7 +43,7 @@ pipeline {
     )
   }
   parameters {
-    string(name: 'kibana_branch', defaultValue: "master", description: "Branch/PR to use to build the Docker image. (e.g PR/10000)")
+    string(name: 'kibana_branch', defaultValue: "master", description: "Branch/PR to use to build the Docker image. (e.g 10000)")
   }
   stages {
     stage('Process GitHub Event') {
@@ -75,7 +75,7 @@ def getBranch(){
     return "PR/${env.GT_PR}"
   }
   
-  return "${params.kibana_branch}"
+  return "PR/${params.kibana_branch}"
 }
 
 def getDockerTag(){
@@ -83,8 +83,8 @@ def getDockerTag(){
     return "${env.GT_PR_HEAD_SHA}"
   }
 
-  // we ar egoing to use the 'pr12345' tag
-  return normalize("${params.kibana_branch}")
+  // we are going to use the 'pr12345' tag
+  return "pr${params.kibana_branch}"
 }
 
 def hasCommentAuthorWritePermissions(prId, commentId){
@@ -95,10 +95,6 @@ def hasCommentAuthorWritePermissions(prId, commentId){
   def json = githubRepoGetUserPermission(token: token, repo: repoName, user: comment?.user?.login)
 
   return json?.permission == 'admin' || json?.permission == 'write'
-}
-
-def normalize(value){
-  return value?.trim().toLowerCase().replaceAll("[^A-Za-z0-9 ]", "")
 }
 
 def runE2ETests(String suite) {
