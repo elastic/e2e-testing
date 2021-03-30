@@ -49,14 +49,15 @@ func setUpSuite() {
 	// check if version is an alias
 	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
 
-	kibanaVersion = shell.GetEnv("KIBANA_VERSION", kibanaVersion)
-	if !strings.HasPrefix(kibanaVersion, "pr") {
-		// we want to deploy a released version for Kibana
-		kibanaVersion = e2e.GetElasticArtifactVersion(kibanaVersion)
-	}
-
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 	stackVersion = e2e.GetElasticArtifactVersion(stackVersion)
+
+	kibanaVersion = shell.GetEnv("KIBANA_VERSION", "")
+	if kibanaVersion == "" {
+		// we want to deploy a released version for Kibana
+		// if not set, let's use stackVersion
+		kibanaVersion = e2e.GetElasticArtifactVersion(stackVersion)
+	}
 
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
