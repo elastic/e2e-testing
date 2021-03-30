@@ -21,13 +21,13 @@ type ElasticAgentInstaller struct {
 	artifactName      string // name of the artifact
 	artifactOS        string // OS of the artifact
 	artifactVersion   string // version of the artifact
+	binaryPath        string // the local path where the agent for the binary is located
 	EnrollFn          func(token string) error
 	image             string // docker image
 	installerType     string
 	InstallFn         func(containerName string, token string) error
 	InstallCertsFn    func() error
 	name              string // the name for the binary
-	path              string // the local path where the agent for the binary is located
 	processName       string // name of the elastic-agent process
 	profile           string // parent docker-compose file
 	PostInstallFn     func() error
@@ -193,13 +193,13 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 		artifactName:      artifact,
 		artifactOS:        os,
 		artifactVersion:   version,
+		binaryPath:        binaryPath,
 		EnrollFn:          enrollFn,
 		image:             image,
 		InstallFn:         installerPackage.Install,
 		InstallCertsFn:    installerPackage.InstallCerts,
 		installerType:     "rpm",
 		name:              binaryName,
-		path:              binaryPath,
 		PostInstallFn:     installerPackage.Postinstall,
 		PreInstallFn:      installerPackage.Preinstall,
 		PrintLogsFn:       installerPackage.PrintLogs,
@@ -260,13 +260,13 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 		artifactName:      artifact,
 		artifactOS:        os,
 		artifactVersion:   version,
+		binaryPath:        binaryPath,
 		EnrollFn:          enrollFn,
 		image:             image,
 		InstallFn:         installerPackage.Install,
 		InstallCertsFn:    installerPackage.InstallCerts,
 		installerType:     "deb",
 		name:              binaryName,
-		path:              binaryPath,
 		PostInstallFn:     installerPackage.Postinstall,
 		PreInstallFn:      installerPackage.Preinstall,
 		PrintLogsFn:       installerPackage.PrintLogs,
@@ -339,13 +339,13 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 		artifactName:      artifact,
 		artifactOS:        os,
 		artifactVersion:   version,
+		binaryPath:        binaryPath,
 		EnrollFn:          enrollFn,
 		image:             image,
 		InstallFn:         installerPackage.Install,
 		InstallCertsFn:    installerPackage.InstallCerts,
 		installerType:     "docker",
 		name:              binaryName,
-		path:              binaryPath,
 		PostInstallFn:     installerPackage.Postinstall,
 		PreInstallFn:      installerPackage.Preinstall,
 		PrintLogsFn:       installerPackage.PrintLogs,
@@ -411,13 +411,13 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 		artifactName:      artifact,
 		artifactOS:        os,
 		artifactVersion:   version,
+		binaryPath:        binaryPath,
 		EnrollFn:          enrollFn,
 		image:             dockerImage,
 		InstallFn:         installerPackage.Install,
 		InstallCertsFn:    installerPackage.InstallCerts,
 		installerType:     "tar",
 		name:              binaryName,
-		path:              binaryPath,
 		PostInstallFn:     installerPackage.Postinstall,
 		PreInstallFn:      installerPackage.Preinstall,
 		PrintLogsFn:       installerPackage.PrintLogs,
