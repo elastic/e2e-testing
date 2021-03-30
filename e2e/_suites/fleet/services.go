@@ -178,8 +178,7 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 	workingDir := "/var/lib/elastic-agent"
 	binDir := workingDir + "/data/elastic-agent-%s/"
 
-	commitFileName := ".elastic-agent.active.commit"
-	commitFile := "/etc/elastic-agent/" + commitFileName
+	commitFile := "/etc/elastic-agent/.elastic-agent.active.commit"
 
 	logsDir := binDir + "logs/"
 	logFileName := "elastic-agent-json.log"
@@ -245,8 +244,7 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 	workingDir := "/var/lib/elastic-agent"
 	binDir := workingDir + "/data/elastic-agent-%s/"
 
-	commitFileName := ".elastic-agent.active.commit"
-	commitFile := "/etc/elastic-agent/" + commitFileName
+	commitFile := "/etc/elastic-agent/.elastic-agent.active.commit"
 
 	logsDir := binDir + "logs/"
 	logFileName := "elastic-agent-json.log"
@@ -312,12 +310,11 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 		return ElasticAgentInstaller{}, err
 	}
 
-	commitFileName := ".elastic-agent.active.commit"
 	homeDir := "/usr/share/elastic-agent"
 	workingDir := homeDir
 	binDir := homeDir + "/data/elastic-agent-%s/"
 
-	commitFile := homeDir + commitFileName
+	commitFile := homeDir + ".elastic-agent.active.commit"
 
 	logsDir := binDir + "logs/"
 	logFileName := "elastic-agent-json.log"
@@ -386,8 +383,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 
 	workingDir := "/opt/Elastic/Agent"
 
-	commitFileName := ".elastic-agent.active.commit"
-	commitFile := "/elastic-agent/" + commitFileName
+	commitFile := "/elastic-agent/.elastic-agent.active.commit"
 
 	logsDir := workingDir + "/data/elastic-agent-%s/logs/"
 	logFileName := "elastic-agent-json.log"
