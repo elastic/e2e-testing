@@ -5,7 +5,7 @@
 pipeline {
   agent none
   environment {
-    REPO = 'beats'
+    REPO = 'kibana'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
     GITHUB_CHECK_E2E_TESTS_NAME = 'E2E Tests'
     PIPELINE_LOG_LEVEL = "INFO"
@@ -23,42 +23,29 @@ pipeline {
   // Pull requests events: https://docs.github.com/en/developers/webhooks-and-events/github-event-types#pullrequestevent
   triggers {
     GenericTrigger(
-      genericVariables: [
-        [key: 'action', value: '$.action'],
-        [key: 'pr_id', value: '$.number'],
-        [key: 'pr_base_ref', value: '$.pull_request.base.ref'],
-        [key: 'pr_head_ref', value: '$.pull_request.head.ref'],
-        [key: 'pr_head_sha', value: '$.pull_request.head.sha'],
-        [key: 'pr_title', value: '$.pull_request.title'],
-        [key: 'pr_author', value: '$.pull_request.user.login'],
-        [key: 'repo_name', value: '$.repository.name'],
-      ],
-      genericHeaderVariables: [
-        [key: 'x-github-event', regexpFilter: '']
-      ],
-      causeString: "Triggered on ${repo_name}#${pr_id}: ${pr_title} (${pr_author}). Commit SHA: ${pr_head_sha}",
-      //Allow to use a credential as a secret to trigger the webhook
-      //tokenCredentialId: '',
-      printContributedVariables: true,
-      printPostContent: false,
-      silentResponse: true,
-      regexpFilterText: "$pr_head_ref-$x_github_event",
-      regexpFilterExpression: '^(refs/tags/current|refs/heads/master/.+)-comment$'
+     genericVariables: [
+      [key: 'GT_REPO', value: '$.repository.full_name'],
+      [key: 'GT_BASE_REF', value: '$.pull_request.base.ref'],
+      [key: 'GT_PR', value: '$.issue.number'],
+      [key: 'GT_PR_HEAD_SHA', value: '$.pull_request.head.sha'],
+      [key: 'GT_BODY', value: '$.comment.body'],
+      [key: 'GT_COMMENT_ID', value: '$.comment.id']
+     ],
+    genericHeaderVariables: [
+     [key: 'x-github-event', regexpFilter: 'comment']
+    ],
+     causeString: 'Triggered on comment: $GT_BODY',
+     printContributedVariables: false,
+     printPostContent: false,
+     silentResponse: true,
+     regexpFilterText: '$GT_REPO$GT_BODY',
+     regexpFilterExpression: '^elastic/kibana/run-fleet-e2e-tests$'
     )
   }
   stages {
     stage('Process GitHub Event') {
-      when {
-        beforeAgent true
-        expression { env.repo_name == 'kibana' }
-        anyOf {
-          expression { env.action == "edited" }
-          expression { env.action == "opened" }
-          expression { env.action == "reopened" }
-          expression { env.action == "synchronize" }
-        }
-      }
       steps {
+        checkPermissions()
         catchError(buildResult: 'UNSTABLE', message: 'Unable to run e2e tests', stageResult: 'FAILURE') {
           runE2ETests('fleet')
         }
@@ -67,11 +54,33 @@ pipeline {
   }
 }
 
+def checkPermissions(){
+  if(env.GT_PR){
+    if(!githubPrCheckApproved(changeId: "${env.GT_PR}", org: 'elastic', repo: 'kibana')){
+      error("Only PRs from Elasticians can be tested with Fleet E2E tests")
+    }
+
+    if(!hasCommentAuthorWritePermissions(env.GT_PR, env.GT_COMMENT_ID)){
+      error("Only Elasticians can trigger Fleet E2E tests")
+    }
+  }
+}
+
+def hasCommentAuthorWritePermissions(prId, commentId){
+  def repoName = "elastic/kibana"
+  def token = getGithubToken()
+  def url = "https://api.github.com/repos/${repoName}/issues/${prId}/comments/${commentId}"
+  def comment = githubApiCall(token: token, url: url, noCache: true)
+  def json = githubRepoGetUserPermission(token: token, repo: repoName, user: comment?.user?.login)
+
+  return json?.permission == 'admin' || json?.permission == 'write'
+}
+
 def runE2ETests(String suite) {
-  log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for PR-${env.pr_id}.")
+  log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for PR-${env.GT_PR}.")
 
   // Kibana's maintenance branches follow the 7.11, 7.12 schema.
-  def branchName = "${env.pr_base_ref}.x"
+  def branchName = "${env.GT_BASE_REF}.x"
   def e2eTestsPipeline = "e2e-tests/e2e-testing-mbp/${branchName}"
 
   def parameters = [
@@ -82,7 +91,7 @@ def runE2ETests(String suite) {
     string(name: 'runTestsSuites', value: suite),
     string(name: 'GITHUB_CHECK_NAME', value: env.GITHUB_CHECK_E2E_TESTS_NAME),
     string(name: 'GITHUB_CHECK_REPO', value: env.REPO),
-    string(name: 'GITHUB_CHECK_SHA1', value: env.GIT_BASE_COMMIT),
+    string(name: 'GITHUB_CHECK_SHA1', value: env.GT_PR_HEAD_SHA),
   ]
 
   build(job: "${e2eTestsPipeline}",
