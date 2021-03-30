@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"strings"
 
 	"github.com/Jeffail/gabs/v2"
@@ -17,18 +18,78 @@ const elasticEnpointIntegrationTitle = "Endpoint Security"
 // IntegrationPackage used to share information about a integration
 type IntegrationPackage struct {
 	packageConfigID string          `json:"packageConfigId"`
-	name            string          `json:"name"`
-	title           string          `json:"title"`
-	version         string          `json:"version"`
+	Name            string          `json:"name"`
+	Title           string          `json:"title"`
+	Version         string          `json:"version"`
 	json            *gabs.Container // json representation of the integration
+}
+
+// Policy is a policy
+type Policy struct {
+	ID            string             `json:"id,omitempty"`
+	Name          string             `json:"name"`
+	Description   string             `json:"description"`
+	Namespace     string             `json:"namespace"`
+	Enabled       bool               `json:"enabled"`
+	AgentPolicyID string             `json:"policy_id"`
+	OutputID      string             `json:"output_id"`
+	Inputs        []Input            `json:"inputs"`
+	Package       IntegrationPackage `json:"package"`
+}
+
+// Input is a policy input
+type Input struct {
+	Type    string         `json:"type"`
+	Enabled bool           `json:"enabled"`
+	Streams []interface{}  `json:"streams"`
+	Vars    map[string]Var `json:"vars,omitempty"`
+}
+
+// Var is an input var
+type Var struct {
+	Value interface{} `json:"value"`
+	Type  string      `json:"type"`
 }
 
 // addIntegrationToPolicy sends a POST request to Fleet adding an integration to a configuration
 func addIntegrationToPolicy(integrationPackage IntegrationPackage, policyID string) (string, error) {
-	name := integrationPackage.name + "-test-name"
-	description := integrationPackage.title + "-test-description"
 
-	body, err := kibanaClient.AddIntegrationToPolicy(integrationPackage.name, name, integrationPackage.title, description, integrationPackage.version, policyID)
+	policy := Policy{
+		AgentPolicyID: policyID,
+		Name:          integrationPackage.Name + "-test-name",
+		Description:   integrationPackage.Title + "-test-description",
+		Namespace:     "default",
+		Enabled:       true,
+		Package:       integrationPackage,
+		Inputs:        []Input{},
+	}
+
+	if policy.Package.Name == "linux" {
+		policy.Inputs = []Input{
+			{
+				Type:    "linux/metrics",
+				Enabled: true,
+				Streams: []interface{}{
+					map[string]interface{}{
+						"id":      "linux/metrics-linux.memory-" + uuid.New().String(),
+						"enabled": true,
+						"data_stream": map[string]interface{}{
+							"dataset": "linux.memory",
+							"type":    "metrics",
+						},
+					},
+				},
+				Vars: map[string]Var{
+					"period": {
+						Value: "1s",
+						Type:  "string",
+					},
+				},
+			},
+		}
+	}
+
+	body, err := kibanaClient.AddIntegrationToPolicy(policy)
 	if err != nil {
 		return "", err
 	}
@@ -47,8 +108,8 @@ func addIntegrationToPolicy(integrationPackage IntegrationPackage, policyID stri
 	log.WithFields(log.Fields{
 		"policyID":                   policyID,
 		"integrationConfigurationID": integrationConfigurationID,
-		"integration":                integrationPackage.name,
-		"version":                    integrationPackage.version,
+		"integration":                integrationPackage.Name,
+		"version":                    integrationPackage.Version,
 	}).Info("Integration added to the configuration")
 
 	return integrationConfigurationID, nil
@@ -63,9 +124,9 @@ func deleteIntegrationFromPolicy(integrationPackage IntegrationPackage, policyID
 
 	log.WithFields(log.Fields{
 		"policyID":        policyID,
-		"integration":     integrationPackage.name,
+		"integration":     integrationPackage.Name,
 		"packageConfigId": integrationPackage.packageConfigID,
-		"version":         integrationPackage.version,
+		"version":         integrationPackage.Version,
 	}).Info("Integration deleted from the configuration")
 
 	return nil
@@ -89,9 +150,9 @@ func getIntegration(packageName string, version string) (IntegrationPackage, err
 
 	response := jsonParsed.Path("response")
 	integrationPackage := IntegrationPackage{
-		name:    response.Path("name").Data().(string),
-		title:   response.Path("title").Data().(string),
-		version: response.Path("latestVersion").Data().(string),
+		Name:    response.Path("name").Data().(string),
+		Title:   response.Path("title").Data().(string),
+		Version: response.Path("latestVersion").Data().(string),
 	}
 
 	return integrationPackage, nil
@@ -120,9 +181,9 @@ func getIntegrationFromAgentPolicy(packageName string, agentPolicyID string) (In
 		if title == packageName {
 			integrationPackage := IntegrationPackage{
 				packageConfigID: packagePolicy.Path("id").Data().(string),
-				name:            packagePolicy.Path("package.name").Data().(string),
-				title:           title,
-				version:         packagePolicy.Path("package.version").Data().(string),
+				Name:            packagePolicy.Path("package.name").Data().(string),
+				Title:           title,
+				Version:         packagePolicy.Path("package.version").Data().(string),
 				json:            packagePolicy,
 			}
 
