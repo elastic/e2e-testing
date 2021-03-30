@@ -286,7 +286,7 @@ def generateStep(Map args = [:]){
   def oss = args.get('oss')
   def platform = args.get('platform')
   return {
-    node('ubuntu-18.04 && immutable && docker') {
+    withNode(labels: 'ubuntu-18.04 && immutable && docker', sleepMax: 20, forceWorspace: true){
       try {
         deleteDir()
         unstash 'source'
@@ -295,8 +295,6 @@ def generateStep(Map args = [:]){
             sh script: 'make build', label: 'Create releases'
           }
         }
-      } catch(e) {
-        error(e.toString())
       } finally {
         archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/cli/.github/releases/download/**"
       }
@@ -325,7 +323,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def workerLabels = "${platform} && immutable && docker"
 
   return {
-    node("${workerLabels}") {
+    withNode(labels: "${workerLabels}", sleepMax: 20, forceWorspace: true){
       deleteDir()
       unstash 'source'
       withGoEnv(version: "${GO_VERSION}"){
