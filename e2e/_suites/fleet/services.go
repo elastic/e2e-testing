@@ -314,7 +314,7 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 
 	commitFileName := ".elastic-agent.active.commit"
 	homeDir := "/usr/share/elastic-agent"
-	workingDir := homeDir + "/"
+	workingDir := homeDir
 	binDir := homeDir + "/data/elastic-agent-%s/"
 
 	commitFile := homeDir + commitFileName
@@ -384,7 +384,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 		return ElasticAgentInstaller{}, err
 	}
 
-	workingDir := "/opt/Elastic/Agent/"
+	workingDir := "/opt/Elastic/Agent"
 
 	commitFileName := ".elastic-agent.active.commit"
 	commitFile := "/elastic-agent/" + commitFileName
