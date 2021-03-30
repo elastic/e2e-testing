@@ -1,6 +1,6 @@
 ---
 - job:
-    name: e2e-tests/e2e-testing-kibana-fleet-mbp
+    name: e2e-tests/e2e-testing-kibana-fleet
     display-name: Fleet UI e2e tests Pipeline
     description: Jenkins pipeline to run the end2end tests for the Fleet UI
     project-type: pipeline
