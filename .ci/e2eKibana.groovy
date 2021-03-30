@@ -44,11 +44,14 @@ pipeline {
   }
   parameters {
     string(name: 'kibana_sha', defaultValue: "", description: "Commit to be used to run the Fleet E2E Tests. (e.g 1234567890abcdef)")
+    string(name: 'kibana_branch', defaultValue: "master", description: "Branch/PR to use to build the Docker image. (e.g PR/10000)")
+    string(name: 'target_tag', defaultValue: "", description: "Tag used for the generated Docker image. If empty, it will use the HEAD commit of the Kibana PR as Docker tag")
   }
   stages {
     stage('Process GitHub Event') {
       steps {
         checkPermissions()
+        buildKibanaDockerImage(refspec: getBranch(), targetTag: "${params.target_tag}")
         catchError(buildResult: 'UNSTABLE', message: 'Unable to run e2e tests', stageResult: 'FAILURE') {
           runE2ETests('fleet')
         }
@@ -69,6 +72,14 @@ def checkPermissions(){
   }
 }
 
+def getBranch(){
+  if(env.GT_PR){
+    return "PR/${env.GT_PR}"
+  }
+  
+  return "${params.kibana_branch}"
+}
+
 def getCommit(){
   if(env.GT_PR){
     return "${env.GT_PR_HEAD_SHA}"
@@ -87,12 +98,21 @@ def hasCommentAuthorWritePermissions(prId, commentId){
   return json?.permission == 'admin' || json?.permission == 'write'
 }
 
+def isEmptyString(value){
+  return value == null || value?.trim() == ""
+}
+
 def runE2ETests(String suite) {
   log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for PR-${env.GT_PR}.")
 
   // Kibana's maintenance branches follow the 7.11, 7.12 schema.
   def branchName = "${env.GT_BASE_REF}.x"
   def e2eTestsPipeline = "e2e-tests/e2e-testing-mbp/${branchName}"
+
+  def kibanaVersion = "${params.target_tag}"
+  if (isEmptyString(params.target_tag)) {
+    kibanaVersion = "${env.GT_PR_HEAD_SHA}"
+  }
 
   def parameters = [
     booleanParam(name: 'forceSkipGitChecks', value: true),
@@ -103,6 +123,7 @@ def runE2ETests(String suite) {
     string(name: 'GITHUB_CHECK_NAME', value: env.GITHUB_CHECK_E2E_TESTS_NAME),
     string(name: 'GITHUB_CHECK_REPO', value: env.REPO),
     string(name: 'GITHUB_CHECK_SHA1', value: getCommit()),
+    string(name: 'KIBANA_VERSION', value: "${kibanaVersion}"),
   ]
 
   build(job: "${e2eTestsPipeline}",
