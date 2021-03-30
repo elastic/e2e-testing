@@ -22,7 +22,6 @@ type ElasticAgentInstaller struct {
 	artifactOS        string // OS of the artifact
 	artifactVersion   string // version of the artifact
 	EnrollFn          func(token string) error
-	homeDir           string // elastic agent home dir
 	image             string // docker image
 	installerType     string
 	InstallFn         func(containerName string, token string) error
@@ -178,10 +177,9 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 
 	workingDir := "/var/lib/elastic-agent"
 	binDir := workingDir + "/data/elastic-agent-%s/"
-	commitFileName := ".elastic-agent.active.commit"
-	homeDir := "/etc/elastic-agent/"
 
-	commitFile := homeDir + commitFileName
+	commitFileName := ".elastic-agent.active.commit"
+	commitFile := "/etc/elastic-agent/" + commitFileName
 
 	logsDir := binDir + "logs/"
 	logFileName := "elastic-agent-json.log"
@@ -196,7 +194,6 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 		artifactOS:        os,
 		artifactVersion:   version,
 		EnrollFn:          enrollFn,
-		homeDir:           homeDir,
 		image:             image,
 		InstallFn:         installerPackage.Install,
 		InstallCertsFn:    installerPackage.InstallCerts,
@@ -247,10 +244,9 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 
 	workingDir := "/var/lib/elastic-agent"
 	binDir := workingDir + "/data/elastic-agent-%s/"
-	commitFileName := ".elastic-agent.active.commit"
-	homeDir := "/etc/elastic-agent/"
 
-	commitFile := homeDir + commitFileName
+	commitFileName := ".elastic-agent.active.commit"
+	commitFile := "/etc/elastic-agent/" + commitFileName
 
 	logsDir := binDir + "logs/"
 	logFileName := "elastic-agent-json.log"
@@ -265,7 +261,6 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 		artifactOS:        os,
 		artifactVersion:   version,
 		EnrollFn:          enrollFn,
-		homeDir:           homeDir,
 		image:             image,
 		InstallFn:         installerPackage.Install,
 		InstallCertsFn:    installerPackage.InstallCerts,
@@ -345,7 +340,6 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 		artifactOS:        os,
 		artifactVersion:   version,
 		EnrollFn:          enrollFn,
-		homeDir:           homeDir,
 		image:             image,
 		InstallFn:         installerPackage.Install,
 		InstallCertsFn:    installerPackage.InstallCerts,
@@ -390,11 +384,10 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 		return ElasticAgentInstaller{}, err
 	}
 
-	commitFileName := ".elastic-agent.active.commit"
-	homeDir := "/elastic-agent/"
 	workingDir := "/opt/Elastic/Agent/"
 
-	commitFile := homeDir + commitFileName
+	commitFileName := ".elastic-agent.active.commit"
+	commitFile := "/elastic-agent/" + commitFileName
 
 	logsDir := workingDir + "/data/elastic-agent-%s/logs/"
 	logFileName := "elastic-agent-json.log"
@@ -419,7 +412,6 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 		artifactOS:        os,
 		artifactVersion:   version,
 		EnrollFn:          enrollFn,
-		homeDir:           homeDir,
 		image:             dockerImage,
 		InstallFn:         installerPackage.Install,
 		InstallCertsFn:    installerPackage.InstallCerts,
