@@ -107,7 +107,10 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			"stackVersion":  stackVersion,
 		}
 
-		profileEnv["kibanaDockerNamespace"] = e2e.GetDockerNamespaceEnvVar("kibana")
+		profileEnv["kibanaDockerNamespace"] = "observability-ci"
+		if kibanaVersion == "" {
+			profileEnv["kibanaDockerNamespace"] = "kibana"
+		}
 
 		profile := FleetProfileName
 		err := serviceManager.RunCompose(context.Background(), true, []string{profile}, profileEnv)
