@@ -42,6 +42,9 @@ pipeline {
      regexpFilterExpression: '^elastic/kibana/run-fleet-e2e-tests$'
     )
   }
+  parameters {
+    string(name: 'kibana_sha', defaultValue: "", description: "Commit to be used to run the Fleet E2E Tests. (e.g 1234567890abcdef)")
+  }
   stages {
     stage('Process GitHub Event') {
       steps {
@@ -64,6 +67,14 @@ def checkPermissions(){
       error("Only Elasticians can trigger Fleet E2E tests")
     }
   }
+}
+
+def getCommit(){
+  if(env.GT_PR){
+    return "${env.GT_PR_HEAD_SHA}"
+  }
+
+  return "${params.kibana_sha}"
 }
 
 def hasCommentAuthorWritePermissions(prId, commentId){
@@ -91,7 +102,7 @@ def runE2ETests(String suite) {
     string(name: 'runTestsSuites', value: suite),
     string(name: 'GITHUB_CHECK_NAME', value: env.GITHUB_CHECK_E2E_TESTS_NAME),
     string(name: 'GITHUB_CHECK_REPO', value: env.REPO),
-    string(name: 'GITHUB_CHECK_SHA1', value: env.GT_PR_HEAD_SHA),
+    string(name: 'GITHUB_CHECK_SHA1', value: getCommit()),
   ]
 
   build(job: "${e2eTestsPipeline}",
