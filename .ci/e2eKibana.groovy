@@ -43,7 +43,7 @@ pipeline {
     )
   }
   parameters {
-    string(name: 'kibana_branch', defaultValue: "master", description: "Branch/PR to use to build the Docker image. (e.g 10000)")
+    string(name: 'kibana_pr', defaultValue: "master", description: "PR ID to use to build the Docker image. (e.g 10000)")
   }
   stages {
     stage('Process GitHub Event') {
@@ -75,7 +75,7 @@ def getBranch(){
     return "PR/${env.GT_PR}"
   }
   
-  return "PR/${params.kibana_branch}"
+  return "PR/${params.kibana_pr}"
 }
 
 def getDockerTag(){
@@ -84,7 +84,7 @@ def getDockerTag(){
   }
 
   // we are going to use the 'pr12345' tag
-  return "pr${params.kibana_branch}"
+  return "pr${params.kibana_pr}"
 }
 
 def hasCommentAuthorWritePermissions(prId, commentId){
