@@ -286,7 +286,7 @@ def generateStep(Map args = [:]){
   def oss = args.get('oss')
   def platform = args.get('platform')
   return {
-    withNode(labels: 'ubuntu-18.04 && immutable && docker', sleepMax: 20, forceWorspace: true){
+    withNode(labels: 'ubuntu-18.04 && immutable && docker', sleepMax: 20, forceWorkspace: true){
       try {
         deleteDir()
         unstash 'source'
@@ -323,7 +323,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def workerLabels = "${platform} && immutable && docker"
 
   return {
-    withNode(labels: "${workerLabels}", sleepMax: 20, forceWorspace: true){
+    withNode(labels: "${workerLabels}", sleepMax: 20, forceWorkspace: true){
       deleteDir()
       unstash 'source'
       withGoEnv(version: "${GO_VERSION}"){
