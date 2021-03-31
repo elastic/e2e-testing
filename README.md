@@ -19,6 +19,20 @@ This repository contains:
         - Redis
         - vSphere
 
+## Building
+
+This project utilizes `goreleaser` to build the cli binaries for all supported
+platforms. Please see [goreleaser installation](https://goreleaser.com/install/)
+for instructions on making that available to you.
+
+Once `goreleaser` is installed building the cli is as follows:
+
+```
+$ make build
+```
+
+This will put the built distribution inside of `dist` in the current working directory.
+
 ## Contributing
 
 ### pre-commit
