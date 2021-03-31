@@ -1,3 +1,10 @@
+# Get current directory of a Makefile: https://stackoverflow.com/a/23324703
+
+# Builds cli for all supported platforms
+.PHONY: build
+build:
+	goreleaser --snapshot --skip-publish --rm-dist
+
 .PHONY: clean
 clean: clean-workspace clean-docker
 
