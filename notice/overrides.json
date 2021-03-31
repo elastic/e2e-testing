@@ -2,3 +2,14 @@
 {"name": "github.com/elastic/go-elasticsearch/v8", "licenceType": "Elastic"}
 {"name": "github.com/opencontainers/go-digest", "licenceFile": "LICENSE.code", "licenceType": "Apache-2.0"}
 {"name": "github.com/pelletier/go-buffruneio", "licenceType": "MIT", "url": "https://github.com/pelletier/go-buffruneio/blob/master/LICENSE"}
+{"name": "github.com/bmizerany/assert", "licenceType": "MIT"}
+{"name": "github.com/chzyer/logex", "licenceType": "MIT", "url": "https://github.com/chzyer/logex/blob/master/LICENSE"}
+{"name": "github.com/dnaeon/go-vcr", "licenceType": "BSD", "url": "https://github.com/dnaeon/go-vcr/blob/master/LICENSE"}
+{"name": "github.com/garyburd/redigo", "licenceType": "Apache-2.0", "url": "https://github.com/garyburd/redigo/blob/master/LICENSE"}
+{"name": "github.com/kr/logfmt", "licenceType": "MIT", "url": "https://github.com/kr/logfmt/blob/master/LICENSE"}
+{"name": "github.com/miekg/dns", "licenceType": "BSD-3-Clause", "url": "https://github.com/miekg/dns/blob/master/LICENSE"}
+{"name": "github.com/pascaldekloe/goe", "licenceType": "Public Domain", "url": "https://github.com/pascaldekloe/goe/blob/master/LICENSE"}
+{"name": "github.com/xeipuuv/gojsonpointer", "licenceType": "Apache-2.0", "url": "https://github.com/xeipuuv/gojsonpointer/blob/master/LICENSE-APACHE-2.0.txt"}
+{"name": "github.com/xeipuuv/gojsonreference", "licenceType": "Apache-2.0", "url": "https://github.com/xeipuuv/gojsonreference/blob/master/LICENSE-APACHE-2.0.txt"}
+{"name": "github.com/xeipuuv/gojsonschema", "licenceType": "Apache-2.0", "url": "https://github.com/xeipuuv/gojsonschema/blob/master/LICENSE-APACHE-2.0.txt"}
+{"name": "github.com/opencontainers/go-digest", "licenceType": "Apache-2.0", "url": "https://github.com/opencontainers/go-digest/blob/master/LICENSE"}

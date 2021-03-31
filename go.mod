@@ -23,6 +23,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.10.0
 	go.elastic.co/apm v1.10.1-0.20210325024138-f936e4b8474d
 	go.elastic.co/apm/module/apmelasticsearch v1.10.0
+	go.elastic.co/go-licence-detector v0.5.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.4.0
