@@ -3,7 +3,7 @@
 @Library('apm@current') _
 
 pipeline {
-  agent any
+  agent { label 'ubuntu-18.04 && immutable && docker' }
   environment {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
@@ -57,7 +57,6 @@ pipeline {
   }
   stages {
     stage('Initializing'){
-      agent { label 'ubuntu-18.04 && immutable && docker' }
       options { skipDefaultCheckout() }
       environment {
         HOME = "${env.WORKSPACE}"
@@ -122,7 +121,6 @@ pipeline {
               }
             }
             stage('Unit Tests') {
-              agent { label 'ubuntu-18.04 && immutable && docker' }
               options { skipDefaultCheckout() }
               when {
                 beforeAgent true
