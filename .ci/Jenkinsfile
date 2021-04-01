@@ -294,7 +294,7 @@ def generateStep(Map args = [:]){
           }
         }
       } finally {
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/cli/.github/releases/download/**"
+        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/cli/dist/**"
       }
     }
   }
