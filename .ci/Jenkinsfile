@@ -221,16 +221,13 @@ pipeline {
             deleteDir()
             unstash 'source'
             dir("${BASE_DIR}") {
-              script {
-                def matrix = readYaml(file: '.ci/.package.yaml')
-                def parallelTasks = [:]
-                matrix['OSS'].each { oss ->
-                  matrix['PLATFORM'].each { platform ->
-                    parallelTasks["${oss}-${platform}"] = generateStep(oss: "${oss}", platform: "${platform}")
-                  }
-                }
-                parallel(parallelTasks)
-              }
+              sh ''
+              sh(label: 'Release binaries with gorelease', script: 'curl -sL https://git.io/goreleaser | bash', returnStatus: true)
+            }
+          }
+          post {
+            always {
+              archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/cli/dist/**"
             }
           }
         }
@@ -277,27 +274,6 @@ def doNotifyBuildResult(boolean slackNotify) {
 
   def header = "*Test Suite*: " + testsSuites
   notifyBuildResult(analyzeFlakey: true, jobName: getFlakyJobName(withBranch: "${env.JOB_BASE_NAME}"), prComment: true, slackHeader: header, slackChannel: "${channels}", slackComment: true, slackNotify: slackNotify)
-}
-
-
-def generateStep(Map args = [:]){
-  def oss = args.get('oss')
-  def platform = args.get('platform')
-  return {
-    withNode(labels: 'ubuntu-18.04 && immutable && docker', sleepMax: 20, forceWorkspace: true){
-      try {
-        deleteDir()
-        unstash 'source'
-        dir("${BASE_DIR}/cli") {
-          withEnv(["GOOS=${oss}", "GOARCH=${platform}"]) {
-            sh script: 'make build', label: 'Create releases'
-          }
-        }
-      } finally {
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/cli/dist/**"
-      }
-    }
-  }
 }
 
 def generateFunctionalTestStep(Map args = [:]){
