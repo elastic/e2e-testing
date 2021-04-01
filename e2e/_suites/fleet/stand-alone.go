@@ -7,7 +7,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -22,10 +21,9 @@ import (
 
 // StandAloneTestSuite represents the scenarios for Stand-alone-mode
 type StandAloneTestSuite struct {
-	AgentConfigFilePath string
-	Cleanup             bool
-	Hostname            string
-	Image               string
+	Cleanup  bool
+	Hostname string
+	Image    string
 	// date controls for queries
 	AgentStoppedDate             time.Time
 	RuntimeDependenciesStartDate time.Time
@@ -44,21 +42,6 @@ func (sats *StandAloneTestSuite) afterScenario() {
 		_ = serviceManager.RemoveServicesFromCompose(context.Background(), FleetProfileName, []string{serviceName}, profileEnv)
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
-	}
-
-	if _, err := os.Stat(sats.AgentConfigFilePath); err == nil {
-		beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
-		if beatsLocalPath == "" {
-			os.Remove(sats.AgentConfigFilePath)
-
-			log.WithFields(log.Fields{
-				"path": sats.AgentConfigFilePath,
-			}).Trace("Elastic Agent configuration file removed.")
-		} else {
-			log.WithFields(log.Fields{
-				"path": sats.AgentConfigFilePath,
-			}).Trace("Elastic Agent configuration file not removed because it's part of a repository.")
-		}
 	}
 }
 
@@ -102,11 +85,6 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 		dockerImageTag += "-amd64"
 	}
 
-	configurationFilePath, err := steps.FetchBeatConfiguration(true, "elastic-agent", "elastic-agent.docker.yml")
-	if err != nil {
-		return err
-	}
-
 	serviceManager := services.NewServiceManager()
 
 	profileEnv["elasticAgentDockerImageSuffix"] = ""
@@ -118,10 +96,7 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 
 	containerName := fmt.Sprintf("%s_%s_%d", FleetProfileName, ElasticAgentServiceName, 1)
 
-	sats.AgentConfigFilePath = configurationFilePath
-
 	profileEnv["elasticAgentContainerName"] = containerName
-	profileEnv["elasticAgentConfigFile"] = sats.AgentConfigFilePath
 	profileEnv["elasticAgentPlatform"] = "linux/amd64"
 	profileEnv["elasticAgentTag"] = dockerImageTag
 
@@ -129,7 +104,7 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 		profileEnv[k] = v
 	}
 
-	err = serviceManager.AddServicesToCompose(context.Background(), FleetProfileName, []string{ElasticAgentServiceName}, profileEnv)
+	err := serviceManager.AddServicesToCompose(context.Background(), FleetProfileName, []string{ElasticAgentServiceName}, profileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err
