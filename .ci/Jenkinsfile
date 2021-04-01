@@ -221,7 +221,9 @@ pipeline {
             deleteDir()
             unstash 'source'
             dir("${BASE_DIR}") {
-              sh(label: 'Release binaries with gorelease', script: 'curl -sL https://git.io/goreleaser | bash', returnStatus: true)
+              retryWithSleep(retries: 2, seconds: 5, backoff: true) {
+                sh(label: 'Release binaries with gorelease', script: 'curl -sL https://git.io/goreleaser | bash', returnStatus: true)
+              }
             }
           }
           post {
