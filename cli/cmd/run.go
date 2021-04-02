@@ -16,8 +16,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var servicesToRun string
+var servicesToRun []string
 var versionToRun string
+var environmentItems map[string]string
 
 func init() {
 	config.Init()
@@ -38,12 +39,14 @@ func init() {
 		profileSubcommand := buildRunProfileCommand(k, profile)
 
 		profileSubcommand.Flags().StringVarP(&versionToRun, "profileVersion", "v", "latest", "Sets the profile version to run")
-		profileSubcommand.Flags().StringVarP(&servicesToRun, "withServices", "s", "", "Sets a list of comma-separated services to be depoyed alongside the profile")
+		profileSubcommand.Flags().StringSliceVarP(&servicesToRun, "withServices", "s", nil, "List of services to deploy with profile, in the format of docker <image>:<tag>")
+		profileSubcommand.Flags().StringToStringVarP(&environmentItems, "environment", "e", nil, "A list of environment key/value pairs to pass into deployment, in the format of ENV=VAR")
 
 		runProfileCmd.AddCommand(profileSubcommand)
 	}
 
 	runCmd.AddCommand(runProfileCmd)
+
 }
 
 var runCmd = &cobra.Command{
@@ -64,6 +67,14 @@ func buildRunServiceCommand(srv string) *cobra.Command {
 			serviceManager := services.NewServiceManager()
 
 			env := config.PutServiceEnvironment(map[string]string{}, srv, versionToRun)
+
+			for k, v := range environmentItems {
+				log.WithFields(log.Fields{
+					"env": k,
+					"var": v,
+				}).Trace("Adding key/value to environment")
+				env[k] = v
+			}
 
 			err := serviceManager.RunCompose(context.Background(), false, []string{srv}, env)
 			if err != nil {
@@ -91,6 +102,14 @@ Example:
 				"profileVersion": versionToRun,
 			}
 
+			for k, v := range environmentItems {
+				log.WithFields(log.Fields{
+					"env": k,
+					"var": v,
+				}).Trace("Adding key/value to environment")
+				env[k] = v
+			}
+
 			err := serviceManager.RunCompose(context.Background(), true, []string{key}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
@@ -99,10 +118,8 @@ Example:
 			}
 
 			composeNames := []string{}
-			if servicesToRun != "" {
-				services := strings.Split(servicesToRun, ",")
-
-				for _, srv := range services {
+			if len(servicesToRun) > 0 {
+				for _, srv := range servicesToRun {
 					arr := strings.Split(srv, ":")
 					if len(arr) != 2 {
 						log.WithFields(log.Fields{
@@ -113,6 +130,11 @@ Example:
 					}
 					image := arr[0]
 					tag := arr[1]
+
+					log.WithFields(log.Fields{
+						"image": image,
+						"tag":   tag,
+					}).Trace("Adding service")
 
 					env = config.PutServiceEnvironment(env, image, tag)
 					composeNames = append(composeNames, image)
