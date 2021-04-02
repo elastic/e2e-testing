@@ -3,7 +3,7 @@
 @Library('apm@current') _
 
 pipeline {
-  agent any
+  agent { label 'ubuntu-18.04 && immutable && docker' }
   environment {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
@@ -57,7 +57,6 @@ pipeline {
   }
   stages {
     stage('Initializing'){
-      agent { label 'ubuntu-18.04 && immutable && docker' }
       options { skipDefaultCheckout() }
       environment {
         HOME = "${env.WORKSPACE}"
@@ -122,7 +121,6 @@ pipeline {
               }
             }
             stage('Unit Tests') {
-              agent { label 'ubuntu-18.04 && immutable && docker' }
               options { skipDefaultCheckout() }
               when {
                 beforeAgent true
@@ -223,16 +221,15 @@ pipeline {
             deleteDir()
             unstash 'source'
             dir("${BASE_DIR}") {
-              script {
-                def matrix = readYaml(file: '.ci/.package.yaml')
-                def parallelTasks = [:]
-                matrix['OSS'].each { oss ->
-                  matrix['PLATFORM'].each { platform ->
-                    parallelTasks["${oss}-${platform}"] = generateStep(oss: "${oss}", platform: "${platform}")
-                  }
-                }
-                parallel(parallelTasks)
+              setEnvVar("GITHUB_TOKEN", getGithubToken())
+              retryWithSleep(retries: 2, seconds: 5, backoff: true) {
+                sh(label: 'Release binaries with gorelease', script: 'curl -sL https://git.io/goreleaser | bash -s -- --rm-dist', returnStatus: true)
               }
+            }
+          }
+          post {
+            always {
+              archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/cli/dist/**"
             }
           }
         }
@@ -281,29 +278,6 @@ def doNotifyBuildResult(boolean slackNotify) {
   notifyBuildResult(analyzeFlakey: true, jobName: getFlakyJobName(withBranch: "${env.JOB_BASE_NAME}"), prComment: true, slackHeader: header, slackChannel: "${channels}", slackComment: true, slackNotify: slackNotify)
 }
 
-
-def generateStep(Map args = [:]){
-  def oss = args.get('oss')
-  def platform = args.get('platform')
-  return {
-    node('ubuntu-18.04 && immutable && docker') {
-      try {
-        deleteDir()
-        unstash 'source'
-        dir("${BASE_DIR}/cli") {
-          withEnv(["GOOS=${oss}", "GOARCH=${platform}"]) {
-            sh script: 'make build', label: 'Create releases'
-          }
-        }
-      } catch(e) {
-        error(e.toString())
-      } finally {
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/cli/.github/releases/download/**"
-      }
-    }
-  }
-}
-
 def generateFunctionalTestStep(Map args = [:]){
   def platform = args.get('platform')
   def suite = args.get('suite')
@@ -325,7 +299,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def workerLabels = "${platform} && immutable && docker"
 
   return {
-    node("${workerLabels}") {
+    withNode(labels: "${workerLabels}", sleepMax: 20, forceWorkspace: true){
       deleteDir()
       unstash 'source'
       withGoEnv(version: "${GO_VERSION}"){

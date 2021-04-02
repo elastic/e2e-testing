@@ -168,10 +168,18 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 
 	if mts.cleanUpTmpFiles {
 		if _, err := os.Stat(mts.configurationFile); err == nil {
-			os.Remove(mts.configurationFile)
-			log.WithFields(log.Fields{
-				"path": mts.configurationFile,
-			}).Debug("Metricbeat configuration file removed.")
+			beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+			if beatsLocalPath == "" {
+				os.Remove(mts.configurationFile)
+
+				log.WithFields(log.Fields{
+					"path": mts.configurationFile,
+				}).Trace("Metricbeat configuration file removed.")
+			} else {
+				log.WithFields(log.Fields{
+					"path": mts.configurationFile,
+				}).Trace("Metricbeat configuration file not removed because it's part of a repository.")
+			}
 		}
 	}
 
@@ -363,18 +371,11 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 
 	metricbeatVersion = e2e.CheckPRVersion(metricbeatVersion, metricbeatVersionBase)
 
-	// use master branch for snapshots
-	tag := "v" + metricbeatVersion
-	if strings.Contains(metricbeatVersion, "SNAPSHOT") {
-		tag = "master"
-	}
-
-	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/" + tag + "/metricbeat/" + configuration + ".yml"
-
-	configurationFilePath, err := e2e.DownloadFile(configurationFileURL)
+	configurationFilePath, err := steps.FetchBeatConfiguration(false, "metricbeat", configuration+".yml")
 	if err != nil {
 		return err
 	}
+
 	mts.configurationFile = configurationFilePath
 	mts.cleanUpTmpFiles = true
 
@@ -407,9 +408,6 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		}
 
 		mts.Version = mts.Version + "-amd64"
-
-		// wait for tagging to ensure the loaded image is present
-		e2e.Sleep(3 * time.Second)
 
 		err = docker.TagImage(
 			"docker.elastic.co/beats/metricbeat:"+metricbeatVersionBase,
