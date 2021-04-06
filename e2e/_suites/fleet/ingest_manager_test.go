@@ -158,7 +158,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		installers := imts.Fleet.Installers
 		for k, v := range installers {
-			agentPath := v.path
+			agentPath := v.binaryPath
 			if _, err := os.Stat(agentPath); err == nil {
 				err = os.Remove(agentPath)
 				if err != nil {

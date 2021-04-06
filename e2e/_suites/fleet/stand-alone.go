@@ -64,12 +64,27 @@ func (sats *StandAloneTestSuite) afterScenario() {
 
 func (sats *StandAloneTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed$`, sats.aStandaloneAgentIsDeployed)
+	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode$`, sats.aStandaloneAgentIsDeployedWithFleetServerMode)
 	s.Step(`^there is new data in the index from agent$`, sats.thereIsNewDataInTheIndexFromAgent)
 	s.Step(`^the "([^"]*)" docker container is stopped$`, sats.theDockerContainerIsStopped)
 	s.Step(`^there is no new data in the index after agent shuts down$`, sats.thereIsNoNewDataInTheIndexAfterAgentShutsDown)
+	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, sats.theAgentIsListedInFleetWithStatus)
+}
+
+func (sats *StandAloneTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
+	return theAgentIsListedInFleetWithStatus(desiredStatus, sats.Hostname)
+}
+
+func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployedWithFleetServerMode(image string) error {
+	return sats.startAgent(image, map[string]string{"fleetServerMode": "1"})
 }
 
 func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error {
+	return sats.startAgent(image, nil)
+}
+
+func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string) error {
+
 	log.Trace("Deploying an agent to Fleet")
 
 	dockerImageTag := agentVersion
@@ -109,6 +124,10 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 	profileEnv["elasticAgentConfigFile"] = sats.AgentConfigFilePath
 	profileEnv["elasticAgentPlatform"] = "linux/amd64"
 	profileEnv["elasticAgentTag"] = dockerImageTag
+
+	for k, v := range env {
+		profileEnv[k] = v
+	}
 
 	err = serviceManager.AddServicesToCompose(context.Background(), FleetProfileName, []string{ElasticAgentServiceName}, profileEnv)
 	if err != nil {
