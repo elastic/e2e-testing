@@ -89,19 +89,6 @@ functional-test: install-godog
 lint:
 	@docker run -t --rm -v $(PWD):/src -w /src gherkin/lint **/*.feature --disable AvoidOutlineForSingleExample,TooClumsy,TooManySteps,TooManyDifferentTags,TooLongStep
 
-.PHONY: notice
-notice:
-	@echo "Generating NOTICE"
-	go mod tidy
-	go mod download
-	go list -m -json all | go run go.elastic.co/go-licence-detector \
-		-includeIndirect \
-		-rules ../notice/rules.json \
-		-overrides ../notice/overrides.json \
-		-noticeTemplate ../notice/NOTICE.txt.tmpl \
-		-noticeOut NOTICE.txt \
-		-depsOut ""
-
 .PHONY: unit-test
 unit-test: test-report-setup unit-test-e2e unit-test-suite-fleet unit-test-suite-helm unit-test-suite-metricbeat
 

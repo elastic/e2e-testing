@@ -415,6 +415,10 @@ func (fts *FleetTestSuite) setup() error {
 }
 
 func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
+	return theAgentIsListedInFleetWithStatus(desiredStatus, fts.Hostname)
+}
+
+func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 	log.Tracef("Checking if agent is listed in Fleet as %s", desiredStatus)
 
 	maxTimeout := time.Duration(timeoutFactor) * time.Minute * 2
@@ -423,7 +427,7 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	agentOnlineFn := func() error {
-		agentID, err := getAgentID(fts.Hostname)
+		agentID, err := getAgentID(hostname)
 		if err != nil {
 			retryCount++
 			return err
@@ -434,7 +438,7 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 			if desiredStatus == "offline" || desiredStatus == "inactive" {
 				log.WithFields(log.Fields{
 					"elapsedTime": exp.GetElapsedTime(),
-					"hostname":    fts.Hostname,
+					"hostname":    hostname,
 					"retries":     retryCount,
 					"status":      desiredStatus,
 				}).Info("The Agent is not present in Fleet, as expected")
@@ -455,7 +459,7 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 				"agentID":         agentID,
 				"isAgentInStatus": isAgentInStatus,
 				"elapsedTime":     exp.GetElapsedTime(),
-				"hostname":        fts.Hostname,
+				"hostname":        hostname,
 				"retry":           retryCount,
 				"status":          desiredStatus,
 			}).Warn(err.Error())
@@ -468,7 +472,7 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 		log.WithFields(log.Fields{
 			"isAgentInStatus": isAgentInStatus,
 			"elapsedTime":     exp.GetElapsedTime(),
-			"hostname":        fts.Hostname,
+			"hostname":        hostname,
 			"retries":         retryCount,
 			"status":          desiredStatus,
 		}).Info("The Agent is in the desired status")
@@ -1338,7 +1342,7 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 	// we are setting the container name because Centos service could be reused by any other test suite
 	profileEnv[envVarsPrefix+"ContainerName"] = containerName
 	// define paths where the binary will be mounted
-	profileEnv[envVarsPrefix+"AgentBinarySrcPath"] = installer.path
+	profileEnv[envVarsPrefix+"AgentBinarySrcPath"] = installer.binaryPath
 	profileEnv[envVarsPrefix+"AgentBinaryTargetPath"] = "/" + installer.name
 
 	serviceManager := services.NewServiceManager()

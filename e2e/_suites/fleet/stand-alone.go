@@ -47,21 +47,44 @@ func (sats *StandAloneTestSuite) afterScenario() {
 	}
 
 	if _, err := os.Stat(sats.AgentConfigFilePath); err == nil {
-		os.Remove(sats.AgentConfigFilePath)
-		log.WithFields(log.Fields{
-			"path": sats.AgentConfigFilePath,
-		}).Debug("Elastic Agent configuration file removed.")
+		beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+		if beatsLocalPath == "" {
+			os.Remove(sats.AgentConfigFilePath)
+
+			log.WithFields(log.Fields{
+				"path": sats.AgentConfigFilePath,
+			}).Trace("Elastic Agent configuration file removed.")
+		} else {
+			log.WithFields(log.Fields{
+				"path": sats.AgentConfigFilePath,
+			}).Trace("Elastic Agent configuration file not removed because it's part of a repository.")
+		}
 	}
 }
 
 func (sats *StandAloneTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed$`, sats.aStandaloneAgentIsDeployed)
+	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode$`, sats.aStandaloneAgentIsDeployedWithFleetServerMode)
 	s.Step(`^there is new data in the index from agent$`, sats.thereIsNewDataInTheIndexFromAgent)
 	s.Step(`^the "([^"]*)" docker container is stopped$`, sats.theDockerContainerIsStopped)
 	s.Step(`^there is no new data in the index after agent shuts down$`, sats.thereIsNoNewDataInTheIndexAfterAgentShutsDown)
+	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, sats.theAgentIsListedInFleetWithStatus)
+}
+
+func (sats *StandAloneTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
+	return theAgentIsListedInFleetWithStatus(desiredStatus, sats.Hostname)
+}
+
+func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployedWithFleetServerMode(image string) error {
+	return sats.startAgent(image, map[string]string{"fleetServerMode": "1"})
 }
 
 func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error {
+	return sats.startAgent(image, nil)
+}
+
+func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string) error {
+
 	log.Trace("Deploying an agent to Fleet")
 
 	dockerImageTag := agentVersion
@@ -79,6 +102,11 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 		dockerImageTag += "-amd64"
 	}
 
+	configurationFilePath, err := steps.FetchBeatConfiguration(true, "elastic-agent", "elastic-agent.docker.yml")
+	if err != nil {
+		return err
+	}
+
 	serviceManager := services.NewServiceManager()
 
 	profileEnv["elasticAgentDockerImageSuffix"] = ""
@@ -90,18 +118,16 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error 
 
 	containerName := fmt.Sprintf("%s_%s_%d", FleetProfileName, ElasticAgentServiceName, 1)
 
-	configurationFileURL := "https://raw.githubusercontent.com/elastic/beats/master/x-pack/elastic-agent/elastic-agent.docker.yml"
-
-	configurationFilePath, err := e2e.DownloadFile(configurationFileURL)
-	if err != nil {
-		return err
-	}
 	sats.AgentConfigFilePath = configurationFilePath
 
 	profileEnv["elasticAgentContainerName"] = containerName
 	profileEnv["elasticAgentConfigFile"] = sats.AgentConfigFilePath
 	profileEnv["elasticAgentPlatform"] = "linux/amd64"
 	profileEnv["elasticAgentTag"] = dockerImageTag
+
+	for k, v := range env {
+		profileEnv[k] = v
+	}
 
 	err = serviceManager.AddServicesToCompose(context.Background(), FleetProfileName, []string{ElasticAgentServiceName}, profileEnv)
 	if err != nil {

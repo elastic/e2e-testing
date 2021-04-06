@@ -18,6 +18,12 @@ $ ./op run service mysql -v 5.7.12
 $ ./op run profile metricbeat
 ```
 
+To pass in multiple services at once:
+
+```
+$ ./op run profile fleet -s elastic-agent:8.0.0-SNAPSHOT -s debian-systemd:latest
+```
+
 The tool also provides a way to stop those running services:
 ```sh
 # if you are in the Go development world
@@ -29,6 +35,12 @@ $ GO111MODULE=on go build -i -o op
 $ ./op stop service apache -v 2.4.20
 $ ./op stop service mysql -v 5.7.12
 $ ./op stop profile metricbeat
+```
+
+Additionally, you can pass in environment options that will be passed along to the docker-compose configurations during deployment through use of the `-e` flag.
+
+```
+$ ./op run profile fleet -s elastic-agent:8.0.0-SNAPSHOT -s debian-systemd:latest -e fleetServerMode=1 -e debian_systemdContainerName=test_container_1
 ```
 
 >By the way, `op` comes from `Observability Provisioner`.
