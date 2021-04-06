@@ -22,7 +22,7 @@ type ElasticAgentInstaller struct {
 	artifactOS        string // OS of the artifact
 	artifactVersion   string // version of the artifact
 	binaryPath        string // the local path where the agent for the binary is located
-	EnrollFn          func(token string) error
+	EnrollFn          func(cfg *FleetConfig) error
 	image             string // docker image
 	installerType     string
 	InstallFn         func(cfg *FleetConfig) error
