@@ -54,7 +54,7 @@ Examples: Ubi8
 @run_fleet_server
 Scenario Outline: Deploying a <image> stand-alone agent with fleet server mode
   When a "<image>" stand-alone agent is deployed with fleet server mode
-  Then the agent is listed in Fleet as "online"
+  Then the agent is listed in the Fleet UI as "online"
 
 @default
 Examples: default
