@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/e2e"
@@ -200,9 +199,6 @@ func (i *DockerPackage) Preinstall() error {
 	if err != nil {
 		return err
 	}
-
-	// wait for tagging to ensure the loaded image is present
-	e2e.Sleep(3 * time.Second)
 
 	arch := e2e.GetArchitecture()
 
