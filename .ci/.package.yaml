@@ -1,8 +1,0 @@
----
-OSS:
-  - "darwin"
-  - "linux"
-
-PLATFORM:
-  - "386"
-  - "amd64"

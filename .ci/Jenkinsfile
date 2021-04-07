@@ -52,6 +52,11 @@ pipeline {
               log(level: 'DEBUG', text: "sendDataToElasticsearch: ${response}")
             }
           }
+          post {
+            always {
+              archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/cli/dist/**"
+            }
+          }
         }
       }
     }
