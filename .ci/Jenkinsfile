@@ -364,7 +364,7 @@ def generateFunctionalTestStep(Map args = [:]){
           if(isInstalled(tool: 'docker', flag: '--version')) {
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
           }
-          filebeat(output: "docker_logs_${suite}_${name}.log", workdir: "${env.WORKSPACE}"){
+          filebeat(output: "docker_logs_${goArch}_${suite}_${name}.log", workdir: "${env.WORKSPACE}"){
             dir("${BASE_DIR}"){
               withEnv(["GOARCH=${goArch}"]) {
                 withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL"){
