@@ -61,10 +61,20 @@ func (i *ElasticAgentInstaller) listElasticAgentWorkingDirContent(containerName 
 
 // runElasticAgentCommand runs a command for the elastic-agent
 func runElasticAgentCommand(profile string, image string, service string, process string, command string, arguments []string) error {
+	return runElasticAgentCommandWithEnv(profile, image, service, process, command, arguments, map[string]strings{})
+}
+
+// runElasticAgentCommandWithEnv runs a command with env for the elastic-agent
+func runElasticAgentCommandWithEnv(profile string, image string, service string, process string, command string, arguments []string, env map[string]string) error {
 	cmds := []string{
 		process, command,
 	}
 	cmds = append(cmds, arguments...)
+
+	// append passed env to profile env
+	for k, v := range env {
+		profileEnv[k] = v
+	}
 
 	err := steps.ExecCommandInService(profile, image, service, cmds, profileEnv, false)
 	if err != nil {
