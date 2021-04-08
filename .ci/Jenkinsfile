@@ -241,13 +241,13 @@ pipeline {
                   if (suitesParam == "") {
                     log(level: 'DEBUG', text: "Iterate through existing test suites")
                     existingSuites['SUITES'].each { item ->
-                      checkTestSuite(parallelTasks, item, 'arm')
+                      checkTestSuite(parallelTasks, item, 'arm64')
                     }
                   } else {
                     log(level: 'DEBUG', text: "Iterate through the comma-separated test suites (${suitesParam}), comparing with the existing test suites")
                     suitesParam.split(',').each { suiteParam ->
                       existingSuites['SUITES'].findAll { suiteParam.trim() == it.suite }.each { item ->
-                        checkTestSuite(parallelTasks, item, 'arm')
+                        checkTestSuite(parallelTasks, item, 'arm64')
                       }
                     }
                   }
