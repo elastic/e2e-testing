@@ -63,7 +63,38 @@ func (cfg FleetConfig) flags() []string {
 	return append(baseFlags, "--kibana-url", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.KibanaURI, cfg.KibanaPort))
 }
 
+func (cfg FleetConfig) isFleetServer() bool {
+	if cfg.ServerPolicyID != "" {
+		return true
+	}
+	return false
+}
+
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerInFleetMode(image string, installerType string) error {
 	fts.ElasticAgentStopped = true
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType, true)
+}
+
+// bootstrapFleetServer runs a command for the elastic-agent
+// KIBANA_HOST=http://localhost:5601 KIBANA_USERNAME=elastic KIBANA_PASSWORD=changeme ELASTICSEARCH_HOST=http://localhost:9200 ELASTICSEARCH_USERNAME=elastic ELASTICSEARCH_PASSWORD=changeme KIBANA_FLEET_SETUP=1 FLEET_SERVER_ENABLE=1 sudo ./elastic-agent container
+func bootstrapFleetServer(profile string, image string, service string, binary string, cfg *FleetConfig) error {
+	log.WithFields(log.Fields{
+		"elasticsearch":     cfg.ElasticsearchURI,
+		"elasticsearchPort": cfg.ElasticsearchPort,
+		"policyID":          cfg.ServerPolicyID,
+		"token":             cfg.EnrollmentToken,
+	}).Debug("Bootstrapping Fleet Server")
+
+	env := map[string]string{
+		"KIBANA_FLEET_SETUP":     "1",
+		"KIBANA_HOST":            fmt.Sprintf("http://%s:%d", cfg.KibanaURI, cfg.KibanaPort),
+		"KIBANA_USERNAME":        "elastic",
+		"KIBANA_PASSWORD":        "changeme",
+		"ELASTICSEARCH_HOST":     fmt.Sprintf("http://%s:%d", cfg.ElasticsearchURI, cfg.ElasticsearchPort),
+		"ELASTICSEARCH_USERNAME": "elastic",
+		"ELASTICSEARCH_PASSWORD": "changeme",
+		"FLEET_SERVER_ENABLE":    "1",
+	}
+
+	return runElasticAgentCommandWithEnv(profile, image, service, binary, "container", []string{}, env)
 }

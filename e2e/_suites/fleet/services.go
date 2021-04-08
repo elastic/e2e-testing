@@ -61,7 +61,7 @@ func (i *ElasticAgentInstaller) listElasticAgentWorkingDirContent(containerName 
 
 // runElasticAgentCommand runs a command for the elastic-agent
 func runElasticAgentCommand(profile string, image string, service string, process string, command string, arguments []string) error {
-	return runElasticAgentCommandWithEnv(profile, image, service, process, command, arguments, map[string]strings{})
+	return runElasticAgentCommandWithEnv(profile, image, service, process, command, arguments, map[string]string{})
 }
 
 // runElasticAgentCommandWithEnv runs a command with env for the elastic-agent
