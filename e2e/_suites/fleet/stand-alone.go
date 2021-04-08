@@ -51,7 +51,7 @@ func (sats *StandAloneTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^there is new data in the index from agent$`, sats.thereIsNewDataInTheIndexFromAgent)
 	s.Step(`^the "([^"]*)" docker container is stopped$`, sats.theDockerContainerIsStopped)
 	s.Step(`^there is no new data in the index after agent shuts down$`, sats.thereIsNoNewDataInTheIndexAfterAgentShutsDown)
-	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, sats.theAgentIsListedInFleetWithStatus)
+	s.Step(`^the stand-alone agent is listed in Fleet as "([^"]*)"$`, sats.theAgentIsListedInFleetWithStatus)
 }
 
 func (sats *StandAloneTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
