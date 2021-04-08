@@ -406,10 +406,6 @@ func (fts *FleetTestSuite) setup() error {
 }
 
 func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
-	return theAgentIsListedInFleetWithStatus(desiredStatus, fts.Hostname)
-}
-
-func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 	log.Tracef("Checking if agent is listed in Fleet as %s", desiredStatus)
 
 	maxTimeout := time.Duration(timeoutFactor) * time.Minute * 2
@@ -418,7 +414,7 @@ func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	agentOnlineFn := func() error {
-		agentID, err := getAgentID(hostname)
+		agentID, err := getAgentID(fts.Hostname)
 		if err != nil {
 			retryCount++
 			return err
@@ -429,7 +425,7 @@ func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 			if desiredStatus == "offline" || desiredStatus == "inactive" {
 				log.WithFields(log.Fields{
 					"elapsedTime": exp.GetElapsedTime(),
-					"hostname":    hostname,
+					"hostname":    fts.Hostname,
 					"retries":     retryCount,
 					"status":      desiredStatus,
 				}).Info("The Agent is not present in Fleet, as expected")
@@ -450,7 +446,7 @@ func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 				"agentID":         agentID,
 				"isAgentInStatus": isAgentInStatus,
 				"elapsedTime":     exp.GetElapsedTime(),
-				"hostname":        hostname,
+				"hostname":        fts.Hostname,
 				"retry":           retryCount,
 				"status":          desiredStatus,
 			}).Warn(err.Error())
@@ -463,7 +459,7 @@ func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 		log.WithFields(log.Fields{
 			"isAgentInStatus": isAgentInStatus,
 			"elapsedTime":     exp.GetElapsedTime(),
-			"hostname":        hostname,
+			"hostname":        fts.Hostname,
 			"retries":         retryCount,
 			"status":          desiredStatus,
 		}).Info("The Agent is in the desired status")

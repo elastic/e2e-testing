@@ -10,14 +10,6 @@ services:
         condition: service_healthy
     environment:
       - "KIBANA_HOST=http://${kibanaHost:-kibana}:${kibanaPort:-5601}"
-      - "FLEET_SERVER_ENABLE=${fleetServerMode:-0}"
-      - "FLEET_SERVER_INSECURE_HTTP=${fleetServerMode:-0}"
-      - "KIBANA_FLEET_SETUP=${fleetServerMode:-0}"
-      - "FLEET_SERVER_HOST=0.0.0.0"
-      - "KIBANA_USERNAME=elastic"
-      - "KIBANA_PASSWORD=changeme"
     platform: ${elasticAgentPlatform:-linux/amd64}
-    ports:
-      - "127.0.0.1:8220:8220"
     volumes:
       - "${elasticAgentConfigFile}:/usr/share/elastic-agent/elastic-agent.yml"
