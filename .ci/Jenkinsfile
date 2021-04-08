@@ -229,7 +229,7 @@ pipeline {
             }
           }
           steps {
-            withGithubNotify(context: 'E2E Tests', tab: 'tests') {
+            withGithubNotify(context: 'E2E Tests in ARM', tab: 'tests') {
               deleteDir()
               unstash 'source'
               dir("${BASE_DIR}") {
