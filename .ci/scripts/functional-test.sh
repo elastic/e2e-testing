@@ -27,6 +27,6 @@ BEAT_VERSION=${4:-'8.0.0-SNAPSHOT'}
 rm -rf outputs || true
 mkdir -p outputs
 
-REPORT="$(pwd)/outputs/TEST-${SUITE}"
+REPORT="$(pwd)/outputs/TEST-${GOARCH}-${SUITE}"
 
 SUITE=${SUITE} TAGS="${TAGS}" FORMAT=junit:${REPORT}.xml STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} make --no-print-directory -C e2e functional-test
