@@ -16,6 +16,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
+	"github.com/elastic/e2e-testing/internal/compose"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -93,7 +94,7 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 }
 
 func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
-	serviceManager := services.NewServiceManager()
+	serviceManager := compose.NewServiceManager()
 
 	ctx.BeforeSuite(func() {
 		setUpSuite()
@@ -104,8 +105,8 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			"stackVersion": stackVersion,
 		}
 
-		profile := FleetProfileName
-		err := serviceManager.RunCompose(context.Background(), true, []string{profile}, profileEnv)
+		profile := common.FleetProfileName
+		err := serviceManager.RunCompose(context.Background(), true, []string{profile}, common.ProfileEnv)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": profile,

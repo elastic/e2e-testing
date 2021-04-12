@@ -10,12 +10,13 @@ import (
 
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/cli/shell"
+	"github.com/elastic/e2e-testing/internal/compose"
 	log "github.com/sirupsen/logrus"
 )
 
 // AddAPMServicesForInstrumentation adds a Kibana and APM Server instances to the running project
 func AddAPMServicesForInstrumentation(ctx context.Context, profile string, stackVersion string, needsKibana bool, env map[string]string) {
-	serviceManager := services.NewServiceManager()
+	serviceManager := compose.NewServiceManager()
 
 	apmServerURL := shell.GetEnv("APM_SERVER_URL", "")
 	if strings.HasPrefix(apmServerURL, "http://localhost") {

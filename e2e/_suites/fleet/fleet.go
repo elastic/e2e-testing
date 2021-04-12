@@ -13,10 +13,10 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
-	"github.com/elastic/e2e-testing/cli/services"
 	curl "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	"github.com/elastic/e2e-testing/e2e/steps"
+	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -52,7 +52,7 @@ type FleetTestSuite struct {
 
 // afterScenario destroys the state created by a scenario
 func (fts *FleetTestSuite) afterScenario() {
-	serviceManager := services.NewServiceManager()
+	serviceManager := compose.NewServiceManager()
 
 	serviceName := fts.Image
 
@@ -509,7 +509,7 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 }
 
 func (fts *FleetTestSuite) theHostIsRestarted() error {
-	serviceManager := services.NewServiceManager()
+	serviceManager := compose.NewServiceManager()
 
 	installer := fts.getInstaller()
 
@@ -1349,9 +1349,9 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 	profileEnv[envVarsPrefix+"AgentBinarySrcPath"] = installer.binaryPath
 	profileEnv[envVarsPrefix+"AgentBinaryTargetPath"] = "/" + installer.name
 
-	serviceManager := services.NewServiceManager()
+	serviceManager := compose.NewServiceManager()
 
-	err := serviceManager.AddServicesToCompose(context.Background(), profile, []string{service}, profileEnv)
+	err := serviceManager.AddServicesToCompose(context.Background(), profile, []string{service}, common.ProfileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": service,

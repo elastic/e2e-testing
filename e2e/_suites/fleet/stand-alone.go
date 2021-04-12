@@ -13,10 +13,10 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/cli/docker"
-	"github.com/elastic/e2e-testing/cli/services"
 	shell "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	"github.com/elastic/e2e-testing/e2e/steps"
+	"github.com/elastic/e2e-testing/internal/compose"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -33,15 +33,15 @@ type StandAloneTestSuite struct {
 
 // afterScenario destroys the state created by a scenario
 func (sats *StandAloneTestSuite) afterScenario() {
-	serviceManager := services.NewServiceManager()
-	serviceName := ElasticAgentServiceName
+	serviceManager := compose.NewServiceManager()
+	serviceName := common.ElasticAgentServiceName
 
 	if log.IsLevelEnabled(log.DebugLevel) {
 		_ = sats.getContainerLogs()
 	}
 
 	if !developerMode {
-		_ = serviceManager.RemoveServicesFromCompose(context.Background(), FleetProfileName, []string{serviceName}, profileEnv)
+		_ = serviceManager.RemoveServicesFromCompose(context.Background(), common.FleetProfileName, []string{serviceName}, common.ProfileEnv)
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
@@ -129,7 +129,7 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 		return err
 	}
 
-	serviceManager := services.NewServiceManager()
+	serviceManager := compose.NewServiceManager()
 
 	profileEnv["elasticAgentDockerImageSuffix"] = ""
 	if image != "default" {
@@ -151,7 +151,7 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 		profileEnv[k] = v
 	}
 
-	err = serviceManager.AddServicesToCompose(context.Background(), FleetProfileName, []string{ElasticAgentServiceName}, profileEnv)
+	err := serviceManager.AddServicesToCompose(context.Background(), common.FleetProfileName, []string{common.ElasticAgentServiceName}, common.ProfileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err
@@ -176,7 +176,7 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 }
 
 func (sats *StandAloneTestSuite) getContainerLogs() error {
-	serviceManager := services.NewServiceManager()
+	serviceManager := compose.NewServiceManager()
 
 	profile := FleetProfileName
 	serviceName := ElasticAgentServiceName
@@ -185,7 +185,7 @@ func (sats *StandAloneTestSuite) getContainerLogs() error {
 		profile,     // profile name
 		serviceName, // agent service
 	}
-	err := serviceManager.RunCommand(profile, composes, []string{"logs", serviceName}, profileEnv)
+	err := serviceManager.RunCommand(profile, composes, []string{"logs", serviceName}, common.ProfileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -246,9 +246,9 @@ func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 }
 
 func (sats *StandAloneTestSuite) theDockerContainerIsStopped(serviceName string) error {
-	serviceManager := services.NewServiceManager()
+	serviceManager := compose.NewServiceManager()
 
-	err := serviceManager.RemoveServicesFromCompose(context.Background(), FleetProfileName, []string{serviceName}, profileEnv)
+	err := serviceManager.RemoveServicesFromCompose(context.Background(), common.FleetProfileName, []string{serviceName}, common.ProfileEnv)
 	if err != nil {
 		return err
 	}
