@@ -7,8 +7,8 @@ package steps
 import (
 	"path"
 
-	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
+	"github.com/elastic/e2e-testing/internal/shell"
 	log "github.com/sirupsen/logrus"
 )
 

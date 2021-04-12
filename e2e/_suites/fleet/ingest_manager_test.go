@@ -14,11 +14,11 @@ import (
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/cli/services"
-	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/installer"
+	"github.com/elastic/e2e-testing/internal/shell"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -32,6 +32,7 @@ func setUpSuite() {
 		log.Error(err)
 		os.Exit(1)
 	}
+	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
 	if developerMode {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
@@ -145,6 +146,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 	})
 
 	ctx.AfterSuite(func() {
+		developerMode := shell.GetEnvBool("DEVELOPER_MODE")
 		if !developerMode {
 			log.Debug("Destroying Fleet runtime dependencies")
 			profile := common.FleetProfileName

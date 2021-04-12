@@ -13,7 +13,6 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
-	curl "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
@@ -21,6 +20,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
+	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -82,6 +82,7 @@ func (fts *FleetTestSuite) afterScenario() {
 		}).Warn("The agentIDs for the hostname could not be unenrolled")
 	}
 
+	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
 	if !developerMode {
 		_ = serviceManager.RemoveServicesFromCompose(context.Background(), common.FleetProfileName, []string{serviceName + "-systemd"}, common.ProfileEnv)
 	} else {

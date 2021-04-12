@@ -13,12 +13,12 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/cli/docker"
-	shell "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/installer"
+	"github.com/elastic/e2e-testing/internal/shell"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -42,6 +42,7 @@ func (sats *StandAloneTestSuite) afterScenario() {
 		_ = sats.getContainerLogs()
 	}
 
+	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
 	if !developerMode {
 		_ = serviceManager.RemoveServicesFromCompose(context.Background(), common.FleetProfileName, []string{serviceName}, common.ProfileEnv)
 	} else {
