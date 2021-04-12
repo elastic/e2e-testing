@@ -29,7 +29,11 @@ services:
       test: "curl -f http://localhost:5601/login | grep kbn-injected-metadata 2>&1 >/dev/null"
       retries: 600
       interval: 1s
+<<<<<<< HEAD
     image: "docker.elastic.co/kibana/kibana:${stackVersion:-7.12.0-SNAPSHOT}"
+=======
+    image: "docker.elastic.co/${kibanaDockerNamespace:-beats}/kibana:${kibanaVersion:-8.0.0-SNAPSHOT}"
+>>>>>>> 7abccaf3... feat: support passing KIBANA_VERSION (#905)
     ports:
       - "5601:5601"
     volumes:
