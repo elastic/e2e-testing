@@ -19,5 +19,3 @@ services:
     platform: ${elasticAgentPlatform:-linux/amd64}
     ports:
       - "127.0.0.1:8220:8220"
-    volumes:
-      - "${elasticAgentConfigFile}:/usr/share/elastic-agent/elastic-agent.yml"
