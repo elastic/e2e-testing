@@ -7,22 +7,20 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
-	"github.com/elastic/e2e-testing/cli/docker"
-	"github.com/elastic/e2e-testing/e2e"
-	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -51,21 +49,6 @@ func (sats *StandAloneTestSuite) afterScenario() {
 		_ = serviceManager.RemoveServicesFromCompose(context.Background(), common.FleetProfileName, []string{serviceName}, common.ProfileEnv)
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
-	}
-
-	if _, err := os.Stat(sats.AgentConfigFilePath); err == nil {
-		beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
-		if beatsLocalPath == "" {
-			os.Remove(sats.AgentConfigFilePath)
-
-			log.WithFields(log.Fields{
-				"path": sats.AgentConfigFilePath,
-			}).Trace("Elastic Agent configuration file removed.")
-		} else {
-			log.WithFields(log.Fields{
-				"path": sats.AgentConfigFilePath,
-			}).Trace("Elastic Agent configuration file not removed because it's part of a repository.")
-		}
 	}
 }
 
