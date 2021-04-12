@@ -11,13 +11,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/cli/docker"
 	"github.com/elastic/e2e-testing/e2e"
 	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/installer"
+	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -25,13 +28,13 @@ import (
 
 // StandAloneTestSuite represents the scenarios for Stand-alone-mode
 type StandAloneTestSuite struct {
-	AgentConfigFilePath string
-	Cleanup             bool
-	Hostname            string
-	Image               string
+	Cleanup  bool
+	Hostname string
+	Image    string
 	// date controls for queries
 	AgentStoppedDate             time.Time
 	RuntimeDependenciesStartDate time.Time
+	kibanaClient                 *kibana.Client
 }
 
 // afterScenario destroys the state created by a scenario
@@ -128,11 +131,6 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 		dockerImageTag += "-amd64"
 	}
 
-	configurationFilePath, err := steps.FetchBeatConfiguration(true, "elastic-agent", "elastic-agent.docker.yml")
-	if err != nil {
-		return err
-	}
-
 	serviceManager := compose.NewServiceManager()
 
 	common.ProfileEnv["elasticAgentDockerImageSuffix"] = ""
@@ -159,7 +157,7 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 	}
 
 	// get container hostname once
-	hostname, err := steps.GetContainerHostname(containerName)
+	hostname, err := docker.GetContainerHostname(containerName)
 	if err != nil {
 		return err
 	}
@@ -243,7 +241,7 @@ func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 
 	log.Tracef("Search result: %v", result)
 
-	return e2e.AssertHitsArePresent(result)
+	return elasticsearch.AssertHitsArePresent(result)
 }
 
 func (sats *StandAloneTestSuite) theDockerContainerIsStopped(serviceName string) error {
@@ -274,10 +272,10 @@ func (sats *StandAloneTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown()
 		return nil
 	}
 
-	return e2e.AssertHitsAreNotPresent(result)
+	return elasticsearch.AssertHitsAreNotPresent(result)
 }
 
-func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int, maxTimeout time.Duration) (e2e.SearchResult, error) {
+func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int, maxTimeout time.Duration) (elasticsearch.SearchResult, error) {
 	timezone := "America/New_York"
 
 	esQuery := map[string]interface{}{
@@ -354,11 +352,11 @@ func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int,
 
 	indexName := "logs-elastic_agent-default"
 
-	result, err := e2e.WaitForNumberOfHits(context.Background(), indexName, esQuery, minimumHitsCount, maxTimeout)
+	result, err := elasticsearch.WaitForNumberOfHits(context.Background(), indexName, esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
-		}).Warn(e2e.WaitForIndices())
+		}).Warn(elasticsearch.WaitForIndices())
 	}
 
 	return result, err

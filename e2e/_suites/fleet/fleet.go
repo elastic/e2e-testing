@@ -10,10 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Jeffail/gabs/v2"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
-	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/docker"
@@ -297,10 +295,14 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 	if err != nil {
 		return err
 	}
-	fts.CurrentToken = tokenJSONObject.Path("api_key").Data().(string)
-	fts.CurrentTokenID = tokenJSONObject.Path("id").Data().(string)
+	fts.CurrentToken = enrollmentKey.APIKey
+	fts.CurrentTokenID = enrollmentKey.ID
 
-	err = deployAgentToFleet(installer, containerName, fts.CurrentToken)
+	log.WithFields(log.Fields{
+		"enrollmentKey": enrollmentKey,
+	}).Trace("Enrollment key created ")
+
+	err = deployAgentToFleet(agentInstaller, containerName, fts.CurrentToken)
 	fts.Cleanup = true
 	if err != nil {
 		return err
@@ -411,7 +413,7 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 	return theAgentIsListedInFleetWithStatus(desiredStatus, fts.Hostname)
 }
 
-func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
+func theAgentIsListedInFleetWithStatus(desiredStatus string, hostname string) error {
 	log.Tracef("Checking if agent is listed in Fleet as %s", desiredStatus)
 
 	kibanaClient, err := kibana.NewClient()
@@ -477,7 +479,7 @@ func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 		return nil
 	}
 
-	err := backoff.Retry(agentOnlineFn, exp)
+	err = backoff.Retry(agentOnlineFn, exp)
 	if err != nil {
 		return err
 	}
@@ -539,6 +541,58 @@ func (fts *FleetTestSuite) theHostIsRestarted() error {
 }
 
 func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
+	log.Trace("Adding system integration")
+	integration, err := fts.kibanaClient.GetIntegrationByPackageName("system")
+	if err != nil {
+		return err
+	}
+
+	packageDataStream := kibana.PackageDataStream{
+		Name:        integration.Name,
+		Description: integration.Title,
+		Namespace:   "default",
+		PolicyID:    fts.Policy.ID,
+		Enabled:     true,
+		Package:     integration,
+	}
+
+	packageDataStream.Inputs = []kibana.Input{
+		{
+			Type:    "system/metrics",
+			Enabled: true,
+			Streams: []interface{}{
+				map[string]interface{}{
+					"id":      "system/metrics-system.cpu-" + uuid.New().String(),
+					"enabled": true,
+					"data_stream": map[string]interface{}{
+						"dataset": "system.cpu",
+						"type":    "metrics",
+					},
+				},
+				map[string]interface{}{
+					"id":      "system/metrics-system.memory-" + uuid.New().String(),
+					"enabled": true,
+					"data_stream": map[string]interface{}{
+						"dataset": "system.memory",
+						"type":    "metrics",
+					},
+				},
+			},
+			Vars: map[string]kibana.Var{
+				"period": {
+					Value: "1s",
+					Type:  "string",
+				},
+			},
+			Config: map[string]interface{}{},
+		},
+	}
+
+	err = fts.kibanaClient.AddIntegrationToPolicy(packageDataStream)
+	if err != nil {
+		return err
+	}
+
 	log.Trace("Checking system Package dashboards in Fleet")
 
 	dataStreamsCount := 0
@@ -584,7 +638,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 		return nil
 	}
 
-	err := backoff.Retry(countDataStreamsFn, exp)
+	err = backoff.Retry(countDataStreamsFn, exp)
 	if err != nil {
 		return err
 	}
@@ -681,44 +735,68 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 	if err != nil {
 		return err
 	}
+
 	if strings.ToLower(action) == actionADDED {
-		name, version, err := getIntegrationLatestVersion(packageName)
-		if err != nil {
-			return err
+		packageDataStream := kibana.PackageDataStream{
+			Name:        integration.Name,
+			Description: integration.Title,
+			Namespace:   "default",
+			PolicyID:    fts.Policy.ID,
+			Enabled:     true,
+			Package:     integration,
 		}
 
-		fts.Integration, err = getIntegration(name, version)
-		if err != nil {
-			return err
+		if strings.EqualFold(integration.Name, "linux") {
+			packageDataStream.Inputs = []kibana.Input{
+				{
+					Type:    "linux/metrics",
+					Enabled: true,
+					Streams: []interface{}{
+						map[string]interface{}{
+							"id":      "linux/metrics-linux.memory-" + uuid.New().String(),
+							"enabled": true,
+							"data_stream": map[string]interface{}{
+								"dataset": "linux.memory",
+								"type":    "metrics",
+							},
+						},
+					},
+					Vars: map[string]kibana.Var{
+						"period": {
+							Value: "1s",
+							Type:  "string",
+						},
+					},
+				},
+			}
 		}
 
-		integrationPolicyID, err := addIntegrationToPolicy(fts.Integration, fts.PolicyID)
-		if err != nil {
-			return err
+		if strings.EqualFold(integration.Name, "endpoint") {
+			packageDataStream.Inputs = []kibana.Input{
+				{
+					Type:    "endpoint",
+					Enabled: true,
+					Streams: []interface{}{},
+					Vars: map[string]kibana.Var{
+						"period": {
+							Value: "1s",
+							Type:  "string",
+						},
+					},
+				},
+			}
 		}
 
-		fts.Integration.packageConfigID = integrationPolicyID
-		return nil
+		return fts.kibanaClient.AddIntegrationToPolicy(packageDataStream)
 	} else if strings.ToLower(action) == actionREMOVED {
-		integration, err := getIntegrationFromAgentPolicy(packageName, fts.PolicyID)
+		packageDataStream, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(integration.Name, fts.Policy)
 		if err != nil {
 			return err
 		}
-		fts.Integration = integration
-
-		err = deleteIntegrationFromPolicy(fts.Integration, fts.PolicyID)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"err":             err,
-				"packageConfigID": fts.Integration.packageConfigID,
-				"policyID":        fts.PolicyID,
-			}).Error("The integration could not be deleted from the policy")
-			return err
-		}
-		return nil
+		return fts.kibanaClient.DeleteIntegrationFromPolicy(packageDataStream)
 	}
 
-	return godog.ErrPending
+	return nil
 }
 
 func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp() error {
@@ -743,19 +821,6 @@ func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp()
 			retryCount++
 
 			return err
-		}
-
-		if host != nil {
-			log.WithFields(log.Fields{
-				"elapsedTime": exp.GetElapsedTime(),
-				"host":        host,
-				"hostname":    fts.Hostname,
-				"retry":       retryCount,
-			}).Warn("The host is still present in the Administration view in the Security App")
-
-			retryCount++
-
-			return fmt.Errorf("The host %s is still present in the Administration view in the Security App", fts.Hostname)
 		}
 
 		log.WithFields(log.Fields{
@@ -817,8 +882,8 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(stat
 	return nil
 }
 
-func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgentAndInstalller(image string, installer string) error {
-	err := fts.anAgentIsDeployedToFleetWithInstaller(image, installer)
+func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgentAndInstalller(endpoint string, image string, agentInstaller string) error {
+	err := fts.anAgentIsDeployedToFleetWithInstaller(image, agentInstaller)
 	if err != nil {
 		return err
 	}
@@ -828,8 +893,7 @@ func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgentAndInstallle
 		return err
 	}
 
-	// we use integration's title
-	return fts.theIntegrationIsOperatedInThePolicy(elasticEnpointIntegrationTitle, actionADDED)
+	return fts.theIntegrationIsOperatedInThePolicy(endpoint, actionADDED)
 }
 
 func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
@@ -1051,28 +1115,6 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	return err
 }
 
-func (fts *FleetTestSuite) removeToken() error {
-	revokeTokenURL := fleetEnrollmentTokenURL + "/" + fts.CurrentTokenID
-	deleteReq := createDefaultHTTPRequest(revokeTokenURL)
-
-	body, err := curl.Delete(deleteReq)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"tokenID": fts.CurrentTokenID,
-			"body":    body,
-			"error":   err,
-			"url":     revokeTokenURL,
-		}).Error("Could not delete token")
-		return err
-	}
-
-	log.WithFields(log.Fields{
-		"tokenID": fts.CurrentTokenID,
-	}).Debug("The token was deleted")
-
-	return nil
-}
-
 // unenrollHostname deletes the statuses for an existing agent, filtering by hostname
 func (fts *FleetTestSuite) unenrollHostname(force bool) error {
 	log.Tracef("Un-enrolling all agentIDs for %s", fts.Hostname)
@@ -1093,30 +1135,6 @@ func (fts *FleetTestSuite) unenrollHostname(force bool) error {
 				return err
 			}
 		}
-	}
-
-	return nil
-}
-
-func (fts *FleetTestSuite) upgradeAgent(version string) error {
-	agentID, err := getAgentID(fts.Hostname)
-	if err != nil {
-		return err
-	}
-
-	upgradeReq := curl.HTTPRequest{
-		BasicAuthUser:     "elastic",
-		BasicAuthPassword: "changeme",
-		Headers: map[string]string{
-			"Content-Type": "application/json",
-			"kbn-xsrf":     "true",
-		},
-		URL:     fmt.Sprintf(fleetAgentUpgradeURL, agentID),
-		Payload: `{"version":"` + version + `", "force": true}`,
-	}
-
-	if content, err := curl.Post(upgradeReq); err != nil {
-		return errors.Wrap(err, content)
 	}
 
 	return nil
@@ -1196,121 +1214,6 @@ func (fts *FleetTestSuite) checkDataStream() error {
 	return err
 }
 
-// checkFleetConfiguration checks that Fleet configuration is not missing
-// any requirements and is read. To achieve it, a GET request is executed
-func checkFleetConfiguration() error {
-	getReq := curl.HTTPRequest{
-		BasicAuthUser:     "elastic",
-		BasicAuthPassword: "changeme",
-		Headers: map[string]string{
-			"Content-Type": "application/json",
-			"kbn-xsrf":     "e2e-tests",
-		},
-		URL: fleetSetupURL,
-	}
-
-	log.Trace("Ensuring Fleet setup was initialised")
-	responseBody, err := curl.Get(getReq)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"responseBody": responseBody,
-		}).Error("Could not check Kibana setup for Fleet")
-		return err
-	}
-
-	if !strings.Contains(responseBody, `"isReady":true,"missing_requirements":[]`) {
-		err = fmt.Errorf("Kibana has not been initialised: %s", responseBody)
-		log.Error(err.Error())
-		return err
-	}
-
-	log.WithFields(log.Fields{
-		"responseBody": responseBody,
-	}).Info("Kibana setup initialised")
-
-	return nil
-}
-
-// createFleetConfiguration sends a POST request to Fleet forcing the
-// recreation of the configuration
-func createFleetConfiguration() error {
-	postReq := createDefaultHTTPRequest(fleetSetupURL)
-	postReq.Payload = `{
-		"forceRecreate": true
-	}`
-
-	body, err := curl.Post(postReq)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"body":  body,
-			"error": err,
-			"url":   fleetSetupURL,
-		}).Error("Could not initialise Fleet setup")
-		return err
-	}
-
-	log.WithFields(log.Fields{
-		"responseBody": body,
-	}).Info("Fleet setup done")
-
-	return nil
-}
-
-// createDefaultHTTPRequest Creates a default HTTP request, including the basic auth,
-// JSON content type header, and a specific header that is required by Kibana
-func createDefaultHTTPRequest(url string) curl.HTTPRequest {
-	return curl.HTTPRequest{
-		BasicAuthUser:     "elastic",
-		BasicAuthPassword: "changeme",
-		Headers: map[string]string{
-			"Content-Type": "application/json",
-			"kbn-xsrf":     "e2e-tests",
-		},
-		URL: url,
-	}
-}
-
-// createFleetToken sends a POST request to Fleet creating a new token with a name
-func createFleetToken(name string, policyID string) (*gabs.Container, error) {
-	postReq := createDefaultHTTPRequest(fleetEnrollmentTokenURL)
-	postReq.Payload = `{
-		"policy_id": "` + policyID + `",
-		"name": "` + name + `"
-	}`
-
-	body, err := curl.Post(postReq)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"body":  body,
-			"error": err,
-			"url":   fleetSetupURL,
-		}).Error("Could not create Fleet token")
-		return nil, err
-	}
-
-	jsonParsed, err := gabs.ParseJSON([]byte(body))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":        err,
-			"responseBody": body,
-		}).Error("Could not parse response into JSON")
-		return nil, err
-	}
-
-	tokenItem := jsonParsed.Path("item")
-
-	log.WithFields(log.Fields{
-		"tokenId":  tokenItem.Path("id").Data().(string),
-		"apiKeyId": tokenItem.Path("api_key_id").Data().(string),
-	}).Debug("Fleet token created")
-
-	return tokenItem, nil
-}
-
-func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, token string) error {
-	profile := installer.profile // name of the runtime dependencies compose file
-	service := installer.service // name of the service
-	serviceTag := installer.tag  // docker tag of the service
 func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containerName string, token string) error {
 	profile := agentInstaller.Profile // name of the runtime dependencies compose file
 	service := agentInstaller.Service // name of the service
