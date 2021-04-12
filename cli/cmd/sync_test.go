@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/Flaque/filet"
-	io "github.com/elastic/e2e-testing/cli/internal"
+	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 )

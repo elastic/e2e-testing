@@ -13,8 +13,8 @@ import (
 	"strings"
 
 	"github.com/elastic/e2e-testing/cli/config"
-	io "github.com/elastic/e2e-testing/cli/internal"
 	git "github.com/elastic/e2e-testing/internal/git"
+	io "github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/sanitizer"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
