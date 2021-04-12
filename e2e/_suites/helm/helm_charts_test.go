@@ -85,10 +85,12 @@ func setupSuite() {
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 	stackVersion = utils.GetElasticArtifactVersion(stackVersion)
 
-	_, err := helm.Factory(helmVersion)
+	h, err := helm.Factory(helmVersion)
 	if err != nil {
 		log.Fatalf("Helm could not be initialised: %v", err)
 	}
+
+	helmManager = h
 
 	testSuite = HelmChartTestSuite{
 		ClusterName:       "helm-charts-test-suite",
