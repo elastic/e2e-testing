@@ -197,7 +197,7 @@ func copyIntegrationsComposeFiles(beats git.Project, pattern string, target stri
 }
 
 type service interface{}
-type compose struct {
+type composeFile struct {
 	Version  string             `yaml:"version"`
 	Services map[string]service `yaml:"services"`
 }
@@ -212,7 +212,7 @@ func sanitizeComposeFile(composeFilePath string, targetFilePath string) error {
 		return err
 	}
 
-	c := compose{}
+	c := composeFile{}
 	err = yaml.Unmarshal(bytes, &c)
 	if err != nil {
 		log.WithFields(log.Fields{

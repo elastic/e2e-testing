@@ -17,6 +17,7 @@ import (
 	curl "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	"github.com/elastic/e2e-testing/e2e/steps"
+	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -46,9 +47,7 @@ type FleetTestSuite struct {
 	CurrentTokenID      string // current enrollment tokenID
 	Hostname            string // the hostname of the container
 	Version             string // current elastic-agent version
-	// integrations
-	Integration     IntegrationPackage // the installed integration
-	PolicyUpdatedAt string             // the moment the policy was updated
+	kibanaClient        *kibana.Client
 }
 
 // afterScenario destroys the state created by a scenario
@@ -86,12 +85,12 @@ func (fts *FleetTestSuite) afterScenario() {
 	}
 
 	if !developerMode {
-		_ = serviceManager.RemoveServicesFromCompose(context.Background(), FleetProfileName, []string{serviceName + "-systemd"}, profileEnv)
+		_ = serviceManager.RemoveServicesFromCompose(context.Background(), common.FleetProfileName, []string{serviceName + "-systemd"}, common.ProfileEnv)
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
 
-	err = fts.removeToken()
+	err = fts.kibanaClient.DeleteEnrollmentAPIKey(fts.CurrentTokenID)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err":     err,
@@ -99,13 +98,24 @@ func (fts *FleetTestSuite) afterScenario() {
 		}).Warn("The enrollment token could not be deleted")
 	}
 
-	err = deleteIntegrationFromPolicy(fts.Integration, fts.PolicyID)
+	// Cleanup all package policies
+	packagePolicies, err := fts.kibanaClient.ListPackagePolicies()
 	if err != nil {
 		log.WithFields(log.Fields{
-			"err":             err,
-			"packageConfigID": fts.Integration.packageConfigID,
-			"configurationID": fts.PolicyID,
-		}).Warn("The integration could not be deleted from the configuration")
+			"err":    err,
+			"policy": fts.Policy,
+		}).Error("The package policies could not be found")
+	}
+	for _, pkgPolicy := range packagePolicies {
+		if pkgPolicy.PolicyID == fts.Policy.ID {
+			err = fts.kibanaClient.DeleteIntegrationFromPolicy(pkgPolicy)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err":           err,
+					"packagePolicy": pkgPolicy,
+				}).Error("The integration could not be deleted from the configuration")
+			}
+		}
 	}
 
 	// clean up fields
@@ -121,8 +131,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 
 	fts.Version = agentVersion
 
-	// create policy with system monitoring enabled
-	defaultPolicy, err := getAgentDefaultPolicy()
+	policy, err := fts.kibanaClient.GetDefaultPolicy(false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,
@@ -130,8 +139,17 @@ func (fts *FleetTestSuite) beforeScenario() {
 
 		return
 	}
+	fts.Policy = policy
 
-	fts.PolicyID = defaultPolicy.Path("id").Data().(string)
+	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Warn("The default fleet policy could not be obtained")
+
+		return
+	}
+	fts.FleetPolicy = fleetPolicy
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
@@ -223,7 +241,7 @@ func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
 		desiredVersion = agentVersion
 	}
 
-	return fts.upgradeAgent(desiredVersion)
+	return fts.kibanaClient.UpgradeAgent(fts.Hostname, desiredVersion)
 }
 
 func (fts *FleetTestSuite) agentInVersion(version string) error {
@@ -235,26 +253,13 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	}
 
 	agentInVersionFn := func() error {
-		agentID, err := getAgentID(fts.Hostname)
+		agent, err := fts.kibanaClient.GetAgentByHostname(fts.Hostname)
 		if err != nil {
 			return err
 		}
 
-		r := createDefaultHTTPRequest(fleetAgentsURL + "/" + agentID)
-		body, err := curl.Get(r)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"body":  body,
-				"error": err,
-				"url":   r.GetURL(),
-			}).Error("Could not get agent in Fleet")
-			return err
-		}
-
-		jsonResponse, err := gabs.ParseJSON([]byte(body))
-
-		retrievedVersion := jsonResponse.Path("item.local_metadata.elastic.agent.version").Data().(string)
-		if isSnapshot := jsonResponse.Path("item.local_metadata.elastic.agent.snapshot").Data().(bool); isSnapshot {
+		retrievedVersion := agent.LocalMetadata.Elastic.Agent.Version
+		if isSnapshot := agent.LocalMetadata.Elastic.Agent.Snapshot; isSnapshot {
 			retrievedVersion += "-SNAPSHOT"
 		}
 
@@ -288,10 +293,8 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 	serviceName := ElasticAgentServiceName                                                     // name of the service
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", serviceName, 1) // name of the container
 
-	uuid := uuid.New().String()
-
 	// enroll the agent with a new token
-	tokenJSONObject, err := createFleetToken("Test token for "+uuid, fts.PolicyID)
+	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.Policy)
 	if err != nil {
 		return err
 	}
@@ -392,12 +395,12 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 func (fts *FleetTestSuite) setup() error {
 	log.Trace("Creating Fleet setup")
 
-	err := createFleetConfiguration()
+	err := fts.kibanaClient.RecreateFleet()
 	if err != nil {
 		return err
 	}
 
-	err = checkFleetConfiguration()
+	err = fts.kibanaClient.WaitForFleet()
 	if err != nil {
 		return err
 	}
@@ -412,13 +415,16 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 	log.Tracef("Checking if agent is listed in Fleet as %s", desiredStatus)
 
-	maxTimeout := time.Duration(timeoutFactor) * time.Minute * 2
+	kibanaClient, err := kibana.NewClient()
+	if err != nil {
+		return err
+	}
 	retryCount := 1
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	agentOnlineFn := func() error {
-		agentID, err := getAgentID(hostname)
+		agentID, err := kibanaClient.GetAgentIDByHostname(hostname)
 		if err != nil {
 			retryCount++
 			return err
@@ -440,7 +446,8 @@ func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 			}
 		}
 
-		isAgentInStatus, err := isAgentInStatus(agentID, desiredStatus)
+		agentStatus, err := kibanaClient.GetAgentStatusByHostname(hostname)
+		isAgentInStatus := strings.EqualFold(agentStatus, desiredStatus)
 		if err != nil || !isAgentInStatus {
 			if err == nil {
 				err = fmt.Errorf("The Agent is not in the %s status yet", desiredStatus)
@@ -541,7 +548,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	countDataStreamsFn := func() error {
-		dataStreams, err := getDataStreams()
+		dataStreams, err := fts.kibanaClient.GetDataStreams()
 		if err != nil {
 			log.WithFields(log.Fields{
 				"retry":       retryCount,
@@ -614,7 +621,7 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 		"tokenID": fts.CurrentTokenID,
 	}).Trace("Revoking enrollment token")
 
-	err := fts.removeToken()
+	err := fts.kibanaClient.DeleteEnrollmentAPIKey(fts.CurrentTokenID)
 	if err != nil {
 		return err
 	}
@@ -629,7 +636,7 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 
 func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) error {
 	log.WithFields(log.Fields{
-		"policyID": fts.PolicyID,
+		"policyID": fts.Policy.ID,
 		"package":  packageName,
 	}).Trace("Checking if the policy shows the package added")
 
@@ -645,14 +652,14 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 	fts.Integration = integration
 
 	configurationIsPresentFn := func() error {
-		defaultPolicy, err := getAgentDefaultPolicy()
+		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(packageName, fts.Policy)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"error":    err,
-				"policyID": fts.PolicyID,
-				"retry":    retryCount,
-			}).Warn("An error retrieving the policy happened")
-
+				"packagePolicy": packagePolicy,
+				"policy":        fts.Policy,
+				"retry":         retryCount,
+				"error":         err,
+			}).Warn("The integration was not found in the policy")
 			retryCount++
 
 			return err
@@ -697,6 +704,10 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 		"package":  packageName,
 	}).Trace("Doing an operation for a package on a policy")
 
+	integration, err := fts.kibanaClient.GetIntegrationByPackageName(packageName)
+	if err != nil {
+		return err
+	}
 	if strings.ToLower(action) == actionADDED {
 		name, version, err := getIntegrationLatestVersion(packageName)
 		if err != nil {
@@ -746,7 +757,7 @@ func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp()
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	agentListedInSecurityFn := func() error {
-		host, err := isAgentListedInSecurityApp(fts.Hostname)
+		host, err := fts.kibanaClient.IsAgentListedInSecurityApp(fts.Hostname)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"elapsedTime": exp.GetElapsedTime(),
@@ -799,7 +810,7 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(stat
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	agentListedInSecurityFn := func() error {
-		matches, err := isAgentListedInSecurityAppWithStatus(fts.Hostname, status)
+		matches, err := fts.kibanaClient.IsAgentListedInSecurityAppWithStatus(fts.Hostname, status)
 		if err != nil || !matches {
 			log.WithFields(log.Fields{
 				"elapsedTime":   exp.GetElapsedTime(),
@@ -849,7 +860,7 @@ func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgentAndInstallle
 }
 
 func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
-	agentID, err := getAgentID(fts.Hostname)
+	agentID, err := fts.kibanaClient.GetAgentIDByHostname(fts.Hostname)
 	if err != nil {
 		return err
 	}
@@ -860,7 +871,7 @@ func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	getEventsFn := func() error {
-		listed, err := isPolicyResponseListedInSecurityApp(agentID)
+		listed, err := fts.kibanaClient.IsPolicyResponseListedInSecurityApp(agentID)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"elapsedTime": exp.GetElapsedTime(),
@@ -914,51 +925,64 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMode(name string, mode string
 		return godog.ErrPending
 	}
 
-	integration, err := getIntegrationFromAgentPolicy(elasticEnpointIntegrationTitle, fts.PolicyID)
+	packageDS, err := fts.kibanaClient.GetIntegrationFromAgentPolicy("endpoint", fts.Policy)
+
 	if err != nil {
 		return err
 	}
-	fts.Integration = integration
+	fts.Integration = packageDS.Package
 
-	integrationJSON := fts.Integration.json
-
-	// prune fields not allowed in the API side
-	prunedFields := []string{
-		"created_at", "created_by", "id", "revision", "updated_at", "updated_by",
+	packageDS.Inputs = []kibana.Input{
+		{
+			Type:    "endpoint",
+			Enabled: true,
+			Streams: []interface{}{},
+			Config: map[string]interface{}{
+				"policy": map[string]interface{}{
+					"value": map[string]interface{}{
+						"windows": map[string]interface{}{
+							"malware": map[string]interface{}{
+								"mode": mode,
+							},
+						},
+						"mac": map[string]interface{}{
+							"malware": map[string]interface{}{
+								"mode": mode,
+							},
+						},
+					},
+				},
+			},
+		},
 	}
-	for _, f := range prunedFields {
-		integrationJSON.Delete(f)
-	}
+	log.WithFields(log.Fields{
+		"inputs": packageDS.Inputs,
+	}).Trace("Upgrading integration package config")
 
-	// wee only support Windows and Mac, not Linux
-	integrationJSON.SetP(mode, "inputs.0.config.policy.value.windows."+name+".mode")
-	integrationJSON.SetP(mode, "inputs.0.config.policy.value.mac."+name+".mode")
-
-	response, err := updateIntegrationPackageConfig(fts.Integration.packageConfigID, integrationJSON.String())
+	updatedAt, err := fts.kibanaClient.UpdateIntegrationPackagePolicy(packageDS)
 	if err != nil {
 		return err
 	}
 
 	// we use a string because we are not able to process what comes in the event, so we will do
 	// an alphabetical order, as they share same layout but different millis and timezone format
-	updatedAt := response.Path("item.updated_at").Data().(string)
 	fts.PolicyUpdatedAt = updatedAt
 	return nil
 }
 
 func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error {
-	agentID, err := getAgentID(fts.Hostname)
+	agentID, err := fts.kibanaClient.GetAgentIDByHostname(fts.Hostname)
 	if err != nil {
 		return err
 	}
 
-	maxTimeout := time.Duration(timeoutFactor) * time.Minute * 2
+	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
 	retryCount := 1
 
-	exp := e2e.GetExponentialBackOff(maxTimeout)
+	exp := common.GetExponentialBackOff(maxTimeout)
 
 	getEventsFn := func() error {
-		err := getAgentEvents("endpoint-security", agentID, fts.Integration.packageConfigID, fts.PolicyUpdatedAt)
+		err := fts.kibanaClient.GetAgentEvents("endpoint-security", agentID, fts.Policy.ID, fts.PolicyUpdatedAt)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"elapsedTime": exp.GetElapsedTime(),
@@ -992,16 +1016,16 @@ func (fts *FleetTestSuite) theVersionOfThePackageIsInstalled(version string, pac
 		"version": version,
 	}).Trace("Checking if package version is installed")
 
-	name, version, err := getIntegrationLatestVersion(packageName)
+	integration, err := fts.kibanaClient.GetIntegrationByPackageName(packageName)
 	if err != nil {
 		return err
 	}
 
-	installedIntegration, err := installIntegrationAssets(name, version)
+	_, err = fts.kibanaClient.InstallIntegrationAssets(integration)
 	if err != nil {
 		return err
 	}
-	fts.Integration = installedIntegration
+	fts.Integration = integration
 
 	return nil
 }
@@ -1080,24 +1104,18 @@ func (fts *FleetTestSuite) removeToken() error {
 func (fts *FleetTestSuite) unenrollHostname(force bool) error {
 	log.Tracef("Un-enrolling all agentIDs for %s", fts.Hostname)
 
-	jsonParsed, err := getOnlineAgents(true)
+	agents, err := fts.kibanaClient.ListAgents()
 	if err != nil {
 		return err
 	}
 
-	hosts := jsonParsed.Path("list").Children()
-
-	for _, host := range hosts {
-		hostname := host.Path("local_metadata.host.hostname").Data().(string)
-		// a hostname has an agentID by status
-		if hostname == fts.Hostname {
-			agentID := host.Path("id").Data().(string)
+	for _, agent := range agents {
+		if agent.LocalMetadata.Host.HostName == fts.Hostname {
 			log.WithFields(log.Fields{
 				"hostname": fts.Hostname,
-				"agentID":  agentID,
 			}).Debug("Un-enrolling agent in Fleet")
 
-			err := unenrollAgent(agentID, force)
+			err := fts.kibanaClient.UnEnrollAgent(agent.LocalMetadata.Host.HostName, force)
 			if err != nil {
 				return err
 			}

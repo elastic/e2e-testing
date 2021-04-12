@@ -24,9 +24,11 @@ var imts IngestManagerTestSuite
 func setUpSuite() {
 	config.Init()
 
-	kibanaClient = services.NewKibanaClient()
-
-	developerMode = shell.GetEnvBool("DEVELOPER_MODE")
+	kibanaClient, err := kibana.NewClient()
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
 	if developerMode {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
@@ -54,9 +56,12 @@ func setUpSuite() {
 
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
-			Installers: map[string]ElasticAgentInstaller{}, // do not pre-initialise the map
+			kibanaClient: kibanaClient,
+			Installers:   map[string]installer.ElasticAgentInstaller{}, // do not pre-initialise the map
 		},
-		StandAlone: &StandAloneTestSuite{},
+		StandAlone: &StandAloneTestSuite{
+			kibanaClient: kibanaClient,
+		},
 	}
 }
 
@@ -116,7 +121,14 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
 
-		healthyKibana, err := kibanaClient.WaitForKibana(context.Background(), minutesToBeHealthy)
+		kibanaClient, err := kibana.NewClient()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Fatal("Unable to create kibana client")
+		}
+
+		healthyKibana, err := kibanaClient.WaitForReady(minutesToBeHealthy)
 		if !healthyKibana {
 			log.WithFields(log.Fields{
 				"error":   err,

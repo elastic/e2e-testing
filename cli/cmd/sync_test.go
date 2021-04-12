@@ -28,7 +28,7 @@ func TestSanitizeComposeFile_Multiple(t *testing.T) {
 	bytes, err := io.ReadFile(target)
 	assert.Nil(t, err)
 
-	c := compose{}
+	c := composeFile{}
 	err = yaml.Unmarshal(bytes, &c)
 	assert.Nil(t, err)
 
@@ -73,7 +73,7 @@ func TestSanitizeComposeFile_Single(t *testing.T) {
 	bytes, err := io.ReadFile(target)
 	assert.Nil(t, err)
 
-	c := compose{}
+	c := composeFile{}
 	err = yaml.Unmarshal(bytes, &c)
 	assert.Nil(t, err)
 
