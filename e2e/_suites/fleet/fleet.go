@@ -16,6 +16,7 @@ import (
 	curl "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	"github.com/elastic/e2e-testing/e2e/steps"
+	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/kibana"
@@ -23,15 +24,6 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
-
-const fleetAgentsURL = kibanaBaseURL + "/api/fleet/agents"
-const fleetAgentEventsURL = kibanaBaseURL + "/api/fleet/agents/%s/events"
-const fleetAgentsUnEnrollURL = kibanaBaseURL + "/api/fleet/agents/%s/unenroll"
-const fleetAgentUpgradeURL = kibanaBaseURL + "/api/fleet/agents/%s/upgrade"
-const fleetEnrollmentTokenURL = kibanaBaseURL + "/api/fleet/enrollment-api-keys"
-const fleetSetupURL = kibanaBaseURL + "/api/fleet/agents/setup"
-const ingestManagerAgentPoliciesURL = kibanaBaseURL + "/api/fleet/agent_policies"
-const ingestManagerDataStreamsURL = kibanaBaseURL + "/api/fleet/data_streams"
 
 const actionADDED = "added"
 const actionREMOVED = "removed"
@@ -130,7 +122,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 	fts.Cleanup = false
 	fts.ElasticAgentStopped = false
 
-	fts.Version = agentVersion
+	fts.Version = common.AgentVersion
 
 	policy, err := fts.kibanaClient.GetDefaultPolicy(false)
 	if err != nil {
@@ -187,11 +179,11 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 
 	switch version {
 	case "stale":
-		version = agentStaleVersion
+		version = common.AgentStaleVersion
 	case "latest":
-		version = agentVersion
+		version = common.AgentVersion
 	default:
-		version = agentStaleVersion
+		version = common.AgentStaleVersion
 	}
 
 	fts.Version = version
@@ -235,11 +227,11 @@ func (fts *FleetTestSuite) installCerts() error {
 func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
 	switch desiredVersion {
 	case "stale":
-		desiredVersion = agentStaleVersion
+		desiredVersion = common.AgentStaleVersion
 	case "latest":
-		desiredVersion = agentVersion
+		desiredVersion = common.AgentVersion
 	default:
-		desiredVersion = agentVersion
+		desiredVersion = common.AgentVersion
 	}
 
 	return fts.kibanaClient.UpgradeAgent(fts.Hostname, desiredVersion)
@@ -248,9 +240,9 @@ func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
 func (fts *FleetTestSuite) agentInVersion(version string) error {
 	switch version {
 	case "stale":
-		version = agentStaleVersion
+		version = common.AgentStaleVersion
 	case "latest":
-		version = agentVersion
+		version = common.AgentVersion
 	}
 
 	agentInVersionFn := func() error {
@@ -271,8 +263,8 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 		return nil
 	}
 
-	maxTimeout := time.Duration(timeoutFactor) * time.Minute * 2
-	exp := e2e.GetExponentialBackOff(maxTimeout)
+	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
+	exp := common.GetExponentialBackOff(maxTimeout)
 
 	return backoff.Retry(agentInVersionFn, exp)
 }
@@ -291,7 +283,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 
 	profile := installer.profile // name of the runtime dependencies compose file
 
-	serviceName := ElasticAgentServiceName                                                     // name of the service
+	serviceName := common.ElasticAgentServiceName                                              // name of the service
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", serviceName, 1) // name of the container
 
 	// enroll the agent with a new token
@@ -341,7 +333,7 @@ func (fts *FleetTestSuite) getInstaller() ElasticAgentInstaller {
 }
 
 func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state string) error {
-	profile := FleetProfileName
+	profile := common.FleetProfileName
 
 	installer := fts.getInstaller()
 
@@ -358,7 +350,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		}
 
 		// signal that the elastic-agent was uninstalled
-		if process == ElasticAgentProcessName {
+		if process == common.ElasticAgentProcessName {
 			fts.ElasticAgentStopped = true
 		}
 
@@ -420,9 +412,10 @@ func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 	if err != nil {
 		return err
 	}
+	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
 	retryCount := 1
 
-	exp := e2e.GetExponentialBackOff(maxTimeout)
+	exp := common.GetExponentialBackOff(maxTimeout)
 
 	agentOnlineFn := func() error {
 		agentID, err := kibanaClient.GetAgentIDByHostname(hostname)
@@ -523,7 +516,7 @@ func (fts *FleetTestSuite) theHostIsRestarted() error {
 		image,   // service
 	}
 
-	err := serviceManager.RunCommand(profile, composes, []string{"restart", service}, profileEnv)
+	err := serviceManager.RunCommand(profile, composes, []string{"restart", service}, common.ProfileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"image":   image,
@@ -543,10 +536,10 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	log.Trace("Checking system Package dashboards in Fleet")
 
 	dataStreamsCount := 0
-	maxTimeout := time.Duration(timeoutFactor) * time.Minute
+	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute
 	retryCount := 1
 
-	exp := e2e.GetExponentialBackOff(maxTimeout)
+	exp := common.GetExponentialBackOff(maxTimeout)
 
 	countDataStreamsFn := func() error {
 		dataStreams, err := fts.kibanaClient.GetDataStreams()
@@ -644,13 +637,7 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 	maxTimeout := time.Minute
 	retryCount := 1
 
-	exp := e2e.GetExponentialBackOff(maxTimeout)
-
-	integration, err := getIntegrationFromAgentPolicy(packageName, fts.PolicyID)
-	if err != nil {
-		return err
-	}
-	fts.Integration = integration
+	exp := common.GetExponentialBackOff(maxTimeout)
 
 	configurationIsPresentFn := func() error {
 		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(packageName, fts.Policy)
@@ -662,35 +649,14 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 				"error":         err,
 			}).Warn("The integration was not found in the policy")
 			retryCount++
-
 			return err
 		}
 
-		packagePolicies := defaultPolicy.Path("package_policies")
-
-		for _, child := range packagePolicies.Children() {
-			id := child.Data().(string)
-			if id == fts.Integration.packageConfigID {
-				log.WithFields(log.Fields{
-					"packageConfigID": fts.Integration.packageConfigID,
-					"policyID":        fts.PolicyID,
-				}).Info("The integration was found in the policy")
-				return nil
-			}
-		}
-
-		log.WithFields(log.Fields{
-			"packageConfigID": fts.Integration.packageConfigID,
-			"policyID":        fts.PolicyID,
-			"retry":           retryCount,
-		}).Warn("The integration was not found in the policy")
-
 		retryCount++
-
 		return err
 	}
 
-	err = backoff.Retry(configurationIsPresentFn, exp)
+	err := backoff.Retry(configurationIsPresentFn, exp)
 	if err != nil {
 		return err
 	}
@@ -752,10 +718,10 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp() error {
 	log.Trace("Checking if the hostname is not shown in the Administration view in the Security App")
 
-	maxTimeout := time.Duration(timeoutFactor) * time.Minute
+	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute
 	retryCount := 1
 
-	exp := e2e.GetExponentialBackOff(maxTimeout)
+	exp := common.GetExponentialBackOff(maxTimeout)
 
 	agentListedInSecurityFn := func() error {
 		host, err := fts.kibanaClient.IsAgentListedInSecurityApp(fts.Hostname)
@@ -805,10 +771,10 @@ func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp()
 func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(status string) error {
 	log.Trace("Checking if the hostname is shown in the Admin view in the Security App")
 
-	maxTimeout := time.Duration(timeoutFactor) * time.Minute
+	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute
 	retryCount := 1
 
-	exp := e2e.GetExponentialBackOff(maxTimeout)
+	exp := common.GetExponentialBackOff(maxTimeout)
 
 	agentListedInSecurityFn := func() error {
 		matches, err := fts.kibanaClient.IsAgentListedInSecurityAppWithStatus(fts.Hostname, status)
@@ -866,10 +832,10 @@ func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error 
 		return err
 	}
 
-	maxTimeout := time.Duration(timeoutFactor) * time.Minute
+	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute
 	retryCount := 1
 
-	exp := e2e.GetExponentialBackOff(maxTimeout)
+	exp := common.GetExponentialBackOff(maxTimeout)
 
 	getEventsFn := func() error {
 		listed, err := fts.kibanaClient.IsPolicyResponseListedInSecurityApp(agentID)
@@ -1343,12 +1309,12 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 	envVarsPrefix := strings.ReplaceAll(service, "-", "_")
 
 	// let's start with Centos 7
-	profileEnv[envVarsPrefix+"Tag"] = serviceTag
+	common.ProfileEnv[envVarsPrefix+"Tag"] = serviceTag
 	// we are setting the container name because Centos service could be reused by any other test suite
-	profileEnv[envVarsPrefix+"ContainerName"] = containerName
+	common.ProfileEnv[envVarsPrefix+"ContainerName"] = containerName
 	// define paths where the binary will be mounted
-	profileEnv[envVarsPrefix+"AgentBinarySrcPath"] = installer.binaryPath
-	profileEnv[envVarsPrefix+"AgentBinaryTargetPath"] = "/" + installer.name
+	common.ProfileEnv[envVarsPrefix+"AgentBinarySrcPath"] = agentInstaller.BinaryPath
+	common.ProfileEnv[envVarsPrefix+"AgentBinaryTargetPath"] = "/" + agentInstaller.Name
 
 	serviceManager := compose.NewServiceManager()
 

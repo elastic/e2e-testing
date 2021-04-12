@@ -16,6 +16,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
+	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
 	log "github.com/sirupsen/logrus"
 )
@@ -35,25 +36,25 @@ func setUpSuite() {
 	}
 
 	// check if base version is an alias
-	agentVersionBase = e2e.GetElasticArtifactVersion(agentVersionBase)
+	common.AgentVersionBase = utils.GetElasticArtifactVersion(common.AgentVersionBase)
 
-	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
-	agentVersion = shell.GetEnv("BEAT_VERSION", agentVersionBase)
+	common.TimeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", common.TimeoutFactor)
+	common.AgentVersion = shell.GetEnv("BEAT_VERSION", common.AgentVersionBase)
 
-	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
+	common.AgentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", common.AgentStaleVersion)
 	// check if stale version is an alias
-	agentStaleVersion = e2e.GetElasticArtifactVersion(agentStaleVersion)
+	common.AgentStaleVersion = utils.GetElasticArtifactVersion(common.AgentStaleVersion)
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
-	if useCISnapshots && !strings.HasSuffix(agentStaleVersion, "-SNAPSHOT") {
-		agentStaleVersion += "-SNAPSHOT"
+	if useCISnapshots && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
+		common.AgentStaleVersion += "-SNAPSHOT"
 	}
 
 	// check if version is an alias
-	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
+	common.AgentVersion = utils.GetElasticArtifactVersion(common.AgentVersion)
 
-	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
-	stackVersion = e2e.GetElasticArtifactVersion(stackVersion)
+	common.StackVersion = shell.GetEnv("STACK_VERSION", common.StackVersion)
+	common.StackVersion = utils.GetElasticArtifactVersion(common.StackVersion)
 
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
@@ -101,8 +102,8 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		log.Trace("Installing Fleet runtime dependencies")
 
-		profileEnv = map[string]string{
-			"stackVersion": stackVersion,
+		common.ProfileEnv = map[string]string{
+			"stackVersion": common.StackVersion,
 		}
 
 		profile := common.FleetProfileName
@@ -113,8 +114,8 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			}).Fatal("Could not run the runtime dependencies for the profile.")
 		}
 
-		minutesToBeHealthy := time.Duration(timeoutFactor) * time.Minute
-		healthy, err := e2e.WaitForElasticsearch(context.Background(), minutesToBeHealthy)
+		minutesToBeHealthy := time.Duration(common.TimeoutFactor) * time.Minute
+		healthy, err := elasticsearch.WaitForElasticsearch(context.Background(), minutesToBeHealthy)
 		if !healthy {
 			log.WithFields(log.Fields{
 				"error":   err,
@@ -145,7 +146,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.AfterSuite(func() {
 		if !developerMode {
 			log.Debug("Destroying Fleet runtime dependencies")
-			profile := FleetProfileName
+			profile := common.FleetProfileName
 
 			err := serviceManager.StopCompose(context.Background(), true, []string{profile})
 			if err != nil {

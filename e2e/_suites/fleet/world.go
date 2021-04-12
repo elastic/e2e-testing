@@ -9,6 +9,7 @@ import (
 
 	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/e2e/steps"
+	"github.com/elastic/e2e-testing/internal/common"
 )
 
 // developerMode tears down the backend services (ES, Kibana, Package Registry)
@@ -60,8 +61,8 @@ type IngestManagerTestSuite struct {
 }
 
 func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
-	profile := FleetProfileName
-	serviceName := ElasticAgentServiceName
+	profile := common.FleetProfileName
+	serviceName := common.ElasticAgentServiceName
 
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, imts.Fleet.Image+"-systemd", serviceName, 1)
 	if imts.StandAlone.Hostname != "" {

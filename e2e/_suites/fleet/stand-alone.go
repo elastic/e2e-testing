@@ -16,6 +16,7 @@ import (
 	shell "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	"github.com/elastic/e2e-testing/e2e/steps"
+	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
 	log "github.com/sirupsen/logrus"
 )
@@ -109,7 +110,7 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 
 	log.Trace("Deploying an agent to Fleet")
 
-	dockerImageTag := agentVersion
+	dockerImageTag := common.AgentVersion
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
@@ -131,24 +132,21 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 
 	serviceManager := compose.NewServiceManager()
 
-	profileEnv["elasticAgentDockerImageSuffix"] = ""
+	common.ProfileEnv["elasticAgentDockerImageSuffix"] = ""
 	if image != "default" {
-		profileEnv["elasticAgentDockerImageSuffix"] = "-" + image
+		common.ProfileEnv["elasticAgentDockerImageSuffix"] = "-" + image
 	}
 
-	profileEnv["elasticAgentDockerNamespace"] = e2e.GetDockerNamespaceEnvVar()
+	common.ProfileEnv["elasticAgentDockerNamespace"] = utils.GetDockerNamespaceEnvVar()
 
-	containerName := fmt.Sprintf("%s_%s_%d", FleetProfileName, ElasticAgentServiceName, 1)
+	containerName := fmt.Sprintf("%s_%s_%d", common.FleetProfileName, common.ElasticAgentServiceName, 1)
 
-	sats.AgentConfigFilePath = configurationFilePath
-
-	profileEnv["elasticAgentContainerName"] = containerName
-	profileEnv["elasticAgentConfigFile"] = sats.AgentConfigFilePath
-	profileEnv["elasticAgentPlatform"] = "linux/amd64"
-	profileEnv["elasticAgentTag"] = dockerImageTag
+	common.ProfileEnv["elasticAgentContainerName"] = containerName
+	common.ProfileEnv["elasticAgentPlatform"] = "linux/amd64"
+	common.ProfileEnv["elasticAgentTag"] = dockerImageTag
 
 	for k, v := range env {
-		profileEnv[k] = v
+		common.ProfileEnv[k] = v
 	}
 
 	err := serviceManager.AddServicesToCompose(context.Background(), common.FleetProfileName, []string{common.ElasticAgentServiceName}, common.ProfileEnv)
@@ -178,8 +176,8 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 func (sats *StandAloneTestSuite) getContainerLogs() error {
 	serviceManager := compose.NewServiceManager()
 
-	profile := FleetProfileName
-	serviceName := ElasticAgentServiceName
+	profile := common.FleetProfileName
+	serviceName := common.ElasticAgentServiceName
 
 	composes := []string{
 		profile,     // profile name
@@ -232,7 +230,7 @@ func (sats *StandAloneTestSuite) installTestTools(containerName string) error {
 }
 
 func (sats *StandAloneTestSuite) thereIsNewDataInTheIndexFromAgent() error {
-	maxTimeout := time.Duration(timeoutFactor) * time.Minute * 2
+	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
 	minimumHitsCount := 50
 
 	result, err := searchAgentData(sats.Hostname, sats.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
