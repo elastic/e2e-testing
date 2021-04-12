@@ -13,9 +13,9 @@ import (
 	"strings"
 
 	"github.com/elastic/e2e-testing/cli/config"
-	git "github.com/elastic/e2e-testing/cli/internal"
 	io "github.com/elastic/e2e-testing/cli/internal"
 	"github.com/elastic/e2e-testing/cli/services"
+	git "github.com/elastic/e2e-testing/internal/git"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
