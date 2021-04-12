@@ -68,5 +68,5 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 		containerName = fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
 	}
 
-	return steps.CheckProcessStateOnTheHost(containerName, process, state, timeoutFactor)
+	return docker.CheckProcessStateOnTheHost(containerName, process, state, common.TimeoutFactor)
 }

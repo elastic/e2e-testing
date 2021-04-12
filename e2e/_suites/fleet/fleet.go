@@ -17,6 +17,7 @@ import (
 	"github.com/elastic/e2e-testing/e2e"
 	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -316,7 +317,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 	}
 
 	// get container hostname once
-	hostname, err := steps.GetContainerHostname(containerName)
+	hostname, err := docker.GetContainerHostname(containerName)
 	if err != nil {
 		return err
 	}
@@ -389,7 +390,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	// command: it simply returns error level
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", ElasticAgentServiceName, 1)
 
-	return steps.CheckProcessStateOnTheHost(containerName, process, "stopped", timeoutFactor)
+	return docker.CheckProcessStateOnTheHost(containerName, process, "stopped", common.TimeoutFactor)
 }
 
 func (fts *FleetTestSuite) setup() error {
