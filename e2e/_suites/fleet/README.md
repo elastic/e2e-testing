@@ -44,8 +44,15 @@ To change it, please use Docker UI, go to `Preferences > Resources > File Sharin
 This is an example of the optional configuration:
 
    ```shell
+<<<<<<< HEAD
    # There should be a Docker image for the runtime dependencies (elasticsearch, kibana, package registry)
    export STACK_VERSION=7.11.0-SNAPSHOT
+=======
+   # There should be a Docker image for the runtime dependencies (elasticsearch, package registry)
+   export STACK_VERSION=8.0.0-SNAPSHOT
+   # There should be a Docker image for the runtime dependencies (kibana)
+   export KIBANA_VERSION=pr12345
+>>>>>>> 7abccaf3... feat: support passing KIBANA_VERSION (#905)
    # (Fleet mode) This environment variable will use a fixed version of the Elastic agent binary, obtained from
    # https://artifacts-api.elastic.co/v1/search/7.11.0-SNAPSHOT/elastic-agent
    export ELASTIC_AGENT_DOWNLOAD_URL="https://snapshots.elastic.co/7.11.0-326bd5a6/downloads/beats/elastic-agent/elastic-agent-7.11.0-SNAPSHOT-linux-x86_64.tar.gz"

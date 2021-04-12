@@ -446,7 +446,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"serviceName":           mts.ServiceName,
 	}
 
-	env["metricbeatDockerNamespace"] = e2e.GetDockerNamespaceEnvVar()
+	env["metricbeatDockerNamespace"] = e2e.GetDockerNamespaceEnvVar("beats")
 	env["metricbeatPlatform"] = "linux/amd64"
 
 	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{"metricbeat"}, env)

@@ -44,9 +44,15 @@ To change it, please use Docker UI, go to `Preferences > Resources > File Sharin
 This is an example of the optional configuration:
 
    ```shell
+<<<<<<< HEAD
    # There should be a Docker image for the runtime dependencies (elasticsearch, kibana, package registry)
    export STACK_VERSION="7.11.0-SNAPSHOT"
    export BEAT_VERSION="7.11.0-SNAPSHOT"
+=======
+   # There should be a Docker image for the runtime dependencies (elasticsearch)
+   export STACK_VERSION="8.0.0-SNAPSHOT"
+   export BEAT_VERSION="8.0.0-SNAPSHOT"
+>>>>>>> 7abccaf3... feat: support passing KIBANA_VERSION (#905)
    # or
    # This environment variable will use the snapshots produced by Beats CI
    export BEATS_USE_CI_SNAPSHOTS="true"
