@@ -8,7 +8,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/elastic/e2e-testing/cli/services"
 	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/shell"
 	log "github.com/sirupsen/logrus"
