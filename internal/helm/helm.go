@@ -2,34 +2,34 @@
 // or more contributor license agreements. Licensed under the Elastic License;
 // you may not use this file except in compliance with the Elastic License.
 
-package services
+package helm
 
 import (
 	"context"
 	"errors"
 	"strings"
 
-	"github.com/elastic/e2e-testing/cli/shell"
+	"github.com/elastic/e2e-testing/internal/shell"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
 
-// HelmManager defines the operations for Helm
-type HelmManager interface {
+// Manager defines the operations for Helm
+type Manager interface {
 	AddRepo(ctx context.Context, repo string, URL string) error
 	DeleteChart(ctx context.Context, chart string) error
 	InstallChart(ctx context.Context, name string, chart string, version string, flags []string) error
 }
 
-// HelmFactory returns oone of the Helm supported versions, or an error
-func HelmFactory(version string) (HelmManager, error) {
+// Factory returns oone of the Helm supported versions, or an error
+func Factory(version string) (Manager, error) {
 	if strings.HasPrefix(version, "3.") {
 		helm := &helm3X{}
 		helm.Version = version
 		return helm, nil
 	}
 
-	var helm HelmManager
+	var helm Manager
 	return helm, errors.New("Sorry, we don't support Helm v" + version + " version")
 }
 
