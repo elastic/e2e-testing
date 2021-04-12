@@ -18,6 +18,7 @@ import (
 	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/installer"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -118,7 +119,7 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries
-		dockerInstaller := GetElasticAgentInstaller("docker", image, agentVersion)
+		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.AgentVersion)
 
 		dockerInstaller.PreInstallFn()
 

@@ -18,6 +18,7 @@ import (
 	"github.com/elastic/e2e-testing/e2e"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/installer"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -159,7 +160,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		installers := imts.Fleet.Installers
 		for k, v := range installers {
-			agentPath := v.binaryPath
+			agentPath := v.BinaryPath
 			if _, err := os.Stat(agentPath); err == nil {
 				err = os.Remove(agentPath)
 				if err != nil {
