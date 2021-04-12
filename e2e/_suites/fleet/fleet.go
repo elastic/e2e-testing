@@ -969,28 +969,11 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMode(name string, mode string
 	}
 	fts.Integration = packageDS.Package
 
-	packageDS.Inputs = []kibana.Input{
-		{
-			Type:    "endpoint",
-			Enabled: true,
-			Streams: []interface{}{},
-			Config: map[string]interface{}{
-				"policy": map[string]interface{}{
-					"value": map[string]interface{}{
-						"windows": map[string]interface{}{
-							"malware": map[string]interface{}{
-								"mode": mode,
-							},
-						},
-						"mac": map[string]interface{}{
-							"malware": map[string]interface{}{
-								"mode": mode,
-							},
-						},
-					},
-				},
-			},
-		},
+	for _, item := range packageDS.Inputs {
+		if item.Type == "endpoint" {
+			item.Config.(map[string]interface{})["policy"].(map[string]interface{})["value"].(map[string]interface{})["windows"].(map[string]interface{})["malware"].(map[string]interface{})["mode"] = mode
+			item.Config.(map[string]interface{})["policy"].(map[string]interface{})["value"].(map[string]interface{})["mac"].(map[string]interface{})["malware"].(map[string]interface{})["mode"] = mode
+		}
 	}
 	log.WithFields(log.Fields{
 		"inputs": packageDS.Inputs,
