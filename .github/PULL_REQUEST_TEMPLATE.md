@@ -56,28 +56,28 @@ Link related issues below. Insert the issue link or reference after the word "Cl
 -->
 - 
 
+<!-- Recommended
 ## Use cases
 
-<!-- Recommended
 Explain here the different behaviors that this PR introduces or modifies in this project, user roles, environment configuration, etc.
 
 If you are familiar with Gherkin test scenarios, we recommend its usage: https://cucumber.io/docs/gherkin/reference/
 -->
 
+<!-- Optional
 ## Screenshots
 
-<!-- Optional
 Add here screenshots about how the project will be changed after the PR is applied. They could be related to web pages, terminal, etc, or any other image you consider important to be shared with the team.
 -->
 
+<!-- Recommended
 ## Logs
 
-<!-- Recommended
 Paste here output logs discovered while creating this PR, such as stack traces or integration logs, or any other output you consider important to be shared with the team.
 -->
 
+<!-- Optional
 ## Follow-ups
 
-<!-- Optional
 Add here any thought that you consider could be identified as an actionable step once this PR is merged.
 -->
