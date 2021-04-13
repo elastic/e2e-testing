@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
@@ -97,9 +98,10 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			"stackVersion":  stackVersion,
 		}
 
-		profileEnv["kibanaDockerNamespace"] = "observability-ci"
-		if kibanaVersion == "" {
-			profileEnv["kibanaDockerNamespace"] = "kibana"
+		profileEnv["kibanaDockerNamespace"] = "kibana"
+		if strings.HasPrefix(kibanaVersion, "pr") {
+			// because it comes from a PR
+			profileEnv["kibanaDockerNamespace"] = "observability-ci"
 		}
 
 		profile := FleetProfileName
