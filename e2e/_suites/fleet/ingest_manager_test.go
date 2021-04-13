@@ -52,6 +52,13 @@ func setUpSuite() {
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 	stackVersion = e2e.GetElasticArtifactVersion(stackVersion)
 
+	kibanaVersion = shell.GetEnv("KIBANA_VERSION", "")
+	if kibanaVersion == "" {
+		// we want to deploy a released version for Kibana
+		// if not set, let's use stackVersion
+		kibanaVersion = e2e.GetElasticArtifactVersion(stackVersion)
+	}
+
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			Installers: map[string]ElasticAgentInstaller{}, // do not pre-initialise the map
@@ -96,7 +103,13 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		log.Trace("Installing Fleet runtime dependencies")
 
 		profileEnv = map[string]string{
-			"stackVersion": stackVersion,
+			"kibanaVersion": kibanaVersion,
+			"stackVersion":  stackVersion,
+		}
+
+		profileEnv["kibanaDockerNamespace"] = "observability-ci"
+		if kibanaVersion == "" {
+			profileEnv["kibanaDockerNamespace"] = "kibana"
 		}
 
 		profile := FleetProfileName
