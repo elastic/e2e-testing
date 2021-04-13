@@ -32,22 +32,43 @@ func setUpSuite() {
 	}
 
 	// check if base version is an alias
-	agentVersionBase = e2e.GetElasticArtifactVersion(agentVersionBase)
+	v, err := e2e.GetElasticArtifactVersion(agentVersionBase)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": agentVersionBase,
+		}).Fatal("Failed to get agent base version, aborting")
+	}
+	agentVersionBase = v
 
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 	agentVersion = shell.GetEnv("BEAT_VERSION", agentVersionBase)
 
 	// check if version is an alias
-	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
+	v, err = e2e.GetElasticArtifactVersion(agentVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": agentVersion,
+		}).Fatal("Failed to get agent version, aborting")
+	}
+	agentVersion = v
 
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
-	stackVersion = e2e.GetElasticArtifactVersion(stackVersion)
+	v, err = e2e.GetElasticArtifactVersion(stackVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": stackVersion,
+		}).Fatal("Failed to get stack version, aborting")
+	}
+	stackVersion = v
 
 	kibanaVersion = shell.GetEnv("KIBANA_VERSION", "")
 	if kibanaVersion == "" {
 		// we want to deploy a released version for Kibana
 		// if not set, let's use stackVersion
-		kibanaVersion = e2e.GetElasticArtifactVersion(stackVersion)
+		kibanaVersion = stackVersion
 	}
 
 	imts = IngestManagerTestSuite{

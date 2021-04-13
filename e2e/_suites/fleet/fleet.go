@@ -169,7 +169,15 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 
 	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
 	// check if stale version is an alias
-	agentStaleVersion = e2e.GetElasticArtifactVersion(agentStaleVersion)
+	v, err := e2e.GetElasticArtifactVersion(agentStaleVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": agentStaleVersion,
+		}).Error("Failed to get stale version")
+		return err
+	}
+	agentStaleVersion = v
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	if useCISnapshots && !strings.HasSuffix(agentStaleVersion, "-SNAPSHOT") {
