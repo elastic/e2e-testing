@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -104,8 +105,9 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		workDir, _ := os.Getwd()
 		profileEnv = map[string]string{
-			"kibanaVersion": kibanaVersion,
-			"stackVersion":  stackVersion,
+			"kibanaConfigPath": path.Join(workDir, "configurations", "kibana.config.yml"),
+			"kibanaVersion":    kibanaVersion,
+			"stackVersion":     stackVersion,
 		}
 
 		profileEnv["kibanaDockerNamespace"] = "observability-ci"
