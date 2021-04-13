@@ -7,7 +7,6 @@ package main
 import (
 	"context"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -105,10 +104,6 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		workDir, _ := os.Getwd()
 		profileEnv = map[string]string{
-<<<<<<< HEAD
-			"stackVersion":     stackVersion,
-			"kibanaConfigPath": path.Join(workDir, "configurations", "kibana.config.yml"),
-=======
 			"kibanaVersion": kibanaVersion,
 			"stackVersion":  stackVersion,
 		}
@@ -116,7 +111,6 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		profileEnv["kibanaDockerNamespace"] = "observability-ci"
 		if kibanaVersion == "" {
 			profileEnv["kibanaDockerNamespace"] = "kibana"
->>>>>>> 7abccaf3... feat: support passing KIBANA_VERSION (#905)
 		}
 
 		profile := FleetProfileName
