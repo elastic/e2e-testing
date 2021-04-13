@@ -34,7 +34,7 @@ var agentVersion = agentVersionBase
 
 // agentStaleVersion is the version of the agent to use as a base during upgrade
 // It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var agentStaleVersion = "7.11.2-SNAPSHOT"
+var agentStaleVersion = "7.11.3-SNAPSHOT"
 
 // kibanaVersion is the version of the kibana to use
 // It can be overriden by KIBANA_VERSION env var
