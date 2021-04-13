@@ -33,7 +33,7 @@ const OPNetworkName = "elastic-dev-network"
 // because it does not support returning the output of a
 // command: it simply returns error level
 func CheckProcessStateOnTheHost(containerName string, process string, state string, timeoutFactor int) error {
-	timeout := time.Duration(timeoutFactor) * time.Minute
+	timeout := time.Duration(common.TimeoutFactor) * time.Minute
 
 	err := WaitForProcess(containerName, process, state, timeout)
 	if err != nil {
