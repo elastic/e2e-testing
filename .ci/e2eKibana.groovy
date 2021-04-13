@@ -3,7 +3,7 @@
 @Library('apm@current') _
 
 pipeline {
-  agent { label 'ubuntu-20' }
+  agent none
   environment {
     REPO = 'kibana'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
@@ -47,6 +47,7 @@ pipeline {
   }
   stages {
     stage('Process GitHub Event') {
+      agent { label 'ubuntu-20' }
       steps {
         checkPermissions()
         buildKibanaDockerImage(refspec: getBranch())
