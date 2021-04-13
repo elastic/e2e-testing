@@ -13,7 +13,6 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/e2e"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
@@ -64,7 +63,7 @@ func setUpSuite() {
 	if kibanaVersion == "" {
 		// we want to deploy a released version for Kibana
 		// if not set, let's use stackVersion
-		kibanaVersion = e2e.GetElasticArtifactVersion(stackVersion)
+		kibanaVersion = utils.GetElasticArtifactVersion(stackVersion)
 	}
 
 	imts = IngestManagerTestSuite{
