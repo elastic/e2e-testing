@@ -15,6 +15,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/cli/services"
 	curl "github.com/elastic/e2e-testing/cli/shell"
+	shell "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/google/uuid"
@@ -165,6 +166,15 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, version, installerType string) error {
 	agentVersionBackup := fts.Version
 	defer func() { fts.Version = agentVersionBackup }()
+
+	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
+	// check if stale version is an alias
+	agentStaleVersion = e2e.GetElasticArtifactVersion(agentStaleVersion)
+
+	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	if useCISnapshots && !strings.HasSuffix(agentStaleVersion, "-SNAPSHOT") {
+		agentStaleVersion += "-SNAPSHOT"
+	}
 
 	switch version {
 	case "stale":

@@ -7,7 +7,6 @@ package main
 import (
 	"context"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
@@ -36,15 +35,6 @@ func setUpSuite() {
 
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 	agentVersion = shell.GetEnv("BEAT_VERSION", agentVersionBase)
-
-	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
-	// check if stale version is an alias
-	agentStaleVersion = e2e.GetElasticArtifactVersion(agentStaleVersion)
-
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
-	if useCISnapshots && !strings.HasSuffix(agentStaleVersion, "-SNAPSHOT") {
-		agentStaleVersion += "-SNAPSHOT"
-	}
 
 	// check if version is an alias
 	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
