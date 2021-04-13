@@ -46,10 +46,6 @@ func setUpSuite() {
 	agentVersion = shell.GetEnv("BEAT_VERSION", agentVersionBase)
 
 	// check if version is an alias
-<<<<<<< HEAD
-	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
-	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
-=======
 	v, err = e2e.GetElasticArtifactVersion(agentVersion)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -59,7 +55,6 @@ func setUpSuite() {
 	}
 	agentVersion = v
 
->>>>>>> 00a568dc... fix: delay checking stale agent version until it's used (#1016)
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 	v, err = e2e.GetElasticArtifactVersion(stackVersion)
 	if err != nil {
