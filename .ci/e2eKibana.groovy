@@ -47,6 +47,7 @@ pipeline {
   }
   stages {
     stage('Process GitHub Event') {
+      agent { label 'ubuntu-20' }
       steps {
         checkPermissions()
         buildKibanaDockerImage(refspec: getBranch())
