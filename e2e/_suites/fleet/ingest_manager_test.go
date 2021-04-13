@@ -33,31 +33,43 @@ func setUpSuite() {
 	}
 
 	// check if base version is an alias
-	agentVersionBase = e2e.GetElasticArtifactVersion(agentVersionBase)
+	v, err := e2e.GetElasticArtifactVersion(agentVersionBase)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": agentVersionBase,
+		}).Fatal("Failed to get agent base version, aborting")
+	}
+	agentVersionBase = v
 
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 	agentVersion = shell.GetEnv("BEAT_VERSION", agentVersionBase)
 
-	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
-	// check if stale version is an alias
-	agentStaleVersion = e2e.GetElasticArtifactVersion(agentStaleVersion)
-
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
-	if useCISnapshots && !strings.HasSuffix(agentStaleVersion, "-SNAPSHOT") {
-		agentStaleVersion += "-SNAPSHOT"
-	}
-
 	// check if version is an alias
-	agentVersion = e2e.GetElasticArtifactVersion(agentVersion)
-	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
+	v, err = e2e.GetElasticArtifactVersion(agentVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": agentVersion,
+		}).Fatal("Failed to get agent version, aborting")
+	}
+	agentVersion = v
+
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
-	stackVersion = e2e.GetElasticArtifactVersion(stackVersion)
+	v, err = e2e.GetElasticArtifactVersion(stackVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": stackVersion,
+		}).Fatal("Failed to get stack version, aborting")
+	}
+	stackVersion = v
 
 	kibanaVersion = shell.GetEnv("KIBANA_VERSION", "")
 	if kibanaVersion == "" {
 		// we want to deploy a released version for Kibana
 		// if not set, let's use stackVersion
-		kibanaVersion = e2e.GetElasticArtifactVersion(stackVersion)
+		kibanaVersion = stackVersion
 	}
 
 	imts = IngestManagerTestSuite{
@@ -110,9 +122,10 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			"stackVersion":     stackVersion,
 		}
 
-		profileEnv["kibanaDockerNamespace"] = "observability-ci"
-		if kibanaVersion == "" {
-			profileEnv["kibanaDockerNamespace"] = "kibana"
+		profileEnv["kibanaDockerNamespace"] = "kibana"
+		if strings.HasPrefix(kibanaVersion, "pr") {
+			// because it comes from a PR
+			profileEnv["kibanaDockerNamespace"] = "observability-ci"
 		}
 
 		profile := FleetProfileName
