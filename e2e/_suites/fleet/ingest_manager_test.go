@@ -13,6 +13,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/e2e"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
@@ -58,6 +59,13 @@ func setUpSuite() {
 
 	common.StackVersion = shell.GetEnv("STACK_VERSION", common.StackVersion)
 	common.StackVersion = utils.GetElasticArtifactVersion(common.StackVersion)
+
+	kibanaVersion = shell.GetEnv("KIBANA_VERSION", "")
+	if kibanaVersion == "" {
+		// we want to deploy a released version for Kibana
+		// if not set, let's use stackVersion
+		kibanaVersion = e2e.GetElasticArtifactVersion(stackVersion)
+	}
 
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
@@ -105,8 +113,14 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		log.Trace("Installing Fleet runtime dependencies")
 
-		common.ProfileEnv = map[string]string{
-			"stackVersion": common.StackVersion,
+		common.profileEnv = map[string]string{
+			"kibanaVersion": kibanaVersion,
+			"stackVersion":  common.stackVersion,
+		}
+
+		common.profileEnv["kibanaDockerNamespace"] = "observability-ci"
+		if kibanaVersion == "" {
+			common.profileEnv["kibanaDockerNamespace"] = "kibana"
 		}
 
 		profile := common.FleetProfileName

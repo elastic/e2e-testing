@@ -443,7 +443,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"serviceName":           mts.ServiceName,
 	}
 
-	env["metricbeatDockerNamespace"] = utils.GetDockerNamespaceEnvVar()
+	env["metricbeatDockerNamespace"] = utils.GetDockerNamespaceEnvVar("beats")
 	env["metricbeatPlatform"] = "linux/amd64"
 
 	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{"metricbeat"}, env)
