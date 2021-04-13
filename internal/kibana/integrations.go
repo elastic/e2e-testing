@@ -104,7 +104,7 @@ func (c *Client) GetIntegrationByPackageName(packageName string) (IntegrationPac
 	}
 
 	for _, pkg := range integrationPackages {
-		if strings.EqualFold(pkg.Name, packageName) {
+		if strings.EqualFold(pkg.Name, packageName) || strings.EqualFold(pkg.Title, packageName) {
 			return pkg, nil
 		}
 	}
@@ -124,7 +124,7 @@ func (c *Client) GetIntegrationFromAgentPolicy(packageName string, policy Policy
 	}
 
 	for _, child := range packagePolicies {
-		if policy.ID == child.PolicyID && strings.EqualFold(packageName, child.Name) {
+		if policy.ID == child.PolicyID && (strings.EqualFold(packageName, child.Name) || strings.EqualFold(packageName, child.Package.Title)) {
 			return child, nil
 		}
 	}
