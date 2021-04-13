@@ -34,6 +34,10 @@ var AgentStaleVersion = "7.11-SNAPSHOT"
 // It can be overriden by STACK_VERSION env var
 var StackVersion = AgentVersionBase
 
+// KibanaVersion is the version of kibana to use
+// It can be override by KIBANA_VERSION
+var KibanaVersion = AgentVersionBase
+
 // ProfileEnv is the environment to be applied to any execution
 // affecting the runtime dependencies (or profile)
 var ProfileEnv map[string]string
