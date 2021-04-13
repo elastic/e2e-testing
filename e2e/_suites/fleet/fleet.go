@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/elastic/e2e-testing/cli/docker"
 	"strings"
 	"time"
 
@@ -50,6 +51,9 @@ type FleetTestSuite struct {
 	// integrations
 	Integration     IntegrationPackage // the installed integration
 	PolicyUpdatedAt string             // the moment the policy was updated
+	// date controls for queries
+	AgentStoppedDate             time.Time
+	RuntimeDependenciesStartDate time.Time
 }
 
 // afterScenario destroys the state created by a scenario
@@ -112,6 +116,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	// clean up fields
 	fts.CurrentTokenID = ""
 	fts.Image = ""
+	// fts.InstallerType = ""
 	fts.Hostname = ""
 }
 
@@ -161,6 +166,161 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
 	s.Step(`^the policy is updated to have "([^"]*)" in "([^"]*)" mode$`, fts.thePolicyIsUpdatedToHaveMode)
 	s.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
+
+	// standalone-only steps
+	s.Step(`^a stand-alone agent is deployed with a "([^"]*)" image$`, fts.aStandaloneAgentIsDeployed)
+	s.Step(`^a stand-alone agent is deployed with a "([^"]*)" image and fleet server mode$`, fts.aStandaloneAgentIsDeployedWithFleetServerMode)
+	s.Step(`^there is new data in the index from agent$`, fts.thereIsNewDataInTheIndexFromAgent)
+	s.Step(`^the "([^"]*)" docker container is stopped$`, fts.theDockerContainerIsStopped)
+	s.Step(`^there is no new data in the index after agent shuts down$`, fts.thereIsNoNewDataInTheIndexAfterAgentShutsDown)
+}
+
+func (fts *FleetTestSuite) aStandaloneAgentIsDeployedWithFleetServerMode(image string) error {
+	return fts.startAgent(image, map[string]string{"fleetServerMode": "1"})
+}
+
+func (fts *FleetTestSuite) aStandaloneAgentIsDeployed(image string) error {
+	return fts.startAgent(image, nil)
+}
+
+func (fts *FleetTestSuite) theDockerContainerIsStopped(serviceName string) error {
+	serviceManager := services.NewServiceManager()
+
+	err := serviceManager.RemoveServicesFromCompose(context.Background(), FleetProfileName, []string{serviceName}, profileEnv)
+	if err != nil {
+		return err
+	}
+	fts.AgentStoppedDate = time.Now().UTC()
+
+	return nil
+}
+
+func (fts *FleetTestSuite) startAgent(image string, env map[string]string) error {
+
+	log.Trace("Deploying an agent to Fleet")
+
+	dockerImageTag := agentVersion
+
+	useCISnapshots := curl.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	beatsLocalPath := curl.GetEnv("BEATS_LOCAL_PATH", "")
+	if useCISnapshots || beatsLocalPath != "" {
+		// load the docker images that were already:
+		// a. downloaded from the GCP bucket
+		// b. fetched from the local beats binaries
+		dockerInstaller := GetElasticAgentInstaller("docker", image, agentVersion)
+
+		dockerInstaller.PreInstallFn()
+
+		dockerImageTag += "-amd64"
+	}
+
+	serviceManager := services.NewServiceManager()
+
+	profileEnv["elasticAgentDockerImageSuffix"] = ""
+	if image != "default" {
+		profileEnv["elasticAgentDockerImageSuffix"] = "-" + image
+	}
+
+	profileEnv["elasticAgentDockerNamespace"] = e2e.GetDockerNamespaceEnvVar("beats")
+
+	containerName := fmt.Sprintf("%s_%s_%d", FleetProfileName, ElasticAgentServiceName, 1)
+
+	profileEnv["elasticAgentContainerName"] = containerName
+	profileEnv["elasticAgentPlatform"] = "linux/amd64"
+	profileEnv["elasticAgentTag"] = dockerImageTag
+
+	for k, v := range env {
+		profileEnv[k] = v
+	}
+
+	err := serviceManager.AddServicesToCompose(context.Background(), FleetProfileName, []string{ElasticAgentServiceName}, profileEnv)
+	if err != nil {
+		log.Error("Could not deploy the elastic-agent")
+		return err
+	}
+
+	// get container hostname once
+	hostname, err := steps.GetContainerHostname(containerName)
+	if err != nil {
+		return err
+	}
+
+	fts.Image = "docker"
+	fts.InstallerType = image
+	fts.Hostname = hostname
+	fts.Cleanup = true
+
+	err = fts.installTestTools(containerName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (fts *FleetTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error {
+	maxTimeout := time.Duration(30) * time.Second
+	minimumHitsCount := 1
+
+	result, err := searchAgentData(fts.Hostname, fts.AgentStoppedDate, minimumHitsCount, maxTimeout)
+	if err != nil {
+		if strings.Contains(err.Error(), "type:index_not_found_exception") {
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Info("No documents were found for the Agent in the index after it stopped")
+		return nil
+	}
+
+	return e2e.AssertHitsAreNotPresent(result)
+}
+
+func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
+	maxTimeout := time.Duration(timeoutFactor) * time.Minute * 2
+	minimumHitsCount := 50
+
+	result, err := searchAgentData(fts.Hostname, fts.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
+	if err != nil {
+		return err
+	}
+
+	log.Tracef("Search result: %v", result)
+
+	return e2e.AssertHitsArePresent(result)
+}
+
+// installTestTools we need the container name because we use the Docker Client instead of Docker Compose
+// we are going to install those tools we use in the test framework for checking
+// and verifications
+func (fts *FleetTestSuite) installTestTools(containerName string) error {
+	if fts.InstallerType != "ubi8" {
+		return nil
+	}
+
+	cmd := []string{"microdnf", "install", "procps-ng"}
+
+	log.WithFields(log.Fields{
+		"command":       cmd,
+		"containerName": containerName,
+	}).Trace("Installing test tools ")
+
+	_, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"command":       cmd,
+			"containerName": containerName,
+			"error":         err,
+		}).Error("Could not install test tools using the Docker client")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"command":       cmd,
+		"containerName": containerName,
+	}).Debug("Test tools installed")
+
+	return nil
 }
 
 func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, version, installerType string) error {
@@ -424,10 +584,6 @@ func (fts *FleetTestSuite) setup() error {
 }
 
 func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
-	return theAgentIsListedInFleetWithStatus(desiredStatus, fts.Hostname)
-}
-
-func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 	log.Tracef("Checking if agent is listed in Fleet as %s", desiredStatus)
 
 	maxTimeout := time.Duration(timeoutFactor) * time.Minute * 2
@@ -436,7 +592,7 @@ func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
 	agentOnlineFn := func() error {
-		agentID, err := getAgentID(hostname)
+		agentID, err := getAgentID(fts.Hostname)
 		if err != nil {
 			retryCount++
 			return err
@@ -447,7 +603,7 @@ func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 			if desiredStatus == "offline" || desiredStatus == "inactive" {
 				log.WithFields(log.Fields{
 					"elapsedTime": exp.GetElapsedTime(),
-					"hostname":    hostname,
+					"hostname":    fts.Hostname,
 					"retries":     retryCount,
 					"status":      desiredStatus,
 				}).Info("The Agent is not present in Fleet, as expected")
@@ -468,7 +624,7 @@ func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 				"agentID":         agentID,
 				"isAgentInStatus": isAgentInStatus,
 				"elapsedTime":     exp.GetElapsedTime(),
-				"hostname":        hostname,
+				"hostname":        fts.Hostname,
 				"retry":           retryCount,
 				"status":          desiredStatus,
 			}).Warn(err.Error())
@@ -481,7 +637,7 @@ func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 		log.WithFields(log.Fields{
 			"isAgentInStatus": isAgentInStatus,
 			"elapsedTime":     exp.GetElapsedTime(),
-			"hostname":        hostname,
+			"hostname":        fts.Hostname,
 			"retries":         retryCount,
 			"status":          desiredStatus,
 		}).Info("The Agent is in the desired status")
