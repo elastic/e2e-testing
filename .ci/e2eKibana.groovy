@@ -3,7 +3,7 @@
 @Library('apm@current') _
 
 pipeline {
-  agent none
+  agent { label 'ubuntu-20' }
   environment {
     REPO = 'kibana'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
