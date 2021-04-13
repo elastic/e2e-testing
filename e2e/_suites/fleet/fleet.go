@@ -19,6 +19,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/internal/utils"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -180,6 +181,23 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, version, installerType string) error {
 	agentVersionBackup := fts.Version
 	defer func() { fts.Version = agentVersionBackup }()
+
+	common.AgentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", common.AgentStaleVersion)
+	// check if stale version is an alias
+	v, err := utils.GetElasticArtifactVersion(common.AgentStaleVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": common.AgentStaleVersion,
+		}).Error("Failed to get stale version")
+		return err
+	}
+	common.AgentStaleVersion = v
+
+	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	if useCISnapshots && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
+		common.AgentStaleVersion += "-SNAPSHOT"
+	}
 
 	switch version {
 	case "stale":

@@ -83,7 +83,14 @@ func setupSuite() {
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
-	stackVersion = utils.GetElasticArtifactVersion(stackVersion)
+	v, err := utils.GetElasticArtifactVersion(stackVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": stackVersion,
+		}).Fatal("Failed to get stack version, aborting")
+	}
+	stackVersion = v
 
 	h, err := helm.Factory(helmVersion)
 	if err != nil {

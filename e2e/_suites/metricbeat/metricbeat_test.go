@@ -67,12 +67,26 @@ func setupSuite() {
 	}
 
 	// check if base version is an alias
-	metricbeatVersionBase = utils.GetElasticArtifactVersion(metricbeatVersionBase)
+	v, err := utils.GetElasticArtifactVersion(metricbeatVersionBase)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": metricbeatVersionBase,
+		}).Fatal("Failed to get metricbeat base version, aborting")
+	}
+	metricbeatVersionBase = v
 
 	metricbeatVersion = shell.GetEnv("BEAT_VERSION", metricbeatVersionBase)
 
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
-	stackVersion = utils.GetElasticArtifactVersion(stackVersion)
+	v, err = utils.GetElasticArtifactVersion(stackVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": stackVersion,
+		}).Fatal("Failed to get stack version, aborting")
+	}
+	stackVersion = v
 
 	serviceManager = compose.NewServiceManager()
 

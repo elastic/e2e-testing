@@ -39,14 +39,28 @@ func setUpSuite() {
 	}
 
 	// check if base version is an alias
-	common.AgentVersionBase = utils.GetElasticArtifactVersion(common.AgentVersionBase)
+	v, err := utils.GetElasticArtifactVersion(common.AgentVersionBase)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": common.AgentVersionBase,
+		}).Fatal("Failed to get agent base version, aborting")
+	}
+	common.AgentVersionBase = v
 
 	common.TimeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", common.TimeoutFactor)
 	common.AgentVersion = shell.GetEnv("BEAT_VERSION", common.AgentVersionBase)
 
 	common.AgentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", common.AgentStaleVersion)
 	// check if stale version is an alias
-	common.AgentStaleVersion = utils.GetElasticArtifactVersion(common.AgentStaleVersion)
+	v, err = utils.GetElasticArtifactVersion(common.AgentStaleVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": common.AgentStaleVersion,
+		}).Fatal("Failed to get agent stale version, aborting")
+	}
+	common.AgentStaleVersion = v
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	if useCISnapshots && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
@@ -54,16 +68,36 @@ func setUpSuite() {
 	}
 
 	// check if version is an alias
-	common.AgentVersion = utils.GetElasticArtifactVersion(common.AgentVersion)
+	v, err = utils.GetElasticArtifactVersion(common.AgentVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": common.AgentVersion,
+		}).Fatal("Failed to get agent version, aborting")
+	}
+	common.AgentVersion = v
 
 	common.StackVersion = shell.GetEnv("STACK_VERSION", common.StackVersion)
-	common.StackVersion = utils.GetElasticArtifactVersion(common.StackVersion)
+	v, err = utils.GetElasticArtifactVersion(common.StackVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": common.StackVersion,
+		}).Fatal("Failed to get stack version, aborting")
+	}
+	common.StackVersion = v
 
 	common.KibanaVersion = shell.GetEnv("KIBANA_VERSION", "")
 	if common.KibanaVersion == "" {
 		// we want to deploy a released version for Kibana
 		// if not set, let's use stackVersion
-		common.KibanaVersion = utils.GetElasticArtifactVersion(common.StackVersion)
+		common.KibanaVersion, err = utils.GetElasticArtifactVersion(common.StackVersion)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"version": common.KibanaVersion,
+			}).Fatal("Failed to get kibana version, aborting")
+		}
 	}
 
 	imts = IngestManagerTestSuite{
@@ -117,9 +151,10 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			"stackVersion":  common.StackVersion,
 		}
 
-		common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
-		if common.KibanaVersion == "" {
-			common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
+		common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
+		if strings.HasPrefix(common.KibanaVersion, "pr") {
+			// because it comes from a PR
+			common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
 		}
 
 		profile := common.FleetProfileName
