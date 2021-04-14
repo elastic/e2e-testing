@@ -60,3 +60,8 @@ Scenario Outline: Deploying a <image> stand-alone agent with fleet server mode
 Examples: default
   | image   |
   | default |
+
+@ubi8
+Examples: Ubi8
+  | image   |
+  | ubi8    |
