@@ -96,7 +96,10 @@ def runE2ETests(String suite) {
   log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for PR-${env.GT_PR}.")
 
   // Kibana's maintenance branches follow the 7.11, 7.12 schema.
-  def branchName = "${env.GT_BASE_REF}.x"
+  def branchName = "${env.GT_BASE_REF}"
+  if (${env.GT_BASE_REF} != "master") {
+    branchName = "${env.GT_BASE_REF}.x"
+  }
   def e2eTestsPipeline = "e2e-tests/e2e-testing-mbp/${branchName}"
 
   def parameters = [
