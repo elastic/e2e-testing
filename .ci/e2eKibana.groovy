@@ -34,7 +34,7 @@ pipeline {
     genericHeaderVariables: [
      [key: 'x-github-event', regexpFilter: 'comment']
     ],
-     causeString: 'Triggered on comment: $GT_BODY',
+     causeString: 'Triggered on #$GT_PR (baseRef:$GT_BASE_REF, sha:$GT_PR_HEAD_SHA), via comment: $GT_BODY',
      printContributedVariables: false,
      printPostContent: false,
      silentResponse: true,
