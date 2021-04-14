@@ -48,6 +48,10 @@ pipeline {
   stages {
     stage('Process GitHub Event') {
       agent { label 'ubuntu-20' }
+      environment {
+        HOME = "${env.WORKSPACE}/${BASE_DIR}"
+        PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
+      }
       steps {
         checkPermissions()
         buildKibanaDockerImage(refspec: getBranch())
