@@ -762,6 +762,7 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 			PolicyID:    fts.Policy.ID,
 			Enabled:     true,
 			Package:     integration,
+			Inputs:      []kibana.Input{},
 		}
 
 		if strings.EqualFold(integration.Name, "linux") {
@@ -779,22 +780,6 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 							},
 						},
 					},
-					Vars: map[string]kibana.Var{
-						"period": {
-							Value: "1s",
-							Type:  "string",
-						},
-					},
-				},
-			}
-		}
-
-		if strings.EqualFold(integration.Name, "endpoint") {
-			packageDataStream.Inputs = []kibana.Input{
-				{
-					Type:    "endpoint",
-					Enabled: true,
-					Streams: []interface{}{},
 					Vars: map[string]kibana.Var{
 						"period": {
 							Value: "1s",
