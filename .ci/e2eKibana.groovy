@@ -69,7 +69,7 @@ def checkPermissions(){
       error("Only PRs from Elasticians can be tested with Fleet E2E tests")
     }
 
-    if(!hasCommentAuthorWritePermissions(env.GT_PR, env.GT_COMMENT_ID)){
+    if(!hasCommentAuthorWritePermissions(env.GT_COMMENT_ID)){
       error("Only Elasticians can trigger Fleet E2E tests")
     }
   }
@@ -92,10 +92,10 @@ def getDockerTag(){
   return "pr${params.kibana_pr}"
 }
 
-def hasCommentAuthorWritePermissions(prId, commentId){
+def hasCommentAuthorWritePermissions(commentId){
   def repoName = "elastic/kibana"
   def token = getGithubToken()
-  def url = "https://api.github.com/repos/${repoName}/issues/${prId}/comments/${commentId}"
+  def url = "https://api.github.com/repos/${repoName}/issues/comments/${commentId}"
   def comment = githubApiCall(token: token, url: url, noCache: true)
   def json = githubRepoGetUserPermission(token: token, repo: repoName, user: comment?.user?.login)
 
