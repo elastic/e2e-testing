@@ -48,6 +48,10 @@ pipeline {
   stages {
     stage('Process GitHub Event') {
       agent { label 'ubuntu-20' }
+      environment {
+        HOME = "${env.WORKSPACE}/${BASE_DIR}"
+        PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
+      }
       steps {
         checkPermissions()
         buildKibanaDockerImage(refspec: getBranch())
@@ -65,7 +69,7 @@ def checkPermissions(){
       error("Only PRs from Elasticians can be tested with Fleet E2E tests")
     }
 
-    if(!hasCommentAuthorWritePermissions(env.GT_PR, env.GT_COMMENT_ID)){
+    if(!hasCommentAuthorWritePermissions(repoName: 'elastic/kibana', commentId: env.GT_COMMENT_ID)){
       error("Only Elasticians can trigger Fleet E2E tests")
     }
   }
@@ -86,16 +90,6 @@ def getDockerTag(){
 
   // we are going to use the 'pr12345' tag
   return "pr${params.kibana_pr}"
-}
-
-def hasCommentAuthorWritePermissions(prId, commentId){
-  def repoName = "elastic/kibana"
-  def token = getGithubToken()
-  def url = "https://api.github.com/repos/${repoName}/issues/${prId}/comments/${commentId}"
-  def comment = githubApiCall(token: token, url: url, noCache: true)
-  def json = githubRepoGetUserPermission(token: token, repo: repoName, user: comment?.user?.login)
-
-  return json?.permission == 'admin' || json?.permission == 'write'
 }
 
 def runE2ETests(String suite) {
