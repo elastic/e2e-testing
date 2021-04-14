@@ -326,14 +326,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 		return err
 	}
 
-	// the installation process for TAR includes the enrollment
-	if agentInstaller.InstallerType != "tar" {
-		err = agentInstaller.EnrollFn(fts.CurrentToken)
-		if err != nil {
-			return err
-		}
-	}
-
 	// get container hostname once
 	hostname, err := docker.GetContainerHostname(containerName)
 	if err != nil {
