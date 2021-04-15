@@ -297,11 +297,11 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType, false)
 }
 
-func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(image string, installerType string, isFleetServer bool) error {
+func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(image string, installerType string, bootstrapFleetServer bool) error {
 	log.WithFields(log.Fields{
-		"fleetServer": isFleetServer,
-		"image":       image,
-		"installer":   installerType,
+		"bootstrapFleetServer": bootstrapFleetServer,
+		"image":                image,
+		"installer":            installerType,
 	}).Trace("Deploying an agent to Fleet with base image and fleet server")
 
 	fts.Image = image
@@ -325,7 +325,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	fts.CurrentTokenID = tokenJSONObject.Path("id").Data().(string)
 
 	var fleetConfig *FleetConfig
-	fleetConfig, err = deployAgentToFleet(installer, containerName, fts.CurrentToken, isFleetServer)
+	fleetConfig, err = deployAgentToFleet(installer, containerName, fts.CurrentToken, bootstrapFleetServer)
 	fts.Cleanup = true
 	if err != nil {
 		return err
@@ -627,7 +627,8 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 
 	installer := fts.getInstaller()
 
-	cfg, err := NewFleetConfig(fts.CurrentToken, false)
+	// a restart does not need to bootstrap the Fleet Server again
+	cfg, err := NewFleetConfig(fts.CurrentToken, false, false)
 	if err != nil {
 		return err
 	}
@@ -1348,7 +1349,7 @@ func createFleetToken(name string, policyID string) (*gabs.Container, error) {
 	return tokenItem, nil
 }
 
-func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, token string, isFleetServer bool) (*FleetConfig, error) {
+func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, token string, bootstrapFleetServer bool) (*FleetConfig, error) {
 	profile := installer.profile // name of the runtime dependencies compose file
 	service := installer.service // name of the service
 	serviceTag := installer.tag  // docker tag of the service
@@ -1379,7 +1380,7 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 		return nil, err
 	}
 
-	cfg, cfgError := NewFleetConfig(token, isFleetServer)
+	cfg, cfgError := NewFleetConfig(token, bootstrapFleetServer, false)
 	if cfgError != nil {
 		return nil, cfgError
 	}

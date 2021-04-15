@@ -330,10 +330,6 @@ func (i *TARPackage) Install(cfg *FleetConfig) error {
 	// install the elastic-agent to /usr/bin/elastic-agent using command
 	binary := fmt.Sprintf("/elastic-agent/%s", i.artifact)
 
-	if cfg.isFleetServer() {
-		return bootstrapFleetServer(i.profile, i.image, i.service, binary, cfg)
-	}
-
 	args := cfg.flags()
 
 	err := runElasticAgentCommand(i.profile, i.image, i.service, binary, "install", args)

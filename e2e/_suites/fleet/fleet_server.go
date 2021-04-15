@@ -19,13 +19,18 @@ type FleetConfig struct {
 	KibanaPort               int
 	KibanaURI                string
 	// server
-	ServerPolicyID string
+	BootstrapFleetServer bool
+	ServerPolicyID       string
 }
 
 // NewFleetConfig builds a new configuration for the fleet agent, defaulting ES credentials, URI and port.
-// If the 'fleetServerMode' flag is true, the it will also retrieve the default policy ID for fleet server
-func NewFleetConfig(token string, fleetServerMode bool) (*FleetConfig, error) {
+// If the 'bootstrappFleetServer' flag is true, the it will create the config for the initial fleet server
+// used to bootstrap Fleet Server
+// If the 'fleetServerMode' flag is true, the it will create the config for an agent using an existing Fleet
+// Server to connect to Fleet. It will also retrieve the default policy ID for fleet server
+func NewFleetConfig(token string, bootstrapFleetServer bool, fleetServerMode bool) (*FleetConfig, error) {
 	cfg := &FleetConfig{
+		BootstrapFleetServer:     bootstrapFleetServer,
 		EnrollmentToken:          token,
 		ElasticsearchCredentials: "elastic:changeme",
 		ElasticsearchPort:        9200,
@@ -54,6 +59,14 @@ func NewFleetConfig(token string, fleetServerMode bool) (*FleetConfig, error) {
 }
 
 func (cfg FleetConfig) flags() []string {
+	if cfg.BootstrapFleetServer {
+		return []string{
+			"--force", "--fleet-server-insecure-http",
+			"--fleet-server-host", cfg.ElasticsearchURI,
+			"--fleet-server-port", fmt.Sprintf("%d", cfg.ElasticsearchPort),
+		}
+	}
+
 	baseFlags := []string{"-e", "-v", "--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken}
 
 	if cfg.ServerPolicyID != "" {
@@ -63,38 +76,24 @@ func (cfg FleetConfig) flags() []string {
 	return append(baseFlags, "--kibana-url", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.KibanaURI, cfg.KibanaPort))
 }
 
-func (cfg FleetConfig) isFleetServer() bool {
-	if cfg.ServerPolicyID != "" {
-		return true
-	}
-	return false
-}
-
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerInFleetMode(image string, installerType string) error {
 	fts.ElasticAgentStopped = true
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType, true)
 }
 
 // bootstrapFleetServer runs a command for the elastic-agent
-// KIBANA_HOST=http://localhost:5601 KIBANA_USERNAME=elastic KIBANA_PASSWORD=changeme ELASTICSEARCH_HOST=http://localhost:9200 ELASTICSEARCH_USERNAME=elastic ELASTICSEARCH_PASSWORD=changeme KIBANA_FLEET_SETUP=1 FLEET_SERVER_ENABLE=1 sudo ./elastic-agent container
 func bootstrapFleetServer(profile string, image string, service string, binary string, cfg *FleetConfig) error {
-	log.WithFields(log.Fields{
-		"elasticsearch":     cfg.ElasticsearchURI,
-		"elasticsearchPort": cfg.ElasticsearchPort,
-		"policyID":          cfg.ServerPolicyID,
-		"token":             cfg.EnrollmentToken,
-	}).Debug("Bootstrapping Fleet Server")
+	log.Debug("Bootstrapping Fleet Server")
 
-	env := map[string]string{
-		"KIBANA_FLEET_SETUP":     "1",
-		"KIBANA_HOST":            fmt.Sprintf("http://%s:%d", cfg.KibanaURI, cfg.KibanaPort),
-		"KIBANA_USERNAME":        "elastic",
-		"KIBANA_PASSWORD":        "changeme",
-		"ELASTICSEARCH_HOST":     fmt.Sprintf("http://%s:%d", cfg.ElasticsearchURI, cfg.ElasticsearchPort),
-		"ELASTICSEARCH_USERNAME": "elastic",
-		"ELASTICSEARCH_PASSWORD": "changeme",
-		"FLEET_SERVER_ENABLE":    "1",
+	args := []string{
+		"-f", "--fleet-server-insecure-http",
+		"--fleet-server", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.ElasticsearchURI, cfg.ElasticsearchPort),
 	}
 
-	return runElasticAgentCommandWithEnv(profile, image, service, binary, "container", []string{}, env)
+	err := runElasticAgentCommand(profile, image, service, binary, "install", args)
+	if err != nil {
+		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
+	}
+
+	return nil
 }
