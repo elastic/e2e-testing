@@ -60,12 +60,23 @@ func NewFleetConfig(token string, bootstrapFleetServer bool, fleetServerMode boo
 
 func (cfg FleetConfig) flags() []string {
 	if cfg.BootstrapFleetServer {
+		// TO-DO: remove all code to calculate the fleet-server policy, because it's inferred by the fleet-server
 		return []string{
-			"--force", "--fleet-server-insecure-http",
-			"--fleet-server-host", cfg.ElasticsearchURI,
-			"--fleet-server-port", fmt.Sprintf("%d", cfg.ElasticsearchPort),
+			"--force",
+			"--fleet-server-es", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.ElasticsearchURI, cfg.ElasticsearchPort),
 		}
 	}
+
+	/*
+		// agent using an already bootstrapped fleet-server
+		fleetServerHost := "https://hostname_of_the_bootstrapped_fleet_server:8220"
+		return []string{
+			"-e", "-v", "--force", "--insecure",
+			// ensure the enrollment belongs to the default policy
+			"--enrollment-token=" + cfg.EnrollmentToken,
+			"--url", fleetServerHost,
+		}
+	*/
 
 	baseFlags := []string{"-e", "-v", "--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken}
 
