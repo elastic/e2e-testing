@@ -27,14 +27,14 @@ pipeline {
       [key: 'GT_REPO', value: '$.repository.full_name'],
       [key: 'GT_BASE_REF', value: '$.pull_request.base.ref'],
       [key: 'GT_PR', value: '$.issue.number'],
-      [key: 'GT_PR_HEAD_SHA', value: '$.pull_request.head.sha'],
+      [key: 'GT_HEAD_SHA', value: '$.pull_request.head.sha'],
       [key: 'GT_BODY', value: '$.comment.body'],
       [key: 'GT_COMMENT_ID', value: '$.comment.id']
      ],
     genericHeaderVariables: [
      [key: 'x-github-event', regexpFilter: 'comment']
     ],
-     causeString: 'Triggered on #$GT_PR (baseRef:$GT_BASE_REF, sha:$GT_PR_HEAD_SHA), via comment: $GT_BODY',
+     causeString: 'Triggered on #$GT_PR (baseRef:$GT_BASE_REF - sha:$GT_HEAD_SHA), via comment: $GT_BODY',
      printContributedVariables: false,
      printPostContent: false,
      silentResponse: true,
@@ -85,7 +85,7 @@ def getBranch(){
 
 def getDockerTag(){
   if(env.GT_PR){
-    return "${env.GT_PR_HEAD_SHA}"
+    return "${env.GT_HEAD_SHA}"
   }
 
   // we are going to use the 'pr12345' tag
