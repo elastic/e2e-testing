@@ -28,7 +28,7 @@ pipeline {
       [key: 'GT_REPO', value: '$.repository.full_name'],
       [key: 'GT_PR', value: '$.issue.number'],
       [key: 'GT_BODY', value: '$.comment.body'],
-      [key: 'GT_COMMENT_ID', value: '$.comment.id']
+      [key: 'GT_COMMENT_ID', value: '$.comment.id'],
       [key: 'GT_PAYLOAD', value: '$']
      ],
     genericHeaderVariables: [
