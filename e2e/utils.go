@@ -194,7 +194,7 @@ func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOf
 // 1. Elastic's artifact repository, building the JSON path query based
 // If the version is a PR, then it will return the version without checking the artifacts API
 // i.e. GetElasticArtifactVersion("$VERSION")
-func GetElasticArtifactVersion(version string) string {
+func GetElasticArtifactVersion(version string) (string, error) {
 	exp := GetExponentialBackOff(time.Minute)
 
 	retryCount := 1
@@ -233,11 +233,7 @@ func GetElasticArtifactVersion(version string) string {
 
 	err := backoff.Retry(apiStatus, exp)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": version,
-		}).Fatal("Failed to get version, aborting")
-		return ""
+		return "", err
 	}
 
 	jsonParsed, err := gabs.ParseJSON([]byte(body))
@@ -245,8 +241,8 @@ func GetElasticArtifactVersion(version string) string {
 		log.WithFields(log.Fields{
 			"error":   err,
 			"version": version,
-		}).Fatal("Could not parse the response body to retrieve the version, aborting")
-		return ""
+		}).Error("Could not parse the response body to retrieve the version")
+		return "", err
 	}
 
 	builds := jsonParsed.Path("version.builds")
@@ -259,7 +255,7 @@ func GetElasticArtifactVersion(version string) string {
 		"version": latestVersion,
 	}).Debug("Latest version for current version obtained")
 
-	return latestVersion
+	return latestVersion, nil
 }
 
 // GetElasticArtifactURL returns the URL of a released artifact, which its full name is defined in the first argument,
@@ -578,14 +574,14 @@ func Sleep(duration time.Duration) error {
 
 // GetDockerNamespaceEnvVar returns the Docker namespace whether we use one of the CI snapshots or
 // the images produced by local Beats build, or not.
-// If an error occurred reading the environment, wil return 'beats' as fallback
-func GetDockerNamespaceEnvVar() string {
+// If an error occurred reading the environment, will return the passed namespace as fallback
+func GetDockerNamespaceEnvVar(fallback string) string {
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	if useCISnapshots || beatsLocalPath != "" {
 		return "observability-ci"
 	}
-	return "beats"
+	return fallback
 }
 
 // WaitForProcess polls a container executing "ps" command until the process is in the desired state (present or not),

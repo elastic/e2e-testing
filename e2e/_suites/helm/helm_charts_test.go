@@ -81,7 +81,14 @@ func setupSuite() {
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
-	stackVersion = e2e.GetElasticArtifactVersion(stackVersion)
+	v, err := e2e.GetElasticArtifactVersion(stackVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": stackVersion,
+		}).Fatal("Failed to get stack version, aborting")
+	}
+	stackVersion = v
 
 	h, err := k8s.HelmFactory(helmVersion)
 	if err != nil {

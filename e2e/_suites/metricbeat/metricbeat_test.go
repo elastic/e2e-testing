@@ -69,13 +69,27 @@ func setupSuite() {
 	}
 
 	// check if base version is an alias
-	metricbeatVersionBase = e2e.GetElasticArtifactVersion(metricbeatVersionBase)
+	v, err := e2e.GetElasticArtifactVersion(metricbeatVersionBase)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": metricbeatVersionBase,
+		}).Fatal("Failed to get metricbeat base version, aborting")
+	}
+	metricbeatVersionBase = v
 
 	metricbeatVersion = shell.GetEnv("BEAT_VERSION", metricbeatVersionBase)
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
-	stackVersion = e2e.GetElasticArtifactVersion(stackVersion)
+	v, err = e2e.GetElasticArtifactVersion(stackVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": stackVersion,
+		}).Fatal("Failed to get stack version, aborting")
+	}
+	stackVersion = v
 
 	serviceManager = services.NewServiceManager()
 
@@ -446,7 +460,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"serviceName":           mts.ServiceName,
 	}
 
-	env["metricbeatDockerNamespace"] = e2e.GetDockerNamespaceEnvVar()
+	env["metricbeatDockerNamespace"] = e2e.GetDockerNamespaceEnvVar("beats")
 	env["metricbeatPlatform"] = "linux/amd64"
 
 	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{"metricbeat"}, env)

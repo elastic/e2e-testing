@@ -225,6 +225,21 @@ func TestGetBucketSearchNextPageParam_HasNoMorePages(t *testing.T) {
 	assert.True(t, param == "")
 }
 
+func TestGetDockerNamespaceEnvVar(t *testing.T) {
+	t.Run("Returns fallback when environment variable is not set", func(t *testing.T) {
+		namespace := GetDockerNamespaceEnvVar("beats")
+		assert.True(t, namespace == "beats")
+	})
+
+	t.Run("Returns Observability CI when environment variable is set", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
+		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "true")
+
+		namespace := GetDockerNamespaceEnvVar("beats")
+		assert.True(t, namespace == "observability-ci")
+	})
+}
+
 func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 	artifact := "elastic-agent"
 	version := testVersion
