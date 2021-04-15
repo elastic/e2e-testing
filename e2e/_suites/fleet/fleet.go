@@ -327,6 +327,14 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 		return err
 	}
 
+	// the installation process for TAR includes the enrollment
+	if agentInstaller.InstallerType != "tar" {
+		err = agentInstaller.EnrollFn(fts.CurrentToken)
+		if err != nil {
+			return err
+		}
+	}
+
 	// add system integration to default policy
 	integration, err := fts.kibanaClient.GetIntegrationByPackageName("system")
 	if err != nil {
