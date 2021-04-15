@@ -56,9 +56,6 @@ Examples: Debian
 @restart-agent
 Scenario Outline: Restarting the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
-    And the "elastic-agent" process is in the "started" state on the host
-    And the "filebeat" process is in the "started" state on the host
-    And the "metricbeat" process is in the "started" state on the host
   When the "elastic-agent" process is "restarted" on the host
   Then the "filebeat" process is in the "started" state on the host
     And the "metricbeat" process is in the "started" state on the host
@@ -76,9 +73,6 @@ Examples: Debian
 @restart-host
 Scenario Outline: Restarting the <os> host with persistent agent restarts backend processes
   Given a "<os>" agent is deployed to Fleet with "tar" installer
-    And the "elastic-agent" process is in the "started" state on the host
-    And the "filebeat" process is in the "started" state on the host
-    And the "metricbeat" process is in the "started" state on the host
   When the host is restarted
   Then the "elastic-agent" process is in the "started" state on the host
     And the "filebeat" process is in the "started" state on the host

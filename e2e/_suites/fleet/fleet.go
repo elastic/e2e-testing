@@ -118,6 +118,7 @@ func (fts *FleetTestSuite) afterScenario() {
 
 	// clean up fields
 	fts.CurrentTokenID = ""
+	fts.CurrentToken = ""
 	fts.Image = ""
 	fts.Hostname = ""
 }
