@@ -327,6 +327,27 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 		return err
 	}
 
+	// add system integration to default policy
+	integration, err := fts.kibanaClient.GetIntegrationByPackageName("system")
+	if err != nil {
+		return err
+	}
+
+	packageDataStream := kibana.PackageDataStream{
+		Name:        integration.Name,
+		Description: integration.Title,
+		Namespace:   "default",
+		PolicyID:    fts.Policy.ID,
+		Enabled:     true,
+		Package:     integration,
+		Inputs:      []kibana.Input{},
+	}
+
+	err = fts.kibanaClient.AddIntegrationToPolicy(packageDataStream)
+	if err != nil {
+		return err
+	}
+
 	// get container hostname once
 	hostname, err := docker.GetContainerHostname(containerName)
 	if err != nil {
@@ -552,58 +573,6 @@ func (fts *FleetTestSuite) theHostIsRestarted() error {
 }
 
 func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
-	log.Trace("Adding system integration")
-	integration, err := fts.kibanaClient.GetIntegrationByPackageName("system")
-	if err != nil {
-		return err
-	}
-
-	packageDataStream := kibana.PackageDataStream{
-		Name:        integration.Name,
-		Description: integration.Title,
-		Namespace:   "default",
-		PolicyID:    fts.Policy.ID,
-		Enabled:     true,
-		Package:     integration,
-	}
-
-	packageDataStream.Inputs = []kibana.Input{
-		{
-			Type:    "system/metrics",
-			Enabled: true,
-			Streams: []interface{}{
-				map[string]interface{}{
-					"id":      "system/metrics-system.cpu-" + uuid.New().String(),
-					"enabled": true,
-					"data_stream": map[string]interface{}{
-						"dataset": "system.cpu",
-						"type":    "metrics",
-					},
-				},
-				map[string]interface{}{
-					"id":      "system/metrics-system.memory-" + uuid.New().String(),
-					"enabled": true,
-					"data_stream": map[string]interface{}{
-						"dataset": "system.memory",
-						"type":    "metrics",
-					},
-				},
-			},
-			Vars: map[string]kibana.Var{
-				"period": {
-					Value: "1s",
-					Type:  "string",
-				},
-			},
-			Config: map[string]interface{}{},
-		},
-	}
-
-	err = fts.kibanaClient.AddIntegrationToPolicy(packageDataStream)
-	if err != nil {
-		return err
-	}
-
 	log.Trace("Checking system Package dashboards in Fleet")
 
 	dataStreamsCount := 0
@@ -649,7 +618,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 		return nil
 	}
 
-	err = backoff.Retry(countDataStreamsFn, exp)
+	err := backoff.Retry(countDataStreamsFn, exp)
 	if err != nil {
 		return err
 	}

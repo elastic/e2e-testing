@@ -337,7 +337,7 @@ func WaitForProcess(containerName string, process string, desiredState string, m
 			"process":      process,
 		}).Trace("Checking process desired state on the container")
 
-		output, err := ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"pgrep", "-n", "-l", "-f", process})
+		output, err := ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"pgrep", "-n", "-l", process})
 		if err != nil {
 			log.WithFields(log.Fields{
 				"desiredState":  desiredState,
@@ -347,7 +347,7 @@ func WaitForProcess(containerName string, process string, desiredState string, m
 				"mustBePresent": mustBePresent,
 				"process":       process,
 				"retry":         retryCount,
-			}).Warn("Could not execute 'pgrep -n -l -f' in the container")
+			}).Warn("Could not execute 'pgrep -n -l' in the container")
 
 			retryCount++
 
