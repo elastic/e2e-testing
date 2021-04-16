@@ -41,7 +41,6 @@ type FleetTestSuite struct {
 	Installers          map[string]installer.ElasticAgentInstaller
 	Integration         kibana.IntegrationPackage // the installed integration
 	Policy              kibana.Policy
-	FleetPolicy         kibana.Policy
 	PolicyUpdatedAt     string // the moment the policy was updated
 	Version             string // current elastic-agent version
 	kibanaClient        *kibana.Client
@@ -139,16 +138,6 @@ func (fts *FleetTestSuite) beforeScenario() {
 		return
 	}
 	fts.Policy = policy
-
-	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(true)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Warn("The default fleet policy could not be obtained")
-
-		return
-	}
-	fts.FleetPolicy = fleetPolicy
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
@@ -333,27 +322,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 		if err != nil {
 			return err
 		}
-	}
-
-	// add system integration to default policy
-	integration, err := fts.kibanaClient.GetIntegrationByPackageName("system")
-	if err != nil {
-		return err
-	}
-
-	packageDataStream := kibana.PackageDataStream{
-		Name:        integration.Name,
-		Description: integration.Title,
-		Namespace:   "default",
-		PolicyID:    fts.Policy.ID,
-		Enabled:     true,
-		Package:     integration,
-		Inputs:      []kibana.Input{},
-	}
-
-	err = fts.kibanaClient.AddIntegrationToPolicy(packageDataStream)
-	if err != nil {
-		return err
 	}
 
 	// get container hostname once
