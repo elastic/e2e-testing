@@ -7,6 +7,7 @@ pipeline {
   environment {
     REPO = 'kibana'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
+    GITHUB_APP_SECRET = 'secret/observability-team/ci/github-app'
     GITHUB_CHECK_E2E_TESTS_NAME = 'E2E Tests'
     PIPELINE_LOG_LEVEL = "INFO"
   }
@@ -25,16 +26,15 @@ pipeline {
     GenericTrigger(
      genericVariables: [
       [key: 'GT_REPO', value: '$.repository.full_name'],
-      [key: 'GT_BASE_REF', value: '$.pull_request.base.ref'],
       [key: 'GT_PR', value: '$.issue.number'],
-      [key: 'GT_PR_HEAD_SHA', value: '$.pull_request.head.sha'],
       [key: 'GT_BODY', value: '$.comment.body'],
-      [key: 'GT_COMMENT_ID', value: '$.comment.id']
+      [key: 'GT_COMMENT_ID', value: '$.comment.id'],
+      [key: 'GT_PAYLOAD', value: '$']
      ],
     genericHeaderVariables: [
      [key: 'x-github-event', regexpFilter: 'comment']
     ],
-     causeString: 'Triggered on #$GT_PR (baseRef:$GT_BASE_REF, sha:$GT_PR_HEAD_SHA), via comment: $GT_BODY',
+     causeString: 'Triggered on #$GT_PR via comment: $GT_BODY',
      printContributedVariables: false,
      printPostContent: false,
      silentResponse: true,
@@ -53,6 +53,7 @@ pipeline {
         PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
       }
       steps {
+        echo(message: "$env.GT_PAYLOAD")
         checkPermissions()
         buildKibanaDockerImage(refspec: getBranch())
         catchError(buildResult: 'UNSTABLE', message: 'Unable to run e2e tests', stageResult: 'FAILURE') {
@@ -76,29 +77,40 @@ def checkPermissions(){
 }
 
 def getBranch(){
-  if(env.GT_PR){
-    return "PR/${env.GT_PR}"
-  }
-  
-  return "PR/${params.kibana_pr}"
+  return "PR/" + getID()
 }
 
-def getDockerTag(){
+def getID(){
   if(env.GT_PR){
-    return "${env.GT_PR_HEAD_SHA}"
+    return "${env.GT_PR}"
   }
-
-  // we are going to use the 'pr12345' tag
-  return "pr${params.kibana_pr}"
+  
+  return "${params.kibana_pr}"
 }
 
 def runE2ETests(String suite) {
-  log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for PR-${env.GT_PR}.")
+  // we need a second API request, as the issue_comment API does not retrieve data about the pull request
+  // See https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#issue_comment
+  def prID = getID()
+  def token = githubAppToken(secret: "${env.GITHUB_APP_SECRET}")
+
+  def pullRequest = githubApiCall(token: token, url: "https://api.github.com/repos/${env.GT_REPO}/pulls/${prID}")
+  def baseRef = pullRequest?.base?.ref
+  def headSha = pullRequest?.head?.sha
+
+  // we are going to use the 'pr12345' tag as default
+  def dockerTag = "pr${params.kibana_pr}"
+  if(env.GT_PR){
+    // it's a PR: we are going to use its head SHA as tag
+    dockerTag = headSha
+  }
+
+  log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for PR-${prID} using '${dockerTag}' as Docker tag")
 
   // Kibana's maintenance branches follow the 7.11, 7.12 schema.
-  def branchName = "${env.GT_BASE_REF}"
-  if (env.GT_BASE_REF != "master") {
-    branchName = "${env.GT_BASE_REF}.x"
+  def branchName = "${baseRef}"
+  if (branchName != "master") {
+    branchName += ".x"
   }
   def e2eTestsPipeline = "e2e-tests/e2e-testing-mbp/${branchName}"
 
@@ -110,7 +122,7 @@ def runE2ETests(String suite) {
     string(name: 'runTestsSuites', value: suite),
     string(name: 'GITHUB_CHECK_NAME', value: env.GITHUB_CHECK_E2E_TESTS_NAME),
     string(name: 'GITHUB_CHECK_REPO', value: env.REPO),
-    string(name: 'KIBANA_VERSION', value: getDockerTag()),
+    string(name: 'KIBANA_VERSION', value: dockerTag),
   ]
 
   build(job: "${e2eTestsPipeline}",

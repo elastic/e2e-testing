@@ -13,6 +13,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -499,6 +500,13 @@ func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
 
 	nextPageToken := token.Data().(string)
 	return "&pageToken=" + nextPageToken
+}
+
+// IsCommit returns true if the string matches commit format
+func IsCommit(s string) bool {
+	re := regexp.MustCompile(`\b[0-9a-f]{5,40}\b`)
+
+	return re.MatchString(s)
 }
 
 func processBucketSearchPage(jsonParsed *gabs.Container, currentPage int, bucket string, prefix string, object string) (string, error) {
