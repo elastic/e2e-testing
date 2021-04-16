@@ -28,7 +28,7 @@ pipeline {
       [key: 'GT_REPO', value: '$.repository.full_name'],
       [key: 'GT_PR', value: '$.issue.number'],
       [key: 'GT_BODY', value: '$.comment.body'],
-      [key: 'GT_COMMENT_ID', value: '$.comment.id']
+      [key: 'GT_COMMENT_ID', value: '$.comment.id'],
       [key: 'GT_PAYLOAD', value: '$']
      ],
     genericHeaderVariables: [
@@ -94,7 +94,7 @@ def runE2ETests(String suite) {
   def prID = getID()
   def token = githubAppToken(secret: "${env.GITHUB_APP_SECRET}")
 
-  def pullRequest = githubApiCall(token: token, url: "https://api.github.com/repos/${env.$GT_REPO}/pulls/${prID}")
+  def pullRequest = githubApiCall(token: token, url: "https://api.github.com/repos/${env.GT_REPO}/pulls/${prID}")
   def baseRef = pullRequest?.base?.ref
   def headSha = pullRequest?.head?.sha
 

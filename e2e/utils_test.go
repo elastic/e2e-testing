@@ -313,6 +313,22 @@ func TestGetGCPBucketCoordinates_Snapshots(t *testing.T) {
 	})
 }
 
+func TestIsCommit(t *testing.T) {
+	t.Run("Returns true with commits", func(t *testing.T) {
+		assert.True(t, IsCommit("abcdef1234"))
+		assert.True(t, IsCommit("a12345"))
+		assert.True(t, IsCommit("abcdef1"))
+	})
+
+	t.Run("Returns false with non-commits", func(t *testing.T) {
+		assert.False(t, IsCommit("master"))
+		assert.False(t, IsCommit("7.x"))
+		assert.False(t, IsCommit("7.12.x"))
+		assert.False(t, IsCommit("7.11.x"))
+		assert.False(t, IsCommit("pr12345"))
+	})
+}
+
 func TestProcessBucketSearchPage_CommitFound(t *testing.T) {
 	// retrieving last element in commits.json
 	object := "024b732844d40bdb2bf806480af2b03fcb8fbdbe/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-darwin-x86_64.tar.gz"
