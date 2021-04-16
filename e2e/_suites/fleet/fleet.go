@@ -823,7 +823,7 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(stat
 	return nil
 }
 
-func (fts *FleetTestSuite) anEndpointIsSuccessfullyDeployedWithAgentAndInstalller(endpoint string, image string, agentInstaller string) error {
+func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstalller(integration string, image string, agentInstaller string) error {
 	err := fts.anAgentIsDeployedToFleetWithInstaller(image, agentInstaller)
 	if err != nil {
 		return err
