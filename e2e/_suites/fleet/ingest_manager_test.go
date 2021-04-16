@@ -151,8 +151,13 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			"stackVersion":  common.StackVersion,
 		}
 
+<<<<<<< HEAD
 		common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
 		if strings.HasPrefix(common.KibanaVersion, "pr") || utils.IsCommit(common.KibanaVersion) {
+=======
+		profileEnv["kibanaDockerNamespace"] = "kibana"
+		if strings.HasPrefix(kibanaVersion, "pr") || e2e.IsCommit(kibanaVersion) {
+>>>>>>> 05ab18f2... fix: check if kibana version is a commit (#1047)
 			// because it comes from a PR
 			common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
 		}
