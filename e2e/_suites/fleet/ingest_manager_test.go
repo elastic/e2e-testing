@@ -120,7 +120,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		}
 
 		profileEnv["kibanaDockerNamespace"] = "kibana"
-		if strings.HasPrefix(kibanaVersion, "pr") {
+		if strings.HasPrefix(kibanaVersion, "pr") || e2e.IsCommit(kibanaVersion) {
 			// because it comes from a PR
 			profileEnv["kibanaDockerNamespace"] = "observability-ci"
 		}
