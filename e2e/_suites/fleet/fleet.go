@@ -834,7 +834,7 @@ func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstal
 		return err
 	}
 
-	return fts.theIntegrationIsOperatedInThePolicy(endpoint, actionADDED)
+	return fts.theIntegrationIsOperatedInThePolicy(integration, actionADDED)
 }
 
 func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
