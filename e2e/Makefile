@@ -87,7 +87,7 @@ functional-test: install-godog
 
 .PHONY: lint
 lint:
-	@docker run -t --rm -v $(PWD):/src -w /src gherkin/lint **/*.feature --disable AvoidOutlineForSingleExample,TooClumsy,TooManySteps,TooManyDifferentTags,TooLongStep,TooManyTags,AvoidScripting
+	@docker run -t --rm -v $(PWD):/src -w /src gherkin/lint **/*.feature --disable AvoidOutlineForSingleExample,TooClumsy,TooManySteps,TooManyDifferentTags,TooLongStep
 
 .PHONY: unit-test
 unit-test: test-report-setup unit-test-e2e unit-test-suite-fleet unit-test-suite-helm unit-test-suite-metricbeat
