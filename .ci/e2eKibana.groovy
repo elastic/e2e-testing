@@ -7,6 +7,7 @@ pipeline {
   environment {
     REPO = 'kibana'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
+    ELASTIC_REPO = "elastic/${env.REPO}"
     GITHUB_APP_SECRET = 'secret/observability-team/ci/github-app'
     GITHUB_CHECK_E2E_TESTS_NAME = 'E2E Tests'
     PIPELINE_LOG_LEVEL = "INFO"
@@ -70,7 +71,7 @@ def checkPermissions(){
       error("Only PRs from Elasticians can be tested with Fleet E2E tests")
     }
 
-    if(!hasCommentAuthorWritePermissions(repoName: 'elastic/kibana', commentId: env.GT_COMMENT_ID)){
+    if(!hasCommentAuthorWritePermissions(repoName: "${env.ELASTIC_REPO}", commentId: env.GT_COMMENT_ID)){
       error("Only Elasticians can trigger Fleet E2E tests")
     }
   }
@@ -94,7 +95,7 @@ def runE2ETests(String suite) {
   def prID = getID()
   def token = githubAppToken(secret: "${env.GITHUB_APP_SECRET}")
 
-  def pullRequest = githubApiCall(token: token, url: "https://api.github.com/repos/${env.GT_REPO}/pulls/${prID}")
+  def pullRequest = githubApiCall(token: token, url: "https://api.github.com/repos/${env.ELASTIC_REPO}/pulls/${prID}")
   def baseRef = pullRequest?.base?.ref
   def headSha = pullRequest?.head?.sha
 
