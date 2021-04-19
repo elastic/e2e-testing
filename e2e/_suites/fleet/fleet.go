@@ -162,7 +162,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the "([^"]*)" datasource is shown in the policy as added$`, fts.thePolicyShowsTheDatasourceAdded)
 	s.Step(`^the host name is shown in the Administration view in the Security App as "([^"]*)"$`, fts.theHostNameIsShownInTheAdminViewInTheSecurityApp)
 	s.Step(`^the host name is not shown in the Administration view in the Security App$`, fts.theHostNameIsNotShownInTheAdminViewInTheSecurityApp)
-	s.Step(`^an "([^"]*)" is successfully deployed with a "([^"]*)" Agent using "([^"]*)" installer$`, fts. anIntegrationIsSuccessfullyDeployedWithAgentAndInstalller)
+	s.Step(`^an "([^"]*)" is successfully deployed with a "([^"]*)" Agent using "([^"]*)" installer$`, fts.anIntegrationIsSuccessfullyDeployedWithAgentAndInstalller)
 	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
 	s.Step(`^the policy is updated to have "([^"]*)" in "([^"]*)" mode$`, fts.thePolicyIsUpdatedToHaveMode)
 	s.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
@@ -358,7 +358,18 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	if state == "started" {
 		return installer.SystemctlRun(profile, agentInstaller.Image, serviceName, "start")
 	} else if state == "restarted" {
-		return installer.SystemctlRun(profile, agentInstaller.Image, serviceName, "restart")
+		err := installer.SystemctlRun(profile, agentInstaller.Image, serviceName, "stop")
+		if err != nil {
+			return err
+		}
+
+		utils.Sleep(time.Duration(common.TimeoutFactor) * 10 * time.Second)
+
+		err = installer.SystemctlRun(profile, agentInstaller.Image, serviceName, "start")
+		if err != nil {
+			return err
+		}
+		return nil
 	} else if state == "uninstalled" {
 		err := agentInstaller.UninstallFn()
 		if err != nil {
@@ -519,26 +530,29 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 }
 
 func (fts *FleetTestSuite) theHostIsRestarted() error {
-	serviceManager := compose.NewServiceManager()
-
 	agentInstaller := fts.getInstaller()
 
 	profile := agentInstaller.Profile // name of the runtime dependencies compose file
 	image := agentInstaller.Image     // image of the service
 	service := agentInstaller.Service // name of the service
 
-	composes := []string{
-		profile, // profile name
-		image,   // service
-	}
-
-	err := serviceManager.RunCommand(profile, composes, []string{"restart", service}, common.ProfileEnv)
+	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", common.ElasticAgentServiceName, 1)
+	_, err := shell.Execute(context.Background(), ".", "docker", "stop", containerName)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"image":   image,
 			"service": service,
-		}).Error("Could not restart the service")
-		return err
+		}).Error("Could not stop the service")
+	}
+
+	utils.Sleep(time.Duration(common.TimeoutFactor) * 10 * time.Second)
+
+	_, err = shell.Execute(context.Background(), ".", "docker", "start", containerName)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"image":   image,
+			"service": service,
+		}).Error("Could not start the service")
 	}
 
 	log.WithFields(log.Fields{
