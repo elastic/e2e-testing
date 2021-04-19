@@ -150,7 +150,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
-	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
+	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstallerInFleetMode)
 	s.Step(`^a "([^"]*)" agent "([^"]*)" is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
 	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
 	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
@@ -171,7 +171,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the "([^"]*)" datasource is shown in the policy as added$`, fts.thePolicyShowsTheDatasourceAdded)
 	s.Step(`^the host name is shown in the Administration view in the Security App as "([^"]*)"$`, fts.theHostNameIsShownInTheAdminViewInTheSecurityApp)
 	s.Step(`^the host name is not shown in the Administration view in the Security App$`, fts.theHostNameIsNotShownInTheAdminViewInTheSecurityApp)
-	s.Step(`^an "([^"]*)" is successfully deployed with a "([^"]*)" Agent using "([^"]*)" installer$`, fts.anIntegrationIsSuccessfullyDeployedWithAgentAndInstalller)
+	s.Step(`^an "([^"]*)" is successfully deployed with a "([^"]*)" Agent using "([^"]*)" installer$`, fts.anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller)
 	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
 	s.Step(`^the policy is updated to have "([^"]*)" in "([^"]*)" mode$`, fts.thePolicyIsUpdatedToHaveMode)
 	s.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
@@ -853,8 +853,8 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(stat
 	return nil
 }
 
-func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstalller(integration string, image string, agentInstaller string) error {
-	err := fts.anAgentIsDeployedToFleetWithInstaller(image, agentInstaller)
+func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller(integration string, image string, agentInstaller string) error {
+	err := fts.anAgentIsDeployedToFleetWithInstallerInFleetMode(image, agentInstaller)
 	if err != nil {
 		return err
 	}
