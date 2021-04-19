@@ -96,7 +96,7 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 	}
 
 	enrollFn := func(cfg *kibana.FleetConfig) error {
-		return runElasticAgentCommand(profile, image, service, common.ElasticAgentProcessName, "enroll", cfg.flags())
+		return runElasticAgentCommandEnv(profile, image, service, common.ElasticAgentProcessName, "enroll", cfg.Flags(), map[string]string{})
 	}
 
 	workingDir := "/var/lib/elastic-agent"

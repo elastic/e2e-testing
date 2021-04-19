@@ -13,7 +13,6 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
@@ -31,9 +30,8 @@ type EnrollmentAPIKey struct {
 
 // CreateEnrollmentAPIKey creates an enrollment api key
 func (c *Client) CreateEnrollmentAPIKey(policy Policy) (EnrollmentAPIKey, error) {
-	uuid := uuid.New().String()
 
-	reqBody := `{"policy_id": "` + policy.ID + `", "name": "Test token for ` + policy.Name + `-` + uuid + `"}`
+	reqBody := `{"policy_id": "` + policy.ID + `"}`
 	statusCode, respBody, _ := c.post(fmt.Sprintf("%s/enrollment-api-keys", FleetAPI), []byte(reqBody))
 	if statusCode != 200 {
 		jsonParsed, err := gabs.ParseJSON([]byte(respBody))

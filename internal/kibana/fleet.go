@@ -7,6 +7,8 @@ package kibana
 import (
 	"fmt"
 
+	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/compose"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -63,7 +65,7 @@ func NewFleetConfig(token string, bootstrapFleetServer bool, fleetServerMode boo
 	return cfg, nil
 }
 
-func (cfg FleetConfig) flags() []string {
+func (cfg FleetConfig) Flags() []string {
 	if cfg.BootstrapFleetServer {
 		// TO-DO: remove all code to calculate the fleet-server policy, because it's inferred by the fleet-server
 		return []string{
@@ -93,17 +95,27 @@ func (cfg FleetConfig) flags() []string {
 }
 
 // bootstrapFleetServer runs a command for the elastic-agent
-func bootstrapFleetServer(profile string, image string, service string, binary string, cfg *kibana.FleetConfig) error {
+func bootstrapFleetServer(profile string, image string, service string, binary string, cfg *FleetConfig) error {
 	log.Debug("Bootstrapping Fleet Server")
 
-	args := []string{
+	cmds := []string{
+		binary,
+		"install",
 		"-f", "--fleet-server-insecure-http",
 		"--fleet-server", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.ElasticsearchURI, cfg.ElasticsearchPort),
 	}
 
-	err := installer.runElasticAgentCommand(profile, image, service, binary, "install", args)
+	sm := compose.NewServiceManager()
+	err := sm.ExecCommandInService(profile, image, service, cmds, common.ProfileEnv, false)
 	if err != nil {
-		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
+		log.WithFields(log.Fields{
+			"command": cmds,
+			"profile": profile,
+			"service": service,
+			"error":   err,
+		}).Error("Failed to install the agent with subcommand")
+
+		return err
 	}
 
 	return nil

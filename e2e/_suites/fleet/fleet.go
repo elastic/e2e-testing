@@ -41,6 +41,7 @@ type FleetTestSuite struct {
 	Installers          map[string]installer.ElasticAgentInstaller
 	Integration         kibana.IntegrationPackage // the installed integration
 	Policy              kibana.Policy
+	FleetPolicy         kibana.Policy
 	PolicyUpdatedAt     string // the moment the policy was updated
 	Version             string // current elastic-agent version
 	kibanaClient        *kibana.Client
@@ -135,9 +136,17 @@ func (fts *FleetTestSuite) beforeScenario() {
 			"err": err,
 		}).Warn("The default policy could not be obtained")
 
-		return
 	}
 	fts.Policy = policy
+
+	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(true)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Warn("The default fleet server policy could not be obtained")
+	}
+	fts.FleetPolicy = fleetPolicy
+
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
@@ -307,15 +316,15 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", serviceName, 1) // name of the container
 
 	// enroll the agent with a new token
-	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.Policy)
+	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.FleetPolicy)
 	if err != nil {
 		return err
 	}
 	fts.CurrentToken = enrollmentKey.APIKey
 	fts.CurrentTokenID = enrollmentKey.ID
 
-	var fleetConfig *FleetConfig
-	fleetConfig, err = deployAgentToFleet(installer, containerName, fts.CurrentToken, bootstrapFleetServer)
+	var fleetConfig *kibana.FleetConfig
+	fleetConfig, err = deployAgentToFleet(agentInstaller, containerName, fts.CurrentToken, bootstrapFleetServer)
 
 	fts.Cleanup = true
 	if err != nil {
@@ -422,11 +431,6 @@ func (fts *FleetTestSuite) setup() error {
 	log.Trace("Creating Fleet setup")
 
 	err := fts.kibanaClient.RecreateFleet()
-	if err != nil {
-		return err
-	}
-
-	err = fts.kibanaClient.WaitForFleet()
 	if err != nil {
 		return err
 	}
@@ -638,7 +642,7 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 	agentInstaller := fts.getInstaller()
 
 	// a restart does not need to bootstrap the Fleet Server again
-	cfg, err := NewFleetConfig(fts.CurrentToken, false, false)
+	cfg, err := kibana.NewFleetConfig(fts.CurrentToken, false, false)
 	if err != nil {
 		return err
 	}
@@ -1169,7 +1173,7 @@ func (fts *FleetTestSuite) checkDataStream() error {
 	return err
 }
 
-func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containerName string, token string, bootstrapFleetServer bool) (*FleetConfig, error) {
+func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containerName string, token string, bootstrapFleetServer bool) (*kibana.FleetConfig, error) {
 	profile := agentInstaller.Profile // name of the runtime dependencies compose file
 	service := agentInstaller.Service // name of the service
 	serviceTag := agentInstaller.Tag  // docker tag of the service
@@ -1200,7 +1204,7 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containe
 		return nil, err
 	}
 
-	cfg, cfgError := NewFleetConfig(token, bootstrapFleetServer, false)
+	cfg, cfgError := kibana.NewFleetConfig(token, bootstrapFleetServer, false)
 	if cfgError != nil {
 		return nil, cfgError
 	}
@@ -1210,5 +1214,5 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containe
 		return nil, err
 	}
 
-	return cfg, agentinstaller.PostInstallFn()
+	return cfg, agentInstaller.PostInstallFn()
 }

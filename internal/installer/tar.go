@@ -43,9 +43,9 @@ func NewTARPackage(binaryName string, profile string, image string, service stri
 func (i *TARPackage) Install(cfg *kibana.FleetConfig) error {
 	// install the elastic-agent to /usr/bin/elastic-agent using command
 	binary := fmt.Sprintf("/elastic-agent/%s", i.artifact)
-	args := cfg.flags()
+	args := cfg.Flags()
 
-	err := runElasticAgentCommand(i.profile, i.image, i.service, binary, "install", args)
+	err := runElasticAgentCommandEnv(i.profile, i.image, i.service, binary, "install", args, map[string]string{})
 	if err != nil {
 		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
 	}
@@ -111,7 +111,7 @@ func (i *TARPackage) Preinstall() error {
 func (i *TARPackage) Uninstall() error {
 	args := []string{"-f"}
 
-	return runElasticAgentCommand(i.profile, i.image, i.service, common.ElasticAgentProcessName, "uninstall", args)
+	return runElasticAgentCommandEnv(i.profile, i.image, i.service, common.ElasticAgentProcessName, "uninstall", args, map[string]string{})
 }
 
 // WithArch sets the architecture
@@ -179,7 +179,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 	logFile := logsDir + "/" + logFileName
 
 	enrollFn := func(cfg *kibana.FleetConfig) error {
-		return runElasticAgentCommand(profile, dockerImage, service, common.ElasticAgentProcessName, "enroll", cfg.flags())
+		return runElasticAgentCommandEnv(profile, dockerImage, service, common.ElasticAgentProcessName, "enroll", cfg.Flags(), map[string]string{})
 	}
 
 	//

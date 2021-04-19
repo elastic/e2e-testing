@@ -26,17 +26,18 @@ type Policy struct {
 }
 
 // GetDefaultPolicy gets the default policy or optionally the default fleet policy
-func (c *Client) GetDefaultPolicy(fleet bool) (Policy, error) {
+func (c *Client) GetDefaultPolicy(fleetServer bool) (Policy, error) {
 	policies, err := c.ListPolicies()
 	if err != nil {
 		return Policy{}, err
 	}
 
 	for _, policy := range policies {
-		if fleet && policy.IsDefaultFleetServer {
+		if fleetServer && policy.IsDefaultFleetServer {
+			log.WithField("policy", policy).Trace("Returning Default Fleet Server Policy")
 			return policy, nil
-		}
-		if policy.IsDefault {
+		} else if !fleetServer && policy.IsDefault {
+			log.WithField("policy", policy).Trace("Returning Default Agent Policy")
 			return policy, nil
 		}
 	}
