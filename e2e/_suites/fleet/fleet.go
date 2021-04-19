@@ -166,6 +166,9 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
 	s.Step(`^the policy is updated to have "([^"]*)" in "([^"]*)" mode$`, fts.thePolicyIsUpdatedToHaveMode)
 	s.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
+
+	// fleet server steps
+	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer in fleet-server mode$`, fts.anAgentIsDeployedToFleetWithInstallerInFleetMode)
 }
 
 func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, version, installerType string) error {
@@ -283,10 +286,15 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 
 // supported installers: tar, systemd
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, installerType string) error {
+	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType, false)
+}
+
+func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(image string, installerType string, bootstrapFleetServer bool) error {
 	log.WithFields(log.Fields{
-		"image":     image,
-		"installer": installerType,
-	}).Trace("Deploying an agent to Fleet with base image")
+		"bootstrapFleetServer": bootstrapFleetServer,
+		"image":                image,
+		"installer":            installerType,
+	}).Trace("Deploying an agent to Fleet with base image and fleet server")
 
 	fts.Image = image
 	fts.InstallerType = installerType
@@ -306,11 +314,9 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 	fts.CurrentToken = enrollmentKey.APIKey
 	fts.CurrentTokenID = enrollmentKey.ID
 
-	log.WithFields(log.Fields{
-		"enrollmentKey": enrollmentKey,
-	}).Trace("Enrollment key created ")
+	var fleetConfig *FleetConfig
+	fleetConfig, err = deployAgentToFleet(installer, containerName, fts.CurrentToken, bootstrapFleetServer)
 
-	err = deployAgentToFleet(agentInstaller, containerName, fts.CurrentToken)
 	fts.Cleanup = true
 	if err != nil {
 		return err
@@ -318,7 +324,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 
 	// the installation process for TAR includes the enrollment
 	if agentInstaller.InstallerType != "tar" {
-		err = agentInstaller.EnrollFn(fts.CurrentToken)
+		err = agentInstaller.EnrollFn(fleetConfig)
 		if err != nil {
 			return err
 		}
@@ -461,10 +467,10 @@ func theAgentIsListedInFleetWithStatus(desiredStatus string, hostname string) er
 					"status":      desiredStatus,
 				}).Info("The Agent is not present in Fleet, as expected")
 				return nil
-			} else if desiredStatus == "online" {
-				retryCount++
-				return fmt.Errorf("The agent is not present in Fleet, but it should")
 			}
+
+			retryCount++
+			return fmt.Errorf("The agent is not present in Fleet in the '%s' status, but it should", desiredStatus)
 		}
 
 		agentStatus, err := kibanaClient.GetAgentStatusByHostname(hostname)
@@ -631,7 +637,13 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 
 	agentInstaller := fts.getInstaller()
 
-	err := agentInstaller.EnrollFn(fts.CurrentToken)
+	// a restart does not need to bootstrap the Fleet Server again
+	cfg, err := NewFleetConfig(fts.CurrentToken, false, false)
+	if err != nil {
+		return err
+	}
+
+	err = agentInstaller.EnrollFn(cfg)
 	if err != nil {
 		return err
 	}
@@ -1019,14 +1031,14 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", common.ElasticAgentServiceName, 2) // name of the new container
 
-	err := deployAgentToFleet(agentInstaller, containerName, fts.CurrentToken)
+	fleetConfig, err := deployAgentToFleet(agentInstaller, containerName, fts.CurrentToken, false)
 	// the installation process for TAR includes the enrollment
 	if agentInstaller.InstallerType != "tar" {
 		if err != nil {
 			return err
 		}
 
-		err = agentInstaller.EnrollFn(fts.CurrentToken)
+		err = agentInstaller.EnrollFn(fleetConfig)
 		if err == nil {
 			err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
 
@@ -1157,7 +1169,7 @@ func (fts *FleetTestSuite) checkDataStream() error {
 	return err
 }
 
-func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containerName string, token string) error {
+func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containerName string, token string, bootstrapFleetServer bool) (*FleetConfig, error) {
 	profile := agentInstaller.Profile // name of the runtime dependencies compose file
 	service := agentInstaller.Service // name of the service
 	serviceTag := agentInstaller.Tag  // docker tag of the service
@@ -1180,18 +1192,23 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containe
 			"service": service,
 			"tag":     serviceTag,
 		}).Error("Could not run the target box")
-		return err
+		return nil, err
 	}
 
 	err = agentInstaller.PreInstallFn()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = agentInstaller.InstallFn(containerName, token)
+	cfg, cfgError := NewFleetConfig(token, bootstrapFleetServer, false)
+	if cfgError != nil {
+		return nil, cfgError
+	}
+
+	err = agentInstaller.InstallFn(cfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return agentInstaller.PostInstallFn()
+	return cfg, agentinstaller.PostInstallFn()
 }

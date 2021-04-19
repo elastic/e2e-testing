@@ -9,6 +9,7 @@ import (
 
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -39,10 +40,10 @@ func NewTARPackage(binaryName string, profile string, image string, service stri
 }
 
 // Install installs a TAR package
-func (i *TARPackage) Install(containerName string, token string) error {
+func (i *TARPackage) Install(cfg *kibana.FleetConfig) error {
 	// install the elastic-agent to /usr/bin/elastic-agent using command
 	binary := fmt.Sprintf("/elastic-agent/%s", i.artifact)
-	args := []string{"--force", "--insecure", "--enrollment-token=" + token, "--kibana-url", "http://kibana:5601"}
+	args := cfg.flags()
 
 	err := runElasticAgentCommand(i.profile, i.image, i.service, binary, "install", args)
 	if err != nil {
@@ -177,8 +178,8 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 	logFileName := "elastic-agent-json.log"
 	logFile := logsDir + "/" + logFileName
 
-	enrollFn := func(token string) error {
-		return runElasticAgentCommand(profile, dockerImage, service, common.ElasticAgentProcessName, "enroll", buildEnrollmentFlags(token))
+	enrollFn := func(cfg *kibana.FleetConfig) error {
+		return runElasticAgentCommand(profile, dockerImage, service, common.ElasticAgentProcessName, "enroll", cfg.flags())
 	}
 
 	//

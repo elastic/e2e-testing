@@ -7,6 +7,7 @@ package installer
 import (
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/docker"
+	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -41,7 +42,7 @@ func NewDockerPackage(binaryName string, profile string, image string, service s
 }
 
 // Install installs a Docker package
-func (i *DockerPackage) Install(containerName string, token string) error {
+func (i *DockerPackage) Install(cfg *kibana.FleetConfig) error {
 	log.Trace("No install commands for Docker packages")
 	return nil
 }
@@ -146,7 +147,7 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 	logFileName := "elastic-agent-json.log"
 	logFile := logsDir + "/" + logFileName
 
-	enrollFn := func(token string) error {
+	enrollFn := func(cfg *kibana.FleetConfig) error {
 		return nil
 	}
 

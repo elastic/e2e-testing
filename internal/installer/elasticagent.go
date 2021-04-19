@@ -10,6 +10,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/docker"
+	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -22,10 +23,10 @@ type ElasticAgentInstaller struct {
 	artifactOS        string // OS of the artifact
 	artifactVersion   string // version of the artifact
 	BinaryPath        string // the local path where the agent for the binary is located
-	EnrollFn          func(token string) error
+	EnrollFn          func(cfg *kibana.FleetConfig) error
 	Image             string // docker image
 	InstallerType     string
-	InstallFn         func(containerName string, token string) error
+	InstallFn         func(cfg *kibana.FleetConfig) error
 	InstallCertsFn    func() error
 	Name              string // the name for the binary
 	processName       string // name of the elastic-agent process
@@ -59,16 +60,16 @@ func (i *ElasticAgentInstaller) ListElasticAgentWorkingDirContent(containerName 
 	return content, nil
 }
 
-func buildEnrollmentFlags(token string) []string {
-	return []string{"--kibana-url=http://kibana:5601", "--enrollment-token=" + token, "-f", "--insecure"}
-}
-
 // runElasticAgentCommand runs a command for the elastic-agent
-func runElasticAgentCommand(profile string, image string, service string, process string, command string, arguments []string) error {
+func runElasticAgentCommandEnv(profile string, image string, service string, process string, command string, arguments []string, env map[string]string) error {
 	cmds := []string{
 		process, command,
 	}
 	cmds = append(cmds, arguments...)
+
+	for k, v := range env {
+		common.ProfileEnv[k] = v
+	}
 
 	sm := compose.NewServiceManager()
 	err := sm.ExecCommandInService(profile, image, service, cmds, common.ProfileEnv, false)

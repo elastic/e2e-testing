@@ -59,6 +59,11 @@ func CheckProcessStateOnTheHost(containerName string, process string, state stri
 
 // ExecCommandIntoContainer executes a command, as a user, into a container
 func ExecCommandIntoContainer(ctx context.Context, containerName string, user string, cmd []string) (string, error) {
+	return ExecCommandIntoContainerWithEnv(ctx, containerName, user, cmd, []string{})
+}
+
+// ExecCommandIntoContainerWithEnv executes a command, as a user, with env, into a container
+func ExecCommandIntoContainerWithEnv(ctx context.Context, containerName string, user string, cmd []string, env []string) (string, error) {
 	dockerClient := getDockerClient()
 
 	detach := false
@@ -68,6 +73,7 @@ func ExecCommandIntoContainer(ctx context.Context, containerName string, user st
 		"container": containerName,
 		"command":   cmd,
 		"detach":    detach,
+		"env":       env,
 		"tty":       tty,
 	}).Trace("Creating command to be executed in container")
 
@@ -80,12 +86,14 @@ func ExecCommandIntoContainer(ctx context.Context, containerName string, user st
 			AttachStdout: true,
 			Detach:       detach,
 			Cmd:          cmd,
+			Env:          env,
 		})
 
 	if err != nil {
 		log.WithFields(log.Fields{
 			"container": containerName,
 			"command":   cmd,
+			"env":       env,
 			"error":     err,
 			"detach":    detach,
 			"tty":       tty,
@@ -97,6 +105,7 @@ func ExecCommandIntoContainer(ctx context.Context, containerName string, user st
 		"container": containerName,
 		"command":   cmd,
 		"detach":    detach,
+		"env":       env,
 		"tty":       tty,
 	}).Trace("Command to be executed in container created")
 
@@ -109,6 +118,7 @@ func ExecCommandIntoContainer(ctx context.Context, containerName string, user st
 			"container": containerName,
 			"command":   cmd,
 			"detach":    detach,
+			"env":       env,
 			"error":     err,
 			"tty":       tty,
 		}).Error("Could not execute command in container")
@@ -123,6 +133,7 @@ func ExecCommandIntoContainer(ctx context.Context, containerName string, user st
 			"container": containerName,
 			"command":   cmd,
 			"detach":    detach,
+			"env":       env,
 			"error":     err,
 			"tty":       tty,
 		}).Error("Could not parse command output from container")
@@ -134,6 +145,7 @@ func ExecCommandIntoContainer(ctx context.Context, containerName string, user st
 		"container": containerName,
 		"command":   cmd,
 		"detach":    detach,
+		"env":       env,
 		"tty":       tty,
 	}).Trace("Command sucessfully executed in container")
 

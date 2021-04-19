@@ -7,6 +7,7 @@ package installer
 import (
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -31,7 +32,7 @@ func NewRPMPackage(binaryName string, profile string, image string, service stri
 }
 
 // Install installs a RPM package
-func (i *RPMPackage) Install(containerName string, token string) error {
+func (i *RPMPackage) Install(cfg *kibana.FleetConfig) error {
 	return i.extractPackage([]string{"yum", "localinstall", "/" + i.binaryName, "-y"})
 }
 
@@ -94,8 +95,8 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 		return ElasticAgentInstaller{}, err
 	}
 
-	enrollFn := func(token string) error {
-		return runElasticAgentCommand(profile, image, service, common.ElasticAgentProcessName, "enroll", buildEnrollmentFlags(token))
+	enrollFn := func(cfg *kibana.FleetConfig) error {
+		return runElasticAgentCommand(profile, image, service, common.ElasticAgentProcessName, "enroll", cfg.flags())
 	}
 
 	workingDir := "/var/lib/elastic-agent"

@@ -7,6 +7,7 @@ package installer
 import (
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -30,7 +31,7 @@ func NewDEBPackage(binaryName string, profile string, image string, service stri
 }
 
 // Install installs a DEB package
-func (i *DEBPackage) Install(containerName string, token string) error {
+func (i *DEBPackage) Install(cfg *kibana.FleetConfig) error {
 	return i.extractPackage([]string{"apt", "install", "/" + i.binaryName, "-y"})
 }
 
@@ -90,8 +91,8 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 		return ElasticAgentInstaller{}, err
 	}
 
-	enrollFn := func(token string) error {
-		return runElasticAgentCommand(profile, image, service, common.ElasticAgentProcessName, "enroll", buildEnrollmentFlags(token))
+	enrollFn := func(cfg *kibana.FleetConfig) error {
+		return runElasticAgentCommand(profile, image, service, common.ElasticAgentProcessName, "enroll", cfg.flags())
 	}
 
 	workingDir := "/var/lib/elastic-agent"
