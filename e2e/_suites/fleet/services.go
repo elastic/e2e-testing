@@ -22,10 +22,10 @@ type ElasticAgentInstaller struct {
 	artifactOS        string // OS of the artifact
 	artifactVersion   string // version of the artifact
 	binaryPath        string // the local path where the agent for the binary is located
-	EnrollFn          func(token string) error
+	EnrollFn          func(cfg *FleetConfig) error
 	image             string // docker image
 	installerType     string
-	InstallFn         func(containerName string, token string) error
+	InstallFn         func(cfg *FleetConfig) error
 	InstallCertsFn    func() error
 	name              string // the name for the binary
 	processName       string // name of the elastic-agent process
@@ -59,16 +59,22 @@ func (i *ElasticAgentInstaller) listElasticAgentWorkingDirContent(containerName 
 	return content, nil
 }
 
-func buildEnrollmentFlags(token string) []string {
-	return []string{"--kibana-url=http://kibana:5601", "--enrollment-token=" + token, "-f", "--insecure"}
-}
-
 // runElasticAgentCommand runs a command for the elastic-agent
 func runElasticAgentCommand(profile string, image string, service string, process string, command string, arguments []string) error {
+	return runElasticAgentCommandWithEnv(profile, image, service, process, command, arguments, map[string]string{})
+}
+
+// runElasticAgentCommandWithEnv runs a command with env for the elastic-agent
+func runElasticAgentCommandWithEnv(profile string, image string, service string, process string, command string, arguments []string, env map[string]string) error {
 	cmds := []string{
 		process, command,
 	}
 	cmds = append(cmds, arguments...)
+
+	// append passed env to profile env
+	for k, v := range env {
+		profileEnv[k] = v
+	}
 
 	err := steps.ExecCommandInService(profile, image, service, cmds, profileEnv, false)
 	if err != nil {
@@ -171,8 +177,8 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 		return ElasticAgentInstaller{}, err
 	}
 
-	enrollFn := func(token string) error {
-		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", buildEnrollmentFlags(token))
+	enrollFn := func(cfg *FleetConfig) error {
+		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", cfg.flags())
 	}
 
 	workingDir := "/var/lib/elastic-agent"
@@ -237,8 +243,8 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 		return ElasticAgentInstaller{}, err
 	}
 
-	enrollFn := func(token string) error {
-		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", buildEnrollmentFlags(token))
+	enrollFn := func(cfg *FleetConfig) error {
+		return runElasticAgentCommand(profile, image, service, ElasticAgentProcessName, "enroll", cfg.flags())
 	}
 
 	workingDir := "/var/lib/elastic-agent"
@@ -320,7 +326,7 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 	logFileName := "elastic-agent-json.log"
 	logFile := logsDir + "/" + logFileName
 
-	enrollFn := func(token string) error {
+	enrollFn := func(cfg *FleetConfig) error {
 		return nil
 	}
 
@@ -389,8 +395,8 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 	logFileName := "elastic-agent-json.log"
 	logFile := logsDir + "/" + logFileName
 
-	enrollFn := func(token string) error {
-		return runElasticAgentCommand(profile, dockerImage, service, ElasticAgentProcessName, "enroll", buildEnrollmentFlags(token))
+	enrollFn := func(cfg *FleetConfig) error {
+		return runElasticAgentCommand(profile, dockerImage, service, ElasticAgentProcessName, "enroll", cfg.flags())
 	}
 
 	//
