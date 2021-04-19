@@ -390,6 +390,21 @@ func TestGetBucketSearchNextPageParam_HasNoMorePages(t *testing.T) {
 	assert.True(t, param == "")
 }
 
+func TestGetDockerNamespaceEnvVar(t *testing.T) {
+	t.Run("Returns fallback when environment variable is not set", func(t *testing.T) {
+		namespace := GetDockerNamespaceEnvVar("beats")
+		assert.True(t, namespace == "beats")
+	})
+
+	t.Run("Returns Observability CI when environment variable is set", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
+		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "true")
+
+		namespace := GetDockerNamespaceEnvVar("beats")
+		assert.True(t, namespace == "observability-ci")
+	})
+}
+
 func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 	artifact := "elastic-agent"
 	version := testVersion
@@ -460,6 +475,22 @@ func TestGetGCPBucketCoordinates_Snapshots(t *testing.T) {
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "snapshots/elastic-agent")
 		assert.Equal(t, object, "elastic-agent-"+testVersion+"-linux-x86_64.tar.gz")
+	})
+}
+
+func TestIsCommit(t *testing.T) {
+	t.Run("Returns true with commits", func(t *testing.T) {
+		assert.True(t, IsCommit("abcdef1234"))
+		assert.True(t, IsCommit("a12345"))
+		assert.True(t, IsCommit("abcdef1"))
+	})
+
+	t.Run("Returns false with non-commits", func(t *testing.T) {
+		assert.False(t, IsCommit("master"))
+		assert.False(t, IsCommit("7.x"))
+		assert.False(t, IsCommit("7.12.x"))
+		assert.False(t, IsCommit("7.11.x"))
+		assert.False(t, IsCommit("pr12345"))
 	})
 }
 

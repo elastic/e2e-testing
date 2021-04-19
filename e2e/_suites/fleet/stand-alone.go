@@ -93,7 +93,7 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 		profileEnv["elasticAgentDockerImageSuffix"] = "-" + image
 	}
 
-	profileEnv["elasticAgentDockerNamespace"] = e2e.GetDockerNamespaceEnvVar()
+	profileEnv["elasticAgentDockerNamespace"] = e2e.GetDockerNamespaceEnvVar("beats")
 
 	containerName := fmt.Sprintf("%s_%s_%d", FleetProfileName, ElasticAgentServiceName, 1)
 
