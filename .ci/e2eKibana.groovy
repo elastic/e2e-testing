@@ -29,8 +29,7 @@ pipeline {
       [key: 'GT_REPO', value: '$.repository.full_name'],
       [key: 'GT_PR', value: '$.issue.number'],
       [key: 'GT_BODY', value: '$.comment.body'],
-      [key: 'GT_COMMENT_ID', value: '$.comment.id'],
-      [key: 'GT_PAYLOAD', value: '$']
+      [key: 'GT_COMMENT_ID', value: '$.comment.id']
      ],
     genericHeaderVariables: [
      [key: 'x-github-event', regexpFilter: 'comment']
@@ -54,7 +53,6 @@ pipeline {
         PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
       }
       steps {
-        echo(message: "$env.GT_PAYLOAD")
         checkPermissions()
         buildKibanaDockerImage(refspec: getBranch())
         catchError(buildResult: 'UNSTABLE', message: 'Unable to run e2e tests', stageResult: 'FAILURE') {
