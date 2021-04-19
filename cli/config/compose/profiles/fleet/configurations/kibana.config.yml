@@ -15,6 +15,6 @@ xpack.fleet.enabled: true
 xpack.fleet.registryUrl: http://package-registry:8080
 xpack.fleet.agents.enabled: true
 xpack.fleet.agents.elasticsearch.host: http://elasticsearch:9200
-xpack.fleet.agents.fleetServerEnabled: true
-xpack.fleet.agents.kibana.host: http://kibana:5601
+xpack.fleet.agents.fleet_server.hosts:
+  - http://kibana:5601
 xpack.fleet.agents.tlsCheckDisabled: true
