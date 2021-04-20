@@ -17,7 +17,11 @@ else
 	SED="sed -i"
 fi
 
-FILES="cli/config/compose/profiles/fleet/docker-compose.yml cli/config/compose/profiles/helm/docker-compose.yml cli/config/compose/profiles/metricbeat/docker-compose.yml cli/config/compose/services/kibana/docker-compose.yml"
+FILES="cli/config/compose/profiles/fleet/docker-compose.yml
+cli/config/compose/profiles/helm/docker-compose.yml
+cli/config/compose/profiles/metricbeat/docker-compose.yml
+cli/config/compose/services/kibana/docker-compose.yml
+"
 
 echo "Update stack with version ${VERSION}"
 for FILE in ${FILES} ; do
