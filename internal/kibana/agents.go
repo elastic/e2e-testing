@@ -5,11 +5,12 @@
 package kibana
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
-	"github.com/Jeffail/gabs/v2"
+	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -100,70 +101,81 @@ func (c *Client) GetAgentStatusByHostname(hostname string) (string, error) {
 
 // GetAgentEvents get events of agent
 func (c *Client) GetAgentEvents(applicationName string, agentID string, packagePolicyID string, updatedAt string) error {
-	statusCode, respBody, err := c.get(fmt.Sprintf("%s/agents/%s/events", FleetAPI, agentID))
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"filter": []interface{}{
+					map[string]interface{}{
+						"bool": map[string]interface{}{
+							"should": []interface{}{
+								map[string]interface{}{
+									"match": map[string]interface{}{
+										"elastic_agent.id": agentID,
+									},
+								},
+							},
+							"minimum_should_match": 1,
+						},
+					},
+					map[string]interface{}{
+						"bool": map[string]interface{}{
+							"should": []interface{}{
+								map[string]interface{}{
+									"match": map[string]interface{}{
+										"data_stream.dataset": "elastic_agent",
+									},
+								},
+							},
+							"minimum_should_match": 1,
+						},
+					},
+				},
+			},
+		},
+	}
 
+	indexName := "logs-elastic_agent-default"
+
+	searchResult, err := elasticsearch.Search(context.Background(), indexName, query)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"agentID":         agentID,
 			"application":     applicationName,
-			"body":            respBody,
+			"result":          searchResult,
 			"error":           err,
 			"packagePolicyID": packagePolicyID,
 		}).Error("Could not get agent events from Fleet")
-
 		return err
 	}
 
-	jsonResponse, err := gabs.ParseJSON([]byte(respBody))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":        err,
-			"responseBody": jsonResponse,
-		}).Error("Could not parse response into JSON")
-		return err
-	}
+	results := searchResult["hits"].(map[string]interface{})["hits"].([]interface{})
 
-	if statusCode != 200 {
-		log.WithFields(log.Fields{
-			"agentID":         agentID,
-			"application":     applicationName,
-			"body":            jsonResponse,
-			"error":           err,
-			"packagePolicyID": packagePolicyID,
-		}).Error("Could not get agent events from Fleet")
-
-		return err
-	}
-
-	listItems := jsonResponse.Path("list").Children()
-	for _, item := range listItems {
-		message := item.Path("message").Data().(string)
-		// we use a string because we are not able to process what comes in the event, so we will do
-		// an alphabetical order, as they share same layout but different millis and timezone format
-		timestamp := item.Path("timestamp").Data().(string)
-
-		log.WithFields(log.Fields{
-			"agentID":         agentID,
-			"application":     applicationName,
-			"event_at":        timestamp,
-			"message":         message,
-			"packagePolicyID": packagePolicyID,
-			"updated_at":      updatedAt,
-		}).Trace("Event found")
-
-		matches := (strings.Contains(message, applicationName) &&
-			strings.Contains(message, "["+agentID+"]: State changed to") &&
-			strings.Contains(message, "Protecting with policy {"+packagePolicyID+"}"))
-
-		if matches && timestamp > updatedAt {
+	for _, result := range results {
+		if message, ok := result.(map[string]interface{})["_source"].(map[string]interface{})["message"].(string); ok {
+			timestamp := result.(map[string]interface{})["_source"].(map[string]interface{})["@timestamp"].(string)
 			log.WithFields(log.Fields{
+				"agentID":         agentID,
 				"application":     applicationName,
 				"event_at":        timestamp,
+				"message":         message,
 				"packagePolicyID": packagePolicyID,
 				"updated_at":      updatedAt,
-				"message":         message,
-			}).Info("Event after the update was found")
-			return nil
+			}).Trace("Event found")
+			matches := (strings.Contains(message, applicationName) &&
+				strings.Contains(message, "["+agentID+"]: State changed to") &&
+				strings.Contains(message, "Protecting with policy {"+packagePolicyID+"}"))
+
+			if matches && timestamp > updatedAt {
+				log.WithFields(log.Fields{
+					"application":     applicationName,
+					"event_at":        timestamp,
+					"packagePolicyID": packagePolicyID,
+					"updated_at":      updatedAt,
+					"message":         message,
+				}).Info("Event after the update was found")
+				return nil
+			}
+
 		}
 	}
 

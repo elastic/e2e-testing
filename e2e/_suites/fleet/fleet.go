@@ -101,11 +101,11 @@ func (fts *FleetTestSuite) afterScenario() {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err":    err,
-			"policy": fts.Policy,
+			"policy": fts.FleetPolicy,
 		}).Error("The package policies could not be found")
 	}
 	for _, pkgPolicy := range packagePolicies {
-		if pkgPolicy.PolicyID == fts.Policy.ID {
+		if pkgPolicy.PolicyID == fts.FleetPolicy.ID {
 			err = fts.kibanaClient.DeleteIntegrationFromPolicy(pkgPolicy)
 			if err != nil {
 				log.WithFields(log.Fields{
@@ -676,7 +676,7 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 
 func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) error {
 	log.WithFields(log.Fields{
-		"policyID": fts.Policy.ID,
+		"policyID": fts.FleetPolicy.ID,
 		"package":  packageName,
 	}).Trace("Checking if the policy shows the package added")
 
@@ -686,11 +686,11 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 	exp := common.GetExponentialBackOff(maxTimeout)
 
 	configurationIsPresentFn := func() error {
-		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(packageName, fts.Policy)
+		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(packageName, fts.FleetPolicy)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"packagePolicy": packagePolicy,
-				"policy":        fts.Policy,
+				"policy":        fts.FleetPolicy,
 				"retry":         retryCount,
 				"error":         err,
 			}).Warn("The integration was not found in the policy")
@@ -713,7 +713,7 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName string, action string) error {
 	log.WithFields(log.Fields{
 		"action":  action,
-		"policy":  fts.Policy,
+		"policy":  fts.FleetPolicy,
 		"package": packageName,
 	}).Trace("Doing an operation for a package on a policy")
 
@@ -727,7 +727,7 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 			Name:        integration.Name,
 			Description: integration.Title,
 			Namespace:   "default",
-			PolicyID:    fts.Policy.ID,
+			PolicyID:    fts.FleetPolicy.ID,
 			Enabled:     true,
 			Package:     integration,
 			Inputs:      []kibana.Input{},
@@ -760,7 +760,7 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 
 		return fts.kibanaClient.AddIntegrationToPolicy(packageDataStream)
 	} else if strings.ToLower(action) == actionREMOVED {
-		packageDataStream, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(integration.Name, fts.Policy)
+		packageDataStream, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(integration.Name, fts.FleetPolicy)
 		if err != nil {
 			return err
 		}
@@ -933,7 +933,7 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMode(name string, mode string
 		return godog.ErrPending
 	}
 
-	packageDS, err := fts.kibanaClient.GetIntegrationFromAgentPolicy("endpoint", fts.Policy)
+	packageDS, err := fts.kibanaClient.GetIntegrationFromAgentPolicy("endpoint", fts.FleetPolicy)
 
 	if err != nil {
 		return err
@@ -967,7 +967,7 @@ func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error
 		return err
 	}
 
-	pkgPolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy("endpoint", fts.Policy)
+	pkgPolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy("endpoint", fts.FleetPolicy)
 	if err != nil {
 		return err
 	}

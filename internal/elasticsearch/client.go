@@ -115,8 +115,8 @@ func getElasticsearchClientFromHostPort(ctx context.Context, host string, port i
 	return esClient, nil
 }
 
-//nolint:unused
-func search(ctx context.Context, indexName string, query map[string]interface{}) (SearchResult, error) {
+// Search provide search interface to ES
+func Search(ctx context.Context, indexName string, query map[string]interface{}) (SearchResult, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Search", "elasticsearch.search", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -299,7 +299,7 @@ func WaitForNumberOfHits(ctx context.Context, indexName string, query map[string
 	result := SearchResult{}
 
 	numberOfHits := func() error {
-		hits, err := search(ctx, indexName, query)
+		hits, err := Search(ctx, indexName, query)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"desiredHits": desiredHits,
