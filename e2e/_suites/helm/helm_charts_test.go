@@ -748,5 +748,5 @@ func toolsAreInstalled() {
 		"helm",
 	}
 
-	shell.CheckInstalledSoftware(binaries)
+	shell.CheckInstalledSoftware(binaries...)
 }

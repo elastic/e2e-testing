@@ -17,7 +17,7 @@ import (
 )
 
 // CheckInstalledSoftware checks that the required software is present
-func CheckInstalledSoftware(binaries []string) {
+func CheckInstalledSoftware(binaries ...string) {
 	log.Tracef("Validating required tools: %v", binaries)
 
 	for _, binary := range binaries {
