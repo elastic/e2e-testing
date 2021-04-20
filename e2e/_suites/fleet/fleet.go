@@ -105,7 +105,8 @@ func (fts *FleetTestSuite) afterScenario() {
 		}).Error("The package policies could not be found")
 	}
 	for _, pkgPolicy := range packagePolicies {
-		if pkgPolicy.PolicyID == fts.FleetPolicy.ID {
+		// Do not remove the fleet server package integration otherwise fleet server fails to bootstrap
+		if !strings.Contains(pkgPolicy.Name, "fleet_server") && pkgPolicy.PolicyID == fts.FleetPolicy.ID {
 			err = fts.kibanaClient.DeleteIntegrationFromPolicy(pkgPolicy)
 			if err != nil {
 				log.WithFields(log.Fields{
