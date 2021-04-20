@@ -7,6 +7,7 @@ package kibana
 import (
 	"fmt"
 
+	"github.com/elastic/e2e-testing/internal/common"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -18,6 +19,8 @@ type FleetConfig struct {
 	ElasticsearchCredentials string
 	KibanaPort               int
 	KibanaURI                string
+	FleetServerPort          int
+	FleetServerURI           string
 	// server
 	BootstrapFleetServer bool
 	ServerPolicyID       string
@@ -37,6 +40,8 @@ func NewFleetConfig(token string, bootstrapFleetServer bool, fleetServerMode boo
 		ElasticsearchURI:         "elasticsearch",
 		KibanaPort:               5601,
 		KibanaURI:                "kibana",
+		FleetServerPort:          8220,
+		FleetServerURI:           "localhost",
 	}
 
 	client, err := NewClient()
@@ -85,6 +90,9 @@ func (cfg FleetConfig) Flags() []string {
 	*/
 
 	baseFlags := []string{"-e", "-v", "--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken}
+	if common.AgentVersionBase == "8.0.0-SNAPSHOT" {
+		return append(baseFlags, "--url", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.FleetServerURI, cfg.FleetServerPort))
+	}
 
 	if cfg.ServerPolicyID != "" {
 		baseFlags = append(baseFlags, "--fleet-server-insecure-http", "--fleet-server", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.ElasticsearchURI, cfg.ElasticsearchPort), "--fleet-server-host=http://0.0.0.0", "--fleet-server-policy", cfg.ServerPolicyID)
