@@ -7,6 +7,7 @@ package shell
 import (
 	"bytes"
 	"context"
+	"io"
 	"os"
 	"os/exec"
 	"strconv"
@@ -33,6 +34,15 @@ func CheckInstalledSoftware(binaries ...string) {
 // - command: represents the name of the binary to execute
 // - args: represents the arguments to be passed to the command
 func Execute(ctx context.Context, workspace string, command string, args ...string) (string, error) {
+	return ExecuteWithStdin(ctx, workspace, nil, command, args...)
+}
+
+// ExecuteWithStdin executes a command in the machine the program is running
+// - workspace: represents the location where to execute the command
+// - stdin: reader to use as standard input for the command
+// - command: represents the name of the binary to execute
+// - args: represents the arguments to be passed to the command
+func ExecuteWithStdin(ctx context.Context, workspace string, stdin io.Reader, command string, args ...string) (string, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Executing shell command", "shell.command.execute", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -51,6 +61,9 @@ func Execute(ctx context.Context, workspace string, command string, args ...stri
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &stderr
+	if stdin != nil {
+		cmd.Stdin = stdin
+	}
 
 	err := cmd.Run()
 	if err != nil {

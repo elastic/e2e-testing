@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -46,15 +47,21 @@ func (c kubernetesControl) Cleanup(ctx context.Context) error {
 	return nil
 }
 
-func (c kubernetesControl) Run(ctx context.Context, args ...string) (output string, err error) {
+func (c kubernetesControl) Run(ctx context.Context, runArgs ...string) (output string, err error) {
+	return c.RunWithStdin(ctx, nil, runArgs...)
+}
+
+func (c kubernetesControl) RunWithStdin(ctx context.Context, stdin io.Reader, runArgs ...string) (output string, err error) {
 	shell.CheckInstalledSoftware("kubectl")
+	var args []string
 	if c.config != "" {
 		args = append(args, "--kubeconfig", c.config)
 	}
 	if c.Namespace != "" {
 		args = append(args, "--namespace", c.Namespace)
 	}
-	return shell.Execute(ctx, ".", "kubectl", args...)
+	args = append(args, runArgs...)
+	return shell.ExecuteWithStdin(ctx, ".", stdin, "kubectl", args...)
 }
 
 type kubernetesCluster struct {
