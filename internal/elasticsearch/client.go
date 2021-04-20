@@ -148,6 +148,7 @@ func Search(ctx context.Context, indexName string, query map[string]interface{})
 		esClient.Search.WithBody(&buf),
 		esClient.Search.WithTrackTotalHits(true),
 		esClient.Search.WithPretty(),
+		esClient.Search.WithSize(10000),
 	)
 	if err != nil {
 		log.WithFields(log.Fields{
