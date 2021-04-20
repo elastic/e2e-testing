@@ -123,7 +123,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 	fts.Version = agentVersion
 
 	// create policy with system monitoring enabled
-	defaultPolicy, err := getAgentDefaultPolicy()
+	defaultPolicy, err := getAgentDefaultPolicy("is_default")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,
@@ -161,6 +161,9 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
 	s.Step(`^the policy is updated to have "([^"]*)" in "([^"]*)" mode$`, fts.thePolicyIsUpdatedToHaveMode)
 	s.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
+
+	// fleet server steps
+	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer in fleet-server mode$`, fts.anAgentIsDeployedToFleetWithInstallerInFleetMode)
 }
 
 func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, version, installerType string) error {
@@ -291,10 +294,15 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 
 // supported installers: tar, systemd
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, installerType string) error {
+	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType, false)
+}
+
+func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(image string, installerType string, bootstrapFleetServer bool) error {
 	log.WithFields(log.Fields{
-		"image":     image,
-		"installer": installerType,
-	}).Trace("Deploying an agent to Fleet with base image")
+		"bootstrapFleetServer": bootstrapFleetServer,
+		"image":                image,
+		"installer":            installerType,
+	}).Trace("Deploying an agent to Fleet with base image and fleet server")
 
 	fts.Image = image
 	fts.InstallerType = installerType
@@ -316,7 +324,8 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 	fts.CurrentToken = tokenJSONObject.Path("api_key").Data().(string)
 	fts.CurrentTokenID = tokenJSONObject.Path("id").Data().(string)
 
-	err = deployAgentToFleet(installer, containerName, fts.CurrentToken)
+	var fleetConfig *FleetConfig
+	fleetConfig, err = deployAgentToFleet(installer, containerName, fts.CurrentToken, bootstrapFleetServer)
 	fts.Cleanup = true
 	if err != nil {
 		return err
@@ -324,7 +333,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 
 	// the installation process for TAR includes the enrollment
 	if installer.installerType != "tar" {
-		err = installer.EnrollFn(fts.CurrentToken)
+		err = installer.EnrollFn(fleetConfig)
 		if err != nil {
 			return err
 		}
@@ -452,10 +461,10 @@ func theAgentIsListedInFleetWithStatus(desiredStatus, hostname string) error {
 					"status":      desiredStatus,
 				}).Info("The Agent is not present in Fleet, as expected")
 				return nil
-			} else if desiredStatus == "online" {
-				retryCount++
-				return fmt.Errorf("The agent is not present in Fleet, but it should")
 			}
+
+			retryCount++
+			return fmt.Errorf("The agent is not present in Fleet in the '%s' status, but it should", desiredStatus)
 		}
 
 		isAgentInStatus, err := isAgentInStatus(agentID, desiredStatus)
@@ -618,7 +627,13 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 
 	installer := fts.getInstaller()
 
-	err := installer.EnrollFn(fts.CurrentToken)
+	// a restart does not need to bootstrap the Fleet Server again
+	cfg, err := NewFleetConfig(fts.CurrentToken, false, false)
+	if err != nil {
+		return err
+	}
+
+	err = installer.EnrollFn(cfg)
 	if err != nil {
 		return err
 	}
@@ -663,7 +678,7 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 	fts.Integration = integration
 
 	configurationIsPresentFn := func() error {
-		defaultPolicy, err := getAgentDefaultPolicy()
+		defaultPolicy, err := getAgentDefaultPolicy("is_default")
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":    err,
@@ -1033,14 +1048,14 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", ElasticAgentServiceName, 2) // name of the new container
 
-	err := deployAgentToFleet(installer, containerName, fts.CurrentToken)
+	fleetConfig, err := deployAgentToFleet(installer, containerName, fts.CurrentToken, false)
 	// the installation process for TAR includes the enrollment
 	if installer.installerType != "tar" {
 		if err != nil {
 			return err
 		}
 
-		err = installer.EnrollFn(fts.CurrentToken)
+		err = installer.EnrollFn(fleetConfig)
 		if err == nil {
 			err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
 
@@ -1334,7 +1349,7 @@ func createFleetToken(name string, policyID string) (*gabs.Container, error) {
 	return tokenItem, nil
 }
 
-func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, token string) error {
+func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, token string, bootstrapFleetServer bool) (*FleetConfig, error) {
 	profile := installer.profile // name of the runtime dependencies compose file
 	service := installer.service // name of the service
 	serviceTag := installer.tag  // docker tag of the service
@@ -1357,24 +1372,31 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 			"service": service,
 			"tag":     serviceTag,
 		}).Error("Could not run the target box")
-		return err
+		return nil, err
 	}
 
 	err = installer.PreInstallFn()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = installer.InstallFn(containerName, token)
+	cfg, cfgError := NewFleetConfig(token, bootstrapFleetServer, false)
+	if cfgError != nil {
+		return nil, cfgError
+	}
+
+	err = installer.InstallFn(cfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return installer.PostInstallFn()
+	return cfg, installer.PostInstallFn()
 }
 
-// getAgentDefaultPolicy sends a GET request to Fleet for the existing default policy
-func getAgentDefaultPolicy() (*gabs.Container, error) {
+// getAgentDefaultPolicy sends a GET request to Fleet for the existing default policy, using the
+// "defaultPolicyFieldName" passed as parameter as field to be used to find the policy in list
+// of fleet policies
+func getAgentDefaultPolicy(defaultPolicyFieldName string) (*gabs.Container, error) {
 	r := createDefaultHTTPRequest(ingestManagerAgentPoliciesURL)
 	body, err := curl.Get(r)
 	if err != nil {
@@ -1402,10 +1424,21 @@ func getAgentDefaultPolicy() (*gabs.Container, error) {
 		"count": len(policies.Children()),
 	}).Trace("Fleet policies retrieved")
 
-	// TODO: perform a strong check to capture default policy
-	defaultPolicy := policies.Index(0)
+	for _, policy := range policies.Children() {
+		if !policy.Exists(defaultPolicyFieldName) {
+			continue
+		}
 
-	return defaultPolicy, nil
+		if policy.Path(defaultPolicyFieldName).Data().(bool) {
+			log.WithFields(log.Fields{
+				"field":  defaultPolicyFieldName,
+				"policy": policy,
+			}).Trace("Default Policy was found")
+			return policy, nil
+		}
+	}
+
+	return nil, fmt.Errorf("Default policy was not found with '%s' field equals to 'true'", defaultPolicyFieldName)
 }
 
 func getAgentEvents(applicationName string, agentID string, packagePolicyID string, updatedAt string) error {
@@ -1580,6 +1613,11 @@ func isAgentInStatus(agentID string, desiredStatus string) (bool, error) {
 	}
 
 	jsonResponse, err := gabs.ParseJSON([]byte(body))
+
+	log.WithFields(log.Fields{
+		"agentID":       agentID,
+		"desiredStatus": desiredStatus,
+	}).Info(jsonResponse)
 
 	agentStatus := jsonResponse.Path("item.status").Data().(string)
 
