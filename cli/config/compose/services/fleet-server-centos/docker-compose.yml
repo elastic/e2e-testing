@@ -1,0 +1,10 @@
+version: '2.4'
+services:
+  fleet-server-centos:
+    image: centos/systemd:${fleet_serverTag:-latest} 
+    container_name: ${fleet_serverContainerName}
+    entrypoint: "/usr/sbin/init"
+    privileged: true
+    volumes:
+      - ${fleet_serverAgentBinarySrcPath:-.}:${fleet_serverAgentBinaryTargetPath:-/tmp}
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro 
