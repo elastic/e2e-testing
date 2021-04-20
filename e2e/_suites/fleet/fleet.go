@@ -419,7 +419,12 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 func (fts *FleetTestSuite) setup() error {
 	log.Trace("Creating Fleet setup")
 
-	err := checkFleetConfiguration()
+	err := createFleetConfiguration()
+	if err != nil {
+		return err
+	}
+
+	err = checkFleetConfiguration()
 	if err != nil {
 		return err
 	}
