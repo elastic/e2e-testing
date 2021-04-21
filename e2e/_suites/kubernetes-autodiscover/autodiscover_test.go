@@ -17,7 +17,7 @@ import (
 	messages "github.com/cucumber/messages-go/v10"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/elastic/e2e-testing/cli/shell"
+	"github.com/elastic/e2e-testing/internal/shell"
 )
 
 const defaultBeatVersion = "8.0.0-SNAPSHOT"

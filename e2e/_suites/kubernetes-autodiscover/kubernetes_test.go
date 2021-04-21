@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/elastic/e2e-testing/cli/shell"
+	"github.com/elastic/e2e-testing/internal/shell"
 )
 
 type kubernetesControl struct {
