@@ -15,7 +15,7 @@ import (
 
 func TestDownloadAgentBinary(t *testing.T) {
 	artifact := "elastic-agent"
-	beatsDir := path.Join("..", "..", "_testresources", "beats")
+	beatsDir := path.Join("..", "_testresources", "beats")
 	distributionsDir, _ := filepath.Abs(path.Join(beatsDir, "x-pack", "elastic-agent", "build", "distributions"))
 	version := "8.0.0-SNAPSHOT"
 
