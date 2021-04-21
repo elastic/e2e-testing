@@ -1,3 +1,5 @@
+@kubernetes
+@autodiscover
 @beats
 Feature: Beats
   Use Kubernetes autodiscover features in Beats to monitor pods
@@ -8,11 +10,11 @@ Scenario: Pod is started
    Then "filebeat" collects events with "kubernetes.pod.name:a-pod"
 
 Scenario: Pod is deleted
-  Given "filebeat" is running with "hints enabled"
+  Given "metricbeat" is running with "hints enabled"
     And "a pod" is deployed
-    And "filebeat" collects events with "kubernetes.pod.name:a-pod"
+    And "metricbeat" collects events with "kubernetes.pod.name:a-pod"
    When "a pod" is deleted
-   Then "filebeat" stops collecting events
+   Then "metricbeat" stops collecting events
 
 Scenario: Pod is failing
   Given "filebeat" is running with "hints enabled"
