@@ -32,8 +32,10 @@ type podsManager struct {
 func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, options []string) error {
 	path := filepath.Join("testdata/templates", sanitizeName(podName)+".yml.tmpl")
 
+	usedOptions := make(map[string]bool)
 	funcs := template.FuncMap{
 		"option": func(o string) bool {
+			usedOptions[o] = true
 			for _, option := range options {
 				if o == option {
 					return true
@@ -61,6 +63,13 @@ func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, optio
 	err = t.ExecuteTemplate(writer, filepath.Base(path), nil)
 	if err != nil {
 		return fmt.Errorf("executing template %s: %w", path, err)
+	}
+
+	for _, option := range options {
+		if _, used := usedOptions[option]; !used {
+			log.Debugf("option '%s' is not used in template for '%s'", option, podName)
+			return godog.ErrPending
+		}
 	}
 
 	return nil
