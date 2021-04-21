@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/cli/services"
+	"github.com/elastic/e2e-testing/internal/compose"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
@@ -63,7 +63,7 @@ func buildRunServiceCommand(srv string) *cobra.Command {
 		Short: `Runs a ` + srv + ` service`,
 		Long:  `Runs a ` + srv + ` service, spinning up a Docker container for it and exposing its internal configuration so that you are able to connect to it in an easy manner`,
 		Run: func(cmd *cobra.Command, args []string) {
-			serviceManager := services.NewServiceManager()
+			serviceManager := compose.NewServiceManager()
 
 			env := config.PutServiceEnvironment(map[string]string{}, srv, versionToRun)
 
@@ -91,7 +91,7 @@ func buildRunProfileCommand(key string, profile config.Profile) *cobra.Command {
 		Short: `Runs the ` + profile.Name + ` profile`,
 		Long:  `Runs the ` + profile.Name + ` profile, spinning up the Services that compound it`,
 		Run: func(cmd *cobra.Command, args []string) {
-			serviceManager := services.NewServiceManager()
+			serviceManager := compose.NewServiceManager()
 
 			env := map[string]string{
 				"profileVersion": versionToRun,

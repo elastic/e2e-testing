@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	io "github.com/elastic/e2e-testing/cli/internal"
+	"github.com/elastic/e2e-testing/internal/io"
 
 	"github.com/Flaque/filet"
 	"github.com/sirupsen/logrus"

@@ -83,7 +83,10 @@ functional-test: install-godog
 	ELASTIC_APM_ENVIRONMENT="${ELASTIC_APM_ENVIRONMENT}" \
 	ELASTIC_APM_SECRET_TOKEN="${APM_SECRET_TOKEN}" \
 	ELASTIC_APM_SERVER_URL="${APM_SERVER_URL}" \
+<<<<<<< HEAD
 	KIBANA_VERSION=pr97021 \
+=======
+>>>>>>> 5f596709... v2 refactor (#1008)
 	godog --format=${FORMAT} ${TAGS_FLAG} ${TAGS_VALUE}
 
 .PHONY: lint
