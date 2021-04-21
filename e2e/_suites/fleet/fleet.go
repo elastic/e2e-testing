@@ -634,7 +634,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 }
 
 func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
-	return fts.unenrollHostname(false)
+	return fts.unenrollHostname(true)
 }
 
 func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
