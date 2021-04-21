@@ -45,13 +45,21 @@ type FleetTestSuite struct {
 	PolicyUpdatedAt     string // the moment the policy was updated
 	Version             string // current elastic-agent version
 	kibanaClient        *kibana.Client
+	// integrations
+	Integration     IntegrationPackage // the installed integration
+	PolicyUpdatedAt string             // the moment the policy was updated
+	// fleet server
+	FleetServerHostname string // hostname of the fleet server. If empty, it means the agent is the first one, bootstrapping fleet server
 }
 
 // afterScenario destroys the state created by a scenario
 func (fts *FleetTestSuite) afterScenario() {
 	serviceManager := compose.NewServiceManager()
 
-	serviceName := fts.Image
+	serviceName := fts.Image + "-systemd"
+	if fts.FleetServerHostname == "" {
+		serviceName = "fleet-server-" + fts.Image
+	}
 
 	if log.IsLevelEnabled(log.DebugLevel) {
 		agentInstaller := fts.getInstaller()
@@ -83,7 +91,7 @@ func (fts *FleetTestSuite) afterScenario() {
 
 	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
 	if !developerMode {
-		_ = serviceManager.RemoveServicesFromCompose(context.Background(), common.FleetProfileName, []string{serviceName + "-systemd"}, common.ProfileEnv)
+		_ = serviceManager.RemoveServicesFromCompose(context.Background(), common.FleetProfileName, []string{serviceName}, common.ProfileEnv)
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
@@ -122,6 +130,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	fts.CurrentToken = ""
 	fts.Image = ""
 	fts.Hostname = ""
+	fts.FleetServerHostname = ""
 }
 
 // beforeScenario creates the state needed by a scenario
@@ -215,7 +224,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 
 	// prepare installer for stale version
 	if fts.Version != agentVersionBackup {
-		i := installer.GetElasticAgentInstaller(image, installerType, fts.Version, false)
+		i := installer.GetElasticAgentInstaller(image, installerType, fts.Version, "")
 		fts.Installers[fmt.Sprintf("%s-%s-%s", image, installerType, version)] = i
 	}
 
@@ -309,6 +318,13 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	fts.Image = image
 	fts.InstallerType = installerType
 
+	fts.FleetServerHostname = ""
+	if !bootstrapFleetServer {
+		// the new compose files for fleet-server (centos/debian) are setting the hostname
+		// we need it here, before getting the installer, to get the installer using fleet-server host
+		fts.FleetServerHostname = "fleet-server"
+	}
+
 	agentInstaller := fts.getInstaller()
 
 	profile := agentInstaller.Profile // name of the runtime dependencies compose file
@@ -325,7 +341,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	fts.CurrentTokenID = enrollmentKey.ID
 
 	var fleetConfig *kibana.FleetConfig
-	fleetConfig, err = deployAgentToFleet(agentInstaller, containerName, fts.CurrentToken, bootstrapFleetServer)
+	fleetConfig, err = deployAgentToFleet(agentInstaller, containerName, fts.CurrentToken, fts.FleetServerHostname)
 
 	fts.Cleanup = true
 	if err != nil {
@@ -356,7 +372,7 @@ func (fts *FleetTestSuite) getInstaller() installer.ElasticAgentInstaller {
 		return i
 	}
 
-	agentInstaller := installer.GetElasticAgentInstaller(fts.Image, fts.InstallerType, fts.Version, false)
+	agentInstaller := installer.GetElasticAgentInstaller(fts.Image, fts.InstallerType, fts.Version, fts.FleetServerHostname)
 
 	// cache the new installer
 	fts.Installers[fts.Image+"-"+fts.InstallerType+"-"+fts.Version] = agentInstaller
@@ -646,7 +662,7 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 	// during an unenroll the fleet server exits as there is no longer
 	// and agent id associated with the enrollment. When fleet server
 	// restarts it needs a new agent to associate with the boostrap
-	cfg, err := kibana.NewFleetConfig(fts.CurrentToken, true, false)
+	cfg, err := kibana.NewFleetConfig(fts.CurrentToken, fts.FleetServerHostname)
 	if err != nil {
 		return err
 	}
@@ -1039,7 +1055,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", common.ElasticAgentServiceName, 2) // name of the new container
 
-	fleetConfig, err := deployAgentToFleet(agentInstaller, containerName, fts.CurrentToken, false)
+	fleetConfig, err := deployAgentToFleet(agentInstaller, containerName, fts.CurrentToken, fts.FleetServerHostname)
 	// the installation process for TAR includes the enrollment
 	if agentInstaller.InstallerType != "tar" {
 		if err != nil {
@@ -1177,7 +1193,7 @@ func (fts *FleetTestSuite) checkDataStream() error {
 	return err
 }
 
-func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containerName string, token string, bootstrapFleetServer bool) (*kibana.FleetConfig, error) {
+func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containerName string, token string, fleetServerHost string) (*kibana.FleetConfig, error) {
 	profile := agentInstaller.Profile // name of the runtime dependencies compose file
 	service := agentInstaller.Service // name of the service
 	serviceTag := agentInstaller.Tag  // docker tag of the service
@@ -1208,7 +1224,7 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containe
 		return nil, err
 	}
 
-	cfg, cfgError := kibana.NewFleetConfig(token, bootstrapFleetServer, false)
+	cfg, cfgError := kibana.NewFleetConfig(token, bootstrapFleetServer, fleetServerHost)
 	if cfgError != nil {
 		return nil, cfgError
 	}

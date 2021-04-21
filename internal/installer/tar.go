@@ -145,9 +145,9 @@ func (i *TARPackage) WithVersion(version string) *TARPackage {
 }
 
 // newTarInstaller returns an instance of the Debian installer for a specific version
-func newTarInstaller(image string, tag string, version string, isFleetServer bool) (ElasticAgentInstaller, error) {
+func newTarInstaller(image string, tag string, version string, fleetServerHost string) (ElasticAgentInstaller, error) {
 	dockerImage := image + "-systemd" // we want to consume systemd boxes
-	if isFleetServer {
+	if fleetServerHost == "" {
 		dockerImage = "fleet-server-" + image
 	}
 

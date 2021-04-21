@@ -1,6 +1,6 @@
 version: '2.4'
 services:
-  centos-systemd:
+  centos:
     image: centos/systemd:${centos_systemdTag:-latest} 
     container_name: ${centos_systemdContainerName}
     entrypoint: "/usr/sbin/init"

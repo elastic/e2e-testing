@@ -27,11 +27,13 @@ type FleetConfig struct {
 }
 
 // NewFleetConfig builds a new configuration for the fleet agent, defaulting ES credentials, URI and port.
-// If the 'bootstrappFleetServer' flag is true, the it will create the config for the initial fleet server
+// If the 'fleetServerHost' flag is empty, then it will create the config for the initial fleet server
 // used to bootstrap Fleet Server
-// If the 'fleetServerMode' flag is true, the it will create the config for an agent using an existing Fleet
+// If the 'fleetServerHost' flag is not empty, the it will create the config for an agent using an existing Fleet
 // Server to connect to Fleet. It will also retrieve the default policy ID for fleet server
-func NewFleetConfig(token string, bootstrapFleetServer bool, fleetServerMode bool) (*FleetConfig, error) {
+func NewFleetConfig(token string, fleetServerHost string) (*FleetConfig, error) {
+	bootstrapFleetServer := (fleetServerHost == "")
+
 	cfg := &FleetConfig{
 		BootstrapFleetServer:     bootstrapFleetServer,
 		EnrollmentToken:          token,
@@ -49,7 +51,7 @@ func NewFleetConfig(token string, bootstrapFleetServer bool, fleetServerMode boo
 		return cfg, err
 	}
 
-	if fleetServerMode {
+	if !bootstrapFleetServer {
 		defaultFleetServerPolicy, err := client.GetDefaultPolicy(true)
 		if err != nil {
 			return nil, err

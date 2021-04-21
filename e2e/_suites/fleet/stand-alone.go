@@ -107,7 +107,7 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries
-		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.AgentVersion, false)
+		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.AgentVersion, "")
 
 		dockerInstaller.PreInstallFn()
 

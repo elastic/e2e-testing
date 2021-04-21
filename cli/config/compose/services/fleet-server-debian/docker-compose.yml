@@ -1,6 +1,6 @@
 version: '2.4'
 services:
-  fleet-server-debian:
+  fleet-server:
     image: alehaa/debian-systemd:${fleet_serverTag:-stretch}
     container_name: ${fleet_serverContainerName} 
     entrypoint: "/sbin/init"
