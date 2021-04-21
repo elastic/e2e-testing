@@ -21,7 +21,8 @@ import (
 )
 
 const defaultBeatVersion = "8.0.0-SNAPSHOT"
-const defaultEventsWaitTimeout = 60 * time.Second
+const defaultEventsWaitTimeout = 120 * time.Second
+const defaultDeployWaitTimeout = 120 * time.Second
 
 type podsManager struct {
 	kubectl kubernetesControl
@@ -31,8 +32,7 @@ type podsManager struct {
 }
 
 func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, funcmap template.FuncMap) error {
-	sanitizedName := strings.ReplaceAll(strings.ToLower(podName), " ", "-")
-	path := filepath.Join("testdata/templates", sanitizedName+".yml.tmpl")
+	path := filepath.Join("testdata/templates", sanitizeName(podName)+".yml.tmpl")
 
 	funcs := template.FuncMap{
 		"option": func(o string) bool {
@@ -106,7 +106,7 @@ func (m *podsManager) isDeleted(podName string) error {
 		return err
 	}
 
-	_, err = m.kubectl.RunWithStdin(context.TODO(), &buf, "delete", "-f", "-")
+	_, err = m.kubectl.RunWithStdin(m.ctx, &buf, "delete", "-f", "-")
 	if err != nil {
 		return fmt.Errorf("failed to delete '%s': %w", podName, err)
 	}
@@ -120,9 +120,25 @@ func (m *podsManager) isDeployed(podName string) error {
 		return err
 	}
 
-	_, err = m.kubectl.RunWithStdin(context.TODO(), &buf, "apply", "-f", "-")
+	_, err = m.kubectl.RunWithStdin(m.ctx, &buf, "apply", "-f", "-")
 	if err != nil {
 		return fmt.Errorf("failed to deploy '%s': %w", podName, err)
+	}
+	return nil
+}
+
+func (m *podsManager) isRunning(podName string) error {
+	err := m.isDeployed(podName)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(m.ctx, defaultDeployWaitTimeout)
+	defer cancel()
+
+	_, err = m.getPodInstances(ctx, podName)
+	if err != nil {
+		return fmt.Errorf("waiting for instance of '%s': %w", podName, err)
 	}
 	return nil
 }
@@ -139,16 +155,15 @@ func (m *podsManager) collectsEventsWith(podName string, condition string) error
 	}
 	defer os.RemoveAll(tmpDir)
 
-	ctx, cancel := context.WithTimeout(context.TODO(), defaultEventsWaitTimeout)
+	ctx, cancel := context.WithTimeout(m.ctx, defaultEventsWaitTimeout)
 	defer cancel()
 
-	// TODO: Review this, it relies now on the existence of the k8s-app label.
-	instance, err := m.getPodInstance(ctx, podName)
+	instances, err := m.getPodInstances(ctx, podName)
 	if err != nil {
 		return fmt.Errorf("failed to get pod name: %w", err)
 	}
 
-	containerPath := fmt.Sprintf("%s/%s:/tmp/beats-events", m.kubectl.Namespace, instance)
+	containerPath := fmt.Sprintf("%s/%s:/tmp/beats-events", m.kubectl.Namespace, instances[0])
 	localPath := filepath.Join(tmpDir, "events")
 	for {
 		_, err := m.kubectl.Run(ctx, "cp", "--no-preserve", containerPath, localPath)
@@ -174,23 +189,24 @@ func (m *podsManager) collectsEventsWith(podName string, condition string) error
 	return nil
 }
 
-func (m *podsManager) getPodInstance(ctx context.Context, podName string) (string, error) {
+func (m *podsManager) getPodInstances(ctx context.Context, podName string) ([]string, error) {
+	app := sanitizeName(podName)
 	for {
 		output, err := m.kubectl.Run(ctx, "get", "pods",
-			"-l", "k8s-app="+podName,
-			"--template", `{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}`)
+			"-l", "k8s-app="+app,
+			"--template", `{{range .items}}{{ if eq .status.phase "Running" }}{{.metadata.name}}{{"\n"}}{{ end }}{{end}}`)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		if output != "" {
 			instances := strings.Split(strings.TrimSpace(output), "\n")
-			return instances[0], nil
+			return instances, nil
 		}
 
 		select {
 		case <-time.After(1 * time.Second):
 		case <-ctx.Done():
-			return "", fmt.Errorf("timeout waiting for pod %s", podName)
+			return nil, fmt.Errorf("timeout waiting for running pods with label k8s-app=%s", app)
 		}
 	}
 }
@@ -252,6 +268,10 @@ func containsEventsWith(path string, condition string) (bool, error) {
 	return false, nil
 }
 
+func sanitizeName(name string) string {
+	return strings.ReplaceAll(strings.ToLower(name), " ", "-")
+}
+
 func (m *podsManager) stopsCollectingEvents(podName string) error {
 	return godog.ErrPending
 }
@@ -303,6 +323,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^configuration for "([^"]*)" has "([^"]*)"$`, pods.configurationForHas)
 	ctx.Step(`^"([^"]*)" is deleted$`, pods.isDeleted)
 	ctx.Step(`^"([^"]*)" is deployed$`, pods.isDeployed)
+	ctx.Step(`^"([^"]*)" is running$`, pods.isRunning)
 	ctx.Step(`^"([^"]*)" collects events with "([^"]*:[^"]*)"$`, pods.collectsEventsWith)
 	ctx.Step(`^"([^"]*)" stops collecting events$`, pods.stopsCollectingEvents)
 }

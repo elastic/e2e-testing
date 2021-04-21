@@ -138,6 +138,8 @@ func (c *kubernetesCluster) initialize(ctx context.Context) error {
 	}
 	c.kindName = name
 
+	log.Infof("Kubeconfig in %s", c.kubeconfig)
+
 	return nil
 }
 
