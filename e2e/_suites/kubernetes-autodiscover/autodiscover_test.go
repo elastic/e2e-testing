@@ -332,7 +332,6 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 		cancel()
 	})
 
-	ctx.Step(`^a cluster is available$`, func() error { return cluster.isAvailable(scenarioCtx) })
 	ctx.Step(`^"([^"]*)" have passed`, func(d string) error { return waitDuration(scenarioCtx, d) })
 
 	ctx.Step(`^configuration for "([^"]*)" has "([^"]*)"$`, pods.configurationForHas)
