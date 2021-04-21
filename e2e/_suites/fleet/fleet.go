@@ -642,8 +642,11 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 
 	agentInstaller := fts.getInstaller()
 
-	// a restart does not need to bootstrap the Fleet Server again
-	cfg, err := kibana.NewFleetConfig(fts.CurrentToken, false, false)
+	// a re-enroll does need to bootstrap the Fleet Server again
+	// during an unenroll the fleet server exits as there is no longer
+	// and agent id associated with the enrollment. When fleet server
+	// restarts it needs a new agent to associate with the boostrap
+	cfg, err := kibana.NewFleetConfig(fts.CurrentToken, true, false)
 	if err != nil {
 		return err
 	}
