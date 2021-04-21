@@ -87,35 +87,6 @@ functional-test: install-godog
 lint:
 	@docker run -t --rm -v $(PWD):/src -w /src gherkin/lint **/*.feature --disable AvoidOutlineForSingleExample,TooClumsy,TooManySteps,TooManyDifferentTags,TooLongStep
 
-<<<<<<< HEAD
-.PHONY: notice
-notice:
-	@echo "Generating NOTICE"
-	go mod tidy
-	go mod download
-	go list -m -json all | go run go.elastic.co/go-licence-detector \
-		-includeIndirect \
-		-rules ../notice/rules.json \
-		-overrides ../notice/overrides.json \
-		-noticeTemplate ../notice/NOTICE.txt.tmpl \
-		-noticeOut NOTICE.txt \
-		-depsOut ""
-
-.PHONY: unit-test
-unit-test: test-report-setup unit-test-e2e unit-test-suite-fleet unit-test-suite-helm unit-test-suite-metricbeat
-
-# See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
-.PHONY: unit-test-e2e
-unit-test-e2e:
-	gotestsum --junitfile "$(PWD)/outputs/TEST-unit-e2e.xml" --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
-
-# See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
-.PHONY: unit-test-suite-%
-unit-test-suite-%:
-	cd _suites/$* && gotestsum --junitfile "$(PWD)/outputs/TEST-unit-e2e-$*.xml" --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
-
-=======
->>>>>>> 249fd97a... fix: run unit tests after refactor (#1067)
 ## Test examples
 
 .PHONY: fleet-fleet

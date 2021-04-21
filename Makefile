@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 # Get current directory of a Makefile: https://stackoverflow.com/a/23324703
 
 include ./commons.mk
@@ -9,7 +7,6 @@ include ./commons.mk
 build:
 	goreleaser --snapshot --skip-publish --rm-dist
 
->>>>>>> 249fd97a... fix: run unit tests after refactor (#1067)
 .PHONY: clean
 clean: clean-workspace clean-docker
 
@@ -24,8 +21,6 @@ clean-workspace:
 .PHONY: install
 install:
 	go get -v -t ./...
-<<<<<<< HEAD
-=======
 
 .PHONY: notice
 notice:
@@ -48,4 +43,3 @@ unit-test: test-report-setup unit-test-dir-cli unit-test-dir-internal unit-test-
 .PHONY: unit-test-suite-%
 unit-test-dir-%:
 	cd $* && gotestsum --junitfile "$(PWD)/outputs/TEST-unit-$*.xml" --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
->>>>>>> 249fd97a... fix: run unit tests after refactor (#1067)
