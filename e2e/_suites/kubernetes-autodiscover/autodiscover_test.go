@@ -272,6 +272,20 @@ func sanitizeName(name string) string {
 	return strings.ReplaceAll(strings.ToLower(name), " ", "-")
 }
 
+func waitDuration(ctx context.Context, d string) error {
+	duration, err := time.ParseDuration(d)
+	if err != nil {
+		return fmt.Errorf("invalid duration %s: %w", d, err)
+	}
+
+	select {
+	case <-time.After(duration):
+	case <-ctx.Done():
+	}
+
+	return nil
+}
+
 func (m *podsManager) stopsCollectingEvents(podName string) error {
 	return godog.ErrPending
 }
@@ -319,6 +333,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	})
 
 	ctx.Step(`^a cluster is available$`, func() error { return cluster.isAvailable(scenarioCtx) })
+	ctx.Step(`^"([^"]*)" have passed`, func(d string) error { return waitDuration(scenarioCtx, d) })
 
 	ctx.Step(`^configuration for "([^"]*)" has "([^"]*)"$`, pods.configurationForHas)
 	ctx.Step(`^"([^"]*)" is deleted$`, pods.isDeleted)

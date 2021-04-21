@@ -25,12 +25,15 @@ Scenario: Pod is failing
    When "a failing pod" is deployed
    Then "filebeat" collects events with "kubernetes.pod.name:a-failing-pod"
 
+# This scenario explicitly waits for 60 seconds before doing checks
+# to be sure that at least one job has been executed.
 Scenario: Short-living cronjob
   Given a cluster is available
     And configuration for "filebeat" has "hints enabled"
     And "filebeat" is running
    When "a short-living cronjob" is deployed
-   Then "filebeat" collects events with "kubernetes.pod.name:a-short-living-cronjob"
+    And "60s" have passed
+   Then "filebeat" collects events with "kubernetes.container.name:cronjob-container"
 
 Scenario: Metrics hints with named ports
   Given a cluster is available
