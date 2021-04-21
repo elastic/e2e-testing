@@ -13,9 +13,9 @@ import (
 	"strings"
 
 	"github.com/elastic/e2e-testing/cli/config"
-	git "github.com/elastic/e2e-testing/cli/internal"
-	io "github.com/elastic/e2e-testing/cli/internal"
-	"github.com/elastic/e2e-testing/cli/services"
+	git "github.com/elastic/e2e-testing/internal/git"
+	io "github.com/elastic/e2e-testing/internal/io"
+	"github.com/elastic/e2e-testing/internal/sanitizer"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -197,7 +197,7 @@ func copyIntegrationsComposeFiles(beats git.Project, pattern string, target stri
 }
 
 type service interface{}
-type compose struct {
+type composeFile struct {
 	Version  string             `yaml:"version"`
 	Services map[string]service `yaml:"services"`
 }
@@ -212,7 +212,7 @@ func sanitizeComposeFile(composeFilePath string, targetFilePath string) error {
 		return err
 	}
 
-	c := compose{}
+	c := composeFile{}
 	err = yaml.Unmarshal(bytes, &c)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -276,7 +276,7 @@ func sanitizeConfigurationFile(serviceName string, configFilePath string) error 
 	// prepend modules header
 	content = "metricbeat.modules:\n" + content
 
-	serviceSanitizer := services.GetConfigSanitizer(serviceName)
+	serviceSanitizer := sanitizer.GetConfigSanitizer(serviceName)
 	content = serviceSanitizer.Sanitize(content)
 
 	log.WithFields(log.Fields{

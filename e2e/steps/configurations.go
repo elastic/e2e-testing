@@ -7,8 +7,8 @@ package steps
 import (
 	"path"
 
-	"github.com/elastic/e2e-testing/cli/shell"
-	"github.com/elastic/e2e-testing/e2e"
+	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -44,7 +44,7 @@ func FetchBeatConfiguration(xpack bool, beat string, configFileName string) (str
 
 	configurationFileURL += "/" + beat + "/" + configFileName
 
-	configurationFilePath, err := e2e.DownloadFile(configurationFileURL)
+	configurationFilePath, err := utils.DownloadFile(configurationFileURL)
 	if err != nil {
 		return "", err
 	}
