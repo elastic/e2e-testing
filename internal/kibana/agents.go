@@ -217,15 +217,12 @@ func (c *Client) ListAgents() ([]Agent, error) {
 }
 
 // UnEnrollAgent unenrolls agent from fleet
-func (c *Client) UnEnrollAgent(hostname string, force bool) error {
+func (c *Client) UnEnrollAgent(hostname string) error {
 	agentID, err := c.GetAgentIDByHostname(hostname)
 	if err != nil {
 		return err
 	}
-	reqBody := `{"force": false}`
-	if force {
-		reqBody = `{"force": true}`
-	}
+	reqBody := `{"revoke": true}`
 	statusCode, respBody, _ := c.post(fmt.Sprintf("%s/agents/%s/unenroll", FleetAPI, agentID), []byte(reqBody))
 	if statusCode != 200 {
 		return fmt.Errorf("could not unenroll agent; API status code = %d, response body = %s", statusCode, respBody)

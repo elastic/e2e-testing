@@ -159,7 +159,7 @@ func (c *Client) ListEnrollmentAPIKeys() ([]EnrollmentAPIKey, error) {
 func (c *Client) RecreateFleet() error {
 	waitForFleet := func() error {
 		reqBody := `{ "forceRecreate": true }`
-		statusCode, respBody, err := c.post(fmt.Sprintf("%s/agents/setup", FleetAPI), []byte(reqBody))
+		statusCode, respBody, err := c.post(fmt.Sprintf("%s/setup", FleetAPI), []byte(reqBody))
 		if err != nil {
 			log.WithFields(log.Fields{
 				"body":       respBody,

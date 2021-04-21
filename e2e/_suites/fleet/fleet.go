@@ -73,7 +73,7 @@ func (fts *FleetTestSuite) afterScenario() {
 		}
 	}
 
-	err := fts.unenrollHostname(true)
+	err := fts.unenrollHostname()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err":      err,
@@ -634,7 +634,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 }
 
 func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
-	return fts.unenrollHostname(true)
+	return fts.unenrollHostname()
 }
 
 func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
@@ -1079,7 +1079,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 }
 
 // unenrollHostname deletes the statuses for an existing agent, filtering by hostname
-func (fts *FleetTestSuite) unenrollHostname(force bool) error {
+func (fts *FleetTestSuite) unenrollHostname() error {
 	log.Tracef("Un-enrolling all agentIDs for %s", fts.Hostname)
 
 	agents, err := fts.kibanaClient.ListAgents()
@@ -1093,7 +1093,7 @@ func (fts *FleetTestSuite) unenrollHostname(force bool) error {
 				"hostname": fts.Hostname,
 			}).Debug("Un-enrolling agent in Fleet")
 
-			err := fts.kibanaClient.UnEnrollAgent(agent.LocalMetadata.Host.HostName, force)
+			err := fts.kibanaClient.UnEnrollAgent(agent.LocalMetadata.Host.HostName)
 			if err != nil {
 				return err
 			}
