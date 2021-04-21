@@ -144,7 +144,7 @@ Examples: Debian
 
 @deploy-endpoint-then-unenroll-agent
 Scenario Outline: Un-enrolling Elastic Agent stops Elastic Endpoint
-  Given an "Endpoint" is successfully deployed with a "<os>" Agent using "tar" installer
+  Given an Endpoint is successfully deployed with a "<os>" Agent using "tar" installer
   When the agent is un-enrolled
   Then the "elastic-endpoint" process is in the "stopped" state on the host
 
@@ -160,7 +160,7 @@ Examples: Debian
 
 @deploy-endpoint-then-remove-it-from-policy
 Scenario Outline: Removing Endpoint from Agent policy stops the connected Endpoint
-  Given an "Endpoint" is successfully deployed with a "<os>" Agent using "tar" installer
+  Given an Endpoint is successfully deployed with a "<os>" Agent using "tar" installer
   When the "Endpoint Security" integration is "removed" in the policy
   Then the "elastic-endpoint" process is in the "stopped" state on the host
 

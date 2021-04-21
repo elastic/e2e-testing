@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/Flaque/filet"
-	"github.com/elastic/e2e-testing/internal/io"
+	io "github.com/elastic/e2e-testing/cli/internal"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 )
@@ -28,7 +28,7 @@ func TestSanitizeComposeFile_Multiple(t *testing.T) {
 	bytes, err := io.ReadFile(target)
 	assert.Nil(t, err)
 
-	c := composeFile{}
+	c := compose{}
 	err = yaml.Unmarshal(bytes, &c)
 	assert.Nil(t, err)
 
@@ -73,7 +73,7 @@ func TestSanitizeComposeFile_Single(t *testing.T) {
 	bytes, err := io.ReadFile(target)
 	assert.Nil(t, err)
 
-	c := composeFile{}
+	c := compose{}
 	err = yaml.Unmarshal(bytes, &c)
 	assert.Nil(t, err)
 

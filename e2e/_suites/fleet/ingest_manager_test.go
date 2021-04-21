@@ -14,13 +14,9 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
-	"github.com/elastic/e2e-testing/internal/elasticsearch"
-	"github.com/elastic/e2e-testing/internal/installer"
-	"github.com/elastic/e2e-testing/internal/kibana"
-	"github.com/elastic/e2e-testing/internal/shell"
-	"github.com/elastic/e2e-testing/internal/utils"
+	"github.com/elastic/e2e-testing/cli/services"
+	"github.com/elastic/e2e-testing/cli/shell"
+	"github.com/elastic/e2e-testing/e2e"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -29,86 +25,58 @@ var imts IngestManagerTestSuite
 func setUpSuite() {
 	config.Init()
 
-	kibanaClient, err := kibana.NewClient()
-	if err != nil {
-		log.Error(err)
-		os.Exit(1)
-	}
-	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
+	kibanaClient = services.NewKibanaClient()
+
+	developerMode = shell.GetEnvBool("DEVELOPER_MODE")
 	if developerMode {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
 
 	// check if base version is an alias
-	v, err := utils.GetElasticArtifactVersion(common.AgentVersionBase)
+	v, err := e2e.GetElasticArtifactVersion(agentVersionBase)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
-			"version": common.AgentVersionBase,
+			"version": agentVersionBase,
 		}).Fatal("Failed to get agent base version, aborting")
 	}
-	common.AgentVersionBase = v
+	agentVersionBase = v
 
-	common.TimeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", common.TimeoutFactor)
-	common.AgentVersion = shell.GetEnv("BEAT_VERSION", common.AgentVersionBase)
-
-	common.AgentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", common.AgentStaleVersion)
-	// check if stale version is an alias
-	v, err = utils.GetElasticArtifactVersion(common.AgentStaleVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": common.AgentStaleVersion,
-		}).Fatal("Failed to get agent stale version, aborting")
-	}
-	common.AgentStaleVersion = v
-
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
-	if useCISnapshots && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
-		common.AgentStaleVersion += "-SNAPSHOT"
-	}
+	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
+	agentVersion = shell.GetEnv("BEAT_VERSION", agentVersionBase)
 
 	// check if version is an alias
-	v, err = utils.GetElasticArtifactVersion(common.AgentVersion)
+	v, err = e2e.GetElasticArtifactVersion(agentVersion)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
-			"version": common.AgentVersion,
+			"version": agentVersion,
 		}).Fatal("Failed to get agent version, aborting")
 	}
-	common.AgentVersion = v
+	agentVersion = v
 
-	common.StackVersion = shell.GetEnv("STACK_VERSION", common.StackVersion)
-	v, err = utils.GetElasticArtifactVersion(common.StackVersion)
+	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
+	v, err = e2e.GetElasticArtifactVersion(stackVersion)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
-			"version": common.StackVersion,
+			"version": stackVersion,
 		}).Fatal("Failed to get stack version, aborting")
 	}
-	common.StackVersion = v
+	stackVersion = v
 
-	common.KibanaVersion = shell.GetEnv("KIBANA_VERSION", "")
-	if common.KibanaVersion == "" {
+	kibanaVersion = shell.GetEnv("KIBANA_VERSION", "")
+	if kibanaVersion == "" {
 		// we want to deploy a released version for Kibana
 		// if not set, let's use stackVersion
-		common.KibanaVersion, err = utils.GetElasticArtifactVersion(common.StackVersion)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error":   err,
-				"version": common.KibanaVersion,
-			}).Fatal("Failed to get kibana version, aborting")
-		}
+		kibanaVersion = stackVersion
 	}
 
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
-			kibanaClient: kibanaClient,
-			Installers:   map[string]installer.ElasticAgentInstaller{}, // do not pre-initialise the map
+			Installers: map[string]ElasticAgentInstaller{}, // do not pre-initialise the map
 		},
-		StandAlone: &StandAloneTestSuite{
-			kibanaClient: kibanaClient,
-		},
+		StandAlone: &StandAloneTestSuite{},
 	}
 }
 
@@ -140,14 +108,13 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 }
 
 func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
-	serviceManager := compose.NewServiceManager()
+	serviceManager := services.NewServiceManager()
 
 	ctx.BeforeSuite(func() {
 		setUpSuite()
 
 		log.Trace("Installing Fleet runtime dependencies")
 
-<<<<<<< HEAD
 		workDir, _ := os.Getwd()
 		profileEnv = map[string]string{
 			"kibanaConfigPath": path.Join(workDir, "configurations", "kibana.config.yml"),
@@ -157,29 +124,20 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		profileEnv["kibanaDockerNamespace"] = "kibana"
 		if strings.HasPrefix(kibanaVersion, "pr") {
-=======
-		common.ProfileEnv = map[string]string{
-			"kibanaVersion": common.KibanaVersion,
-			"stackVersion":  common.StackVersion,
-		}
-
-		common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
-		if strings.HasPrefix(common.KibanaVersion, "pr") || utils.IsCommit(common.KibanaVersion) {
->>>>>>> 5f596709... v2 refactor (#1008)
 			// because it comes from a PR
-			common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
+			profileEnv["kibanaDockerNamespace"] = "observability-ci"
 		}
 
-		profile := common.FleetProfileName
-		err := serviceManager.RunCompose(context.Background(), true, []string{profile}, common.ProfileEnv)
+		profile := FleetProfileName
+		err := serviceManager.RunCompose(context.Background(), true, []string{profile}, profileEnv)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": profile,
 			}).Fatal("Could not run the runtime dependencies for the profile.")
 		}
 
-		minutesToBeHealthy := time.Duration(common.TimeoutFactor) * time.Minute
-		healthy, err := elasticsearch.WaitForElasticsearch(context.Background(), minutesToBeHealthy)
+		minutesToBeHealthy := time.Duration(timeoutFactor) * time.Minute
+		healthy, err := e2e.WaitForElasticsearch(context.Background(), minutesToBeHealthy)
 		if !healthy {
 			log.WithFields(log.Fields{
 				"error":   err,
@@ -187,14 +145,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
 
-		kibanaClient, err := kibana.NewClient()
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Fatal("Unable to create kibana client")
-		}
-
-		healthyKibana, err := kibanaClient.WaitForReady(minutesToBeHealthy)
+		healthyKibana, err := kibanaClient.WaitForKibana(context.Background(), minutesToBeHealthy)
 		if !healthyKibana {
 			log.WithFields(log.Fields{
 				"error":   err,
@@ -208,10 +159,9 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 	})
 
 	ctx.AfterSuite(func() {
-		developerMode := shell.GetEnvBool("DEVELOPER_MODE")
 		if !developerMode {
 			log.Debug("Destroying Fleet runtime dependencies")
-			profile := common.FleetProfileName
+			profile := FleetProfileName
 
 			err := serviceManager.StopCompose(context.Background(), true, []string{profile})
 			if err != nil {
@@ -224,7 +174,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		installers := imts.Fleet.Installers
 		for k, v := range installers {
-			agentPath := v.BinaryPath
+			agentPath := v.binaryPath
 			if _, err := os.Stat(agentPath); err == nil {
 				err = os.Remove(agentPath)
 				if err != nil {

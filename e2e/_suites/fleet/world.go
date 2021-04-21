@@ -7,11 +7,10 @@ package main
 import (
 	"fmt"
 
-	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/docker"
+	"github.com/elastic/e2e-testing/cli/services"
+	"github.com/elastic/e2e-testing/e2e/steps"
 )
 
-<<<<<<< HEAD
 // developerMode tears down the backend services (ES, Kibana, Package Registry)
 // after a test suite. This is the desired behavior, but when developing, we maybe want to keep
 // them running to speed up the development cycle.
@@ -58,8 +57,6 @@ const kibanaBaseURL = "http://localhost:5601"
 
 var kibanaClient *services.KibanaClient
 
-=======
->>>>>>> 5f596709... v2 refactor (#1008)
 // IngestManagerTestSuite represents a test suite, holding references to the pieces needed to run the tests
 type IngestManagerTestSuite struct {
 	Fleet      *FleetTestSuite
@@ -67,13 +64,13 @@ type IngestManagerTestSuite struct {
 }
 
 func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
-	profile := common.FleetProfileName
-	serviceName := common.ElasticAgentServiceName
+	profile := FleetProfileName
+	serviceName := ElasticAgentServiceName
 
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, imts.Fleet.Image+"-systemd", serviceName, 1)
 	if imts.StandAlone.Hostname != "" {
 		containerName = fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
 	}
 
-	return docker.CheckProcessStateOnTheHost(containerName, process, state, common.TimeoutFactor)
+	return steps.CheckProcessStateOnTheHost(containerName, process, state, timeoutFactor)
 }
