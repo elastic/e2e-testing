@@ -1,5 +1,7 @@
 # Get current directory of a Makefile: https://stackoverflow.com/a/23324703
 
+include ./commons.mk
+
 # Builds cli for all supported platforms
 .PHONY: build
 build:
@@ -33,3 +35,11 @@ notice:
 		-noticeTemplate ./notice/NOTICE.txt.tmpl \
 		-noticeOut NOTICE.txt \
 		-depsOut ""
+
+.PHONY: unit-test
+unit-test: test-report-setup unit-test-dir-cli unit-test-dir-internal
+
+# See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
+.PHONY: unit-test-suite-%
+unit-test-dir-%:
+	cd $* && gotestsum --junitfile "$(PWD)/outputs/TEST-unit-$*.xml" --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
