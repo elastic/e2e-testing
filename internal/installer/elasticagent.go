@@ -6,6 +6,7 @@ package installer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
@@ -63,7 +64,7 @@ func (i *ElasticAgentInstaller) ListElasticAgentWorkingDirContent(containerName 
 // runElasticAgentCommandEnv runs a command for the elastic-agent
 func runElasticAgentCommandEnv(profile string, image string, service string, process string, command string, arguments []string, env map[string]string) error {
 	cmds := []string{
-		process, command,
+		"timeout", fmt.Sprintf("%dm", common.TimeoutFactor), process, command,
 	}
 	cmds = append(cmds, arguments...)
 
