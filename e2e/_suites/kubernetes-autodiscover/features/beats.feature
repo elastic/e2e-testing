@@ -6,8 +6,8 @@ Scenario: Pod is started
   Given a cluster is available
     And configuration for "filebeat" has "hints enabled"
     And "filebeat" is deployed
-  When "a pod" is deployed
-  Then "filebeat" collects events with "kubernetes.pod.name:a-pod"
+   When "a pod" is deployed
+   Then "filebeat" collects events with "kubernetes.pod.name:a-pod"
 
 Scenario: Pod is deleted
   Given a cluster is available
@@ -15,22 +15,22 @@ Scenario: Pod is deleted
     And "filebeat" is deployed
     And "a pod" is deployed
     And "filebeat" collects events with "kubernetes.pod.name:a-pod"
-  When "a pod" is deleted
-  Then "filebeat" stops collecting events
+   When "a pod" is deleted
+   Then "filebeat" stops collecting events
 
 Scenario: Pod is failing
   Given a cluster is available
     And configuration for "filebeat" has "hints enabled"
     And "filebeat" is deployed
-  When "a failing pod" is deployed
-  Then "filebeat" collects events with "kubernetes.pod.name:a-failing-pod"
+   When "a failing pod" is deployed
+   Then "filebeat" collects events with "kubernetes.pod.name:a-failing-pod"
 
 Scenario: Short-living cronjob
   Given a cluster is available
     And configuration for "filebeat" has "hints enabled"
     And "filebeat" is deployed
    When "a short-living cronjob" is deployed
-  Then "filebeat" collects events with "kubernetes.pod.name:a-short-living-cronjob"
+   Then "filebeat" collects events with "kubernetes.pod.name:a-short-living-cronjob"
 
 Scenario: Metrics hints with named ports
   Given a cluster is available

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -15,8 +16,9 @@ import (
 )
 
 type kubernetesControl struct {
-	config    string
-	Namespace string
+	config           string
+	Namespace        string
+	createdNamespace bool
 }
 
 func (c kubernetesControl) WithConfig(config string) kubernetesControl {
@@ -27,18 +29,47 @@ func (c kubernetesControl) WithConfig(config string) kubernetesControl {
 func (c kubernetesControl) WithNamespace(ctx context.Context, namespace string) kubernetesControl {
 	if namespace == "" {
 		namespace = "test-" + uuid.New().String()
-		output, err := c.Run(ctx, "create", "namespace", namespace)
+		err := c.createNamespace(ctx, namespace)
 		if err != nil {
-			log.WithError(err).WithField("output", output).Warn(
-				"failed to create namespace, default will be used")
+			log.WithError(err).Fatalf("Failed to create namespace %s", namespace)
 		}
+		c.createdNamespace = true
 	}
 	c.Namespace = namespace
 	return c
 }
 
+func (c kubernetesControl) createNamespace(ctx context.Context, namespace string) error {
+	if namespace == "" {
+		return nil
+	}
+
+	_, err := c.Run(ctx, "create", "namespace", namespace)
+	if err != nil {
+		return fmt.Errorf("namespace creation failed: %w", err)
+	}
+
+	// Wait for default account to be available, if not it is not possible to
+	// deploy pods in this namespace.
+	timeout := 60 * time.Second
+	timeoutCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	for {
+		_, err := c.Run(ctx, "get", "serviceaccount", "default")
+		if err == nil {
+			return nil
+		}
+		select {
+		case <-timeoutCtx.Done():
+			return fmt.Errorf("namespace was created but it is not ready after %s: %w", timeout, err)
+		default:
+		}
+		time.Sleep(time.Second)
+	}
+}
+
 func (c kubernetesControl) Cleanup(ctx context.Context) error {
-	if c.Namespace != "" {
+	if c.createdNamespace && c.Namespace != "" {
 		output, err := c.Run(ctx, "delete", "namespace", c.Namespace)
 		if err != nil {
 			return fmt.Errorf("failed to delete namespace %s: %v: %s", c.Namespace, err, output)
