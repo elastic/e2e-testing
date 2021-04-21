@@ -1,0 +1,5 @@
+capabilities:
+- rule: allow
+  input: fleet-server
+- rule: deny
+  input: "*"

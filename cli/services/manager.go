@@ -7,11 +7,10 @@ package services
 import (
 	"context"
 	"fmt"
-	"path/filepath"
-
 	"github.com/elastic/e2e-testing/cli/config"
 	state "github.com/elastic/e2e-testing/cli/internal"
 	"go.elastic.co/apm"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	tc "github.com/testcontainers/testcontainers-go"
@@ -19,7 +18,7 @@ import (
 
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
-	AddServicesToCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error
+	AddServicesToCompose(ctx context.Context, profile string, composeNames []string, env map[string]string, composeFilename ...string) error
 	RemoveServicesFromCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error
 	RunCommand(profile string, composeNames []string, composeArgs []string, env map[string]string) error
 	RunCompose(ctx context.Context, isProfile bool, composeNames []string, env map[string]string) error
@@ -36,7 +35,7 @@ func NewServiceManager() ServiceManager {
 }
 
 // AddServicesToCompose adds services to a running docker compose
-func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error {
+func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profile string, composeNames []string, env map[string]string, composeFilename ...string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Add services to Docker Compose", "docker-compose.services.add", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -55,7 +54,7 @@ func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profil
 		persistedEnv[k] = v
 	}
 
-	err := executeCompose(sm, true, newComposeNames, []string{"up", "-d"}, persistedEnv)
+	err := executeCompose(true, newComposeNames, []string{"up", "-d"}, persistedEnv, composeFilename...)
 	if err != nil {
 		return err
 	}
@@ -87,7 +86,7 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(ctx context.Context, p
 		command := []string{"rm", "-fvs"}
 		command = append(command, composeName)
 
-		err := executeCompose(sm, true, newComposeNames, command, persistedEnv)
+		err := executeCompose(true, newComposeNames, command, persistedEnv)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"command": command,
@@ -107,7 +106,7 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(ctx context.Context, p
 
 // RunCommand executes a docker-compose command in a running a docker compose
 func (sm *DockerServiceManager) RunCommand(profile string, composeNames []string, composeArgs []string, env map[string]string) error {
-	return executeCompose(sm, true, composeNames, composeArgs, env)
+	return executeCompose(true, composeNames, composeArgs, env)
 }
 
 // RunCompose runs a docker compose by its name
@@ -117,7 +116,7 @@ func (sm *DockerServiceManager) RunCompose(ctx context.Context, isProfile bool, 
 	})
 	defer span.End()
 
-	return executeCompose(sm, isProfile, composeNames, []string{"up", "-d"}, env)
+	return executeCompose(isProfile, composeNames, []string{"up", "-d"}, env)
 }
 
 // StopCompose stops a docker compose by its name
@@ -147,7 +146,7 @@ func (sm *DockerServiceManager) StopCompose(ctx context.Context, isProfile bool,
 	}
 	persistedEnv := state.Recover(ID, config.Op.Workspace)
 
-	err := executeCompose(sm, isProfile, composeNames, []string{"down", "--remove-orphans"}, persistedEnv)
+	err := executeCompose(isProfile, composeNames, []string{"down", "--remove-orphans"}, persistedEnv)
 	if err != nil {
 		return fmt.Errorf("Could not stop compose file: %v - %v", composeFilePaths, err)
 	}
@@ -161,7 +160,7 @@ func (sm *DockerServiceManager) StopCompose(ctx context.Context, isProfile bool,
 	return nil
 }
 
-func executeCompose(sm *DockerServiceManager, isProfile bool, composeNames []string, command []string, env map[string]string) error {
+func executeCompose(isProfile bool, composeNames []string, command []string, env map[string]string, composeFilename ...string) error {
 	composeFilePaths := make([]string, len(composeNames))
 	for i, composeName := range composeNames {
 		b := false
@@ -169,13 +168,12 @@ func executeCompose(sm *DockerServiceManager, isProfile bool, composeNames []str
 			b = true
 		}
 
-		composeFilePath, err := config.GetComposeFile(b, composeName)
+		composeFilePath, err := config.GetComposeFile(b, composeName, composeFilename...)
 		if err != nil {
 			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
 		}
 		composeFilePaths[i] = composeFilePath
 	}
-
 	compose := tc.NewLocalDockerCompose(composeFilePaths, composeNames[0])
 	execError := compose.
 		WithCommand(command).

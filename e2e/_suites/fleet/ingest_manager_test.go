@@ -130,6 +130,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": profile,
+				"error":   err,
 			}).Fatal("Could not run the runtime dependencies for the profile.")
 		}
 

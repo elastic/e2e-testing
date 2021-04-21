@@ -21,9 +21,11 @@ import (
 
 // StandAloneTestSuite represents the scenarios for Stand-alone-mode
 type StandAloneTestSuite struct {
-	Cleanup  bool
-	Hostname string
-	Image    string
+	Cleanup     bool
+	Hostname    string
+	Image       string
+	PolicyID    string
+	Integration IntegrationPackage
 	// date controls for queries
 	AgentStoppedDate             time.Time
 	RuntimeDependenciesStartDate time.Time
@@ -43,30 +45,67 @@ func (sats *StandAloneTestSuite) afterScenario() {
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
+
+	err := deleteIntegrationFromPolicy(sats.Integration, sats.PolicyID)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err":             err,
+			"packageConfigID": sats.Integration.packageConfigID,
+			"configurationID": sats.PolicyID,
+		}).Warn("The integration could not be deleted from the configuration")
+	}
+
 }
 
 func (sats *StandAloneTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed$`, sats.aStandaloneAgentIsDeployed)
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode$`, sats.aStandaloneAgentIsDeployedWithFleetServerMode)
+	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode on cloud$`, sats.aStandaloneAgentIsDeployedWithFleetServerModeOnCloud)
 	s.Step(`^there is new data in the index from agent$`, sats.thereIsNewDataInTheIndexFromAgent)
 	s.Step(`^the "([^"]*)" docker container is stopped$`, sats.theDockerContainerIsStopped)
 	s.Step(`^there is no new data in the index after agent shuts down$`, sats.thereIsNoNewDataInTheIndexAfterAgentShutsDown)
 	s.Step(`^the stand-alone agent is listed in Fleet as "([^"]*)"$`, sats.theAgentIsListedInFleetWithStatus)
+	s.Step(`^the "([^"]*)" integration is added to the policy$`, sats.theIntegrationIsAddedToThePolicy)
+	s.Step(`^the "([^"]*)" datasource is shown in the policy$`, sats.thePolicyShowsTheDatasourceAdded)
+}
+
+func (sats *StandAloneTestSuite) theIntegrationIsAddedToThePolicy(packageName string) (err error) {
+	sats.Integration, err = theIntegrationIsOperatedInThePolicy(sats.PolicyID, packageName, "added")
+	return
+}
+
+func (sats *StandAloneTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) (err error) {
+	sats.Integration, err = thePolicyShowsTheDatasourceAdded(sats.PolicyID, packageName, true)
+	return
 }
 
 func (sats *StandAloneTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
 	return theAgentIsListedInFleetWithStatus(desiredStatus, sats.Hostname)
 }
 
+func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployedWithFleetServerModeOnCloud(image string) error {
+	defaultPolicy, err := getAgentDefaultPolicy(true)
+	if err != nil {
+		return err
+	}
+	sats.PolicyID = defaultPolicy.Path("id").Data().(string)
+	return sats.startAgent(image, "docker-compose-cloud.yml", nil)
+}
+
 func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployedWithFleetServerMode(image string) error {
-	return sats.startAgent(image, map[string]string{"fleetServerMode": "1"})
+	defaultPolicy, err := getAgentDefaultPolicy(true)
+	if err != nil {
+		return err
+	}
+	sats.PolicyID = defaultPolicy.Path("id").Data().(string)
+	return sats.startAgent(image, "", map[string]string{"fleetServerMode": "1"})
 }
 
 func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error {
-	return sats.startAgent(image, nil)
+	return sats.startAgent(image, "", nil)
 }
 
-func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string) error {
+func (sats *StandAloneTestSuite) startAgent(image, composeFilename string, env map[string]string) error {
 
 	log.Trace("Deploying an agent to Fleet")
 
@@ -104,7 +143,8 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 		profileEnv[k] = v
 	}
 
-	err := serviceManager.AddServicesToCompose(context.Background(), FleetProfileName, []string{ElasticAgentServiceName}, profileEnv)
+	err := serviceManager.AddServicesToCompose(context.Background(),
+		FleetProfileName, []string{ElasticAgentServiceName}, profileEnv, composeFilename)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err

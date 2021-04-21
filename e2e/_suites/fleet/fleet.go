@@ -123,7 +123,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 	fts.Version = agentVersion
 
 	// create policy with system monitoring enabled
-	defaultPolicy, err := getAgentDefaultPolicy()
+	defaultPolicy, err := getAgentDefaultPolicy(false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,
@@ -645,9 +645,14 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 	return nil
 }
 
-func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) error {
+func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) (err error) {
+	fts.Integration, err = thePolicyShowsTheDatasourceAdded(fts.PolicyID, packageName, false)
+	return err
+}
+
+func thePolicyShowsTheDatasourceAdded(policyID, packageName string, fleetServerMode bool) (IntegrationPackage, error) {
 	log.WithFields(log.Fields{
-		"policyID": fts.PolicyID,
+		"policyID": policyID,
 		"package":  packageName,
 	}).Trace("Checking if the policy shows the package added")
 
@@ -656,18 +661,17 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 
 	exp := e2e.GetExponentialBackOff(maxTimeout)
 
-	integration, err := getIntegrationFromAgentPolicy(packageName, fts.PolicyID)
+	integration, err := getIntegrationFromAgentPolicy(packageName, policyID)
 	if err != nil {
-		return err
+		return integration, err
 	}
-	fts.Integration = integration
 
 	configurationIsPresentFn := func() error {
-		defaultPolicy, err := getAgentDefaultPolicy()
+		defaultPolicy, err := getAgentDefaultPolicy(fleetServerMode)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":    err,
-				"policyID": fts.PolicyID,
+				"policyID": policyID,
 				"retry":    retryCount,
 			}).Warn("An error retrieving the policy happened")
 
@@ -680,18 +684,18 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 
 		for _, child := range packagePolicies.Children() {
 			id := child.Data().(string)
-			if id == fts.Integration.packageConfigID {
+			if id == integration.packageConfigID {
 				log.WithFields(log.Fields{
-					"packageConfigID": fts.Integration.packageConfigID,
-					"policyID":        fts.PolicyID,
+					"packageConfigID": integration.packageConfigID,
+					"policyID":        policyID,
 				}).Info("The integration was found in the policy")
 				return nil
 			}
 		}
 
 		log.WithFields(log.Fields{
-			"packageConfigID": fts.Integration.packageConfigID,
-			"policyID":        fts.PolicyID,
+			"packageConfigID": integration.packageConfigID,
+			"policyID":        policyID,
 			"retry":           retryCount,
 		}).Warn("The integration was not found in the policy")
 
@@ -701,58 +705,60 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 	}
 
 	err = backoff.Retry(configurationIsPresentFn, exp)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return integration, err
 }
 
-func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName string, action string) error {
+func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName string, action string) (err error) {
+	fts.Integration, err = theIntegrationIsOperatedInThePolicy(fts.PolicyID, packageName, action)
+	return
+}
+
+func theIntegrationIsOperatedInThePolicy(policyID, packageName string, action string) (IntegrationPackage, error) {
 	log.WithFields(log.Fields{
 		"action":   action,
-		"policyID": fts.PolicyID,
+		"policyID": policyID,
 		"package":  packageName,
 	}).Trace("Doing an operation for a package on a policy")
+	integration := IntegrationPackage{}
 
 	if strings.ToLower(action) == actionADDED {
 		name, version, err := getIntegrationLatestVersion(packageName)
 		if err != nil {
-			return err
+			return integration, err
 		}
 
-		fts.Integration, err = getIntegration(name, version)
+		integration, err = getIntegration(name, version)
 		if err != nil {
-			return err
+			return integration, err
 		}
 
-		integrationPolicyID, err := addIntegrationToPolicy(fts.Integration, fts.PolicyID)
+		integrationPolicyID, err := addIntegrationToPolicy(integration, policyID)
 		if err != nil {
-			return err
+			return integration, err
 		}
 
-		fts.Integration.packageConfigID = integrationPolicyID
-		return nil
+		integration.packageConfigID = integrationPolicyID
+		return integration, nil
+
 	} else if strings.ToLower(action) == actionREMOVED {
-		integration, err := getIntegrationFromAgentPolicy(packageName, fts.PolicyID)
+		integration, err := getIntegrationFromAgentPolicy(packageName, policyID)
 		if err != nil {
-			return err
+			return integration, err
 		}
-		fts.Integration = integration
 
-		err = deleteIntegrationFromPolicy(fts.Integration, fts.PolicyID)
+		err = deleteIntegrationFromPolicy(integration, policyID)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"err":             err,
-				"packageConfigID": fts.Integration.packageConfigID,
-				"policyID":        fts.PolicyID,
+				"packageConfigID": integration.packageConfigID,
+				"policyID":        policyID,
 			}).Error("The integration could not be deleted from the policy")
-			return err
+			return integration, err
 		}
-		return nil
+		return integration, nil
 	}
 
-	return godog.ErrPending
+	return integration, godog.ErrPending
 }
 
 func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp() error {
@@ -1374,7 +1380,7 @@ func deployAgentToFleet(installer ElasticAgentInstaller, containerName string, t
 }
 
 // getAgentDefaultPolicy sends a GET request to Fleet for the existing default policy
-func getAgentDefaultPolicy() (*gabs.Container, error) {
+func getAgentDefaultPolicy(fleetServerMode bool) (*gabs.Container, error) {
 	r := createDefaultHTTPRequest(ingestManagerAgentPoliciesURL)
 	body, err := curl.Get(r)
 	if err != nil {
@@ -1402,10 +1408,21 @@ func getAgentDefaultPolicy() (*gabs.Container, error) {
 		"count": len(policies.Children()),
 	}).Trace("Fleet policies retrieved")
 
-	// TODO: perform a strong check to capture default policy
-	defaultPolicy := policies.Index(0)
+	for _, policy := range policies.Children() {
+		if fleetServerMode && policy.Path("name").String() == "\"Default Fleet Server policy\"" {
+			return policy, nil
+		}
+		if !fleetServerMode && policy.Path("name").String() == "\"Default policy\"" {
+			return policy, nil
+		}
+	}
 
-	return defaultPolicy, nil
+	err = errors.New("No default policy found")
+	log.WithFields(log.Fields{
+		"policies": policies.String(),
+	}).Error(err.Error())
+
+	return nil, err
 }
 
 func getAgentEvents(applicationName string, agentID string, packagePolicyID string, updatedAt string) error {

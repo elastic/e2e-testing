@@ -63,32 +63,7 @@ func addIntegrationToPolicy(integrationPackage IntegrationPackage, policyID stri
 		Package:       integrationPackage,
 		Inputs:        []Input{},
 	}
-
-	if policy.Package.Name == "linux" {
-		policy.Inputs = []Input{
-			{
-				Type:    "linux/metrics",
-				Enabled: true,
-				Streams: []interface{}{
-					map[string]interface{}{
-						"id":      "linux/metrics-linux.memory-" + uuid.New().String(),
-						"enabled": true,
-						"data_stream": map[string]interface{}{
-							"dataset": "linux.memory",
-							"type":    "metrics",
-						},
-					},
-				},
-				Vars: map[string]Var{
-					"period": {
-						Value: "1s",
-						Type:  "string",
-					},
-				},
-			},
-		}
-	}
-
+	policy.Inputs = inputs(policy.Package.Name)
 	body, err := kibanaClient.AddIntegrationToPolicy(policy)
 	if err != nil {
 		return "", err
@@ -113,6 +88,48 @@ func addIntegrationToPolicy(integrationPackage IntegrationPackage, policyID stri
 	}).Info("Integration added to the configuration")
 
 	return integrationConfigurationID, nil
+}
+
+func inputs(integration string) []Input {
+	switch integration {
+	case "linux":
+		return []Input{
+			{
+				Type:    "linux/metrics",
+				Enabled: true,
+				Streams: []interface{}{
+					map[string]interface{}{
+						"id":      "linux/metrics-linux.memory-" + uuid.New().String(),
+						"enabled": true,
+						"data_stream": map[string]interface{}{
+							"dataset": "linux.memory",
+							"type":    "metrics",
+						},
+					},
+				},
+				Vars: map[string]Var{
+					"period": {
+						Value: "1s",
+						Type:  "string",
+					},
+				},
+			}}
+	case "apm":
+		return []Input{
+			{
+				Type:    "apm",
+				Enabled: true,
+				Streams: []interface{}{},
+				Vars: map[string]Var{
+					"apm-server": {
+						Value: "host",
+						Type:  "localhost:8200",
+					},
+				},
+			},
+		}
+	}
+	return nil
 }
 
 // deleteIntegrationFromPolicy sends a POST request to Fleet deleting an integration from a configuration
