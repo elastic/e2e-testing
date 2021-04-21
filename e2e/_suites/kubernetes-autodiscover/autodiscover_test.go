@@ -27,16 +27,13 @@ const defaultDeployWaitTimeout = 120 * time.Second
 type podsManager struct {
 	kubectl kubernetesControl
 	ctx     context.Context
-
-	configurations map[string][]string
 }
 
-func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, funcmap template.FuncMap) error {
+func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, options []string) error {
 	path := filepath.Join("testdata/templates", sanitizeName(podName)+".yml.tmpl")
 
 	funcs := template.FuncMap{
 		"option": func(o string) bool {
-			options := m.configurations[podName]
 			for _, option := range options {
 				if o == option {
 					return true
@@ -50,9 +47,6 @@ func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, funcm
 		"namespace": func() string {
 			return m.kubectl.Namespace
 		},
-	}
-	for name, f := range funcmap {
-		funcs[name] = f
 	}
 
 	t, err := template.New(filepath.Base(path)).Funcs(funcs).ParseFiles(path)
@@ -72,36 +66,9 @@ func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, funcm
 	return nil
 }
 
-func (m *podsManager) configurationForHas(podName, option string) error {
-	used := false
-	funcs := template.FuncMap{
-		"option": func(o string) bool {
-			if o == option {
-				used = true
-			}
-			return true
-		},
-	}
-	err := m.executeTemplateFor(podName, ioutil.Discard, funcs)
-	if err != nil {
-		return err
-	}
-	if !used {
-		log.Debugf("option '%s' is not used in template for '%s'", option, podName)
-		return godog.ErrPending
-	}
-
-	if m.configurations == nil {
-		m.configurations = make(map[string][]string)
-	}
-	m.configurations[podName] = append(m.configurations[podName], option)
-
-	return nil
-}
-
-func (m *podsManager) isDeleted(podName string) error {
+func (m *podsManager) isDeleted(podName string, options []string) error {
 	var buf bytes.Buffer
-	err := m.executeTemplateFor(podName, &buf, nil)
+	err := m.executeTemplateFor(podName, &buf, options)
 	if err != nil {
 		return err
 	}
@@ -113,9 +80,9 @@ func (m *podsManager) isDeleted(podName string) error {
 	return nil
 }
 
-func (m *podsManager) isDeployed(podName string) error {
+func (m *podsManager) isDeployed(podName string, options []string) error {
 	var buf bytes.Buffer
-	err := m.executeTemplateFor(podName, &buf, nil)
+	err := m.executeTemplateFor(podName, &buf, options)
 	if err != nil {
 		return err
 	}
@@ -127,8 +94,8 @@ func (m *podsManager) isDeployed(podName string) error {
 	return nil
 }
 
-func (m *podsManager) isRunning(podName string) error {
-	err := m.isDeployed(podName)
+func (m *podsManager) isRunning(podName string, options []string) error {
+	err := m.isDeployed(podName, options)
 	if err != nil {
 		return err
 	}
@@ -141,6 +108,19 @@ func (m *podsManager) isRunning(podName string) error {
 		return fmt.Errorf("waiting for instance of '%s': %w", podName, err)
 	}
 	return nil
+}
+
+func (m *podsManager) resourceIs(podName string, state string, options ...string) error {
+	switch state {
+	case "running":
+		return m.isRunning(podName, options)
+	case "deployed":
+		return m.isDeployed(podName, options)
+	case "deleted":
+		return m.isDeleted(podName, options)
+	default:
+		return godog.ErrPending
+	}
 }
 
 func (m *podsManager) collectsEventsWith(podName string, condition string) error {
@@ -332,12 +312,15 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 		cancel()
 	})
 
-	ctx.Step(`^"([^"]*)" have passed`, func(d string) error { return waitDuration(scenarioCtx, d) })
+	ctx.Step(`^"([^"]*)" have passed$`, func(d string) error { return waitDuration(scenarioCtx, d) })
 
-	ctx.Step(`^configuration for "([^"]*)" has "([^"]*)"$`, pods.configurationForHas)
-	ctx.Step(`^"([^"]*)" is deleted$`, pods.isDeleted)
-	ctx.Step(`^"([^"]*)" is deployed$`, pods.isDeployed)
-	ctx.Step(`^"([^"]*)" is running$`, pods.isRunning)
+	ctx.Step(`^"([^"]*)" is ([a-z]*)$`, func(name, state string) error {
+		return pods.resourceIs(name, state)
+	})
+	ctx.Step(`^"([^"]*)" is ([a-z]*) with "([^"]*)"$`, func(name, state, option string) error {
+		return pods.resourceIs(name, state, option)
+	})
+
 	ctx.Step(`^"([^"]*)" collects events with "([^"]*:[^"]*)"$`, pods.collectsEventsWith)
 	ctx.Step(`^"([^"]*)" stops collecting events$`, pods.stopsCollectingEvents)
 }
