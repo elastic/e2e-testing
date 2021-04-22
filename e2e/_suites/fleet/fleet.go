@@ -407,15 +407,18 @@ func (fts *FleetTestSuite) getServiceName(i installer.ElasticAgentInstaller) str
 }
 
 func (fts *FleetTestSuite) getInstaller() installer.ElasticAgentInstaller {
+	bootstrappedAgent := fts.FleetServerHostname == ""
+
+	key := fmt.Sprintf("%s-%s-%s-%t", fts.Image, fts.InstallerType, fts.Version, bootstrappedAgent)
 	// check if the agent is already cached
-	if i, exists := fts.Installers[fts.Image+"-"+fts.InstallerType+"-"+fts.Version]; exists {
+	if i, exists := fts.Installers[key]; exists {
 		return i
 	}
 
 	agentInstaller := installer.GetElasticAgentInstaller(fts.Image, fts.InstallerType, fts.Version, fts.FleetServerHostname)
 
 	// cache the new installer
-	fts.Installers[fts.Image+"-"+fts.InstallerType+"-"+fts.Version] = agentInstaller
+	fts.Installers[key] = agentInstaller
 
 	return agentInstaller
 }
