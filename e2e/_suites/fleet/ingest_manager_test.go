@@ -146,7 +146,6 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		log.Trace("Installing Fleet runtime dependencies")
 
-<<<<<<< HEAD
 		common.ProfileEnv = map[string]string{
 			"kibanaVersion": common.KibanaVersion,
 			"stackVersion":  common.StackVersion,
@@ -156,10 +155,6 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		if strings.HasPrefix(common.KibanaVersion, "pr") || utils.IsCommit(common.KibanaVersion) {
 			// because it comes from a PR
 			common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
-=======
-		profileEnv = map[string]string{
-			"stackVersion": stackVersion,
->>>>>>> ae5b9fe3... cli: enable loading default profiles turnkey (#943)
 		}
 
 		profile := common.FleetProfileName
