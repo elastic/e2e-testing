@@ -184,12 +184,63 @@ func (m *podsManager) collectsEventsWith(podName string, condition string) error
 		return fmt.Errorf("invalid condition '%s'", condition)
 	}
 
-	tmpDir, err := ioutil.TempDir(os.TempDir(), "test-")
-	if err != nil {
-		return fmt.Errorf("failed to create temporary directory: %w", err)
-	}
-	defer os.RemoveAll(tmpDir)
+	return m.waitForEventsCondition(podName, func(ctx context.Context, localPath string) (bool, error) {
+		ok, err := containsEventsWith(localPath, condition)
+		if ok {
+			return true, nil
+		}
+		if err != nil {
+			log.Debugf("Error checking if %v contains %v: %v", localPath, condition, err)
+		}
+		return false, nil
+	})
+}
 
+func (m *podsManager) doesNotCollectEvents(podName, condition, duration string) error {
+	_, _, ok := splitCondition(condition)
+	if !ok {
+		return fmt.Errorf("invalid condition '%s'", condition)
+	}
+
+	d, err := time.ParseDuration(duration)
+	if err != nil {
+		return fmt.Errorf("invalid duration %s: %w", d, err)
+	}
+
+	return m.waitForEventsCondition(podName, func(ctx context.Context, localPath string) (bool, error) {
+		events, err := readEventsWith(localPath, condition)
+		if err != nil {
+			return false, err
+		}
+		// No events ever received, so condition satisfied.
+		if len(events) == 0 {
+			return true, nil
+		}
+
+		lastEvent := events[len(events)-1]
+		lastTimestamp, ok := lastEvent["@timestamp"].(string)
+		if !ok {
+			return false, fmt.Errorf("event %v doesn't contain a @timestamp", lastEvent)
+		}
+		t, err := time.Parse(time.RFC3339, lastTimestamp)
+		if err != nil {
+			return false, fmt.Errorf("failed to parse @timestamp %s: %w", lastTimestamp, err)
+		}
+		if sinceLast := time.Now().Sub(t); sinceLast <= d {
+			// Condition cannot be satisfied until the duration has passed after the last
+			// event. So wait till then.
+			select {
+			case <-ctx.Done():
+			case <-time.After(d - sinceLast):
+			}
+			return false, nil
+		}
+
+		return true, nil
+	})
+}
+
+func (m *podsManager) waitForEventsCondition(podName string, conditionFn func(ctx context.Context, localPath string) (bool, error)) error {
 	ctx, cancel := context.WithTimeout(m.ctx, defaultEventsWaitTimeout)
 	defer cancel()
 
@@ -198,17 +249,23 @@ func (m *podsManager) collectsEventsWith(podName string, condition string) error
 		return fmt.Errorf("failed to get pod name: %w", err)
 	}
 
+	tmpDir, err := ioutil.TempDir(os.TempDir(), "test-")
+	if err != nil {
+		return fmt.Errorf("failed to create temporary directory: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
 	containerPath := fmt.Sprintf("%s/%s:/tmp/beats-events", m.kubectl.Namespace, instances[0])
 	localPath := filepath.Join(tmpDir, "events")
 	for {
 		_, err := m.kubectl.Run(ctx, "cp", "--no-preserve", containerPath, localPath)
 		if err == nil {
-			ok, err := containsEventsWith(localPath, condition)
+			ok, err := conditionFn(ctx, localPath)
 			if ok {
-				break
+				return nil
 			}
 			if err != nil {
-				log.Debugf("Error checking if %v contains %v: %v", localPath, condition, err)
+				return err
 			}
 		} else {
 			log.Debugf("Failed to copy events from %s to %s: %s", containerPath, localPath, err)
@@ -217,7 +274,7 @@ func (m *podsManager) collectsEventsWith(podName string, condition string) error
 		select {
 		case <-time.After(1 * time.Second):
 		case <-ctx.Done():
-			return fmt.Errorf("timeout waiting for events with %s", condition)
+			return fmt.Errorf("timeout waiting for events condition")
 		}
 	}
 
@@ -272,17 +329,26 @@ func flattenMap(m map[string]interface{}) map[string]interface{} {
 }
 
 func containsEventsWith(path string, condition string) (bool, error) {
+	events, err := readEventsWith(path, condition)
+	if err != nil {
+		return false, err
+	}
+	return len(events) > 0, nil
+}
+
+func readEventsWith(path string, condition string) ([]map[string]interface{}, error) {
 	key, value, ok := splitCondition(condition)
 	if !ok {
-		return false, fmt.Errorf("invalid condition '%s'", condition)
+		return nil, fmt.Errorf("invalid condition '%s'", condition)
 	}
 
 	f, err := os.Open(path)
 	if err != nil {
-		return false, fmt.Errorf("opening %s: %w", path, err)
+		return nil, fmt.Errorf("opening %s: %w", path, err)
 	}
 	defer f.Close()
 
+	var events []map[string]interface{}
 	decoder := json.NewDecoder(f)
 	for decoder.More() {
 		var event map[string]interface{}
@@ -291,38 +357,34 @@ func containsEventsWith(path string, condition string) (bool, error) {
 			break
 		}
 		if err != nil {
-			return false, fmt.Errorf("decoding event: %w", err)
+			return nil, fmt.Errorf("decoding event: %w", err)
 		}
 
 		event = flattenMap(event)
 		if v, ok := event[key]; ok && fmt.Sprint(v) == value {
-			return true, nil
+			events = append(events, event)
 		}
 	}
 
-	return false, nil
+	return events, nil
 }
 
 func sanitizeName(name string) string {
 	return strings.ReplaceAll(strings.ToLower(name), " ", "-")
 }
 
-func waitDuration(ctx context.Context, d string) error {
-	duration, err := time.ParseDuration(d)
+func waitDuration(ctx context.Context, duration string) error {
+	d, err := time.ParseDuration(duration)
 	if err != nil {
 		return fmt.Errorf("invalid duration %s: %w", d, err)
 	}
 
 	select {
-	case <-time.After(duration):
+	case <-time.After(d):
 	case <-ctx.Done():
 	}
 
 	return nil
-}
-
-func (m *podsManager) stopsCollectingEvents(podName string, duration string) error {
-	return godog.ErrPending
 }
 
 var cluster kubernetesCluster
@@ -377,6 +439,6 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	})
 
 	ctx.Step(`^"([^"]*)" collects events with "([^"]*:[^"]*)"$`, pods.collectsEventsWith)
-	ctx.Step(`^"([^"]*)" stops collecting events after ""([^"]*)"$`, pods.stopsCollectingEvents)
+	ctx.Step(`^"([^"]*)" does not collect events with "([^"]*)" during "([^"]*)"$`, pods.doesNotCollectEvents)
 	ctx.Step(`^an ephemeral container is started in "([^"]*)"$`, pods.startEphemeralContainerIn)
 }

@@ -11,10 +11,10 @@ Scenario: Pod is started
 
 Scenario: Pod is deleted
   Given "metricbeat" is running with "hints enabled"
-    And "a pod" is deployed
-    And "metricbeat" collects events with "kubernetes.pod.name:a-pod"
-   When "a pod" is deleted
-   Then "metricbeat" stops collecting events
+    And "redis" is deployed with "metrics annotations"
+    And "metricbeat" collects events with "kubernetes.pod.name:redis"
+   When "redis" is deleted
+   Then "metricbeat" does not collect events with "kubernetes.pod.name:redis" during "30s"
 
 Scenario: Pod is failing
   Given "filebeat" is running with "hints enabled"
@@ -46,8 +46,8 @@ Scenario: Ephemeral container in a pod
 
 Scenario: Metrics hints with named ports
   Given "metricbeat" is running with "hints enabled"
-   When "a pod" is deployewd with "metrics annotations with named port"
-   Then "metricbeat" collects events with "kubernetes.pod.name:a-pod"
+   When "redis" is deployed with "metrics annotations"
+   Then "metricbeat" collects events with "kubernetes.pod.name:redis"
 
 Scenario: Monitor hints with named ports
   Given "heartbeat" is running with "hints enabled"
