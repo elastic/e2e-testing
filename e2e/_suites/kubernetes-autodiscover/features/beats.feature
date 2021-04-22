@@ -49,7 +49,7 @@ Scenario: Metrics hints with named ports
    When "redis" is deployed with "metrics annotations with named port"
    Then "metricbeat" collects events with "kubernetes.pod.name:redis"
 
-Scenario: Monitor hints with named ports
-  Given "heartbeat" is running with "hints enabled"
-   When "a service" is deployed with "monitor annotations with named port"
-   Then "heartbeat" collects events with "kubernetes.service.name:a-service"
+Scenario: Monitor hints for pods with named ports
+  Given "heartbeat" is running with "hints enabled for pods"
+   When "redis" is deployed with "monitor annotations with named port"
+   Then "heartbeat" collects events with "kubernetes.pod.name:redis"
