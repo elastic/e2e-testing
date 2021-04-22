@@ -49,6 +49,11 @@ func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, optio
 		"namespace": func() string {
 			return m.kubectl.Namespace
 		},
+		// Can be used to add owner references so cluster-level resources
+		// are removed when removing the namespace.
+		"namespace_uid": func() string {
+			return m.kubectl.NamespaceUID
+		},
 	}
 
 	t, err := template.New(filepath.Base(path)).Funcs(funcs).ParseFiles(path)

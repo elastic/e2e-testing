@@ -18,6 +18,7 @@ import (
 type kubernetesControl struct {
 	config           string
 	Namespace        string
+	NamespaceUID     string
 	createdNamespace bool
 }
 
@@ -35,6 +36,11 @@ func (c kubernetesControl) WithNamespace(ctx context.Context, namespace string) 
 		}
 		c.createdNamespace = true
 	}
+	uid, err := c.Run(ctx, "get", "namespace", namespace, "-o", "jsonpath={.metadata.uid}")
+	if err != nil {
+		log.WithError(err).Fatalf("Failed to get namespace %s uid", namespace)
+	}
+	c.NamespaceUID = uid
 	c.Namespace = namespace
 	return c
 }
@@ -66,6 +72,8 @@ func (c kubernetesControl) createNamespace(ctx context.Context, namespace string
 		}
 		time.Sleep(time.Second)
 	}
+
+	return nil
 }
 
 func (c kubernetesControl) Cleanup(ctx context.Context) error {
