@@ -108,8 +108,10 @@ func downloadAgentBinary(artifactName string, artifact string, version string) (
 // GetElasticAgentInstaller returns an installer from a docker image
 func GetElasticAgentInstaller(image string, installerType string, version string, fleetServerHost string) ElasticAgentInstaller {
 	log.WithFields(log.Fields{
-		"image":     image,
-		"installer": installerType,
+		"fleetServerHost": fleetServerHost,
+		"image":           image,
+		"installer":       installerType,
+		"version":         version,
 	}).Debug("Configuring installer for the agent")
 
 	var installer ElasticAgentInstaller
