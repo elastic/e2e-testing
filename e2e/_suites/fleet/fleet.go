@@ -323,8 +323,8 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 
 	profile := agentInstaller.Profile // name of the runtime dependencies compose file
 
-	serviceName := common.ElasticAgentServiceName                                              // name of the service
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", serviceName, 1) // name of the container
+	serviceName := common.ElasticAgentServiceName                                        // name of the service
+	containerName := fts.getContainerName(profile, fts.Image+"-systemd", serviceName, 1) // name of the container
 
 	// enroll the agent with a new token
 	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.FleetPolicy)
@@ -358,6 +358,13 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	fts.Hostname = hostname
 
 	return err
+}
+
+// getContainerName returns the current container name for the service:
+// we are using the Docker client instead of docker-compose because it does not support
+// returning the output of a command: it simply returns error level
+func (fts *FleetTestSuite) getContainerName(profile string, image string, service string, index int) {
+	return fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", service, 1)
 }
 
 // getServiceName returns the current service name, the one defined at the docker compose
@@ -439,11 +446,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		return err
 	}
 
-	// name of the container for the service:
-	// we are using the Docker client instead of docker-compose
-	// because it does not support returning the output of a
-	// command: it simply returns error level
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", common.ElasticAgentServiceName, 1)
+	containerName := fts.getContainerName(profile, fts.Image+"-systemd", common.ElasticAgentServiceName, 1)
 
 	return docker.CheckProcessStateOnTheHost(containerName, process, "stopped", common.TimeoutFactor)
 }
@@ -542,11 +545,7 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 
 	profile := agentInstaller.Profile // name of the runtime dependencies compose file
 
-	// name of the container for the service:
-	// we are using the Docker client instead of docker-compose
-	// because it does not support returning the output of a
-	// command: it simply returns error level
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", common.ElasticAgentServiceName, 1)
+	containerName := fts.getContainerName(profile, fts.Image+"-systemd", common.ElasticAgentServiceName, 1)
 
 	content, err := agentInstaller.ListElasticAgentWorkingDirContent(containerName)
 	if err != nil {
@@ -567,7 +566,7 @@ func (fts *FleetTestSuite) theHostIsRestarted() error {
 	image := agentInstaller.Image     // image of the service
 	service := agentInstaller.Service // name of the service
 
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", common.ElasticAgentServiceName, 1)
+	containerName := fts.getContainerName(profile, fts.Image+"-systemd", common.ElasticAgentServiceName, 1)
 	_, err := shell.Execute(context.Background(), ".", "docker", "stop", containerName)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -1057,7 +1056,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 	profile := agentInstaller.Profile // name of the runtime dependencies compose file
 
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", common.ElasticAgentServiceName, 2) // name of the new container
+	containerName := fts.getContainerName(profile, fts.Image+"-systemd", common.ElasticAgentServiceName, 2) // name of the new container
 
 	fleetConfig, err := deployAgentToFleet(agentInstaller, containerName, fts.CurrentToken, fts.FleetServerHostname)
 	// the installation process for TAR includes the enrollment
