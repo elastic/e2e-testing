@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"strings"
 	"time"
 
@@ -351,6 +352,11 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 }
 
 func (fts *FleetTestSuite) getInstaller() installer.ElasticAgentInstaller {
+	if runtime.GOOS == "windows" {
+		agentInstaller := installer.GetElasticAgentWindowsInstaller(fts.Version)
+		return agentInstaller
+	}
+
 	// check if the agent is already cached
 	if i, exists := fts.Installers[fts.Image+"-"+fts.InstallerType+"-"+fts.Version]; exists {
 		return i

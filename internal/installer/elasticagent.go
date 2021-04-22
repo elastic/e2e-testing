@@ -105,6 +105,16 @@ func downloadAgentBinary(artifactName string, artifact string, version string) (
 	return imagePath, nil
 }
 
+// GetElasticAgentWindowsInstaller returns an installer for Windows
+func GetElasticAgentWindowsInstaller(version string) ElasticAgentInstaller {
+	installer, err := newWindowsInstaller(version)
+	if err != nil {
+		log.WithField("error", err).Fatal("Could not load the Windows installer")
+		return ElasticAgentInstaller{}
+	}
+	return installer
+}
+
 // GetElasticAgentInstaller returns an installer from a docker image
 func GetElasticAgentInstaller(image string, installerType string, version string) ElasticAgentInstaller {
 	log.WithFields(log.Fields{

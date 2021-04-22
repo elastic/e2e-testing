@@ -173,7 +173,7 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 		PostInstallFn:     installerPackage.Postinstall,
 		PreInstallFn:      installerPackage.Preinstall,
 		PrintLogsFn:       installerPackage.PrintLogs,
-		processName:       common.ElasticAgentProcessName,
+		processName:       common.GetElasticAgentProcessName(),
 		Profile:           profile,
 		Service:           service,
 		Tag:               version,
