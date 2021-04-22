@@ -19,6 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/internal/utils"
 )
 
 const defaultBeatVersion = "8.0.0-SNAPSHOT"
@@ -44,8 +45,11 @@ func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, optio
 			}
 			return false
 		},
+		"beats_namespace": func() string {
+			return utils.GetDockerNamespaceEnvVar("beats")
+		},
 		"beats_version": func() string {
-			return shell.GetEnv("BEAT_VERSION", defaultBeatVersion)
+			return shell.GetEnv("GITHUB_CHECK_SHA1", shell.GetEnv("BEAT_VERSION", defaultBeatVersion))
 		},
 		"namespace": func() string {
 			return m.kubectl.Namespace
