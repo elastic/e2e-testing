@@ -53,10 +53,7 @@ type FleetTestSuite struct {
 func (fts *FleetTestSuite) afterScenario() {
 	serviceManager := compose.NewServiceManager()
 
-	serviceName := fts.Image + "-systemd"
-	if fts.FleetServerHostname == "" {
-		serviceName = "fleet-server-" + fts.Image
-	}
+	serviceName := fts.getServiceName()
 
 	if log.IsLevelEnabled(log.DebugLevel) {
 		agentInstaller := fts.getInstaller()
@@ -361,6 +358,16 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	fts.Hostname = hostname
 
 	return err
+}
+
+// getServiceName returns the current service name, the one defined at the docker compose
+func (fts *FleetTestSuite) getServiceName() {
+	serviceName := fts.Image + "-systemd"
+	if fts.FleetServerHostname == "" {
+		serviceName = "fleet-server-" + fts.Image
+	}
+
+	return serviceName
 }
 
 func (fts *FleetTestSuite) getInstaller() installer.ElasticAgentInstaller {
