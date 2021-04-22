@@ -1221,7 +1221,7 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containe
 		return nil, err
 	}
 
-	cfg, cfgError := kibana.NewFleetConfig(token, bootstrapFleetServer, fleetServerHost)
+	cfg, cfgError := kibana.NewFleetConfig(token, fleetServerHost)
 	if cfgError != nil {
 		return nil, cfgError
 	}
