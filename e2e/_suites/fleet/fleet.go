@@ -356,7 +356,12 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	containerName := fts.getContainerName(agentInstaller, 1) // name of the container
 
 	// enroll the agent with a new token
-	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.FleetPolicy)
+	policy := fts.Policy
+	if bootstrapFleetServer {
+		policy = fts.FleetPolicy
+	}
+
+	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(policy)
 	if err != nil {
 		return err
 	}
