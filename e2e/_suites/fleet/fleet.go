@@ -45,9 +45,6 @@ type FleetTestSuite struct {
 	PolicyUpdatedAt     string // the moment the policy was updated
 	Version             string // current elastic-agent version
 	kibanaClient        *kibana.Client
-	// integrations
-	Integration     IntegrationPackage // the installed integration
-	PolicyUpdatedAt string             // the moment the policy was updated
 	// fleet server
 	FleetServerHostname string // hostname of the fleet server. If empty, it means the agent is the first one, bootstrapping fleet server
 }
