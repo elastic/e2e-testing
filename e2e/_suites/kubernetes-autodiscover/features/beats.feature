@@ -46,7 +46,7 @@ Scenario: Ephemeral container in a pod
 
 Scenario: Metrics hints with named ports
   Given "metricbeat" is running with "hints enabled"
-   When "redis" is deployed with "metrics annotations"
+   When "redis" is deployed with "metrics annotations with named port"
    Then "metricbeat" collects events with "kubernetes.pod.name:redis"
 
 Scenario: Monitor hints with named ports

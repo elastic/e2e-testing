@@ -8,6 +8,11 @@ metadata:
     co.elastic.metrics/hosts: "${data.host}:6379"
     co.elastic.metrics/period: "5s"
 {{ end }}
+{{ if option "metrics annotations with named port" }}
+    co.elastic.metrics/module: redis
+    co.elastic.metrics/hosts: "${data.host}:${data.ports.redis}"
+    co.elastic.metrics/period: "5s"
+{{ end }}
 spec:
   containers:
   - image: redis
