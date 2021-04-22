@@ -29,6 +29,21 @@ Scenario: Short-living cronjob
     And "60s" have passed
    Then "filebeat" collects events with "kubernetes.container.name:cronjob-container"
 
+Scenario: Init container in a pod
+  Given "filebeat" is running with "hints enabled"
+   When "a pod" is deployed with "init container"
+   Then "filebeat" collects events with "kubernetes.container.name:init-container"
+    And "filebeat" collects events with "kubernetes.container.name:container-in-pod"
+
+# Ephemeral containers need to be explicitly enabled in the API server with the
+# `EphemeralContainers` feature flag.
+Scenario: Ephemeral container in a pod
+  Given "filebeat" is running with "hints enabled"
+    And "a pod" is deployed
+    And "filebeat" collects events with "kubernetes.container.name:container-in-pod"
+   When an ephemeral container is started in "a pod"
+   Then "filebeat" collects events with "kubernetes.container.name:ephemeral-container"
+
 Scenario: Metrics hints with named ports
   Given "metricbeat" is running with "hints enabled"
    When "a pod" is deployewd with "metrics annotations with named port"

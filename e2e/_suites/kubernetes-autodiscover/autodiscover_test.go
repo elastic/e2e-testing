@@ -137,6 +137,47 @@ func (m *podsManager) resourceIs(podName string, state string, options ...string
 	}
 }
 
+// This only works as JSON, not as YAML.
+// From https://kubernetes.io/docs/concepts/workloads/pods/ephemeral-containers/#ephemeral-containers-api
+const ephemeralContainerTemplate = `
+{
+    "apiVersion": "v1",
+    "kind": "EphemeralContainers",
+    "metadata": {
+        "name": "{{ .podName }}"
+    },
+    "ephemeralContainers": [{
+        "name": "ephemeral-container",
+        "command": [
+          "/bin/sh", "-c",
+          "while true; do echo Hi from an ephemeral container; sleep 1; done"
+        ],
+        "image": "busybox",
+        "imagePullPolicy": "IfNotPresent",
+        "stdin": true,
+        "tty": true,
+        "terminationMessagePolicy": "File"
+    }]
+}
+`
+
+func (m *podsManager) startEphemeralContainerIn(podName string) error {
+	podName = sanitizeName(podName)
+	t := template.Must(template.New("ephemeral-container").Parse(ephemeralContainerTemplate))
+	var buf bytes.Buffer
+	err := t.Execute(&buf, map[string]string{"podName": podName})
+	if err != nil {
+		return fmt.Errorf("executing ephemeral-container template: %w", err)
+	}
+
+	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/ephemeralcontainers", m.kubectl.Namespace, podName)
+	_, err = m.kubectl.RunWithStdin(m.ctx, &buf, "replace", "--raw", path, "-f", "-")
+	if err != nil {
+		return fmt.Errorf("failed to create ephemeral container: %w. Is EphemeralContainers feature flag enabled in the cluster?", err)
+	}
+	return nil
+}
+
 func (m *podsManager) collectsEventsWith(podName string, condition string) error {
 	_, _, ok := splitCondition(condition)
 	if !ok {
@@ -280,7 +321,7 @@ func waitDuration(ctx context.Context, d string) error {
 	return nil
 }
 
-func (m *podsManager) stopsCollectingEvents(podName string) error {
+func (m *podsManager) stopsCollectingEvents(podName string, duration string) error {
 	return godog.ErrPending
 }
 
@@ -336,5 +377,6 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	})
 
 	ctx.Step(`^"([^"]*)" collects events with "([^"]*:[^"]*)"$`, pods.collectsEventsWith)
-	ctx.Step(`^"([^"]*)" stops collecting events$`, pods.stopsCollectingEvents)
+	ctx.Step(`^"([^"]*)" stops collecting events after ""([^"]*)"$`, pods.stopsCollectingEvents)
+	ctx.Step(`^an ephemeral container is started in "([^"]*)"$`, pods.startEphemeralContainerIn)
 }

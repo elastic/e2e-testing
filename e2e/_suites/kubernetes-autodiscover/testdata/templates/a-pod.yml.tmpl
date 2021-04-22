@@ -2,27 +2,22 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: a-pod
-  annotations:
-{{ if option "annotations at container level" }}
-    co.elastic.logs.redis/module: redis
-    co.elastic.logs.redis/fileset.stdout: log
-    co.elastic.metrics.redis/module: redis
-    co.elastic.metrics.redis/hosts: "${data.host}:6379"
-    co.elastic.metrics.redis/hosts: "${data.host}:6379"
-    co.elastic.monitor.redis/type: icmp
-    co.elastic.monitor.redis/hosts: "${data.host}"
-{{ end }}
-{{ if option "metrics annotations with named port" }}
-    co.elastic.metrics/module: redis
-    co.elastic.metrics/hosts: "${data.host}:${data.ports.redis}"
-{{ end }}
-    dummy: test
 spec:
-  containers:
-  - image: redis
+{{ if option "init container" }}
+  initContainers:
+  - name: init-container
+    image: busybox
     imagePullPolicy: IfNotPresent
-    name: redis
-    ports:
-    - name: redis
-      containerPort: 6379
-      protocol: TCP
+    command:
+    - /bin/sh
+    - -c
+    - echo Hi from an init container
+{{ end }}
+  containers:
+  - name: container-in-pod
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    command:
+    - /bin/sh
+    - -c
+    - while true; do echo Hi from a container in a pod; sleep 1; done

@@ -66,11 +66,11 @@ func (c kubernetesControl) createNamespace(ctx context.Context, namespace string
 			return nil
 		}
 		select {
+		case <-time.After(1 * time.Second):
 		case <-timeoutCtx.Done():
 			return fmt.Errorf("namespace was created but it is not ready after %s: %w", timeout, err)
 		default:
 		}
-		time.Sleep(time.Second)
 	}
 
 	return nil
@@ -138,6 +138,7 @@ func (c *kubernetesCluster) initialize(ctx context.Context) error {
 
 	output, err := shell.Execute(ctx, ".", "kind", "create", "cluster",
 		"--name", name,
+		"--config", "testdata/kind.yml",
 		"--kubeconfig", c.kubeconfig,
 	)
 	if err != nil {
