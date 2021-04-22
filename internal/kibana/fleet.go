@@ -43,7 +43,7 @@ func NewFleetConfig(token string, fleetServerHost string) (*FleetConfig, error) 
 		KibanaPort:               5601,
 		KibanaURI:                "kibana",
 		FleetServerPort:          8220,
-		FleetServerURI:           "localhost",
+		FleetServerURI:           fleetServerHost,
 	}
 
 	client, err := NewClient()
