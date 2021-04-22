@@ -17,6 +17,8 @@ metadata:
     co.elastic.monitor/type: tcp
     co.elastic.monitor/hosts: "${data.host}:${data.ports.redis}"
 {{ end }}
+  labels:
+    k8s-app: redis
 spec:
   containers:
   - image: redis

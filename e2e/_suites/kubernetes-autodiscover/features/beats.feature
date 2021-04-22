@@ -1,7 +1,7 @@
 @kubernetes
 @autodiscover
 @beats
-Feature: Beats
+Feature: Kubernetes autodiscover with Beats
   Use Kubernetes autodiscover features in Beats to monitor pods
 
 Scenario: Pod is started
@@ -53,3 +53,18 @@ Scenario: Monitor hints for pods with named ports
   Given "heartbeat" is running with "hints enabled for pods"
    When "redis" is deployed with "monitor annotations with named port"
    Then "heartbeat" collects events with "kubernetes.pod.name:redis"
+    And "heartbeat" collects events with "monitor.status:up"
+
+Scenario: Monitor hints for services
+  Given "heartbeat" is running with "hints enabled for services"
+   When "redis service" is deployed with "monitor annotations"
+   Then "heartbeat" collects events with "kubernetes.service.name:redis"
+    And "heartbeat" collects events with "monitor.status:down"
+   When "redis" is running
+    And "heartbeat" collects events with "monitor.status:up"
+    And "heartbeat" does not collect events with "monitor.status:down" during "20s"
+
+Scenario: Monitor hints for nodes
+  Given "heartbeat" is running with "hints enabled for nodes"
+   Then "heartbeat" collects events with "url.port:10250"
+    And "heartbeat" collects events with "monitor.status:up"
