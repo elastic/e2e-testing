@@ -13,6 +13,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
 	messages "github.com/cucumber/messages-go/v10"
 	log "github.com/sirupsen/logrus"
@@ -257,50 +258,38 @@ func (m *podsManager) waitForEventsCondition(podName string, conditionFn func(ct
 
 	containerPath := fmt.Sprintf("%s/%s:/tmp/beats-events", m.kubectl.Namespace, instances[0])
 	localPath := filepath.Join(tmpDir, "events")
-	for {
+	exp := backoff.WithContext(backoff.NewConstantBackOff(1*time.Second), ctx)
+	return backoff.Retry(func() error {
 		_, err := m.kubectl.Run(ctx, "cp", "--no-preserve", containerPath, localPath)
-		if err == nil {
-			ok, err := conditionFn(ctx, localPath)
-			if ok {
-				return nil
-			}
-			if err != nil {
-				return err
-			}
-		} else {
+		if err != nil {
 			log.Debugf("Failed to copy events from %s to %s: %s", containerPath, localPath, err)
+			return err
 		}
-
-		select {
-		case <-time.After(1 * time.Second):
-		case <-ctx.Done():
-			return fmt.Errorf("timeout waiting for events condition")
+		ok, err := conditionFn(ctx, localPath)
+		if !ok {
+			return fmt.Errorf("events do not satisfy condition")
 		}
-	}
-
-	return nil
+		return nil
+	}, exp)
 }
 
-func (m *podsManager) getPodInstances(ctx context.Context, podName string) ([]string, error) {
+func (m *podsManager) getPodInstances(ctx context.Context, podName string) (instances []string, err error) {
 	app := sanitizeName(podName)
-	for {
+	ticker := backoff.WithContext(backoff.NewConstantBackOff(1*time.Second), ctx)
+	err = backoff.Retry(func() error {
 		output, err := m.kubectl.Run(ctx, "get", "pods",
 			"-l", "k8s-app="+app,
 			"--template", `{{range .items}}{{ if eq .status.phase "Running" }}{{.metadata.name}}{{"\n"}}{{ end }}{{end}}`)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		if output != "" {
-			instances := strings.Split(strings.TrimSpace(output), "\n")
-			return instances, nil
+		if output == "" {
+			return fmt.Errorf("no running pods with label k8s-app=%s found", app)
 		}
-
-		select {
-		case <-time.After(1 * time.Second):
-		case <-ctx.Done():
-			return nil, fmt.Errorf("timeout waiting for running pods with label k8s-app=%s", app)
-		}
-	}
+		instances = strings.Split(strings.TrimSpace(output), "\n")
+		return nil
+	}, ticker)
+	return
 }
 
 func splitCondition(c string) (key string, value string, ok bool) {

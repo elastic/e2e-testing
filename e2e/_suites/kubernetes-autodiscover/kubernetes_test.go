@@ -9,9 +9,11 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/shell"
 )
 
@@ -58,22 +60,14 @@ func (c kubernetesControl) createNamespace(ctx context.Context, namespace string
 	// Wait for default account to be available, if not it is not possible to
 	// deploy pods in this namespace.
 	timeout := 60 * time.Second
-	timeoutCtx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	for {
+	exp := backoff.WithContext(common.GetExponentialBackOff(timeout), ctx)
+	return backoff.Retry(func() error {
 		_, err := c.Run(ctx, "get", "serviceaccount", "default")
-		if err == nil {
-			return nil
+		if err != nil {
+			return fmt.Errorf("namespace was created but still not ready: %w", err)
 		}
-		select {
-		case <-time.After(1 * time.Second):
-		case <-timeoutCtx.Done():
-			return fmt.Errorf("namespace was created but it is not ready after %s: %w", timeout, err)
-		default:
-		}
-	}
-
-	return nil
+		return nil
+	}, exp)
 }
 
 func (c kubernetesControl) Cleanup(ctx context.Context) error {
