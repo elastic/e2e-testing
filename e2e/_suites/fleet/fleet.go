@@ -393,7 +393,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		}
 
 		// signal that the elastic-agent was uninstalled
-		if process == common.ElasticAgentProcessName {
+		if process == common.GetElasticAgentProcessName() {
 			fts.ElasticAgentStopped = true
 		}
 

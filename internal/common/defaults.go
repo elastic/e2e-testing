@@ -4,17 +4,10 @@
 
 package common
 
-// ElasticAgentProcessName the name of the process for the Elastic Agent
-const ElasticAgentProcessName = "elastic-agent"
+import "runtime"
 
 // ElasticAgentServiceName the name of the service for the Elastic Agent
 const ElasticAgentServiceName = "elastic-agent"
-
-// ElasticEndpointIntegrationTitle title for the Elastic Endpoint integration in the package registry.
-// This value could change depending on the version of the package registry
-// We are using the title because the feature files have to be super readable
-// and the title is more readable than the name
-const ElasticEndpointIntegrationTitle = "Endpoint Security"
 
 // FleetProfileName the name of the profile to run the runtime, backend services
 const FleetProfileName = "fleet"
@@ -41,3 +34,11 @@ var KibanaVersion = AgentVersionBase
 // ProfileEnv is the environment to be applied to any execution
 // affecting the runtime dependencies (or profile)
 var ProfileEnv map[string]string
+
+// GetElasticAgentProcessName returns the elastic agent process name
+func GetElasticAgentProcessName() string {
+	if runtime.GOOS == "windows" {
+		return "elastic-agent.exe"
+	}
+	return "elastic-agent"
+}

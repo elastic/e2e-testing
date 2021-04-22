@@ -130,7 +130,7 @@ func getElasticAgentHash(containerName string, commitFile string) (string, error
 
 // SystemctlRun runs systemctl in profile or service
 func SystemctlRun(profile string, image string, service string, command string) error {
-	cmd := []string{"systemctl", command, common.ElasticAgentProcessName}
+	cmd := []string{"systemctl", command, common.GetElasticAgentProcessName()}
 	sm := compose.NewServiceManager()
 	err := sm.ExecCommandInService(profile, image, service, cmd, common.ProfileEnv, false)
 	if err != nil {

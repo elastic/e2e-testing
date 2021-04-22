@@ -111,7 +111,7 @@ func (i *TARPackage) Preinstall() error {
 func (i *TARPackage) Uninstall() error {
 	args := []string{"-f"}
 
-	return runElasticAgentCommandEnv(i.profile, i.image, i.service, common.ElasticAgentProcessName, "uninstall", args, map[string]string{})
+	return runElasticAgentCommandEnv(i.profile, i.image, i.service, common.GetElasticAgentProcessName(), "uninstall", args, map[string]string{})
 }
 
 // WithArch sets the architecture
@@ -179,7 +179,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 	logFile := logsDir + "/" + logFileName
 
 	enrollFn := func(cfg *kibana.FleetConfig) error {
-		return runElasticAgentCommandEnv(profile, dockerImage, service, common.ElasticAgentProcessName, "enroll", cfg.Flags(), map[string]string{})
+		return runElasticAgentCommandEnv(profile, dockerImage, service, common.GetElasticAgentProcessName(), "enroll", cfg.Flags(), map[string]string{})
 	}
 
 	//
@@ -206,7 +206,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 		PostInstallFn:     installerPackage.Postinstall,
 		PreInstallFn:      installerPackage.Preinstall,
 		PrintLogsFn:       installerPackage.PrintLogs,
-		processName:       common.ElasticAgentProcessName,
+		processName:       common.GetElasticAgentProcessName(),
 		Profile:           profile,
 		Service:           service,
 		Tag:               tag,

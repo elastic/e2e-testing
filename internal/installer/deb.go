@@ -92,7 +92,7 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 	}
 
 	enrollFn := func(cfg *kibana.FleetConfig) error {
-		return runElasticAgentCommandEnv(profile, image, service, common.ElasticAgentProcessName, "enroll", cfg.Flags(), map[string]string{})
+		return runElasticAgentCommandEnv(profile, image, service, common.GetElasticAgentProcessName(), "enroll", cfg.Flags(), map[string]string{})
 	}
 
 	workingDir := "/var/lib/elastic-agent"
@@ -122,7 +122,7 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 		PostInstallFn:     installerPackage.Postinstall,
 		PreInstallFn:      installerPackage.Preinstall,
 		PrintLogsFn:       installerPackage.PrintLogs,
-		processName:       common.ElasticAgentProcessName,
+		processName:       common.GetElasticAgentProcessName(),
 		Profile:           profile,
 		Service:           service,
 		Tag:               tag,
