@@ -321,9 +321,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 
 	agentInstaller := fts.getInstaller()
 
-	profile := agentInstaller.Profile // name of the runtime dependencies compose file
-
-	containerName := fts.getContainerName(profile, 1) // name of the container
+	containerName := fts.getContainerName(agentInstaller, 1) // name of the container
 
 	// enroll the agent with a new token
 	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.FleetPolicy)
@@ -362,12 +360,12 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 // getContainerName returns the current container name for the service:
 // we are using the Docker client instead of docker-compose because it does not support
 // returning the output of a command: it simply returns error level
-func (fts *FleetTestSuite) getContainerName(profile string, index int) {
-	return fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", common.ElasticAgentServiceName, 1)
+func (fts *FleetTestSuite) getContainerName(i installer.ElasticAgentInstaller, index int) string {
+	return fmt.Sprintf("%s_%s_%s_%d", i.Profile, i.Image, common.ElasticAgentServiceName, 1)
 }
 
 // getServiceName returns the current service name, the one defined at the docker compose
-func (fts *FleetTestSuite) getServiceName() {
+func (fts *FleetTestSuite) getServiceName() string {
 	serviceName := fts.Image + "-systemd"
 	if fts.FleetServerHostname == "" {
 		serviceName = "fleet-server-" + fts.Image
@@ -445,7 +443,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		return err
 	}
 
-	containerName := fts.getContainerName(profile, 1)
+	containerName := fts.getContainerName(agentInstaller, 1)
 
 	return docker.CheckProcessStateOnTheHost(containerName, process, "stopped", common.TimeoutFactor)
 }
@@ -542,9 +540,7 @@ func theAgentIsListedInFleetWithStatus(desiredStatus string, hostname string) er
 func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 	agentInstaller := fts.getInstaller()
 
-	profile := agentInstaller.Profile // name of the runtime dependencies compose file
-
-	containerName := fts.getContainerName(profile, 1)
+	containerName := fts.getContainerName(agentInstaller, 1)
 
 	content, err := agentInstaller.ListElasticAgentWorkingDirContent(containerName)
 	if err != nil {
@@ -561,11 +557,10 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 func (fts *FleetTestSuite) theHostIsRestarted() error {
 	agentInstaller := fts.getInstaller()
 
-	profile := agentInstaller.Profile // name of the runtime dependencies compose file
 	image := agentInstaller.Image     // image of the service
 	service := agentInstaller.Service // name of the service
 
-	containerName := fts.getContainerName(profile, 1)
+	containerName := fts.getContainerName(agentInstaller, 1)
 	_, err := shell.Execute(context.Background(), ".", "docker", "stop", containerName)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -1053,9 +1048,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 	agentInstaller := fts.getInstaller()
 
-	profile := agentInstaller.Profile // name of the runtime dependencies compose file
-
-	containerName := fts.getContainerName(profile, 2) // name of the new container
+	containerName := fts.getContainerName(agentInstaller, 2) // name of the new container
 
 	fleetConfig, err := deployAgentToFleet(agentInstaller, containerName, fts.CurrentToken, fts.FleetServerHostname)
 	// the installation process for TAR includes the enrollment
