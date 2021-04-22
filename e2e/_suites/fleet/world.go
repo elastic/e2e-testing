@@ -20,7 +20,7 @@ type IngestManagerTestSuite struct {
 func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
 	profile := common.FleetProfileName
 
-	containerName := imts.Fleet.getContainerName(profile, imts.Fleet.Image+"-systemd", 1)
+	containerName := imts.Fleet.getContainerName(profile, 1)
 	if imts.StandAlone.Hostname != "" {
 		containerName = fmt.Sprintf("%s_%s_%d", profile, common.ElasticAgentServiceName, 1)
 	}
