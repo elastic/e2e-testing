@@ -17,7 +17,7 @@ import (
 var deployToProfile string
 
 func init() {
-	config.InitConfig()
+	config.Init()
 
 	for k := range config.AvailableServices() {
 		// deploy command

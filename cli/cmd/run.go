@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"context"
+	"os"
 	"strings"
 
 	"github.com/elastic/e2e-testing/cli/config"
@@ -20,7 +21,7 @@ var versionToRun string
 var environmentItems map[string]string
 
 func init() {
-	config.InitConfig()
+	config.Init()
 
 	rootCmd.AddCommand(runCmd)
 
@@ -89,7 +90,11 @@ func buildRunProfileCommand(key string, profile config.Profile) *cobra.Command {
 	return &cobra.Command{
 		Use:   key,
 		Short: `Runs the ` + profile.Name + ` profile`,
-		Long:  `Runs the ` + profile.Name + ` profile, spinning up the Services that compound it`,
+		Long: `Runs the ` + profile.Name + ` profile, spinning up the Services that compound it
+
+Example:
+  go run main.go run profile fleet -s elastic-agent:8.0.0-SNAPSHOT
+`,
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := compose.NewServiceManager()
 
@@ -116,6 +121,13 @@ func buildRunProfileCommand(key string, profile config.Profile) *cobra.Command {
 			if len(servicesToRun) > 0 {
 				for _, srv := range servicesToRun {
 					arr := strings.Split(srv, ":")
+					if len(arr) != 2 {
+						log.WithFields(log.Fields{
+							"profile":  key,
+							"services": servicesToRun,
+						}).Error("Unable to determine the <image>:<tag>, please make sure to use a known docker tag format, eg. `elastic-agent:8.0.0-SNAPSHOT`")
+						os.Exit(1)
+					}
 					image := arr[0]
 					tag := arr[1]
 
