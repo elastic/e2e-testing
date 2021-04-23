@@ -592,15 +592,13 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 func (fts *FleetTestSuite) theHostIsRestarted() error {
 	agentInstaller := fts.getInstaller()
 
-	image := agentInstaller.Image     // image of the service
-	service := agentInstaller.Service // name of the service
-
 	containerName := fts.getContainerName(agentInstaller, 1)
 	_, err := shell.Execute(context.Background(), ".", "docker", "stop", containerName)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"image":   image,
-			"service": service,
+			"containerName": containerName,
+			"image":         agentInstaller.Image,
+			"service":       agentInstaller.Service,
 		}).Error("Could not stop the service")
 	}
 
@@ -609,14 +607,16 @@ func (fts *FleetTestSuite) theHostIsRestarted() error {
 	_, err = shell.Execute(context.Background(), ".", "docker", "start", containerName)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"image":   image,
-			"service": service,
+			"containerName": containerName,
+			"image":         agentInstaller.Image,
+			"service":       agentInstaller.Service,
 		}).Error("Could not start the service")
 	}
 
 	log.WithFields(log.Fields{
-		"image":   image,
-		"service": service,
+		"containerName": containerName,
+		"image":         agentInstaller.Image,
+		"service":       agentInstaller.Service,
 	}).Debug("The service has been restarted")
 	return nil
 }
