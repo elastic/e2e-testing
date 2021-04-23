@@ -140,11 +140,11 @@ func InitConfig() {
 	if Op != nil {
 		return
 	}
-	newConfig(OpDir())
+	newConfig(opDir())
 }
 
-// OpDir returns the directory to copy to
-func OpDir() string {
+// opDir returns the directory to copy to
+func opDir() string {
 	home, err := homedir.Dir()
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -228,7 +228,7 @@ func PutServiceVariantEnvironment(env map[string]string, service string, service
 func checkConfigDirectory(dir string) {
 	found, err := io.Exists(dir)
 	if found && err == nil {
-		return
+		os.RemoveAll(dir)
 	}
 	_ = io.MkdirAll(dir)
 }

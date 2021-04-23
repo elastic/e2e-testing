@@ -7,7 +7,6 @@ package main
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -131,8 +130,6 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 		if imts.Fleet.Cleanup {
 			imts.Fleet.afterScenario()
 		}
-
-		os.RemoveAll(filepath.Join(config.OpDir(), "compose"))
 	})
 
 	ctx.Step(`^the "([^"]*)" process is in the "([^"]*)" state on the host$`, imts.processStateOnTheHost)
