@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -130,6 +131,8 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 		if imts.Fleet.Cleanup {
 			imts.Fleet.afterScenario()
 		}
+
+		os.RemoveAll(filepath.Join(config.OpDir(), "compose"))
 	})
 
 	ctx.Step(`^the "([^"]*)" process is in the "([^"]*)" state on the host$`, imts.processStateOnTheHost)
@@ -162,6 +165,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": profile,
+				"error":   err.Error(),
 			}).Fatal("Could not run the runtime dependencies for the profile.")
 		}
 
