@@ -1,6 +1,6 @@
 @kubernetes
 @autodiscover
-@beats
+@heartbeat
 Feature: Monitor uptime of Kubernetes resources
   Use Kubernetes autodiscover features in Heartbeat to monitor pods, services and nodes.
 

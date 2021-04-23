@@ -1,6 +1,6 @@
 @kubernetes
 @autodiscover
-@beats
+@metricbeat
 Feature: Metrics collection from services deployed in Kubernetes.
   Use Kubernetes autodiscover features in Metricbeat to discover services and
   collect metrics from them.

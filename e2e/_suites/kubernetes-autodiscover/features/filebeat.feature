@@ -1,6 +1,6 @@
 @kubernetes
 @autodiscover
-@beats
+@filebeat
 Feature: Log collection from Kubernetes pods.
   Use Kubernetes autodiscover features in Filebeat to collect logs.
 
