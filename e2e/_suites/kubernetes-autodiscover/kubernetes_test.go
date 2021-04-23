@@ -121,6 +121,11 @@ func (c *kubernetesCluster) initialize(ctx context.Context) error {
 
 	log.Info("Kubernetes cluster not available, will start one using kind")
 	shell.CheckInstalledSoftware("kind")
+	kindVersion, err := shell.Execute(ctx, ".", "kind", "version")
+	if err != nil {
+		log.WithError(err).Fatal("Failed to get kind version")
+	}
+	log.Infof("Using %s", kindVersion)
 
 	c.tmpDir, err = ioutil.TempDir(os.TempDir(), "test-")
 	if err != nil {
