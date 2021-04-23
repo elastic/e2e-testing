@@ -32,7 +32,6 @@ SUITES:
         tags: "backend_processes"
   - suite: "metricbeat"
     platforms:
-      - "arm64"
       - "ubuntu-18.04"
     scenarios:
       - name: "ActiveMQ"
