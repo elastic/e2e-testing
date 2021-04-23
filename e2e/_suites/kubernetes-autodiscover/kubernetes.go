@@ -164,6 +164,7 @@ func (c *kubernetesCluster) cleanup(ctx context.Context) {
 			log.Warnf("Failed to delete kind cluster %s", c.kindName)
 		}
 		c.kindName = ""
+		log.Infof("kind cluster %s was deleted", c.kindName)
 	}
 	if c.tmpDir != "" {
 		err := os.RemoveAll(c.tmpDir)
