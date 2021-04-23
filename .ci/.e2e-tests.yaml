@@ -67,8 +67,8 @@ SUITES:
       - "ubuntu-18.04"
     scenarios:
       - name: "kubernetes autodiscover with filebeat"
-        tags: "kubernetes && autodiscover && filebeat"
+        tags: "kubernetes-autodiscover && filebeat"
       - name: "kubernetes autodiscover with heartbeat"
-        tags: "kubernetes && autodiscover && heartbeat"
+        tags: "kubernetes-autodiscover && heartbeat"
       - name: "kubernetes autodiscover with metricbeat"
-        tags: "kubernetes && autodiscover && metricbeat"
+        tags: "kubernetes-autodiscover && metricbeat"

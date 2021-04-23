@@ -1,7 +1,6 @@
-@kubernetes
-@autodiscover
+@kubernetes-autodiscover
 @heartbeat
-Feature: Monitor uptime of Kubernetes resources
+Feature: Heartbeat
   Use Kubernetes autodiscover features in Heartbeat to monitor pods, services and nodes.
 
 Scenario: Monitor pod availability using hints with named ports
@@ -12,8 +11,8 @@ Scenario: Monitor pod availability using hints with named ports
 
 Scenario: Monitor service availability using hints
   Given "heartbeat" is running with "hints enabled for services"
-   When "redis service" is deployed with "monitor annotations"
-    And "redis" is running
+    And "redis service" is deployed with "monitor annotations"
+   When "redis" is running
    Then "heartbeat" collects events with "kubernetes.service.name:redis"
     And "heartbeat" collects events with "monitor.status:up"
     And "heartbeat" does not collect events with "monitor.status:down" during "20s"
@@ -27,6 +26,6 @@ Scenario: Monitor service unavailability using hints
     And "heartbeat" does not collect events with "monitor.status:up" during "20s"
 
 Scenario: Monitor nodes using hints
-  Given "heartbeat" is running with "hints enabled for nodes"
+   When "heartbeat" is running with "hints enabled for nodes"
    Then "heartbeat" collects events with "url.port:10250"
     And "heartbeat" collects events with "monitor.status:up"
