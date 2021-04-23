@@ -51,7 +51,7 @@ template, such as the following ones:
 * `"filebeat" is running` deploys the template `filebeat.yml.tmpl` and waits for
   filebeat pods to be running. This step expects some pod to be labeled with
   `k8s-app:filebeat`.
-* `"a service" is deployed deploys the resources in the template
+* `"a service" is deployed` deploys the resources in the template
   `a-service.yml.tmpl`, and continues without expecting any state of the
   deployed resources.
 * `"a pod" is deleted` deletes the resources defined in the template
