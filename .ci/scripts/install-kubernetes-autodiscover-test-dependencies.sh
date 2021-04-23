@@ -9,24 +9,24 @@ set -euxo pipefail
 # Install the dependencies using the install and test make goals.
 #
 # Parameters:
-#   - KUBERNETES_AUTODISCOVER_KIND_VERSION - that's the Kind version which will be installed and enabled.
-#   - KUBERNETES_AUTODISCOVER_KUBECTL_VERSION - that's the Kubernetes version which will be installed and enabled.
+#   - KIND_VERSION - that's the Kind version which will be installed and enabled.
+#   - KUBERNETES_VERSION - that's the Kubernetes version which will be installed and enabled.
 #
 
 MSG="parameter missing."
 HOME=${HOME:?$MSG}
 
-KUBERNETES_AUTODISCOVER_KIND_VERSION="v${KUBERNETES_AUTODISCOVER_KIND_VERSION:-"0.10.0"}"
-KUBERNETES_AUTODISCOVER_KUBECTL_VERSION="${KUBERNETES_AUTODISCOVER_KUBECTL_VERSION:-"1.20.5"}"
+KIND_VERSION="v${KIND_VERSION:-"0.10.0"}"
+KUBERNETES_VERSION="${KUBERNETES_VERSION:-"1.18.2"}"
 
 KUBECTL_CMD="${HOME}/bin/kubectl"
 
 # Install kind as a Go binary
-GO111MODULE="on" go get sigs.k8s.io/kind@${KUBERNETES_AUTODISCOVER_KIND_VERSION}
+GO111MODULE="on" go get sigs.k8s.io/kind@${KIND_VERSION}
 
 mkdir -p "${HOME}/bin"
 
 # Install kubectl
-curl -sSLo "${KUBECTL_CMD}" "https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_AUTODISCOVER_KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+curl -sSLo "${KUBECTL_CMD}" "https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl"
 chmod +x "${KUBECTL_CMD}"
 ${KUBECTL_CMD} version --client

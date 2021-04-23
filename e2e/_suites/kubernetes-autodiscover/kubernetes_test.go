@@ -135,11 +135,17 @@ func (c *kubernetesCluster) initialize(ctx context.Context) error {
 	name := "kind-" + uuid.New().String()
 	c.kubeconfig = filepath.Join(c.tmpDir, "kubeconfig")
 
-	output, err := shell.Execute(ctx, ".", "kind", "create", "cluster",
+	args := []string{
+		"create", "cluster",
 		"--name", name,
 		"--config", "testdata/kind.yml",
 		"--kubeconfig", c.kubeconfig,
-	)
+	}
+	if version, ok := os.LookupEnv("KUBERNETES_VERSION"); ok && version != "" {
+		log.Infof("Installing Kubernetes v%s", version)
+		args = append(args, "--image", "kindest/node:v"+version)
+	}
+	output, err := shell.Execute(ctx, ".", "kind", args...)
 	if err != nil {
 		log.WithError(err).WithField("output", output).Fatal("Failed to create kind cluster")
 		return err
