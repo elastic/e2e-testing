@@ -54,7 +54,7 @@ func (sats *StandAloneTestSuite) afterScenario() {
 
 func (sats *StandAloneTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed$`, sats.aStandaloneAgentIsDeployed)
-	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode$`, sats.aStandaloneAgentIsDeployedWithFleetServerMode)
+	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode$`, sats.bootstrapFleetServerFromAStandaloneAgent)
 	s.Step(`^there is new data in the index from agent$`, sats.thereIsNewDataInTheIndexFromAgent)
 	s.Step(`^the "([^"]*)" docker container is stopped$`, sats.theDockerContainerIsStopped)
 	s.Step(`^there is no new data in the index after agent shuts down$`, sats.thereIsNoNewDataInTheIndexAfterAgentShutsDown)
@@ -87,7 +87,7 @@ func (sats *StandAloneTestSuite) theStandaloneAgentIsListedInFleetWithStatus(des
 	return nil
 }
 
-func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployedWithFleetServerMode(image string) error {
+func (sats *StandAloneTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string) error {
 	return sats.startAgent(image, map[string]string{"fleetServerMode": "1"})
 }
 

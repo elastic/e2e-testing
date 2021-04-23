@@ -4,7 +4,7 @@
 
 package main
 
-func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerInFleetMode(image string, installerType string) error {
+func (fts *FleetTestSuite) bootstrapFleetServerWithInstaller(image string, installerType string) error {
 	fts.ElasticAgentStopped = true
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType, true)
 }
