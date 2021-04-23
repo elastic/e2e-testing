@@ -20,12 +20,13 @@ type IngestManagerTestSuite struct {
 func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
 	profile := common.FleetProfileName
 
-	agentInstaller := imts.Fleet.getInstaller()
-
-	containerName := imts.Fleet.getContainerName(agentInstaller, 1)
+	var containerName string
 
 	if imts.StandAlone.Hostname != "" {
 		containerName = fmt.Sprintf("%s_%s_%d", profile, common.ElasticAgentServiceName, 1)
+	} else {
+		agentInstaller := imts.Fleet.getInstaller()
+		containerName = imts.Fleet.getContainerName(agentInstaller, 1)
 	}
 
 	return docker.CheckProcessStateOnTheHost(containerName, process, state, common.TimeoutFactor)
