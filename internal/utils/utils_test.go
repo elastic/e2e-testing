@@ -3,6 +3,7 @@ package utils
 import (
 	"io/ioutil"
 	"os"
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,19 +22,19 @@ var commitsJSON *gabs.Container
 var snapshotsJSON *gabs.Container
 
 func init() {
-	nextTokenParamContent, err := ioutil.ReadFile("_testresources/gcp/nextPageParam.json")
+	nextTokenParamContent, err := ioutil.ReadFile(path.Join("..", "_testresources", "gcp", "nextPageParam.json"))
 	if err != nil {
 		os.Exit(1)
 	}
 	nextTokenParamJSON, _ = gabs.ParseJSON([]byte(nextTokenParamContent))
 
-	commitsContent, err := ioutil.ReadFile("_testresources/gcp/commits.json")
+	commitsContent, err := ioutil.ReadFile(path.Join("..", "_testresources", "gcp", "commits.json"))
 	if err != nil {
 		os.Exit(1)
 	}
 	commitsJSON, _ = gabs.ParseJSON([]byte(commitsContent))
 
-	snapshotsContent, err := ioutil.ReadFile("_testresources/gcp/snapshots.json")
+	snapshotsContent, err := ioutil.ReadFile(path.Join("..", "_testresources", "gcp", "snapshots.json"))
 	if err != nil {
 		os.Exit(1)
 	}

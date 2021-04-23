@@ -49,8 +49,6 @@ GO_IMAGE_TAG?=stretch
 GOOS?=linux
 GOARCH?=amd64
 
-TEST_TIMEOUT?=5m
-
 .PHONT: build-docs
 build-docs:
 	rm -fr docs
@@ -88,19 +86,6 @@ functional-test: install-godog
 .PHONY: lint
 lint:
 	@docker run -t --rm -v $(PWD):/src -w /src gherkin/lint **/*.feature --disable AvoidOutlineForSingleExample,TooClumsy,TooManySteps,TooManyDifferentTags,TooLongStep
-
-.PHONY: unit-test
-unit-test: test-report-setup unit-test-e2e unit-test-suite-fleet unit-test-suite-helm unit-test-suite-metricbeat
-
-# See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
-.PHONY: unit-test-e2e
-unit-test-e2e:
-	gotestsum --junitfile "$(PWD)/outputs/TEST-unit-e2e.xml" --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
-
-# See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
-.PHONY: unit-test-suite-%
-unit-test-suite-%:
-	cd _suites/$* && gotestsum --junitfile "$(PWD)/outputs/TEST-unit-e2e-$*.xml" --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
 
 ## Test examples
 
