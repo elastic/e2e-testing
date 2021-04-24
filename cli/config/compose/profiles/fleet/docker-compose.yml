@@ -24,8 +24,6 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
-      package-registry:
-        condition: service_healthy
     healthcheck:
       test: "curl -f http://localhost:5601/login | grep kbn-injected-metadata 2>&1 >/dev/null"
       retries: 600
@@ -36,9 +34,3 @@ services:
       - "5601:5601"
     volumes:
       - ./configurations/kibana.config.yml:/usr/share/kibana/config/kibana.yml
-  package-registry:
-    image: docker.elastic.co/package-registry/distribution:staging
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
-      retries: 300
-      interval: 1s
