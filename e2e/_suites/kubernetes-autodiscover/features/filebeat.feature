@@ -17,8 +17,8 @@ Scenario: Logs collection from failing pod
 # This scenario explicitly waits for 60 seconds before doing checks
 # to be sure that at least one job has been executed.
 Scenario: Logs collection from short-living cronjobs
-  Given "a short-living cronjob" is deployed
-   When "60s" have passed
+  When "a short-living cronjob" is deployed
+   And "60s" have passed
    Then "filebeat" collects events with "kubernetes.container.name:cronjob-container"
 
 Scenario: Logs collection from a pod with an init container
