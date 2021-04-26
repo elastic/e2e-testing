@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: a-pod
+spec:
+{{ if option "init container" }}
+  initContainers:
+  - name: init-container
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    command:
+    - /bin/sh
+    - -c
+    - echo Hi from an init container
+{{ end }}
+  containers:
+  - name: container-in-pod
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    command:
+    - /bin/sh
+    - -c
+    - while true; do echo Hi from a container in a pod; sleep 1; done

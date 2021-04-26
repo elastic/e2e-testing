@@ -79,7 +79,7 @@ func setupSuite() {
 
 	helmVersion = shell.GetEnv("HELM_VERSION", helmVersion)
 	helmChartVersion = shell.GetEnv("HELM_CHART_VERSION", helmChartVersion)
-	kubernetesVersion = shell.GetEnv("HELM_KUBERNETES_VERSION", kubernetesVersion)
+	kubernetesVersion = shell.GetEnv("KUBERNETES_VERSION", kubernetesVersion)
 	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
@@ -751,5 +751,5 @@ func toolsAreInstalled() {
 		"helm",
 	}
 
-	shell.CheckInstalledSoftware(binaries)
+	shell.CheckInstalledSoftware(binaries...)
 }
