@@ -12,14 +12,14 @@ readonly ELASTIC_REGISTRY="docker.elastic.co"
 readonly OBSERVABILITY_CI_REGISTRY="${ELASTIC_REGISTRY}/observability-ci"
 
 main() {
-  _build_and_push "centos"
-  _build_and_push "debian"
+  _build_and_push "centos-systemd"
+  _build_and_push "debian-systemd"
 }
 
 _build_and_push() {
   local image="${1}"
 
-  local platformSpecificImage="${OBSERVABILITY_CI_REGISTRY}/${image}-systemd-${ARCH}:latest"
+  local platformSpecificImage="${OBSERVABILITY_CI_REGISTRY}/${image}-${ARCH}:latest"
 
   docker build -t ${platformSpecificImage} .ci/docker/${image}
 
