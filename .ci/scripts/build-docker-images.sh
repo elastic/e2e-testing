@@ -6,7 +6,7 @@
 
 set -euxo pipefail
 
-ARCH="${ARCH}:-amd64"
+ARCH="${ARCH:-amd64}"
 
 readonly ELASTIC_REGISTRY="docker.elastic.co"
 readonly OBSERVABILITY_CI_REGISTRY="${ELASTIC_REGISTRY}/observability-ci"
