@@ -1,6 +1,6 @@
 ---
 - job:
-    name: Beats/build-docker-images
+    name: e2e-tests/build-docker-images
     display-name: E2E Tests Docker images
     description: Job to pre-build docker images used in E2E tests.
     view: Beats
