@@ -21,6 +21,7 @@ type FleetConfig struct {
 	KibanaURI                string
 	FleetServerPort          int
 	FleetServerURI           string
+	FleetServerServiceToken  string
 	// server
 	BootstrapFleetServer bool
 	ServerPolicyID       string
@@ -49,6 +50,16 @@ func NewFleetConfig(token string, bootstrapFleetServer bool, fleetServerMode boo
 		return cfg, err
 	}
 
+	if bootstrapFleetServer {
+		// obtain a Fleet Server Service Token for bootstrap
+		serviceToken, err := client.CreateServiceToken()
+		log.WithField("serviceToken", serviceToken).Trace("Get service token")
+		if err != nil {
+			return nil, err
+		}
+		cfg.FleetServerServiceToken = serviceToken.Value
+	}
+
 	if fleetServerMode {
 		defaultFleetServerPolicy, err := client.GetDefaultPolicy(true)
 		if err != nil {
@@ -63,6 +74,7 @@ func NewFleetConfig(token string, bootstrapFleetServer bool, fleetServerMode boo
 			"policyID":          cfg.ServerPolicyID,
 			"token":             cfg.EnrollmentToken,
 		}).Debug("Fleet Server config created")
+
 	}
 
 	return cfg, nil
@@ -74,7 +86,8 @@ func (cfg FleetConfig) Flags() []string {
 		// TO-DO: remove all code to calculate the fleet-server policy, because it's inferred by the fleet-server
 		return []string{
 			"--force",
-			"--fleet-server-es", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.ElasticsearchURI, cfg.ElasticsearchPort),
+			"--fleet-server-es", fmt.Sprintf("http://%s:%d", cfg.ElasticsearchURI, cfg.ElasticsearchPort),
+			"--fleet-server-service-token", cfg.FleetServerServiceToken,
 		}
 	}
 
