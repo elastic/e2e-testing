@@ -140,11 +140,11 @@ func InitConfig() {
 	if Op != nil {
 		return
 	}
-	newConfig(opDir())
+	newConfig(OpDir())
 }
 
-// opDir returns the directory to copy to
-func opDir() string {
+// OpDir returns the directory to copy to
+func OpDir() string {
 	home, err := homedir.Dir()
 	if err != nil {
 		log.WithFields(log.Fields{

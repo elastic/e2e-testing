@@ -7,6 +7,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/elastic/e2e-testing/cli/config"
+	"path"
 	"strings"
 	"time"
 
@@ -81,7 +83,8 @@ func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployedWithFleetServerModeOn
 		return err
 	}
 	sats.FleetPolicy = fleetPolicy
-	return sats.startAgent(image, "docker-compose-cloud.yml", nil)
+	volume := path.Join(config.OpDir(), "compose", "services", "elastic-agent", "apm-legacy")
+	return sats.startAgent(image, "docker-compose-cloud.yml", map[string]string{"apmVolume": volume})
 }
 
 func (sats *StandAloneTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredStatus string) error {

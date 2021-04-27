@@ -12,10 +12,10 @@ apm-server:
   kibana:
     # For APM Agent configuration in Kibana, enabled must be true.
     enabled: true
-    host: ""
+    host: "kibana"
     username: "elastic"
     password: "changeme"
 output.elasticsearch:
-  hosts: [""]
+  hosts: ["http://elasticsearch:9200"]
   username: "elastic"
   password: "changeme"

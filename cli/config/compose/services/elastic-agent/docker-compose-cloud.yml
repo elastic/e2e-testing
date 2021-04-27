@@ -3,6 +3,11 @@ services:
   elastic-agent:
     image: docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.0.0-SNAPSHOT}
     container_name:  ${elasticAgentContainerName}
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
     environment:
       - "FLEET_SERVER_ENABLE=1"
       - "FLEET_SERVER_INSECURE_HTTP=1"
@@ -14,7 +19,7 @@ services:
       - "LOGS_PATH=/apm-legacy/logs/"
       - "HOME_PATH=/apm-legacy/"
     volumes:
-      - "./apm-legacy:/apm-legacy"
+      - "${apmVolume}:/apm-legacy"
     ports:
       - "127.0.0.1:8220:8220"
       - "127.0.0.1:8200:8200"
