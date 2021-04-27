@@ -50,8 +50,8 @@ pipeline {
     string(name: 'STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
     string(name: 'HELM_CHART_VERSION', defaultValue: '7.11.2', description: 'SemVer version of Helm chart to be used.')
     string(name: 'HELM_VERSION', defaultValue: '3.5.2', description: 'SemVer version of Helm to be used.')
-    string(name: 'HELM_KIND_VERSION', defaultValue: '0.10.0', description: 'SemVer version of Kind to be used.')
-    string(name: 'HELM_KUBERNETES_VERSION', defaultValue: '1.18.2', description: 'SemVer version of Kubernetes to be used.')
+    string(name: 'KIND_VERSION', defaultValue: '0.10.0', description: 'SemVer version of Kind to be used.')
+    string(name: 'KUBERNETES_VERSION', defaultValue: '1.18.2', description: 'SemVer version of Kubernetes to be used.')
     string(name: 'GITHUB_CHECK_NAME', defaultValue: '', description: 'Name of the GitHub check to be updated. Only if this build is triggered from another parent stream.')
     string(name: 'GITHUB_CHECK_REPO', defaultValue: '', description: 'Name of the GitHub repo to be updated. Only if this build is triggered from another parent stream.')
     string(name: 'GITHUB_CHECK_SHA1', defaultValue: '', description: 'Git SHA for the Beats upstream project (branch or PR)')
@@ -76,8 +76,8 @@ pipeline {
         FORCE_SKIP_PRESUBMIT = "${params.forceSkipPresubmit}"
         HELM_CHART_VERSION = "${params.HELM_CHART_VERSION.trim()}"
         HELM_VERSION = "${params.HELM_VERSION.trim()}"
-        HELM_KIND_VERSION = "${params.HELM_KIND_VERSION.trim()}"
-        HELM_KUBERNETES_VERSION = "${params.HELM_KUBERNETES_VERSION.trim()}"
+        KIND_VERSION = "${params.KIND_VERSION.trim()}"
+        KUBERNETES_VERSION = "${params.KUBERNETES_VERSION.trim()}"
         LOG_LEVEL = "${params.LOG_LEVEL.trim()}"
         TIMEOUT_FACTOR = "${params.TIMEOUT_FACTOR.trim()}"
       }
