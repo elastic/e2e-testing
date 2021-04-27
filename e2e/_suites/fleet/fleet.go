@@ -367,7 +367,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 // we are using the Docker client instead of docker-compose because it does not support
 // returning the output of a command: it simply returns error level
 func (fts *FleetTestSuite) getContainerName(i installer.ElasticAgentInstaller, index int) string {
-	return fmt.Sprintf("%s_%s_%s_%d", i.Profile, i.Image, common.ElasticAgentServiceName, 1)
+	return fmt.Sprintf("%s_%s_%s_%d", i.Profile, i.Image, common.ElasticAgentServiceName, index)
 }
 
 // getServiceName returns the current service name, the one defined at the docker compose
