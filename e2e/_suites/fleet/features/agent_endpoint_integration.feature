@@ -23,7 +23,7 @@ Examples: Debian
 
 @endpoint-policy-check
 Scenario Outline: Deploying an Endpoint makes policies to appear in the Security App
-  When an Endpoint is successfully deployed with a "<os>" Agent using "tar" installer
+  When an "Endpoint" is successfully deployed with a "<os>" Agent using "tar" installer
     And the agent is listed in Fleet as "online"
     And the host name is shown in the Administration view in the Security App as "online"
   Then the policy response will be shown in the Security App
@@ -40,7 +40,7 @@ Examples: Debian
 
 @set-policy-and-check-changes
 Scenario Outline: Changing an Agent policy is reflected in the Security App
-  Given an Endpoint is successfully deployed with a "<os>" Agent using "tar" installer
+  Given an "Endpoint" is successfully deployed with a "<os>" Agent using "tar" installer
     And the agent is listed in Fleet as "online"
     And the host name is shown in the Administration view in the Security App as "online"
   When the policy is updated to have "malware" in "detect" mode
@@ -58,7 +58,7 @@ Examples: Debian
 
 @deploy-endpoint-then-unenroll-agent
 Scenario Outline: Un-enrolling Elastic Agent stops Elastic Endpoint
-  Given an Endpoint is successfully deployed with a "<os>" Agent using "tar" installer
+  Given an "Endpoint" is successfully deployed with a "<os>" Agent using "tar" installer
     And the agent is listed in Fleet as "online"
     And the host name is shown in the Administration view in the Security App as "online"
   When the agent is un-enrolled
@@ -77,7 +77,7 @@ Examples: Debian
 
 @deploy-endpoint-then-remove-it-from-policy
 Scenario Outline: Removing Endpoint from Agent policy stops the connected Endpoint
-  Given an Endpoint is successfully deployed with a "<os>" Agent using "tar" installer
+  Given an "Endpoint" is successfully deployed with a "<os>" Agent using "tar" installer
     And the agent is listed in Fleet as "online"
     And the host name is shown in the Administration view in the Security App as "online"
   When the "Endpoint Security" integration is "removed" in the policy
