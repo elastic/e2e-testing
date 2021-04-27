@@ -1183,8 +1183,6 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containe
 
 	envVarsPrefix := strings.ReplaceAll(service, "-", "_")
 
-	// let's start with Centos 7
-	common.ProfileEnv[envVarsPrefix+"Tag"] = serviceTag
 	// we are setting the container name because Centos service could be reused by any other test suite
 	common.ProfileEnv[envVarsPrefix+"ContainerName"] = containerName
 	// define paths where the binary will be mounted
