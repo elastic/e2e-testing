@@ -25,7 +25,7 @@ pipeline {
     quietPeriod(10)
   }
   parameters {
-    string(name: 'branch_specifier', defaultValue: 'master', description: 'It would not be defined on the first build, see JENKINS-41929.')
+    string(name: 'BRANCH_SPECIFIER', defaultValue: 'master', description: 'It would not be defined on the first build, see JENKINS-41929.')
   }
   triggers {
     cron 'H H(4-5) * * 1-5'
@@ -35,7 +35,7 @@ pipeline {
       environment {
         // Parameters will be empty for the very first build, setting an environment variable
         // with the same name will workaround the issue. see JENKINS-41929
-        BRANCH_SPECIFIER = "${params?.branch_specifier}"
+        BRANCH_SPECIFIER = "${params?.BRANCH_SPECIFIER}"
       }
       steps {
         deleteDir()
