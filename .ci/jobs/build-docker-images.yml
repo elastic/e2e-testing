@@ -18,5 +18,3 @@
             reference-repo: /var/lib/jenkins/.git-references/e2e-testing.git
             branches:
               - master
-    triggers:
-      - timed: 'H H(0-5) * * 1-5'
