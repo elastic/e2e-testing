@@ -296,14 +296,6 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 
 // supported installers: tar, systemd
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, installerType string) error {
-	// bootstrapping fleet-server agent if needed
-	if fts.FleetServerHostname == "" {
-		err := fts.bootstrapFleetServerWithInstaller(image, installerType)
-		if err != nil {
-			return err
-		}
-	}
-
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType, false)
 }
 
@@ -872,11 +864,6 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(stat
 }
 
 func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller(integration string, image string, agentInstaller string) error {
-	err := fts.bootstrapFleetServerWithInstaller(image, agentInstaller)
-	if err != nil {
-		return err
-	}
-
 	return fts.theIntegrationIsOperatedInThePolicy(integration, actionADDED)
 }
 
