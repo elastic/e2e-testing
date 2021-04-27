@@ -24,4 +24,4 @@
             branches:
               - $BRANCH_REFERENCE
     triggers:
-      - timed: 'H H(0-5) * * 1-5'
+      - timed: '@daily'

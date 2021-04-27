@@ -25,7 +25,7 @@ pipeline {
     quietPeriod(10)
   }
   triggers {
-    cron 'H H(0-5) * * 1-5'
+     cron '@daily'
   }
   stages {
     stage('Checkout') {
