@@ -8,7 +8,7 @@ pipeline {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
     DOCKER_REGISTRY = 'docker.elastic.co'
-    DOCKER_REGISTRY_SECRET = 'secret/observability-team/ci/docker-registry/prod'
+    DOCKER_ELASTIC_SECRET = 'secret/observability-team/ci/docker-registry/prod'
     HOME = "${env.WORKSPACE}"
     NOTIFY_TO = credentials('notify-to')
     PIPELINE_LOG_LEVEL = 'INFO'
