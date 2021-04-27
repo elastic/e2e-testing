@@ -18,6 +18,7 @@ import (
 	messages "github.com/cucumber/messages-go/v10"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 )
@@ -27,7 +28,7 @@ const defaultEventsWaitTimeout = 120 * time.Second
 const defaultDeployWaitTimeout = 120 * time.Second
 
 type podsManager struct {
-	kubectl kubernetesControl
+	kubectl kubernetes.Control
 	ctx     context.Context
 }
 
@@ -380,24 +381,24 @@ func waitDuration(ctx context.Context, duration string) error {
 	return nil
 }
 
-var cluster kubernetesCluster
+var cluster kubernetes.Cluster
 
 func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 	suiteContext, cancel := context.WithCancel(context.Background())
 	log.DeferExitHandler(cancel)
 
 	ctx.BeforeSuite(func() {
-		err := cluster.initialize(suiteContext)
+		err := cluster.Initialize(suiteContext, "testdata/kind.yml")
 		if err != nil {
 			log.WithError(err).Fatal("Failed to initialize cluster")
 		}
 		log.DeferExitHandler(func() {
-			cluster.cleanup(suiteContext)
+			cluster.Cleanup(suiteContext)
 		})
 	})
 
 	ctx.AfterSuite(func() {
-		cluster.cleanup(suiteContext)
+		cluster.Cleanup(suiteContext)
 		cancel()
 	})
 }
@@ -406,7 +407,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	scenarioCtx, cancel := context.WithCancel(context.Background())
 	log.DeferExitHandler(cancel)
 
-	var kubectl kubernetesControl
+	var kubectl kubernetes.Control
 	var pods podsManager
 	ctx.BeforeScenario(func(*messages.Pickle) {
 		kubectl = cluster.Kubectl().WithNamespace(scenarioCtx, "")
