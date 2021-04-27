@@ -1188,6 +1188,20 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containe
 
 func inputs(integration string) []kibana.Input {
 	switch integration {
+	case "apm":
+		return []kibana.Input{
+			{
+				Type:    "apm",
+				Enabled: true,
+				Streams: []interface{}{},
+				Vars: map[string]kibana.Var{
+					"apm-server": {
+						Value: "host",
+						Type:  "localhost:8200",
+					},
+				},
+			},
+		}
 	case "linux":
 		return []kibana.Input{
 			{
@@ -1209,21 +1223,8 @@ func inputs(integration string) []kibana.Input {
 						Type:  "string",
 					},
 				},
-			}}
-	case "apm":
-		return []kibana.Input{
-			{
-				Type:    "apm",
-				Enabled: true,
-				Streams: []interface{}{},
-				Vars: map[string]kibana.Var{
-					"apm-server": {
-						Value: "host",
-						Type:  "localhost:8200",
-					},
-				},
 			},
 		}
 	}
-	return nil
+	return []kibana.Input{}
 }

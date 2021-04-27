@@ -132,11 +132,11 @@ func Init() {
 	}
 	shell.CheckInstalledSoftware(binaries...)
 
-	InitConfig()
+	initConfig()
 }
 
-// InitConfig initialises configuration
-func InitConfig() {
+// initConfig initialises configuration
+func initConfig() {
 	if Op != nil {
 		return
 	}
