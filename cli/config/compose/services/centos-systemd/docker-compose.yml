@@ -4,6 +4,7 @@ services:
     image: centos/systemd:${centos_systemdTag:-latest} 
     container_name: ${centos_systemdContainerName}
     entrypoint: "/usr/sbin/init"
+    platform: ${stackPlatform:-linux/amd64}
     privileged: true
     volumes:
       - ${centos_systemdAgentBinarySrcPath:-.}:${centos_systemdAgentBinaryTargetPath:-/tmp}

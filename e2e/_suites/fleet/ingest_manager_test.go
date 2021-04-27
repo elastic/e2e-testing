@@ -54,22 +54,6 @@ func setUpSuite() {
 	common.TimeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", common.TimeoutFactor)
 	common.AgentVersion = shell.GetEnv("BEAT_VERSION", common.AgentVersionBase)
 
-	common.AgentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", common.AgentStaleVersion)
-	// check if stale version is an alias
-	v, err = utils.GetElasticArtifactVersion(common.AgentStaleVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": common.AgentStaleVersion,
-		}).Fatal("Failed to get agent stale version, aborting")
-	}
-	common.AgentStaleVersion = v
-
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
-	if useCISnapshots && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
-		common.AgentStaleVersion += "-SNAPSHOT"
-	}
-
 	// check if version is an alias
 	v, err = utils.GetElasticArtifactVersion(common.AgentVersion)
 	if err != nil {
@@ -193,6 +177,22 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		}
 
 		imts.Fleet.setup()
+
+		// we are going to bootstrap Fleet Server in a centos container, using TAR installer, and the base version
+		// Because it is the first agent in Fleet, there is no FleetServerHost
+		fleetServerBaseImage := "centos"
+		fleetServerInstallerType := "tar"
+		fleetServerVersion := common.AgentVersionBase
+		agentInstaller := installer.GetElasticAgentInstaller(fleetServerBaseImage, fleetServerInstallerType, fleetServerVersion, "")
+
+		// bootstrap Fleet Server only once: we need to set the version here
+		imts.Fleet.Version = fleetServerVersion
+		err = imts.Fleet.bootstrapFleetServerWithInstaller(fleetServerBaseImage, fleetServerInstallerType)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"installer": agentInstaller,
+			}).Fatal("Fleet Server could not be bootstrapped")
+		}
 
 		imts.StandAlone.RuntimeDependenciesStartDate = time.Now().UTC()
 	})
