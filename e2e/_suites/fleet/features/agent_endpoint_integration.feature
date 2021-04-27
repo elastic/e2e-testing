@@ -97,7 +97,7 @@ Examples: Debian
 
 @stop-agent-and-endpoint
 Scenario Outline: Stopping the agent deployed with Endpoint stops all backend processes
-  Given an Endpoint is successfully deployed with a "<os>" Agent using "tar" installer
+  Given an "Endpoint" is successfully deployed with a "<os>" Agent using "tar" installer
     And the agent is listed in Fleet as "online"
     And the host name is shown in the Administration view in the Security App as "online"
   When the "elastic-agent" process is "stopped" on the host
@@ -115,7 +115,7 @@ Examples: Debian
 
 @restart-host-with-endpoint-deployed
 Scenario Outline: Restarting the host with persistent agent with Endpoint restarts backend processes
-  Given an Endpoint is successfully deployed with a "<os>" Agent using "tar" installer
+  Given an "Endpoint" is successfully deployed with a "<os>" Agent using "tar" installer
     And the agent is listed in Fleet as "online"
     And the host name is shown in the Administration view in the Security App as "online"
   When the host is restarted
@@ -134,7 +134,7 @@ Examples: Debian
 
 @unenroll-with-deployed-endpoint
 Scenario Outline: Un-enrolling the agent with Endpoint
-  Given an Endpoint is successfully deployed with a "<os>" Agent using "tar" installer
+  Given an "Endpoint" is successfully deployed with a "<os>" Agent using "tar" installer
     And the agent is listed in Fleet as "online"
     And the host name is shown in the Administration view in the Security App as "online"
   When the agent is un-enrolled
