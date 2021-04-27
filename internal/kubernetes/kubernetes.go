@@ -1,4 +1,4 @@
-package main
+package kubernetes
 
 import (
 	"context"
@@ -17,19 +17,22 @@ import (
 	"github.com/elastic/e2e-testing/internal/shell"
 )
 
-type kubernetesControl struct {
+// Control struct for k8s cluster
+type Control struct {
 	config           string
 	Namespace        string
 	NamespaceUID     string
 	createdNamespace bool
 }
 
-func (c kubernetesControl) WithConfig(config string) kubernetesControl {
+// WithConfig config setter
+func (c Control) WithConfig(config string) Control {
 	c.config = config
 	return c
 }
 
-func (c kubernetesControl) WithNamespace(ctx context.Context, namespace string) kubernetesControl {
+// WithNamespace namespace setter
+func (c Control) WithNamespace(ctx context.Context, namespace string) Control {
 	if namespace == "" {
 		namespace = "test-" + uuid.New().String()
 		err := c.createNamespace(ctx, namespace)
@@ -47,7 +50,7 @@ func (c kubernetesControl) WithNamespace(ctx context.Context, namespace string) 
 	return c
 }
 
-func (c kubernetesControl) createNamespace(ctx context.Context, namespace string) error {
+func (c Control) createNamespace(ctx context.Context, namespace string) error {
 	if namespace == "" {
 		return nil
 	}
@@ -70,7 +73,8 @@ func (c kubernetesControl) createNamespace(ctx context.Context, namespace string
 	}, exp)
 }
 
-func (c kubernetesControl) Cleanup(ctx context.Context) error {
+// Cleanup deletes k8s namespace
+func (c Control) Cleanup(ctx context.Context) error {
 	if c.createdNamespace && c.Namespace != "" {
 		output, err := c.Run(ctx, "delete", "namespace", c.Namespace)
 		if err != nil {
@@ -80,11 +84,13 @@ func (c kubernetesControl) Cleanup(ctx context.Context) error {
 	return nil
 }
 
-func (c kubernetesControl) Run(ctx context.Context, runArgs ...string) (output string, err error) {
+// Run ability to run kubectl commands
+func (c Control) Run(ctx context.Context, runArgs ...string) (output string, err error) {
 	return c.RunWithStdin(ctx, nil, runArgs...)
 }
 
-func (c kubernetesControl) RunWithStdin(ctx context.Context, stdin io.Reader, runArgs ...string) (output string, err error) {
+// RunWithStdin run kubectl commands passing in options from stdin
+func (c Control) RunWithStdin(ctx context.Context, stdin io.Reader, runArgs ...string) (output string, err error) {
 	shell.CheckInstalledSoftware("kubectl")
 	var args []string
 	if c.config != "" {
@@ -97,23 +103,26 @@ func (c kubernetesControl) RunWithStdin(ctx context.Context, stdin io.Reader, ru
 	return shell.ExecuteWithStdin(ctx, ".", stdin, "kubectl", args...)
 }
 
-type kubernetesCluster struct {
+// Cluster kind structure definition
+type Cluster struct {
 	kindName   string
 	kubeconfig string
 
 	tmpDir string
 }
 
-func (c kubernetesCluster) Kubectl() kubernetesControl {
-	return kubernetesControl{}.WithConfig(c.kubeconfig)
+// Kubectl executable reference to kubectl with applied kubeconfig
+func (c Cluster) Kubectl() Control {
+	return Control{}.WithConfig(c.kubeconfig)
 }
 
-func (c kubernetesCluster) isAvailable(ctx context.Context) error {
+func (c Cluster) isAvailable(ctx context.Context) error {
 	_, err := c.Kubectl().Run(ctx, "api-versions")
 	return err
 }
 
-func (c *kubernetesCluster) initialize(ctx context.Context) error {
+// Initialize detect existing cluster contexts, otherwise will create one via Kind
+func (c *Cluster) Initialize(ctx context.Context, kindConfigPath string) error {
 	err := c.isAvailable(ctx)
 	if err == nil {
 		return nil
@@ -138,7 +147,7 @@ func (c *kubernetesCluster) initialize(ctx context.Context) error {
 	args := []string{
 		"create", "cluster",
 		"--name", name,
-		"--config", "testdata/kind.yml",
+		"--config", kindConfigPath,
 		"--kubeconfig", c.kubeconfig,
 	}
 	if version, ok := os.LookupEnv("KUBERNETES_VERSION"); ok && version != "" {
@@ -157,7 +166,8 @@ func (c *kubernetesCluster) initialize(ctx context.Context) error {
 	return nil
 }
 
-func (c *kubernetesCluster) cleanup(ctx context.Context) {
+// Cleanup deletes the kind cluster if available
+func (c *Cluster) Cleanup(ctx context.Context) {
 	if c.kindName != "" {
 		_, err := shell.Execute(ctx, ".", "kind", "delete", "cluster", "--name", c.kindName)
 		if err != nil {
