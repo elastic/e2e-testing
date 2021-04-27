@@ -14,7 +14,7 @@
       script-path: .ci/build-docker-images.groovy
       scm:
         - git:
-            url: git@github.com:elastic/e2e-testint.git
+            url: git@github.com:elastic/e2e-testing.git
             refspec: +refs/heads/*:refs/remotes/origin/*
             wipe-workspace: true
             name: origin
