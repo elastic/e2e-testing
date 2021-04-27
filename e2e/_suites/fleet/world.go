@@ -24,11 +24,14 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 
 func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocurrences string, process string, state string) error {
 	profile := common.FleetProfileName
-	serviceName := common.ElasticAgentServiceName
 
-	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, imts.Fleet.Image+"-systemd", serviceName, 1)
+	var containerName string
+
 	if imts.StandAlone.Hostname != "" {
-		containerName = fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
+		containerName = fmt.Sprintf("%s_%s_%d", profile, common.ElasticAgentServiceName, 1)
+	} else {
+		agentInstaller := imts.Fleet.getInstaller()
+		containerName = imts.Fleet.getContainerName(agentInstaller, 1)
 	}
 
 	count, err := strconv.Atoi(ocurrences)
