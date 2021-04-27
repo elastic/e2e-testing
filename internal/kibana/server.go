@@ -56,6 +56,38 @@ func (c *Client) CreateEnrollmentAPIKey(policy Policy) (EnrollmentAPIKey, error)
 	return resp.Enrollment, nil
 }
 
+// ServiceToken struct for holding service token
+type ServiceToken struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// CreateServiceToken creates a fleet service token
+func (c *Client) CreateServiceToken() (ServiceToken, error) {
+
+	reqBody := `{}`
+	statusCode, respBody, _ := c.post(fmt.Sprintf("%s/service-tokens", FleetAPI), []byte(reqBody))
+	if statusCode != 200 {
+		jsonParsed, err := gabs.ParseJSON([]byte(respBody))
+		log.WithFields(log.Fields{
+			"body":       jsonParsed,
+			"reqBody":    reqBody,
+			"error":      err,
+			"statusCode": statusCode,
+		}).Error("Could not create service token")
+
+		return ServiceToken{}, err
+	}
+
+	var resp ServiceToken
+
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return ServiceToken{}, errors.Wrap(err, "Unable to convert service token response to JSON")
+	}
+
+	return resp, nil
+}
+
 // DeleteEnrollmentAPIKey deletes the enrollment api key
 func (c *Client) DeleteEnrollmentAPIKey(enrollmentID string) error {
 	statusCode, respBody, err := c.delete(fmt.Sprintf("%s/enrollment-api-keys/%s", FleetAPI, enrollmentID))

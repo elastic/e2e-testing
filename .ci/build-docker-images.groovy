@@ -64,7 +64,7 @@ pipeline {
       }
     }
     stage('Build ARM Docker images'){
-      agent { label 'arm && immutable && docker' }
+      agent { label 'arm' }
       environment {
         HOME = "${env.WORKSPACE}/${BASE_DIR}"
       }
