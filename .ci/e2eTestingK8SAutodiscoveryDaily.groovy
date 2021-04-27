@@ -45,7 +45,7 @@ pipeline {
             booleanParam(name: 'forceSkipGitChecks', value: true),
             booleanParam(name: 'forceSkipPresubmit', value: true),
             string(name: 'runTestsSuites', value: 'kubernetes-autodiscover'),
-            string(name: 'SLACK_CHANNEL', value: "beats-build"),
+            string(name: 'SLACK_CHANNEL', value: "integrations"),
           ],
           propagate: false,
           wait: false
