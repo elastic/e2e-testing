@@ -863,7 +863,12 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(stat
 	return nil
 }
 
-func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller(integration string, image string, agentInstaller string) error {
+func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller(integration string, image string, installerType string) error {
+	err := fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
+	if err != nil {
+		return err
+	}
+
 	return fts.theIntegrationIsOperatedInThePolicy(integration, actionADDED)
 }
 
