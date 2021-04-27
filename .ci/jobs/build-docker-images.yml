@@ -23,5 +23,3 @@
             reference-repo: /var/lib/jenkins/.git-references/e2e-testing.git
             branches:
               - $branch_specifier
-    triggers:
-      - timed: '@daily'
