@@ -51,22 +51,6 @@ func setUpSuite() {
 	common.TimeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", common.TimeoutFactor)
 	common.AgentVersion = shell.GetEnv("BEAT_VERSION", common.AgentVersionBase)
 
-	common.AgentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", common.AgentStaleVersion)
-	// check if stale version is an alias
-	v, err = utils.GetElasticArtifactVersion(common.AgentStaleVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": common.AgentStaleVersion,
-		}).Fatal("Failed to get agent stale version, aborting")
-	}
-	common.AgentStaleVersion = v
-
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
-	if useCISnapshots && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
-		common.AgentStaleVersion += "-SNAPSHOT"
-	}
-
 	// check if version is an alias
 	v, err = utils.GetElasticArtifactVersion(common.AgentVersion)
 	if err != nil {

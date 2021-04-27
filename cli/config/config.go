@@ -130,7 +130,7 @@ func Init() {
 		"docker",
 		"docker-compose",
 	}
-	shell.CheckInstalledSoftware(binaries)
+	shell.CheckInstalledSoftware(binaries...)
 
 	InitConfig()
 }
