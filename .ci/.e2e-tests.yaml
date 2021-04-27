@@ -17,6 +17,9 @@ SUITES:
       - name: "Fleet"
         pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent"
+      - name: "Fleet Server"
+        pullRequestFilter: " && ~debian"
+        tags: "fleet_server"
       - name: "Endpoint Integration"
         pullRequestFilter: " && ~debian"
         tags: "agent_endpoint_integration"
@@ -59,3 +62,13 @@ SUITES:
         tags: "integrations && redisenterprise"
       - name: "vSphere"
         tags: "integrations && vsphere"
+  - suite: "kubernetes-autodiscover"
+    platforms:
+      - "ubuntu-18.04"
+    scenarios:
+      - name: "kubernetes autodiscover with filebeat"
+        tags: "kubernetes-autodiscover && filebeat"
+      - name: "kubernetes autodiscover with heartbeat"
+        tags: "kubernetes-autodiscover && heartbeat"
+      - name: "kubernetes autodiscover with metricbeat"
+        tags: "kubernetes-autodiscover && metricbeat"

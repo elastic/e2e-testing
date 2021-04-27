@@ -4,17 +4,15 @@
     display-name: Fleet UI e2e tests Pipeline
     description: Jenkins pipeline to run the end2end tests for the Fleet UI
     project-type: pipeline
-    disabled: false
     pipeline-scm:
       script-path: .ci/e2eKibana.groovy
       scm:
         - git:
             url: git@github.com:elastic/e2e-testing.git
-            refspec: +refs/heads/*:refs/remotes/origin/* +refs/pull/*/head:refs/remotes/origin/pr/*
             wipe-workspace: 'True'
             name: origin
             shallow-clone: true
             credentials-id: f6c7695a-671e-4f4f-a331-acdce44ff9ba
-            reference-repo: /var/lib/jenkins/.git-references/e2e-testing.git
             branches:
-              - $branch_specifier
+              - "master"
+    triggers: []

@@ -14,5 +14,4 @@ mkdir -p $(pwd)/outputs
 
 go get -v -u gotest.tools/gotestsum
 
-make -C cli install test
-make -C e2e unit-test
+make unit-test

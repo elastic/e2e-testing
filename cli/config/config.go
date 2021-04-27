@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	io "github.com/elastic/e2e-testing/cli/internal"
-	shell "github.com/elastic/e2e-testing/cli/shell"
+	io "github.com/elastic/e2e-testing/internal/io"
+	shell "github.com/elastic/e2e-testing/internal/shell"
 
 	packr "github.com/gobuffalo/packr/v2"
 	homedir "github.com/mitchellh/go-homedir"
@@ -128,7 +128,7 @@ func Init() {
 		"docker",
 		"docker-compose",
 	}
-	shell.CheckInstalledSoftware(binaries)
+	shell.CheckInstalledSoftware(binaries...)
 
 	InitConfig()
 }
