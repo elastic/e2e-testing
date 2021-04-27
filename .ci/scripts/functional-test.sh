@@ -12,14 +12,14 @@ set -euxo pipefail
 # Parameters:
 #   - SUITE - that's the suite to be tested. Default '' which means all of them.
 #   - TAGS - that's the tags to be tested. Default '' which means all of them.
-#   - STACK_VERSION - that's the version of the stack to be tested. Default '8.0.0-SNAPSHOT'.
-#   - BEAT_VERSION - that's the version of the metricbeat to be tested. Default '8.0.0-SNAPSHOT'.
+#   - STACK_VERSION - that's the version of the stack to be tested. Default '7.13.0-SNAPSHOT'.
+#   - BEAT_VERSION - that's the version of the metricbeat to be tested. Default '7.13.0-SNAPSHOT'.
 #
 
 SUITE=${1:-''}
 TAGS=${2:-''}
-STACK_VERSION=${3:-'8.0.0-SNAPSHOT'}
-BEAT_VERSION=${4:-'8.0.0-SNAPSHOT'}
+STACK_VERSION=${3:-'7.13.0-SNAPSHOT'}
+BEAT_VERSION=${4:-'7.13.0-SNAPSHOT'}
 
 ## Install the required dependencies for the given SUITE
 .ci/scripts/install-test-dependencies.sh "${SUITE}"

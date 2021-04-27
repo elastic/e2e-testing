@@ -93,7 +93,7 @@ func buildRunProfileCommand(key string, profile config.Profile) *cobra.Command {
 		Long: `Runs the ` + profile.Name + ` profile, spinning up the Services that compound it
 
 Example:
-  go run main.go run profile fleet -s elastic-agent:8.0.0-SNAPSHOT
+  go run main.go run profile fleet -s elastic-agent:7.13.0-SNAPSHOT
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := compose.NewServiceManager()
@@ -125,7 +125,7 @@ Example:
 						log.WithFields(log.Fields{
 							"profile":  key,
 							"services": servicesToRun,
-						}).Error("Unable to determine the <image>:<tag>, please make sure to use a known docker tag format, eg. `elastic-agent:8.0.0-SNAPSHOT`")
+						}).Error("Unable to determine the <image>:<tag>, please make sure to use a known docker tag format, eg. `elastic-agent:7.13.0-SNAPSHOT`")
 						os.Exit(1)
 					}
 					image := arr[0]

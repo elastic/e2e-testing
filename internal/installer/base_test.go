@@ -17,7 +17,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 	artifact := "elastic-agent"
 	beatsDir := path.Join("..", "_testresources", "beats")
 	distributionsDir, _ := filepath.Abs(path.Join(beatsDir, "x-pack", "elastic-agent", "build", "distributions"))
-	version := "8.0.0-SNAPSHOT"
+	version := "7.13.0-SNAPSHOT"
 
 	t.Run("Fetching non-existent binary from local Beats dir throws an error", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
@@ -31,7 +31,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
-		artifactName := "elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm"
+		artifactName := "elastic-agent-7.13.0-SNAPSHOT-x86_64.rpm"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
@@ -43,7 +43,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
-		artifactName := "elastic-agent-8.0.0-SNAPSHOT-amd64.deb"
+		artifactName := "elastic-agent-7.13.0-SNAPSHOT-amd64.deb"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
@@ -55,7 +55,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
-		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.tar.gz"
+		artifactName := "elastic-agent-7.13.0-SNAPSHOT-linux-amd64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
@@ -67,7 +67,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
-		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
+		artifactName := "elastic-agent-7.13.0-SNAPSHOT-linux-amd64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
@@ -79,7 +79,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
-		artifactName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
+		artifactName := "elastic-agent-ubi8-7.13.0-SNAPSHOT-linux-amd64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)

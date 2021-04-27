@@ -108,6 +108,8 @@ We have built the project and the CI job in a manner that it is possible to over
 
 - **7.10.x**: will use `7.10.x` alias for the Elastic Stack, the Agent and Metricbeat
 - **7.11.x**: will use `7.11.x` alias for the Elastic Stack, the Agent and Metricbeat
+- **7.12.x**: will use `7.12.x` alias for the Elastic Stack, the Agent and Metricbeat
+- **7.13.x**: will use `7.13.x` alias for the Elastic Stack, the Agent and Metricbeat
 - **7.x**: will use `7.x` alias for the Elastic Stack, the Agent and Metricbeat
 - **master**: will use `8.0.0-SNAPSHOT` for the Elastic Stack, the Agent and Metricbeat, representing the current development version of the different products under test.
 
