@@ -52,7 +52,7 @@ func (c *Client) DeleteIntegrationFromPolicy(packageDS PackageDataStream) error 
 
 // GetIntegrations returns all available integrations
 func (c *Client) GetIntegrations() ([]IntegrationPackage, error) {
-	statusCode, respBody, err := c.get(fmt.Sprintf("%s/epm/packages", FleetAPI))
+	statusCode, respBody, err := c.get(fmt.Sprintf("%s/epm/packages?experimental=true", FleetAPI))
 
 	if err != nil {
 		log.WithFields(log.Fields{

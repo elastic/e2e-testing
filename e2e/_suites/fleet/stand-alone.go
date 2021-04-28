@@ -7,6 +7,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/elastic/e2e-testing/cli/config"
+	"path"
 	"strings"
 	"time"
 
@@ -26,9 +28,10 @@ import (
 
 // StandAloneTestSuite represents the scenarios for Stand-alone-mode
 type StandAloneTestSuite struct {
-	Cleanup  bool
-	Hostname string
-	Image    string
+	Cleanup     bool
+	Hostname    string
+	Image       string
+	FleetPolicy kibana.Policy
 	// date controls for queries
 	AgentStoppedDate             time.Time
 	RuntimeDependenciesStartDate time.Time
@@ -50,15 +53,38 @@ func (sats *StandAloneTestSuite) afterScenario() {
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
+
+	sats.kibanaClient.DeleteAllPolicies(sats.FleetPolicy)
 }
 
 func (sats *StandAloneTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed$`, sats.aStandaloneAgentIsDeployed)
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode$`, sats.bootstrapFleetServerFromAStandaloneAgent)
+	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode on cloud$`, sats.aStandaloneAgentIsDeployedWithFleetServerModeOnCloud)
 	s.Step(`^there is new data in the index from agent$`, sats.thereIsNewDataInTheIndexFromAgent)
 	s.Step(`^the "([^"]*)" docker container is stopped$`, sats.theDockerContainerIsStopped)
 	s.Step(`^there is no new data in the index after agent shuts down$`, sats.thereIsNoNewDataInTheIndexAfterAgentShutsDown)
 	s.Step(`^the stand-alone agent is listed in Fleet as "([^"]*)"$`, sats.theStandaloneAgentIsListedInFleetWithStatus)
+	s.Step(`^the "([^"]*)" integration is added to the policy$`, sats.theIntegrationIsAddedToThePolicy)
+	s.Step(`^the "([^"]*)" datasource is shown in the policy$`, sats.thePolicyShowsTheDatasourceAdded)
+}
+
+func (sats *StandAloneTestSuite) theIntegrationIsAddedToThePolicy(packageName string) error {
+	return theIntegrationIsOperatedInThePolicy(sats.kibanaClient, sats.FleetPolicy, packageName, "added")
+}
+
+func (sats *StandAloneTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) error {
+	return thePolicyShowsTheDatasourceAdded(sats.kibanaClient, sats.FleetPolicy, packageName)
+}
+
+func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployedWithFleetServerModeOnCloud(image string) error {
+	fleetPolicy, err := sats.kibanaClient.GetDefaultPolicy(true)
+	if err != nil {
+		return err
+	}
+	sats.FleetPolicy = fleetPolicy
+	volume := path.Join(config.OpDir(), "compose", "services", "elastic-agent", "apm-legacy")
+	return sats.startAgent(image, "docker-compose-cloud.yml", map[string]string{"apmVolume": volume})
 }
 
 func (sats *StandAloneTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredStatus string) error {
@@ -88,14 +114,19 @@ func (sats *StandAloneTestSuite) theStandaloneAgentIsListedInFleetWithStatus(des
 }
 
 func (sats *StandAloneTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string) error {
-	return sats.startAgent(image, map[string]string{"fleetServerMode": "1"})
+	fleetPolicy, err := sats.kibanaClient.GetDefaultPolicy(true)
+	if err != nil {
+		return err
+	}
+	sats.FleetPolicy = fleetPolicy
+	return sats.startAgent(image, "", map[string]string{"fleetServerMode": "1"})
 }
 
 func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployed(image string) error {
-	return sats.startAgent(image, nil)
+	return sats.startAgent(image, "", nil)
 }
 
-func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string) error {
+func (sats *StandAloneTestSuite) startAgent(image string, composeFilename string, env map[string]string) error {
 
 	log.Trace("Deploying an agent to Fleet")
 
@@ -133,7 +164,8 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 		common.ProfileEnv[k] = v
 	}
 
-	err := serviceManager.AddServicesToCompose(context.Background(), common.FleetProfileName, []string{common.ElasticAgentServiceName}, common.ProfileEnv)
+	err := serviceManager.AddServicesToCompose(context.Background(), common.FleetProfileName,
+		[]string{common.ElasticAgentServiceName}, common.ProfileEnv, composeFilename)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err
