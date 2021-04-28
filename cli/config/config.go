@@ -228,7 +228,7 @@ func PutServiceVariantEnvironment(env map[string]string, service string, service
 func checkConfigDirectory(dir string) {
 	found, err := io.Exists(dir)
 	if found && err == nil {
-		os.RemoveAll(dir)
+		return
 	}
 	_ = io.MkdirAll(dir)
 }
