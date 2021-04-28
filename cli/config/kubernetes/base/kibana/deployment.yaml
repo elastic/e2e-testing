@@ -24,9 +24,9 @@ spec:
           value: elastic
         - name: ELASTICSEARCH_PASSWORD
           value: changeme
-
         ports:
         - containerPort: 5601
+          hostPort: 5601
           name: http
         livenessProbe:
           tcpSocket:

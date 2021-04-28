@@ -340,14 +340,6 @@ spec:
             - --validating-webhook-certificate=/usr/local/certificates/cert
             - --validating-webhook-key=/usr/local/certificates/key
             - --publish-status-address=localhost
-          securityContext:
-            capabilities:
-              drop:
-                - ALL
-              add:
-                - NET_BIND_SERVICE
-            runAsUser: 101
-            allowPrivilegeEscalation: true
           env:
             - name: POD_NAME
               valueFrom:

@@ -13,7 +13,11 @@ kind create cluster
 kubectl apply -k base
 ```
 
-## Local Ingress
+This will allow you to visit `http://localhost:5601` using username: `elastic` password: `changeme` to login
+
+## Local Ingress (Optional)
+
+If a local ingress is preferred, apply the following to setup nginx-ingress
 
 ```
 kubectl apply -k overlays/local
