@@ -19,14 +19,24 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 )
 
 const defaultBeatVersion = "8.0.0-SNAPSHOT"
-const defaultEventsWaitTimeout = 120 * time.Second
-const defaultDeployWaitTimeout = 120 * time.Second
+
+var defaultEventsWaitTimeout = 60 * time.Second
+var defaultDeployWaitTimeout = 60 * time.Second
+
+func init() {
+	// initialise timeout factor
+	common.TimeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", common.TimeoutFactor)
+
+	defaultEventsWaitTimeout = defaultEventsWaitTimeout * time.Duration(common.TimeoutFactor)
+	defaultDeployWaitTimeout = defaultDeployWaitTimeout * time.Duration(common.TimeoutFactor)
+}
 
 type podsManager struct {
 	kubectl kubernetes.Control
