@@ -176,6 +176,22 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		imts.Fleet.setup()
 
+		// we are going to bootstrap Fleet Server in a centos container, using TAR installer, and the base version
+		// Because it is the first agent in Fleet, there is no FleetServerHost
+		fleetServerBaseImage := "centos"
+		fleetServerInstallerType := "tar"
+		fleetServerVersion := common.AgentVersionBase
+		agentInstaller := installer.GetElasticAgentInstaller(fleetServerBaseImage, fleetServerInstallerType, fleetServerVersion, "")
+
+		// bootstrap Fleet Server only once: we need to set the version here
+		imts.Fleet.Version = fleetServerVersion
+		err = imts.Fleet.bootstrapFleetServerWithInstaller(fleetServerBaseImage, fleetServerInstallerType)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"installer": agentInstaller,
+			}).Fatal("Fleet Server could not be bootstrapped")
+		}
+
 		imts.StandAlone.RuntimeDependenciesStartDate = time.Now().UTC()
 	})
 

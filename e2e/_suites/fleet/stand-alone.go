@@ -59,7 +59,7 @@ func (sats *StandAloneTestSuite) afterScenario() {
 
 func (sats *StandAloneTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed$`, sats.aStandaloneAgentIsDeployed)
-	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode$`, sats.aStandaloneAgentIsDeployedWithFleetServerMode)
+	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode$`, sats.bootstrapFleetServerFromAStandaloneAgent)
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode on cloud$`, sats.aStandaloneAgentIsDeployedWithFleetServerModeOnCloud)
 	s.Step(`^there is new data in the index from agent$`, sats.thereIsNewDataInTheIndexFromAgent)
 	s.Step(`^the "([^"]*)" docker container is stopped$`, sats.theDockerContainerIsStopped)
@@ -113,7 +113,7 @@ func (sats *StandAloneTestSuite) theStandaloneAgentIsListedInFleetWithStatus(des
 	return nil
 }
 
-func (sats *StandAloneTestSuite) aStandaloneAgentIsDeployedWithFleetServerMode(image string) error {
+func (sats *StandAloneTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string) error {
 	fleetPolicy, err := sats.kibanaClient.GetDefaultPolicy(true)
 	if err != nil {
 		return err
@@ -138,7 +138,7 @@ func (sats *StandAloneTestSuite) startAgent(image string, composeFilename string
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries
-		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.AgentVersion)
+		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.AgentVersion, "")
 
 		dockerInstaller.PreInstallFn()
 

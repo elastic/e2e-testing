@@ -8,7 +8,7 @@ pipeline {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
     DOCKER_REGISTRY = 'docker.elastic.co'
-    DOCKER_REGISTRY_SECRET = 'secret/observability-team/ci/docker-registry/prod'
+    DOCKER_ELASTIC_SECRET = 'secret/observability-team/ci/docker-registry/prod'
     HOME = "${env.WORKSPACE}"
     NOTIFY_TO = credentials('notify-to')
     PIPELINE_LOG_LEVEL = 'INFO'
@@ -24,15 +24,23 @@ pipeline {
     rateLimitBuilds(throttle: [count: 60, durationName: 'hour', userBoost: true])
     quietPeriod(10)
   }
+  parameters {
+    string(name: 'BRANCH_SPECIFIER', defaultValue: 'master', description: 'It would not be defined on the first build, see JENKINS-41929.')
+  }
   triggers {
-    cron 'H H(0-5) * * 1-5'
+    cron 'H H(4-5) * * 1-5'
   }
   stages {
     stage('Checkout') {
+      environment {
+        // Parameters will be empty for the very first build, setting an environment variable
+        // with the same name will workaround the issue. see JENKINS-41929
+        BRANCH_SPECIFIER = "${params?.BRANCH_SPECIFIER}"
+      }
       steps {
         deleteDir()
         gitCheckout(basedir: "${BASE_DIR}",
-          branch: "${params.BRANCH_REFERENCE}",
+          branch: "${env.BRANCH_SPECIFIER}",
           repo: "https://github.com/elastic/${REPO}.git",
           credentialsId: "${JOB_GIT_CREDENTIALS}"
         )
@@ -56,7 +64,7 @@ pipeline {
       }
     }
     stage('Build ARM Docker images'){
-      agent { label 'arm && immutable && docker' }
+      agent { label 'arm' }
       environment {
         HOME = "${env.WORKSPACE}/${BASE_DIR}"
       }
