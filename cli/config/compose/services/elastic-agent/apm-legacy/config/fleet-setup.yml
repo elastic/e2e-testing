@@ -1,0 +1,9 @@
+fleet:
+  enroll: true
+  force: false
+  insecure: true
+fleet_server:
+  enable: true
+kibana:
+  fleet:
+    setup: true

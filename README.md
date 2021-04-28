@@ -10,6 +10,7 @@ This repository contains:
         - APM Server
         - Filebeat
         - Metricbeat
+    - [Kubernetes Autodiscover](./e2e/_suites/kubernetes-autodiscover)
     - [Fleet](./e2e/_suites/fleet)
         - Stand-Alone mode
         - Fleet mode

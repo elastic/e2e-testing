@@ -1,0 +1,21 @@
+monitoring.enabled: true
+http.enabled: true
+http.port: 5067
+http.host: "0.0.0.0"
+apm-server:
+  host: "0.0.0:8200"
+  secret_token: "1234"
+  # Enable APM Server Golang expvar support (https://golang.org/pkg/expvar/).
+  expvar:
+    enabled: true
+    url: "/debug/vars"
+  kibana:
+    # For APM Agent configuration in Kibana, enabled must be true.
+    enabled: true
+    host: "kibana"
+    username: "elastic"
+    password: "changeme"
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+  username: "elastic"
+  password: "changeme"
