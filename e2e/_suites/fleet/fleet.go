@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"strings"
 	"time"
 
@@ -20,7 +21,6 @@ import (
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -98,26 +98,7 @@ func (fts *FleetTestSuite) afterScenario() {
 		}).Warn("The enrollment token could not be deleted")
 	}
 
-	// Cleanup all package policies
-	packagePolicies, err := fts.kibanaClient.ListPackagePolicies()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err":    err,
-			"policy": fts.FleetServerPolicy,
-		}).Error("The package policies could not be found")
-	}
-	for _, pkgPolicy := range packagePolicies {
-		// Do not remove the fleet server package integration otherwise fleet server fails to bootstrap
-		if !strings.Contains(pkgPolicy.Name, "fleet_server") && pkgPolicy.PolicyID == fts.FleetServerPolicy.ID {
-			err = fts.kibanaClient.DeleteIntegrationFromPolicy(pkgPolicy)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"err":           err,
-					"packagePolicy": pkgPolicy,
-				}).Error("The integration could not be deleted from the configuration")
-			}
-		}
-	}
+	fts.kibanaClient.DeleteAllPolicies(fts.FleetServerPolicy)
 
 	// clean up fields
 	fts.CurrentTokenID = ""
@@ -685,8 +666,12 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 }
 
 func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) error {
+	return thePolicyShowsTheDatasourceAdded(fts.kibanaClient, fts.FleetServerPolicy, packageName)
+}
+
+func thePolicyShowsTheDatasourceAdded(client *kibana.Client, policy kibana.Policy, packageName string) error {
 	log.WithFields(log.Fields{
-		"policyID": fts.FleetServerPolicy.ID,
+		"policyID": policy.ID,
 		"package":  packageName,
 	}).Trace("Checking if the policy shows the package added")
 
@@ -696,11 +681,11 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 	exp := common.GetExponentialBackOff(maxTimeout)
 
 	configurationIsPresentFn := func() error {
-		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(packageName, fts.FleetServerPolicy)
+		packagePolicy, err := client.GetIntegrationFromAgentPolicy(packageName, policy)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"packagePolicy": packagePolicy,
-				"policy":        fts.FleetServerPolicy,
+				"policy":        policy,
 				"retry":         retryCount,
 				"error":         err,
 			}).Warn("The integration was not found in the policy")
@@ -721,13 +706,17 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 }
 
 func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName string, action string) error {
+	return theIntegrationIsOperatedInThePolicy(fts.kibanaClient, fts.FleetServerPolicy, packageName, action)
+}
+
+func theIntegrationIsOperatedInThePolicy(client *kibana.Client, policy kibana.Policy, packageName string, action string) error {
 	log.WithFields(log.Fields{
 		"action":  action,
-		"policy":  fts.FleetServerPolicy,
+		"policy":  policy,
 		"package": packageName,
 	}).Trace("Doing an operation for a package on a policy")
 
-	integration, err := fts.kibanaClient.GetIntegrationByPackageName(packageName)
+	integration, err := client.GetIntegrationByPackageName(packageName)
 	if err != nil {
 		return err
 	}
@@ -737,44 +726,20 @@ func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName strin
 			Name:        integration.Name,
 			Description: integration.Title,
 			Namespace:   "default",
-			PolicyID:    fts.FleetServerPolicy.ID,
+			PolicyID:    policy.ID,
 			Enabled:     true,
 			Package:     integration,
 			Inputs:      []kibana.Input{},
 		}
+		packageDataStream.Inputs = inputs(integration.Name)
 
-		if strings.EqualFold(integration.Name, "linux") {
-			packageDataStream.Inputs = []kibana.Input{
-				{
-					Type:    "linux/metrics",
-					Enabled: true,
-					Streams: []interface{}{
-						map[string]interface{}{
-							"id":      "linux/metrics-linux.memory-" + uuid.New().String(),
-							"enabled": true,
-							"data_stream": map[string]interface{}{
-								"dataset": "linux.memory",
-								"type":    "metrics",
-							},
-						},
-					},
-					Vars: map[string]kibana.Var{
-						"period": {
-							Value: "1s",
-							Type:  "string",
-						},
-					},
-				},
-			}
-		}
-
-		return fts.kibanaClient.AddIntegrationToPolicy(packageDataStream)
+		return client.AddIntegrationToPolicy(packageDataStream)
 	} else if strings.ToLower(action) == actionREMOVED {
-		packageDataStream, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(integration.Name, fts.FleetServerPolicy)
+		packageDataStream, err := client.GetIntegrationFromAgentPolicy(integration.Name, policy)
 		if err != nil {
 			return err
 		}
-		return fts.kibanaClient.DeleteIntegrationFromPolicy(packageDataStream)
+		return client.DeleteIntegrationFromPolicy(packageDataStream)
 	}
 
 	return nil
@@ -1218,4 +1183,47 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containe
 	}
 
 	return cfg, agentInstaller.PostInstallFn()
+}
+
+func inputs(integration string) []kibana.Input {
+	switch integration {
+	case "apm":
+		return []kibana.Input{
+			{
+				Type:    "apm",
+				Enabled: true,
+				Streams: []interface{}{},
+				Vars: map[string]kibana.Var{
+					"apm-server": {
+						Value: "host",
+						Type:  "localhost:8200",
+					},
+				},
+			},
+		}
+	case "linux":
+		return []kibana.Input{
+			{
+				Type:    "linux/metrics",
+				Enabled: true,
+				Streams: []interface{}{
+					map[string]interface{}{
+						"id":      "linux/metrics-linux.memory-" + uuid.New().String(),
+						"enabled": true,
+						"data_stream": map[string]interface{}{
+							"dataset": "linux.memory",
+							"type":    "metrics",
+						},
+					},
+				},
+				Vars: map[string]kibana.Var{
+					"period": {
+						Value: "1s",
+						Type:  "string",
+					},
+				},
+			},
+		}
+	}
+	return []kibana.Input{}
 }
