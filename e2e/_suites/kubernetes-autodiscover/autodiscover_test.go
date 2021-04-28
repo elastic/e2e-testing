@@ -18,6 +18,7 @@ import (
 	messages "github.com/cucumber/messages-go/v10"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
@@ -388,6 +389,9 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 	log.DeferExitHandler(cancel)
 
 	ctx.BeforeSuite(func() {
+		// init logger
+		config.Init()
+
 		err := cluster.Initialize(suiteContext, "testdata/kind.yml")
 		if err != nil {
 			log.WithError(err).Fatal("Failed to initialize cluster")
