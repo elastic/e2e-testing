@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"strings"
 	"time"
 
@@ -20,7 +21,6 @@ import (
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -1183,4 +1183,47 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containe
 	}
 
 	return cfg, agentInstaller.PostInstallFn()
+}
+
+func inputs(integration string) []kibana.Input {
+	switch integration {
+	case "apm":
+		return []kibana.Input{
+			{
+				Type:    "apm",
+				Enabled: true,
+				Streams: []interface{}{},
+				Vars: map[string]kibana.Var{
+					"apm-server": {
+						Value: "host",
+						Type:  "localhost:8200",
+					},
+				},
+			},
+		}
+	case "linux":
+		return []kibana.Input{
+			{
+				Type:    "linux/metrics",
+				Enabled: true,
+				Streams: []interface{}{
+					map[string]interface{}{
+						"id":      "linux/metrics-linux.memory-" + uuid.New().String(),
+						"enabled": true,
+						"data_stream": map[string]interface{}{
+							"dataset": "linux.memory",
+							"type":    "metrics",
+						},
+					},
+				},
+				Vars: map[string]kibana.Var{
+					"period": {
+						Value: "1s",
+						Type:  "string",
+					},
+				},
+			},
+		}
+	}
+	return []kibana.Input{}
 }
