@@ -1,11 +1,11 @@
 ---
 - job:
-    name: e2e-tests/e2e-testing-fleet-daily-mbp
-    display-name: End-2-End tests for Fleet Pipeline
-    description: Run E2E Fleet test suite daily, including maintenance branches
+    name: e2e-tests/e2e-testing-k8s-autodiscovery-daily-mbp
+    display-name: End-2-End tests for Observability K8S Autodiscovery Pipeline
+    description: Run E2E K8S Autodiscovery test suite daily, including maintenance branches
     view: E2E
     project-type: multibranch
-    script-path: .ci/e2eTestingFleetDaily.groovy
+    script-path: .ci/e2eTestingK8SAutodiscoveryDaily.groovy
     scm:
       - github:
           branch-discovery: no-pr
