@@ -187,3 +187,27 @@ func (c *Cluster) Cleanup(ctx context.Context) {
 		}
 	}
 }
+
+// LoadImage loads a Docker image into Kind runtime, using it fully qualified name.
+// It does not check cluster availability because a pull error could be present in the pod,
+// which will need the load of the requested image, causing a chicken-egg error.
+func (c *Cluster) LoadImage(ctx context.Context, image string) error {
+	shell.CheckInstalledSoftware("kind")
+
+	loadArgs := []string{"load", "docker-image", image}
+	// default cluster name is equals to 'kind'
+	if c.kindName != "" {
+		loadArgs = append(loadArgs, "--name", c.kindName)
+	}
+
+	result, err := shell.Execute(ctx, ".", "kind", loadArgs...)
+	if err != nil {
+		log.WithError(err).Fatal("Failed to load archive into kind")
+	}
+	log.WithFields(log.Fields{
+		"image":  image,
+		"result": result,
+	}).Info("Image has been loaded into Kind runtime")
+
+	return nil
+}
