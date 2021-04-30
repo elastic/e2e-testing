@@ -124,7 +124,7 @@ func Init() {
 		return
 	}
 
-	configureLogger()
+	ConfigureLogger()
 
 	binaries := []string{
 		"docker",
@@ -246,7 +246,8 @@ func checkConfigDirs(workspace string) {
 	}).Trace("'op' workdirs created.")
 }
 
-func configureLogger() {
+// ConfigureLogger sets the log for the application
+func ConfigureLogger() {
 	includeTimestamp := os.Getenv("OP_LOG_INCLUDE_TIMESTAMP")
 	fullTimestamp := (strings.ToUpper(includeTimestamp) == "TRUE")
 

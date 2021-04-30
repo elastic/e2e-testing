@@ -63,7 +63,7 @@ var tx *apm.Transaction
 var stepSpan *apm.Span
 
 func setupSuite() {
-	config.Init()
+	config.ConfigureLogger()
 
 	developerMode = shell.GetEnvBool("DEVELOPER_MODE")
 	if developerMode {

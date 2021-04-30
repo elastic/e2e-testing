@@ -42,7 +42,7 @@ func TestConfigureLoggerWithTimestamps(t *testing.T) {
 	os.Setenv("OP_LOG_INCLUDE_TIMESTAMP", "true")
 	defer cleanUpEnv()
 
-	configureLogger()
+	ConfigureLogger()
 
 	logger := logrus.New()
 
@@ -104,7 +104,7 @@ func checkLoggerWithLogLevel(t *testing.T, level string) {
 		level = "INFO"
 	}
 
-	configureLogger()
+	ConfigureLogger()
 
 	logLevel := logrus.GetLevel()
 
