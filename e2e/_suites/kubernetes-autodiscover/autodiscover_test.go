@@ -469,7 +469,7 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 
 	ctx.BeforeSuite(func() {
 		// init logger
-		config.ConfigureLogger()
+		config.Init()
 
 		err := cluster.Initialize(suiteContext, "testdata/kind.yml")
 		if err != nil {
