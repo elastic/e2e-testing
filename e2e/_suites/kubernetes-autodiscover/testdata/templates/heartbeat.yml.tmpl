@@ -64,6 +64,7 @@ spec:
       containers:
       - name: heartbeat
         image: docker.elastic.co/{{ beats_namespace }}/heartbeat:{{ beats_version }}
+        imagePullPolicy: IfNotPresent
         args: [
           "-c", "/etc/heartbeat.yml",
           "-e",
