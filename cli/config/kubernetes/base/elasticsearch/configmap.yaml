@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elasticsearch-config
+data:
+  ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+  network.host: ""
+  transport.host: "127.0.0.1"
+  http.host: "0.0.0.0"
+  indices.id_field_data.enabled: 'true'
+  xpack.license.self_generated.type: "trial"
+  xpack.security.enabled: 'true'
+  xpack.security.authc.api_key.enabled: 'true'
+  ELASTIC_USERNAME: "elastic"
+  ELASTIC_PASSWORD: "changeme"
