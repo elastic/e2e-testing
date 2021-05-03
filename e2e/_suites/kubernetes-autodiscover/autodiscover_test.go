@@ -161,7 +161,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 
 	}
 
-	log.Infof("Caching beat version '%s' for %s", beatVersion, podName)
+	log.Tracef("Caching beat version '%s' for %s", beatVersion, podName)
 	beatVersions[podName] = beatVersion
 
 	return nil
