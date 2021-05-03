@@ -45,6 +45,7 @@ spec:
       containers:
       - name: filebeat
         image: docker.elastic.co/{{ beats_namespace }}/filebeat:{{ beats_version }}
+        imagePullPolicy: IfNotPresent
         args: [
           "-c", "/etc/filebeat.yml",
           "-e",
