@@ -675,7 +675,8 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		if elasticAPMActive {
+		elasticAPMEnvironment := shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "ci")
+		if elasticAPMActive && elasticAPMEnvironment == "local" {
 			serviceManager := compose.NewServiceManager()
 
 			env := map[string]string{
