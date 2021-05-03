@@ -22,7 +22,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/utils"
 )
 
-const defaultBeatVersion = "8.0.0-SNAPSHOT"
+const defaultBeatVersion = "7.x-SNAPSHOT"
 const defaultEventsWaitTimeout = 120 * time.Second
 const defaultDeployWaitTimeout = 120 * time.Second
 

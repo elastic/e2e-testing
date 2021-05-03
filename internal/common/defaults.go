@@ -23,7 +23,7 @@ const FleetProfileName = "fleet"
 const FleetServerAgentServiceName = "fleet-server"
 
 // AgentVersionBase is the base version of the agent to use
-var AgentVersionBase = "8.0.0-SNAPSHOT"
+var AgentVersionBase = "7.x-SNAPSHOT"
 
 // AgentVersion is the version of the agent to use
 // It can be overriden by BEAT_VERSION env var

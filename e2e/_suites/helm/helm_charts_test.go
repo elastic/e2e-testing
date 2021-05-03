@@ -55,7 +55,7 @@ var kubernetesVersion = "1.18.2"
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
-var stackVersion = "8.0.0-SNAPSHOT"
+var stackVersion = "7.x-SNAPSHOT"
 
 var testSuite HelmChartTestSuite
 
