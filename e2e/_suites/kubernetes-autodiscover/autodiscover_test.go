@@ -492,10 +492,10 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 
 	var kubectl kubernetes.Control
 	var pods podsManager
-	ctx.BeforeScenario(func(*messages.Pickle) {
+	ctx.BeforeScenario(func(p *messages.Pickle) {
 		kubectl = cluster.Kubectl().WithNamespace(scenarioCtx, "")
 		if kubectl.Namespace != "" {
-			log.Debugf("Running scenario in namespace: %s", kubectl.Namespace)
+			log.Debugf("Running scenario %s in namespace: %s", p.Name, kubectl.Namespace)
 		}
 		pods.kubectl = kubectl
 		pods.ctx = scenarioCtx
