@@ -7,9 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/google/uuid"
-	"path"
 	"strings"
 	"time"
 
@@ -33,7 +31,7 @@ const actionREMOVED = "removed"
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
 	// integrations
-	//Cleanup             bool
+	StandAlone          bool
 	CurrentToken        string // current enrollment token
 	CurrentTokenID      string // current enrollment tokenID
 	ElasticAgentStopped bool   // will be used to signal when the agent process can be called again in the tear-down stage
@@ -52,52 +50,37 @@ type FleetTestSuite struct {
 	// date controls for queries
 	AgentStoppedDate             time.Time
 	RuntimeDependenciesStartDate time.Time
-	StandAlone                   bool
 }
 
 // afterScenario destroys the state created by a scenario
 func (fts *FleetTestSuite) afterScenario() {
-	if fts.StandAlone {
-		serviceManager := compose.NewServiceManager()
-		serviceName := common.ElasticAgentServiceName
 
-		if log.IsLevelEnabled(log.DebugLevel) {
-			_ = fts.getContainerLogs()
-		}
-
-		developerMode := shell.GetEnvBool("DEVELOPER_MODE")
-		if !developerMode {
-			_ = serviceManager.RemoveServicesFromCompose(context.Background(), common.FleetProfileName, []string{serviceName}, common.ProfileEnv)
-		} else {
-			log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
-		}
-
-		fts.kibanaClient.DeleteAllPolicies(fts.FleetServerPolicy)
-		return
-	}
-
+	serviceName := common.ElasticAgentServiceName
 	serviceManager := compose.NewServiceManager()
 
-	agentInstaller := fts.getInstaller()
+	if !fts.StandAlone {
+		agentInstaller := fts.getInstaller()
+		serviceName = fts.getServiceName(agentInstaller)
 
-	serviceName := fts.getServiceName(agentInstaller)
-
-	if log.IsLevelEnabled(log.DebugLevel) {
-		err := agentInstaller.PrintLogsFn(fts.Hostname)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"containerName": fts.Hostname,
-				"error":         err,
-			}).Warn("Could not get agent logs in the container")
+		if log.IsLevelEnabled(log.DebugLevel) {
+			err := agentInstaller.PrintLogsFn(fts.Hostname)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"containerName": fts.Hostname,
+					"error":         err,
+				}).Warn("Could not get agent logs in the container")
+			}
 		}
-	}
 
-	// only call it when the elastic-agent is present
-	if !fts.ElasticAgentStopped {
-		err := agentInstaller.UninstallFn()
-		if err != nil {
-			log.Warnf("Could not uninstall the agent after the scenario: %v", err)
+		// only call it when the elastic-agent is present
+		if !fts.ElasticAgentStopped {
+			err := agentInstaller.UninstallFn()
+			if err != nil {
+				log.Warnf("Could not uninstall the agent after the scenario: %v", err)
+			}
 		}
+	} else if log.IsLevelEnabled(log.DebugLevel) {
+		_ = fts.getContainerLogs()
 	}
 
 	err := fts.unenrollHostname()
@@ -198,24 +181,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the "([^"]*)" datasource is shown in the policy$`, fts.thePolicyShowsTheDatasourceAdded)
 }
 
-func (fts *FleetTestSuite) theIntegrationIsAddedToThePolicy(packageName string) error {
-	fts.StandAlone = true
-	return theIntegrationIsOperatedInThePolicy(fts.kibanaClient, fts.FleetServerPolicy, packageName, "added")
-}
-
-func (fts *FleetTestSuite) aStandaloneAgentIsDeployedWithFleetServerModeOnCloud(image string) error {
-	fts.StandAlone = true
-	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(true)
-	if err != nil {
-		return err
-	}
-	fts.FleetServerPolicy = fleetPolicy
-	volume := path.Join(config.OpDir(), "compose", "services", "elastic-agent", "apm-legacy")
-	return fts.startAgent(image, "docker-compose-cloud.yml", map[string]string{"apmVolume": volume})
-}
-
 func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredStatus string) error {
-	fts.StandAlone = true
 	waitForAgents := func() error {
 		agents, err := fts.kibanaClient.ListAgents()
 		if err != nil {
@@ -238,165 +204,6 @@ func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredSt
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func (fts *FleetTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string) error {
-	fts.StandAlone = true
-	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(true)
-	if err != nil {
-		return err
-	}
-	fts.FleetServerPolicy = fleetPolicy
-	return fts.startAgent(image, "", map[string]string{"fleetServerMode": "1"})
-}
-
-func (fts *FleetTestSuite) aStandaloneAgentIsDeployed(image string) error {
-	fts.StandAlone = true
-	return fts.startAgent(image, "", nil)
-}
-
-func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
-	fts.StandAlone = true
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
-	minimumHitsCount := 50
-
-	result, err := searchAgentData(fts.Hostname, fts.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
-	if err != nil {
-		return err
-	}
-
-	log.Tracef("Search result: %v", result)
-
-	return elasticsearch.AssertHitsArePresent(result)
-}
-
-func (fts *FleetTestSuite) theDockerContainerIsStopped(serviceName string) error {
-	fts.StandAlone = true
-	serviceManager := compose.NewServiceManager()
-
-	err := serviceManager.RemoveServicesFromCompose(context.Background(), common.FleetProfileName, []string{serviceName}, common.ProfileEnv)
-	if err != nil {
-		return err
-	}
-	fts.AgentStoppedDate = time.Now().UTC()
-
-	return nil
-}
-
-func (fts *FleetTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error {
-	fts.StandAlone = true
-	maxTimeout := time.Duration(30) * time.Second
-	minimumHitsCount := 1
-
-	result, err := searchAgentData(fts.Hostname, fts.AgentStoppedDate, minimumHitsCount, maxTimeout)
-	if err != nil {
-		if strings.Contains(err.Error(), "type:index_not_found_exception") {
-			return err
-		}
-
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Info("No documents were found for the Agent in the index after it stopped")
-		return nil
-	}
-
-	return elasticsearch.AssertHitsAreNotPresent(result)
-}
-
-func (fts *FleetTestSuite) startAgent(image string, composeFilename string, env map[string]string) error {
-
-	log.Trace("Deploying an agent to Fleet")
-
-	dockerImageTag := common.AgentVersion
-
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
-	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
-	if useCISnapshots || beatsLocalPath != "" {
-		// load the docker images that were already:
-		// a. downloaded from the GCP bucket
-		// b. fetched from the local beats binaries
-		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.AgentVersion, "")
-
-		dockerInstaller.PreInstallFn()
-
-		dockerImageTag += "-amd64"
-	}
-
-	serviceManager := compose.NewServiceManager()
-
-	common.ProfileEnv["elasticAgentDockerImageSuffix"] = ""
-	if image != "default" {
-		common.ProfileEnv["elasticAgentDockerImageSuffix"] = "-" + image
-	}
-
-	common.ProfileEnv["elasticAgentDockerNamespace"] = utils.GetDockerNamespaceEnvVar("beats")
-
-	containerName := fmt.Sprintf("%s_%s_%d", common.FleetProfileName, common.ElasticAgentServiceName, 1)
-
-	common.ProfileEnv["elasticAgentContainerName"] = containerName
-	common.ProfileEnv["elasticAgentPlatform"] = "linux/amd64"
-	common.ProfileEnv["elasticAgentTag"] = dockerImageTag
-
-	for k, v := range env {
-		common.ProfileEnv[k] = v
-	}
-
-	err := serviceManager.AddServicesToCompose(context.Background(), common.FleetProfileName,
-		[]string{common.ElasticAgentServiceName}, common.ProfileEnv, composeFilename)
-	if err != nil {
-		log.Error("Could not deploy the elastic-agent")
-		return err
-	}
-
-	// get container hostname once
-	hostname, err := docker.GetContainerHostname(containerName)
-	if err != nil {
-		return err
-	}
-
-	fts.Image = image
-	fts.Hostname = hostname
-	//fts.Cleanup = true
-
-	err = fts.installTestTools(containerName)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// installTestTools we need the container name because we use the Docker Client instead of Docker Compose
-// we are going to install those tools we use in the test framework for checking
-// and verifications
-func (fts *FleetTestSuite) installTestTools(containerName string) error {
-	if fts.Image != "ubi8" {
-		return nil
-	}
-
-	cmd := []string{"microdnf", "install", "procps-ng"}
-
-	log.WithFields(log.Fields{
-		"command":       cmd,
-		"containerName": containerName,
-	}).Trace("Installing test tools ")
-
-	_, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"command":       cmd,
-			"containerName": containerName,
-			"error":         err,
-		}).Error("Could not install test tools using the Docker client")
-		return err
-	}
-
-	log.WithFields(log.Fields{
-		"command":       cmd,
-		"containerName": containerName,
-	}).Debug("Test tools installed")
-
 	return nil
 }
 
@@ -548,7 +355,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	var fleetConfig *kibana.FleetConfig
 	fleetConfig, err = deployAgentToFleet(agentInstaller, containerName, fts.CurrentToken, fts.FleetServerHostname)
 
-	//fts.Cleanup = true
 	if err != nil {
 		return err
 	}
@@ -899,43 +705,6 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 		"token":   fts.CurrentToken,
 		"tokenID": fts.CurrentTokenID,
 	}).Debug("Token was revoked")
-
-	return nil
-}
-
-func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) error {
-	fts.StandAlone = true
-	log.WithFields(log.Fields{
-		"policyID": fts.FleetServerPolicy.ID,
-		"package":  packageName,
-	}).Trace("Checking if the policy shows the package added")
-
-	maxTimeout := time.Minute
-	retryCount := 1
-
-	exp := common.GetExponentialBackOff(maxTimeout)
-
-	configurationIsPresentFn := func() error {
-		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(packageName, fts.FleetServerPolicy)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"packagePolicy": packagePolicy,
-				"policy":        fts.FleetServerPolicy,
-				"retry":         retryCount,
-				"error":         err,
-			}).Warn("The integration was not found in the policy")
-			retryCount++
-			return err
-		}
-
-		retryCount++
-		return err
-	}
-
-	err := backoff.Retry(configurationIsPresentFn, exp)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }

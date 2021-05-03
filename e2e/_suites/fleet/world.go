@@ -14,7 +14,6 @@ import (
 // IngestManagerTestSuite represents a test suite, holding references to the pieces needed to run the tests
 type IngestManagerTestSuite struct {
 	Fleet *FleetTestSuite
-	//StandAlone *StandAloneTestSuite
 }
 
 func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
