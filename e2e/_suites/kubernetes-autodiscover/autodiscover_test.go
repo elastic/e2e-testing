@@ -121,12 +121,12 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		return nil
 	}
 
+	beatVersion := shell.GetEnv("BEAT_VERSION", defaultBeatVersion)
+
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if useCISnapshots || beatsLocalPath != "" {
 		log.Debugf("Configuring Docker image for %s", podName)
-
-		beatVersion := shell.GetEnv("BEAT_VERSION", defaultBeatVersion)
 
 		// this method will detect if the GITHUB_CHECK_SHA1 variable is set
 		artifactName := utils.BuildArtifactName(podName, beatVersion, defaultBeatVersion, "linux", "amd64", "tar.gz", true)
@@ -159,9 +159,10 @@ func (m *podsManager) configureDockerImage(podName string) error {
 			return err
 		}
 
-		log.Tracef("Caching beat version '%s' for %s", beatVersion, podName)
-		beatVersions[podName] = beatVersion
 	}
+
+	log.Infof("Caching beat version '%s' for %s", beatVersion, podName)
+	beatVersions[podName] = beatVersion
 
 	return nil
 }
