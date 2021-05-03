@@ -8,6 +8,8 @@ repos:
         exclude: ^notice/overrides.json
     -   id: check-merge-conflict
     -   id: check-yaml
+        exclude: >
+          (?x)^(cli/config/kubernetes.*)$
     -   id: check-xml
     -   id: end-of-file-fixer
         exclude: >

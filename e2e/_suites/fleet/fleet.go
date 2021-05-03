@@ -71,13 +71,13 @@ func (fts *FleetTestSuite) afterScenario() {
 				}).Warn("Could not get agent logs in the container")
 			}
 		}
+	}
 
-		// only call it when the elastic-agent is present
-		if !fts.ElasticAgentStopped {
-			err := agentInstaller.UninstallFn()
-			if err != nil {
-				log.Warnf("Could not uninstall the agent after the scenario: %v", err)
-			}
+	// only call it when the elastic-agent is present
+	if !fts.ElasticAgentStopped {
+		err := agentInstaller.UninstallFn()
+		if err != nil {
+			log.Warnf("Could not uninstall the agent after the scenario: %v", err)
 		}
 	} else if log.IsLevelEnabled(log.DebugLevel) {
 		_ = fts.getContainerLogs()
