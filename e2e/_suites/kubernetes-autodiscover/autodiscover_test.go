@@ -22,9 +22,18 @@ import (
 	"github.com/elastic/e2e-testing/internal/utils"
 )
 
+<<<<<<< HEAD
 const defaultBeatVersion = "7.13.0-SNAPSHOT"
 const defaultEventsWaitTimeout = 120 * time.Second
 const defaultDeployWaitTimeout = 120 * time.Second
+=======
+var beatVersions = map[string]string{}
+
+const defaultBeatVersion = "8.0.0-SNAPSHOT"
+
+var defaultEventsWaitTimeout = 60 * time.Second
+var defaultDeployWaitTimeout = 60 * time.Second
+>>>>>>> 15a2a3d7... chore: initialise timeout factor next to the declaration (#1118)
 
 type podsManager struct {
 	kubectl kubernetesControl
@@ -387,7 +396,17 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 	log.DeferExitHandler(cancel)
 
 	ctx.BeforeSuite(func() {
+<<<<<<< HEAD
 		err := cluster.initialize(suiteContext)
+=======
+		// init logger
+		config.Init()
+
+		defaultEventsWaitTimeout = defaultEventsWaitTimeout * time.Duration(common.TimeoutFactor)
+		defaultDeployWaitTimeout = defaultDeployWaitTimeout * time.Duration(common.TimeoutFactor)
+
+		err := cluster.Initialize(suiteContext, "testdata/kind.yml")
+>>>>>>> 15a2a3d7... chore: initialise timeout factor next to the declaration (#1118)
 		if err != nil {
 			log.WithError(err).Fatal("Failed to initialize cluster")
 		}
