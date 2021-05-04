@@ -31,7 +31,7 @@ const actionREMOVED = "removed"
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
 	// integrations
-	Cleanup             bool
+	StandAlone          bool
 	CurrentToken        string // current enrollment token
 	CurrentTokenID      string // current enrollment tokenID
 	ElasticAgentStopped bool   // will be used to signal when the agent process can be called again in the tear-down stage
@@ -45,12 +45,20 @@ type FleetTestSuite struct {
 	PolicyUpdatedAt     string // the moment the policy was updated
 	Version             string // current elastic-agent version
 	kibanaClient        *kibana.Client
+<<<<<<< HEAD
+=======
+	// fleet server
+	FleetServerHostname string // hostname of the fleet server. If empty, it means the agent is the first one, bootstrapping fleet server
+	// date controls for queries
+	AgentStoppedDate             time.Time
+	RuntimeDependenciesStartDate time.Time
+>>>>>>> 77a2c554... Unify fleet and stand-alone suites (#1112)
 }
 
 // afterScenario destroys the state created by a scenario
 func (fts *FleetTestSuite) afterScenario() {
-	serviceManager := compose.NewServiceManager()
 
+<<<<<<< HEAD
 	serviceName := fts.Image
 
 	if log.IsLevelEnabled(log.DebugLevel) {
@@ -64,6 +72,24 @@ func (fts *FleetTestSuite) afterScenario() {
 			}).Warn("Could not get agent logs in the container")
 		}
 
+=======
+	serviceName := common.ElasticAgentServiceName
+	serviceManager := compose.NewServiceManager()
+
+	if !fts.StandAlone {
+		agentInstaller := fts.getInstaller()
+		serviceName = fts.getServiceName(agentInstaller)
+
+		if log.IsLevelEnabled(log.DebugLevel) {
+			err := agentInstaller.PrintLogsFn(fts.Hostname)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"containerName": fts.Hostname,
+					"error":         err,
+				}).Warn("Could not get agent logs in the container")
+			}
+		}
+>>>>>>> 77a2c554... Unify fleet and stand-alone suites (#1112)
 		// only call it when the elastic-agent is present
 		if !fts.ElasticAgentStopped {
 			err := agentInstaller.UninstallFn()
@@ -71,6 +97,8 @@ func (fts *FleetTestSuite) afterScenario() {
 				log.Warnf("Could not uninstall the agent after the scenario: %v", err)
 			}
 		}
+	} else if log.IsLevelEnabled(log.DebugLevel) {
+		_ = fts.getContainerLogs()
 	}
 
 	err := fts.unenrollHostname()
@@ -122,11 +150,16 @@ func (fts *FleetTestSuite) afterScenario() {
 	fts.CurrentToken = ""
 	fts.Image = ""
 	fts.Hostname = ""
+<<<<<<< HEAD
+=======
+	fts.FleetServerHostname = ""
+	fts.StandAlone = false
+>>>>>>> 77a2c554... Unify fleet and stand-alone suites (#1112)
 }
 
 // beforeScenario creates the state needed by a scenario
 func (fts *FleetTestSuite) beforeScenario() {
-	fts.Cleanup = false
+	fts.StandAlone = false
 	fts.ElasticAgentStopped = false
 
 	fts.Version = common.AgentVersion
@@ -177,8 +210,45 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the policy is updated to have "([^"]*)" in "([^"]*)" mode$`, fts.thePolicyIsUpdatedToHaveMode)
 	s.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
 
+<<<<<<< HEAD
 	// fleet server steps
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer in fleet-server mode$`, fts.anAgentIsDeployedToFleetWithInstallerInFleetMode)
+=======
+	// stand-alone only steps
+	s.Step(`^a "([^"]*)" stand-alone agent is deployed$`, fts.aStandaloneAgentIsDeployed)
+	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode$`, fts.bootstrapFleetServerFromAStandaloneAgent)
+	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode on cloud$`, fts.aStandaloneAgentIsDeployedWithFleetServerModeOnCloud)
+	s.Step(`^there is new data in the index from agent$`, fts.thereIsNewDataInTheIndexFromAgent)
+	s.Step(`^the "([^"]*)" docker container is stopped$`, fts.theDockerContainerIsStopped)
+	s.Step(`^there is no new data in the index after agent shuts down$`, fts.thereIsNoNewDataInTheIndexAfterAgentShutsDown)
+	s.Step(`^the stand-alone agent is listed in Fleet as "([^"]*)"$`, fts.theStandaloneAgentIsListedInFleetWithStatus)
+}
+
+func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredStatus string) error {
+	waitForAgents := func() error {
+		agents, err := fts.kibanaClient.ListAgents()
+		if err != nil {
+			return err
+		}
+
+		if len(agents) == 0 {
+			return errors.New("No agents found")
+		}
+
+		agentZero := agents[0]
+		hostname := agentZero.LocalMetadata.Host.HostName
+
+		return theAgentIsListedInFleetWithStatus(desiredStatus, hostname)
+	}
+	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
+	exp := common.GetExponentialBackOff(maxTimeout)
+
+	err := backoff.Retry(waitForAgents, exp)
+	if err != nil {
+		return err
+	}
+	return nil
+>>>>>>> 77a2c554... Unify fleet and stand-alone suites (#1112)
 }
 
 func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, version, installerType string) error {
@@ -327,7 +397,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	var fleetConfig *kibana.FleetConfig
 	fleetConfig, err = deployAgentToFleet(agentInstaller, containerName, fts.CurrentToken, bootstrapFleetServer)
 
-	fts.Cleanup = true
 	if err != nil {
 		return err
 	}
@@ -678,6 +747,7 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 	return nil
 }
 
+<<<<<<< HEAD
 func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) error {
 	log.WithFields(log.Fields{
 		"policyID": fts.FleetPolicy.ID,
@@ -714,6 +784,8 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 	return nil
 }
 
+=======
+>>>>>>> 77a2c554... Unify fleet and stand-alone suites (#1112)
 func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName string, action string) error {
 	log.WithFields(log.Fields{
 		"action":  action,
@@ -1220,3 +1292,72 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containe
 
 	return cfg, agentInstaller.PostInstallFn()
 }
+<<<<<<< HEAD
+=======
+
+func inputs(integration string) []kibana.Input {
+	switch integration {
+	case "apm":
+		return []kibana.Input{
+			{
+				Type:    "apm",
+				Enabled: true,
+				Streams: []interface{}{},
+				Vars: map[string]kibana.Var{
+					"apm-server": {
+						Value: "host",
+						Type:  "localhost:8200",
+					},
+				},
+			},
+		}
+	case "linux":
+		return []kibana.Input{
+			{
+				Type:    "linux/metrics",
+				Enabled: true,
+				Streams: []interface{}{
+					map[string]interface{}{
+						"id":      "linux/metrics-linux.memory-" + uuid.New().String(),
+						"enabled": true,
+						"data_stream": map[string]interface{}{
+							"dataset": "linux.memory",
+							"type":    "metrics",
+						},
+					},
+				},
+				Vars: map[string]kibana.Var{
+					"period": {
+						Value: "1s",
+						Type:  "string",
+					},
+				},
+			},
+		}
+	}
+	return []kibana.Input{}
+}
+
+func (fts *FleetTestSuite) getContainerLogs() error {
+	serviceManager := compose.NewServiceManager()
+
+	profile := common.FleetProfileName
+	serviceName := common.ElasticAgentServiceName
+
+	composes := []string{
+		profile,     // profile name
+		serviceName, // agent service
+	}
+	err := serviceManager.RunCommand(profile, composes, []string{"logs", serviceName}, common.ProfileEnv)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"service": serviceName,
+		}).Error("Could not retrieve Elastic Agent logs")
+
+		return err
+	}
+
+	return nil
+}
+>>>>>>> 77a2c554... Unify fleet and stand-alone suites (#1112)
