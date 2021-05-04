@@ -43,6 +43,7 @@ type FleetTestSuite struct {
 	Integration         kibana.IntegrationPackage // the installed integration
 	Policy              kibana.Policy
 	PolicyUpdatedAt     string // the moment the policy was updated
+	FleetServerPolicy   kibana.Policy
 	Version             string // current elastic-agent version
 	kibanaClient        *kibana.Client
 
