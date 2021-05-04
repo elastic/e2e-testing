@@ -177,8 +177,6 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the "([^"]*)" docker container is stopped$`, fts.theDockerContainerIsStopped)
 	s.Step(`^there is no new data in the index after agent shuts down$`, fts.thereIsNoNewDataInTheIndexAfterAgentShutsDown)
 	s.Step(`^the stand-alone agent is listed in Fleet as "([^"]*)"$`, fts.theStandaloneAgentIsListedInFleetWithStatus)
-	s.Step(`^the "([^"]*)" integration is added to the policy$`, fts.theIntegrationIsAddedToThePolicy)
-	s.Step(`^the "([^"]*)" datasource is shown in the policy$`, fts.thePolicyShowsTheDatasourceAdded)
 }
 
 func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredStatus string) error {

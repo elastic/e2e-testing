@@ -24,29 +24,26 @@ import (
 )
 
 func (fts *FleetTestSuite) aStandaloneAgentIsDeployed(image string) error {
-	fts.StandAlone = true
-	return fts.startAgent(image, "", nil)
+	return fts.startStandAloneAgent(image, "", nil)
 }
 
 func (fts *FleetTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string) error {
-	fts.StandAlone = true
 	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(true)
 	if err != nil {
 		return err
 	}
 	fts.FleetServerPolicy = fleetPolicy
-	return fts.startAgent(image, "", map[string]string{"fleetServerMode": "1"})
+	return fts.startStandAloneAgent(image, "", map[string]string{"fleetServerMode": "1"})
 }
 
 func (fts *FleetTestSuite) aStandaloneAgentIsDeployedWithFleetServerModeOnCloud(image string) error {
-	fts.StandAlone = true
 	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(true)
 	if err != nil {
 		return err
 	}
 	fts.FleetServerPolicy = fleetPolicy
 	volume := path.Join(config.OpDir(), "compose", "services", "elastic-agent", "apm-legacy")
-	return fts.startAgent(image, "docker-compose-cloud.yml", map[string]string{"apmVolume": volume})
+	return fts.startStandAloneAgent(image, "docker-compose-cloud.yml", map[string]string{"apmVolume": volume})
 }
 
 func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
@@ -94,8 +91,8 @@ func (fts *FleetTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error
 	return elasticsearch.AssertHitsAreNotPresent(result)
 }
 
-func (fts *FleetTestSuite) startAgent(image string, composeFilename string, env map[string]string) error {
-
+func (fts *FleetTestSuite) startStandAloneAgent(image string, composeFilename string, env map[string]string) error {
+	fts.StandAlone = true
 	log.Trace("Deploying an agent to Fleet")
 
 	dockerImageTag := common.AgentVersion
@@ -156,12 +153,7 @@ func (fts *FleetTestSuite) startAgent(image string, composeFilename string, env 
 	return nil
 }
 
-func (fts *FleetTestSuite) theIntegrationIsAddedToThePolicy(packageName string) error {
-	return theIntegrationIsOperatedInThePolicy(fts.kibanaClient, fts.FleetServerPolicy, packageName, "added")
-}
-
 func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) error {
-	fts.StandAlone = true
 	log.WithFields(log.Fields{
 		"policyID": fts.FleetServerPolicy.ID,
 		"package":  packageName,
