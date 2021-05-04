@@ -87,7 +87,8 @@ func (c *Client) DeleteAllPolicies() {
 	}
 	for _, pkgPolicy := range packagePolicies {
 		// Do not remove the fleet server package integration otherwise fleet server fails to bootstrap
-		if !strings.Contains(pkgPolicy.Name, "fleet_server") && pkgPolicy.PolicyID == "system" {
+		if !strings.Contains(pkgPolicy.Name, "fleet_server") && !strings.Contains(pkgPolicy.Name, "system") {
+			log.WithField("pkgPolicy", pkgPolicy.Name).Trace("Removing package policy")
 			err = c.DeleteIntegrationFromPolicy(pkgPolicy)
 			if err != nil {
 				log.WithFields(log.Fields{
