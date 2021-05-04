@@ -73,14 +73,16 @@ func FileExists(configFile string) (bool, error) {
 
 // GetComposeFile returns the path of the compose file, looking up the
 // tool's workdir
-func GetComposeFile(isProfile bool, composeName string) (string, error) {
-	composeFileName := "docker-compose.yml"
+func GetComposeFile(isProfile bool, composeName string, composeFileName ...string) (string, error) {
+	if isProfile || composeFileName == nil || composeFileName[0] == "" {
+		composeFileName = []string{"docker-compose.yml"}
+	}
 	serviceType := "services"
 	if isProfile {
 		serviceType = "profiles"
 	}
 
-	composeFilePath := path.Join(Op.Workspace, "compose", serviceType, composeName, composeFileName)
+	composeFilePath := path.Join(Op.Workspace, "compose", serviceType, composeName, composeFileName[0])
 	found, err := io.Exists(composeFilePath)
 	if found && err == nil {
 		log.WithFields(log.Fields{
@@ -130,15 +132,19 @@ func Init() {
 	}
 	shell.CheckInstalledSoftware(binaries...)
 
-	InitConfig()
+	initConfig()
 }
 
-// InitConfig initialises configuration
-func InitConfig() {
+// initConfig initialises configuration
+func initConfig() {
 	if Op != nil {
 		return
 	}
+	newConfig(OpDir())
+}
 
+// OpDir returns the directory to copy to
+func OpDir() string {
 	home, err := homedir.Dir()
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -146,9 +152,7 @@ func InitConfig() {
 		}).Fatal("Could not get current user's HOME dir")
 	}
 
-	w := filepath.Join(home, ".op")
-
-	newConfig(w)
+	return filepath.Join(home, ".op")
 }
 
 // PutServiceEnvironment puts the environment variables for the service, replacing "SERVICE_"

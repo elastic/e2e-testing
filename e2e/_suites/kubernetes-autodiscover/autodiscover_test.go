@@ -1,3 +1,7 @@
+// Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+// or more contributor license agreements. Licensed under the Elastic License;
+// you may not use this file except in compliance with the Elastic License.
+
 package main
 
 import (
@@ -18,21 +22,41 @@ import (
 	messages "github.com/cucumber/messages-go/v10"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/docker"
+	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 )
 
+var beatVersions = map[string]string{}
+
 const defaultBeatVersion = "8.0.0-SNAPSHOT"
-const defaultEventsWaitTimeout = 120 * time.Second
-const defaultDeployWaitTimeout = 120 * time.Second
+
+var defaultEventsWaitTimeout = 60 * time.Second
+var defaultDeployWaitTimeout = 60 * time.Second
+
+func init() {
+	// initialise timeout factor
+	common.TimeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", common.TimeoutFactor)
+
+	defaultEventsWaitTimeout = defaultEventsWaitTimeout * time.Duration(common.TimeoutFactor)
+	defaultDeployWaitTimeout = defaultDeployWaitTimeout * time.Duration(common.TimeoutFactor)
+}
 
 type podsManager struct {
-	kubectl kubernetesControl
+	kubectl kubernetes.Control
 	ctx     context.Context
 }
 
 func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, options []string) error {
 	path := filepath.Join("testdata/templates", sanitizeName(podName)+".yml.tmpl")
+
+	err := m.configureDockerImage(podName)
+	if err != nil {
+		return err
+	}
 
 	usedOptions := make(map[string]bool)
 	funcs := template.FuncMap{
@@ -49,7 +73,7 @@ func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, optio
 			return utils.GetDockerNamespaceEnvVar("beats")
 		},
 		"beats_version": func() string {
-			return shell.GetEnv("GITHUB_CHECK_SHA1", shell.GetEnv("BEAT_VERSION", defaultBeatVersion))
+			return beatVersions[podName]
 		},
 		"namespace": func() string {
 			return m.kubectl.Namespace
@@ -81,6 +105,64 @@ func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, optio
 			return godog.ErrPending
 		}
 	}
+
+	return nil
+}
+
+func (m *podsManager) configureDockerImage(podName string) error {
+	if podName != "filebeat" && podName != "heartbeat" && podName != "metricbeat" {
+		log.Debugf("Not processing custom binaries for pod: %s. Only [filebeat, heartbeat, metricbeat] will be processed", podName)
+		return nil
+	}
+
+	// we are caching the versions by pod to avoid downloading and loading/tagging the Docker image multiple times
+	if beatVersions[podName] != "" {
+		log.Tracef("The beat version was already loaded: %s", beatVersions[podName])
+		return nil
+	}
+
+	beatVersion := shell.GetEnv("BEAT_VERSION", defaultBeatVersion)
+
+	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+	if useCISnapshots || beatsLocalPath != "" {
+		log.Debugf("Configuring Docker image for %s", podName)
+
+		// this method will detect if the GITHUB_CHECK_SHA1 variable is set
+		artifactName := utils.BuildArtifactName(podName, beatVersion, defaultBeatVersion, "linux", "amd64", "tar.gz", true)
+
+		imagePath, err := utils.FetchBeatsBinary(artifactName, podName, beatVersion, defaultBeatVersion, common.TimeoutFactor, true)
+		if err != nil {
+			return err
+		}
+
+		// load the TAR file into the docker host as a Docker image
+		err = docker.LoadImage(imagePath)
+		if err != nil {
+			return err
+		}
+
+		beatVersion = beatVersion + "-amd64"
+
+		// tag the image with the proper docker tag, including platform
+		err = docker.TagImage(
+			"docker.elastic.co/beats/"+podName+":"+defaultBeatVersion,
+			"docker.elastic.co/observability-ci/"+podName+":"+beatVersion,
+		)
+		if err != nil {
+			return err
+		}
+
+		// load PR image into kind
+		err = cluster.LoadImage(m.ctx, "docker.elastic.co/observability-ci/"+podName+":"+beatVersion)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	log.Tracef("Caching beat version '%s' for %s", beatVersion, podName)
+	beatVersions[podName] = beatVersion
 
 	return nil
 }
@@ -380,24 +462,27 @@ func waitDuration(ctx context.Context, duration string) error {
 	return nil
 }
 
-var cluster kubernetesCluster
+var cluster kubernetes.Cluster
 
 func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 	suiteContext, cancel := context.WithCancel(context.Background())
 	log.DeferExitHandler(cancel)
 
 	ctx.BeforeSuite(func() {
-		err := cluster.initialize(suiteContext)
+		// init logger
+		config.Init()
+
+		err := cluster.Initialize(suiteContext, "testdata/kind.yml")
 		if err != nil {
 			log.WithError(err).Fatal("Failed to initialize cluster")
 		}
 		log.DeferExitHandler(func() {
-			cluster.cleanup(suiteContext)
+			cluster.Cleanup(suiteContext)
 		})
 	})
 
 	ctx.AfterSuite(func() {
-		cluster.cleanup(suiteContext)
+		cluster.Cleanup(suiteContext)
 		cancel()
 	})
 }
@@ -406,12 +491,12 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	scenarioCtx, cancel := context.WithCancel(context.Background())
 	log.DeferExitHandler(cancel)
 
-	var kubectl kubernetesControl
+	var kubectl kubernetes.Control
 	var pods podsManager
-	ctx.BeforeScenario(func(*messages.Pickle) {
+	ctx.BeforeScenario(func(p *messages.Pickle) {
 		kubectl = cluster.Kubectl().WithNamespace(scenarioCtx, "")
 		if kubectl.Namespace != "" {
-			log.Debugf("Running scenario in namespace: %s", kubectl.Namespace)
+			log.Debugf("Running scenario %s in namespace: %s", p.Name, kubectl.Namespace)
 		}
 		pods.kubectl = kubectl
 		pods.ctx = scenarioCtx

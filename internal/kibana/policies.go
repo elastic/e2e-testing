@@ -7,6 +7,7 @@ package kibana
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -73,6 +74,29 @@ func (c *Client) ListPolicies() ([]Policy, error) {
 	}
 
 	return resp.Items, nil
+}
+
+// DeleteAllPolicies deletes all policies
+func (c *Client) DeleteAllPolicies(except Policy) {
+	// Cleanup all package policies
+	packagePolicies, err := c.ListPackagePolicies()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Error("The package policies could not be found")
+	}
+	for _, pkgPolicy := range packagePolicies {
+		// Do not remove the fleet server package integration otherwise fleet server fails to bootstrap
+		if !strings.Contains(pkgPolicy.Name, "fleet_server") && pkgPolicy.PolicyID == except.ID {
+			err = c.DeleteIntegrationFromPolicy(pkgPolicy)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err":           err,
+					"packagePolicy": pkgPolicy,
+				}).Error("The integration could not be deleted from the configuration")
+			}
+		}
+	}
 }
 
 // Var represents a single variable at the package or
