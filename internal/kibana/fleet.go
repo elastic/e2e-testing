@@ -92,7 +92,7 @@ func (cfg FleetConfig) Flags() []string {
 	*/
 
 	baseFlags := []string{"-e", "-v", "--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken}
-	if common.AgentVersionBase == "8.0.0-SNAPSHOT" {
+	if common.AgentVersionBase == "7.14.x-SNAPSHOT" {
 		return append(baseFlags, "--url", fmt.Sprintf("https://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.FleetServerURI, cfg.FleetServerPort))
 	}
 
