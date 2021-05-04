@@ -134,14 +134,6 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			return nil
 		})
 
-		serviceManifest, err := deployer.Inspect("fleet-server")
-		if err != nil {
-			log.WithField("manifest", serviceManifest).Fatal("Unable to grab service manifest")
-		}
-		imts.Fleet.FleetServerHostname = serviceManifest.Hostname
-
-		log.WithField("manifest", serviceManifest).Trace("Discovered Fleet Server hostname")
-
 		imts.Fleet.Version = common.AgentVersionBase
 		imts.Fleet.RuntimeDependenciesStartDate = time.Now().UTC()
 	})
