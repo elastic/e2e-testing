@@ -55,7 +55,7 @@ func (sats *StandAloneTestSuite) afterScenario() {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
 
-	sats.kibanaClient.DeleteAllPolicies(sats.FleetPolicy)
+	sats.kibanaClient.DeleteAllPolicies()
 }
 
 func (sats *StandAloneTestSuite) contributeSteps(s *godog.ScenarioContext) {

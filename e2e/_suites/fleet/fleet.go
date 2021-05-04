@@ -96,7 +96,7 @@ func (fts *FleetTestSuite) afterScenario() {
 		}).Warn("The enrollment token could not be deleted")
 	}
 
-	fts.kibanaClient.DeleteAllPolicies(fts.Policy)
+	fts.kibanaClient.DeleteAllPolicies()
 
 	// clean up fields
 	fts.CurrentTokenID = ""
