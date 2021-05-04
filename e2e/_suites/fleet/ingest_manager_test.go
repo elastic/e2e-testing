@@ -6,9 +6,6 @@ package main
 
 import (
 	"context"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
-	"io"
 	"os"
 	"strings"
 	"time"
@@ -18,6 +15,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
@@ -140,7 +138,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		if !shell.GetEnvBool("SKIP_PULL") {
 			log.Info("Pulling Docker images...")
-			pullFreshImages(common.StackVersion, common.AgentVersion, common.KibanaVersion)
+			docker.PullImages(common.StackVersion, common.AgentVersion, common.KibanaVersion)
 		}
 
 		common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
@@ -222,32 +220,4 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			}
 		}
 	})
-}
-
-func pullFreshImages(stackVersion, agentVersion, kibanaVersion string) error {
-	c, err := client.NewClientWithOpts()
-	if err != nil {
-		return err
-	}
-	ctx := context.Background()
-	images := []string{
-		"docker.elastic.co/beats/elastic-agent:" + agentVersion,
-		"docker.elastic.co/beats/elastic-agent-ubi8:" + agentVersion,
-		"docker.elastic.co/elasticsearch/elasticsearch:" + stackVersion,
-		"docker.elastic.co/kibana/kibana:" + kibanaVersion,
-		"docker.elastic.co/observability-ci/elastic-agent:" + agentVersion,
-		"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + agentVersion,
-		"docker.elastic.co/observability-ci/elasticsearch:" + stackVersion,
-		"docker.elastic.co/observability-ci/elasticsearch-ubi8:" + stackVersion,
-		"docker.elastic.co/observability-ci/kibana:" + kibanaVersion,
-		"docker.elastic.co/observability-ci/kibana-ubi8:" + kibanaVersion,
-	}
-	for _, image := range images {
-		r, err := c.ImagePull(ctx, image, types.ImagePullOptions{})
-		if err != nil {
-			return err
-		}
-		io.Copy(os.Stdout, r)
-	}
-	return nil
 }
