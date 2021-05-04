@@ -21,22 +21,14 @@ type FleetConfig struct {
 	KibanaURI                string
 	FleetServerPort          int
 	FleetServerURI           string
-	FleetServerServiceToken  string
 	// server
-	BootstrapFleetServer bool
-	ServerPolicyID       string
+	ServerPolicyID string
 }
 
-// NewFleetConfig builds a new configuration for the fleet agent, defaulting ES credentials, URI and port.
-// If the 'fleetServerHost' flag is empty, then it will create the config for the initial fleet server
-// used to bootstrap Fleet Server
-// If the 'fleetServerHost' flag is not empty, the it will create the config for an agent using an existing Fleet
-// Server to connect to Fleet. It will also retrieve the default policy ID for fleet server
-func NewFleetConfig(token string, fleetServerHost string) (*FleetConfig, error) {
-	bootstrapFleetServer := (fleetServerHost == "")
-
+// NewFleetConfig builds a new configuration for the fleet agent, defaulting fleet-server host, ES credentials, URI and port.
+// It will also retrieve the default policy ID for fleet server
+func NewFleetConfig(token string) (*FleetConfig, error) {
 	cfg := &FleetConfig{
-		BootstrapFleetServer:     bootstrapFleetServer,
 		EnrollmentToken:          token,
 		ElasticsearchCredentials: "elastic:changeme",
 		ElasticsearchPort:        9200,
@@ -44,7 +36,7 @@ func NewFleetConfig(token string, fleetServerHost string) (*FleetConfig, error) 
 		KibanaPort:               5601,
 		KibanaURI:                "kibana",
 		FleetServerPort:          8220,
-		FleetServerURI:           fleetServerHost,
+		FleetServerURI:           "fleet-server",
 	}
 
 	client, err := NewClient()
@@ -52,45 +44,25 @@ func NewFleetConfig(token string, fleetServerHost string) (*FleetConfig, error) 
 		return cfg, err
 	}
 
-	if bootstrapFleetServer {
-		// obtain a Fleet Server Service Token for bootstrap
-		serviceToken, err := client.CreateServiceToken()
-		log.WithField("serviceToken", serviceToken).Trace("Get service token")
-		if err != nil {
-			return nil, err
-		}
-		cfg.FleetServerServiceToken = serviceToken.Value
-	} else {
-		defaultFleetServerPolicy, err := client.GetDefaultPolicy(true)
-		if err != nil {
-			return nil, err
-		}
-
-		cfg.ServerPolicyID = defaultFleetServerPolicy.ID
-
-		log.WithFields(log.Fields{
-			"elasticsearch":     cfg.ElasticsearchURI,
-			"elasticsearchPort": cfg.ElasticsearchPort,
-			"policyID":          cfg.ServerPolicyID,
-			"token":             cfg.EnrollmentToken,
-		}).Debug("Fleet Server config created")
-
+	defaultFleetServerPolicy, err := client.GetDefaultPolicy(true)
+	if err != nil {
+		return nil, err
 	}
+
+	cfg.ServerPolicyID = defaultFleetServerPolicy.ID
+
+	log.WithFields(log.Fields{
+		"elasticsearch":     cfg.ElasticsearchURI,
+		"elasticsearchPort": cfg.ElasticsearchPort,
+		"policyID":          cfg.ServerPolicyID,
+		"token":             cfg.EnrollmentToken,
+	}).Debug("Fleet Server config created")
 
 	return cfg, nil
 }
 
 // Flags bootstrap flags for fleet server
 func (cfg FleetConfig) Flags() []string {
-	if cfg.BootstrapFleetServer {
-		// TO-DO: remove all code to calculate the fleet-server policy, because it's inferred by the fleet-server
-		return []string{
-			"--force",
-			"--fleet-server-es", fmt.Sprintf("http://%s:%d", cfg.ElasticsearchURI, cfg.ElasticsearchPort),
-			"--fleet-server-service-token", cfg.FleetServerServiceToken,
-		}
-	}
-
 	/*
 		// agent using an already bootstrapped fleet-server
 		fleetServerHost := "https://hostname_of_the_bootstrapped_fleet_server:8220"

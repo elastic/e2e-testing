@@ -7,10 +7,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/elastic/e2e-testing/cli/config"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/elastic/e2e-testing/cli/config"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
@@ -138,7 +139,7 @@ func (sats *StandAloneTestSuite) startAgent(image string, composeFilename string
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries
-		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.AgentVersion, "")
+		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.AgentVersion)
 
 		dockerInstaller.PreInstallFn()
 
