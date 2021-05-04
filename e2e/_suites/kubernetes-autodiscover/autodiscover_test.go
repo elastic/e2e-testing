@@ -37,14 +37,6 @@ const defaultBeatVersion = "7.x-SNAPSHOT"
 var defaultEventsWaitTimeout = 60 * time.Second
 var defaultDeployWaitTimeout = 60 * time.Second
 
-func init() {
-	// initialise timeout factor
-	common.TimeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", common.TimeoutFactor)
-
-	defaultEventsWaitTimeout = defaultEventsWaitTimeout * time.Duration(common.TimeoutFactor)
-	defaultDeployWaitTimeout = defaultDeployWaitTimeout * time.Duration(common.TimeoutFactor)
-}
-
 type podsManager struct {
 	kubectl kubernetes.Control
 	ctx     context.Context
@@ -471,6 +463,9 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
 		// init logger
 		config.Init()
+
+		defaultEventsWaitTimeout = defaultEventsWaitTimeout * time.Duration(common.TimeoutFactor)
+		defaultDeployWaitTimeout = defaultDeployWaitTimeout * time.Duration(common.TimeoutFactor)
 
 		err := cluster.Initialize(suiteContext, "testdata/kind.yml")
 		if err != nil {
