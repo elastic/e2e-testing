@@ -7,14 +7,16 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/installer"
@@ -45,6 +47,7 @@ type FleetTestSuite struct {
 	PolicyUpdatedAt     string // the moment the policy was updated
 	Version             string // current elastic-agent version
 	kibanaClient        *kibana.Client
+	deployer            deploy.Deployment
 	// fleet server
 	FleetServerHostname string // hostname of the fleet server. If empty, it means the agent is the first one, bootstrapping fleet server
 	// date controls for queries
@@ -54,13 +57,11 @@ type FleetTestSuite struct {
 
 // afterScenario destroys the state created by a scenario
 func (fts *FleetTestSuite) afterScenario() {
-
-	serviceName := common.ElasticAgentServiceName
-	serviceManager := compose.NewServiceManager()
+	agentInstaller := fts.getInstaller()
+	serviceName := fts.getServiceName(agentInstaller)
 
 	if !fts.StandAlone {
 		agentInstaller := fts.getInstaller()
-		serviceName = fts.getServiceName(agentInstaller)
 
 		if log.IsLevelEnabled(log.DebugLevel) {
 			err := agentInstaller.PrintLogsFn(fts.Hostname)
@@ -92,7 +93,7 @@ func (fts *FleetTestSuite) afterScenario() {
 
 	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
 	if !developerMode {
-		_ = serviceManager.RemoveServicesFromCompose(context.Background(), common.FleetProfileName, []string{serviceName}, common.ProfileEnv)
+		_ = fts.deployer.Remove([]string{common.FleetProfileName, serviceName}, common.ProfileEnv)
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
@@ -105,7 +106,7 @@ func (fts *FleetTestSuite) afterScenario() {
 		}).Warn("The enrollment token could not be deleted")
 	}
 
-	fts.kibanaClient.DeleteAllPolicies(fts.FleetServerPolicy)
+	fts.kibanaClient.DeleteAllPolicies()
 
 	// clean up fields
 	fts.CurrentTokenID = ""
@@ -350,8 +351,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	fts.CurrentToken = enrollmentKey.APIKey
 	fts.CurrentTokenID = enrollmentKey.ID
 
-	var fleetConfig *kibana.FleetConfig
-	fleetConfig, err = deployAgentToFleet(agentInstaller, containerName, fts.CurrentToken, fts.FleetServerHostname)
+	_, err = deployAgentToFleet(agentInstaller, fts.deployer, containerName, fts.CurrentToken, fts.FleetServerHostname)
 
 	if err != nil {
 		return err
@@ -1005,7 +1005,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 	containerName := fts.getContainerName(agentInstaller, 2) // name of the new container
 
-	fleetConfig, err := deployAgentToFleet(agentInstaller, containerName, fts.CurrentToken, fts.FleetServerHostname)
+	fleetConfig, err := deployAgentToFleet(agentInstaller, fts.deployer, containerName, fts.CurrentToken, fts.FleetServerHostname)
 	// the installation process for TAR includes the enrollment
 	if agentInstaller.InstallerType != "tar" {
 		if err != nil {
@@ -1143,7 +1143,7 @@ func (fts *FleetTestSuite) checkDataStream() error {
 	return err
 }
 
-func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containerName string, token string, fleetServerHost string) (*kibana.FleetConfig, error) {
+func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, deployer deploy.Deployment, containerName string, token string, fleetServerHost string) (*kibana.FleetConfig, error) {
 	profile := agentInstaller.Profile // name of the runtime dependencies compose file
 	service := agentInstaller.Service // name of the service
 	serviceTag := agentInstaller.Tag  // docker tag of the service
@@ -1158,9 +1158,8 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, containe
 	common.ProfileEnv[envVarsPrefix+"AgentBinarySrcPath"] = agentInstaller.BinaryPath
 	common.ProfileEnv[envVarsPrefix+"AgentBinaryTargetPath"] = "/" + agentInstaller.Name
 
-	serviceManager := compose.NewServiceManager()
-
-	err := serviceManager.AddServicesToCompose(context.Background(), profile, []string{service}, common.ProfileEnv)
+	services := []string{profile, service}
+	err := deployer.Add(services, common.ProfileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": service,

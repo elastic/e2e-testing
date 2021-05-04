@@ -270,10 +270,10 @@ func (c *Client) WaitForFleet() error {
 				"body":       jsonResponse,
 				"error":      err,
 				"statusCode": statusCode,
-			}).Error("Kibana has not been initialized")
-			return errors.New("Kibana has not been initialized")
+			}).Warn("Fleet is not ready")
+			return errors.New("Fleet is not ready")
 		}
-		log.Info("Kibana setup initialized")
+		log.Info("Fleet setup complete")
 		return nil
 	}
 	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
