@@ -76,7 +76,7 @@ func (c *Client) ListPolicies() ([]Policy, error) {
 	return resp.Items, nil
 }
 
-// DeleteAllPolicies deletes all policies
+// DeleteAllPolicies deletes all policies except fleet_server and system
 func (c *Client) DeleteAllPolicies() {
 	// Cleanup all package policies
 	packagePolicies, err := c.ListPackagePolicies()
