@@ -48,7 +48,6 @@ func setUpSuite() {
 	}
 	common.AgentVersionBase = v
 
-	common.TimeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", common.TimeoutFactor)
 	common.AgentVersion = shell.GetEnv("BEAT_VERSION", common.AgentVersionBase)
 
 	// check if version is an alias
