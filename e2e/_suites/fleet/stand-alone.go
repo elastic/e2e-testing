@@ -32,6 +32,7 @@ func (fts *FleetTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string
 	if err != nil {
 		return err
 	}
+
 	fts.FleetServerPolicy = fleetPolicy
 	return fts.startStandAloneAgent(image, "", map[string]string{"fleetServerMode": "1"})
 }
@@ -103,7 +104,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, composeFilename st
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries
-		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.AgentVersion, "")
+		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.AgentVersion)
 
 		dockerInstaller.PreInstallFn()
 
@@ -155,7 +156,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, composeFilename st
 
 func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) error {
 	log.WithFields(log.Fields{
-		"policyID": fts.FleetServerPolicy.ID,
+		"policyID": fts.Policy.ID,
 		"package":  packageName,
 	}).Trace("Checking if the policy shows the package added")
 
@@ -165,11 +166,11 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 	exp := common.GetExponentialBackOff(maxTimeout)
 
 	configurationIsPresentFn := func() error {
-		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(packageName, fts.FleetServerPolicy)
+		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(packageName, fts.Policy)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"packagePolicy": packagePolicy,
-				"policy":        fts.FleetServerPolicy,
+				"policy":        fts.Policy,
 				"retry":         retryCount,
 				"error":         err,
 			}).Warn("The integration was not found in the policy")
