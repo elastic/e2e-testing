@@ -110,6 +110,10 @@ func GetElasticAgentInstaller(image string, installerType string, version string
 	log.WithFields(log.Fields{
 		"image":     image,
 		"installer": installerType,
+<<<<<<< HEAD
+=======
+		"version":   version,
+>>>>>>> 82380ced... chore: remove unused code (#1119)
 	}).Debug("Configuring installer for the agent")
 
 	var installer ElasticAgentInstaller

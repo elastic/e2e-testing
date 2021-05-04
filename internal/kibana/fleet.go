@@ -7,7 +7,6 @@ package kibana
 import (
 	"fmt"
 
-	"github.com/elastic/e2e-testing/internal/common"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,6 +20,7 @@ type FleetConfig struct {
 	KibanaURI                string
 	FleetServerPort          int
 	FleetServerURI           string
+<<<<<<< HEAD
 	// server
 	BootstrapFleetServer bool
 	ServerPolicyID       string
@@ -32,8 +32,13 @@ type FleetConfig struct {
 // If the 'fleetServerMode' flag is true, the it will create the config for an agent using an existing Fleet
 // Server to connect to Fleet. It will also retrieve the default policy ID for fleet server
 func NewFleetConfig(token string, bootstrapFleetServer bool, fleetServerMode bool) (*FleetConfig, error) {
+=======
+}
+
+// NewFleetConfig builds a new configuration for the fleet agent, defaulting fleet-server host, ES credentials, URI and port.
+func NewFleetConfig(token string) (*FleetConfig, error) {
+>>>>>>> 82380ced... chore: remove unused code (#1119)
 	cfg := &FleetConfig{
-		BootstrapFleetServer:     bootstrapFleetServer,
 		EnrollmentToken:          token,
 		ElasticsearchCredentials: "elastic:changeme",
 		ElasticsearchPort:        9200,
@@ -41,6 +46,7 @@ func NewFleetConfig(token string, bootstrapFleetServer bool, fleetServerMode boo
 		KibanaPort:               5601,
 		KibanaURI:                "kibana",
 		FleetServerPort:          8220,
+<<<<<<< HEAD
 		FleetServerURI:           "localhost",
 	}
 
@@ -64,12 +70,23 @@ func NewFleetConfig(token string, bootstrapFleetServer bool, fleetServerMode boo
 			"token":             cfg.EnrollmentToken,
 		}).Debug("Fleet Server config created")
 	}
+=======
+		FleetServerURI:           "fleet-server",
+	}
+
+	log.WithFields(log.Fields{
+		"elasticsearch":     cfg.ElasticsearchURI,
+		"elasticsearchPort": cfg.ElasticsearchPort,
+		"token":             cfg.EnrollmentToken,
+	}).Debug("Fleet Server config created")
+>>>>>>> 82380ced... chore: remove unused code (#1119)
 
 	return cfg, nil
 }
 
 // Flags bootstrap flags for fleet server
 func (cfg FleetConfig) Flags() []string {
+<<<<<<< HEAD
 	if cfg.BootstrapFleetServer {
 		// TO-DO: remove all code to calculate the fleet-server policy, because it's inferred by the fleet-server
 		return []string{
@@ -78,6 +95,8 @@ func (cfg FleetConfig) Flags() []string {
 		}
 	}
 
+=======
+>>>>>>> 82380ced... chore: remove unused code (#1119)
 	/*
 		// agent using an already bootstrapped fleet-server
 		fleetServerHost := "https://hostname_of_the_bootstrapped_fleet_server:8220"
@@ -89,6 +108,7 @@ func (cfg FleetConfig) Flags() []string {
 		}
 	*/
 
+<<<<<<< HEAD
 	baseFlags := []string{"-e", "-v", "--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken}
 	if common.AgentVersionBase == "7.13.0-SNAPSHOT" {
 		return append(baseFlags, "--url", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.FleetServerURI, cfg.FleetServerPort))
@@ -96,7 +116,12 @@ func (cfg FleetConfig) Flags() []string {
 
 	if cfg.ServerPolicyID != "" {
 		baseFlags = append(baseFlags, "--fleet-server-insecure-http", "--fleet-server", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.ElasticsearchURI, cfg.ElasticsearchPort), "--fleet-server-host=http://0.0.0.0", "--fleet-server-policy", cfg.ServerPolicyID)
+=======
+	flags := []string{
+		"-e", "-v", "--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken,
+		"--url", fmt.Sprintf("http://%s:%d", cfg.FleetServerURI, cfg.FleetServerPort),
+>>>>>>> 82380ced... chore: remove unused code (#1119)
 	}
 
-	return append(baseFlags, "--kibana-url", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.KibanaURI, cfg.KibanaPort))
+	return flags
 }

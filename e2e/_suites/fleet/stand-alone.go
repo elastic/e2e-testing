@@ -43,6 +43,13 @@ func (sats *StandAloneTestSuite) afterScenario() {
 	if log.IsLevelEnabled(log.DebugLevel) {
 		_ = sats.getContainerLogs()
 	}
+<<<<<<< HEAD
+=======
+
+	fts.FleetServerPolicy = fleetPolicy
+	return fts.startStandAloneAgent(image, "", map[string]string{"fleetServerMode": "1"})
+}
+>>>>>>> 82380ced... chore: remove unused code (#1119)
 
 	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
 	if !developerMode {
@@ -157,11 +164,37 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 	return nil
 }
 
+<<<<<<< HEAD
 func (sats *StandAloneTestSuite) getContainerLogs() error {
 	serviceManager := compose.NewServiceManager()
 
 	profile := common.FleetProfileName
 	serviceName := common.ElasticAgentServiceName
+=======
+func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) error {
+	log.WithFields(log.Fields{
+		"policyID": fts.Policy.ID,
+		"package":  packageName,
+	}).Trace("Checking if the policy shows the package added")
+
+	maxTimeout := time.Minute
+	retryCount := 1
+
+	exp := common.GetExponentialBackOff(maxTimeout)
+
+	configurationIsPresentFn := func() error {
+		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(packageName, fts.Policy)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"packagePolicy": packagePolicy,
+				"policy":        fts.Policy,
+				"retry":         retryCount,
+				"error":         err,
+			}).Warn("The integration was not found in the policy")
+			retryCount++
+			return err
+		}
+>>>>>>> 82380ced... chore: remove unused code (#1119)
 
 	composes := []string{
 		profile,     // profile name

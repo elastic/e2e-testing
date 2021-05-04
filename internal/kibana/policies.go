@@ -75,6 +75,33 @@ func (c *Client) ListPolicies() ([]Policy, error) {
 	return resp.Items, nil
 }
 
+<<<<<<< HEAD
+=======
+// DeleteAllPolicies deletes all policies except fleet_server and system
+func (c *Client) DeleteAllPolicies() {
+	// Cleanup all package policies
+	packagePolicies, err := c.ListPackagePolicies()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Error("The package policies could not be found")
+	}
+	for _, pkgPolicy := range packagePolicies {
+		// Do not remove the fleet server package integration otherwise fleet server fails to bootstrap
+		if !strings.Contains(pkgPolicy.Name, "fleet_server") && !strings.Contains(pkgPolicy.Name, "system") {
+			log.WithField("pkgPolicy", pkgPolicy.Name).Trace("Removing package policy")
+			err = c.DeleteIntegrationFromPolicy(pkgPolicy)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err":           err,
+					"packagePolicy": pkgPolicy,
+				}).Error("The integration could not be deleted from the configuration")
+			}
+		}
+	}
+}
+
+>>>>>>> 82380ced... chore: remove unused code (#1119)
 // Var represents a single variable at the package or
 // data stream level, encapsulating the data type of the
 // variable and it's value.
