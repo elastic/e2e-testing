@@ -8,11 +8,16 @@ import (
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v4"
+	"github.com/elastic/e2e-testing/internal/shell"
 )
 
 // TimeoutFactor a multiplier for the max timeout when doing backoff retries.
 // It can be overriden by TIMEOUT_FACTOR env var
 var TimeoutFactor = 3
+
+func init() {
+	TimeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", TimeoutFactor)
+}
 
 // GetExponentialBackOff returns a preconfigured exponential backoff instance
 func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOff {
