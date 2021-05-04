@@ -7,7 +7,6 @@ package kibana
 import (
 	"fmt"
 
-	"github.com/elastic/e2e-testing/internal/common"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,12 +20,9 @@ type FleetConfig struct {
 	KibanaURI                string
 	FleetServerPort          int
 	FleetServerURI           string
-	// server
-	ServerPolicyID string
 }
 
 // NewFleetConfig builds a new configuration for the fleet agent, defaulting fleet-server host, ES credentials, URI and port.
-// It will also retrieve the default policy ID for fleet server
 func NewFleetConfig(token string) (*FleetConfig, error) {
 	cfg := &FleetConfig{
 		EnrollmentToken:          token,
@@ -39,22 +35,9 @@ func NewFleetConfig(token string) (*FleetConfig, error) {
 		FleetServerURI:           "fleet-server",
 	}
 
-	client, err := NewClient()
-	if err != nil {
-		return cfg, err
-	}
-
-	defaultFleetServerPolicy, err := client.GetDefaultPolicy(true)
-	if err != nil {
-		return nil, err
-	}
-
-	cfg.ServerPolicyID = defaultFleetServerPolicy.ID
-
 	log.WithFields(log.Fields{
 		"elasticsearch":     cfg.ElasticsearchURI,
 		"elasticsearchPort": cfg.ElasticsearchPort,
-		"policyID":          cfg.ServerPolicyID,
 		"token":             cfg.EnrollmentToken,
 	}).Debug("Fleet Server config created")
 
@@ -74,14 +57,10 @@ func (cfg FleetConfig) Flags() []string {
 		}
 	*/
 
-	baseFlags := []string{"-e", "-v", "--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken}
-	if common.AgentVersionBase == "8.0.0-SNAPSHOT" {
-		return append(baseFlags, "--url", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.FleetServerURI, cfg.FleetServerPort))
+	flags := []string{
+		"-e", "-v", "--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken,
+		"--url", fmt.Sprintf("http://%s:%d", cfg.FleetServerURI, cfg.FleetServerPort),
 	}
 
-	if cfg.ServerPolicyID != "" {
-		baseFlags = append(baseFlags, "--fleet-server-insecure-http", "--fleet-server", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.ElasticsearchURI, cfg.ElasticsearchPort), "--fleet-server-host=http://0.0.0.0", "--fleet-server-policy", cfg.ServerPolicyID)
-	}
-
-	return append(baseFlags, "--kibana-url", fmt.Sprintf("http://%s@%s:%d", cfg.ElasticsearchCredentials, cfg.KibanaURI, cfg.KibanaPort))
+	return flags
 }
