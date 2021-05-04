@@ -6,6 +6,9 @@ package main
 
 import (
 	"context"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -135,6 +138,11 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			"stackVersion":  common.StackVersion,
 		}
 
+		if !shell.GetEnvBool("SKIP_PULL") {
+			log.Info("Pulling Docker images...")
+			pullFreshImages(common.StackVersion, common.AgentVersion, common.KibanaVersion)
+		}
+
 		common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
 		if strings.HasPrefix(common.KibanaVersion, "pr") || utils.IsCommit(common.KibanaVersion) {
 			// because it comes from a PR
@@ -214,4 +222,32 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			}
 		}
 	})
+}
+
+func pullFreshImages(stackVersion, agentVersion, kibanaVersion string) error {
+	c, err := client.NewClientWithOpts()
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	images := []string{
+		"docker.elastic.co/beats/elastic-agent:" + agentVersion,
+		"docker.elastic.co/beats/elastic-agent-ubi8:" + agentVersion,
+		"docker.elastic.co/elasticsearch/elasticsearch:" + stackVersion,
+		"docker.elastic.co/kibana/kibana:" + kibanaVersion,
+		"docker.elastic.co/observability-ci/elastic-agent:" + agentVersion,
+		"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + agentVersion,
+		"docker.elastic.co/observability-ci/elasticsearch:" + stackVersion,
+		"docker.elastic.co/observability-ci/elasticsearch-ubi8:" + stackVersion,
+		"docker.elastic.co/observability-ci/kibana:" + kibanaVersion,
+		"docker.elastic.co/observability-ci/kibana-ubi8:" + kibanaVersion,
+	}
+	for _, image := range images {
+		r, err := c.ImagePull(ctx, image, types.ImagePullOptions{})
+		if err != nil {
+			return err
+		}
+		io.Copy(os.Stdout, r)
+	}
+	return nil
 }
