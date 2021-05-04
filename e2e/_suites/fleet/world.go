@@ -14,8 +14,7 @@ import (
 
 // IngestManagerTestSuite represents a test suite, holding references to the pieces needed to run the tests
 type IngestManagerTestSuite struct {
-	Fleet      *FleetTestSuite
-	StandAlone *StandAloneTestSuite
+	Fleet *FleetTestSuite
 }
 
 func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
@@ -27,7 +26,7 @@ func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocur
 
 	var containerName string
 
-	if imts.StandAlone.Hostname != "" {
+	if imts.Fleet.StandAlone {
 		containerName = fmt.Sprintf("%s_%s_%d", profile, common.ElasticAgentServiceName, 1)
 	} else {
 		agentInstaller := imts.Fleet.getInstaller()

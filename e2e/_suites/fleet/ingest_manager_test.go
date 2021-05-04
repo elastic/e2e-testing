@@ -89,38 +89,24 @@ func setUpSuite() {
 			kibanaClient: kibanaClient,
 			Installers:   map[string]installer.ElasticAgentInstaller{}, // do not pre-initialise the map
 		},
-		StandAlone: &StandAloneTestSuite{
-			kibanaClient: kibanaClient,
-		},
 	}
 }
 
 func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(*messages.Pickle) {
 		log.Trace("Before Fleet scenario")
-
-		imts.StandAlone.Cleanup = false
-
 		imts.Fleet.beforeScenario()
 	})
 
 	ctx.AfterScenario(func(*messages.Pickle, error) {
 		log.Trace("After Fleet scenario")
-
-		if imts.StandAlone.Cleanup {
-			imts.StandAlone.afterScenario()
-		}
-
-		if imts.Fleet.Cleanup {
-			imts.Fleet.afterScenario()
-		}
+		imts.Fleet.afterScenario()
 	})
 
 	ctx.Step(`^the "([^"]*)" process is in the "([^"]*)" state on the host$`, imts.processStateOnTheHost)
 	ctx.Step(`^there are "([^"]*)" instances of the "([^"]*)" process in the "([^"]*)" state$`, imts.thereAreInstancesOfTheProcessInTheState)
 
 	imts.Fleet.contributeSteps(ctx)
-	imts.StandAlone.contributeSteps(ctx)
 }
 
 func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
@@ -193,7 +179,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		imts.Fleet.setup()
 
-		imts.StandAlone.RuntimeDependenciesStartDate = time.Now().UTC()
+		imts.Fleet.RuntimeDependenciesStartDate = time.Now().UTC()
 	})
 
 	ctx.AfterSuite(func() {
