@@ -55,8 +55,7 @@ type FleetTestSuite struct {
 
 // afterScenario destroys the state created by a scenario
 func (fts *FleetTestSuite) afterScenario() {
-	agentInstaller := fts.getInstaller()
-	serviceName := fts.getServiceName(agentInstaller)
+	serviceName := common.ElasticAgentServiceName
 
 	if !fts.StandAlone {
 		agentInstaller := fts.getInstaller()
