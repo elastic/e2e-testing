@@ -15,6 +15,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
@@ -133,6 +134,11 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		common.ProfileEnv = map[string]string{
 			"kibanaVersion": common.KibanaVersion,
 			"stackVersion":  common.StackVersion,
+		}
+
+		if !shell.GetEnvBool("SKIP_PULL") {
+			log.Info("Pulling Docker images...")
+			docker.PullImages(common.StackVersion, common.AgentVersion, common.KibanaVersion)
 		}
 
 		common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
