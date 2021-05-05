@@ -1135,9 +1135,6 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, deployer
 	common.ProfileEnv[envVarsPrefix+"Tag"] = serviceTag
 	// we are setting the container name because Centos service could be reused by any other test suite
 	common.ProfileEnv[envVarsPrefix+"ContainerName"] = containerName
-	// define paths where the binary will be mounted
-	common.ProfileEnv[envVarsPrefix+"AgentBinarySrcPath"] = agentInstaller.BinaryPath
-	common.ProfileEnv[envVarsPrefix+"AgentBinaryTargetPath"] = "/" + agentInstaller.Name
 
 	services := []string{profile, service}
 	err := deployer.Add(services, common.ProfileEnv)
@@ -1146,6 +1143,15 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, deployer
 			"service": service,
 			"tag":     serviceTag,
 		}).Error("Could not run the target box")
+		return nil, err
+	}
+
+	isTar := (agentInstaller.InstallerType == "tar")
+	targetFile := "/"
+
+	// copy downloaded agent to the root dir of the container
+	err = docker.CopyFileToContainer(context.Background(), containerName, agentInstaller.BinaryPath, targetFile, isTar)
+	if err != nil {
 		return nil, err
 	}
 

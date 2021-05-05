@@ -5,11 +5,14 @@
 package docker
 
 import (
+	"archive/tar"
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,6 +30,36 @@ var instance *client.Client
 
 // OPNetworkName name of the network used by the tool
 const OPNetworkName = "elastic-dev-network"
+
+func buildTarForDeployment(file *os.File) (bytes.Buffer, error) {
+	fileInfo, _ := file.Stat()
+
+	var buffer bytes.Buffer
+	tarWriter := tar.NewWriter(&buffer)
+	err := tarWriter.WriteHeader(&tar.Header{
+		Name: fileInfo.Name(),
+		Mode: 0777,
+		Size: int64(fileInfo.Size()),
+	})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"fileInfoName": fileInfo.Name(),
+			"size":         fileInfo.Size(),
+			"error":        err,
+		}).Error("Could not build TAR header")
+		return bytes.Buffer{}, fmt.Errorf("could not build TAR header: %v", err)
+	}
+
+	b, err := ioutil.ReadFile(file.Name())
+	if err != nil {
+		return bytes.Buffer{}, err
+	}
+
+	tarWriter.Write(b)
+	defer tarWriter.Close()
+
+	return buffer, nil
+}
 
 // CheckProcessStateOnTheHost checks if a process is in the desired state in a container
 // name of the container for the service:
@@ -52,6 +85,72 @@ func CheckProcessStateOnTheHost(containerName string, process string, state stri
 			}).Error("The process was found but shouldn't be present")
 		}
 
+		return err
+	}
+
+	return nil
+}
+
+// CopyFileToContainer copies a file to the running container
+func CopyFileToContainer(ctx context.Context, containerName string, srcPath string, parentDir string, isTar bool) error {
+	dockerClient := getDockerClient()
+
+	log.WithFields(log.Fields{
+		"container": containerName,
+		"src":       srcPath,
+		"parentDir": parentDir,
+	}).Trace("Copying file to container")
+
+	targetDirectory := filepath.Dir(parentDir)
+
+	_, err := dockerClient.ContainerStatPath(ctx, containerName, targetDirectory)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"container": containerName,
+			"error":     err,
+			"src":       srcPath,
+			"target":    targetDirectory,
+		}).Error("Could not get parent directory in the container")
+		return err
+	}
+
+	file, err := os.Open(srcPath)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"container": containerName,
+			"error":     err,
+			"src":       srcPath,
+			"parentDir": parentDir,
+		}).Error("Could not open file to deploy")
+		return err
+	}
+	defer file.Close()
+
+	// TODO: detect the file has TAR headers
+	var buffer bytes.Buffer
+	if !isTar {
+		buffer, err = buildTarForDeployment(file)
+		if err != nil {
+			return err
+		}
+	} else {
+		writer := bufio.NewWriter(&buffer)
+		b, err := ioutil.ReadFile(file.Name())
+		if err != nil {
+			return err
+		}
+
+		writer.Write(b)
+	}
+
+	err = dockerClient.CopyToContainer(ctx, containerName, parentDir, &buffer, types.CopyToContainerOptions{AllowOverwriteDirWithFile: true})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"container": containerName,
+			"error":     err,
+			"src":       srcPath,
+			"parentDir": parentDir,
+		}).Error("Could not copy file to container")
 		return err
 	}
 
