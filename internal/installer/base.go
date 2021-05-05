@@ -12,15 +12,17 @@ import (
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/docker"
-	"github.com/elastic/e2e-testing/internal/kibana"
 	log "github.com/sirupsen/logrus"
 )
 
 // Package represents the operations that can be performed by an installer package type
 type Package interface {
-	Install(containerName string, token string) error
-	InstallCerts(cfg *kibana.FleetConfig) error
-	PrintLogs(containerName string) error
+	AddFiles(files []string) error      // adds files to service environment
+	Enroll(token string) error          // handle any enrollment/registering of service
+	Exec(args []string) (string, error) // exec arbitrary commands in service environment
+	Install() error
+	InstallCerts() error
+	Logs() error
 	Postinstall() error
 	Preinstall() error
 	Uninstall() error

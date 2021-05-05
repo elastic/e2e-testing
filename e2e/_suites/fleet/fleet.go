@@ -312,19 +312,17 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 }
 
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(image string, installerType string) error {
+	service := fmt.Sprintf("%s-systemd", image)
 	log.WithFields(log.Fields{
 		"image":     image,
+		"service":   service,
 		"installer": installerType,
 	}).Trace("Deploying an agent to Fleet with base image using an already bootstrapped Fleet Server")
 
 	fts.Image = image
 	fts.InstallerType = installerType
 
-	agentInstaller := fts.getInstaller()
-
-	containerName := fts.getContainerName(agentInstaller, 1) // name of the container
-
-	// enroll the agent with a new token
+	// Grab a new enrollment key for new agent
 	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.Policy)
 	if err != nil {
 		return err
@@ -332,28 +330,19 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	fts.CurrentToken = enrollmentKey.APIKey
 	fts.CurrentTokenID = enrollmentKey.ID
 
-	var fleetConfig *kibana.FleetConfig
-	fleetConfig, err = deployAgentToFleet(agentInstaller, fts.deployer, containerName, fts.CurrentToken)
+	envVarsPrefix := strings.ReplaceAll(service, "-", "_")
 
+	common.ProfileEnv[envVarsPrefix+"ContainerName"] = fmt.Sprintf("%s_%s_elastic-agent_1", common.FleetProfileName, service)
+	services := []string{common.FleetProfileName, service}
+	err = fts.deployer.Add(services, common.ProfileEnv)
 	if err != nil {
 		return err
 	}
 
-	// the installation process for TAR includes the enrollment
-	if agentInstaller.InstallerType != "tar" {
-		err = agentInstaller.EnrollFn(fleetConfig)
-		if err != nil {
-			return err
-		}
-	}
-
-	// get container hostname once
-	hostname, err := docker.GetContainerHostname(containerName)
+	err = deployAgentToFleet(fts.deployer, fts.InstallerType, fts.CurrentToken)
 	if err != nil {
 		return err
 	}
-	fts.Hostname = hostname
-
 	return err
 }
 
@@ -385,29 +374,28 @@ func (fts *FleetTestSuite) getInstaller() installer.ElasticAgentInstaller {
 }
 
 func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state string) error {
-	profile := common.FleetProfileName
+	agentInstaller, _ := fts.deployer.Mount("elastic-agent", fts.InstallerType)
 
-	agentInstaller := fts.getInstaller()
-
-	serviceName := agentInstaller.Service // name of the service
+	serviceName := "elastic-agent" // name of the service
 
 	if state == "started" {
-		return installer.SystemctlRun(profile, agentInstaller.Image, serviceName, "start")
+		_, err := agentInstaller.Exec([]string{"systemctl", "start", serviceName})
+		return err
 	} else if state == "restarted" {
-		err := installer.SystemctlRun(profile, agentInstaller.Image, serviceName, "stop")
+		_, err := agentInstaller.Exec([]string{"systemctl", "stop", serviceName})
 		if err != nil {
 			return err
 		}
 
 		utils.Sleep(time.Duration(common.TimeoutFactor) * 10 * time.Second)
 
-		err = installer.SystemctlRun(profile, agentInstaller.Image, serviceName, "start")
+		_, err = agentInstaller.Exec([]string{"systemctl", "start", serviceName})
 		if err != nil {
 			return err
 		}
 		return nil
 	} else if state == "uninstalled" {
-		err := agentInstaller.UninstallFn()
+		err := agentInstaller.Uninstall()
 		if err != nil {
 			return err
 		}
@@ -427,7 +415,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		"process": process,
 	}).Trace("Stopping process on the service")
 
-	err := installer.SystemctlRun(profile, agentInstaller.Image, serviceName, "stop")
+	_, err := agentInstaller.Exec([]string{"systemctl", "stop", serviceName})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"action":  state,
@@ -439,7 +427,8 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		return err
 	}
 
-	containerName := fts.getContainerName(agentInstaller, 1)
+	manifest, _ := fts.deployer.Inspect("elastic-agent")
+	containerName := manifest.Name
 
 	return docker.CheckProcessStateOnTheHost(containerName, process, "stopped", common.TimeoutFactor)
 }
@@ -981,35 +970,16 @@ func (fts *FleetTestSuite) theVersionOfThePackageIsInstalled(version string, pac
 func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	log.Trace("Enrolling a new agent with an revoked token")
 
-	agentInstaller := fts.getInstaller()
+	err := deployAgentToFleet(fts.deployer, fts.InstallerType, fts.CurrentToken)
 
-	containerName := fts.getContainerName(agentInstaller, 2) // name of the new container
-
-	fleetConfig, err := deployAgentToFleet(agentInstaller, fts.deployer, containerName, fts.CurrentToken)
-
-	// the installation process for TAR includes the enrollment
-	if agentInstaller.InstallerType != "tar" {
-		if err != nil {
-			return err
-		}
-
-		err = agentInstaller.EnrollFn(fleetConfig)
-		if err == nil {
-			err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
-
-			log.WithFields(log.Fields{
-				"tokenID": fts.CurrentTokenID,
-				"error":   err,
-			}).Error(err.Error())
-
-			return err
-		}
+	if err == nil {
+		err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
 
 		log.WithFields(log.Fields{
-			"err":   err,
-			"token": fts.CurrentToken,
-		}).Debug("As expected, it's not possible to enroll an agent with a revoked token")
-		return nil
+			"tokenID": fts.CurrentTokenID,
+			"error":   err,
+		}).Error(err.Error())
+		return err
 	}
 
 	// checking the error message produced by the install command in TAR installer
@@ -1022,7 +992,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 		return nil
 	}
 
-	return err
+	return nil
 }
 
 // unenrollHostname deletes the statuses for an existing agent, filtering by hostname
@@ -1124,53 +1094,25 @@ func (fts *FleetTestSuite) checkDataStream() error {
 	return err
 }
 
-func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, deployer deploy.Deployment, containerName string, token string) (*kibana.FleetConfig, error) {
-	profile := agentInstaller.Profile // name of the runtime dependencies compose file
-	service := agentInstaller.Service // name of the service
-	serviceTag := agentInstaller.Tag  // docker tag of the service
+func deployAgentToFleet(deployer deploy.Deployment, installType string, token string) error {
+	agentInstaller, _ := deployer.Mount("elastic-agent", installType)
 
-	envVarsPrefix := strings.ReplaceAll(service, "-", "_")
-
-	// let's start with Centos 7
-	common.ProfileEnv[envVarsPrefix+"Tag"] = serviceTag
-	// we are setting the container name because Centos service could be reused by any other test suite
-	common.ProfileEnv[envVarsPrefix+"ContainerName"] = containerName
-
-	services := []string{profile, service}
-	err := deployer.Add(services, common.ProfileEnv)
+	err = agentInstaller.Preinstall()
 	if err != nil {
-		log.WithFields(log.Fields{
-			"service": service,
-			"tag":     serviceTag,
-		}).Error("Could not run the target box")
-		return nil, err
+		return err
 	}
 
-	isTar := (agentInstaller.InstallerType == "tar")
-	targetFile := "/"
-
-	// copy downloaded agent to the root dir of the container
-	err = docker.CopyFileToContainer(context.Background(), containerName, agentInstaller.BinaryPath, targetFile, isTar)
+	err = agentInstaller.Install()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	err = agentInstaller.PreInstallFn()
+	err = agentInstaller.Enroll(token)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	cfg, cfgError := kibana.NewFleetConfig(token)
-	if cfgError != nil {
-		return nil, cfgError
-	}
-
-	err = agentInstaller.InstallFn(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return cfg, agentInstaller.PostInstallFn()
+	return agentInstaller.Postinstall()
 }
 
 func inputs(integration string) []kibana.Input {

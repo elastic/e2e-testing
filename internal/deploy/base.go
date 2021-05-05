@@ -6,17 +6,21 @@ package deploy
 
 import (
 	"strings"
+
+	"github.com/elastic/e2e-testing/internal/installer"
 )
 
 // Deployment interface for operations dealing with deployments of the bits
 // required for testing
 type Deployment interface {
-	Add(services []string, env map[string]string) error    // adds a service to deployment
-	Bootstrap(waitCB func() error) error                   // will bootstrap or reuse existing cluster if kubernetes is selected
-	Destroy() error                                        // Teardown deployment
-	ExecIn(service string, cmd []string) (string, error)   // Execute arbitrary commands in service
-	Inspect(service string) (*ServiceManifest, error)      // inspects service
-	Remove(services []string, env map[string]string) error // Removes services from deployment
+	Add(services []string, env map[string]string) error                  // adds a service to deployment
+	AddFiles(service string, files []string) error                       // adds files to a service
+	Bootstrap(waitCB func() error) error                                 // will bootstrap or reuse existing cluster if kubernetes is selected
+	Destroy() error                                                      // Teardown deployment
+	ExecIn(service string, cmd []string) (string, error)                 // Execute arbitrary commands in service
+	Inspect(service string) (*ServiceManifest, error)                    // inspects service
+	Mount(service string, installType string) (installer.Package, error) // mounts a service for performing actions against it
+	Remove(services []string, env map[string]string) error               // Removes services from deployment
 }
 
 // ServiceManifest information about a service in a deployment
