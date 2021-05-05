@@ -199,8 +199,7 @@ func InspectContainer(name string) (*types.ContainerJSON, error) {
 	ctx := context.Background()
 
 	labelFilters := filters.NewArgs()
-	labelFilters.Add("label", "service.owner=co.elastic.observability")
-	labelFilters.Add("label", "service.container.name="+name)
+	labelFilters.Add("name", name)
 
 	containers, err := dockerClient.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: labelFilters})
 	if err != nil {
@@ -216,6 +215,18 @@ func InspectContainer(name string) (*types.ContainerJSON, error) {
 	}
 
 	return &inspect, nil
+}
+
+// ListContainers returns a list of running containers
+func ListContainers() ([]types.Container, error) {
+	dockerClient := getDockerClient()
+	ctx := context.Background()
+
+	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{})
+	if err != nil {
+		return []types.Container{}, err
+	}
+	return containers, nil
 }
 
 // RemoveContainer removes a container identified by its container name

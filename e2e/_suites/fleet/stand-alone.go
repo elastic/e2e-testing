@@ -7,17 +7,17 @@ package main
 import (
 	"context"
 	"fmt"
+	"path"
+	"strings"
+	"time"
+
 	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
-	"path"
-	"strings"
-	"time"
 
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	log "github.com/sirupsen/logrus"
@@ -62,9 +62,7 @@ func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 }
 
 func (fts *FleetTestSuite) theDockerContainerIsStopped(serviceName string) error {
-	serviceManager := compose.NewServiceManager()
-
-	err := serviceManager.RemoveServicesFromCompose(context.Background(), common.FleetProfileName, []string{serviceName}, common.ProfileEnv)
+	err := fts.deployer.Remove([]string{common.FleetProfileName, serviceName}, common.ProfileEnv)
 	if err != nil {
 		return err
 	}
@@ -111,8 +109,6 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, composeFilename st
 		dockerImageTag += "-amd64"
 	}
 
-	serviceManager := compose.NewServiceManager()
-
 	common.ProfileEnv["elasticAgentDockerImageSuffix"] = ""
 	if image != "default" {
 		common.ProfileEnv["elasticAgentDockerImageSuffix"] = "-" + image
@@ -130,8 +126,8 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, composeFilename st
 		common.ProfileEnv[k] = v
 	}
 
-	err := serviceManager.AddServicesToCompose(context.Background(), common.FleetProfileName,
-		[]string{common.ElasticAgentServiceName}, common.ProfileEnv, composeFilename)
+	services := []string{common.FleetProfileName, common.ElasticAgentServiceName}
+	err := fts.deployer.Add(services, common.ProfileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err
