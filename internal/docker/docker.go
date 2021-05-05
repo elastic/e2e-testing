@@ -199,7 +199,7 @@ func InspectContainer(name string) (*types.ContainerJSON, error) {
 	ctx := context.Background()
 
 	labelFilters := filters.NewArgs()
-	labelFilters.Add("label", "com.docker.compose.service="+name)
+	labelFilters.Add("name", name)
 
 	containers, err := dockerClient.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: labelFilters})
 	if err != nil {
