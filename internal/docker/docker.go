@@ -436,3 +436,25 @@ func getDockerClient() *client.Client {
 
 	return instance
 }
+<<<<<<< HEAD
+=======
+
+// PullImages pulls images
+func PullImages(images []string) error {
+	c := getDockerClient()
+	ctx := context.Background()
+
+	log.WithField("images", images).Info("Pulling Docker images...")
+	for _, image := range images {
+		r, err := c.ImagePull(ctx, image, types.ImagePullOptions{})
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(os.Stdout, r)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+>>>>>>> 4c0075fb... chore: abstract image pulling (#1137)
