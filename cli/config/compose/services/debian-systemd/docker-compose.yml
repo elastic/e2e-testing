@@ -7,5 +7,4 @@ services:
     platform: ${stackPlatform:-linux/amd64}
     privileged: true
     volumes:
-      - ${debian_systemdAgentBinarySrcPath:-.}:${debian_systemdAgentBinaryTargetPath:-/tmp}
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
