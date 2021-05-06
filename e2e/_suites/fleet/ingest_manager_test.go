@@ -15,6 +15,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
@@ -133,6 +134,22 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		common.ProfileEnv = map[string]string{
 			"kibanaVersion": common.KibanaVersion,
 			"stackVersion":  common.StackVersion,
+		}
+
+		if !shell.GetEnvBool("SKIP_PULL") {
+			images := []string{
+				"docker.elastic.co/beats/elastic-agent:" + common.AgentVersion,
+				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.AgentVersion,
+				"docker.elastic.co/elasticsearch/elasticsearch:" + common.StackVersion,
+				"docker.elastic.co/kibana/kibana:" + common.KibanaVersion,
+				"docker.elastic.co/observability-ci/elastic-agent:" + common.AgentVersion,
+				"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.AgentVersion,
+				"docker.elastic.co/observability-ci/elasticsearch:" + common.StackVersion,
+				"docker.elastic.co/observability-ci/elasticsearch-ubi8:" + common.StackVersion,
+				"docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion,
+				"docker.elastic.co/observability-ci/kibana-ubi8:" + common.KibanaVersion,
+			}
+			docker.PullImages(images)
 		}
 
 		common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
