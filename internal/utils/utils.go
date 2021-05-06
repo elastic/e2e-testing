@@ -118,9 +118,20 @@ func FetchBeatsBinary(artifactName string, artifact string, version string, fall
 			return filePath, err
 		}
 
-		binariesCache[URL] = filePath
+		// use artifact name as file name to avoid having URL params in the name
+		sanitizedFilePath := path.Join(path.Dir(filePath), artifactName)
+		err = os.Rename(filePath, sanitizedFilePath)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"fileName":          filePath,
+				"sanitizedFileName": sanitizedFilePath,
+			}).Warn("Could not sanitize downloaded file name. Keeping old name")
+			sanitizedFilePath = filePath
+		}
 
-		return filePath, nil
+		binariesCache[URL] = sanitizedFilePath
+
+		return sanitizedFilePath, nil
 	}
 
 	var downloadURL string
