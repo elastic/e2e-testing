@@ -80,6 +80,7 @@ func (i *TARPackage) Postinstall() error {
 func (i *TARPackage) Preinstall() error {
 	// simplify layout
 	cmds := [][]string{
+		{"rm", "-fr", "/elastic-agent"},
 		{"mv", fmt.Sprintf("/%s-%s-%s-%s", i.artifact, i.version, i.OS, i.arch), "/elastic-agent"},
 	}
 	for _, cmd := range cmds {
