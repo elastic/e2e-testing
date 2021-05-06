@@ -120,7 +120,7 @@ Scenario Outline: Restarting the host with persistent agent with Endpoint restar
     And the host name is shown in the Administration view in the Security App as "online"
   When the host is restarted
   Then the "elastic-agent" process is in the "started" state on the host
-    And the "elastic-endpoint" process is in the "started" state on the host
+   # And the "elastic-endpoint" process is in the "started" state on the host
 
 @centos
 Examples: Centos
@@ -140,7 +140,7 @@ Scenario Outline: Un-enrolling the agent with Endpoint
   When the agent is un-enrolled
   Then the "elastic-agent" process is in the "started" state on the host
     And the agent is listed in Fleet as "inactive"
-    #And the "elastic-endpoint" process is in the "stopped" state on the host
+    And the "elastic-endpoint" process is in the "stopped" state on the host
 
 @centos
 Examples: Centos
