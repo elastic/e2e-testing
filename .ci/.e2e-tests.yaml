@@ -18,6 +18,9 @@ SUITES:
       - name: "Fleet"
         pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent"
+      - name: "APM Integration"
+        pullRequestFilter: " && ~debian"
+        tags: "apm_server"
       - name: "Endpoint Integration"
         platforms:
           - "ubuntu-18.04"
