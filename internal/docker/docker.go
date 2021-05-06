@@ -11,11 +11,8 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-<<<<<<< HEAD
-=======
 	"io"
 	"io/ioutil"
->>>>>>> f39aba58... feat: use Docker copy to transfer binaries to containers (#1136)
 	"os"
 	"path/filepath"
 	"strings"
@@ -538,4 +535,24 @@ func getDockerClient() *client.Client {
 	}
 
 	return instance
+}
+
+// PullImages pulls images
+func PullImages(images []string) error {
+	c := getDockerClient()
+	ctx := context.Background()
+
+	log.WithField("images", images).Info("Pulling Docker images...")
+
+	for _, image := range images {
+		r, err := c.ImagePull(ctx, image, types.ImagePullOptions{})
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(os.Stdout, r)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
