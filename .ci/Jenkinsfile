@@ -18,6 +18,7 @@ pipeline {
     JOB_GIT_CREDENTIALS = "2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken"
     DOCKER_ELASTIC_SECRET = 'secret/observability-team/ci/docker-registry/prod'
     DOCKER_REGISTRY = 'docker.elastic.co'
+    SKIP_PULL = 'true'
   }
   options {
     timeout(time: 1, unit: 'HOURS')
