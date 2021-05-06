@@ -106,22 +106,21 @@ func downloadAgentBinary(artifactName string, artifact string, version string) (
 }
 
 // GetElasticAgentInstaller returns an installer from a docker image
-func GetElasticAgentInstaller(image string, installerType string, version string, fleetServerHost string) ElasticAgentInstaller {
+func GetElasticAgentInstaller(image string, installerType string, version string) ElasticAgentInstaller {
 	log.WithFields(log.Fields{
-		"fleetServerHost": fleetServerHost,
-		"image":           image,
-		"installer":       installerType,
-		"version":         version,
+		"image":     image,
+		"installer": installerType,
+		"version":   version,
 	}).Debug("Configuring installer for the agent")
 
 	var installer ElasticAgentInstaller
 	var err error
 	if "centos" == image && "tar" == installerType {
-		installer, err = newTarInstaller("centos", "latest", version, fleetServerHost)
+		installer, err = newTarInstaller("centos", "latest", version)
 	} else if "centos" == image && "systemd" == installerType {
 		installer, err = newCentosInstaller("centos", "latest", version)
 	} else if "debian" == image && "tar" == installerType {
-		installer, err = newTarInstaller("debian", "stretch", version, fleetServerHost)
+		installer, err = newTarInstaller("debian", "stretch", version)
 	} else if "debian" == image && "systemd" == installerType {
 		installer, err = newDebianInstaller("debian", "stretch", version)
 	} else if "docker" == image && "default" == installerType {

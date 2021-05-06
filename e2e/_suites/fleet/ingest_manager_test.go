@@ -5,17 +5,15 @@
 package main
 
 import (
-	"context"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
-	"github.com/elastic/e2e-testing/internal/elasticsearch"
+	"github.com/elastic/e2e-testing/internal/deploy"
+	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -33,6 +31,8 @@ func setUpSuite() {
 		log.Error(err)
 		os.Exit(1)
 	}
+
+	common.Provider = shell.GetEnv("PROVIDER", common.Provider)
 	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
 	if developerMode {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
@@ -48,7 +48,6 @@ func setUpSuite() {
 	}
 	common.AgentVersionBase = v
 
-	common.TimeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", common.TimeoutFactor)
 	common.AgentVersion = shell.GetEnv("BEAT_VERSION", common.AgentVersionBase)
 
 	// check if version is an alias
@@ -87,10 +86,8 @@ func setUpSuite() {
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			kibanaClient: kibanaClient,
+			deployer:     deploy.New(common.Provider),
 			Installers:   map[string]installer.ElasticAgentInstaller{}, // do not pre-initialise the map
-		},
-		StandAlone: &StandAloneTestSuite{
-			kibanaClient: kibanaClient,
 		},
 	}
 }
@@ -98,117 +95,63 @@ func setUpSuite() {
 func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(*messages.Pickle) {
 		log.Trace("Before Fleet scenario")
-
-		imts.StandAlone.Cleanup = false
-
 		imts.Fleet.beforeScenario()
 	})
 
 	ctx.AfterScenario(func(*messages.Pickle, error) {
 		log.Trace("After Fleet scenario")
-
-		if imts.StandAlone.Cleanup {
-			imts.StandAlone.afterScenario()
-		}
-
-		if imts.Fleet.Cleanup {
-			imts.Fleet.afterScenario()
-		}
+		imts.Fleet.afterScenario()
 	})
 
 	ctx.Step(`^the "([^"]*)" process is in the "([^"]*)" state on the host$`, imts.processStateOnTheHost)
 
 	imts.Fleet.contributeSteps(ctx)
-	imts.StandAlone.contributeSteps(ctx)
 }
 
 func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
-	serviceManager := compose.NewServiceManager()
+	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
 
 	ctx.BeforeSuite(func() {
 		setUpSuite()
 
-		log.Trace("Installing Fleet runtime dependencies")
-
-		common.ProfileEnv = map[string]string{
-			"kibanaVersion": common.KibanaVersion,
-			"stackPlatform": "linux/" + utils.GetArchitecture(),
-			"stackVersion":  common.StackVersion,
+		if !shell.GetEnvBool("SKIP_PULL") {
+			images := []string{
+				"docker.elastic.co/beats/elastic-agent:" + common.AgentVersion,
+				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.AgentVersion,
+				"docker.elastic.co/elasticsearch/elasticsearch:" + common.StackVersion,
+				"docker.elastic.co/kibana/kibana:" + common.KibanaVersion,
+				"docker.elastic.co/observability-ci/elastic-agent:" + common.AgentVersion,
+				"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.AgentVersion,
+				"docker.elastic.co/observability-ci/elasticsearch:" + common.StackVersion,
+				"docker.elastic.co/observability-ci/elasticsearch-ubi8:" + common.StackVersion,
+				"docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion,
+				"docker.elastic.co/observability-ci/kibana-ubi8:" + common.KibanaVersion,
+			}
+			docker.PullImages(images)
 		}
 
-		common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
-		if strings.HasPrefix(common.KibanaVersion, "pr") || utils.IsCommit(common.KibanaVersion) {
-			// because it comes from a PR
-			common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
-		}
+		deployer := deploy.New(common.Provider)
+		deployer.Bootstrap(func() error {
+			kibanaClient, err := kibana.NewClient()
+			if err != nil {
+				log.WithField("error", err).Fatal("Unable to create kibana client")
+			}
+			err = kibanaClient.WaitForFleet()
+			if err != nil {
+				log.WithField("error", err).Fatal("Fleet could not be initialized")
+			}
+			return nil
+		})
 
-		profile := common.FleetProfileName
-		err := serviceManager.RunCompose(context.Background(), true, []string{profile}, common.ProfileEnv)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"profile": profile,
-				"error":   err.Error(),
-			}).Fatal("Could not run the runtime dependencies for the profile.")
-		}
-
-		minutesToBeHealthy := time.Duration(common.TimeoutFactor) * time.Minute
-		healthy, err := elasticsearch.WaitForElasticsearch(context.Background(), minutesToBeHealthy)
-		if !healthy {
-			log.WithFields(log.Fields{
-				"error":   err,
-				"minutes": minutesToBeHealthy,
-			}).Fatal("The Elasticsearch cluster could not get the healthy status")
-		}
-
-		kibanaClient, err := kibana.NewClient()
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Fatal("Unable to create kibana client")
-		}
-
-		healthyKibana, err := kibanaClient.WaitForReady(minutesToBeHealthy)
-		if !healthyKibana {
-			log.WithFields(log.Fields{
-				"error":   err,
-				"minutes": minutesToBeHealthy,
-			}).Fatal("The Kibana instance could not get the healthy status")
-		}
-
-		imts.Fleet.setup()
-
-		// we are going to bootstrap Fleet Server in a centos container, using TAR installer, and the base version
-		// Because it is the first agent in Fleet, there is no FleetServerHost
-		fleetServerBaseImage := "centos"
-		fleetServerInstallerType := "tar"
-		fleetServerVersion := common.AgentVersionBase
-		agentInstaller := installer.GetElasticAgentInstaller(fleetServerBaseImage, fleetServerInstallerType, fleetServerVersion, "")
-
-		// bootstrap Fleet Server only once: we need to set the version here
-		imts.Fleet.Version = fleetServerVersion
-		err = imts.Fleet.bootstrapFleetServerWithInstaller(fleetServerBaseImage, fleetServerInstallerType)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"installer": agentInstaller,
-			}).Fatal("Fleet Server could not be bootstrapped")
-		}
-
-		imts.StandAlone.RuntimeDependenciesStartDate = time.Now().UTC()
+		imts.Fleet.Version = common.AgentVersionBase
+		imts.Fleet.RuntimeDependenciesStartDate = time.Now().UTC()
 	})
 
 	ctx.AfterSuite(func() {
-		developerMode := shell.GetEnvBool("DEVELOPER_MODE")
 		if !developerMode {
 			log.Debug("Destroying Fleet runtime dependencies")
-			profile := common.FleetProfileName
-
-			err := serviceManager.StopCompose(context.Background(), true, []string{profile})
-			if err != nil {
-				log.WithFields(log.Fields{
-					"error":   err,
-					"profile": profile,
-				}).Warn("Could not destroy the runtime dependencies for the profile.")
-			}
+			deployer := deploy.New(common.Provider)
+			deployer.Destroy()
 		}
 
 		installers := imts.Fleet.Installers

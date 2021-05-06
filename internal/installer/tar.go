@@ -78,11 +78,6 @@ func (i *TARPackage) Postinstall() error {
 
 // Preinstall executes operations before installing a TAR package
 func (i *TARPackage) Preinstall() error {
-	err := i.extractPackage([]string{"tar", "-xvf", "/" + i.binaryName})
-	if err != nil {
-		return err
-	}
-
 	// simplify layout
 	cmds := [][]string{
 		{"rm", "-fr", "/elastic-agent"},
@@ -90,7 +85,7 @@ func (i *TARPackage) Preinstall() error {
 	}
 	for _, cmd := range cmds {
 		sm := compose.NewServiceManager()
-		err = sm.ExecCommandInService(i.profile, i.image, i.service, cmd, common.ProfileEnv, false)
+		err := sm.ExecCommandInService(i.profile, i.image, i.service, cmd, common.ProfileEnv, false)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"command": cmd,
@@ -145,11 +140,8 @@ func (i *TARPackage) WithVersion(version string) *TARPackage {
 }
 
 // newTarInstaller returns an instance of the Debian installer for a specific version
-func newTarInstaller(image string, tag string, version string, fleetServerHost string) (ElasticAgentInstaller, error) {
+func newTarInstaller(image string, tag string, version string) (ElasticAgentInstaller, error) {
 	dockerImage := image + "-systemd" // we want to consume systemd boxes
-	if fleetServerHost == "" {
-		dockerImage = "fleet-server-" + image
-	}
 
 	service := dockerImage
 	profile := common.FleetProfileName

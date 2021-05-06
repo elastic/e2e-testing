@@ -34,3 +34,21 @@ services:
       - "5601:5601"
     volumes:
       - ./configurations/kibana.config.yml:/usr/share/kibana/config/kibana.yml
+  fleet-server:
+    image: "docker.elastic.co/beats/elastic-agent:${stackVersion:-8.0.0-SNAPSHOT}"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
+    healthcheck:
+      test: "curl -f http://127.0.0.1:8220/api/status | grep HEALTHY 2>&1 >/dev/null"
+      retries: 12
+      interval: 5s
+    environment:
+      - "FLEET_SERVER_ENABLE=1"
+      - "FLEET_SERVER_INSECURE_HTTP=1"
+      - "KIBANA_FLEET_SETUP=1"
+      - "KIBANA_FLEET_HOST=http://kibana:5601"
+      - "FLEET_SERVER_HOST=0.0.0.0"
+      - "FLEET_SERVER_PORT=8220"

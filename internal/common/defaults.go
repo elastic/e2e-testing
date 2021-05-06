@@ -44,3 +44,6 @@ var KibanaVersion = AgentVersionBase
 // ProfileEnv is the environment to be applied to any execution
 // affecting the runtime dependencies (or profile)
 var ProfileEnv map[string]string
+
+// Provider is the deployment provider used, currently docker is supported
+var Provider = "docker"
