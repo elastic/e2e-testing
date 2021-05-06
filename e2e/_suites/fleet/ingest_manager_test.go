@@ -137,8 +137,19 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		}
 
 		if !shell.GetEnvBool("SKIP_PULL") {
-			log.Info("Pulling Docker images...")
-			docker.PullImages(common.StackVersion, common.AgentVersion, common.KibanaVersion)
+			images := []string{
+				"docker.elastic.co/beats/elastic-agent:" + common.AgentVersion,
+				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.AgentVersion,
+				"docker.elastic.co/elasticsearch/elasticsearch:" + common.StackVersion,
+				"docker.elastic.co/kibana/kibana:" + common.KibanaVersion,
+				"docker.elastic.co/observability-ci/elastic-agent:" + common.AgentVersion,
+				"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.AgentVersion,
+				"docker.elastic.co/observability-ci/elasticsearch:" + common.StackVersion,
+				"docker.elastic.co/observability-ci/elasticsearch-ubi8:" + common.StackVersion,
+				"docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion,
+				"docker.elastic.co/observability-ci/kibana-ubi8:" + common.KibanaVersion,
+			}
+			docker.PullImages(images)
 		}
 
 		common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
