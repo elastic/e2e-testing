@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const testResourcesBasePath = "_testresources/"
+const testResourcesBasePath = "../_testresources/"
 const dockerComposeMultiple = "docker-compose-multiple.yml"
 const dockerComposeSingle = "docker-compose-single.yml"
 
