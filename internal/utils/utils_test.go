@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -211,6 +213,14 @@ func TestCheckPRVersion(t *testing.T) {
 
 		assert.Equal(t, testVersion, v)
 	})
+}
+
+func TestDownloadFile(t *testing.T) {
+	f, err := DownloadFile("https://www.elastic.co/robots.txt")
+	assert.Nil(t, err)
+	defer os.Remove(filepath.Dir(f))
+
+	assert.True(t, strings.HasSuffix(f, "robots.txt"))
 }
 
 func TestGetBucketSearchNextPageParam_HasMorePages(t *testing.T) {

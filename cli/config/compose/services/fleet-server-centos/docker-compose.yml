@@ -6,5 +6,4 @@ services:
     entrypoint: "/usr/sbin/init"
     privileged: true
     volumes:
-      - ${fleet_server_centosAgentBinarySrcPath:-.}:${fleet_server_centosAgentBinaryTargetPath:-/tmp}
       - /sys/fs/cgroup:/sys/fs/cgroup:ro 
