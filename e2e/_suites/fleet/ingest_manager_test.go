@@ -15,6 +15,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
@@ -130,11 +131,11 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		log.Trace("Installing Fleet runtime dependencies")
 
-<<<<<<< HEAD
 		common.ProfileEnv = map[string]string{
 			"kibanaVersion": common.KibanaVersion,
 			"stackVersion":  common.StackVersion,
-=======
+		}
+
 		if !shell.GetEnvBool("SKIP_PULL") {
 			images := []string{
 				"docker.elastic.co/beats/elastic-agent:" + common.AgentVersion,
@@ -149,7 +150,6 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 				"docker.elastic.co/observability-ci/kibana-ubi8:" + common.KibanaVersion,
 			}
 			docker.PullImages(images)
->>>>>>> 4c0075fb... chore: abstract image pulling (#1137)
 		}
 
 		common.ProfileEnv["kibanaDockerNamespace"] = "kibana"

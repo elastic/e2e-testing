@@ -9,6 +9,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -436,8 +437,6 @@ func getDockerClient() *client.Client {
 
 	return instance
 }
-<<<<<<< HEAD
-=======
 
 // PullImages pulls images
 func PullImages(images []string) error {
@@ -457,4 +456,3 @@ func PullImages(images []string) error {
 	}
 	return nil
 }
->>>>>>> 4c0075fb... chore: abstract image pulling (#1137)
