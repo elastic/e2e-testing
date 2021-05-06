@@ -439,21 +439,12 @@ func getDockerClient() *client.Client {
 }
 
 // PullImages pulls images
-func PullImages(stackVersion, agentVersion, kibanaVersion string) error {
+func PullImages(images []string) error {
 	c := getDockerClient()
 	ctx := context.Background()
-	images := []string{
-		"docker.elastic.co/beats/elastic-agent:" + agentVersion,
-		"docker.elastic.co/beats/elastic-agent-ubi8:" + agentVersion,
-		"docker.elastic.co/elasticsearch/elasticsearch:" + stackVersion,
-		"docker.elastic.co/kibana/kibana:" + kibanaVersion,
-		"docker.elastic.co/observability-ci/elastic-agent:" + agentVersion,
-		"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + agentVersion,
-		"docker.elastic.co/observability-ci/elasticsearch:" + stackVersion,
-		"docker.elastic.co/observability-ci/elasticsearch-ubi8:" + stackVersion,
-		"docker.elastic.co/observability-ci/kibana:" + kibanaVersion,
-		"docker.elastic.co/observability-ci/kibana-ubi8:" + kibanaVersion,
-	}
+
+	log.WithField("images", images).Info("Pulling Docker images...")
+
 	for _, image := range images {
 		r, err := c.ImagePull(ctx, image, types.ImagePullOptions{})
 		if err != nil {
