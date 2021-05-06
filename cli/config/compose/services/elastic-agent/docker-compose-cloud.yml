@@ -18,6 +18,7 @@ services:
       - "DATA_PATH=/apm-legacy/data/"
       - "LOGS_PATH=/apm-legacy/logs/"
       - "HOME_PATH=/apm-legacy/"
+    platform: ${elasticAgentPlatform:-linux/amd64}
     volumes:
       - "${apmVolume}:/apm-legacy"
     ports:
