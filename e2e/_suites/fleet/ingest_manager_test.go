@@ -5,6 +5,9 @@
 package main
 
 import (
+	"fmt"
+	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/version"
 	"os"
 	"time"
 
@@ -117,6 +120,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		log.Trace("Bootstrapping Fleet Server")
 
 		if !shell.GetEnvBool("SKIP_PULL") {
+			log.Info("Pulling Docker images...")
 			images := []string{
 				"docker.elastic.co/beats/elastic-agent:" + common.AgentVersion,
 				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.AgentVersion,
@@ -130,6 +134,24 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 				"docker.elastic.co/observability-ci/kibana-ubi8:" + common.KibanaVersion,
 			}
 			docker.PullImages(images)
+		}
+
+		if !shell.GetEnvBool("SKIP_FETCH") {
+			version, err := version.Parse(common.StackVersion)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"error":   err.Error(),
+					"version": common.StackVersion,
+				}).Fatal("Could not parse the stack version")
+			}
+			remote := "elastic:" + version.Ref()
+			log.Info(fmt.Sprintf("Fetching beats repo %s...", remote))
+			err = compose.SyncMetricbeatComposeFiles(false, remote)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"error": err.Error(),
+				}).Fatal("Could not fetch Beats repo")
+			}
 		}
 
 		deployer := deploy.New(common.Provider)

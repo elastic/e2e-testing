@@ -5,7 +5,6 @@
 package git
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,6 +14,7 @@ import (
 
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	ssh "gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 )
 
@@ -90,7 +90,7 @@ func (b projectBuilder) withUser(user string) projectBuilder {
 var ProjectBuilder = builder.Register(projectBuilder{}, Project{}).(projectBuilder)
 
 // Clone allows cloning an array of repositories simultaneously
-func Clone(repositories ...Project) {
+func Clone(repositories ...Project) error {
 	repositoriesChannel := make(chan Project, len(repositories))
 	for i := range repositories {
 		repositoriesChannel <- repositories[i]
@@ -127,15 +127,15 @@ func Clone(repositories ...Project) {
 					"error": err,
 				}).Warn("Git clone errored")
 			}
+			return err
 		}
 	}
+	return nil
 }
 
-func cloneGithubRepository(
-	githubRepo Project, resultChannel chan bool, errorChannel chan error) {
+func cloneGithubRepository(githubRepo Project, resultChannel chan bool, errorChannel chan error) {
 
 	gitRepositoryDir := githubRepo.GetWorkspace()
-
 	if _, err := os.Stat(gitRepositoryDir); os.IsExist(err) {
 		select {
 		case errorChannel <- err:
@@ -156,19 +156,10 @@ func cloneGithubRepository(
 	cloneOptions := &git.CloneOptions{
 		URL:           githubRepositoryURL,
 		Progress:      os.Stdout,
-		ReferenceName: plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", githubRepo.Branch)),
-		SingleBranch:  true,
-	}
-
-	if githubRepo.Protocol == GitProtocol {
-		auth, err1 := ssh.NewSSHAgentAuth("git")
-		if err1 != nil {
-			log.WithFields(log.Fields{
-				"error": err1,
-			}).Fatal("Cloning using keys from SSH agent failed")
-		}
-
-		cloneOptions.Auth = auth
+		RemoteName:    "origin",
+		ReferenceName: plumbing.NewBranchReferenceName(githubRepo.Branch),
+		Depth:         1,
+		Auth:          auth(githubRepo.Protocol),
 	}
 
 	_, err := git.PlainClone(gitRepositoryDir, false, cloneOptions)
@@ -184,4 +175,50 @@ func cloneGithubRepository(
 	}
 
 	resultChannel <- true
+}
+
+// Fetch performs a fetch and checkout of the specified remote branch
+func Fetch(beats Project) error {
+	repo, err := git.PlainOpen(beats.GetWorkspace())
+	if err != nil {
+		return err
+	}
+
+	fetchOptions := &git.FetchOptions{
+		RemoteName: "origin",
+		Depth:      1,
+		Progress:   os.Stdout,
+		Force:      true,
+		Auth:       auth(beats.Protocol),
+	}
+
+	err = repo.Fetch(fetchOptions)
+	if err != nil && err != git.NoErrAlreadyUpToDate {
+		return err
+	}
+
+	tree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	ref := plumbing.NewRemoteReferenceName("origin", beats.Branch)
+	err = tree.Checkout(&git.CheckoutOptions{
+		Branch: ref,
+		Force:  true,
+	})
+	return err
+}
+
+func auth(protocol string) transport.AuthMethod {
+	if protocol == GitProtocol {
+		auth, err := ssh.NewSSHAgentAuth("git")
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Fatal("Cloning using keys from SSH agent failed")
+		}
+		return auth
+	}
+	return nil
 }
