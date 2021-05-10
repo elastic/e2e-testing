@@ -104,6 +104,7 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	})
 
 	ctx.Step(`^the "([^"]*)" process is in the "([^"]*)" state on the host$`, imts.processStateOnTheHost)
+	ctx.Step(`^there are "([^"]*)" instances of the "([^"]*)" process in the "([^"]*)" state$`, imts.thereAreInstancesOfTheProcessInTheState)
 
 	imts.Fleet.contributeSteps(ctx)
 }
