@@ -47,9 +47,7 @@ func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocur
 
 // CheckProcessState checks if a process is in the desired state in a container
 // name of the container for the service:
-// we are using the Docker client instead of docker-compose
-// because it does not support returning the output of a
-// command: it simply returns error level
+// we are using the underlying deployer to run the commands in the container/service
 func CheckProcessState(deployer deploy.Deployment, service string, process string, state string, occurrences int, timeoutFactor int) error {
 	timeout := time.Duration(common.TimeoutFactor) * time.Minute
 
