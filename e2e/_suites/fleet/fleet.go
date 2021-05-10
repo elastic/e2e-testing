@@ -543,7 +543,7 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 		return err
 	}
 
-	if strings.Contains(content, "No such file or directory") {
+	if content == "" || strings.Contains(content, "No such file or directory") {
 		return nil
 	}
 
