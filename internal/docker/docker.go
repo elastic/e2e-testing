@@ -73,10 +73,10 @@ func buildTarForDeployment(file *os.File) (bytes.Buffer, error) {
 // we are using the Docker client instead of docker-compose
 // because it does not support returning the output of a
 // command: it simply returns error level
-func CheckProcessStateOnTheHost(containerName string, process string, state string, timeoutFactor int) error {
+func CheckProcessStateOnTheHost(containerName string, process string, state string, occurrences int, timeoutFactor int) error {
 	timeout := time.Duration(common.TimeoutFactor) * time.Minute
 
-	err := WaitForProcess(containerName, process, state, timeout)
+	err := WaitForProcess(containerName, process, state, occurrences, timeout)
 	if err != nil {
 		if state == "started" {
 			log.WithFields(log.Fields{
@@ -468,7 +468,7 @@ func RemoveDevNetwork() error {
 
 // WaitForProcess polls a container executing "ps" command until the process is in the desired state (present or not),
 // or a timeout happens
-func WaitForProcess(containerName string, process string, desiredState string, maxTimeout time.Duration) error {
+func WaitForProcess(containerName string, process string, desiredState string, ocurrences int, maxTimeout time.Duration) error {
 	exp := common.GetExponentialBackOff(maxTimeout)
 
 	mustBePresent := false
@@ -480,49 +480,125 @@ func WaitForProcess(containerName string, process string, desiredState string, m
 	processStatus := func() error {
 		log.WithFields(log.Fields{
 			"desiredState": desiredState,
+			"ocurrences":   ocurrences,
 			"process":      process,
 		}).Trace("Checking process desired state on the container")
 
-		output, err := ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"pgrep", "-n", "-l", process})
+		// pgrep -d: -d, --delimiter <string>  specify output delimiter
+		//i.e. "pgrep -d , metricbeat": 483,519
+		cmds := []string{"pgrep", "-d", ",", process}
+		output, err := ExecCommandIntoContainer(context.Background(), containerName, "root", cmds)
 		if err != nil {
 			log.WithFields(log.Fields{
+				"cmds":          cmds,
 				"desiredState":  desiredState,
 				"elapsedTime":   exp.GetElapsedTime(),
 				"error":         err,
 				"container":     containerName,
 				"mustBePresent": mustBePresent,
+				"ocurrences":    ocurrences,
 				"process":       process,
 				"retry":         retryCount,
-			}).Warn("Could not execute 'pgrep -n -l' in the container")
+			}).Warn("Could not get number of processes in the container")
 
 			retryCount++
 
 			return err
 		}
 
-		outputContainsProcess := strings.Contains(output, process)
+		// tokenize the pids to get each pid's state, adding them to an array if they match the desired state
+		// From Split docs:
+		// If output does not contain sep and sep is not empty, Split returns a
+		// slice of length 1 whose only element is s, that's why we first initialise to the empty array
+		pids := strings.Split(output, ",")
+		if len(pids) == 1 && pids[0] == "" {
+			pids = []string{}
+		}
 
-		// both true or both false
-		if mustBePresent == outputContainsProcess {
+		log.WithFields(log.Fields{
+			"count":         len(pids),
+			"desiredState":  desiredState,
+			"mustBePresent": mustBePresent,
+			"pids":          pids,
+			"process":       process,
+		}).Tracef("Pids for process found")
+
+		desiredStatePids := []string{}
+
+		for _, pid := range pids {
+			pidStateCmds := []string{"ps", "-q", pid, "-o", "state", "--no-headers"}
+			pidState, err := ExecCommandIntoContainer(context.Background(), containerName, "root", pidStateCmds)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"cmds":          cmds,
+					"desiredState":  desiredState,
+					"elapsedTime":   exp.GetElapsedTime(),
+					"error":         err,
+					"container":     containerName,
+					"mustBePresent": mustBePresent,
+					"ocurrences":    ocurrences,
+					"pid":           pid,
+					"process":       process,
+					"retry":         retryCount,
+				}).Warn("Could not check pid status in the container")
+
+				retryCount++
+
+				return err
+			}
+
 			log.WithFields(log.Fields{
 				"desiredState":  desiredState,
-				"container":     containerName,
 				"mustBePresent": mustBePresent,
+				"pid":           pid,
+				"pidState":      pidState,
 				"process":       process,
+			}).Tracef("Checking if process is in the S state")
+
+			// if the process must be present, then check for the S state
+			// From 'man ps':
+			// D    uninterruptible sleep (usually IO)
+			// R    running or runnable (on run queue)
+			// S    interruptible sleep (waiting for an event to complete)
+			// T    stopped by job control signal
+			// t    stopped by debugger during the tracing
+			// W    paging (not valid since the 2.6.xx kernel)
+			// X    dead (should never be seen)
+			// Z    defunct ("zombie") process, terminated but not reaped by its parent
+			if mustBePresent && pidState == "S" {
+				desiredStatePids = append(desiredStatePids, pid)
+			} else if !mustBePresent {
+				desiredStatePids = append(desiredStatePids, pid)
+			}
+		}
+
+		occurrencesMatched := (len(desiredStatePids) == ocurrences)
+
+		// both true or both false
+		if mustBePresent == occurrencesMatched {
+			log.WithFields(log.Fields{
+				"desiredOcurrences": ocurrences,
+				"desiredState":      desiredState,
+				"container":         containerName,
+				"mustBePresent":     mustBePresent,
+				"ocurrences":        len(desiredStatePids),
+				"process":           process,
 			}).Infof("Process desired state checked")
 
 			return nil
 		}
 
 		if mustBePresent {
-			err = fmt.Errorf("%s process is not running in the container yet", process)
+			err = fmt.Errorf("%s process is not running in the container with the desired number of occurrences (%d) yet", process, ocurrences)
 			log.WithFields(log.Fields{
-				"desiredState": desiredState,
-				"elapsedTime":  exp.GetElapsedTime(),
-				"error":        err,
-				"container":    containerName,
-				"process":      process,
-				"retry":        retryCount,
+				"desiredOcurrences": ocurrences,
+				"desiredState":      desiredState,
+				"elapsedTime":       exp.GetElapsedTime(),
+				"error":             err,
+				"container":         containerName,
+				"ocurrences":        len(desiredStatePids),
+				"process":           process,
+				"retry":             retryCount,
 			}).Warn(err.Error())
 
 			retryCount++
@@ -532,12 +608,14 @@ func WaitForProcess(containerName string, process string, desiredState string, m
 
 		err = fmt.Errorf("%s process is still running in the container", process)
 		log.WithFields(log.Fields{
-			"elapsedTime": exp.GetElapsedTime(),
-			"error":       err,
-			"container":   containerName,
-			"process":     process,
-			"state":       desiredState,
-			"retry":       retryCount,
+			"desiredOcurrences": ocurrences,
+			"elapsedTime":       exp.GetElapsedTime(),
+			"error":             err,
+			"container":         containerName,
+			"ocurrences":        len(desiredStatePids),
+			"process":           process,
+			"state":             desiredState,
+			"retry":             retryCount,
 		}).Warn(err.Error())
 
 		retryCount++
