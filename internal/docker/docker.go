@@ -22,6 +22,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/elastic/e2e-testing/internal/common"
 	log "github.com/sirupsen/logrus"
 )
@@ -30,6 +31,12 @@ var instance *client.Client
 
 // OPNetworkName name of the network used by the tool
 const OPNetworkName = "elastic-dev-network"
+
+type execResult struct {
+	StdOut   string
+	StdErr   string
+	ExitCode int
+}
 
 func buildTarForDeployment(file *os.File) (bytes.Buffer, error) {
 	fileInfo, _ := file.Stat()
@@ -226,8 +233,31 @@ func ExecCommandIntoContainerWithEnv(ctx context.Context, containerName string, 
 	}
 	defer resp.Close()
 
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Reader)
+	// see https://stackoverflow.com/a/57132902
+	var execRes execResult
+
+	// read the output
+	var outBuf, errBuf bytes.Buffer
+	outputDone := make(chan error)
+
+	go func() {
+		// StdCopy demultiplexes the stream into two buffers
+		_, err = stdcopy.StdCopy(&outBuf, &errBuf, resp.Reader)
+		outputDone <- err
+	}()
+
+	select {
+	case err := <-outputDone:
+		if err != nil {
+			return "", err
+		}
+		break
+
+	case <-ctx.Done():
+		return "", ctx.Err()
+	}
+
+	stdout, err := ioutil.ReadAll(&outBuf)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"container": containerName,
@@ -236,35 +266,28 @@ func ExecCommandIntoContainerWithEnv(ctx context.Context, containerName string, 
 			"env":       env,
 			"error":     err,
 			"tty":       tty,
-		}).Error("Could not parse command output from container")
+		}).Error("Could not parse stdout from container")
 		return "", err
 	}
-	output := buf.String()
-
-	log.WithFields(log.Fields{
-		"container": containerName,
-		"command":   cmd,
-		"detach":    detach,
-		"env":       env,
-		"tty":       tty,
-	}).Trace("Command sucessfully executed in container")
-
-	output = strings.ReplaceAll(output, "\n", "")
-
-	patterns := []string{
-		"\x01\x00\x00\x00\x00\x00\x00\r",
-		"\x01\x00\x00\x00\x00\x00\x00)",
-	}
-	for _, pattern := range patterns {
-		if strings.HasPrefix(output, pattern) {
-			output = strings.ReplaceAll(output, pattern, "")
-			log.WithFields(log.Fields{
-				"output": output,
-			}).Trace("Output name has been sanitized")
-		}
+	stderr, err := ioutil.ReadAll(&errBuf)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"container": containerName,
+			"command":   cmd,
+			"detach":    detach,
+			"env":       env,
+			"error":     err,
+			"tty":       tty,
+		}).Error("Could not parse stderr from container")
+		return "", err
 	}
 
-	return output, nil
+	execRes.ExitCode = 0
+	execRes.StdOut = string(stdout)
+	execRes.StdErr = string(stderr)
+
+	// remove '\n' from the response
+	return strings.ReplaceAll(execRes.StdOut, "\n", ""), nil
 }
 
 // GetContainerHostname we need the container name because we use the Docker Client instead of Docker Compose
