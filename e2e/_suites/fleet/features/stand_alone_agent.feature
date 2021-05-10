@@ -7,7 +7,7 @@ Feature: Stand-alone Agent
 @start-agent
 Scenario Outline: Starting the <image> agent starts backend processes
   When a "<image>" stand-alone agent is deployed
-  Then there are "2" instances of the "filebeat" process in the "started" state
+  Then there are "1" instances of the "filebeat" process in the "started" state
     And there are "2" instances of the "metricbeat" process in the "started" state
 
 @default
