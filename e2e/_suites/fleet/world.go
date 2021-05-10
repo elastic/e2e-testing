@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/docker"
@@ -18,6 +19,10 @@ type IngestManagerTestSuite struct {
 }
 
 func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
+	return imts.thereAreInstancesOfTheProcessInTheState("1", process, state)
+}
+
+func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocurrences string, process string, state string) error {
 	profile := common.FleetProfileName
 	serviceName := common.ElasticAgentServiceName
 
@@ -26,5 +31,10 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 		containerName = fmt.Sprintf("%s_%s_%d", profile, serviceName, 1)
 	}
 
-	return docker.CheckProcessStateOnTheHost(containerName, process, state, common.TimeoutFactor)
+	count, err := strconv.Atoi(ocurrences)
+	if err != nil {
+		return err
+	}
+
+	return docker.CheckProcessStateOnTheHost(containerName, process, state, count, common.TimeoutFactor)
 }
