@@ -49,3 +49,8 @@ pull_request_rules:
         branches:
           - "7.12.x"
         title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
+  - name: delete head branch after merge
+    conditions:
+      - merged
+    actions:
+      delete_head_branch:
