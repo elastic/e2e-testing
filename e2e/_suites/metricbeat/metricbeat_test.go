@@ -42,10 +42,6 @@ var metricbeatVersion = metricbeatVersionBase
 
 var serviceManager compose.ServiceManager
 
-// stackVersion is the version of the stack to use
-// It can be overriden by STACK_VERSION env var
-var stackVersion = metricbeatVersionBase
-
 var testSuite MetricbeatTestSuite
 
 var tx *apm.Transaction
@@ -78,15 +74,7 @@ func setupSuite() {
 
 	metricbeatVersion = shell.GetEnv("BEAT_VERSION", metricbeatVersionBase)
 
-	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
-	v, err = utils.GetElasticArtifactVersion(stackVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": stackVersion,
-		}).Fatal("Failed to get stack version, aborting")
-	}
-	stackVersion = v
+	common.InitVersions()
 
 	serviceManager = compose.NewServiceManager()
 
@@ -167,7 +155,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	defer fn(context.Background())
 
 	env := map[string]string{
-		"stackVersion": stackVersion,
+		"stackVersion": common.StackVersion,
 	}
 
 	services := []string{"metricbeat"}
@@ -262,7 +250,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		serviceManager := compose.NewServiceManager()
 
 		env := map[string]string{
-			"stackVersion": stackVersion,
+			"stackVersion": common.StackVersion,
 		}
 
 		err := serviceManager.RunCompose(suiteContext, true, []string{"metricbeat"}, env)
@@ -283,7 +271,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 
 		elasticAPMEnvironment := shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "ci")
 		if elasticAPMActive && elasticAPMEnvironment == "local" {
-			steps.AddAPMServicesForInstrumentation(suiteContext, "metricbeat", stackVersion, true, env)
+			steps.AddAPMServicesForInstrumentation(suiteContext, "metricbeat", common.StackVersion, true, env)
 		}
 	})
 
@@ -453,7 +441,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"logLevel":              logLevel,
 		"metricbeatConfigFile":  mts.configurationFile,
 		"metricbeatTag":         mts.Version,
-		"stackVersion":          stackVersion,
+		"stackVersion":          common.StackVersion,
 		mts.ServiceName + "Tag": mts.ServiceVersion,
 		"serviceName":           mts.ServiceName,
 	}
@@ -517,7 +505,7 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(serviceType string
 	serviceType = strings.ToLower(serviceType)
 
 	env := map[string]string{
-		"stackVersion": stackVersion,
+		"stackVersion": common.StackVersion,
 	}
 	env = config.PutServiceEnvironment(env, serviceType, serviceVersion)
 
@@ -542,7 +530,7 @@ func (mts *MetricbeatTestSuite) serviceVariantIsRunningForMetricbeat(
 	serviceType = strings.ToLower(serviceType)
 
 	env := map[string]string{
-		"stackVersion": stackVersion,
+		"stackVersion": common.StackVersion,
 	}
 	env = config.PutServiceVariantEnvironment(env, serviceType, serviceVariant, serviceVersion)
 

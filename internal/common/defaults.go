@@ -4,6 +4,12 @@
 
 package common
 
+import (
+	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/internal/utils"
+	log "github.com/sirupsen/logrus"
+)
+
 // ElasticAgentProcessName the name of the process for the Elastic Agent
 const ElasticAgentProcessName = "elastic-agent"
 
@@ -47,3 +53,18 @@ var ProfileEnv map[string]string
 
 // Provider is the deployment provider used, currently docker is supported
 var Provider = "docker"
+
+// InitVersions initialise default versions. We do not want to do it in the init phase
+// supporting lazy-loading the versions when needed. Basically, the CLI part does not
+// need to load them
+func InitVersions() {
+	StackVersion = shell.GetEnv("STACK_VERSION", StackVersion)
+	v, err := utils.GetElasticArtifactVersion(StackVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": StackVersion,
+		}).Fatal("Failed to get stack version, aborting")
+	}
+	StackVersion = v
+}

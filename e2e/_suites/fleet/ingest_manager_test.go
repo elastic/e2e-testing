@@ -60,15 +60,7 @@ func setUpSuite() {
 	}
 	common.AgentVersion = v
 
-	common.StackVersion = shell.GetEnv("STACK_VERSION", common.StackVersion)
-	v, err = utils.GetElasticArtifactVersion(common.StackVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": common.StackVersion,
-		}).Fatal("Failed to get stack version, aborting")
-	}
-	common.StackVersion = v
+	common.InitVersions()
 
 	common.KibanaVersion = shell.GetEnv("KIBANA_VERSION", "")
 	if common.KibanaVersion == "" {

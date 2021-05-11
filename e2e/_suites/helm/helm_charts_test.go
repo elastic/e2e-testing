@@ -14,6 +14,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/e2e/steps"
+	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/helm"
 	"github.com/elastic/e2e-testing/internal/kubectl"
@@ -48,10 +49,6 @@ var helmChartVersion = "7.11.2"
 // kubernetesVersion represents the default version used for Kubernetes
 var kubernetesVersion = "1.18.2"
 
-// stackVersion is the version of the stack to use
-// It can be overriden by STACK_VERSION env var
-var stackVersion = "8.0.0-SNAPSHOT"
-
 var testSuite HelmChartTestSuite
 
 var tx *apm.Transaction
@@ -76,15 +73,7 @@ func setupSuite() {
 	helmChartVersion = shell.GetEnv("HELM_CHART_VERSION", helmChartVersion)
 	kubernetesVersion = shell.GetEnv("KUBERNETES_VERSION", kubernetesVersion)
 
-	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
-	v, err := utils.GetElasticArtifactVersion(stackVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": stackVersion,
-		}).Fatal("Failed to get stack version, aborting")
-	}
-	stackVersion = v
+	common.InitVersions()
 
 	h, err := helm.Factory(helmVersion)
 	if err != nil {
@@ -674,7 +663,7 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 			serviceManager := compose.NewServiceManager()
 
 			env := map[string]string{
-				"stackVersion": stackVersion,
+				"stackVersion": common.StackVersion,
 			}
 
 			err := serviceManager.RunCompose(suiteContext, true, []string{"helm"}, env)
@@ -683,7 +672,7 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 					"profile": "metricbeat",
 				}).Warn("Could not run the profile.")
 			}
-			steps.AddAPMServicesForInstrumentation(suiteContext, "helm", stackVersion, true, env)
+			steps.AddAPMServicesForInstrumentation(suiteContext, "helm", common.StackVersion, true, env)
 		}
 
 		err := testSuite.createCluster(suiteContext, testSuite.KubernetesVersion)
