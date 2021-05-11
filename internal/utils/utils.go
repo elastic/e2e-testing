@@ -18,7 +18,6 @@ import (
 
 	"github.com/Jeffail/gabs/v2"
 	backoff "github.com/cenkalti/backoff/v4"
-	"github.com/elastic/e2e-testing/internal/common"
 	curl "github.com/elastic/e2e-testing/internal/curl"
 	internalio "github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -187,7 +186,7 @@ func getGCPBucketCoordinates(fileName string, artifact string, version string, f
 // If the version is a PR, then it will return the version without checking the artifacts API
 // i.e. GetElasticArtifactVersion("$VERSION")
 func GetElasticArtifactVersion(version string) (string, error) {
-	exp := common.GetExponentialBackOff(time.Minute)
+	exp := GetExponentialBackOff(time.Minute)
 
 	retryCount := 1
 
@@ -256,7 +255,7 @@ func GetElasticArtifactVersion(version string) (string, error) {
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-x86_64.rpm", "elastic-agent","$VERSION")
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-linux-amd64.tar.gz", "elastic-agent","$VERSION")
 func GetElasticArtifactURL(artifactName string, artifact string, version string) (string, error) {
-	exp := common.GetExponentialBackOff(time.Minute)
+	exp := GetExponentialBackOff(time.Minute)
 
 	retryCount := 1
 
@@ -320,7 +319,7 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 // GetObjectURLFromBucket extracts the media URL for the desired artifact from the
 // Google Cloud Storage bucket used by the CI to push snapshots
 func GetObjectURLFromBucket(bucket string, prefix string, object string, maxtimeout time.Duration) (string, error) {
-	exp := common.GetExponentialBackOff(maxtimeout)
+	exp := GetExponentialBackOff(maxtimeout)
 
 	retryCount := 1
 
@@ -447,7 +446,7 @@ func DownloadFile(url string) (string, error) {
 
 	filepath := tempFile.Name()
 
-	exp := common.GetExponentialBackOff(3)
+	exp := GetExponentialBackOff(3)
 
 	retryCount := 1
 	var fileReader io.ReadCloser

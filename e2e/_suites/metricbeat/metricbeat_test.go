@@ -272,7 +272,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 			}).Fatal("Could not run the profile.")
 		}
 
-		minutesToBeHealthy := time.Duration(common.TimeoutFactor) * time.Minute
+		minutesToBeHealthy := time.Duration(utils.TimeoutFactor) * time.Minute
 		healthy, err := elasticsearch.WaitForElasticsearch(suiteContext, minutesToBeHealthy)
 		if !healthy {
 			log.WithFields(log.Fields{
@@ -409,7 +409,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	if useCISnapshots || beatsLocalPath != "" {
 		artifactName := utils.BuildArtifactName("metricbeat", mts.Version, metricbeatVersionBase, "linux", "amd64", "tar.gz", true)
 
-		imagePath, err := utils.FetchBeatsBinary(artifactName, "metricbeat", mts.Version, metricbeatVersionBase, common.TimeoutFactor, true)
+		imagePath, err := utils.FetchBeatsBinary(artifactName, "metricbeat", mts.Version, metricbeatVersionBase, utils.TimeoutFactor, true)
 		if err != nil {
 			return err
 		}
@@ -431,7 +431,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	}
 
 	// this is needed because, in general, the target service (apache, mysql, redis) does not have a healthcheck
-	waitForService := time.Duration(common.TimeoutFactor) * 10 * time.Second
+	waitForService := time.Duration(utils.TimeoutFactor) * 10 * time.Second
 	if mts.ServiceName == "ceph" {
 		// see https://github.com/elastic/beats/blob/ef6274d0d1e36308a333cbed69846a1bd63528ae/metricbeat/module/ceph/mgr_osd_tree/mgr_osd_tree_integration_test.go#L35
 		// Ceph service needs more time to start up
@@ -577,7 +577,7 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 	}
 
 	minimumHitsCount := 5
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 
 	result, err := elasticsearch.WaitForNumberOfHits(mts.currentContext, mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
@@ -613,7 +613,7 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 	}
 
 	minimumHitsCount := 5
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 
 	result, err := elasticsearch.WaitForNumberOfHits(mts.currentContext, mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {

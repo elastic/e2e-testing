@@ -48,7 +48,7 @@ func (fts *FleetTestSuite) aStandaloneAgentIsDeployedWithFleetServerModeOnCloud(
 }
 
 func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
 	minimumHitsCount := 50
 
 	result, err := searchAgentData(fts.Hostname, fts.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
@@ -159,7 +159,7 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 	maxTimeout := time.Minute
 	retryCount := 1
 
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	configurationIsPresentFn := func() error {
 		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(packageName, fts.Policy)
