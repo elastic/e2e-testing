@@ -67,7 +67,19 @@ func InitVersions() {
 	}
 	AgentVersionBase = v
 
-	StackVersion = shell.GetEnv("STACK_VERSION", StackVersion)
+	AgentVersion = shell.GetEnv("BEAT_VERSION", AgentVersionBase)
+
+	// check if version is an alias
+	v, err = utils.GetElasticArtifactVersion(AgentVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": AgentVersion,
+		}).Fatal("Failed to get agent version, aborting")
+	}
+	AgentVersion = v
+
+	StackVersion = shell.GetEnv("STACK_VERSION", AgentVersionBase)
 	v, err = utils.GetElasticArtifactVersion(StackVersion)
 	if err != nil {
 		log.WithFields(log.Fields{

@@ -38,18 +38,6 @@ func setUpSuite() {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
 
-	common.AgentVersion = shell.GetEnv("BEAT_VERSION", common.AgentVersionBase)
-
-	// check if version is an alias
-	v, err := utils.GetElasticArtifactVersion(common.AgentVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": common.AgentVersion,
-		}).Fatal("Failed to get agent version, aborting")
-	}
-	common.AgentVersion = v
-
 	common.InitVersions()
 
 	common.KibanaVersion = shell.GetEnv("KIBANA_VERSION", "")
