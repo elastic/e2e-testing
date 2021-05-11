@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	log "github.com/sirupsen/logrus"
@@ -38,7 +38,7 @@ type BasePackage struct {
 
 // extractPackage depends on the underlying OS, so 'cmds' must contain the specific instructions for the OS
 func (i *BasePackage) extractPackage(cmds []string) error {
-	sm := compose.NewServiceManager()
+	sm := deploy.NewServiceManager()
 	err := sm.ExecCommandInService(i.profile, i.image, i.service, cmds, common.ProfileEnv, false)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -74,7 +74,7 @@ func (i *BasePackage) PrintLogs(containerName string) error {
 		"cat", i.logFile,
 	}
 
-	sm := compose.NewServiceManager()
+	sm := deploy.NewServiceManager()
 	err = sm.ExecCommandInService(i.profile, i.image, i.service, cmd, common.ProfileEnv, false)
 	if err != nil {
 		return err
@@ -131,7 +131,7 @@ func getElasticAgentHash(containerName string, commitFile string) (string, error
 // SystemctlRun runs systemctl in profile or service
 func SystemctlRun(profile string, image string, service string, command string) error {
 	cmd := []string{"systemctl", command, common.ElasticAgentProcessName}
-	sm := compose.NewServiceManager()
+	sm := deploy.NewServiceManager()
 	err := sm.ExecCommandInService(profile, image, service, cmd, common.ProfileEnv, false)
 	if err != nil {
 		log.WithFields(log.Fields{

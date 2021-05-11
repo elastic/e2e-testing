@@ -6,7 +6,7 @@ package installer
 
 import (
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -41,7 +41,7 @@ func (i *RPMPackage) InstallCerts() error {
 	return installCertsForCentos(i.profile, i.image, i.service)
 }
 func installCertsForCentos(profile string, image string, service string) error {
-	sm := compose.NewServiceManager()
+	sm := deploy.NewServiceManager()
 	if err := sm.ExecCommandInService(profile, image, service, []string{"yum", "check-update"}, common.ProfileEnv, false); err != nil {
 		return err
 	}

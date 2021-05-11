@@ -17,7 +17,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -40,7 +40,7 @@ var metricbeatVersionBase = "8.0.0-SNAPSHOT"
 // It can be overriden by BEAT_VERSION env var
 var metricbeatVersion = metricbeatVersionBase
 
-var serviceManager compose.ServiceManager
+var serviceManager deploy.ServiceManager
 
 // stackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
@@ -88,7 +88,7 @@ func setupSuite() {
 	}
 	stackVersion = v
 
-	serviceManager = compose.NewServiceManager()
+	serviceManager = deploy.NewServiceManager()
 
 	testSuite = MetricbeatTestSuite{
 		Query: elasticsearch.Query{},
@@ -153,7 +153,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	testSuite.currentContext = apm.ContextWithSpan(context.Background(), span)
 	defer span.End()
 
-	serviceManager := compose.NewServiceManager()
+	serviceManager := deploy.NewServiceManager()
 
 	fn := func(ctx context.Context) {
 		err := elasticsearch.DeleteIndex(ctx, mts.getIndexName())
@@ -259,7 +259,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		serviceManager := compose.NewServiceManager()
+		serviceManager := deploy.NewServiceManager()
 
 		env := map[string]string{
 			"stackVersion": stackVersion,
@@ -305,7 +305,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		defer suiteParentSpan.End()
 
 		if !developerMode {
-			serviceManager := compose.NewServiceManager()
+			serviceManager := deploy.NewServiceManager()
 			err := serviceManager.StopCompose(suiteContext, true, []string{"metricbeat"})
 			if err != nil {
 				log.WithFields(log.Fields{
@@ -440,7 +440,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 
 	utils.Sleep(waitForService)
 
-	serviceManager := compose.NewServiceManager()
+	serviceManager := deploy.NewServiceManager()
 
 	logLevel := log.GetLevel().String()
 	if log.GetLevel() == log.TraceLevel {

@@ -15,7 +15,6 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
@@ -1217,7 +1216,7 @@ func inputs(integration string) []kibana.Input {
 }
 
 func (fts *FleetTestSuite) getContainerLogs() error {
-	serviceManager := compose.NewServiceManager()
+	serviceManager := deploy.NewServiceManager()
 
 	profile := common.FleetProfileName
 	serviceName := common.ElasticAgentServiceName

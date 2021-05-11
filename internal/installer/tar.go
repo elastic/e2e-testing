@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -84,7 +84,7 @@ func (i *TARPackage) Preinstall() error {
 		{"mv", fmt.Sprintf("/%s-%s-%s-%s", i.artifact, i.version, i.OS, i.arch), "/elastic-agent"},
 	}
 	for _, cmd := range cmds {
-		sm := compose.NewServiceManager()
+		sm := deploy.NewServiceManager()
 		err := sm.ExecCommandInService(i.profile, i.image, i.service, cmd, common.ProfileEnv, false)
 		if err != nil {
 			log.WithFields(log.Fields{

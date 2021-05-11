@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
@@ -72,7 +72,7 @@ func runElasticAgentCommandEnv(profile string, image string, service string, pro
 		common.ProfileEnv[k] = v
 	}
 
-	sm := compose.NewServiceManager()
+	sm := deploy.NewServiceManager()
 	err := sm.ExecCommandInService(profile, image, service, cmds, common.ProfileEnv, false)
 	if err != nil {
 		log.WithFields(log.Fields{

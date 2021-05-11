@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -26,14 +25,14 @@ func newDockerDeploy() Deployment {
 
 // Add adds services deployment
 func (c *dockerDeploymentManifest) Add(services []string, env map[string]string) error {
-	serviceManager := compose.NewServiceManager()
+	serviceManager := NewServiceManager()
 
 	return serviceManager.AddServicesToCompose(c.Context, services[0], services[1:], env)
 }
 
 // Bootstrap sets up environment with docker compose
 func (c *dockerDeploymentManifest) Bootstrap(waitCB func() error) error {
-	serviceManager := compose.NewServiceManager()
+	serviceManager := NewServiceManager()
 	common.ProfileEnv = map[string]string{
 		"kibanaVersion": common.KibanaVersion,
 		"stackVersion":  common.StackVersion,
@@ -62,7 +61,7 @@ func (c *dockerDeploymentManifest) Bootstrap(waitCB func() error) error {
 
 // Destroy teardown docker environment
 func (c *dockerDeploymentManifest) Destroy() error {
-	serviceManager := compose.NewServiceManager()
+	serviceManager := NewServiceManager()
 	err := serviceManager.StopCompose(c.Context, true, []string{common.FleetProfileName})
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -98,7 +97,7 @@ func (c *dockerDeploymentManifest) Inspect(service string) (*ServiceManifest, er
 
 // Remove remove services from deployment
 func (c *dockerDeploymentManifest) Remove(services []string, env map[string]string) error {
-	serviceManager := compose.NewServiceManager()
+	serviceManager := NewServiceManager()
 
 	return serviceManager.RemoveServicesFromCompose(c.Context, services[0], services[1:], env)
 }

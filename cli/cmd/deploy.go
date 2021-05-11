@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
@@ -63,7 +63,7 @@ func buildDeployServiceCommand(srv string) *cobra.Command {
 		Short: `Deploys a ` + srv + ` service`,
 		Long:  `Deploys a ` + srv + ` service, adding it to a running profile, identified by its name`,
 		Run: func(cmd *cobra.Command, args []string) {
-			serviceManager := compose.NewServiceManager()
+			serviceManager := deploy.NewServiceManager()
 
 			env := map[string]string{}
 			env = config.PutServiceEnvironment(env, srv, versionToRun)
@@ -85,7 +85,7 @@ func buildUndeployServiceCommand(srv string) *cobra.Command {
 		Short: `Undeploys a ` + srv + ` service`,
 		Long:  `Undeploys a ` + srv + ` service, removing it from a running profile, identified by its name`,
 		Run: func(cmd *cobra.Command, args []string) {
-			serviceManager := compose.NewServiceManager()
+			serviceManager := deploy.NewServiceManager()
 
 			env := map[string]string{}
 			env = config.PutServiceEnvironment(env, srv, versionToRun)
