@@ -7,5 +7,4 @@ services:
     platform: ${stackPlatform:-linux/amd64}
     privileged: true
     volumes:
-      - ${centos_systemdAgentBinarySrcPath:-.}:${centos_systemdAgentBinaryTargetPath:-/tmp}
       - /sys/fs/cgroup:/sys/fs/cgroup:ro 

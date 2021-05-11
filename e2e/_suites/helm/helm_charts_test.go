@@ -37,10 +37,6 @@ var elasticAPMActive = false
 
 var helmManager helm.Manager
 
-// timeoutFactor a multiplier for the max timeout when doing backoff retries.
-// It can be overriden by TIMEOUT_FACTOR env var
-var timeoutFactor = 2
-
 //nolint:unused
 var kubectlClient kubectl.Kubectl
 
@@ -80,7 +76,6 @@ func setupSuite() {
 	helmVersion = shell.GetEnv("HELM_VERSION", helmVersion)
 	helmChartVersion = shell.GetEnv("HELM_CHART_VERSION", helmChartVersion)
 	kubernetesVersion = shell.GetEnv("KUBERNETES_VERSION", kubernetesVersion)
-	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 
 	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
 	v, err := utils.GetElasticArtifactVersion(stackVersion)
@@ -187,7 +182,7 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 		return err
 	}
 
-	maxTimeout := time.Duration(timeoutFactor) * time.Minute
+	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute
 
 	exp := common.GetExponentialBackOff(maxTimeout)
 	retryCount := 1
@@ -675,7 +670,8 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		if elasticAPMActive {
+		elasticAPMEnvironment := shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "ci")
+		if elasticAPMActive && elasticAPMEnvironment == "local" {
 			serviceManager := compose.NewServiceManager()
 
 			env := map[string]string{

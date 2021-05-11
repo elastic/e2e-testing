@@ -19,6 +19,9 @@ const ElasticEndpointIntegrationTitle = "Endpoint Security"
 // FleetProfileName the name of the profile to run the runtime, backend services
 const FleetProfileName = "fleet"
 
+// FleetServerAgentServiceName the name of the service for the Elastic Agent
+const FleetServerAgentServiceName = "fleet-server"
+
 // AgentVersionBase is the base version of the agent to use
 var AgentVersionBase = "8.0.0-SNAPSHOT"
 
@@ -28,7 +31,7 @@ var AgentVersion = AgentVersionBase
 
 // AgentStaleVersion is the version of the agent to use as a base during upgrade
 // It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var AgentStaleVersion = "7.11-SNAPSHOT"
+var AgentStaleVersion = "7.13-SNAPSHOT"
 
 // StackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
@@ -41,3 +44,6 @@ var KibanaVersion = AgentVersionBase
 // ProfileEnv is the environment to be applied to any execution
 // affecting the runtime dependencies (or profile)
 var ProfileEnv map[string]string
+
+// Provider is the deployment provider used, currently docker is supported
+var Provider = "docker"

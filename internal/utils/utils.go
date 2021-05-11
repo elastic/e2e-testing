@@ -7,7 +7,6 @@ package utils
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -21,7 +20,9 @@ import (
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/internal/common"
 	curl "github.com/elastic/e2e-testing/internal/curl"
+	internalio "github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -117,9 +118,20 @@ func FetchBeatsBinary(artifactName string, artifact string, version string, fall
 			return filePath, err
 		}
 
-		binariesCache[URL] = filePath
+		// use artifact name as file name to avoid having URL params in the name
+		sanitizedFilePath := path.Join(path.Dir(filePath), artifactName)
+		err = os.Rename(filePath, sanitizedFilePath)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"fileName":          filePath,
+				"sanitizedFileName": sanitizedFilePath,
+			}).Warn("Could not sanitize downloaded file name. Keeping old name")
+			sanitizedFilePath = filePath
+		}
 
-		return filePath, nil
+		binariesCache[URL] = sanitizedFilePath
+
+		return sanitizedFilePath, nil
 	}
 
 	var downloadURL string
@@ -420,7 +432,10 @@ func GetObjectURLFromBucket(bucket string, prefix string, object string, maxtime
 // It writes to the destination file as it downloads it, without
 // loading the entire file into memory.
 func DownloadFile(url string) (string, error) {
-	tempFile, err := ioutil.TempFile(os.TempDir(), path.Base(url))
+	tempParentDir := path.Join(os.TempDir(), uuid.NewString())
+	internalio.MkdirAll(tempParentDir)
+
+	tempFile, err := os.Create(path.Join(tempParentDir, path.Base(url)))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,

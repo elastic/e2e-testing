@@ -5,10 +5,14 @@
 package docker
 
 import (
+	"archive/tar"
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,6 +22,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/elastic/e2e-testing/internal/common"
 	log "github.com/sirupsen/logrus"
 )
@@ -27,30 +32,102 @@ var instance *client.Client
 // OPNetworkName name of the network used by the tool
 const OPNetworkName = "elastic-dev-network"
 
-// CheckProcessStateOnTheHost checks if a process is in the desired state in a container
-// name of the container for the service:
-// we are using the Docker client instead of docker-compose
-// because it does not support returning the output of a
-// command: it simply returns error level
-func CheckProcessStateOnTheHost(containerName string, process string, state string, timeoutFactor int) error {
-	timeout := time.Duration(common.TimeoutFactor) * time.Minute
+type execResult struct {
+	StdOut   string
+	StdErr   string
+	ExitCode int
+}
 
-	err := WaitForProcess(containerName, process, state, timeout)
+func buildTarForDeployment(file *os.File) (bytes.Buffer, error) {
+	fileInfo, _ := file.Stat()
+
+	var buffer bytes.Buffer
+	tarWriter := tar.NewWriter(&buffer)
+	err := tarWriter.WriteHeader(&tar.Header{
+		Name: fileInfo.Name(),
+		Mode: 0777,
+		Size: int64(fileInfo.Size()),
+	})
 	if err != nil {
-		if state == "started" {
-			log.WithFields(log.Fields{
-				"container ": containerName,
-				"error":      err,
-				"timeout":    timeout,
-			}).Error("The process was not found but should be present")
-		} else {
-			log.WithFields(log.Fields{
-				"container": containerName,
-				"error":     err,
-				"timeout":   timeout,
-			}).Error("The process was found but shouldn't be present")
+		log.WithFields(log.Fields{
+			"fileInfoName": fileInfo.Name(),
+			"size":         fileInfo.Size(),
+			"error":        err,
+		}).Error("Could not build TAR header")
+		return bytes.Buffer{}, fmt.Errorf("could not build TAR header: %v", err)
+	}
+
+	b, err := ioutil.ReadFile(file.Name())
+	if err != nil {
+		return bytes.Buffer{}, err
+	}
+
+	tarWriter.Write(b)
+	defer tarWriter.Close()
+
+	return buffer, nil
+}
+
+// CopyFileToContainer copies a file to the running container
+func CopyFileToContainer(ctx context.Context, containerName string, srcPath string, parentDir string, isTar bool) error {
+	dockerClient := getDockerClient()
+
+	log.WithFields(log.Fields{
+		"container": containerName,
+		"src":       srcPath,
+		"parentDir": parentDir,
+	}).Trace("Copying file to container")
+
+	targetDirectory := filepath.Dir(parentDir)
+
+	_, err := dockerClient.ContainerStatPath(ctx, containerName, targetDirectory)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"container": containerName,
+			"error":     err,
+			"src":       srcPath,
+			"target":    targetDirectory,
+		}).Error("Could not get parent directory in the container")
+		return err
+	}
+
+	file, err := os.Open(srcPath)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"container": containerName,
+			"error":     err,
+			"src":       srcPath,
+			"parentDir": parentDir,
+		}).Error("Could not open file to deploy")
+		return err
+	}
+	defer file.Close()
+
+	// TODO: detect the file has TAR headers
+	var buffer bytes.Buffer
+	if !isTar {
+		buffer, err = buildTarForDeployment(file)
+		if err != nil {
+			return err
+		}
+	} else {
+		writer := bufio.NewWriter(&buffer)
+		b, err := ioutil.ReadFile(file.Name())
+		if err != nil {
+			return err
 		}
 
+		writer.Write(b)
+	}
+
+	err = dockerClient.CopyToContainer(ctx, containerName, parentDir, &buffer, types.CopyToContainerOptions{AllowOverwriteDirWithFile: true})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"container": containerName,
+			"error":     err,
+			"src":       srcPath,
+			"parentDir": parentDir,
+		}).Error("Could not copy file to container")
 		return err
 	}
 
@@ -126,8 +203,31 @@ func ExecCommandIntoContainerWithEnv(ctx context.Context, containerName string, 
 	}
 	defer resp.Close()
 
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Reader)
+	// see https://stackoverflow.com/a/57132902
+	var execRes execResult
+
+	// read the output
+	var outBuf, errBuf bytes.Buffer
+	outputDone := make(chan error)
+
+	go func() {
+		// StdCopy demultiplexes the stream into two buffers
+		_, err = stdcopy.StdCopy(&outBuf, &errBuf, resp.Reader)
+		outputDone <- err
+	}()
+
+	select {
+	case err := <-outputDone:
+		if err != nil {
+			return "", err
+		}
+		break
+
+	case <-ctx.Done():
+		return "", ctx.Err()
+	}
+
+	stdout, err := ioutil.ReadAll(&outBuf)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"container": containerName,
@@ -136,35 +236,28 @@ func ExecCommandIntoContainerWithEnv(ctx context.Context, containerName string, 
 			"env":       env,
 			"error":     err,
 			"tty":       tty,
-		}).Error("Could not parse command output from container")
+		}).Error("Could not parse stdout from container")
 		return "", err
 	}
-	output := buf.String()
-
-	log.WithFields(log.Fields{
-		"container": containerName,
-		"command":   cmd,
-		"detach":    detach,
-		"env":       env,
-		"tty":       tty,
-	}).Trace("Command sucessfully executed in container")
-
-	output = strings.ReplaceAll(output, "\n", "")
-
-	patterns := []string{
-		"\x01\x00\x00\x00\x00\x00\x00\r",
-		"\x01\x00\x00\x00\x00\x00\x00)",
-	}
-	for _, pattern := range patterns {
-		if strings.HasPrefix(output, pattern) {
-			output = strings.ReplaceAll(output, pattern, "")
-			log.WithFields(log.Fields{
-				"output": output,
-			}).Trace("Output name has been sanitized")
-		}
+	stderr, err := ioutil.ReadAll(&errBuf)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"container": containerName,
+			"command":   cmd,
+			"detach":    detach,
+			"env":       env,
+			"error":     err,
+			"tty":       tty,
+		}).Error("Could not parse stderr from container")
+		return "", err
 	}
 
-	return output, nil
+	execRes.ExitCode = 0
+	execRes.StdOut = string(stdout)
+	execRes.StdErr = string(stderr)
+
+	// remove '\n' from the response
+	return strings.ReplaceAll(execRes.StdOut, "\n", ""), nil
 }
 
 // GetContainerHostname we need the container name because we use the Docker Client instead of Docker Compose
@@ -198,8 +291,7 @@ func InspectContainer(name string) (*types.ContainerJSON, error) {
 	ctx := context.Background()
 
 	labelFilters := filters.NewArgs()
-	labelFilters.Add("label", "service.owner=co.elastic.observability")
-	labelFilters.Add("label", "service.container.name="+name)
+	labelFilters.Add("name", name)
 
 	containers, err := dockerClient.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: labelFilters})
 	if err != nil {
@@ -215,6 +307,18 @@ func InspectContainer(name string) (*types.ContainerJSON, error) {
 	}
 
 	return &inspect, nil
+}
+
+// ListContainers returns a list of running containers
+func ListContainers() ([]types.Container, error) {
+	dockerClient := getDockerClient()
+	ctx := context.Background()
+
+	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{})
+	if err != nil {
+		return []types.Container{}, err
+	}
+	return containers, nil
 }
 
 // RemoveContainer removes a container identified by its container name
@@ -332,93 +436,6 @@ func RemoveDevNetwork() error {
 	return nil
 }
 
-// WaitForProcess polls a container executing "ps" command until the process is in the desired state (present or not),
-// or a timeout happens
-func WaitForProcess(containerName string, process string, desiredState string, maxTimeout time.Duration) error {
-	exp := common.GetExponentialBackOff(maxTimeout)
-
-	mustBePresent := false
-	if desiredState == "started" {
-		mustBePresent = true
-	}
-	retryCount := 1
-
-	processStatus := func() error {
-		log.WithFields(log.Fields{
-			"desiredState": desiredState,
-			"process":      process,
-		}).Trace("Checking process desired state on the container")
-
-		output, err := ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"pgrep", "-n", "-l", process})
-		if err != nil {
-			log.WithFields(log.Fields{
-				"desiredState":  desiredState,
-				"elapsedTime":   exp.GetElapsedTime(),
-				"error":         err,
-				"container":     containerName,
-				"mustBePresent": mustBePresent,
-				"process":       process,
-				"retry":         retryCount,
-			}).Warn("Could not execute 'pgrep -n -l' in the container")
-
-			retryCount++
-
-			return err
-		}
-
-		outputContainsProcess := strings.Contains(output, process)
-
-		// both true or both false
-		if mustBePresent == outputContainsProcess {
-			log.WithFields(log.Fields{
-				"desiredState":  desiredState,
-				"container":     containerName,
-				"mustBePresent": mustBePresent,
-				"process":       process,
-			}).Infof("Process desired state checked")
-
-			return nil
-		}
-
-		if mustBePresent {
-			err = fmt.Errorf("%s process is not running in the container yet", process)
-			log.WithFields(log.Fields{
-				"desiredState": desiredState,
-				"elapsedTime":  exp.GetElapsedTime(),
-				"error":        err,
-				"container":    containerName,
-				"process":      process,
-				"retry":        retryCount,
-			}).Warn(err.Error())
-
-			retryCount++
-
-			return err
-		}
-
-		err = fmt.Errorf("%s process is still running in the container", process)
-		log.WithFields(log.Fields{
-			"elapsedTime": exp.GetElapsedTime(),
-			"error":       err,
-			"container":   containerName,
-			"process":     process,
-			"state":       desiredState,
-			"retry":       retryCount,
-		}).Warn(err.Error())
-
-		retryCount++
-
-		return err
-	}
-
-	err := backoff.Retry(processStatus, exp)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func getDockerClient() *client.Client {
 	if instance != nil {
 		return instance
@@ -435,4 +452,23 @@ func getDockerClient() *client.Client {
 	}
 
 	return instance
+}
+
+// PullImages pulls images
+func PullImages(images []string) error {
+	c := getDockerClient()
+	ctx := context.Background()
+
+	log.WithField("images", images).Info("Pulling Docker images...")
+	for _, image := range images {
+		r, err := c.ImagePull(ctx, image, types.ImagePullOptions{})
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(os.Stdout, r)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
