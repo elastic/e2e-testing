@@ -118,7 +118,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 	fts.StandAlone = false
 	fts.ElasticAgentStopped = false
 
-	fts.Version = common.AgentVersion
+	fts.Version = common.BeatVersion
 
 	policy, err := fts.kibanaClient.GetDefaultPolicy(false)
 	if err != nil {
@@ -218,7 +218,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 	case "stale":
 		version = common.AgentStaleVersion
 	case "latest":
-		version = common.AgentVersion
+		version = common.BeatVersion
 	default:
 		version = common.AgentStaleVersion
 	}
@@ -240,7 +240,7 @@ func (fts *FleetTestSuite) installCerts() error {
 		log.WithFields(log.Fields{
 			"installer":         agentInstaller,
 			"version":           fts.Version,
-			"agentVersion":      common.AgentVersion,
+			"agentVersion":      common.BeatVersion,
 			"agentStaleVersion": common.AgentStaleVersion,
 		}).Error("No installer found")
 		return errors.New("no installer found")
@@ -249,7 +249,7 @@ func (fts *FleetTestSuite) installCerts() error {
 	err := agentInstaller.InstallCertsFn()
 	if err != nil {
 		log.WithFields(log.Fields{
-			"agentVersion":      common.AgentVersion,
+			"agentVersion":      common.BeatVersion,
 			"agentStaleVersion": common.AgentStaleVersion,
 			"error":             err,
 			"installer":         agentInstaller,
@@ -266,9 +266,9 @@ func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
 	case "stale":
 		desiredVersion = common.AgentStaleVersion
 	case "latest":
-		desiredVersion = common.AgentVersion
+		desiredVersion = common.BeatVersion
 	default:
-		desiredVersion = common.AgentVersion
+		desiredVersion = common.BeatVersion
 	}
 
 	return fts.kibanaClient.UpgradeAgent(fts.Hostname, desiredVersion)
@@ -279,7 +279,7 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	case "stale":
 		version = common.AgentStaleVersion
 	case "latest":
-		version = common.AgentVersion
+		version = common.BeatVersion
 	}
 
 	agentInVersionFn := func() error {

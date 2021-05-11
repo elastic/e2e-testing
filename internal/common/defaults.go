@@ -31,9 +31,9 @@ const FleetServerAgentServiceName = "fleet-server"
 // BeatVersionBase is the base version of the Beat to use
 var BeatVersionBase = "8.0.0-SNAPSHOT"
 
-// AgentVersion is the version of the agent to use
+// BeatVersion is the version of the Beat to use
 // It can be overriden by BEAT_VERSION env var
-var AgentVersion = BeatVersionBase
+var BeatVersion = BeatVersionBase
 
 // AgentStaleVersion is the version of the agent to use as a base during upgrade
 // It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
@@ -63,21 +63,21 @@ func InitVersions() {
 		log.WithFields(log.Fields{
 			"error":   err,
 			"version": BeatVersionBase,
-		}).Fatal("Failed to get agent base version, aborting")
+		}).Fatal("Failed to get Beat base version, aborting")
 	}
 	BeatVersionBase = v
 
-	AgentVersion = shell.GetEnv("BEAT_VERSION", BeatVersionBase)
+	BeatVersion = shell.GetEnv("BEAT_VERSION", BeatVersionBase)
 
 	// check if version is an alias
-	v, err = utils.GetElasticArtifactVersion(AgentVersion)
+	v, err = utils.GetElasticArtifactVersion(BeatVersion)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
-			"version": AgentVersion,
-		}).Fatal("Failed to get agent version, aborting")
+			"version": BeatVersion,
+		}).Fatal("Failed to get Beat version, aborting")
 	}
-	AgentVersion = v
+	BeatVersion = v
 
 	StackVersion = shell.GetEnv("STACK_VERSION", BeatVersionBase)
 	v, err = utils.GetElasticArtifactVersion(StackVersion)
