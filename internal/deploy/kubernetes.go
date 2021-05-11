@@ -10,8 +10,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 var cluster kubernetes.Cluster
@@ -34,6 +36,20 @@ func (c *kubernetesDeploymentManifest) Add(services []string, env map[string]str
 		_, err := kubectl.Run(c.Context, "apply", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service))
 		if err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+// AddFiles - add files to deployment service
+func (c *kubernetesDeploymentManifest) AddFiles(service string, files []string) error {
+	container, _ := c.Inspect(service)
+	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
+
+	for _, file := range files {
+		_, err := kubectl.Run(c.Context, "cp", file, fmt.Sprintf("deployment/%s:.", container.Name))
+		if err != nil {
+			log.WithField("error", err).Fatal("Unable to copy file to service")
 		}
 	}
 	return nil
@@ -103,6 +119,17 @@ func (c *kubernetesDeploymentManifest) Inspect(service string) (*ServiceManifest
 		Connection: service,
 		Hostname:   service,
 	}, nil
+}
+
+// Mount will mount a service with ability to perform actions within that services environment
+func (c *kubernetesDeploymentManifest) Mount(service string, installType string) (installer.Package, error) {
+	container, _ := c.Inspect(service)
+	var install installer.Package
+	if strings.EqualFold(installType, "tar") && strings.EqualFold(service, "elastic-agent") {
+		install = installer.NewElasticAgentTARPackage(container.Name, c.ExecIn, c.AddFiles)
+		return install, nil
+	}
+	return nil, nil
 }
 
 // Remove remove services from deployment

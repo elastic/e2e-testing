@@ -11,6 +11,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/docker"
+	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -60,6 +61,18 @@ func (c *dockerDeploymentManifest) Bootstrap(waitCB func() error) error {
 	return nil
 }
 
+// AddFiles - add files to service
+func (c *dockerDeploymentManifest) AddFiles(service string, files []string) error {
+	container, _ := c.Inspect(service)
+	for _, file := range files {
+		err := docker.CopyFileToContainer(c.Context, container.Name, file, "/", true)
+		if err != nil {
+			log.WithField("error", err).Fatal("Unable to copy file to service")
+		}
+	}
+	return nil
+}
+
 // Destroy teardown docker environment
 func (c *dockerDeploymentManifest) Destroy() error {
 	serviceManager := compose.NewServiceManager()
@@ -94,6 +107,17 @@ func (c *dockerDeploymentManifest) Inspect(service string) (*ServiceManifest, er
 		Connection: service,
 		Hostname:   inspect.NetworkSettings.Networks["fleet_default"].Aliases[0],
 	}, nil
+}
+
+// Mount will mount a service with ability to perform actions within that services environment
+func (c *dockerDeploymentManifest) Mount(service string, installType string) (installer.Package, error) {
+	container, _ := c.Inspect(service)
+	var install installer.Package
+	if strings.EqualFold(installType, "tar") && strings.EqualFold(service, "elastic-agent") {
+		install = installer.NewElasticAgentTARPackage(container.Name, c.ExecIn, c.AddFiles)
+		return install, nil
+	}
+	return nil, nil
 }
 
 // Remove remove services from deployment
