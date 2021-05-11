@@ -25,6 +25,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// to avoid fetching the same Elastic artifacts version, we are adding this map to cache the version of the Elastic artifacts,
+// using as key the URL of the version. If another request is trying to fetch the same URL, it will return the string version
+// of the already requested one.
+var elasticVersionsCache = map[string]string{}
+
 // to avoid downloading the same artifacts, we are adding this map to cache the URL of the downloaded binaries, using as key
 // the URL of the artifact. If another installer is trying to download the same URL, it will return the location of the
 // already downloaded artifact.
@@ -186,6 +191,16 @@ func getGCPBucketCoordinates(fileName string, artifact string, version string, f
 // If the version is a PR, then it will return the version without checking the artifacts API
 // i.e. GetElasticArtifactVersion("$VERSION")
 func GetElasticArtifactVersion(version string) (string, error) {
+	cacheKey := fmt.Sprintf("https://artifacts-api.elastic.co/v1/versions/%s/?x-elastic-no-kpi=true", version)
+
+	if val, ok := elasticVersionsCache[cacheKey]; ok {
+		log.WithFields(log.Fields{
+			"URL":     cacheKey,
+			"version": val,
+		}).Debug("Retrieving version from local cache")
+		return val, nil
+	}
+
 	exp := GetExponentialBackOff(time.Minute)
 
 	retryCount := 1
@@ -194,7 +209,7 @@ func GetElasticArtifactVersion(version string) (string, error) {
 
 	apiStatus := func() error {
 		r := curl.HTTPRequest{
-			URL: fmt.Sprintf("https://artifacts-api.elastic.co/v1/versions/%s/?x-elastic-no-kpi=true", version),
+			URL: cacheKey,
 		}
 
 		response, err := curl.Get(r)
@@ -245,6 +260,8 @@ func GetElasticArtifactVersion(version string) (string, error) {
 		"alias":   version,
 		"version": latestVersion,
 	}).Debug("Latest version for current version obtained")
+
+	elasticVersionsCache[cacheKey] = latestVersion
 
 	return latestVersion, nil
 }
