@@ -45,7 +45,7 @@ func (fts *FleetTestSuite) aStandaloneAgentIsDeployedWithFleetServerModeOnCloud(
 	}
 	fts.FleetServerPolicy = fleetPolicy
 	volume := path.Join(config.OpDir(), "compose", "services", "elastic-agent", "apm-legacy")
-	return fts.startStandAloneAgent(image, "docker-compose-cloud.yml", map[string]string{"apmVolume": volume})
+	return fts.startStandAloneAgent(image, "cloud", map[string]string{"apmVolume": volume})
 }
 
 func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
@@ -91,7 +91,7 @@ func (fts *FleetTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error
 	return elasticsearch.AssertHitsAreNotPresent(result)
 }
 
-func (fts *FleetTestSuite) startStandAloneAgent(image string, composeFilename string, env map[string]string) error {
+func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, env map[string]string) error {
 	fts.StandAlone = true
 	log.Trace("Deploying an agent to Fleet")
 
@@ -129,7 +129,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, composeFilename st
 
 	services := []deploy.ServiceRequest{
 		deploy.NewServiceRequest(common.FleetProfileName),
-		deploy.NewServiceRequest(common.ElasticAgentServiceName),
+		deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(flavour),
 	}
 	err := fts.deployer.Add(services, common.ProfileEnv)
 	if err != nil {

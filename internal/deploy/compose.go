@@ -19,7 +19,7 @@ import (
 
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
-	AddServicesToCompose(ctx context.Context, profile ServiceRequest, composeNames []ServiceRequest, env map[string]string, composeFilename ...string) error
+	AddServicesToCompose(ctx context.Context, profile ServiceRequest, composeNames []ServiceRequest, env map[string]string) error
 	ExecCommandInService(profile string, image string, serviceName string, cmds []string, env map[string]string, detach bool) error
 	RemoveServicesFromCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error
 	RunCommand(profile string, composeNames []string, composeArgs []string, env map[string]string) error
@@ -37,7 +37,7 @@ func NewServiceManager() ServiceManager {
 }
 
 // AddServicesToCompose adds services to a running docker compose
-func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profile ServiceRequest, composeNames []ServiceRequest, env map[string]string, composeFilename ...string) error {
+func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profile ServiceRequest, composeNames []ServiceRequest, env map[string]string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Add services to Docker Compose", "docker-compose.services.add", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -50,7 +50,12 @@ func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profil
 
 	newComposeNames := []string{profile.Name}
 	for _, cn := range composeNames {
-		newComposeNames = append(newComposeNames, cn.Name)
+		serviceIncludingFlavour := cn.Name
+		if cn.Flavour != "" {
+			// discover the flavour in the subdir
+			serviceIncludingFlavour = filepath.Join(cn.Name, cn.Flavour)
+		}
+		newComposeNames = append(newComposeNames, serviceIncludingFlavour)
 	}
 
 	persistedEnv := state.Recover(profile.Name+"-profile", config.Op.Workspace)
@@ -58,7 +63,7 @@ func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profil
 		persistedEnv[k] = v
 	}
 
-	err := executeCompose(true, newComposeNames, []string{"up", "-d"}, persistedEnv, composeFilename...)
+	err := executeCompose(true, newComposeNames, []string{"up", "-d"}, persistedEnv)
 	if err != nil {
 		return err
 	}
@@ -191,7 +196,7 @@ func (sm *DockerServiceManager) StopCompose(ctx context.Context, isProfile bool,
 	return nil
 }
 
-func executeCompose(isProfile bool, composeNames []string, command []string, env map[string]string, composeFilename ...string) error {
+func executeCompose(isProfile bool, composeNames []string, command []string, env map[string]string) error {
 	composeFilePaths := make([]string, len(composeNames))
 	for i, composeName := range composeNames {
 		b := false
@@ -199,7 +204,7 @@ func executeCompose(isProfile bool, composeNames []string, command []string, env
 			b = true
 		}
 
-		composeFilePath, err := config.GetComposeFile(b, composeName, composeFilename...)
+		composeFilePath, err := config.GetComposeFile(b, composeName)
 		if err != nil {
 			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
 		}

@@ -29,7 +29,8 @@ type ServiceManifest struct {
 
 // ServiceRequest represents the service to be created using the provider
 type ServiceRequest struct {
-	Name string
+	Name    string
+	Flavour string // optional, configured using builder method
 }
 
 // NewServiceRequest creates a request for a service
@@ -37,6 +38,13 @@ func NewServiceRequest(n string) ServiceRequest {
 	return ServiceRequest{
 		Name: n,
 	}
+}
+
+// WithFlavour adds a flavour for the service, resulting in a look-up of the service in the config directory,
+// using flavour as a subdir of the service
+func (sr ServiceRequest) WithFlavour(f string) ServiceRequest {
+	sr.Flavour = f
+	return sr
 }
 
 // New creates a new deployment
