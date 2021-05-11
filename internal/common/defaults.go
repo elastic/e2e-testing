@@ -79,6 +79,9 @@ func InitVersions() {
 	}
 	BeatVersion = v
 
+	// detects if the BeatVersion is set by the GITHUB_CHECK_SHA1 variable
+	BeatVersion = utils.CheckPRVersion(BeatVersion, BeatVersionBase)
+
 	StackVersion = shell.GetEnv("STACK_VERSION", BeatVersionBase)
 	v, err = utils.GetElasticArtifactVersion(StackVersion)
 	if err != nil {
