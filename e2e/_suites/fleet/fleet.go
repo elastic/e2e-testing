@@ -425,7 +425,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	// command: it simply returns error level
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", common.ElasticAgentServiceName, 1)
 
-	return docker.CheckProcessStateOnTheHost(containerName, process, "stopped", 1, common.TimeoutFactor)
+	return CheckProcessState(fts.deployer, containerName, process, "stopped", 1, common.TimeoutFactor)
 }
 
 func (fts *FleetTestSuite) setup() error {
