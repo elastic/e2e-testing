@@ -117,7 +117,7 @@ Example:
 				}).Error("Could not run the profile.")
 			}
 
-			composeNames := []string{}
+			composeNames := []deploy.ServiceRequest{}
 			if len(servicesToRun) > 0 {
 				for _, srv := range servicesToRun {
 					arr := strings.Split(srv, ":")
@@ -137,10 +137,10 @@ Example:
 					}).Trace("Adding service")
 
 					env = config.PutServiceEnvironment(env, image, tag)
-					composeNames = append(composeNames, image)
+					composeNames = append(composeNames, deploy.NewServiceRequest(image))
 				}
 
-				err = serviceManager.AddServicesToCompose(context.Background(), key, composeNames, env)
+				err = serviceManager.AddServicesToCompose(context.Background(), deploy.NewServiceRequest(key), composeNames, env)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"profile":  key,

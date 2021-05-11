@@ -24,7 +24,7 @@ func newDockerDeploy() Deployment {
 }
 
 // Add adds services deployment
-func (c *dockerDeploymentManifest) Add(services []string, env map[string]string) error {
+func (c *dockerDeploymentManifest) Add(services []ServiceRequest, env map[string]string) error {
 	serviceManager := NewServiceManager()
 
 	return serviceManager.AddServicesToCompose(c.Context, services[0], services[1:], env)

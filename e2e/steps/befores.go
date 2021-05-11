@@ -19,13 +19,13 @@ func AddAPMServicesForInstrumentation(ctx context.Context, profile string, stack
 
 	apmServerURL := shell.GetEnv("APM_SERVER_URL", "")
 	if strings.HasPrefix(apmServerURL, "http://localhost") {
-		apmServices := []string{
-			"apm-server",
+		apmServices := []deploy.ServiceRequest{
+			deploy.NewServiceRequest("apm-server"),
 		}
 
 		if needsKibana {
 			env["kibanaTag"] = stackVersion
-			apmServices = append(apmServices, "kibana")
+			apmServices = append(apmServices, deploy.NewServiceRequest("kibana"))
 		}
 
 		log.WithFields(log.Fields{
@@ -34,7 +34,7 @@ func AddAPMServicesForInstrumentation(ctx context.Context, profile string, stack
 		}).Info("Starting local APM services for instrumentation")
 
 		env["apmServerTag"] = stackVersion
-		err := serviceManager.AddServicesToCompose(ctx, profile, apmServices, env)
+		err := serviceManager.AddServicesToCompose(ctx, deploy.NewServiceRequest(profile), apmServices, env)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,

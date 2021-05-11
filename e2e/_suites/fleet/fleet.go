@@ -1135,7 +1135,10 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, deployer
 	// we are setting the container name because Centos service could be reused by any other test suite
 	common.ProfileEnv[envVarsPrefix+"ContainerName"] = containerName
 
-	services := []string{profile, service}
+	services := []deploy.ServiceRequest{
+		deploy.NewServiceRequest(profile),
+		deploy.NewServiceRequest(service),
+	}
 	err := deployer.Add(services, common.ProfileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{

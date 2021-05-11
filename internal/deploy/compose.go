@@ -19,7 +19,7 @@ import (
 
 // ServiceManager manages lifecycle of a service
 type ServiceManager interface {
-	AddServicesToCompose(ctx context.Context, profile string, composeNames []string, env map[string]string, composeFilename ...string) error
+	AddServicesToCompose(ctx context.Context, profile ServiceRequest, composeNames []ServiceRequest, env map[string]string, composeFilename ...string) error
 	ExecCommandInService(profile string, image string, serviceName string, cmds []string, env map[string]string, detach bool) error
 	RemoveServicesFromCompose(ctx context.Context, profile string, composeNames []string, env map[string]string) error
 	RunCommand(profile string, composeNames []string, composeArgs []string, env map[string]string) error
@@ -37,7 +37,7 @@ func NewServiceManager() ServiceManager {
 }
 
 // AddServicesToCompose adds services to a running docker compose
-func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profile string, composeNames []string, env map[string]string, composeFilename ...string) error {
+func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profile ServiceRequest, composeNames []ServiceRequest, env map[string]string, composeFilename ...string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Add services to Docker Compose", "docker-compose.services.add", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -48,10 +48,12 @@ func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profil
 		"services": composeNames,
 	}).Trace("Adding services to compose")
 
-	newComposeNames := []string{profile}
-	newComposeNames = append(newComposeNames, composeNames...)
+	newComposeNames := []string{profile.Name}
+	for _, cn := range composeNames {
+		newComposeNames = append(newComposeNames, cn.Name)
+	}
 
-	persistedEnv := state.Recover(profile+"-profile", config.Op.Workspace)
+	persistedEnv := state.Recover(profile.Name+"-profile", config.Op.Workspace)
 	for k, v := range env {
 		persistedEnv[k] = v
 	}

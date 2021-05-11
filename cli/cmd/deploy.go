@@ -68,7 +68,11 @@ func buildDeployServiceCommand(srv string) *cobra.Command {
 			env := map[string]string{}
 			env = config.PutServiceEnvironment(env, srv, versionToRun)
 
-			err := serviceManager.AddServicesToCompose(context.Background(), deployToProfile, []string{srv}, env)
+			err := serviceManager.AddServicesToCompose(
+				context.Background(),
+				deploy.NewServiceRequest(deployToProfile),
+				[]deploy.ServiceRequest{deploy.NewServiceRequest(srv)},
+				env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile":  deployToProfile,

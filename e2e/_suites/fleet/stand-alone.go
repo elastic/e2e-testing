@@ -14,6 +14,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -126,7 +127,10 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, composeFilename st
 		common.ProfileEnv[k] = v
 	}
 
-	services := []string{common.FleetProfileName, common.ElasticAgentServiceName}
+	services := []deploy.ServiceRequest{
+		deploy.NewServiceRequest(common.FleetProfileName),
+		deploy.NewServiceRequest(common.ElasticAgentServiceName),
+	}
 	err := fts.deployer.Add(services, common.ProfileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")

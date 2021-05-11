@@ -27,11 +27,11 @@ func newK8sDeploy() Deployment {
 }
 
 // Add adds services deployment
-func (c *kubernetesDeploymentManifest) Add(services []string, env map[string]string) error {
+func (c *kubernetesDeploymentManifest) Add(services []ServiceRequest, env map[string]string) error {
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
 
 	for _, service := range services {
-		_, err := kubectl.Run(c.Context, "apply", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service))
+		_, err := kubectl.Run(c.Context, "apply", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service.Name))
 		if err != nil {
 			return err
 		}
