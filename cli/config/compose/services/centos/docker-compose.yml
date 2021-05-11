@@ -1,6 +1,0 @@
-version: '2.4'
-services:
-  centos:
-    image: centos:${centosTag:-7}
-    container_name: ${centosContainerName} 
-    entrypoint: tail -f /dev/null
