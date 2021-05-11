@@ -34,12 +34,6 @@ var developerMode = false
 
 var elasticAPMActive = false
 
-var metricbeatVersionBase = "8.0.0-SNAPSHOT"
-
-// metricbeatVersion is the version of the metricbeat to use
-// It can be overriden by BEAT_VERSION env var
-var metricbeatVersion = metricbeatVersionBase
-
 var serviceManager compose.ServiceManager
 
 var testSuite MetricbeatTestSuite
@@ -61,18 +55,6 @@ func setupSuite() {
 			"apm-environment": shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "local"),
 		}).Info("Current execution will be instrumented 🛠")
 	}
-
-	// check if base version is an alias
-	v, err := utils.GetElasticArtifactVersion(metricbeatVersionBase)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": metricbeatVersionBase,
-		}).Fatal("Failed to get metricbeat base version, aborting")
-	}
-	metricbeatVersionBase = v
-
-	metricbeatVersion = shell.GetEnv("BEAT_VERSION", metricbeatVersionBase)
 
 	common.InitVersions()
 
@@ -308,7 +290,7 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 	serviceType = strings.ToLower(serviceType)
 
 	// at this point we have everything to define the index name
-	mts.Version = metricbeatVersion
+	mts.Version = common.BeatVersion
 	mts.setIndexName()
 	mts.ServiceType = serviceType
 
@@ -361,15 +343,9 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForVariantModule(serviceVa
 }
 
 func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string) error {
-	// restore initial state
-	metricbeatVersionBackup := metricbeatVersion
-	defer func() { metricbeatVersion = metricbeatVersionBackup }()
-
 	// at this point we have everything to define the index name
-	mts.Version = metricbeatVersion
+	mts.Version = common.BeatVersion
 	mts.setIndexName()
-
-	metricbeatVersion = utils.CheckPRVersion(metricbeatVersion, metricbeatVersionBase)
 
 	configurationFilePath, err := steps.FetchBeatConfiguration(false, "metricbeat", configuration+".yml")
 	if err != nil {
@@ -395,9 +371,9 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if useCISnapshots || beatsLocalPath != "" {
-		artifactName := utils.BuildArtifactName("metricbeat", mts.Version, metricbeatVersionBase, "linux", "amd64", "tar.gz", true)
+		artifactName := utils.BuildArtifactName("metricbeat", mts.Version, common.BeatVersionBase, "linux", "amd64", "tar.gz", true)
 
-		imagePath, err := utils.FetchBeatsBinary(artifactName, "metricbeat", mts.Version, metricbeatVersionBase, utils.TimeoutFactor, true)
+		imagePath, err := utils.FetchBeatsBinary(artifactName, "metricbeat", mts.Version, common.BeatVersionBase, utils.TimeoutFactor, true)
 		if err != nil {
 			return err
 		}
@@ -410,7 +386,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		mts.Version = mts.Version + "-amd64"
 
 		err = docker.TagImage(
-			"docker.elastic.co/beats/metricbeat:"+metricbeatVersionBase,
+			"docker.elastic.co/beats/metricbeat:"+common.BeatVersionBase,
 			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version,
 		)
 		if err != nil {
