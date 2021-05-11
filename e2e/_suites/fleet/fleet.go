@@ -461,7 +461,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 
 	containerName := fts.getContainerName(agentInstaller, 1)
 
-	return docker.CheckProcessStateOnTheHost(containerName, process, "stopped", 1, common.TimeoutFactor)
+	return CheckProcessState(fts.deployer, containerName, process, "stopped", 1, common.TimeoutFactor)
 }
 
 func (fts *FleetTestSuite) setup() error {
