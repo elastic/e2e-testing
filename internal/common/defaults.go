@@ -58,8 +58,17 @@ var Provider = "docker"
 // supporting lazy-loading the versions when needed. Basically, the CLI part does not
 // need to load them
 func InitVersions() {
+	v, err := utils.GetElasticArtifactVersion(AgentVersionBase)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": AgentVersionBase,
+		}).Fatal("Failed to get agent base version, aborting")
+	}
+	AgentVersionBase = v
+
 	StackVersion = shell.GetEnv("STACK_VERSION", StackVersion)
-	v, err := utils.GetElasticArtifactVersion(StackVersion)
+	v, err = utils.GetElasticArtifactVersion(StackVersion)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
