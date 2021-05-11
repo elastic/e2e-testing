@@ -28,12 +28,12 @@ const FleetProfileName = "fleet"
 // FleetServerAgentServiceName the name of the service for the Elastic Agent
 const FleetServerAgentServiceName = "fleet-server"
 
-// AgentVersionBase is the base version of the agent to use
-var AgentVersionBase = "8.0.0-SNAPSHOT"
+// BeatVersionBase is the base version of the Beat to use
+var BeatVersionBase = "8.0.0-SNAPSHOT"
 
 // AgentVersion is the version of the agent to use
 // It can be overriden by BEAT_VERSION env var
-var AgentVersion = AgentVersionBase
+var AgentVersion = BeatVersionBase
 
 // AgentStaleVersion is the version of the agent to use as a base during upgrade
 // It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
@@ -41,11 +41,11 @@ var AgentStaleVersion = "7.13-SNAPSHOT"
 
 // StackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
-var StackVersion = AgentVersionBase
+var StackVersion = BeatVersionBase
 
 // KibanaVersion is the version of kibana to use
 // It can be override by KIBANA_VERSION
-var KibanaVersion = AgentVersionBase
+var KibanaVersion = BeatVersionBase
 
 // ProfileEnv is the environment to be applied to any execution
 // affecting the runtime dependencies (or profile)
@@ -58,16 +58,16 @@ var Provider = "docker"
 // supporting lazy-loading the versions when needed. Basically, the CLI part does not
 // need to load them
 func InitVersions() {
-	v, err := utils.GetElasticArtifactVersion(AgentVersionBase)
+	v, err := utils.GetElasticArtifactVersion(BeatVersionBase)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
-			"version": AgentVersionBase,
+			"version": BeatVersionBase,
 		}).Fatal("Failed to get agent base version, aborting")
 	}
-	AgentVersionBase = v
+	BeatVersionBase = v
 
-	AgentVersion = shell.GetEnv("BEAT_VERSION", AgentVersionBase)
+	AgentVersion = shell.GetEnv("BEAT_VERSION", BeatVersionBase)
 
 	// check if version is an alias
 	v, err = utils.GetElasticArtifactVersion(AgentVersion)
@@ -79,7 +79,7 @@ func InitVersions() {
 	}
 	AgentVersion = v
 
-	StackVersion = shell.GetEnv("STACK_VERSION", AgentVersionBase)
+	StackVersion = shell.GetEnv("STACK_VERSION", BeatVersionBase)
 	v, err = utils.GetElasticArtifactVersion(StackVersion)
 	if err != nil {
 		log.WithFields(log.Fields{

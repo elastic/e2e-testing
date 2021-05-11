@@ -97,7 +97,7 @@ func runElasticAgentCommandEnv(profile string, image string, service string, pro
 // Else, if the environment variable BEATS_USE_CI_SNAPSHOTS is set, then the artifact
 // to be downloaded will be defined by the latest snapshot produced by the Beats CI.
 func downloadAgentBinary(artifactName string, artifact string, version string) (string, error) {
-	imagePath, err := utils.FetchBeatsBinary(artifactName, artifact, version, common.AgentVersionBase, utils.TimeoutFactor, true)
+	imagePath, err := utils.FetchBeatsBinary(artifactName, artifact, version, common.BeatVersionBase, utils.TimeoutFactor, true)
 	if err != nil {
 		return "", err
 	}
