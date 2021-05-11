@@ -33,8 +33,8 @@ func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocur
 	if imts.Fleet.StandAlone {
 		containerName = fmt.Sprintf("%s_%s_%d", profile, common.ElasticAgentServiceName, 1)
 	} else {
-		agentInstaller := imts.Fleet.getInstaller()
-		containerName = imts.Fleet.getContainerName(agentInstaller, 1)
+		manifest, _ := imts.Fleet.deployer.Inspect(common.ElasticAgentServiceName)
+		containerName = manifest.Name
 	}
 
 	count, err := strconv.Atoi(ocurrences)

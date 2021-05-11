@@ -118,6 +118,8 @@ func (c *kubernetesDeploymentManifest) Inspect(service string) (*ServiceManifest
 		Name:       strings.TrimPrefix(inspect.Metadata.Name, "/"),
 		Connection: service,
 		Hostname:   service,
+		Alias:      service,
+		Platform:   "linux",
 	}, nil
 }
 
@@ -142,5 +144,15 @@ func (c *kubernetesDeploymentManifest) Remove(services []string, env map[string]
 			return err
 		}
 	}
+	return nil
+}
+
+// Start a container
+func (c *kubernetesDeploymentManifest) Start(service string) error {
+	return nil
+}
+
+// Stop a container
+func (c *kubernetesDeploymentManifest) Stop(service string) error {
 	return nil
 }

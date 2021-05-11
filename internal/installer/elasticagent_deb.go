@@ -13,16 +13,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// elasticAgentTARPackage implements operations for a RPM installer
-type elasticAgentTARPackage struct {
+// elasticAgentDEBPackage implements operations for a DEB installer
+type elasticAgentDEBPackage struct {
 	service  string
 	executor func(service string, cmd []string) (string, error)
 	copier   func(service string, files []string) error
 }
 
-// NewElasticAgentTARPackage creates an instance for the RPM installer
-func NewElasticAgentTARPackage(service string, executor func(service string, cmd []string) (string, error), copier func(service string, files []string) error) Package {
-	return &elasticAgentTARPackage{
+// NewElasticAgentDEBPackage creates an instance for the DEB installer
+func NewElasticAgentDEBPackage(service string, executor func(service string, cmd []string) (string, error), copier func(service string, files []string) error) Package {
+	return &elasticAgentDEBPackage{
 		service:  service,
 		executor: executor,
 		copier:   copier,
@@ -30,35 +30,35 @@ func NewElasticAgentTARPackage(service string, executor func(service string, cmd
 }
 
 // AddFiles will add files into the service environment, default destination is /
-func (i *elasticAgentTARPackage) AddFiles(files []string) error {
+func (i *elasticAgentDEBPackage) AddFiles(files []string) error {
 	return i.copier(i.service, files)
 }
 
 // Inspect returns info on package
-func (i *elasticAgentTARPackage) Inspect() (PackageManifest, error) {
+func (i *elasticAgentDEBPackage) Inspect() (PackageManifest, error) {
 	return PackageManifest{
-		WorkDir:    "/opt/Elastic/Agent",
-		CommitFile: "/elastic-agent/.elastic-agent.active.commit",
+		WorkDir:    "/var/lib/elastic-agent",
+		CommitFile: "/etc/elastic-agent/.elastic-agent.active.commit",
 	}, nil
 }
 
-// Install installs a TAR package
-func (i *elasticAgentTARPackage) Install() error {
-	log.Trace("No TAR install instructions")
+// Install installs a DEB package
+func (i *elasticAgentDEBPackage) Install() error {
+	log.Trace("No additional install commands for DEB")
 	return nil
 }
 
 // Exec will execute a command within the service environment
-func (i *elasticAgentTARPackage) Exec(args []string) (string, error) {
+func (i *elasticAgentDEBPackage) Exec(args []string) (string, error) {
 	output, err := i.executor(i.service, args)
 	return output, err
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentTARPackage) Enroll(token string) error {
+func (i *elasticAgentDEBPackage) Enroll(token string) error {
 
 	cfg, _ := kibana.NewFleetConfig(token)
-	args := []string{"/elastic-agent/elastic-agent", "install"}
+	args := []string{"elastic-agent", "enroll"}
 	for _, arg := range cfg.Flags() {
 		args = append(args, arg)
 	}
@@ -71,27 +71,41 @@ func (i *elasticAgentTARPackage) Enroll(token string) error {
 	return nil
 }
 
-// InstallCerts installs the certificates for a TAR package, using the right OS package manager
-func (i *elasticAgentTARPackage) InstallCerts() error {
+// InstallCerts installs the certificates for a DEB package, using the right OS package manager
+func (i *elasticAgentDEBPackage) InstallCerts() error {
+	cmds := [][]string{
+		{"apt-get", "update"},
+		{"apt", "install", "ca-certificates", "-y"},
+		{"update-ca-certificates", "-f"},
+	}
+	for _, cmd := range cmds {
+		if _, err := i.executor(i.service, cmd); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 // Logs prints logs of service
-func (i *elasticAgentTARPackage) Logs() error {
+func (i *elasticAgentDEBPackage) Logs() error {
 	return nil
 }
 
-// Postinstall executes operations after installing a TAR package
-func (i *elasticAgentTARPackage) Postinstall() error {
+// Postinstall executes operations after installing a DEB package
+func (i *elasticAgentDEBPackage) Postinstall() error {
+	_, err := i.executor(i.service, []string{"systemctl", "restart", "elastic-agent"})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-// Preinstall executes operations before installing a TAR package
-func (i *elasticAgentTARPackage) Preinstall() error {
+// Preinstall executes operations before installing a DEB package
+func (i *elasticAgentDEBPackage) Preinstall() error {
 	artifact := "elastic-agent"
 	os := "linux"
-	arch := "x86_64"
-	extension := "tar.gz"
+	arch := "amd64"
+	extension := "deb"
 
 	binaryName := utils.BuildArtifactName(artifact, common.AgentVersion, common.AgentVersionBase, os, arch, extension, false)
 	binaryPath, err := utils.FetchBeatsBinary(binaryName, artifact, common.AgentVersion, common.AgentVersionBase, common.TimeoutFactor, true)
@@ -112,13 +126,16 @@ func (i *elasticAgentTARPackage) Preinstall() error {
 		return err
 	}
 
-	output, _ := i.Exec([]string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, common.AgentVersion, os, arch), "/elastic-agent"})
-	log.WithField("output", output).Trace("Moved elastic-agent")
+	_, err = i.executor(i.service, []string{"apt", "install", "/" + binaryName, "-y"})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // Start will start a service
-func (i *elasticAgentTARPackage) Start() error {
+func (i *elasticAgentDEBPackage) Start() error {
 	_, err := i.Exec([]string{"systemctl", "start", "elastic-agent"})
 	if err != nil {
 		return err
@@ -127,7 +144,7 @@ func (i *elasticAgentTARPackage) Start() error {
 }
 
 // Stop will start a service
-func (i *elasticAgentTARPackage) Stop() error {
+func (i *elasticAgentDEBPackage) Stop() error {
 	_, err := i.Exec([]string{"systemctl", "stop", "elastic-agent"})
 	if err != nil {
 		return err
@@ -135,8 +152,8 @@ func (i *elasticAgentTARPackage) Stop() error {
 	return nil
 }
 
-// Uninstall uninstalls a TAR package
-func (i *elasticAgentTARPackage) Uninstall() error {
+// Uninstall uninstalls a DEB package
+func (i *elasticAgentDEBPackage) Uninstall() error {
 	args := []string{"elastic-agent", "uninstall", "-f"}
 	_, err := i.Exec(args)
 	if err != nil {

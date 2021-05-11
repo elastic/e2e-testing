@@ -6,12 +6,14 @@ package deploy
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/installer"
+	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -65,7 +67,12 @@ func (c *dockerDeploymentManifest) Bootstrap(waitCB func() error) error {
 func (c *dockerDeploymentManifest) AddFiles(service string, files []string) error {
 	container, _ := c.Inspect(service)
 	for _, file := range files {
-		err := docker.CopyFileToContainer(c.Context, container.Name, file, "/", true)
+		isTar := true
+		fileExt := filepath.Ext(file)
+		if fileExt == ".rpm" || fileExt == ".deb" {
+			isTar = false
+		}
+		err := docker.CopyFileToContainer(c.Context, container.Name, file, "/", isTar)
 		if err != nil {
 			log.WithField("error", err).Fatal("Unable to copy file to service")
 		}
@@ -105,24 +112,61 @@ func (c *dockerDeploymentManifest) Inspect(service string) (*ServiceManifest, er
 		ID:         inspect.ID,
 		Name:       strings.TrimPrefix(inspect.Name, "/"),
 		Connection: service,
-		Hostname:   inspect.NetworkSettings.Networks["fleet_default"].Aliases[0],
+		Alias:      inspect.NetworkSettings.Networks["fleet_default"].Aliases[0],
+		Hostname:   inspect.Config.Hostname,
+		Platform:   inspect.Platform,
 	}, nil
 }
 
 // Mount will mount a service with ability to perform actions within that services environment
+// TODO: Not a fan of passing in installType here, should think about abstracting that portion out more
 func (c *dockerDeploymentManifest) Mount(service string, installType string) (installer.Package, error) {
+	log.WithFields(log.Fields{
+		"service":     service,
+		"installType": installType,
+	}).Trace("Mounting service for configuration")
+
 	container, _ := c.Inspect(service)
 	var install installer.Package
-	if strings.EqualFold(installType, "tar") && strings.EqualFold(service, "elastic-agent") {
-		install = installer.NewElasticAgentTARPackage(container.Name, c.ExecIn, c.AddFiles)
-		return install, nil
+	if strings.EqualFold(service, "elastic-agent") {
+		switch installType {
+		case "tar":
+			install = installer.NewElasticAgentTARPackage(container.Name, c.ExecIn, c.AddFiles)
+			return install, nil
+		case "rpm":
+			install = installer.NewElasticAgentRPMPackage(container.Name, c.ExecIn, c.AddFiles)
+			return install, nil
+		case "deb":
+			install = installer.NewElasticAgentDEBPackage(container.Name, c.ExecIn, c.AddFiles)
+			return install, nil
+		}
 	}
+
 	return nil, nil
 }
 
 // Remove remove services from deployment
 func (c *dockerDeploymentManifest) Remove(services []string, env map[string]string) error {
-	serviceManager := compose.NewServiceManager()
+	for _, service := range services[1:] {
+		manifest, _ := c.Inspect(service)
+		_, err := shell.Execute(c.Context, ".", "docker", "rm", "-f", manifest.Name)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-	return serviceManager.RemoveServicesFromCompose(c.Context, services[0], services[1:], env)
+// Start a container
+func (c *dockerDeploymentManifest) Start(service string) error {
+	manifest, _ := c.Inspect(service)
+	_, err := shell.Execute(c.Context, ".", "docker", "start", manifest.Name)
+	return err
+}
+
+// Stop a container
+func (c *dockerDeploymentManifest) Stop(service string) error {
+	manifest, _ := c.Inspect(service)
+	_, err := shell.Execute(c.Context, ".", "docker", "stop", manifest.Name)
+	return err
 }

@@ -20,12 +20,21 @@ type Package interface {
 	AddFiles(files []string) error      // adds files to service environment
 	Enroll(token string) error          // handle any enrollment/registering of service
 	Exec(args []string) (string, error) // exec arbitrary commands in service environment
+	Inspect() (PackageManifest, error)  // returns manifest for package
 	Install() error
 	InstallCerts() error
 	Logs() error
 	Postinstall() error
 	Preinstall() error
+	Start() error // will start a service
+	Stop() error  // will stop a service
 	Uninstall() error
+}
+
+// PackageManifest is state information for each installer
+type PackageManifest struct {
+	CommitFile string
+	WorkDir    string
 }
 
 // BasePackage holds references to basic state for all installers

@@ -21,6 +21,8 @@ type Deployment interface {
 	Inspect(service string) (*ServiceManifest, error)                    // inspects service
 	Mount(service string, installType string) (installer.Package, error) // mounts a service for performing actions against it
 	Remove(services []string, env map[string]string) error               // Removes services from deployment
+	Start(service string) error                                          // Starts a service or container depending on Deployment
+	Stop(service string) error                                           // Stop a service or container depending on deployment
 }
 
 // ServiceManifest information about a service in a deployment
@@ -28,7 +30,9 @@ type ServiceManifest struct {
 	ID         string
 	Name       string
 	Connection string // a string representing how to connect to service
+	Alias      string // docker network aliases
 	Hostname   string
+	Platform   string // running in linux, macos, windows
 }
 
 // New creates a new deployment

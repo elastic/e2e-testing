@@ -51,7 +51,8 @@ func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
 	minimumHitsCount := 50
 
-	result, err := searchAgentData(fts.Hostname, fts.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
+	manifest, _ := fts.deployer.Inspect("elastic-agent")
+	result, err := searchAgentData(manifest.Hostname, fts.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
 	}
@@ -75,7 +76,8 @@ func (fts *FleetTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error
 	maxTimeout := time.Duration(30) * time.Second
 	minimumHitsCount := 1
 
-	result, err := searchAgentData(fts.Hostname, fts.AgentStoppedDate, minimumHitsCount, maxTimeout)
+	manifest, _ := fts.deployer.Inspect("elastic-agent")
+	result, err := searchAgentData(manifest.Hostname, fts.AgentStoppedDate, minimumHitsCount, maxTimeout)
 	if err != nil {
 		if strings.Contains(err.Error(), "type:index_not_found_exception") {
 			return err
@@ -133,14 +135,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, composeFilename st
 		return err
 	}
 
-	// get container hostname once
-	hostname, err := docker.GetContainerHostname(containerName)
-	if err != nil {
-		return err
-	}
-
 	fts.Image = image
-	fts.Hostname = hostname
 
 	err = fts.installTestTools(containerName)
 	if err != nil {

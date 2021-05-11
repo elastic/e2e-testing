@@ -46,17 +46,6 @@ func NewFleetConfig(token string) (*FleetConfig, error) {
 
 // Flags bootstrap flags for fleet server
 func (cfg FleetConfig) Flags() []string {
-	/*
-		// agent using an already bootstrapped fleet-server
-		fleetServerHost := "https://hostname_of_the_bootstrapped_fleet_server:8220"
-		return []string{
-			"-e", "-v", "--force", "--insecure",
-			// ensure the enrollment belongs to the default policy
-			"--enrollment-token=" + cfg.EnrollmentToken,
-			"--url", fleetServerHost,
-		}
-	*/
-
 	flags := []string{
 		"-e", "-v", "--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken,
 		"--url", fmt.Sprintf("http://%s:%d", cfg.FleetServerURI, cfg.FleetServerPort),
