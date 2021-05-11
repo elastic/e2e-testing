@@ -13,7 +13,7 @@ import (
 	gabs "github.com/Jeffail/gabs/v2"
 )
 
-var testVersion = "8.0.0-SNAPSHOT"
+var testVersion = "7.x-SNAPSHOT"
 
 const bucket = "beats-ci-artifacts"
 const commits = "commits"
@@ -46,12 +46,12 @@ func init() {
 func TestBuildArtifactName(t *testing.T) {
 	artifact := "elastic-agent"
 	OS := "linux"
-	version := "8.0.0-SNAPSHOT"
+	version := "7.x-SNAPSHOT"
 
 	t.Run("For RPM", func(t *testing.T) {
 		arch := "x86_64"
 		extension := "rpm"
-		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm"
+		expectedFileName := "elastic-agent-7.x-SNAPSHOT-x86_64.rpm"
 
 		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -63,7 +63,7 @@ func TestBuildArtifactName(t *testing.T) {
 	t.Run("For DEB", func(t *testing.T) {
 		arch := "amd64"
 		extension := "deb"
-		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-amd64.deb"
+		expectedFileName := "elastic-agent-7.x-SNAPSHOT-amd64.deb"
 
 		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -75,7 +75,7 @@ func TestBuildArtifactName(t *testing.T) {
 	t.Run("For TAR", func(t *testing.T) {
 		arch := "amd64"
 		extension := "tar.gz"
-		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.tar.gz"
+		expectedFileName := "elastic-agent-7.x-SNAPSHOT-linux-amd64.tar.gz"
 
 		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -91,7 +91,7 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "amd64"
 		extension := "tar.gz"
-		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-docker-image-linux-amd64.tar.gz"
+		expectedFileName := "elastic-agent-7.x-SNAPSHOT-docker-image-linux-amd64.tar.gz"
 
 		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -107,7 +107,7 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent-ubi8"
 		arch := "amd64"
 		extension := "tar.gz"
-		expectedFileName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-docker-image-linux-amd64.tar.gz"
+		expectedFileName := "elastic-agent-ubi8-7.x-SNAPSHOT-docker-image-linux-amd64.tar.gz"
 
 		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -123,7 +123,7 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "amd64"
 		extension := "tar.gz"
-		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
+		expectedFileName := "elastic-agent-7.x-SNAPSHOT-linux-amd64.docker.tar.gz"
 
 		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -139,7 +139,7 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent-ubi8"
 		arch := "amd64"
 		extension := "tar.gz"
-		expectedFileName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
+		expectedFileName := "elastic-agent-ubi8-7.x-SNAPSHOT-linux-amd64.docker.tar.gz"
 
 		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -155,7 +155,7 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "amd64"
 		extension := "tar.gz"
-		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
+		expectedFileName := "elastic-agent-7.x-SNAPSHOT-linux-amd64.docker.tar.gz"
 
 		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -171,7 +171,7 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent-ubi8"
 		arch := "amd64"
 		extension := "tar.gz"
-		expectedFileName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
+		expectedFileName := "elastic-agent-ubi8-7.x-SNAPSHOT-linux-amd64.docker.tar.gz"
 
 		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -187,8 +187,8 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "amd64"
 		extension := "tar.gz"
-		fallbackVersion := "8.0.0-SNAPSHOT"
-		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-docker-image-linux-amd64.tar.gz"
+		fallbackVersion := "7.x-SNAPSHOT"
+		expectedFileName := "elastic-agent-7.x-SNAPSHOT-docker-image-linux-amd64.tar.gz"
 
 		artifactName := BuildArtifactName(artifact, version, fallbackVersion, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -342,15 +342,15 @@ func TestIsCommit(t *testing.T) {
 
 func TestProcessBucketSearchPage_CommitFound(t *testing.T) {
 	// retrieving last element in commits.json
-	object := "024b732844d40bdb2bf806480af2b03fcb8fbdbe/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-darwin-x86_64.tar.gz"
+	object := "024b732844d40bdb2bf806480af2b03fcb8fbdbe/elastic-agent/elastic-agent-7.x-SNAPSHOT-darwin-x86_64.tar.gz"
 
 	mediaLink, err := processBucketSearchPage(commitsJSON, 1, bucket, commits, object)
 	assert.Nil(t, err)
-	assert.True(t, mediaLink == "https://storage.googleapis.com/download/storage/v1/b/beats-ci-artifacts/o/commits%2F024b732844d40bdb2bf806480af2b03fcb8fbdbe%2Felastic-agent%2Felastic-agent-8.0.0-SNAPSHOT-darwin-x86_64.tar.gz?generation=1612983859986704&alt=media")
+	assert.True(t, mediaLink == "https://storage.googleapis.com/download/storage/v1/b/beats-ci-artifacts/o/commits%2F024b732844d40bdb2bf806480af2b03fcb8fbdbe%2Felastic-agent%2Felastic-agent-7.x-SNAPSHOT-darwin-x86_64.tar.gz?generation=1612983859986704&alt=media")
 }
 
 func TestProcessBucketSearchPage_CommitsNotFound(t *testing.T) {
-	object := "foo/elastic-agent-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
+	object := "foo/elastic-agent-7.x-SNAPSHOT-linux-amd64.docker.tar.gz"
 
 	mediaLink, err := processBucketSearchPage(commitsJSON, 1, bucket, commits, object)
 	assert.NotNil(t, err)

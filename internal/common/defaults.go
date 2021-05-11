@@ -23,7 +23,7 @@ const FleetProfileName = "fleet"
 const FleetServerAgentServiceName = "fleet-server"
 
 // AgentVersionBase is the base version of the agent to use
-var AgentVersionBase = "8.0.0-SNAPSHOT"
+var AgentVersionBase = "7.x-SNAPSHOT"
 
 // AgentVersion is the version of the agent to use
 // It can be overriden by BEAT_VERSION env var
@@ -31,7 +31,7 @@ var AgentVersion = AgentVersionBase
 
 // AgentStaleVersion is the version of the agent to use as a base during upgrade
 // It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var AgentStaleVersion = "7.11-SNAPSHOT"
+var AgentStaleVersion = "7.13-SNAPSHOT"
 
 // StackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var

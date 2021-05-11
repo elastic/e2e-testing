@@ -12,7 +12,7 @@ set -euxo pipefail
 #   - STACK_VERSION - that's the version of the stack to be tested. Default '8.0.0-SNAPSHOT'.
 #
 
-STACK_VERSION=${1:-'8.0.0-SNAPSHOT'}
+STACK_VERSION=${1:-'7.x-SNAPSHOT'}
 SUITE='fleet'
 
 # Exclude the nightly tests in the CI.
