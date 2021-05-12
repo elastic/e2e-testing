@@ -38,8 +38,10 @@ type BasePackage struct {
 // extractPackage depends on the underlying OS, so 'cmds' must contain the specific instructions for the OS
 func (i *BasePackage) extractPackage(cmds []string) error {
 	sm := deploy.NewServiceManager()
+	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(i.image)
+
 	err := sm.ExecCommandInService(
-		deploy.NewServiceRequest(i.profile), deploy.NewServiceRequest(i.image), i.service, cmds, common.ProfileEnv, false)
+		deploy.NewServiceRequest(i.profile), imageService, i.service, cmds, common.ProfileEnv, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmds,
@@ -78,8 +80,10 @@ func (i *BasePackage) PrintLogs(containerName string) error {
 	}
 
 	sm := deploy.NewServiceManager()
+	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(i.image)
+
 	err = sm.ExecCommandInService(
-		deploy.NewServiceRequest(i.profile), deploy.NewServiceRequest(i.image), i.service, cmd, common.ProfileEnv, false)
+		deploy.NewServiceRequest(i.profile), imageService, i.service, cmd, common.ProfileEnv, false)
 	if err != nil {
 		return err
 	}

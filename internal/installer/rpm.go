@@ -43,7 +43,7 @@ func (i *RPMPackage) InstallCerts() error {
 func installCertsForCentos(profile string, image string, service string) error {
 	sm := deploy.NewServiceManager()
 	serviceProfile := deploy.NewServiceRequest(profile)
-	serviceImage := deploy.NewServiceRequest(image)
+	serviceImage := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(image)
 
 	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"yum", "check-update"}, common.ProfileEnv, false); err != nil {
 		return err

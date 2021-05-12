@@ -42,7 +42,7 @@ func (i *DEBPackage) InstallCerts() error {
 func installCertsForDebian(profile string, image string, service string) error {
 	sm := deploy.NewServiceManager()
 	serviceProfile := deploy.NewServiceRequest(profile)
-	serviceImage := deploy.NewServiceRequest(image)
+	serviceImage := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(image)
 
 	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"apt-get", "update"}, common.ProfileEnv, false); err != nil {
 		return err

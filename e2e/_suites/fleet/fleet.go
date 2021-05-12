@@ -88,10 +88,12 @@ func (fts *FleetTestSuite) afterScenario() {
 
 	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
 	if !developerMode {
+		agentInstaller := fts.getInstaller()
+
 		_ = fts.deployer.Remove(
 			[]deploy.ServiceRequest{
 				deploy.NewServiceRequest(common.FleetProfileName),
-				deploy.NewServiceRequest(serviceName),
+				deploy.NewServiceRequest(serviceName).WithFlavour(agentInstaller.Image),
 			},
 			common.ProfileEnv)
 	} else {
@@ -1240,12 +1242,13 @@ func inputs(integration string) []kibana.Input {
 func (fts *FleetTestSuite) getContainerLogs() error {
 	serviceManager := deploy.NewServiceManager()
 
+	agentInstaller := fts.getInstaller()
 	profile := deploy.NewServiceRequest(common.FleetProfileName)
 	serviceName := common.ElasticAgentServiceName
 
 	services := []deploy.ServiceRequest{
-		profile,                               // profile name
-		deploy.NewServiceRequest(serviceName), // agent service
+		profile, // profile name
+		deploy.NewServiceRequest(serviceName).WithFlavour(agentInstaller.Image), // agent service
 	}
 	err := serviceManager.RunCommand(profile, services, []string{"logs", serviceName}, common.ProfileEnv)
 	if err != nil {
