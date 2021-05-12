@@ -9,12 +9,14 @@ set -euxo pipefail
 # Run the functional tests for metricbeat using the functional-test wrapper
 #
 # Parameters:
-#   - STACK_VERSION - that's the version of the stack to be tested. Default '8.0.0-SNAPSHOT'.
-#   - BEAT_VERSION - that's the version of the metricbeat to be tested. Default '8.0.0-SNAPSHOT'.
+#   - STACK_VERSION - that's the version of the stack to be tested. Default is stored in '.stack-version'.
+#   - BEAT_VERSION - that's the version of the metricbeat to be tested. Default is stored in '.stack-version'.
 #
 
-STACK_VERSION=${1:-'8.0.0-SNAPSHOT'}
-BEAT_VERSION=${2:-'8.0.0-SNAPSHOT'}
+BASE_VERSION="$(cat $(pwd)/.stack-version)"
+
+STACK_VERSION=${1:-"${BASE_VERSION}"}
+BEAT_VERSION=${2:-"${BASE_VERSION}"}
 SUITE='metricbeat'
 
 .ci/scripts/functional-test.sh "${SUITE}" "" "${STACK_VERSION}" "${BEAT_VERSION}"

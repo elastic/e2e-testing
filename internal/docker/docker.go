@@ -23,7 +23,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -385,7 +385,7 @@ func TagImage(src string, target string) error {
 	dockerClient := getDockerClient()
 
 	maxTimeout := 15 * time.Second
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 	retryCount := 0
 
 	tagImageFn := func() error {
