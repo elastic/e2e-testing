@@ -155,7 +155,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 	}
 	extension := "tar.gz"
 
-	binaryName := utils.BuildArtifactName(artifact, version, common.AgentVersionBase, os, arch, extension, false)
+	binaryName := utils.BuildArtifactName(artifact, version, common.BeatVersionBase, os, arch, extension, false)
 	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -187,7 +187,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 		WithArtifact(artifact).
 		WithOS(os).
 		WithOSFlavour(image).
-		WithVersion(utils.CheckPRVersion(version, common.AgentVersionBase)) // sanitize version
+		WithVersion(utils.CheckPRVersion(version, common.BeatVersionBase)) // sanitize version
 
 	return ElasticAgentInstaller{
 		artifactArch:      arch,

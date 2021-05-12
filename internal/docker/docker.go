@@ -22,7 +22,8 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -30,6 +31,12 @@ var instance *client.Client
 
 // OPNetworkName name of the network used by the tool
 const OPNetworkName = "elastic-dev-network"
+
+type execResult struct {
+	StdOut   string
+	StdErr   string
+	ExitCode int
+}
 
 func buildTarForDeployment(file *os.File) (bytes.Buffer, error) {
 	fileInfo, _ := file.Stat()
@@ -59,36 +66,6 @@ func buildTarForDeployment(file *os.File) (bytes.Buffer, error) {
 	defer tarWriter.Close()
 
 	return buffer, nil
-}
-
-// CheckProcessStateOnTheHost checks if a process is in the desired state in a container
-// name of the container for the service:
-// we are using the Docker client instead of docker-compose
-// because it does not support returning the output of a
-// command: it simply returns error level
-func CheckProcessStateOnTheHost(containerName string, process string, state string, timeoutFactor int) error {
-	timeout := time.Duration(common.TimeoutFactor) * time.Minute
-
-	err := WaitForProcess(containerName, process, state, timeout)
-	if err != nil {
-		if state == "started" {
-			log.WithFields(log.Fields{
-				"container ": containerName,
-				"error":      err,
-				"timeout":    timeout,
-			}).Error("The process was not found but should be present")
-		} else {
-			log.WithFields(log.Fields{
-				"container": containerName,
-				"error":     err,
-				"timeout":   timeout,
-			}).Error("The process was found but shouldn't be present")
-		}
-
-		return err
-	}
-
-	return nil
 }
 
 // CopyFileToContainer copies a file to the running container
@@ -226,8 +203,31 @@ func ExecCommandIntoContainerWithEnv(ctx context.Context, containerName string, 
 	}
 	defer resp.Close()
 
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Reader)
+	// see https://stackoverflow.com/a/57132902
+	var execRes execResult
+
+	// read the output
+	var outBuf, errBuf bytes.Buffer
+	outputDone := make(chan error)
+
+	go func() {
+		// StdCopy demultiplexes the stream into two buffers
+		_, err = stdcopy.StdCopy(&outBuf, &errBuf, resp.Reader)
+		outputDone <- err
+	}()
+
+	select {
+	case err := <-outputDone:
+		if err != nil {
+			return "", err
+		}
+		break
+
+	case <-ctx.Done():
+		return "", ctx.Err()
+	}
+
+	stdout, err := ioutil.ReadAll(&outBuf)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"container": containerName,
@@ -236,35 +236,28 @@ func ExecCommandIntoContainerWithEnv(ctx context.Context, containerName string, 
 			"env":       env,
 			"error":     err,
 			"tty":       tty,
-		}).Error("Could not parse command output from container")
+		}).Error("Could not parse stdout from container")
 		return "", err
 	}
-	output := buf.String()
-
-	log.WithFields(log.Fields{
-		"container": containerName,
-		"command":   cmd,
-		"detach":    detach,
-		"env":       env,
-		"tty":       tty,
-	}).Trace("Command sucessfully executed in container")
-
-	output = strings.ReplaceAll(output, "\n", "")
-
-	patterns := []string{
-		"\x01\x00\x00\x00\x00\x00\x00\r",
-		"\x01\x00\x00\x00\x00\x00\x00)",
-	}
-	for _, pattern := range patterns {
-		if strings.HasPrefix(output, pattern) {
-			output = strings.ReplaceAll(output, pattern, "")
-			log.WithFields(log.Fields{
-				"output": output,
-			}).Trace("Output name has been sanitized")
-		}
+	stderr, err := ioutil.ReadAll(&errBuf)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"container": containerName,
+			"command":   cmd,
+			"detach":    detach,
+			"env":       env,
+			"error":     err,
+			"tty":       tty,
+		}).Error("Could not parse stderr from container")
+		return "", err
 	}
 
-	return output, nil
+	execRes.ExitCode = 0
+	execRes.StdOut = string(stdout)
+	execRes.StdErr = string(stderr)
+
+	// remove '\n' from the response
+	return strings.ReplaceAll(execRes.StdOut, "\n", ""), nil
 }
 
 // GetContainerHostname we need the container name because we use the Docker Client instead of Docker Compose
@@ -392,7 +385,7 @@ func TagImage(src string, target string) error {
 	dockerClient := getDockerClient()
 
 	maxTimeout := 15 * time.Second
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 	retryCount := 0
 
 	tagImageFn := func() error {
@@ -439,93 +432,6 @@ func RemoveDevNetwork() error {
 	log.WithFields(log.Fields{
 		"network": OPNetworkName,
 	}).Trace("Dev Network has been removed")
-
-	return nil
-}
-
-// WaitForProcess polls a container executing "ps" command until the process is in the desired state (present or not),
-// or a timeout happens
-func WaitForProcess(containerName string, process string, desiredState string, maxTimeout time.Duration) error {
-	exp := common.GetExponentialBackOff(maxTimeout)
-
-	mustBePresent := false
-	if desiredState == "started" {
-		mustBePresent = true
-	}
-	retryCount := 1
-
-	processStatus := func() error {
-		log.WithFields(log.Fields{
-			"desiredState": desiredState,
-			"process":      process,
-		}).Trace("Checking process desired state on the container")
-
-		output, err := ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"pgrep", "-n", "-l", process})
-		if err != nil {
-			log.WithFields(log.Fields{
-				"desiredState":  desiredState,
-				"elapsedTime":   exp.GetElapsedTime(),
-				"error":         err,
-				"container":     containerName,
-				"mustBePresent": mustBePresent,
-				"process":       process,
-				"retry":         retryCount,
-			}).Warn("Could not execute 'pgrep -n -l' in the container")
-
-			retryCount++
-
-			return err
-		}
-
-		outputContainsProcess := strings.Contains(output, process)
-
-		// both true or both false
-		if mustBePresent == outputContainsProcess {
-			log.WithFields(log.Fields{
-				"desiredState":  desiredState,
-				"container":     containerName,
-				"mustBePresent": mustBePresent,
-				"process":       process,
-			}).Infof("Process desired state checked")
-
-			return nil
-		}
-
-		if mustBePresent {
-			err = fmt.Errorf("%s process is not running in the container yet", process)
-			log.WithFields(log.Fields{
-				"desiredState": desiredState,
-				"elapsedTime":  exp.GetElapsedTime(),
-				"error":        err,
-				"container":    containerName,
-				"process":      process,
-				"retry":        retryCount,
-			}).Warn(err.Error())
-
-			retryCount++
-
-			return err
-		}
-
-		err = fmt.Errorf("%s process is still running in the container", process)
-		log.WithFields(log.Fields{
-			"elapsedTime": exp.GetElapsedTime(),
-			"error":       err,
-			"container":   containerName,
-			"process":     process,
-			"state":       desiredState,
-			"retry":       retryCount,
-		}).Warn(err.Error())
-
-		retryCount++
-
-		return err
-	}
-
-	err := backoff.Retry(processStatus, exp)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }

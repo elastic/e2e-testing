@@ -118,7 +118,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 	fts.StandAlone = false
 	fts.ElasticAgentStopped = false
 
-	fts.Version = common.AgentVersion
+	fts.Version = common.BeatVersion
 
 	policy, err := fts.kibanaClient.GetDefaultPolicy(false)
 	if err != nil {
@@ -183,8 +183,8 @@ func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredSt
 
 		return theAgentIsListedInFleetWithStatus(desiredStatus, hostname)
 	}
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
-	exp := common.GetExponentialBackOff(maxTimeout)
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	err := backoff.Retry(waitForAgents, exp)
 	if err != nil {
@@ -218,7 +218,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 	case "stale":
 		version = common.AgentStaleVersion
 	case "latest":
-		version = common.AgentVersion
+		version = common.BeatVersion
 	default:
 		version = common.AgentStaleVersion
 	}
@@ -240,7 +240,7 @@ func (fts *FleetTestSuite) installCerts() error {
 		log.WithFields(log.Fields{
 			"installer":         agentInstaller,
 			"version":           fts.Version,
-			"agentVersion":      common.AgentVersion,
+			"agentVersion":      common.BeatVersion,
 			"agentStaleVersion": common.AgentStaleVersion,
 		}).Error("No installer found")
 		return errors.New("no installer found")
@@ -249,7 +249,7 @@ func (fts *FleetTestSuite) installCerts() error {
 	err := agentInstaller.InstallCertsFn()
 	if err != nil {
 		log.WithFields(log.Fields{
-			"agentVersion":      common.AgentVersion,
+			"agentVersion":      common.BeatVersion,
 			"agentStaleVersion": common.AgentStaleVersion,
 			"error":             err,
 			"installer":         agentInstaller,
@@ -266,9 +266,9 @@ func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
 	case "stale":
 		desiredVersion = common.AgentStaleVersion
 	case "latest":
-		desiredVersion = common.AgentVersion
+		desiredVersion = common.BeatVersion
 	default:
-		desiredVersion = common.AgentVersion
+		desiredVersion = common.BeatVersion
 	}
 
 	return fts.kibanaClient.UpgradeAgent(fts.Hostname, desiredVersion)
@@ -279,7 +279,7 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	case "stale":
 		version = common.AgentStaleVersion
 	case "latest":
-		version = common.AgentVersion
+		version = common.BeatVersion
 	}
 
 	agentInVersionFn := func() error {
@@ -300,8 +300,8 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 		return nil
 	}
 
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
-	exp := common.GetExponentialBackOff(maxTimeout)
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	return backoff.Retry(agentInVersionFn, exp)
 }
@@ -399,7 +399,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 			return err
 		}
 
-		utils.Sleep(time.Duration(common.TimeoutFactor) * 10 * time.Second)
+		utils.Sleep(time.Duration(utils.TimeoutFactor) * 10 * time.Second)
 
 		err = installer.SystemctlRun(profile, agentInstaller.Image, serviceName, "start")
 		if err != nil {
@@ -441,7 +441,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 
 	containerName := fts.getContainerName(agentInstaller, 1)
 
-	return docker.CheckProcessStateOnTheHost(containerName, process, "stopped", common.TimeoutFactor)
+	return CheckProcessState(fts.deployer, containerName, process, "stopped", 1, utils.TimeoutFactor)
 }
 
 func (fts *FleetTestSuite) setup() error {
@@ -466,10 +466,10 @@ func theAgentIsListedInFleetWithStatus(desiredStatus string, hostname string) er
 	if err != nil {
 		return err
 	}
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
 	retryCount := 1
 
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	agentOnlineFn := func() error {
 		agentID, err := kibanaClient.GetAgentIDByHostname(hostname)
@@ -543,7 +543,7 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 		return err
 	}
 
-	if strings.Contains(content, "No such file or directory") {
+	if content == "" || strings.Contains(content, "No such file or directory") {
 		return nil
 	}
 
@@ -563,7 +563,7 @@ func (fts *FleetTestSuite) theHostIsRestarted() error {
 		}).Error("Could not stop the service")
 	}
 
-	utils.Sleep(time.Duration(common.TimeoutFactor) * 10 * time.Second)
+	utils.Sleep(time.Duration(utils.TimeoutFactor) * 10 * time.Second)
 
 	_, err = shell.Execute(context.Background(), ".", "docker", "start", containerName)
 	if err != nil {
@@ -586,10 +586,10 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	log.Trace("Checking system Package dashboards in Fleet")
 
 	dataStreamsCount := 0
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 	retryCount := 1
 
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	countDataStreamsFn := func() error {
 		dataStreams, err := fts.kibanaClient.GetDataStreams()
@@ -730,10 +730,10 @@ func theIntegrationIsOperatedInThePolicy(client *kibana.Client, policy kibana.Po
 func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp() error {
 	log.Trace("Checking if the hostname is not shown in the Administration view in the Security App")
 
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 	retryCount := 1
 
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	agentListedInSecurityFn := func() error {
 		host, err := fts.kibanaClient.IsAgentListedInSecurityApp(fts.Hostname)
@@ -770,10 +770,10 @@ func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp()
 func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(status string) error {
 	log.Trace("Checking if the hostname is shown in the Admin view in the Security App")
 
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 	retryCount := 1
 
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	agentListedInSecurityFn := func() error {
 		matches, err := fts.kibanaClient.IsAgentListedInSecurityAppWithStatus(fts.Hostname, status)
@@ -825,10 +825,10 @@ func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error 
 		return err
 	}
 
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 	retryCount := 1
 
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	getEventsFn := func() error {
 		listed, err := fts.kibanaClient.IsPolicyResponseListedInSecurityApp(agentID)
@@ -924,10 +924,10 @@ func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error
 		return err
 	}
 
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
 	retryCount := 1
 
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	getEventsFn := func() error {
 		err := fts.kibanaClient.GetAgentEvents("endpoint-security", agentID, pkgPolicy.ID, fts.PolicyUpdatedAt)

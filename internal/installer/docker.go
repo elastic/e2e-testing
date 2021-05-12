@@ -64,7 +64,7 @@ func (i *DockerPackage) Preinstall() error {
 
 	// we need to tag the loaded image because its tag relates to the target branch
 	return docker.TagImage(
-		"docker.elastic.co/beats/"+i.artifact+":"+common.AgentVersionBase,
+		"docker.elastic.co/beats/"+i.artifact+":"+common.BeatVersionBase,
 		"docker.elastic.co/observability-ci/"+i.artifact+":"+i.originalVersion+"-"+arch,
 	)
 }
@@ -101,7 +101,7 @@ func (i *DockerPackage) WithOS(OS string) *DockerPackage {
 
 // WithVersion sets the version
 func (i *DockerPackage) WithVersion(version string) *DockerPackage {
-	i.version = utils.CheckPRVersion(version, common.AgentVersionBase) // sanitize version
+	i.version = utils.CheckPRVersion(version, common.BeatVersionBase) // sanitize version
 	i.originalVersion = version
 	return i
 }
@@ -125,7 +125,7 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 	arch := utils.GetArchitecture()
 	extension := "tar.gz"
 
-	binaryName := utils.BuildArtifactName(artifactName, version, common.AgentVersionBase, os, arch, extension, true)
+	binaryName := utils.BuildArtifactName(artifactName, version, common.BeatVersionBase, os, arch, extension, true)
 	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{

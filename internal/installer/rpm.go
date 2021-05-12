@@ -84,7 +84,7 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 	}
 	extension := "rpm"
 
-	binaryName := utils.BuildArtifactName(artifact, version, common.AgentVersionBase, os, arch, extension, false)
+	binaryName := utils.BuildArtifactName(artifact, version, common.BeatVersionBase, os, arch, extension, false)
 	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
