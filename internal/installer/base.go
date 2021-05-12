@@ -56,11 +56,14 @@ func (i *BasePackage) extractPackage(cmds []string) error {
 
 // Postinstall executes operations after installing a DEB package
 func (i *BasePackage) Postinstall() error {
-	err := SystemctlRun(i.profile, i.image, i.service, "enable")
+	profileService := deploy.NewServiceRequest(i.profile)
+	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(i.image)
+
+	err := SystemctlRun(profileService, imageService, i.service, "enable")
 	if err != nil {
 		return err
 	}
-	return SystemctlRun(i.profile, i.image, i.service, "start")
+	return SystemctlRun(profileService, imageService, i.service, "start")
 }
 
 // PrintLogs prints logs for the agent
@@ -130,11 +133,10 @@ func getElasticAgentHash(containerName string, commitFile string) (string, error
 }
 
 // SystemctlRun runs systemctl in profile or service
-func SystemctlRun(profile string, image string, service string, command string) error {
+func SystemctlRun(profile deploy.ServiceRequest, image deploy.ServiceRequest, service string, command string) error {
 	cmd := []string{"systemctl", command, common.ElasticAgentProcessName}
 	sm := deploy.NewServiceManager()
-	err := sm.ExecCommandInService(
-		deploy.NewServiceRequest(profile), deploy.NewServiceRequest(image), service, cmd, common.ProfileEnv, false)
+	err := sm.ExecCommandInService(profile, image, service, cmd, common.ProfileEnv, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd,

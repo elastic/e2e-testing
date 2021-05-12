@@ -394,17 +394,20 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 
 	serviceName := agentInstaller.Service // name of the service
 
+	profileService := deploy.NewServiceRequest(profile)
+	imageService := deploy.NewServiceRequest(agentInstaller.Image)
+
 	if state == "started" {
-		return installer.SystemctlRun(profile, agentInstaller.Image, serviceName, "start")
+		return installer.SystemctlRun(profileService, imageService, serviceName, "start")
 	} else if state == "restarted" {
-		err := installer.SystemctlRun(profile, agentInstaller.Image, serviceName, "stop")
+		err := installer.SystemctlRun(profileService, imageService, serviceName, "stop")
 		if err != nil {
 			return err
 		}
 
 		utils.Sleep(time.Duration(common.TimeoutFactor) * 10 * time.Second)
 
-		err = installer.SystemctlRun(profile, agentInstaller.Image, serviceName, "start")
+		err = installer.SystemctlRun(profileService, imageService, serviceName, "start")
 		if err != nil {
 			return err
 		}
@@ -430,7 +433,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		"process": process,
 	}).Trace("Stopping process on the service")
 
-	err := installer.SystemctlRun(profile, agentInstaller.Image, serviceName, "stop")
+	err := installer.SystemctlRun(profileService, imageService, serviceName, "stop")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"action":  state,

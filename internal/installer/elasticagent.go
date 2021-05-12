@@ -61,7 +61,7 @@ func (i *ElasticAgentInstaller) ListElasticAgentWorkingDirContent(containerName 
 }
 
 // runElasticAgentCommandEnv runs a command for the elastic-agent
-func runElasticAgentCommandEnv(profile string, image string, service string, process string, command string, arguments []string, env map[string]string) error {
+func runElasticAgentCommandEnv(profile deploy.ServiceRequest, image deploy.ServiceRequest, service string, process string, command string, arguments []string, env map[string]string) error {
 	cmds := []string{
 		"timeout", fmt.Sprintf("%dm", common.TimeoutFactor), process, command,
 	}
@@ -72,8 +72,7 @@ func runElasticAgentCommandEnv(profile string, image string, service string, pro
 	}
 
 	sm := deploy.NewServiceManager()
-	err := sm.ExecCommandInService(
-		deploy.NewServiceRequest(profile), deploy.NewServiceRequest(image), service, cmds, common.ProfileEnv, false)
+	err := sm.ExecCommandInService(profile, image, service, cmds, common.ProfileEnv, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmds,

@@ -98,8 +98,11 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 		return ElasticAgentInstaller{}, err
 	}
 
+	profileService := deploy.NewServiceRequest(profile)
+	imageService := deploy.NewServiceRequest(image).WithFlavour("centos")
+
 	enrollFn := func(cfg *kibana.FleetConfig) error {
-		return runElasticAgentCommandEnv(profile, image, service, common.ElasticAgentProcessName, "enroll", cfg.Flags(), map[string]string{})
+		return runElasticAgentCommandEnv(profileService, imageService, service, common.ElasticAgentProcessName, "enroll", cfg.Flags(), map[string]string{})
 	}
 
 	workingDir := "/var/lib/elastic-agent"
