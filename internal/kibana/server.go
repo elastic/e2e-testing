@@ -12,7 +12,7 @@ import (
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
@@ -193,8 +193,8 @@ func (c *Client) RecreateFleet() error {
 		}).Info("Fleet setup done")
 		return nil
 	}
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
-	exp := common.GetExponentialBackOff(maxTimeout)
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	err := backoff.Retry(waitForFleet, exp)
 	if err != nil {
@@ -244,8 +244,8 @@ func (c *Client) WaitForFleet() error {
 		log.Info("Fleet setup complete")
 		return nil
 	}
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
-	exp := common.GetExponentialBackOff(maxTimeout)
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	err := backoff.Retry(waitForFleet, exp)
 	if err != nil {
@@ -257,8 +257,8 @@ func (c *Client) WaitForFleet() error {
 
 // WaitForReady waits for Kibana to be healthy and accept connections
 func (c *Client) WaitForReady(maxTimeoutMinutes time.Duration) (bool, error) {
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
-	exp := common.GetExponentialBackOff(maxTimeout)
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	ctx := context.Background()
 
