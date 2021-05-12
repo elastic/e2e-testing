@@ -84,6 +84,9 @@ func waitForProcess(deployer deploy.Deployment, service string, process string, 
 	}
 	retryCount := 1
 
+	// wrap service into a request for the deployer
+	serviceRequest := deploy.NewServiceRequest(service)
+
 	processStatus := func() error {
 		log.WithFields(log.Fields{
 			"desiredState": desiredState,
@@ -94,7 +97,7 @@ func waitForProcess(deployer deploy.Deployment, service string, process string, 
 		// pgrep -d: -d, --delimiter <string>  specify output delimiter
 		//i.e. "pgrep -d , metricbeat": 483,519
 		cmds := []string{"pgrep", "-d", ",", process}
-		output, err := deployer.ExecIn(service, cmds)
+		output, err := deployer.ExecIn(serviceRequest, cmds)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"cmds":          cmds,
@@ -134,7 +137,7 @@ func waitForProcess(deployer deploy.Deployment, service string, process string, 
 
 		for _, pid := range pids {
 			pidStateCmds := []string{"ps", "-q", pid, "-o", "state", "--no-headers"}
-			pidState, err := deployer.ExecIn(service, pidStateCmds)
+			pidState, err := deployer.ExecIn(serviceRequest, pidStateCmds)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"cmds":          cmds,

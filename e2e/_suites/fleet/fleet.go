@@ -88,7 +88,12 @@ func (fts *FleetTestSuite) afterScenario() {
 
 	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
 	if !developerMode {
-		_ = fts.deployer.Remove([]string{common.FleetProfileName, serviceName}, common.ProfileEnv)
+		_ = fts.deployer.Remove(
+			[]deploy.ServiceRequest{
+				deploy.NewServiceRequest(common.FleetProfileName),
+				deploy.NewServiceRequest(serviceName),
+			},
+			common.ProfileEnv)
 	} else {
 		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
@@ -1220,14 +1225,14 @@ func inputs(integration string) []kibana.Input {
 func (fts *FleetTestSuite) getContainerLogs() error {
 	serviceManager := deploy.NewServiceManager()
 
-	profile := common.FleetProfileName
+	profile := deploy.NewServiceRequest(common.FleetProfileName)
 	serviceName := common.ElasticAgentServiceName
 
-	composes := []string{
-		profile,     // profile name
-		serviceName, // agent service
+	services := []deploy.ServiceRequest{
+		profile,                               // profile name
+		deploy.NewServiceRequest(serviceName), // agent service
 	}
-	err := serviceManager.RunCommand(profile, composes, []string{"logs", serviceName}, common.ProfileEnv)
+	err := serviceManager.RunCommand(profile, services, []string{"logs", serviceName}, common.ProfileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,

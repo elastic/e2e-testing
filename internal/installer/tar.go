@@ -85,7 +85,8 @@ func (i *TARPackage) Preinstall() error {
 	}
 	for _, cmd := range cmds {
 		sm := deploy.NewServiceManager()
-		err := sm.ExecCommandInService(i.profile, i.image, i.service, cmd, common.ProfileEnv, false)
+		err := sm.ExecCommandInService(
+			deploy.NewServiceRequest(i.profile), deploy.NewServiceRequest(i.image), i.service, cmd, common.ProfileEnv, false)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"command": cmd,

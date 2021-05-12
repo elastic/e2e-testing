@@ -41,13 +41,16 @@ func (i *DEBPackage) InstallCerts() error {
 }
 func installCertsForDebian(profile string, image string, service string) error {
 	sm := deploy.NewServiceManager()
-	if err := sm.ExecCommandInService(profile, image, service, []string{"apt-get", "update"}, common.ProfileEnv, false); err != nil {
+	serviceProfile := deploy.NewServiceRequest(profile)
+	serviceImage := deploy.NewServiceRequest(image)
+
+	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"apt-get", "update"}, common.ProfileEnv, false); err != nil {
 		return err
 	}
-	if err := sm.ExecCommandInService(profile, image, service, []string{"apt", "install", "ca-certificates", "-y"}, common.ProfileEnv, false); err != nil {
+	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"apt", "install", "ca-certificates", "-y"}, common.ProfileEnv, false); err != nil {
 		return err
 	}
-	if err := sm.ExecCommandInService(profile, image, service, []string{"update-ca-certificates", "-f"}, common.ProfileEnv, false); err != nil {
+	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"update-ca-certificates", "-f"}, common.ProfileEnv, false); err != nil {
 		return err
 	}
 	return nil

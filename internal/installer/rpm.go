@@ -42,16 +42,19 @@ func (i *RPMPackage) InstallCerts() error {
 }
 func installCertsForCentos(profile string, image string, service string) error {
 	sm := deploy.NewServiceManager()
-	if err := sm.ExecCommandInService(profile, image, service, []string{"yum", "check-update"}, common.ProfileEnv, false); err != nil {
+	serviceProfile := deploy.NewServiceRequest(profile)
+	serviceImage := deploy.NewServiceRequest(image)
+
+	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"yum", "check-update"}, common.ProfileEnv, false); err != nil {
 		return err
 	}
-	if err := sm.ExecCommandInService(profile, image, service, []string{"yum", "install", "ca-certificates", "-y"}, common.ProfileEnv, false); err != nil {
+	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"yum", "install", "ca-certificates", "-y"}, common.ProfileEnv, false); err != nil {
 		return err
 	}
-	if err := sm.ExecCommandInService(profile, image, service, []string{"update-ca-trust", "force-enable"}, common.ProfileEnv, false); err != nil {
+	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"update-ca-trust", "force-enable"}, common.ProfileEnv, false); err != nil {
 		return err
 	}
-	if err := sm.ExecCommandInService(profile, image, service, []string{"update-ca-trust", "extract"}, common.ProfileEnv, false); err != nil {
+	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"update-ca-trust", "extract"}, common.ProfileEnv, false); err != nil {
 		return err
 	}
 	return nil

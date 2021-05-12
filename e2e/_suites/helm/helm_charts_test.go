@@ -678,7 +678,8 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 				"stackVersion": stackVersion,
 			}
 
-			err := serviceManager.RunCompose(suiteContext, true, []string{"helm"}, env)
+			err := serviceManager.RunCompose(
+				suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("helm")}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": "metricbeat",

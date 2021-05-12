@@ -38,7 +38,8 @@ type BasePackage struct {
 // extractPackage depends on the underlying OS, so 'cmds' must contain the specific instructions for the OS
 func (i *BasePackage) extractPackage(cmds []string) error {
 	sm := deploy.NewServiceManager()
-	err := sm.ExecCommandInService(i.profile, i.image, i.service, cmds, common.ProfileEnv, false)
+	err := sm.ExecCommandInService(
+		deploy.NewServiceRequest(i.profile), deploy.NewServiceRequest(i.image), i.service, cmds, common.ProfileEnv, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmds,
@@ -74,7 +75,8 @@ func (i *BasePackage) PrintLogs(containerName string) error {
 	}
 
 	sm := deploy.NewServiceManager()
-	err = sm.ExecCommandInService(i.profile, i.image, i.service, cmd, common.ProfileEnv, false)
+	err = sm.ExecCommandInService(
+		deploy.NewServiceRequest(i.profile), deploy.NewServiceRequest(i.image), i.service, cmd, common.ProfileEnv, false)
 	if err != nil {
 		return err
 	}
@@ -109,7 +111,7 @@ func getElasticAgentHash(containerName string, commitFile string) (string, error
 		"cat", commitFile,
 	}
 
-	fullHash, err := deploy.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
+	fullHash, err := deploy.ExecCommandIntoContainer(context.Background(), deploy.NewServiceRequest(containerName), "root", cmd)
 	if err != nil {
 		return "", err
 	}
@@ -131,7 +133,8 @@ func getElasticAgentHash(containerName string, commitFile string) (string, error
 func SystemctlRun(profile string, image string, service string, command string) error {
 	cmd := []string{"systemctl", command, common.ElasticAgentProcessName}
 	sm := deploy.NewServiceManager()
-	err := sm.ExecCommandInService(profile, image, service, cmd, common.ProfileEnv, false)
+	err := sm.ExecCommandInService(
+		deploy.NewServiceRequest(profile), deploy.NewServiceRequest(image), service, cmd, common.ProfileEnv, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmd,

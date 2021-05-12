@@ -76,7 +76,8 @@ func buildRunServiceCommand(srv string) *cobra.Command {
 				env[k] = v
 			}
 
-			err := serviceManager.RunCompose(context.Background(), false, []string{srv}, env)
+			err := serviceManager.RunCompose(
+				context.Background(), false, []deploy.ServiceRequest{deploy.NewServiceRequest(srv)}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"service": srv,
@@ -110,7 +111,8 @@ Example:
 				env[k] = v
 			}
 
-			err := serviceManager.RunCompose(context.Background(), true, []string{key}, env)
+			err := serviceManager.RunCompose(
+				context.Background(), true, []deploy.ServiceRequest{deploy.NewServiceRequest(key)}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": key,

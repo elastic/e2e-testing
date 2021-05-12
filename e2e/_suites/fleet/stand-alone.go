@@ -62,7 +62,11 @@ func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 }
 
 func (fts *FleetTestSuite) theDockerContainerIsStopped(serviceName string) error {
-	err := fts.deployer.Remove([]string{common.FleetProfileName, serviceName}, common.ProfileEnv)
+	services := []deploy.ServiceRequest{
+		deploy.NewServiceRequest(common.FleetProfileName),
+		deploy.NewServiceRequest(serviceName),
+	}
+	err := fts.deployer.Remove(services, common.ProfileEnv)
 	if err != nil {
 		return err
 	}
@@ -204,7 +208,7 @@ func (fts *FleetTestSuite) installTestTools(containerName string) error {
 		"containerName": containerName,
 	}).Trace("Installing test tools ")
 
-	_, err := deploy.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
+	_, err := deploy.ExecCommandIntoContainer(context.Background(), deploy.NewServiceRequest(containerName), "root", cmd)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command":       cmd,

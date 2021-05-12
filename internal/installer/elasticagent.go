@@ -46,7 +46,7 @@ func (i *ElasticAgentInstaller) ListElasticAgentWorkingDirContent(containerName 
 		"ls", "-l", i.workingDir,
 	}
 
-	content, err := deploy.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
+	content, err := deploy.ExecCommandIntoContainer(context.Background(), deploy.NewServiceRequest(containerName), "root", cmd)
 	if err != nil {
 		return "", err
 	}
@@ -72,7 +72,8 @@ func runElasticAgentCommandEnv(profile string, image string, service string, pro
 	}
 
 	sm := deploy.NewServiceManager()
-	err := sm.ExecCommandInService(profile, image, service, cmds, common.ProfileEnv, false)
+	err := sm.ExecCommandInService(
+		deploy.NewServiceRequest(profile), deploy.NewServiceRequest(image), service, cmds, common.ProfileEnv, false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmds,

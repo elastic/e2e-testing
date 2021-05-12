@@ -169,12 +169,12 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 		"stackVersion": stackVersion,
 	}
 
-	services := []string{"metricbeat"}
+	services := []deploy.ServiceRequest{"metricbeat"}
 	if mts.ServiceName != "" {
-		services = append(services, mts.ServiceName)
+		services = append(services, deploy.NewServiceRequest(mts.ServiceName))
 	}
 
-	err := serviceManager.RemoveServicesFromCompose(mts.currentContext, "metricbeat", services, env)
+	err := serviceManager.RemoveServicesFromCompose(mts.currentContext, deploy.NewServiceRequest("metricbeat"), services, env)
 
 	if mts.cleanUpTmpFiles {
 		if _, err := os.Stat(mts.configurationFile); err == nil {
@@ -264,7 +264,8 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 			"stackVersion": stackVersion,
 		}
 
-		err := serviceManager.RunCompose(suiteContext, true, []string{"metricbeat"}, env)
+		err := serviceManager.RunCompose(
+			suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")}, env)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": "metricbeat",
@@ -491,13 +492,13 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	}
 
 	if log.IsLevelEnabled(log.DebugLevel) {
-		composes := []string{
-			"metricbeat", // profile name
-			"metricbeat", // metricbeat service
+		services := []ServiceRequest{
+			deploy.NewServiceRequest("metricbeat"), // profile name
+			deploy.NewServiceRequest("metricbeat"), // metricbeat service
 		}
 
 		if developerMode {
-			err = serviceManager.RunCommand("metricbeat", composes, []string{"logs", "metricbeat"}, env)
+			err = serviceManager.RunCommand("metricbeat", services, []string{"logs", "metricbeat"}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error":             err,

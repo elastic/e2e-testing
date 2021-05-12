@@ -43,8 +43,8 @@ func (c *dockerDeploymentManifest) Bootstrap(waitCB func() error) error {
 		common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
 	}
 
-	profile := common.FleetProfileName
-	err := serviceManager.RunCompose(c.Context, true, []string{profile}, common.ProfileEnv)
+	profile := NewServiceRequest(common.FleetProfileName)
+	err := serviceManager.RunCompose(c.Context, true, []ServiceRequest{profile}, common.ProfileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"profile": profile,
@@ -61,7 +61,7 @@ func (c *dockerDeploymentManifest) Bootstrap(waitCB func() error) error {
 // Destroy teardown docker environment
 func (c *dockerDeploymentManifest) Destroy() error {
 	serviceManager := NewServiceManager()
-	err := serviceManager.StopCompose(c.Context, true, []string{common.FleetProfileName})
+	err := serviceManager.StopCompose(c.Context, true, []ServiceRequest{NewServiceRequest(common.FleetProfileName)})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -72,7 +72,7 @@ func (c *dockerDeploymentManifest) Destroy() error {
 }
 
 // ExecIn execute command in service
-func (c *dockerDeploymentManifest) ExecIn(service string, cmd []string) (string, error) {
+func (c *dockerDeploymentManifest) ExecIn(service ServiceRequest, cmd []string) (string, error) {
 	output, err := ExecCommandIntoContainer(c.Context, service, "root", cmd)
 	if err != nil {
 		return "", err
@@ -81,7 +81,7 @@ func (c *dockerDeploymentManifest) ExecIn(service string, cmd []string) (string,
 }
 
 // Inspect inspects a service
-func (c *dockerDeploymentManifest) Inspect(service string) (*ServiceManifest, error) {
+func (c *dockerDeploymentManifest) Inspect(service ServiceRequest) (*ServiceManifest, error) {
 	inspect, err := InspectContainer(service)
 	if err != nil {
 		return &ServiceManifest{}, err
@@ -89,13 +89,13 @@ func (c *dockerDeploymentManifest) Inspect(service string) (*ServiceManifest, er
 	return &ServiceManifest{
 		ID:         inspect.ID,
 		Name:       strings.TrimPrefix(inspect.Name, "/"),
-		Connection: service,
+		Connection: service.Name,
 		Hostname:   inspect.NetworkSettings.Networks["fleet_default"].Aliases[0],
 	}, nil
 }
 
 // Remove remove services from deployment
-func (c *dockerDeploymentManifest) Remove(services []string, env map[string]string) error {
+func (c *dockerDeploymentManifest) Remove(services []ServiceRequest, env map[string]string) error {
 	serviceManager := NewServiceManager()
 
 	return serviceManager.RemoveServicesFromCompose(c.Context, services[0], services[1:], env)
