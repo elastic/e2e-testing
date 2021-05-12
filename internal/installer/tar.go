@@ -46,7 +46,7 @@ func (i *TARPackage) Install(cfg *kibana.FleetConfig) error {
 	args := cfg.Flags()
 
 	profileService := deploy.NewServiceRequest(i.profile)
-	imageService := deploy.NewServiceRequest(i.image).WithFlavour(i.OSFlavour)
+	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(i.OSFlavour)
 
 	err := runElasticAgentCommandEnv(profileService, imageService, i.service, binary, "install", args, map[string]string{})
 	if err != nil {
@@ -86,10 +86,13 @@ func (i *TARPackage) Preinstall() error {
 		{"rm", "-fr", "/elastic-agent"},
 		{"mv", fmt.Sprintf("/%s-%s-%s-%s", i.artifact, i.version, i.OS, i.arch), "/elastic-agent"},
 	}
+
+	profileService := deploy.NewServiceRequest(i.profile)
+	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(i.OSFlavour)
+
 	for _, cmd := range cmds {
 		sm := deploy.NewServiceManager()
-		err := sm.ExecCommandInService(
-			deploy.NewServiceRequest(i.profile), deploy.NewServiceRequest(i.image), i.service, cmd, common.ProfileEnv, false)
+		err := sm.ExecCommandInService(profileService, imageService, i.service, cmd, common.ProfileEnv, false)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"command": cmd,
@@ -111,7 +114,7 @@ func (i *TARPackage) Uninstall() error {
 	args := []string{"-f"}
 
 	profileService := deploy.NewServiceRequest(i.profile)
-	imageService := deploy.NewServiceRequest(i.image).WithFlavour(i.OSFlavour)
+	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(i.OSFlavour)
 
 	return runElasticAgentCommandEnv(profileService, imageService, i.service, common.ElasticAgentProcessName, "uninstall", args, map[string]string{})
 }
@@ -148,9 +151,7 @@ func (i *TARPackage) WithVersion(version string) *TARPackage {
 
 // newTarInstaller returns an instance of the Debian installer for a specific version
 func newTarInstaller(image string, tag string, version string) (ElasticAgentInstaller, error) {
-	dockerImage := image + "-systemd" // we want to consume systemd boxes
-
-	service := dockerImage
+	service := common.ElasticAgentServiceName
 	profile := common.FleetProfileName
 
 	// extract the agent in the box, as it's mounted as a volume
@@ -189,7 +190,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 	}
 
 	//
-	installerPackage := NewTARPackage(binaryName, profile, dockerImage, service, commitFile, logFile).
+	installerPackage := NewTARPackage(binaryName, profile, image, service, commitFile, logFile).
 		WithArch(arch).
 		WithArtifact(artifact).
 		WithOS(os).
@@ -204,7 +205,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 		artifactVersion:   version,
 		BinaryPath:        binaryPath,
 		EnrollFn:          enrollFn,
-		Image:             dockerImage,
+		Image:             image,
 		InstallFn:         installerPackage.Install,
 		InstallCertsFn:    installerPackage.InstallCerts,
 		InstallerType:     "tar",

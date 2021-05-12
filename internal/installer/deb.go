@@ -71,7 +71,7 @@ func (i *DEBPackage) Uninstall() error {
 // newDebianInstaller returns an instance of the Debian installer for a specific version
 func newDebianInstaller(image string, tag string, version string) (ElasticAgentInstaller, error) {
 	image = image + "-systemd" // we want to consume systemd boxes
-	service := image
+	service := common.ElasticAgentServiceName
 	profile := common.FleetProfileName
 
 	// extract the agent in the box, as it's mounted as a volume

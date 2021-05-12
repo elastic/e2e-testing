@@ -75,7 +75,7 @@ func (i *RPMPackage) Uninstall() error {
 // newCentosInstaller returns an instance of the Centos installer for a specific version
 func newCentosInstaller(image string, tag string, version string) (ElasticAgentInstaller, error) {
 	image = image + "-systemd" // we want to consume systemd boxes
-	service := image
+	service := common.ElasticAgentServiceName
 	profile := common.FleetProfileName
 
 	// extract the agent in the box, as it's mounted as a volume

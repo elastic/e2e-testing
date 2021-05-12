@@ -106,7 +106,7 @@ func (i *DockerPackage) WithVersion(version string) *DockerPackage {
 
 // newDockerInstaller returns an instance of the Docker installer
 func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error) {
-	image := "elastic-agent"
+	image := common.ElasticAgentServiceName
 	service := image
 	profile := common.FleetProfileName
 
