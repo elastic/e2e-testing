@@ -37,37 +37,7 @@ func setUpSuite() {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
 
-	// check if base version is an alias
-	v, err := utils.GetElasticArtifactVersion(common.AgentVersionBase)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": common.AgentVersionBase,
-		}).Fatal("Failed to get agent base version, aborting")
-	}
-	common.AgentVersionBase = v
-
-	common.AgentVersion = shell.GetEnv("BEAT_VERSION", common.AgentVersionBase)
-
-	// check if version is an alias
-	v, err = utils.GetElasticArtifactVersion(common.AgentVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": common.AgentVersion,
-		}).Fatal("Failed to get agent version, aborting")
-	}
-	common.AgentVersion = v
-
-	common.StackVersion = shell.GetEnv("STACK_VERSION", common.StackVersion)
-	v, err = utils.GetElasticArtifactVersion(common.StackVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": common.StackVersion,
-		}).Fatal("Failed to get stack version, aborting")
-	}
-	common.StackVersion = v
+	common.InitVersions()
 
 	common.KibanaVersion = shell.GetEnv("KIBANA_VERSION", "")
 	if common.KibanaVersion == "" {
@@ -118,12 +88,12 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		if !shell.GetEnvBool("SKIP_PULL") {
 			images := []string{
-				"docker.elastic.co/beats/elastic-agent:" + common.AgentVersion,
-				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.AgentVersion,
+				"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
+				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,
 				"docker.elastic.co/elasticsearch/elasticsearch:" + common.StackVersion,
 				"docker.elastic.co/kibana/kibana:" + common.KibanaVersion,
-				"docker.elastic.co/observability-ci/elastic-agent:" + common.AgentVersion,
-				"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.AgentVersion,
+				"docker.elastic.co/observability-ci/elastic-agent:" + common.BeatVersion,
+				"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.BeatVersion,
 				"docker.elastic.co/observability-ci/elasticsearch:" + common.StackVersion,
 				"docker.elastic.co/observability-ci/elasticsearch-ubi8:" + common.StackVersion,
 				"docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion,
@@ -145,7 +115,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			return nil
 		})
 
-		imts.Fleet.Version = common.AgentVersionBase
+		imts.Fleet.Version = common.BeatVersionBase
 		imts.Fleet.RuntimeDependenciesStartDate = time.Now().UTC()
 	})
 

@@ -80,7 +80,7 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 	arch := "amd64"
 	extension := "deb"
 
-	binaryName := utils.BuildArtifactName(artifact, version, common.AgentVersionBase, os, arch, extension, false)
+	binaryName := utils.BuildArtifactName(artifact, version, common.BeatVersionBase, os, arch, extension, false)
 	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{

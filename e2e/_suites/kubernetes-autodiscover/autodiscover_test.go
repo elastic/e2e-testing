@@ -23,7 +23,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -123,7 +122,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		// this method will detect if the GITHUB_CHECK_SHA1 variable is set
 		artifactName := utils.BuildArtifactName(podName, beatVersion, defaultBeatVersion, "linux", "amd64", "tar.gz", true)
 
-		imagePath, err := utils.FetchBeatsBinary(artifactName, podName, beatVersion, defaultBeatVersion, common.TimeoutFactor, true)
+		imagePath, err := utils.FetchBeatsBinary(artifactName, podName, beatVersion, defaultBeatVersion, utils.TimeoutFactor, true)
 		if err != nil {
 			return err
 		}
@@ -464,8 +463,8 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 		// init logger
 		config.Init()
 
-		defaultEventsWaitTimeout = defaultEventsWaitTimeout * time.Duration(common.TimeoutFactor)
-		defaultDeployWaitTimeout = defaultDeployWaitTimeout * time.Duration(common.TimeoutFactor)
+		defaultEventsWaitTimeout = defaultEventsWaitTimeout * time.Duration(utils.TimeoutFactor)
+		defaultDeployWaitTimeout = defaultDeployWaitTimeout * time.Duration(utils.TimeoutFactor)
 
 		err := cluster.Initialize(suiteContext, "testdata/kind.yml")
 		if err != nil {

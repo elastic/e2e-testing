@@ -48,7 +48,7 @@ func (fts *FleetTestSuite) aStandaloneAgentIsDeployedWithFleetServerModeOnCloud(
 }
 
 func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
 	minimumHitsCount := 50
 
 	result, err := searchAgentData(fts.Hostname, fts.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
@@ -98,7 +98,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 	fts.StandAlone = true
 	log.Trace("Deploying an agent to Fleet")
 
-	dockerImageTag := common.AgentVersion
+	dockerImageTag := common.BeatVersion
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
@@ -106,7 +106,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries
-		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.AgentVersion)
+		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.BeatVersion)
 
 		dockerInstaller.PreInstallFn()
 
@@ -166,7 +166,7 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 	maxTimeout := time.Minute
 	retryCount := 1
 
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	configurationIsPresentFn := func() error {
 		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(packageName, fts.Policy)

@@ -13,6 +13,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
+	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -42,14 +43,14 @@ func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocur
 		return err
 	}
 
-	return CheckProcessState(imts.Fleet.deployer, containerName, process, state, count, common.TimeoutFactor)
+	return CheckProcessState(imts.Fleet.deployer, containerName, process, state, count, utils.TimeoutFactor)
 }
 
 // CheckProcessState checks if a process is in the desired state in a container
 // name of the container for the service:
 // we are using the underlying deployer to run the commands in the container/service
 func CheckProcessState(deployer deploy.Deployment, service string, process string, state string, occurrences int, timeoutFactor int) error {
-	timeout := time.Duration(common.TimeoutFactor) * time.Minute
+	timeout := time.Duration(utils.TimeoutFactor) * time.Minute
 
 	err := waitForProcess(deployer, service, process, state, occurrences, timeout)
 	if err != nil {
@@ -76,7 +77,7 @@ func CheckProcessState(deployer deploy.Deployment, service string, process strin
 // waitForProcess polls a container executing "ps" command until the process is in the desired state (present or not),
 // or a timeout happens
 func waitForProcess(deployer deploy.Deployment, service string, process string, desiredState string, ocurrences int, maxTimeout time.Duration) error {
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	mustBePresent := false
 	if desiredState == "started" {
