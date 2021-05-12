@@ -39,6 +39,7 @@ func setUpSuite() {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
 
+<<<<<<< HEAD
 	// check if base version is an alias
 	v, err := utils.GetElasticArtifactVersion(common.AgentVersionBase)
 	if err != nil {
@@ -71,6 +72,9 @@ func setUpSuite() {
 		}).Fatal("Failed to get stack version, aborting")
 	}
 	common.StackVersion = v
+=======
+	common.InitVersions()
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 
 	common.KibanaVersion = shell.GetEnv("KIBANA_VERSION", "")
 	if common.KibanaVersion == "" {
@@ -139,12 +143,12 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		if !shell.GetEnvBool("SKIP_PULL") {
 			images := []string{
-				"docker.elastic.co/beats/elastic-agent:" + common.AgentVersion,
-				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.AgentVersion,
+				"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
+				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,
 				"docker.elastic.co/elasticsearch/elasticsearch:" + common.StackVersion,
 				"docker.elastic.co/kibana/kibana:" + common.KibanaVersion,
-				"docker.elastic.co/observability-ci/elastic-agent:" + common.AgentVersion,
-				"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.AgentVersion,
+				"docker.elastic.co/observability-ci/elastic-agent:" + common.BeatVersion,
+				"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.BeatVersion,
 				"docker.elastic.co/observability-ci/elasticsearch:" + common.StackVersion,
 				"docker.elastic.co/observability-ci/elasticsearch-ubi8:" + common.StackVersion,
 				"docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion,
@@ -159,6 +163,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
 		}
 
+<<<<<<< HEAD
 		profile := common.FleetProfileName
 		err := serviceManager.RunCompose(context.Background(), true, []string{profile}, common.ProfileEnv)
 		if err != nil {
@@ -194,6 +199,10 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		imts.Fleet.setup()
 
 		imts.StandAlone.RuntimeDependenciesStartDate = time.Now().UTC()
+=======
+		imts.Fleet.Version = common.BeatVersionBase
+		imts.Fleet.RuntimeDependenciesStartDate = time.Now().UTC()
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 	})
 
 	ctx.AfterSuite(func() {

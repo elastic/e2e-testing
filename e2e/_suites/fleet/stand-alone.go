@@ -61,12 +61,18 @@ func (sats *StandAloneTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the stand-alone agent is listed in Fleet as "([^"]*)"$`, sats.theStandaloneAgentIsListedInFleetWithStatus)
 }
 
+<<<<<<< HEAD
 func (sats *StandAloneTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredStatus string) error {
 	waitForAgents := func() error {
 		agents, err := sats.kibanaClient.ListAgents()
 		if err != nil {
 			return err
 		}
+=======
+func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	minimumHitsCount := 50
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 
 		if len(agents) == 0 {
 			return errors.New("No agents found")
@@ -99,7 +105,7 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 
 	log.Trace("Deploying an agent to Fleet")
 
-	dockerImageTag := common.AgentVersion
+	dockerImageTag := common.BeatVersion
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
@@ -107,7 +113,7 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries
-		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.AgentVersion)
+		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.BeatVersion)
 
 		dockerInstaller.PreInstallFn()
 
@@ -160,8 +166,15 @@ func (sats *StandAloneTestSuite) startAgent(image string, env map[string]string)
 func (sats *StandAloneTestSuite) getContainerLogs() error {
 	serviceManager := compose.NewServiceManager()
 
+<<<<<<< HEAD
 	profile := common.FleetProfileName
 	serviceName := common.ElasticAgentServiceName
+=======
+	maxTimeout := time.Minute
+	retryCount := 1
+
+	exp := utils.GetExponentialBackOff(maxTimeout)
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 
 	composes := []string{
 		profile,     // profile name

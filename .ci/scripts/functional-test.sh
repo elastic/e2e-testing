@@ -12,14 +12,26 @@ set -euxo pipefail
 # Parameters:
 #   - SUITE - that's the suite to be tested. Default '' which means all of them.
 #   - TAGS - that's the tags to be tested. Default '' which means all of them.
+<<<<<<< HEAD
 #   - STACK_VERSION - that's the version of the stack to be tested. Default '7.13.0-SNAPSHOT'.
 #   - BEAT_VERSION - that's the version of the metricbeat to be tested. Default '7.13.0-SNAPSHOT'.
+=======
+#   - STACK_VERSION - that's the version of the stack to be tested. Default is stored in '.stack-version'.
+#   - BEAT_VERSION - that's the version of the metricbeat to be tested. Default is stored in '.stack-version'.
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 #
+
+BASE_VERSION="$(cat $(pwd)/.stack-version)"
 
 SUITE=${1:-''}
 TAGS=${2:-''}
+<<<<<<< HEAD
 STACK_VERSION=${3:-'7.13.0-SNAPSHOT'}
 BEAT_VERSION=${4:-'7.13.0-SNAPSHOT'}
+=======
+STACK_VERSION=${3:-"${BASE_VERSION}"}
+BEAT_VERSION=${4:-"${BASE_VERSION}"}
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 
 ## Install the required dependencies for the given SUITE
 .ci/scripts/install-test-dependencies.sh "${SUITE}"

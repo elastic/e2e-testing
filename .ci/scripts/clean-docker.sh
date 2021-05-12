@@ -9,7 +9,11 @@ set -euxo pipefail
 # Build and test the app using the install and test make goals.
 #
 
+<<<<<<< HEAD
 readonly VERSION="7.13.0-SNAPSHOT"
+=======
+readonly VERSION="$(cat $(pwd)/.stack-version)"
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 
 main() {
   # refresh docker images

@@ -18,6 +18,12 @@ import (
 	messages "github.com/cucumber/messages-go/v10"
 	log "github.com/sirupsen/logrus"
 
+<<<<<<< HEAD
+=======
+	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/internal/docker"
+	"github.com/elastic/e2e-testing/internal/kubernetes"
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 )
@@ -85,6 +91,67 @@ func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, optio
 	return nil
 }
 
+<<<<<<< HEAD
+=======
+func (m *podsManager) configureDockerImage(podName string) error {
+	if podName != "filebeat" && podName != "heartbeat" && podName != "metricbeat" {
+		log.Debugf("Not processing custom binaries for pod: %s. Only [filebeat, heartbeat, metricbeat] will be processed", podName)
+		return nil
+	}
+
+	// we are caching the versions by pod to avoid downloading and loading/tagging the Docker image multiple times
+	if beatVersions[podName] != "" {
+		log.Tracef("The beat version was already loaded: %s", beatVersions[podName])
+		return nil
+	}
+
+	beatVersion := shell.GetEnv("BEAT_VERSION", defaultBeatVersion)
+
+	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+	if useCISnapshots || beatsLocalPath != "" {
+		log.Debugf("Configuring Docker image for %s", podName)
+
+		// this method will detect if the GITHUB_CHECK_SHA1 variable is set
+		artifactName := utils.BuildArtifactName(podName, beatVersion, defaultBeatVersion, "linux", "amd64", "tar.gz", true)
+
+		imagePath, err := utils.FetchBeatsBinary(artifactName, podName, beatVersion, defaultBeatVersion, utils.TimeoutFactor, true)
+		if err != nil {
+			return err
+		}
+
+		// load the TAR file into the docker host as a Docker image
+		err = docker.LoadImage(imagePath)
+		if err != nil {
+			return err
+		}
+
+		beatVersion = beatVersion + "-amd64"
+
+		// tag the image with the proper docker tag, including platform
+		err = docker.TagImage(
+			"docker.elastic.co/beats/"+podName+":"+defaultBeatVersion,
+			"docker.elastic.co/observability-ci/"+podName+":"+beatVersion,
+		)
+		if err != nil {
+			return err
+		}
+
+		// load PR image into kind
+		err = cluster.LoadImage(m.ctx, "docker.elastic.co/observability-ci/"+podName+":"+beatVersion)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	log.Tracef("Caching beat version '%s' for %s", beatVersion, podName)
+	beatVersions[podName] = beatVersion
+
+	return nil
+}
+
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 func (m *podsManager) isDeleted(podName string, options []string) error {
 	var buf bytes.Buffer
 	err := m.executeTemplateFor(podName, &buf, options)
@@ -387,7 +454,17 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 	log.DeferExitHandler(cancel)
 
 	ctx.BeforeSuite(func() {
+<<<<<<< HEAD
 		err := cluster.initialize(suiteContext)
+=======
+		// init logger
+		config.Init()
+
+		defaultEventsWaitTimeout = defaultEventsWaitTimeout * time.Duration(utils.TimeoutFactor)
+		defaultDeployWaitTimeout = defaultDeployWaitTimeout * time.Duration(utils.TimeoutFactor)
+
+		err := cluster.Initialize(suiteContext, "testdata/kind.yml")
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 		if err != nil {
 			log.WithError(err).Fatal("Failed to initialize cluster")
 		}

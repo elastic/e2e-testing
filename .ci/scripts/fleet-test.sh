@@ -9,10 +9,17 @@ set -euxo pipefail
 # Run the functional tests for fleets using the functional-test wrapper
 #
 # Parameters:
+<<<<<<< HEAD
 #   - STACK_VERSION - that's the version of the stack to be tested. Default '7.13.0-SNAPSHOT'.
 #
 
 STACK_VERSION=${1:-'7.13.0-SNAPSHOT'}
+=======
+#   - STACK_VERSION - that's the version of the stack to be tested. Default is stored in '.stack-version'.
+#
+
+STACK_VERSION=${1:-"$(cat $(pwd)/.stack-version)"}
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 SUITE='fleet'
 
 # Exclude the nightly tests in the CI.
