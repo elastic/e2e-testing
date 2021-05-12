@@ -33,7 +33,11 @@ var developerMode = false
 
 var elasticAPMActive = false
 
+<<<<<<< HEAD
 var serviceManager deploy.ServiceManager
+=======
+var serviceManager compose.ServiceManager
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 
 var testSuite MetricbeatTestSuite
 
@@ -57,7 +61,11 @@ func setupSuite() {
 
 	common.InitVersions()
 
+<<<<<<< HEAD
 	serviceManager = deploy.NewServiceManager()
+=======
+	serviceManager = compose.NewServiceManager()
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 
 	testSuite = MetricbeatTestSuite{
 		Query: elasticsearch.Query{},
@@ -385,7 +393,11 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 
 		mts.Version = mts.Version + "-amd64"
 
+<<<<<<< HEAD
 		err = deploy.TagImage(
+=======
+		err = docker.TagImage(
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 			"docker.elastic.co/beats/metricbeat:"+common.BeatVersionBase,
 			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version,
 		)

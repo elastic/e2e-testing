@@ -23,7 +23,11 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/elastic/e2e-testing/cli/config"
+<<<<<<< HEAD
 	"github.com/elastic/e2e-testing/internal/deploy"
+=======
+	"github.com/elastic/e2e-testing/internal/docker"
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"

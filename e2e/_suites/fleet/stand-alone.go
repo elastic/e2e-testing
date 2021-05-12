@@ -106,7 +106,11 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries
+<<<<<<< HEAD
 		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.BeatVersion, deployedAgentsCount)
+=======
+		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.BeatVersion)
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 
 		dockerInstaller.PreInstallFn()
 

@@ -61,7 +61,11 @@ func (i *DockerPackage) Preinstall() error {
 	}
 
 	// we need to tag the loaded image because its tag relates to the target branch
+<<<<<<< HEAD
 	return deploy.TagImage(
+=======
+	return docker.TagImage(
+>>>>>>> 4c3d3ebe... feat: simplify the initialisation of versions (#1159)
 		"docker.elastic.co/beats/"+i.artifact+":"+common.BeatVersionBase,
 		"docker.elastic.co/observability-ci/"+i.artifact+":"+i.originalVersion+"-amd64",
 	)
