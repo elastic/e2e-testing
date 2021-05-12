@@ -49,10 +49,6 @@ var helmChartVersion = "7.11.2"
 // kubernetesVersion represents the default version used for Kubernetes
 var kubernetesVersion = "1.18.2"
 
-// stackVersion is the version of the stack to use
-// It can be overriden by STACK_VERSION env var
-var stackVersion = "7.x-SNAPSHOT"
-
 var testSuite HelmChartTestSuite
 
 var tx *apm.Transaction
@@ -77,15 +73,7 @@ func setupSuite() {
 	helmChartVersion = shell.GetEnv("HELM_CHART_VERSION", helmChartVersion)
 	kubernetesVersion = shell.GetEnv("KUBERNETES_VERSION", kubernetesVersion)
 
-	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
-	v, err := utils.GetElasticArtifactVersion(stackVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": stackVersion,
-		}).Fatal("Failed to get stack version, aborting")
-	}
-	stackVersion = v
+	common.InitVersions()
 
 	h, err := helm.Factory(helmVersion)
 	if err != nil {
@@ -182,9 +170,9 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 		return err
 	}
 
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 	retryCount := 1
 
 	checkEndpointsFn := func() error {
@@ -407,7 +395,7 @@ func (ts *HelmChartTestSuite) install(ctx context.Context, chart string) error {
 			"chart": ts.Name,
 		}).Info("Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes installed")
 
-		maxTimeout := common.TimeoutFactor * 100
+		maxTimeout := utils.TimeoutFactor * 100
 
 		log.Debug("Applying workaround to use Rancher's local-path storage class for Elasticsearch volumes")
 		flags = []string{"--wait", fmt.Sprintf("--timeout=%ds", maxTimeout), "--values", "https://raw.githubusercontent.com/elastic/helm-charts/master/elasticsearch/examples/kubernetes-kind/values.yaml"}
@@ -675,7 +663,7 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 			serviceManager := compose.NewServiceManager()
 
 			env := map[string]string{
-				"stackVersion": stackVersion,
+				"stackVersion": common.StackVersion,
 			}
 
 			err := serviceManager.RunCompose(suiteContext, true, []string{"helm"}, env)
@@ -684,7 +672,7 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 					"profile": "metricbeat",
 				}).Warn("Could not run the profile.")
 			}
-			steps.AddAPMServicesForInstrumentation(suiteContext, "helm", stackVersion, true, env)
+			steps.AddAPMServicesForInstrumentation(suiteContext, "helm", common.StackVersion, true, env)
 		}
 
 		err := testSuite.createCluster(suiteContext, testSuite.KubernetesVersion)

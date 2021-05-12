@@ -13,9 +13,9 @@ import (
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v4"
-	"github.com/elastic/e2e-testing/internal/common"
 	curl "github.com/elastic/e2e-testing/internal/curl"
 	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/internal/utils"
 	es "github.com/elastic/go-elasticsearch/v8"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
@@ -202,7 +202,7 @@ func WaitForElasticsearch(ctx context.Context, maxTimeoutMinutes time.Duration) 
 // WaitForElasticsearchFromHostPort waits for an elasticsearch running in a host:port to be healthy, returning false
 // if elasticsearch does not get healthy status in a defined number of minutes.
 func WaitForElasticsearchFromHostPort(ctx context.Context, host string, port int, maxTimeoutMinutes time.Duration) (bool, error) {
-	exp := common.GetExponentialBackOff(maxTimeoutMinutes)
+	exp := utils.GetExponentialBackOff(maxTimeoutMinutes)
 
 	retryCount := 1
 
@@ -251,7 +251,7 @@ func WaitForElasticsearchFromHostPort(ctx context.Context, host string, port int
 
 // WaitForIndices waits for the elasticsearch indices to return the list of indices.
 func WaitForIndices() (string, error) {
-	exp := common.GetExponentialBackOff(60 * time.Second)
+	exp := utils.GetExponentialBackOff(60 * time.Second)
 
 	retryCount := 1
 	body := ""
@@ -294,7 +294,7 @@ func WaitForIndices() (string, error) {
 // WaitForNumberOfHits waits for an elasticsearch query to return more than a number of hits,
 // returning false if the query does not reach that number in a defined number of time.
 func WaitForNumberOfHits(ctx context.Context, indexName string, query map[string]interface{}, desiredHits int, maxTimeout time.Duration) (SearchResult, error) {
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	retryCount := 1
 	result := SearchResult{}
