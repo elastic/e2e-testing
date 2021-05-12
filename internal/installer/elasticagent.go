@@ -116,11 +116,11 @@ func GetElasticAgentInstaller(image string, installerType string, version string
 	var err error
 	if "centos" == image && "tar" == installerType {
 		installer, err = newTarInstaller("centos", "latest", version)
-	} else if "centos" == image && "systemd" == installerType {
+	} else if "centos" == image && "rpm" == installerType {
 		installer, err = newCentosInstaller("centos", "latest", version)
 	} else if "debian" == image && "tar" == installerType {
 		installer, err = newTarInstaller("debian", "stretch", version)
-	} else if "debian" == image && "systemd" == installerType {
+	} else if "debian" == image && "deb" == installerType {
 		installer, err = newDebianInstaller("debian", "stretch", version)
 	} else if "docker" == image && "default" == installerType {
 		installer, err = newDockerInstaller(false, version)
