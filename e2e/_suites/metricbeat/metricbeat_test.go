@@ -461,7 +461,11 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	env["metricbeatDockerNamespace"] = utils.GetDockerNamespaceEnvVar("beats")
 	env["metricbeatPlatform"] = "linux/amd64"
 
-	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{"metricbeat"}, env)
+	err := serviceManager.AddServicesToCompose(
+		testSuite.currentContext,
+		deploy.NewServiceRequest("metricbeat"),
+		[]deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")},
+		env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":             err,
@@ -521,7 +525,10 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(serviceType string
 	}
 	env = config.PutServiceEnvironment(env, serviceType, serviceVersion)
 
-	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{serviceType}, env)
+	err := serviceManager.AddServicesToCompose(
+		testSuite.currentContext, deploy.NewServiceRequest("metricbeat"),
+		[]deploy.ServiceRequest{deploy.NewServiceRequest(serviceType)},
+		env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": serviceType,
@@ -546,7 +553,10 @@ func (mts *MetricbeatTestSuite) serviceVariantIsRunningForMetricbeat(
 	}
 	env = config.PutServiceVariantEnvironment(env, serviceType, serviceVariant, serviceVersion)
 
-	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{serviceType}, env)
+	err := serviceManager.AddServicesToCompose(
+		testSuite.currentContext, deploy.NewServiceRequest("metricbeat"),
+		[]deploy.ServiceRequest{deploy.NewServiceRequest(serviceType)},
+		env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": serviceType,
