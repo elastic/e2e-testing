@@ -16,7 +16,6 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
-	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
@@ -347,7 +346,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	}
 
 	// get container hostname once
-	hostname, err := docker.GetContainerHostname(containerName)
+	hostname, err := deploy.GetContainerHostname(containerName)
 	if err != nil {
 		return err
 	}
@@ -1152,7 +1151,7 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, deployer
 	targetFile := "/"
 
 	// copy downloaded agent to the root dir of the container
-	err = docker.CopyFileToContainer(context.Background(), containerName, agentInstaller.BinaryPath, targetFile, isTar)
+	err = deploy.CopyFileToContainer(context.Background(), containerName, agentInstaller.BinaryPath, targetFile, isTar)
 	if err != nil {
 		return nil, err
 	}

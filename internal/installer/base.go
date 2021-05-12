@@ -11,7 +11,6 @@ import (
 
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
-	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	log "github.com/sirupsen/logrus"
 )
@@ -110,7 +109,7 @@ func getElasticAgentHash(containerName string, commitFile string) (string, error
 		"cat", commitFile,
 	}
 
-	fullHash, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
+	fullHash, err := deploy.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
 	if err != nil {
 		return "", err
 	}

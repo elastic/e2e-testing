@@ -18,7 +18,6 @@ import (
 	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
-	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
@@ -414,14 +413,14 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 			return err
 		}
 
-		err = docker.LoadImage(imagePath)
+		err = deploy.LoadImage(imagePath)
 		if err != nil {
 			return err
 		}
 
 		mts.Version = mts.Version + "-amd64"
 
-		err = docker.TagImage(
+		err = deploy.TagImage(
 			"docker.elastic.co/beats/metricbeat:"+metricbeatVersionBase,
 			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version,
 		)

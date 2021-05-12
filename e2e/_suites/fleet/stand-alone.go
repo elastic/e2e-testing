@@ -15,7 +15,6 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
-	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
@@ -138,7 +137,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 	}
 
 	// get container hostname once
-	hostname, err := docker.GetContainerHostname(containerName)
+	hostname, err := deploy.GetContainerHostname(containerName)
 	if err != nil {
 		return err
 	}
@@ -205,7 +204,7 @@ func (fts *FleetTestSuite) installTestTools(containerName string) error {
 		"containerName": containerName,
 	}).Trace("Installing test tools ")
 
-	_, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
+	_, err := deploy.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command":       cmd,

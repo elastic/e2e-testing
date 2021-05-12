@@ -6,7 +6,7 @@ package installer
 
 import (
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/docker"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -55,13 +55,13 @@ func (i *DockerPackage) InstallCerts() error {
 
 // Preinstall executes operations before installing a Docker package
 func (i *DockerPackage) Preinstall() error {
-	err := docker.LoadImage(i.installerPath)
+	err := deploy.LoadImage(i.installerPath)
 	if err != nil {
 		return err
 	}
 
 	// we need to tag the loaded image because its tag relates to the target branch
-	return docker.TagImage(
+	return deploy.TagImage(
 		"docker.elastic.co/beats/"+i.artifact+":"+common.AgentVersionBase,
 		"docker.elastic.co/observability-ci/"+i.artifact+":"+i.originalVersion+"-amd64",
 	)

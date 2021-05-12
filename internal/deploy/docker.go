@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -74,7 +73,7 @@ func (c *dockerDeploymentManifest) Destroy() error {
 
 // ExecIn execute command in service
 func (c *dockerDeploymentManifest) ExecIn(service string, cmd []string) (string, error) {
-	output, err := docker.ExecCommandIntoContainer(c.Context, service, "root", cmd)
+	output, err := ExecCommandIntoContainer(c.Context, service, "root", cmd)
 	if err != nil {
 		return "", err
 	}
@@ -83,7 +82,7 @@ func (c *dockerDeploymentManifest) ExecIn(service string, cmd []string) (string,
 
 // Inspect inspects a service
 func (c *dockerDeploymentManifest) Inspect(service string) (*ServiceManifest, error) {
-	inspect, err := docker.InspectContainer(service)
+	inspect, err := InspectContainer(service)
 	if err != nil {
 		return &ServiceManifest{}, err
 	}
