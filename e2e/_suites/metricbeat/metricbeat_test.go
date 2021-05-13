@@ -139,7 +139,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 		"stackVersion": common.StackVersion,
 	}
 
-	services := []deploy.ServiceRequest{"metricbeat"}
+	services := []deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")}
 	if mts.ServiceName != "" {
 		services = append(services, deploy.NewServiceRequest(mts.ServiceName))
 	}
@@ -276,7 +276,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 
 		if !developerMode {
 			serviceManager := deploy.NewServiceManager()
-			err := serviceManager.StopCompose(suiteContext, true, []string{"metricbeat"})
+			err := serviceManager.StopCompose(suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")})
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": "metricbeat",
@@ -460,13 +460,13 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	}
 
 	if log.IsLevelEnabled(log.DebugLevel) {
-		services := []ServiceRequest{
+		services := []deploy.ServiceRequest{
 			deploy.NewServiceRequest("metricbeat"), // profile name
 			deploy.NewServiceRequest("metricbeat"), // metricbeat service
 		}
 
 		if developerMode {
-			err = serviceManager.RunCommand("metricbeat", services, []string{"logs", "metricbeat"}, env)
+			err = serviceManager.RunCommand(deploy.NewServiceRequest("metricbeat"), services, []string{"logs", "metricbeat"}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error":             err,
