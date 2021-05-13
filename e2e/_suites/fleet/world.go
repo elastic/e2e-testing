@@ -35,7 +35,7 @@ func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocur
 		containerName = fmt.Sprintf("%s_%s_%d", profile, common.ElasticAgentServiceName, 1)
 	} else {
 		agentInstaller := imts.Fleet.getInstaller()
-		containerName = imts.Fleet.getContainerName(agentInstaller, 1)
+		containerName = imts.Fleet.getContainerName(agentInstaller)
 	}
 
 	count, err := strconv.Atoi(ocurrences)

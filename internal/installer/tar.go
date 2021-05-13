@@ -20,6 +20,7 @@ type TARPackage struct {
 	// optional fields
 	arch      string
 	artifact  string
+	index     int
 	OS        string
 	OSFlavour string // at this moment, centos or debian
 	version   string
@@ -46,7 +47,7 @@ func (i *TARPackage) Install(cfg *kibana.FleetConfig) error {
 	args := cfg.Flags()
 
 	profileService := deploy.NewServiceRequest(i.profile)
-	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(i.OSFlavour)
+	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(i.OSFlavour).WithScale(i.index)
 
 	err := runElasticAgentCommandEnv(profileService, imageService, i.service, binary, "install", args, map[string]string{})
 	if err != nil {
@@ -88,7 +89,7 @@ func (i *TARPackage) Preinstall() error {
 	}
 
 	profileService := deploy.NewServiceRequest(i.profile)
-	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(i.OSFlavour)
+	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(i.OSFlavour).WithScale(i.index)
 
 	for _, cmd := range cmds {
 		sm := deploy.NewServiceManager()
@@ -114,7 +115,7 @@ func (i *TARPackage) Uninstall() error {
 	args := []string{"-f"}
 
 	profileService := deploy.NewServiceRequest(i.profile)
-	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(i.OSFlavour)
+	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(i.OSFlavour).WithScale(i.index)
 
 	return runElasticAgentCommandEnv(profileService, imageService, i.service, common.ElasticAgentProcessName, "uninstall", args, map[string]string{})
 }
@@ -128,6 +129,12 @@ func (i *TARPackage) WithArch(arch string) *TARPackage {
 // WithArtifact sets the artifact
 func (i *TARPackage) WithArtifact(artifact string) *TARPackage {
 	i.artifact = artifact
+	return i
+}
+
+// WithIndex sets the index of the agent
+func (i *TARPackage) WithIndex(index int) *TARPackage {
+	i.index = index
 	return i
 }
 
@@ -150,7 +157,7 @@ func (i *TARPackage) WithVersion(version string) *TARPackage {
 }
 
 // newTarInstaller returns an instance of the Debian installer for a specific version
-func newTarInstaller(image string, tag string, version string) (ElasticAgentInstaller, error) {
+func newTarInstaller(image string, tag string, version string, index int) (ElasticAgentInstaller, error) {
 	service := common.ElasticAgentServiceName
 	profile := common.FleetProfileName
 
@@ -193,6 +200,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 	installerPackage := NewTARPackage(binaryName, profile, image, service, commitFile, logFile).
 		WithArch(arch).
 		WithArtifact(artifact).
+		WithIndex(index).
 		WithOS(os).
 		WithOSFlavour(image).
 		WithVersion(utils.CheckPRVersion(version, common.BeatVersionBase)) // sanitize version

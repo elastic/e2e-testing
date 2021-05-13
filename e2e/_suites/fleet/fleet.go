@@ -28,6 +28,8 @@ import (
 const actionADDED = "added"
 const actionREMOVED = "removed"
 
+var deployedAgentsCount = 0
+
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
 	// integrations
@@ -53,6 +55,8 @@ type FleetTestSuite struct {
 
 // afterScenario destroys the state created by a scenario
 func (fts *FleetTestSuite) afterScenario() {
+	defer func() { deployedAgentsCount = 0 }()
+
 	serviceName := common.ElasticAgentServiceName
 
 	if !fts.StandAlone {
@@ -237,7 +241,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 
 	// prepare installer for stale version
 	if fts.Version != agentVersionBackup {
-		i := installer.GetElasticAgentInstaller(image, installerType, fts.Version)
+		i := installer.GetElasticAgentInstaller(image, installerType, fts.Version, deployedAgentsCount)
 		fts.Installers[fmt.Sprintf("%s-%s-%s", image, installerType, version)] = i
 	}
 
@@ -338,12 +342,14 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 		"installer": installerType,
 	}).Trace("Deploying an agent to Fleet with base image using an already bootstrapped Fleet Server")
 
+	deployedAgentsCount++
+
 	fts.Image = image
 	fts.InstallerType = installerType
 
 	agentInstaller := fts.getInstaller()
 
-	containerName := fts.getContainerName(agentInstaller, 1) // name of the container
+	containerName := fts.getContainerName(agentInstaller) // name of the container
 
 	// enroll the agent with a new token
 	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.Policy)
@@ -381,8 +387,8 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 // getContainerName returns the current container name for the service:
 // we are using the Docker client instead of docker-compose because it does not support
 // returning the output of a command: it simply returns error level
-func (fts *FleetTestSuite) getContainerName(i installer.ElasticAgentInstaller, index int) string {
-	return fmt.Sprintf("%s_%s_%d", i.Profile, common.ElasticAgentServiceName, index)
+func (fts *FleetTestSuite) getContainerName(i installer.ElasticAgentInstaller) string {
+	return fmt.Sprintf("%s_%s_%d", i.Profile, common.ElasticAgentServiceName, deployedAgentsCount)
 }
 
 // getServiceName returns the current service name, the one defined at the docker compose
@@ -391,13 +397,14 @@ func (fts *FleetTestSuite) getServiceName(i installer.ElasticAgentInstaller) str
 }
 
 func (fts *FleetTestSuite) getInstaller() installer.ElasticAgentInstaller {
-	key := fmt.Sprintf("%s-%s-%s", fts.Image, fts.InstallerType, fts.Version)
+	key := fmt.Sprintf("%s-%s-%s-%d", fts.Image, fts.InstallerType, fts.Version, deployedAgentsCount)
 	// check if the agent is already cached
 	if i, exists := fts.Installers[key]; exists {
 		return i
 	}
 
-	agentInstaller := installer.GetElasticAgentInstaller(fts.Image, fts.InstallerType, fts.Version)
+	// setting current index for the installer
+	agentInstaller := installer.GetElasticAgentInstaller(fts.Image, fts.InstallerType, fts.Version, deployedAgentsCount)
 
 	// cache the new installer
 	fts.Installers[key] = agentInstaller
@@ -463,7 +470,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		return err
 	}
 
-	containerName := fts.getContainerName(agentInstaller, 1)
+	containerName := fts.getContainerName(agentInstaller)
 
 	return CheckProcessState(fts.deployer, containerName, process, "stopped", 1, utils.TimeoutFactor)
 }
@@ -560,7 +567,7 @@ func theAgentIsListedInFleetWithStatus(desiredStatus string, hostname string) er
 func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 	agentInstaller := fts.getInstaller()
 
-	containerName := fts.getContainerName(agentInstaller, 1)
+	containerName := fts.getContainerName(agentInstaller)
 
 	content, err := agentInstaller.ListElasticAgentWorkingDirContent(containerName)
 	if err != nil {
@@ -577,7 +584,7 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 func (fts *FleetTestSuite) theHostIsRestarted() error {
 	agentInstaller := fts.getInstaller()
 
-	containerName := fts.getContainerName(agentInstaller, 1)
+	containerName := fts.getContainerName(agentInstaller)
 	_, err := shell.Execute(context.Background(), ".", "docker", "stop", containerName)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -1005,9 +1012,12 @@ func (fts *FleetTestSuite) theVersionOfThePackageIsInstalled(version string, pac
 func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	log.Trace("Enrolling a new agent with an revoked token")
 
+	// increase the number of agents
+	deployedAgentsCount++
+
 	agentInstaller := fts.getInstaller()
 
-	containerName := fts.getContainerName(agentInstaller, 2) // name of the new container
+	containerName := fts.getContainerName(agentInstaller) // name of the new container
 
 	fleetConfig, err := deployAgentToFleet(agentInstaller, fts.deployer, containerName, fts.CurrentToken)
 
@@ -1160,10 +1170,10 @@ func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, deployer
 	// we are setting the container name because Centos service could be reused by any other test suite
 	common.ProfileEnv[envVarsPrefix+"ContainerName"] = containerName
 
-	services := []deploy.ServiceRequest{
-		deploy.NewServiceRequest(profile),
-		deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(agentInstaller.Image),
-	}
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(agentInstaller.Image).WithScale(deployedAgentsCount)
+
+	services := []deploy.ServiceRequest{deploy.NewServiceRequest(profile), agentService}
+
 	err := deployer.Add(services, common.ProfileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
