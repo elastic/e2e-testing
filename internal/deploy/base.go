@@ -31,12 +31,14 @@ type ServiceManifest struct {
 type ServiceRequest struct {
 	Name    string
 	Flavour string // optional, configured using builder method
+	Scale   int    // default: 1
 }
 
 // NewServiceRequest creates a request for a service
 func NewServiceRequest(n string) ServiceRequest {
 	return ServiceRequest{
-		Name: n,
+		Name:  n,
+		Scale: 1,
 	}
 }
 
@@ -44,6 +46,16 @@ func NewServiceRequest(n string) ServiceRequest {
 // using flavour as a subdir of the service
 func (sr ServiceRequest) WithFlavour(f string) ServiceRequest {
 	sr.Flavour = f
+	return sr
+}
+
+// WithScale adds the scale index to the service
+func (sr ServiceRequest) WithScale(s int) ServiceRequest {
+	if s < 1 {
+		s = 1
+	}
+
+	sr.Scale = s
 	return sr
 }
 

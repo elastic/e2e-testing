@@ -48,9 +48,13 @@ func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profil
 		"services": services,
 	}).Trace("Adding services to compose")
 
+	scaleCmds := []string{}
 	newServices := []ServiceRequest{profile}
 	for _, srv := range services {
 		newServices = append(newServices, srv)
+		if srv.Scale > 1 {
+			scaleCmds = append(scaleCmds, fmt.Sprintf("%s=%d", srv.Name, srv.Scale))
+		}
 	}
 
 	persistedEnv := state.Recover(profile.Name+"-profile", config.Op.Workspace)
@@ -58,7 +62,13 @@ func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profil
 		persistedEnv[k] = v
 	}
 
-	err := executeCompose(true, newServices, []string{"up", "-d"}, persistedEnv)
+	cmds := []string{"up", "-d"}
+	if len(scaleCmds) > 0 {
+		cmds = append(cmds, "--scale")
+		cmds = append(cmds, scaleCmds...)
+	}
+
+	err := executeCompose(true, newServices, cmds, persistedEnv)
 	if err != nil {
 		return err
 	}
@@ -76,6 +86,7 @@ func (sm *DockerServiceManager) ExecCommandInService(profile ServiceRequest, ima
 	if detach {
 		composeArgs = append(composeArgs, "-d")
 	}
+	composeArgs = append(composeArgs, "--index", fmt.Sprintf("%d", image.Scale))
 	composeArgs = append(composeArgs, serviceName)
 	composeArgs = append(composeArgs, cmds...)
 
