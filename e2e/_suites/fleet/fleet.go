@@ -88,12 +88,16 @@ func (fts *FleetTestSuite) afterScenario() {
 
 	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
 	if !developerMode {
-		agentInstaller := fts.getInstaller()
+		image := ""
+		if !fts.StandAlone {
+			agentInstaller := fts.getInstaller()
+			image = agentInstaller.Image
+		}
 
 		_ = fts.deployer.Remove(
 			[]deploy.ServiceRequest{
 				deploy.NewServiceRequest(common.FleetProfileName),
-				deploy.NewServiceRequest(serviceName).WithFlavour(agentInstaller.Image),
+				deploy.NewServiceRequest(serviceName).WithFlavour(image),
 			},
 			common.ProfileEnv)
 	} else {
