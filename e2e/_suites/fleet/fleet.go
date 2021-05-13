@@ -1246,13 +1246,18 @@ func inputs(integration string) []kibana.Input {
 func (fts *FleetTestSuite) getContainerLogs() error {
 	serviceManager := deploy.NewServiceManager()
 
-	agentInstaller := fts.getInstaller()
+	image := ""
+	if !fts.StandAlone {
+		agentInstaller := fts.getInstaller()
+		image = agentInstaller.Image
+	}
+
 	profile := deploy.NewServiceRequest(common.FleetProfileName)
 	serviceName := common.ElasticAgentServiceName
 
 	services := []deploy.ServiceRequest{
 		profile, // profile name
-		deploy.NewServiceRequest(serviceName).WithFlavour(agentInstaller.Image), // agent service
+		deploy.NewServiceRequest(serviceName).WithFlavour(image), // agent service
 	}
 	err := serviceManager.RunCommand(profile, services, []string{"logs", serviceName}, common.ProfileEnv)
 	if err != nil {
