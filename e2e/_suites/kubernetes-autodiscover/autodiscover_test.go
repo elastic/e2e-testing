@@ -32,7 +32,7 @@ import (
 
 var beatVersions = map[string]string{}
 
-const defaultBeatVersion = "8.0.0-SNAPSHOT"
+const defaultBeatVersion = "7.x-SNAPSHOT"
 
 var defaultEventsWaitTimeout = 60 * time.Second
 var defaultDeployWaitTimeout = 60 * time.Second
