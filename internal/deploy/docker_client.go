@@ -2,7 +2,7 @@
 // or more contributor license agreements. Licensed under the Elastic License;
 // you may not use this file except in compliance with the Elastic License.
 
-package docker
+package deploy
 
 import (
 	"archive/tar"
@@ -135,16 +135,18 @@ func CopyFileToContainer(ctx context.Context, containerName string, srcPath stri
 }
 
 // ExecCommandIntoContainer executes a command, as a user, into a container
-func ExecCommandIntoContainer(ctx context.Context, containerName string, user string, cmd []string) (string, error) {
-	return ExecCommandIntoContainerWithEnv(ctx, containerName, user, cmd, []string{})
+func ExecCommandIntoContainer(ctx context.Context, container ServiceRequest, user string, cmd []string) (string, error) {
+	return ExecCommandIntoContainerWithEnv(ctx, container, user, cmd, []string{})
 }
 
 // ExecCommandIntoContainerWithEnv executes a command, as a user, with env, into a container
-func ExecCommandIntoContainerWithEnv(ctx context.Context, containerName string, user string, cmd []string, env []string) (string, error) {
+func ExecCommandIntoContainerWithEnv(ctx context.Context, container ServiceRequest, user string, cmd []string, env []string) (string, error) {
 	dockerClient := getDockerClient()
 
 	detach := false
 	tty := false
+
+	containerName := container.Name
 
 	log.WithFields(log.Fields{
 		"container": containerName,
@@ -266,7 +268,7 @@ func GetContainerHostname(containerName string) (string, error) {
 		"containerName": containerName,
 	}).Trace("Retrieving container name from the Docker client")
 
-	hostname, err := ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"cat", "/etc/hostname"})
+	hostname, err := ExecCommandIntoContainer(context.Background(), NewServiceRequest(containerName), "root", []string{"cat", "/etc/hostname"})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"containerName": containerName,
@@ -285,13 +287,13 @@ func GetContainerHostname(containerName string) (string, error) {
 
 // InspectContainer returns the JSON representation of the inspection of a
 // Docker container, identified by its name
-func InspectContainer(name string) (*types.ContainerJSON, error) {
+func InspectContainer(service ServiceRequest) (*types.ContainerJSON, error) {
 	dockerClient := getDockerClient()
 
 	ctx := context.Background()
 
 	labelFilters := filters.NewArgs()
-	labelFilters.Add("name", name)
+	labelFilters.Add("name", service.Name)
 
 	containers, err := dockerClient.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: labelFilters})
 	if err != nil {

@@ -17,8 +17,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
-	"github.com/elastic/e2e-testing/internal/docker"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
@@ -34,7 +33,7 @@ var developerMode = false
 
 var elasticAPMActive = false
 
-var serviceManager compose.ServiceManager
+var serviceManager deploy.ServiceManager
 
 var testSuite MetricbeatTestSuite
 
@@ -58,7 +57,7 @@ func setupSuite() {
 
 	common.InitVersions()
 
-	serviceManager = compose.NewServiceManager()
+	serviceManager = deploy.NewServiceManager()
 
 	testSuite = MetricbeatTestSuite{
 		Query: elasticsearch.Query{},
@@ -123,7 +122,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	testSuite.currentContext = apm.ContextWithSpan(context.Background(), span)
 	defer span.End()
 
-	serviceManager := compose.NewServiceManager()
+	serviceManager := deploy.NewServiceManager()
 
 	fn := func(ctx context.Context) {
 		err := elasticsearch.DeleteIndex(ctx, mts.getIndexName())
@@ -140,12 +139,12 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 		"stackVersion": common.StackVersion,
 	}
 
-	services := []string{"metricbeat"}
+	services := []deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")}
 	if mts.ServiceName != "" {
-		services = append(services, mts.ServiceName)
+		services = append(services, deploy.NewServiceRequest(mts.ServiceName))
 	}
 
-	err := serviceManager.RemoveServicesFromCompose(mts.currentContext, "metricbeat", services, env)
+	err := serviceManager.RemoveServicesFromCompose(mts.currentContext, deploy.NewServiceRequest("metricbeat"), services, env)
 
 	if mts.cleanUpTmpFiles {
 		if _, err := os.Stat(mts.configurationFile); err == nil {
@@ -229,13 +228,14 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		serviceManager := compose.NewServiceManager()
+		serviceManager := deploy.NewServiceManager()
 
 		env := map[string]string{
 			"stackVersion": common.StackVersion,
 		}
 
-		err := serviceManager.RunCompose(suiteContext, true, []string{"metricbeat"}, env)
+		err := serviceManager.RunCompose(
+			suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")}, env)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": "metricbeat",
@@ -275,8 +275,8 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		defer suiteParentSpan.End()
 
 		if !developerMode {
-			serviceManager := compose.NewServiceManager()
-			err := serviceManager.StopCompose(suiteContext, true, []string{"metricbeat"})
+			serviceManager := deploy.NewServiceManager()
+			err := serviceManager.StopCompose(suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")})
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": "metricbeat",
@@ -378,14 +378,14 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 			return err
 		}
 
-		err = docker.LoadImage(imagePath)
+		err = deploy.LoadImage(imagePath)
 		if err != nil {
 			return err
 		}
 
 		mts.Version = mts.Version + "-amd64"
 
-		err = docker.TagImage(
+		err = deploy.TagImage(
 			"docker.elastic.co/beats/metricbeat:"+common.BeatVersionBase,
 			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version,
 		)
@@ -404,7 +404,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 
 	utils.Sleep(waitForService)
 
-	serviceManager := compose.NewServiceManager()
+	serviceManager := deploy.NewServiceManager()
 
 	logLevel := log.GetLevel().String()
 	if log.GetLevel() == log.TraceLevel {
@@ -425,7 +425,11 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	env["metricbeatDockerNamespace"] = utils.GetDockerNamespaceEnvVar("beats")
 	env["metricbeatPlatform"] = "linux/amd64"
 
-	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{"metricbeat"}, env)
+	err := serviceManager.AddServicesToCompose(
+		testSuite.currentContext,
+		deploy.NewServiceRequest("metricbeat"),
+		[]deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")},
+		env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":             err,
@@ -456,13 +460,13 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	}
 
 	if log.IsLevelEnabled(log.DebugLevel) {
-		composes := []string{
-			"metricbeat", // profile name
-			"metricbeat", // metricbeat service
+		services := []deploy.ServiceRequest{
+			deploy.NewServiceRequest("metricbeat"), // profile name
+			deploy.NewServiceRequest("metricbeat"), // metricbeat service
 		}
 
 		if developerMode {
-			err = serviceManager.RunCommand("metricbeat", composes, []string{"logs", "metricbeat"}, env)
+			err = serviceManager.RunCommand(deploy.NewServiceRequest("metricbeat"), services, []string{"logs", "metricbeat"}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error":             err,
@@ -485,7 +489,10 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(serviceType string
 	}
 	env = config.PutServiceEnvironment(env, serviceType, serviceVersion)
 
-	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{serviceType}, env)
+	err := serviceManager.AddServicesToCompose(
+		testSuite.currentContext, deploy.NewServiceRequest("metricbeat"),
+		[]deploy.ServiceRequest{deploy.NewServiceRequest(serviceType)},
+		env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": serviceType,
@@ -510,7 +517,10 @@ func (mts *MetricbeatTestSuite) serviceVariantIsRunningForMetricbeat(
 	}
 	env = config.PutServiceVariantEnvironment(env, serviceType, serviceVariant, serviceVersion)
 
-	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{serviceType}, env)
+	err := serviceManager.AddServicesToCompose(
+		testSuite.currentContext, deploy.NewServiceRequest("metricbeat"),
+		[]deploy.ServiceRequest{deploy.NewServiceRequest(serviceType)},
+		env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": serviceType,
