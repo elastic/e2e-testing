@@ -716,7 +716,7 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 
 			if elasticAPMActive {
 				serviceManager := deploy.NewServiceManager()
-				err := serviceManager.StopCompose(suiteContext, true, []string{"helm"})
+				err := serviceManager.StopCompose(suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("helm")})
 				if err != nil {
 					log.WithFields(log.Fields{
 						"profile": "helm",
