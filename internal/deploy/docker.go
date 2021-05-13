@@ -149,7 +149,7 @@ func (c *dockerDeploymentManifest) Mount(service string, installType string) (in
 func (c *dockerDeploymentManifest) Remove(services []string, env map[string]string) error {
 	for _, service := range services[1:] {
 		manifest, _ := c.Inspect(service)
-		_, err := shell.Execute(c.Context, ".", "docker", "rm", "-f", manifest.Name)
+		_, err := shell.Execute(c.Context, ".", "docker", "rm", "-fv", manifest.Name)
 		if err != nil {
 			return err
 		}
