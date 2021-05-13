@@ -70,7 +70,6 @@ func (i *DEBPackage) Uninstall() error {
 
 // newDebianInstaller returns an instance of the Debian installer for a specific version
 func newDebianInstaller(image string, tag string, version string) (ElasticAgentInstaller, error) {
-	image = image + "-systemd" // we want to consume systemd boxes
 	service := common.ElasticAgentServiceName
 	profile := common.FleetProfileName
 
@@ -95,7 +94,7 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 	}
 
 	profileService := deploy.NewServiceRequest(profile)
-	imageService := deploy.NewServiceRequest(image).WithFlavour("debian")
+	imageService := deploy.NewServiceRequest(service).WithFlavour("debian")
 
 	enrollFn := func(cfg *kibana.FleetConfig) error {
 		return runElasticAgentCommandEnv(profileService, imageService, service, common.ElasticAgentProcessName, "enroll", cfg.Flags(), map[string]string{})

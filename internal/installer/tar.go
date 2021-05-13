@@ -183,7 +183,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 	logFile := logsDir + "/" + logFileName
 
 	profileService := deploy.NewServiceRequest(profile)
-	imageService := deploy.NewServiceRequest(image).WithFlavour(image)
+	imageService := deploy.NewServiceRequest(service).WithFlavour(image)
 
 	enrollFn := func(cfg *kibana.FleetConfig) error {
 		return runElasticAgentCommandEnv(profileService, imageService, service, common.ElasticAgentProcessName, "enroll", cfg.Flags(), map[string]string{})

@@ -74,7 +74,6 @@ func (i *RPMPackage) Uninstall() error {
 
 // newCentosInstaller returns an instance of the Centos installer for a specific version
 func newCentosInstaller(image string, tag string, version string) (ElasticAgentInstaller, error) {
-	image = image + "-systemd" // we want to consume systemd boxes
 	service := common.ElasticAgentServiceName
 	profile := common.FleetProfileName
 
@@ -99,7 +98,7 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 	}
 
 	profileService := deploy.NewServiceRequest(profile)
-	imageService := deploy.NewServiceRequest(image).WithFlavour("centos")
+	imageService := deploy.NewServiceRequest(service).WithFlavour("centos")
 
 	enrollFn := func(cfg *kibana.FleetConfig) error {
 		return runElasticAgentCommandEnv(profileService, imageService, service, common.ElasticAgentProcessName, "enroll", cfg.Flags(), map[string]string{})
