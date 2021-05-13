@@ -23,7 +23,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/internal/docker"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
@@ -128,7 +128,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		}
 
 		// load the TAR file into the docker host as a Docker image
-		err = docker.LoadImage(imagePath)
+		err = deploy.LoadImage(imagePath)
 		if err != nil {
 			return err
 		}
@@ -136,7 +136,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		beatVersion = beatVersion + "-amd64"
 
 		// tag the image with the proper docker tag, including platform
-		err = docker.TagImage(
+		err = deploy.TagImage(
 			"docker.elastic.co/beats/"+podName+":"+defaultBeatVersion,
 			"docker.elastic.co/observability-ci/"+podName+":"+beatVersion,
 		)

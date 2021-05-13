@@ -21,7 +21,7 @@ Examples: Debian
 
 @enroll
 Scenario Outline: Deploying the <os> agent with enroll and then run on rpm and deb
-  Given a "<os>" agent is deployed to Fleet with "systemd" installer
+  Given a "<os>" agent is deployed to Fleet
   When the "elastic-agent" process is in the "started" state on the host
   Then there are "2" instances of the "filebeat" process in the "started" state
     And there are "2" instances of the "metricbeat" process in the "started" state
