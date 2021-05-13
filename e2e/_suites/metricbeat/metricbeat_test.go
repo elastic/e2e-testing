@@ -17,8 +17,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
-	"github.com/elastic/e2e-testing/internal/docker"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
@@ -34,17 +33,7 @@ var developerMode = false
 
 var elasticAPMActive = false
 
-var metricbeatVersionBase = "8.0.0-SNAPSHOT"
-
-// metricbeatVersion is the version of the metricbeat to use
-// It can be overriden by BEAT_VERSION env var
-var metricbeatVersion = metricbeatVersionBase
-
-var serviceManager compose.ServiceManager
-
-// stackVersion is the version of the stack to use
-// It can be overriden by STACK_VERSION env var
-var stackVersion = metricbeatVersionBase
+var serviceManager deploy.ServiceManager
 
 var testSuite MetricbeatTestSuite
 
@@ -66,29 +55,9 @@ func setupSuite() {
 		}).Info("Current execution will be instrumented 🛠")
 	}
 
-	// check if base version is an alias
-	v, err := utils.GetElasticArtifactVersion(metricbeatVersionBase)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": metricbeatVersionBase,
-		}).Fatal("Failed to get metricbeat base version, aborting")
-	}
-	metricbeatVersionBase = v
+	common.InitVersions()
 
-	metricbeatVersion = shell.GetEnv("BEAT_VERSION", metricbeatVersionBase)
-
-	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
-	v, err = utils.GetElasticArtifactVersion(stackVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": stackVersion,
-		}).Fatal("Failed to get stack version, aborting")
-	}
-	stackVersion = v
-
-	serviceManager = compose.NewServiceManager()
+	serviceManager = deploy.NewServiceManager()
 
 	testSuite = MetricbeatTestSuite{
 		Query: elasticsearch.Query{},
@@ -153,7 +122,7 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	testSuite.currentContext = apm.ContextWithSpan(context.Background(), span)
 	defer span.End()
 
-	serviceManager := compose.NewServiceManager()
+	serviceManager := deploy.NewServiceManager()
 
 	fn := func(ctx context.Context) {
 		err := elasticsearch.DeleteIndex(ctx, mts.getIndexName())
@@ -167,15 +136,15 @@ func (mts *MetricbeatTestSuite) CleanUp() error {
 	defer fn(context.Background())
 
 	env := map[string]string{
-		"stackVersion": stackVersion,
+		"stackVersion": common.StackVersion,
 	}
 
-	services := []string{"metricbeat"}
+	services := []deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")}
 	if mts.ServiceName != "" {
-		services = append(services, mts.ServiceName)
+		services = append(services, deploy.NewServiceRequest(mts.ServiceName))
 	}
 
-	err := serviceManager.RemoveServicesFromCompose(mts.currentContext, "metricbeat", services, env)
+	err := serviceManager.RemoveServicesFromCompose(mts.currentContext, deploy.NewServiceRequest("metricbeat"), services, env)
 
 	if mts.cleanUpTmpFiles {
 		if _, err := os.Stat(mts.configurationFile); err == nil {
@@ -259,20 +228,21 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		serviceManager := compose.NewServiceManager()
+		serviceManager := deploy.NewServiceManager()
 
 		env := map[string]string{
-			"stackVersion": stackVersion,
+			"stackVersion": common.StackVersion,
 		}
 
-		err := serviceManager.RunCompose(suiteContext, true, []string{"metricbeat"}, env)
+		err := serviceManager.RunCompose(
+			suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")}, env)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"profile": "metricbeat",
 			}).Fatal("Could not run the profile.")
 		}
 
-		minutesToBeHealthy := time.Duration(common.TimeoutFactor) * time.Minute
+		minutesToBeHealthy := time.Duration(utils.TimeoutFactor) * time.Minute
 		healthy, err := elasticsearch.WaitForElasticsearch(suiteContext, minutesToBeHealthy)
 		if !healthy {
 			log.WithFields(log.Fields{
@@ -283,7 +253,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 
 		elasticAPMEnvironment := shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "ci")
 		if elasticAPMActive && elasticAPMEnvironment == "local" {
-			steps.AddAPMServicesForInstrumentation(suiteContext, "metricbeat", stackVersion, true, env)
+			steps.AddAPMServicesForInstrumentation(suiteContext, "metricbeat", common.StackVersion, true, env)
 		}
 	})
 
@@ -305,8 +275,8 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		defer suiteParentSpan.End()
 
 		if !developerMode {
-			serviceManager := compose.NewServiceManager()
-			err := serviceManager.StopCompose(suiteContext, true, []string{"metricbeat"})
+			serviceManager := deploy.NewServiceManager()
+			err := serviceManager.StopCompose(suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")})
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": "metricbeat",
@@ -320,7 +290,7 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 	serviceType = strings.ToLower(serviceType)
 
 	// at this point we have everything to define the index name
-	mts.Version = metricbeatVersion
+	mts.Version = common.BeatVersion
 	mts.setIndexName()
 	mts.ServiceType = serviceType
 
@@ -373,15 +343,9 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForVariantModule(serviceVa
 }
 
 func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string) error {
-	// restore initial state
-	metricbeatVersionBackup := metricbeatVersion
-	defer func() { metricbeatVersion = metricbeatVersionBackup }()
-
 	// at this point we have everything to define the index name
-	mts.Version = metricbeatVersion
+	mts.Version = common.BeatVersion
 	mts.setIndexName()
-
-	metricbeatVersion = utils.CheckPRVersion(metricbeatVersion, metricbeatVersionBase)
 
 	configurationFilePath, err := steps.FetchBeatConfiguration(false, "metricbeat", configuration+".yml")
 	if err != nil {
@@ -407,22 +371,22 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if useCISnapshots || beatsLocalPath != "" {
-		artifactName := utils.BuildArtifactName("metricbeat", mts.Version, metricbeatVersionBase, "linux", "amd64", "tar.gz", true)
+		artifactName := utils.BuildArtifactName("metricbeat", mts.Version, common.BeatVersionBase, "linux", "amd64", "tar.gz", true)
 
-		imagePath, err := utils.FetchBeatsBinary(artifactName, "metricbeat", mts.Version, metricbeatVersionBase, common.TimeoutFactor, true)
+		imagePath, err := utils.FetchBeatsBinary(artifactName, "metricbeat", mts.Version, common.BeatVersionBase, utils.TimeoutFactor, true)
 		if err != nil {
 			return err
 		}
 
-		err = docker.LoadImage(imagePath)
+		err = deploy.LoadImage(imagePath)
 		if err != nil {
 			return err
 		}
 
 		mts.Version = mts.Version + "-amd64"
 
-		err = docker.TagImage(
-			"docker.elastic.co/beats/metricbeat:"+metricbeatVersionBase,
+		err = deploy.TagImage(
+			"docker.elastic.co/beats/metricbeat:"+common.BeatVersionBase,
 			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version,
 		)
 		if err != nil {
@@ -431,7 +395,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	}
 
 	// this is needed because, in general, the target service (apache, mysql, redis) does not have a healthcheck
-	waitForService := time.Duration(common.TimeoutFactor) * 10 * time.Second
+	waitForService := time.Duration(utils.TimeoutFactor) * 10 * time.Second
 	if mts.ServiceName == "ceph" {
 		// see https://github.com/elastic/beats/blob/ef6274d0d1e36308a333cbed69846a1bd63528ae/metricbeat/module/ceph/mgr_osd_tree/mgr_osd_tree_integration_test.go#L35
 		// Ceph service needs more time to start up
@@ -440,7 +404,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 
 	utils.Sleep(waitForService)
 
-	serviceManager := compose.NewServiceManager()
+	serviceManager := deploy.NewServiceManager()
 
 	logLevel := log.GetLevel().String()
 	if log.GetLevel() == log.TraceLevel {
@@ -453,7 +417,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"logLevel":              logLevel,
 		"metricbeatConfigFile":  mts.configurationFile,
 		"metricbeatTag":         mts.Version,
-		"stackVersion":          stackVersion,
+		"stackVersion":          common.StackVersion,
 		mts.ServiceName + "Tag": mts.ServiceVersion,
 		"serviceName":           mts.ServiceName,
 	}
@@ -461,7 +425,11 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	env["metricbeatDockerNamespace"] = utils.GetDockerNamespaceEnvVar("beats")
 	env["metricbeatPlatform"] = "linux/amd64"
 
-	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{"metricbeat"}, env)
+	err := serviceManager.AddServicesToCompose(
+		testSuite.currentContext,
+		deploy.NewServiceRequest("metricbeat"),
+		[]deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")},
+		env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":             err,
@@ -492,13 +460,13 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	}
 
 	if log.IsLevelEnabled(log.DebugLevel) {
-		composes := []string{
-			"metricbeat", // profile name
-			"metricbeat", // metricbeat service
+		services := []deploy.ServiceRequest{
+			deploy.NewServiceRequest("metricbeat"), // profile name
+			deploy.NewServiceRequest("metricbeat"), // metricbeat service
 		}
 
 		if developerMode {
-			err = serviceManager.RunCommand("metricbeat", composes, []string{"logs", "metricbeat"}, env)
+			err = serviceManager.RunCommand(deploy.NewServiceRequest("metricbeat"), services, []string{"logs", "metricbeat"}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error":             err,
@@ -517,11 +485,14 @@ func (mts *MetricbeatTestSuite) serviceIsRunningForMetricbeat(serviceType string
 	serviceType = strings.ToLower(serviceType)
 
 	env := map[string]string{
-		"stackVersion": stackVersion,
+		"stackVersion": common.StackVersion,
 	}
 	env = config.PutServiceEnvironment(env, serviceType, serviceVersion)
 
-	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{serviceType}, env)
+	err := serviceManager.AddServicesToCompose(
+		testSuite.currentContext, deploy.NewServiceRequest("metricbeat"),
+		[]deploy.ServiceRequest{deploy.NewServiceRequest(serviceType)},
+		env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": serviceType,
@@ -542,11 +513,14 @@ func (mts *MetricbeatTestSuite) serviceVariantIsRunningForMetricbeat(
 	serviceType = strings.ToLower(serviceType)
 
 	env := map[string]string{
-		"stackVersion": stackVersion,
+		"stackVersion": common.StackVersion,
 	}
 	env = config.PutServiceVariantEnvironment(env, serviceType, serviceVariant, serviceVersion)
 
-	err := serviceManager.AddServicesToCompose(testSuite.currentContext, "metricbeat", []string{serviceType}, env)
+	err := serviceManager.AddServicesToCompose(
+		testSuite.currentContext, deploy.NewServiceRequest("metricbeat"),
+		[]deploy.ServiceRequest{deploy.NewServiceRequest(serviceType)},
+		env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"service": serviceType,
@@ -577,7 +551,7 @@ func (mts *MetricbeatTestSuite) thereAreEventsInTheIndex() error {
 	}
 
 	minimumHitsCount := 5
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 
 	result, err := elasticsearch.WaitForNumberOfHits(mts.currentContext, mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
@@ -613,7 +587,7 @@ func (mts *MetricbeatTestSuite) thereAreNoErrorsInTheIndex() error {
 	}
 
 	minimumHitsCount := 5
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 
 	result, err := elasticsearch.WaitForNumberOfHits(mts.currentContext, mts.getIndexName(), esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {

@@ -14,7 +14,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/docker"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
@@ -44,11 +44,11 @@ func (fts *FleetTestSuite) aStandaloneAgentIsDeployedWithFleetServerModeOnCloud(
 	}
 	fts.FleetServerPolicy = fleetPolicy
 	volume := path.Join(config.OpDir(), "compose", "services", "elastic-agent", "apm-legacy")
-	return fts.startStandAloneAgent(image, "docker-compose-cloud.yml", map[string]string{"apmVolume": volume})
+	return fts.startStandAloneAgent(image, "cloud", map[string]string{"apmVolume": volume})
 }
 
 func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute * 2
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
 	minimumHitsCount := 50
 
 	manifest, _ := fts.deployer.Inspect("elastic-agent")
@@ -63,7 +63,11 @@ func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 }
 
 func (fts *FleetTestSuite) theDockerContainerIsStopped(serviceName string) error {
-	err := fts.deployer.Remove([]string{common.FleetProfileName, serviceName}, common.ProfileEnv)
+	services := []deploy.ServiceRequest{
+		deploy.NewServiceRequest(common.FleetProfileName),
+		deploy.NewServiceRequest(serviceName),
+	}
+	err := fts.deployer.Remove(services, common.ProfileEnv)
 	if err != nil {
 		return err
 	}
@@ -92,11 +96,11 @@ func (fts *FleetTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error
 	return elasticsearch.AssertHitsAreNotPresent(result)
 }
 
-func (fts *FleetTestSuite) startStandAloneAgent(image string, composeFilename string, env map[string]string) error {
+func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, env map[string]string) error {
 	fts.StandAlone = true
 	log.Trace("Deploying an agent to Fleet")
 
-	dockerImageTag := common.AgentVersion
+	dockerImageTag := common.BeatVersion
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
@@ -104,7 +108,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, composeFilename st
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries
-		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.AgentVersion)
+		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.BeatVersion, deployedAgentsCount)
 
 		dockerInstaller.PreInstallFn()
 
@@ -128,7 +132,10 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, composeFilename st
 		common.ProfileEnv[k] = v
 	}
 
-	services := []string{common.FleetProfileName, common.ElasticAgentServiceName}
+	services := []deploy.ServiceRequest{
+		deploy.NewServiceRequest(common.FleetProfileName),
+		deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(flavour),
+	}
 	err := fts.deployer.Add(services, common.ProfileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
@@ -154,7 +161,7 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 	maxTimeout := time.Minute
 	retryCount := 1
 
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	configurationIsPresentFn := func() error {
 		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(packageName, fts.Policy)
@@ -196,7 +203,7 @@ func (fts *FleetTestSuite) installTestTools(containerName string) error {
 		"containerName": containerName,
 	}).Trace("Installing test tools ")
 
-	_, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
+	_, err := deploy.ExecCommandIntoContainer(context.Background(), deploy.NewServiceRequest(containerName), "root", cmd)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command":       cmd,

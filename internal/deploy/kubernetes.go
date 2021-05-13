@@ -29,11 +29,11 @@ func newK8sDeploy() Deployment {
 }
 
 // Add adds services deployment
-func (c *kubernetesDeploymentManifest) Add(services []string, env map[string]string) error {
+func (c *kubernetesDeploymentManifest) Add(services []ServiceRequest, env map[string]string) error {
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
 
 	for _, service := range services {
-		_, err := kubectl.Run(c.Context, "apply", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service))
+		_, err := kubectl.Run(c.Context, "apply", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service.Name))
 		if err != nil {
 			return err
 		}
@@ -82,9 +82,9 @@ func (c *kubernetesDeploymentManifest) Destroy() error {
 }
 
 // ExecIn execute command in service
-func (c *kubernetesDeploymentManifest) ExecIn(service string, cmd []string) (string, error) {
+func (c *kubernetesDeploymentManifest) ExecIn(service ServiceRequest, cmd []string) (string, error) {
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
-	args := []string{"exec", "deployment/" + service, "--"}
+	args := []string{"exec", "deployment/" + service.Name, "--"}
 	for _, arg := range cmd {
 		args = append(cmd, arg)
 	}
@@ -103,9 +103,9 @@ type kubernetesServiceManifest struct {
 }
 
 // Inspect inspects a service
-func (c *kubernetesDeploymentManifest) Inspect(service string) (*ServiceManifest, error) {
+func (c *kubernetesDeploymentManifest) Inspect(service ServiceRequest) (*ServiceManifest, error) {
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
-	out, err := kubectl.Run(c.Context, "get", "deployment/"+service, "-o", "json")
+	out, err := kubectl.Run(c.Context, "get", "deployment/"+service.Name, "-o", "json")
 	if err != nil {
 		return &ServiceManifest{}, err
 	}
@@ -116,8 +116,8 @@ func (c *kubernetesDeploymentManifest) Inspect(service string) (*ServiceManifest
 	return &ServiceManifest{
 		ID:         inspect.Metadata.ID,
 		Name:       strings.TrimPrefix(inspect.Metadata.Name, "/"),
-		Connection: service,
-		Hostname:   service,
+		Connection: service.Name,
+		Hostname:   service.Name,
 		Alias:      service,
 		Platform:   "linux",
 	}, nil
@@ -135,11 +135,11 @@ func (c *kubernetesDeploymentManifest) Mount(service string, installType string)
 }
 
 // Remove remove services from deployment
-func (c *kubernetesDeploymentManifest) Remove(services []string, env map[string]string) error {
+func (c *kubernetesDeploymentManifest) Remove(services []ServiceRequest, env map[string]string) error {
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
 
 	for _, service := range services {
-		_, err := kubectl.Run(c.Context, "delete", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service))
+		_, err := kubectl.Run(c.Context, "delete", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service.Name))
 		if err != nil {
 			return err
 		}

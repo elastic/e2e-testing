@@ -23,8 +23,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/docker"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
@@ -123,13 +122,13 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		// this method will detect if the GITHUB_CHECK_SHA1 variable is set
 		artifactName := utils.BuildArtifactName(podName, beatVersion, defaultBeatVersion, "linux", "amd64", "tar.gz", true)
 
-		imagePath, err := utils.FetchBeatsBinary(artifactName, podName, beatVersion, defaultBeatVersion, common.TimeoutFactor, true)
+		imagePath, err := utils.FetchBeatsBinary(artifactName, podName, beatVersion, defaultBeatVersion, utils.TimeoutFactor, true)
 		if err != nil {
 			return err
 		}
 
 		// load the TAR file into the docker host as a Docker image
-		err = docker.LoadImage(imagePath)
+		err = deploy.LoadImage(imagePath)
 		if err != nil {
 			return err
 		}
@@ -137,7 +136,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		beatVersion = beatVersion + "-amd64"
 
 		// tag the image with the proper docker tag, including platform
-		err = docker.TagImage(
+		err = deploy.TagImage(
 			"docker.elastic.co/beats/"+podName+":"+defaultBeatVersion,
 			"docker.elastic.co/observability-ci/"+podName+":"+beatVersion,
 		)
@@ -464,8 +463,8 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 		// init logger
 		config.Init()
 
-		defaultEventsWaitTimeout = defaultEventsWaitTimeout * time.Duration(common.TimeoutFactor)
-		defaultDeployWaitTimeout = defaultDeployWaitTimeout * time.Duration(common.TimeoutFactor)
+		defaultEventsWaitTimeout = defaultEventsWaitTimeout * time.Duration(utils.TimeoutFactor)
+		defaultDeployWaitTimeout = defaultDeployWaitTimeout * time.Duration(utils.TimeoutFactor)
 
 		err := cluster.Initialize(suiteContext, "testdata/kind.yml")
 		if err != nil {
