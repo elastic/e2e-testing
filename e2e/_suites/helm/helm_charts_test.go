@@ -15,7 +15,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/helm"
 	"github.com/elastic/e2e-testing/internal/kubectl"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -660,13 +660,14 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 
 		elasticAPMEnvironment := shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "ci")
 		if elasticAPMActive && elasticAPMEnvironment == "local" {
-			serviceManager := compose.NewServiceManager()
+			serviceManager := deploy.NewServiceManager()
 
 			env := map[string]string{
 				"stackVersion": common.StackVersion,
 			}
 
-			err := serviceManager.RunCompose(suiteContext, true, []string{"helm"}, env)
+			err := serviceManager.RunCompose(
+				suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("helm")}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": "metricbeat",
@@ -714,8 +715,8 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 			}
 
 			if elasticAPMActive {
-				serviceManager := compose.NewServiceManager()
-				err := serviceManager.StopCompose(suiteContext, true, []string{"helm"})
+				serviceManager := deploy.NewServiceManager()
+				err := serviceManager.StopCompose(suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("helm")})
 				if err != nil {
 					log.WithFields(log.Fields{
 						"profile": "helm",
