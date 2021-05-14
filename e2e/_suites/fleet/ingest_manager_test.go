@@ -13,7 +13,6 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
-	"github.com/elastic/e2e-testing/internal/docker"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -98,7 +97,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 				"docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion,
 				"docker.elastic.co/observability-ci/kibana-ubi8:" + common.KibanaVersion,
 			}
-			docker.PullImages(images)
+			deploy.PullImages(images)
 		}
 
 		deployer := deploy.New(common.Provider)

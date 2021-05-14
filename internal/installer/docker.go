@@ -6,7 +6,7 @@ package installer
 
 import (
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/docker"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -55,7 +55,7 @@ func (i *DockerPackage) InstallCerts() error {
 
 // Preinstall executes operations before installing a Docker package
 func (i *DockerPackage) Preinstall() error {
-	err := docker.LoadImage(i.installerPath)
+	err := deploy.LoadImage(i.installerPath)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (i *DockerPackage) Preinstall() error {
 	arch := utils.GetArchitecture()
 
 	// we need to tag the loaded image because its tag relates to the target branch
-	return docker.TagImage(
+	return deploy.TagImage(
 		"docker.elastic.co/beats/"+i.artifact+":"+common.BeatVersionBase,
 		"docker.elastic.co/observability-ci/"+i.artifact+":"+i.originalVersion+"-"+arch,
 	)
@@ -108,7 +108,7 @@ func (i *DockerPackage) WithVersion(version string) *DockerPackage {
 
 // newDockerInstaller returns an instance of the Docker installer
 func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error) {
-	image := "elastic-agent"
+	image := common.ElasticAgentServiceName
 	service := image
 	profile := common.FleetProfileName
 
