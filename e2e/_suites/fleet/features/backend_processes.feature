@@ -7,7 +7,7 @@ Scenario Outline: Deploying the <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the "elastic-agent" process is in the "started" state on the host
   Then there are "1" instances of the "filebeat" process in the "started" state
-    And there are "2" instances of the "metricbeat" process in the "started" state
+    And there are "1" instances of the "metricbeat" process in the "started" state
 
 @centos
 Examples: Centos
@@ -24,7 +24,7 @@ Scenario Outline: Deploying the <os> agent with enroll and then run on rpm and d
   Given a "<os>" agent is deployed to Fleet with "systemd" installer
   When the "elastic-agent" process is in the "started" state on the host
   Then there are "1" instances of the "filebeat" process in the "started" state
-    And there are "2" instances of the "metricbeat" process in the "started" state
+    And there are "1" instances of the "metricbeat" process in the "started" state
 
 @centos
 Examples: Centos
@@ -58,7 +58,7 @@ Scenario Outline: Restarting the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the "elastic-agent" process is "restarted" on the host
   Then there are "1" instances of the "filebeat" process in the "started" state
-    And there are "2" instances of the "metricbeat" process in the "started" state
+    And there are "1" instances of the "metricbeat" process in the "started" state
 
 @centos
 Examples: Centos
@@ -76,7 +76,7 @@ Scenario Outline: Restarting the <os> host with persistent agent restarts backen
   When the host is restarted
   Then the "elastic-agent" process is in the "started" state on the host
     And there are "1" instances of the "filebeat" process in the "started" state
-    And there are "2" instances of the "metricbeat" process in the "started" state
+    And there are "1" instances of the "metricbeat" process in the "started" state
 
 @centos
 Examples: Centos
