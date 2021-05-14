@@ -425,7 +425,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	// command: it simply returns error level
 	containerName := fmt.Sprintf("%s_%s_%s_%d", profile, fts.Image+"-systemd", common.ElasticAgentServiceName, 1)
 
-	return docker.CheckProcessStateOnTheHost(containerName, process, "stopped", common.TimeoutFactor)
+	return docker.CheckProcessStateOnTheHost(containerName, process, "stopped", 1, common.TimeoutFactor)
 }
 
 func (fts *FleetTestSuite) setup() error {
@@ -533,7 +533,7 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 		return err
 	}
 
-	if strings.Contains(content, "No such file or directory") {
+	if content == "" || strings.Contains(content, "No such file or directory") {
 		return nil
 	}
 
