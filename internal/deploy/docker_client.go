@@ -386,7 +386,7 @@ func LoadImage(imagePath string) error {
 func TagImage(src string, target string) error {
 	dockerClient := getDockerClient()
 
-	maxTimeout := 15 * time.Second
+	maxTimeout := 5 * time.Second * time.Duration(utils.TimeoutFactor)
 	exp := utils.GetExponentialBackOff(maxTimeout)
 	retryCount := 0
 
