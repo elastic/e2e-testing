@@ -113,6 +113,11 @@ func (m *podsManager) configureDockerImage(podName string) error {
 	}
 
 	beatVersion := shell.GetEnv("BEAT_VERSION", defaultBeatVersion)
+	v, err := utils.GetElasticArtifactVersion(beatVersion)
+	if err != nil {
+		return err
+	}
+	beatVersion = v
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
