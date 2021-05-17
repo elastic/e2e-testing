@@ -130,15 +130,19 @@ func Init() {
 	}
 	shell.CheckInstalledSoftware(binaries...)
 
-	InitConfig()
+	initConfig()
 }
 
-// InitConfig initialises configuration
-func InitConfig() {
+// initConfig initialises configuration
+func initConfig() {
 	if Op != nil {
 		return
 	}
+	newConfig(OpDir())
+}
 
+// OpDir returns the directory to copy to
+func OpDir() string {
 	home, err := homedir.Dir()
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -146,9 +150,7 @@ func InitConfig() {
 		}).Fatal("Could not get current user's HOME dir")
 	}
 
-	w := filepath.Join(home, ".op")
-
-	newConfig(w)
+	return filepath.Join(home, ".op")
 }
 
 // PutServiceEnvironment puts the environment variables for the service, replacing "SERVICE_"

@@ -15,7 +15,7 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/helm"
 	"github.com/elastic/e2e-testing/internal/kubectl"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -37,10 +37,6 @@ var elasticAPMActive = false
 
 var helmManager helm.Manager
 
-// timeoutFactor a multiplier for the max timeout when doing backoff retries.
-// It can be overriden by TIMEOUT_FACTOR env var
-var timeoutFactor = 2
-
 //nolint:unused
 var kubectlClient kubectl.Kubectl
 
@@ -52,10 +48,6 @@ var helmChartVersion = "7.11.2"
 
 // kubernetesVersion represents the default version used for Kubernetes
 var kubernetesVersion = "1.18.2"
-
-// stackVersion is the version of the stack to use
-// It can be overriden by STACK_VERSION env var
-var stackVersion = "7.13.0-SNAPSHOT"
 
 var testSuite HelmChartTestSuite
 
@@ -80,17 +72,8 @@ func setupSuite() {
 	helmVersion = shell.GetEnv("HELM_VERSION", helmVersion)
 	helmChartVersion = shell.GetEnv("HELM_CHART_VERSION", helmChartVersion)
 	kubernetesVersion = shell.GetEnv("KUBERNETES_VERSION", kubernetesVersion)
-	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
 
-	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
-	v, err := utils.GetElasticArtifactVersion(stackVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": stackVersion,
-		}).Fatal("Failed to get stack version, aborting")
-	}
-	stackVersion = v
+	common.InitVersions()
 
 	h, err := helm.Factory(helmVersion)
 	if err != nil {
@@ -187,9 +170,9 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 		return err
 	}
 
-	maxTimeout := time.Duration(timeoutFactor) * time.Minute
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 	retryCount := 1
 
 	checkEndpointsFn := func() error {
@@ -412,7 +395,7 @@ func (ts *HelmChartTestSuite) install(ctx context.Context, chart string) error {
 			"chart": ts.Name,
 		}).Info("Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes installed")
 
-		maxTimeout := common.TimeoutFactor * 100
+		maxTimeout := utils.TimeoutFactor * 100
 
 		log.Debug("Applying workaround to use Rancher's local-path storage class for Elasticsearch volumes")
 		flags = []string{"--wait", fmt.Sprintf("--timeout=%ds", maxTimeout), "--values", "https://raw.githubusercontent.com/elastic/helm-charts/master/elasticsearch/examples/kubernetes-kind/values.yaml"}
@@ -675,20 +658,22 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		if elasticAPMActive {
-			serviceManager := compose.NewServiceManager()
+		elasticAPMEnvironment := shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "ci")
+		if elasticAPMActive && elasticAPMEnvironment == "local" {
+			serviceManager := deploy.NewServiceManager()
 
 			env := map[string]string{
-				"stackVersion": stackVersion,
+				"stackVersion": common.StackVersion,
 			}
 
-			err := serviceManager.RunCompose(suiteContext, true, []string{"helm"}, env)
+			err := serviceManager.RunCompose(
+				suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("helm")}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": "metricbeat",
 				}).Warn("Could not run the profile.")
 			}
-			steps.AddAPMServicesForInstrumentation(suiteContext, "helm", stackVersion, true, env)
+			steps.AddAPMServicesForInstrumentation(suiteContext, "helm", common.StackVersion, true, env)
 		}
 
 		err := testSuite.createCluster(suiteContext, testSuite.KubernetesVersion)
@@ -730,8 +715,8 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 			}
 
 			if elasticAPMActive {
-				serviceManager := compose.NewServiceManager()
-				err := serviceManager.StopCompose(suiteContext, true, []string{"helm"})
+				serviceManager := deploy.NewServiceManager()
+				err := serviceManager.StopCompose(suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("helm")})
 				if err != nil {
 					log.WithFields(log.Fields{
 						"profile": "helm",

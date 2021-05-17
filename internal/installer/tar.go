@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -20,6 +20,7 @@ type TARPackage struct {
 	// optional fields
 	arch      string
 	artifact  string
+	index     int
 	OS        string
 	OSFlavour string // at this moment, centos or debian
 	version   string
@@ -45,7 +46,10 @@ func (i *TARPackage) Install(cfg *kibana.FleetConfig) error {
 	binary := fmt.Sprintf("/elastic-agent/%s", i.artifact)
 	args := cfg.Flags()
 
-	err := runElasticAgentCommandEnv(i.profile, i.image, i.service, binary, "install", args, map[string]string{})
+	profileService := deploy.NewServiceRequest(i.profile)
+	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(i.OSFlavour).WithScale(i.index)
+
+	err := runElasticAgentCommandEnv(profileService, imageService, i.service, binary, "install", args, map[string]string{})
 	if err != nil {
 		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
 	}
@@ -83,9 +87,13 @@ func (i *TARPackage) Preinstall() error {
 		{"rm", "-fr", "/elastic-agent"},
 		{"mv", fmt.Sprintf("/%s-%s-%s-%s", i.artifact, i.version, i.OS, i.arch), "/elastic-agent"},
 	}
+
+	profileService := deploy.NewServiceRequest(i.profile)
+	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(i.OSFlavour).WithScale(i.index)
+
 	for _, cmd := range cmds {
-		sm := compose.NewServiceManager()
-		err := sm.ExecCommandInService(i.profile, i.image, i.service, cmd, common.ProfileEnv, false)
+		sm := deploy.NewServiceManager()
+		err := sm.ExecCommandInService(profileService, imageService, i.service, cmd, common.ProfileEnv, false)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"command": cmd,
@@ -106,7 +114,10 @@ func (i *TARPackage) Preinstall() error {
 func (i *TARPackage) Uninstall() error {
 	args := []string{"-f"}
 
-	return runElasticAgentCommandEnv(i.profile, i.image, i.service, common.ElasticAgentProcessName, "uninstall", args, map[string]string{})
+	profileService := deploy.NewServiceRequest(i.profile)
+	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(i.OSFlavour).WithScale(i.index)
+
+	return runElasticAgentCommandEnv(profileService, imageService, i.service, common.ElasticAgentProcessName, "uninstall", args, map[string]string{})
 }
 
 // WithArch sets the architecture
@@ -118,6 +129,12 @@ func (i *TARPackage) WithArch(arch string) *TARPackage {
 // WithArtifact sets the artifact
 func (i *TARPackage) WithArtifact(artifact string) *TARPackage {
 	i.artifact = artifact
+	return i
+}
+
+// WithIndex sets the index of the agent
+func (i *TARPackage) WithIndex(index int) *TARPackage {
+	i.index = index
 	return i
 }
 
@@ -140,9 +157,8 @@ func (i *TARPackage) WithVersion(version string) *TARPackage {
 }
 
 // newTarInstaller returns an instance of the Debian installer for a specific version
-func newTarInstaller(image string, tag string, version string) (ElasticAgentInstaller, error) {
-	dockerImage := image + "-systemd" // we want to consume systemd boxes
-	service := dockerImage
+func newTarInstaller(image string, tag string, version string, index int) (ElasticAgentInstaller, error) {
+	service := common.ElasticAgentServiceName
 	profile := common.FleetProfileName
 
 	// extract the agent in the box, as it's mounted as a volume
@@ -151,7 +167,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 	arch := "x86_64"
 	extension := "tar.gz"
 
-	binaryName := utils.BuildArtifactName(artifact, version, common.AgentVersionBase, os, arch, extension, false)
+	binaryName := utils.BuildArtifactName(artifact, version, common.BeatVersionBase, os, arch, extension, false)
 	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -173,17 +189,21 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 	logFileName := "elastic-agent-json.log"
 	logFile := logsDir + "/" + logFileName
 
+	profileService := deploy.NewServiceRequest(profile)
+	imageService := deploy.NewServiceRequest(service).WithFlavour(image)
+
 	enrollFn := func(cfg *kibana.FleetConfig) error {
-		return runElasticAgentCommandEnv(profile, dockerImage, service, common.ElasticAgentProcessName, "enroll", cfg.Flags(), map[string]string{})
+		return runElasticAgentCommandEnv(profileService, imageService, service, common.ElasticAgentProcessName, "enroll", cfg.Flags(), map[string]string{})
 	}
 
 	//
-	installerPackage := NewTARPackage(binaryName, profile, dockerImage, service, commitFile, logFile).
+	installerPackage := NewTARPackage(binaryName, profile, image, service, commitFile, logFile).
 		WithArch(arch).
 		WithArtifact(artifact).
+		WithIndex(index).
 		WithOS(os).
 		WithOSFlavour(image).
-		WithVersion(utils.CheckPRVersion(version, common.AgentVersionBase)) // sanitize version
+		WithVersion(utils.CheckPRVersion(version, common.BeatVersionBase)) // sanitize version
 
 	return ElasticAgentInstaller{
 		artifactArch:      arch,
@@ -193,7 +213,7 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 		artifactVersion:   version,
 		BinaryPath:        binaryPath,
 		EnrollFn:          enrollFn,
-		Image:             dockerImage,
+		Image:             image,
 		InstallFn:         installerPackage.Install,
 		InstallCertsFn:    installerPackage.InstallCerts,
 		InstallerType:     "tar",

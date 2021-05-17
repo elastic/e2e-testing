@@ -51,10 +51,11 @@ Examples: Ubi8
 | image   |
 | ubi8    |
 
-@run_fleet_server
-Scenario Outline: Deploying a <image> stand-alone agent with fleet server mode
+@bootstrap-fleet-server
+Scenario Outline: Bootstrapping Fleet Server from a <image> stand-alone Elastic Agent
   When a "<image>" stand-alone agent is deployed with fleet server mode
   Then the stand-alone agent is listed in Fleet as "online"
+    And there are "1" instances of the "fleet-server" process in the "started" state
 
 @default
 Examples: default

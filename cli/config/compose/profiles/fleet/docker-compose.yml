@@ -29,7 +29,7 @@ services:
       test: "curl -f http://localhost:5601/login | grep kbn-injected-metadata 2>&1 >/dev/null"
       retries: 600
       interval: 1s
-    image: "docker.elastic.co/${kibanaDockerNamespace:-beats}/kibana:${kibanaVersion:-7.13.0-SNAPSHOT}"
+    image: "docker.elastic.co/${kibanaDockerNamespace:-kibana}/kibana:${kibanaVersion:-7.13.0-SNAPSHOT}"
     ports:
       - "5601:5601"
     volumes:
@@ -40,3 +40,22 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]
       retries: 300
       interval: 1s
+
+  fleet-server:
+    image: "docker.elastic.co/beats/elastic-agent:${stackVersion:-8.0.0-SNAPSHOT}"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
+    healthcheck:
+      test: "curl -f http://127.0.0.1:8220/api/status | grep HEALTHY 2>&1 >/dev/null"
+      retries: 12
+      interval: 5s
+    environment:
+      - "FLEET_SERVER_ENABLE=1"
+      - "FLEET_SERVER_INSECURE_HTTP=1"
+      - "KIBANA_FLEET_SETUP=1"
+      - "KIBANA_FLEET_HOST=http://kibana:5601"
+      - "FLEET_SERVER_HOST=0.0.0.0"
+      - "FLEET_SERVER_PORT=8220"
