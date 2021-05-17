@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
@@ -64,7 +64,7 @@ func buildRunServiceCommand(srv string) *cobra.Command {
 		Short: `Runs a ` + srv + ` service`,
 		Long:  `Runs a ` + srv + ` service, spinning up a Docker container for it and exposing its internal configuration so that you are able to connect to it in an easy manner`,
 		Run: func(cmd *cobra.Command, args []string) {
-			serviceManager := compose.NewServiceManager()
+			serviceManager := deploy.NewServiceManager()
 
 			env := config.PutServiceEnvironment(map[string]string{}, srv, versionToRun)
 
@@ -76,7 +76,8 @@ func buildRunServiceCommand(srv string) *cobra.Command {
 				env[k] = v
 			}
 
-			err := serviceManager.RunCompose(context.Background(), false, []string{srv}, env)
+			err := serviceManager.RunCompose(
+				context.Background(), false, []deploy.ServiceRequest{deploy.NewServiceRequest(srv)}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"service": srv,
@@ -96,7 +97,7 @@ Example:
   go run main.go run profile fleet -s elastic-agent:8.0.0-SNAPSHOT
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			serviceManager := compose.NewServiceManager()
+			serviceManager := deploy.NewServiceManager()
 
 			env := map[string]string{
 				"profileVersion": versionToRun,
@@ -110,14 +111,15 @@ Example:
 				env[k] = v
 			}
 
-			err := serviceManager.RunCompose(context.Background(), true, []string{key}, env)
+			err := serviceManager.RunCompose(
+				context.Background(), true, []deploy.ServiceRequest{deploy.NewServiceRequest(key)}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": key,
 				}).Error("Could not run the profile.")
 			}
 
-			composeNames := []string{}
+			composeNames := []deploy.ServiceRequest{}
 			if len(servicesToRun) > 0 {
 				for _, srv := range servicesToRun {
 					arr := strings.Split(srv, ":")
@@ -137,10 +139,10 @@ Example:
 					}).Trace("Adding service")
 
 					env = config.PutServiceEnvironment(env, image, tag)
-					composeNames = append(composeNames, image)
+					composeNames = append(composeNames, deploy.NewServiceRequest(image))
 				}
 
-				err = serviceManager.AddServicesToCompose(context.Background(), key, composeNames, env)
+				err = serviceManager.AddServicesToCompose(context.Background(), deploy.NewServiceRequest(key), composeNames, env)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"profile":  key,

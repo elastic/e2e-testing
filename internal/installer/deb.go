@@ -6,7 +6,7 @@ package installer
 
 import (
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -40,14 +40,17 @@ func (i *DEBPackage) InstallCerts() error {
 	return installCertsForDebian(i.profile, i.image, i.service)
 }
 func installCertsForDebian(profile string, image string, service string) error {
-	sm := compose.NewServiceManager()
-	if err := sm.ExecCommandInService(profile, image, service, []string{"apt-get", "update"}, common.ProfileEnv, false); err != nil {
+	sm := deploy.NewServiceManager()
+	serviceProfile := deploy.NewServiceRequest(profile)
+	serviceImage := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(image)
+
+	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"apt-get", "update"}, common.ProfileEnv, false); err != nil {
 		return err
 	}
-	if err := sm.ExecCommandInService(profile, image, service, []string{"apt", "install", "ca-certificates", "-y"}, common.ProfileEnv, false); err != nil {
+	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"apt", "install", "ca-certificates", "-y"}, common.ProfileEnv, false); err != nil {
 		return err
 	}
-	if err := sm.ExecCommandInService(profile, image, service, []string{"update-ca-certificates", "-f"}, common.ProfileEnv, false); err != nil {
+	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"update-ca-certificates", "-f"}, common.ProfileEnv, false); err != nil {
 		return err
 	}
 	return nil
@@ -67,8 +70,7 @@ func (i *DEBPackage) Uninstall() error {
 
 // newDebianInstaller returns an instance of the Debian installer for a specific version
 func newDebianInstaller(image string, tag string, version string) (ElasticAgentInstaller, error) {
-	image = image + "-systemd" // we want to consume systemd boxes
-	service := image
+	service := common.ElasticAgentServiceName
 	profile := common.FleetProfileName
 
 	// extract the agent in the box, as it's mounted as a volume
@@ -77,7 +79,7 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 	arch := "amd64"
 	extension := "deb"
 
-	binaryName := utils.BuildArtifactName(artifact, version, common.AgentVersionBase, os, arch, extension, false)
+	binaryName := utils.BuildArtifactName(artifact, version, common.BeatVersionBase, os, arch, extension, false)
 	binaryPath, err := downloadAgentBinary(binaryName, artifact, version)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -91,8 +93,11 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 		return ElasticAgentInstaller{}, err
 	}
 
+	profileService := deploy.NewServiceRequest(profile)
+	imageService := deploy.NewServiceRequest(service).WithFlavour("debian")
+
 	enrollFn := func(cfg *kibana.FleetConfig) error {
-		return runElasticAgentCommandEnv(profile, image, service, common.ElasticAgentProcessName, "enroll", cfg.Flags(), map[string]string{})
+		return runElasticAgentCommandEnv(profileService, imageService, service, common.ElasticAgentProcessName, "enroll", cfg.Flags(), map[string]string{})
 	}
 
 	workingDir := "/var/lib/elastic-agent"

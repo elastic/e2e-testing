@@ -9,8 +9,7 @@ import (
 	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
-	"github.com/elastic/e2e-testing/internal/docker"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -47,7 +46,7 @@ func (i *ElasticAgentInstaller) ListElasticAgentWorkingDirContent(containerName 
 		"ls", "-l", i.workingDir,
 	}
 
-	content, err := docker.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
+	content, err := deploy.ExecCommandIntoContainer(context.Background(), deploy.NewServiceRequest(containerName), "root", cmd)
 	if err != nil {
 		return "", err
 	}
@@ -62,9 +61,9 @@ func (i *ElasticAgentInstaller) ListElasticAgentWorkingDirContent(containerName 
 }
 
 // runElasticAgentCommandEnv runs a command for the elastic-agent
-func runElasticAgentCommandEnv(profile string, image string, service string, process string, command string, arguments []string, env map[string]string) error {
+func runElasticAgentCommandEnv(profile deploy.ServiceRequest, image deploy.ServiceRequest, service string, process string, command string, arguments []string, env map[string]string) error {
 	cmds := []string{
-		"timeout", fmt.Sprintf("%dm", common.TimeoutFactor), process, command,
+		"timeout", fmt.Sprintf("%dm", utils.TimeoutFactor), process, command,
 	}
 	cmds = append(cmds, arguments...)
 
@@ -72,7 +71,7 @@ func runElasticAgentCommandEnv(profile string, image string, service string, pro
 		common.ProfileEnv[k] = v
 	}
 
-	sm := compose.NewServiceManager()
+	sm := deploy.NewServiceManager()
 	err := sm.ExecCommandInService(profile, image, service, cmds, common.ProfileEnv, false)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -97,7 +96,7 @@ func runElasticAgentCommandEnv(profile string, image string, service string, pro
 // Else, if the environment variable BEATS_USE_CI_SNAPSHOTS is set, then the artifact
 // to be downloaded will be defined by the latest snapshot produced by the Beats CI.
 func downloadAgentBinary(artifactName string, artifact string, version string) (string, error) {
-	imagePath, err := utils.FetchBeatsBinary(artifactName, artifact, version, common.AgentVersionBase, common.TimeoutFactor, true)
+	imagePath, err := utils.FetchBeatsBinary(artifactName, artifact, version, common.BeatVersionBase, utils.TimeoutFactor, true)
 	if err != nil {
 		return "", err
 	}
@@ -106,23 +105,22 @@ func downloadAgentBinary(artifactName string, artifact string, version string) (
 }
 
 // GetElasticAgentInstaller returns an installer from a docker image
-func GetElasticAgentInstaller(image string, installerType string, version string, fleetServerHost string) ElasticAgentInstaller {
+func GetElasticAgentInstaller(image string, installerType string, version string, index int) ElasticAgentInstaller {
 	log.WithFields(log.Fields{
-		"fleetServerHost": fleetServerHost,
-		"image":           image,
-		"installer":       installerType,
-		"version":         version,
+		"image":     image,
+		"installer": installerType,
+		"version":   version,
 	}).Debug("Configuring installer for the agent")
 
 	var installer ElasticAgentInstaller
 	var err error
 	if "centos" == image && "tar" == installerType {
-		installer, err = newTarInstaller("centos", "latest", version, fleetServerHost)
-	} else if "centos" == image && "systemd" == installerType {
+		installer, err = newTarInstaller("centos", "latest", version, index)
+	} else if "centos" == image && "rpm" == installerType {
 		installer, err = newCentosInstaller("centos", "latest", version)
 	} else if "debian" == image && "tar" == installerType {
-		installer, err = newTarInstaller("debian", "stretch", version, fleetServerHost)
-	} else if "debian" == image && "systemd" == installerType {
+		installer, err = newTarInstaller("debian", "stretch", version, index)
+	} else if "debian" == image && "deb" == installerType {
 		installer, err = newDebianInstaller("debian", "stretch", version)
 	} else if "docker" == image && "default" == installerType {
 		installer, err = newDockerInstaller(false, version)

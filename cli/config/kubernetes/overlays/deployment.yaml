@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elastic-agent
+  labels:
+    app: elastic-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elastic-agent
+  template:
+    metadata:
+      labels:
+        app: elastic-agent
+    spec:
+      containers:
+      - name: elastic-agent
+        image: centos/systemd:latest
+        command: ["/usr/sbin/init"]
+        securityContext:
+          allowPrivilegeEscalation: true
+          runAsUser: 0
+          capabilities:
+            add: ["SYS_ADMIN"]

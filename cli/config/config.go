@@ -73,16 +73,14 @@ func FileExists(configFile string) (bool, error) {
 
 // GetComposeFile returns the path of the compose file, looking up the
 // tool's workdir
-func GetComposeFile(isProfile bool, composeName string, composeFileName ...string) (string, error) {
-	if isProfile || composeFileName == nil || composeFileName[0] == "" {
-		composeFileName = []string{"docker-compose.yml"}
-	}
+func GetComposeFile(isProfile bool, composeName string) (string, error) {
+	composeFileName := "docker-compose.yml"
 	serviceType := "services"
 	if isProfile {
 		serviceType = "profiles"
 	}
 
-	composeFilePath := path.Join(Op.Workspace, "compose", serviceType, composeName, composeFileName[0])
+	composeFilePath := path.Join(Op.Workspace, "compose", serviceType, composeName, composeFileName)
 	found, err := io.Exists(composeFilePath)
 	if found && err == nil {
 		log.WithFields(log.Fields{
