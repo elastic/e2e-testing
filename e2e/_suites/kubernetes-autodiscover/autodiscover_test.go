@@ -23,6 +23,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -30,8 +31,6 @@ import (
 )
 
 var beatVersions = map[string]string{}
-
-const defaultBeatVersion = "7.13.0-SNAPSHOT"
 
 var defaultEventsWaitTimeout = 60 * time.Second
 var defaultDeployWaitTimeout = 60 * time.Second
@@ -112,7 +111,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		return nil
 	}
 
-	beatVersion := shell.GetEnv("BEAT_VERSION", defaultBeatVersion)
+	beatVersion := common.BeatVersion + "-amd64"
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
@@ -120,9 +119,9 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		log.Debugf("Configuring Docker image for %s", podName)
 
 		// this method will detect if the GITHUB_CHECK_SHA1 variable is set
-		artifactName := utils.BuildArtifactName(podName, beatVersion, defaultBeatVersion, "linux", "amd64", "tar.gz", true)
+		artifactName := utils.BuildArtifactName(podName, common.BeatVersion, common.BeatVersionBase, "linux", "amd64", "tar.gz", true)
 
-		imagePath, err := utils.FetchBeatsBinary(artifactName, podName, beatVersion, defaultBeatVersion, utils.TimeoutFactor, true)
+		imagePath, err := utils.FetchBeatsBinary(artifactName, podName, common.BeatVersion, common.BeatVersionBase, utils.TimeoutFactor, true)
 		if err != nil {
 			return err
 		}
@@ -133,11 +132,9 @@ func (m *podsManager) configureDockerImage(podName string) error {
 			return err
 		}
 
-		beatVersion = beatVersion + "-amd64"
-
 		// tag the image with the proper docker tag, including platform
 		err = deploy.TagImage(
-			"docker.elastic.co/beats/"+podName+":"+defaultBeatVersion,
+			"docker.elastic.co/beats/"+podName+":"+common.BeatVersionBase,
 			"docker.elastic.co/observability-ci/"+podName+":"+beatVersion,
 		)
 		if err != nil {
@@ -462,6 +459,8 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
 		// init logger
 		config.Init()
+
+		common.InitVersions()
 
 		defaultEventsWaitTimeout = defaultEventsWaitTimeout * time.Duration(utils.TimeoutFactor)
 		defaultDeployWaitTimeout = defaultDeployWaitTimeout * time.Duration(utils.TimeoutFactor)
