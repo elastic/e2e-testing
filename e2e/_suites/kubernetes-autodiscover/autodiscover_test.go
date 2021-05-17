@@ -32,11 +32,6 @@ import (
 
 var beatVersions = map[string]string{}
 
-<<<<<<< HEAD
-const defaultBeatVersion = "7.x-SNAPSHOT"
-
-=======
->>>>>>> 9d505cc6... fix: resolve issues in k8s-autodiscover test suite (#1171)
 var defaultEventsWaitTimeout = 60 * time.Second
 var defaultDeployWaitTimeout = 60 * time.Second
 
