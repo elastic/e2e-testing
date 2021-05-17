@@ -403,8 +403,13 @@ func LoadImage(imagePath string) error {
 func TagImage(src string, target string) error {
 	dockerClient := getDockerClient()
 
+<<<<<<< HEAD:internal/docker/docker.go
 	maxTimeout := 15 * time.Second
 	exp := common.GetExponentialBackOff(maxTimeout)
+=======
+	maxTimeout := 5 * time.Second * time.Duration(utils.TimeoutFactor)
+	exp := utils.GetExponentialBackOff(maxTimeout)
+>>>>>>> 9d505cc6... fix: resolve issues in k8s-autodiscover test suite (#1171):internal/deploy/docker_client.go
 	retryCount := 0
 
 	tagImageFn := func() error {
