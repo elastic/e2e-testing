@@ -6,7 +6,7 @@ Feature: Backend Processes
 Scenario Outline: Deploying the <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the "elastic-agent" process is in the "started" state on the host
-  Then there are "1" instances of the "filebeat" process in the "started" state
+  Then there are "2" instances of the "filebeat" process in the "started" state
     And there are "1" instances of the "metricbeat" process in the "started" state
 
 @centos
@@ -57,7 +57,7 @@ Examples: Debian
 Scenario Outline: Restarting the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the "elastic-agent" process is "restarted" on the host
-  Then there are "1" instances of the "filebeat" process in the "started" state
+  Then there are "2" instances of the "filebeat" process in the "started" state
     And there are "1" instances of the "metricbeat" process in the "started" state
 
 @centos
