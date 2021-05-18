@@ -47,12 +47,6 @@ func (i *DockerPackage) Install(cfg *kibana.FleetConfig) error {
 	return nil
 }
 
-// InstallCerts installs the certificates for a Docker package
-func (i *DockerPackage) InstallCerts() error {
-	log.Trace("No install certs commands for Docker packages")
-	return nil
-}
-
 // Preinstall executes operations before installing a Docker package
 func (i *DockerPackage) Preinstall() error {
 	err := deploy.LoadImage(i.installerPath)
@@ -167,7 +161,6 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 		EnrollFn:          enrollFn,
 		Image:             image,
 		InstallFn:         installerPackage.Install,
-		InstallCertsFn:    installerPackage.InstallCerts,
 		InstallerType:     "docker",
 		Name:              binaryName,
 		PostInstallFn:     installerPackage.Postinstall,

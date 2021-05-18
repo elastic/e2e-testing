@@ -57,23 +57,6 @@ func (i *TARPackage) Install(cfg *kibana.FleetConfig) error {
 	return nil
 }
 
-// InstallCerts installs the certificates for a TAR package, using the right OS package manager
-func (i *TARPackage) InstallCerts() error {
-	if i.OSFlavour == "centos" {
-		return installCertsForCentos(i.profile, i.image, i.service)
-	} else if i.OSFlavour == "debian" {
-		return installCertsForDebian(i.profile, i.image, i.service)
-	}
-
-	log.WithFields(log.Fields{
-		"arch":      i.arch,
-		"OS":        i.OS,
-		"OSFlavour": i.OSFlavour,
-	}).Debug("Installation of certificates was skipped because of unknown OS flavour")
-
-	return nil
-}
-
 // Postinstall executes operations after installing a TAR package
 func (i *TARPackage) Postinstall() error {
 	log.Trace("No postinstall commands for TAR installer")
@@ -215,7 +198,6 @@ func newTarInstaller(image string, tag string, version string, index int) (Elast
 		EnrollFn:          enrollFn,
 		Image:             image,
 		InstallFn:         installerPackage.Install,
-		InstallCertsFn:    installerPackage.InstallCerts,
 		InstallerType:     "tar",
 		Name:              binaryName,
 		PostInstallFn:     installerPackage.Postinstall,
