@@ -35,27 +35,6 @@ func (i *DEBPackage) Install(cfg *kibana.FleetConfig) error {
 	return i.extractPackage([]string{"apt", "install", "/" + i.binaryName, "-y"})
 }
 
-// InstallCerts installs the certificates for a DEB package
-func (i *DEBPackage) InstallCerts() error {
-	return installCertsForDebian(i.profile, i.image, i.service)
-}
-func installCertsForDebian(profile string, image string, service string) error {
-	sm := deploy.NewServiceManager()
-	serviceProfile := deploy.NewServiceRequest(profile)
-	serviceImage := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(image)
-
-	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"apt-get", "update"}, common.ProfileEnv, false); err != nil {
-		return err
-	}
-	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"apt", "install", "ca-certificates", "-y"}, common.ProfileEnv, false); err != nil {
-		return err
-	}
-	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"update-ca-certificates", "-f"}, common.ProfileEnv, false); err != nil {
-		return err
-	}
-	return nil
-}
-
 // Preinstall executes operations before installing a DEB package
 func (i *DEBPackage) Preinstall() error {
 	log.Trace("No preinstall commands for DEB packages")
@@ -121,7 +100,6 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 		EnrollFn:          enrollFn,
 		Image:             image,
 		InstallFn:         installerPackage.Install,
-		InstallCertsFn:    installerPackage.InstallCerts,
 		InstallerType:     "deb",
 		Name:              binaryName,
 		PostInstallFn:     installerPackage.Postinstall,

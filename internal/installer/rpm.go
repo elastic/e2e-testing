@@ -36,30 +36,6 @@ func (i *RPMPackage) Install(cfg *kibana.FleetConfig) error {
 	return i.extractPackage([]string{"yum", "localinstall", "/" + i.binaryName, "-y"})
 }
 
-// InstallCerts installs the certificates for a RPM package
-func (i *RPMPackage) InstallCerts() error {
-	return installCertsForCentos(i.profile, i.image, i.service)
-}
-func installCertsForCentos(profile string, image string, service string) error {
-	sm := deploy.NewServiceManager()
-	serviceProfile := deploy.NewServiceRequest(profile)
-	serviceImage := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(image)
-
-	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"yum", "check-update"}, common.ProfileEnv, false); err != nil {
-		return err
-	}
-	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"yum", "install", "ca-certificates", "-y"}, common.ProfileEnv, false); err != nil {
-		return err
-	}
-	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"update-ca-trust", "force-enable"}, common.ProfileEnv, false); err != nil {
-		return err
-	}
-	if err := sm.ExecCommandInService(serviceProfile, serviceImage, service, []string{"update-ca-trust", "extract"}, common.ProfileEnv, false); err != nil {
-		return err
-	}
-	return nil
-}
-
 // Preinstall executes operations before installing a RPM package
 func (i *RPMPackage) Preinstall() error {
 	log.Trace("No preinstall commands for RPM packages")
@@ -125,7 +101,6 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 		EnrollFn:          enrollFn,
 		Image:             image,
 		InstallFn:         installerPackage.Install,
-		InstallCertsFn:    installerPackage.InstallCerts,
 		InstallerType:     "rpm",
 		Name:              binaryName,
 		PostInstallFn:     installerPackage.Postinstall,

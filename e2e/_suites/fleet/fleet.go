@@ -146,9 +146,6 @@ func (fts *FleetTestSuite) beforeScenario() {
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
-	s.Step(`^a "([^"]*)" agent "([^"]*)" is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
-	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
-	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
@@ -158,7 +155,6 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
-	s.Step(`^certs are installed$`, fts.installCerts)
 	s.Step(`^a Linux data stream exists with some data$`, fts.checkDataStream)
 
 	// endpoint steps
@@ -205,119 +201,6 @@ func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredSt
 		return err
 	}
 	return nil
-}
-
-func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, version, installerType string) error {
-	agentVersionBackup := fts.Version
-	defer func() { fts.Version = agentVersionBackup }()
-
-	common.AgentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", common.AgentStaleVersion)
-	// check if stale version is an alias
-	v, err := utils.GetElasticArtifactVersion(common.AgentStaleVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": common.AgentStaleVersion,
-		}).Error("Failed to get stale version")
-		return err
-	}
-	common.AgentStaleVersion = v
-
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
-	if useCISnapshots && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
-		common.AgentStaleVersion += "-SNAPSHOT"
-	}
-
-	switch version {
-	case "stale":
-		version = common.AgentStaleVersion
-	case "latest":
-		version = common.BeatVersion
-	default:
-		version = common.AgentStaleVersion
-	}
-
-	fts.Version = version
-
-	// prepare installer for stale version
-	if fts.Version != agentVersionBackup {
-		i := installer.GetElasticAgentInstaller(image, installerType, fts.Version, deployedAgentsCount)
-		fts.Installers[fmt.Sprintf("%s-%s-%s", image, installerType, version)] = i
-	}
-
-	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
-}
-
-func (fts *FleetTestSuite) installCerts() error {
-	agentInstaller := fts.getInstaller()
-	if agentInstaller.InstallCertsFn == nil {
-		log.WithFields(log.Fields{
-			"installer":         agentInstaller,
-			"version":           fts.Version,
-			"agentVersion":      common.BeatVersion,
-			"agentStaleVersion": common.AgentStaleVersion,
-		}).Error("No installer found")
-		return errors.New("no installer found")
-	}
-
-	err := agentInstaller.InstallCertsFn()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"agentVersion":      common.BeatVersion,
-			"agentStaleVersion": common.AgentStaleVersion,
-			"error":             err,
-			"installer":         agentInstaller,
-			"version":           fts.Version,
-		}).Error("Could not install the certificates")
-		return err
-	}
-
-	return nil
-}
-
-func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
-	switch desiredVersion {
-	case "stale":
-		desiredVersion = common.AgentStaleVersion
-	case "latest":
-		desiredVersion = common.BeatVersion
-	default:
-		desiredVersion = common.BeatVersion
-	}
-
-	return fts.kibanaClient.UpgradeAgent(fts.Hostname, desiredVersion)
-}
-
-func (fts *FleetTestSuite) agentInVersion(version string) error {
-	switch version {
-	case "stale":
-		version = common.AgentStaleVersion
-	case "latest":
-		version = common.BeatVersion
-	}
-
-	agentInVersionFn := func() error {
-		agent, err := fts.kibanaClient.GetAgentByHostname(fts.Hostname)
-		if err != nil {
-			return err
-		}
-
-		retrievedVersion := agent.LocalMetadata.Elastic.Agent.Version
-		if isSnapshot := agent.LocalMetadata.Elastic.Agent.Snapshot; isSnapshot {
-			retrievedVersion += "-SNAPSHOT"
-		}
-
-		if retrievedVersion != version {
-			return fmt.Errorf("version mismatch required '%s' retrieved '%s'", version, retrievedVersion)
-		}
-
-		return nil
-	}
-
-	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
-	exp := utils.GetExponentialBackOff(maxTimeout)
-
-	return backoff.Retry(agentInVersionFn, exp)
 }
 
 // this step infers the installer type from the underlying OS image

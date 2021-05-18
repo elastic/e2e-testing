@@ -27,7 +27,6 @@ type ElasticAgentInstaller struct {
 	Image             string // docker image
 	InstallerType     string
 	InstallFn         func(cfg *kibana.FleetConfig) error
-	InstallCertsFn    func() error
 	Name              string // the name for the binary
 	processName       string // name of the elastic-agent process
 	Profile           string // parent docker-compose file

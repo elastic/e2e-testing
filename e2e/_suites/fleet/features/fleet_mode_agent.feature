@@ -36,20 +36,6 @@ Examples: Debian
 | os     |
 | debian |
 
-# @upgrade-agent
-@nightly
-Scenario Outline: Upgrading the installed <os> agent
-  Given a "<os>" agent "stale" is deployed to Fleet with "tar" installer
-    And certs are installed
-    And the "elastic-agent" process is "restarted" on the host
-  When agent is upgraded to version "latest"
-  Then agent is in version "latest"
-
-@debian
-Examples: Debian
-| os     |
-| debian |
-
 @restart-agent
 Scenario Outline: Restarting the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
