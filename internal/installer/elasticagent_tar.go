@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -15,28 +16,26 @@ import (
 
 // elasticAgentTARPackage implements operations for a RPM installer
 type elasticAgentTARPackage struct {
-	service  string
-	executor func(service string, cmd []string) (string, error)
-	copier   func(service string, files []string) error
+	service deploy.ServiceRequest
+	deploy  deploy.Deployment
 }
 
-// NewElasticAgentTARPackage creates an instance for the RPM installer
-func NewElasticAgentTARPackage(service string, executor func(service string, cmd []string) (string, error), copier func(service string, files []string) error) Package {
+// AttachElasticAgentTARPackage creates an instance for the RPM installer
+func AttachElasticAgentTARPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentTARPackage{
-		service:  service,
-		executor: executor,
-		copier:   copier,
+		service: service,
+		deploy:  deploy,
 	}
 }
 
 // AddFiles will add files into the service environment, default destination is /
 func (i *elasticAgentTARPackage) AddFiles(files []string) error {
-	return i.copier(i.service, files)
+	return i.deploy.AddFiles(i.service, files)
 }
 
 // Inspect returns info on package
-func (i *elasticAgentTARPackage) Inspect() (PackageManifest, error) {
-	return PackageManifest{
+func (i *elasticAgentTARPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
+	return deploy.ServiceOperatorManifest{
 		WorkDir:    "/opt/Elastic/Agent",
 		CommitFile: "/elastic-agent/.elastic-agent.active.commit",
 	}, nil
@@ -50,7 +49,7 @@ func (i *elasticAgentTARPackage) Install() error {
 
 // Exec will execute a command within the service environment
 func (i *elasticAgentTARPackage) Exec(args []string) (string, error) {
-	output, err := i.executor(i.service, args)
+	output, err := i.deploy.ExecIn(i.service, args)
 	return output, err
 }
 
@@ -78,6 +77,7 @@ func (i *elasticAgentTARPackage) InstallCerts() error {
 
 // Logs prints logs of service
 func (i *elasticAgentTARPackage) Logs() error {
+	log.Trace("No logs to print")
 	return nil
 }
 
@@ -93,12 +93,12 @@ func (i *elasticAgentTARPackage) Preinstall() error {
 	arch := "x86_64"
 	extension := "tar.gz"
 
-	binaryName := utils.BuildArtifactName(artifact, common.AgentVersion, common.AgentVersionBase, os, arch, extension, false)
-	binaryPath, err := utils.FetchBeatsBinary(binaryName, artifact, common.AgentVersion, common.AgentVersionBase, common.TimeoutFactor, true)
+	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, common.BeatVersionBase, os, arch, extension, false)
+	binaryPath, err := utils.FetchBeatsBinary(binaryName, artifact, common.BeatVersion, common.BeatVersionBase, utils.TimeoutFactor, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
-			"version":   common.AgentVersion,
+			"version":   common.BeatVersion,
 			"os":        os,
 			"arch":      arch,
 			"extension": extension,
@@ -112,7 +112,7 @@ func (i *elasticAgentTARPackage) Preinstall() error {
 		return err
 	}
 
-	output, _ := i.Exec([]string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, common.AgentVersion, os, arch), "/elastic-agent"})
+	output, _ := i.Exec([]string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, common.BeatVersion, os, arch), "/elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }

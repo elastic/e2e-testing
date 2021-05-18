@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -42,7 +41,7 @@ func (c *kubernetesDeploymentManifest) Add(services []ServiceRequest, env map[st
 }
 
 // AddFiles - add files to deployment service
-func (c *kubernetesDeploymentManifest) AddFiles(service string, files []string) error {
+func (c *kubernetesDeploymentManifest) AddFiles(service ServiceRequest, files []string) error {
 	container, _ := c.Inspect(service)
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
 
@@ -118,20 +117,24 @@ func (c *kubernetesDeploymentManifest) Inspect(service ServiceRequest) (*Service
 		Name:       strings.TrimPrefix(inspect.Metadata.Name, "/"),
 		Connection: service.Name,
 		Hostname:   service.Name,
-		Alias:      service,
+		Alias:      service.Name,
 		Platform:   "linux",
 	}, nil
 }
 
-// Mount will mount a service with ability to perform actions within that services environment
-func (c *kubernetesDeploymentManifest) Mount(service string, installType string) (installer.Package, error) {
-	container, _ := c.Inspect(service)
-	var install installer.Package
-	if strings.EqualFold(installType, "tar") && strings.EqualFold(service, "elastic-agent") {
-		install = installer.NewElasticAgentTARPackage(container.Name, c.ExecIn, c.AddFiles)
-		return install, nil
+// Logs print logs of service
+func (c *kubernetesDeploymentManifest) Logs(service ServiceRequest) error {
+	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
+	_, err := kubectl.Run(c.Context, "logs", "deployment/"+service.Name)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"service": service.Name,
+		}).Error("Could not retrieve Elastic Agent logs")
+
+		return err
 	}
-	return nil, nil
+	return nil
 }
 
 // Remove remove services from deployment
@@ -148,11 +151,11 @@ func (c *kubernetesDeploymentManifest) Remove(services []ServiceRequest, env map
 }
 
 // Start a container
-func (c *kubernetesDeploymentManifest) Start(service string) error {
+func (c *kubernetesDeploymentManifest) Start(service ServiceRequest) error {
 	return nil
 }
 
 // Stop a container
-func (c *kubernetesDeploymentManifest) Stop(service string) error {
+func (c *kubernetesDeploymentManifest) Stop(service ServiceRequest) error {
 	return nil
 }

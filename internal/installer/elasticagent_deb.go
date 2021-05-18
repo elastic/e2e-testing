@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -15,28 +16,26 @@ import (
 
 // elasticAgentDEBPackage implements operations for a DEB installer
 type elasticAgentDEBPackage struct {
-	service  string
-	executor func(service string, cmd []string) (string, error)
-	copier   func(service string, files []string) error
+	service deploy.ServiceRequest
+	deploy  deploy.Deployment
 }
 
-// NewElasticAgentDEBPackage creates an instance for the DEB installer
-func NewElasticAgentDEBPackage(service string, executor func(service string, cmd []string) (string, error), copier func(service string, files []string) error) Package {
+// AttachElasticAgentDEBPackage creates an instance for the DEB installer
+func AttachElasticAgentDEBPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentDEBPackage{
-		service:  service,
-		executor: executor,
-		copier:   copier,
+		service: service,
+		deploy:  deploy,
 	}
 }
 
 // AddFiles will add files into the service environment, default destination is /
 func (i *elasticAgentDEBPackage) AddFiles(files []string) error {
-	return i.copier(i.service, files)
+	return i.deploy.AddFiles(i.service, files)
 }
 
 // Inspect returns info on package
-func (i *elasticAgentDEBPackage) Inspect() (PackageManifest, error) {
-	return PackageManifest{
+func (i *elasticAgentDEBPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
+	return deploy.ServiceOperatorManifest{
 		WorkDir:    "/var/lib/elastic-agent",
 		CommitFile: "/etc/elastic-agent/.elastic-agent.active.commit",
 	}, nil
@@ -50,7 +49,7 @@ func (i *elasticAgentDEBPackage) Install() error {
 
 // Exec will execute a command within the service environment
 func (i *elasticAgentDEBPackage) Exec(args []string) (string, error) {
-	output, err := i.executor(i.service, args)
+	output, err := i.deploy.ExecIn(i.service, args)
 	return output, err
 }
 
@@ -79,7 +78,7 @@ func (i *elasticAgentDEBPackage) InstallCerts() error {
 		{"update-ca-certificates", "-f"},
 	}
 	for _, cmd := range cmds {
-		if _, err := i.executor(i.service, cmd); err != nil {
+		if _, err := i.Exec(cmd); err != nil {
 			return err
 		}
 	}
@@ -93,7 +92,7 @@ func (i *elasticAgentDEBPackage) Logs() error {
 
 // Postinstall executes operations after installing a DEB package
 func (i *elasticAgentDEBPackage) Postinstall() error {
-	_, err := i.executor(i.service, []string{"systemctl", "restart", "elastic-agent"})
+	_, err := i.Exec([]string{"systemctl", "restart", "elastic-agent"})
 	if err != nil {
 		return err
 	}
@@ -107,12 +106,12 @@ func (i *elasticAgentDEBPackage) Preinstall() error {
 	arch := "amd64"
 	extension := "deb"
 
-	binaryName := utils.BuildArtifactName(artifact, common.AgentVersion, common.AgentVersionBase, os, arch, extension, false)
-	binaryPath, err := utils.FetchBeatsBinary(binaryName, artifact, common.AgentVersion, common.AgentVersionBase, common.TimeoutFactor, true)
+	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, common.BeatVersionBase, os, arch, extension, false)
+	binaryPath, err := utils.FetchBeatsBinary(binaryName, artifact, common.BeatVersion, common.BeatVersionBase, utils.TimeoutFactor, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
-			"version":   common.AgentVersion,
+			"version":   common.BeatVersion,
 			"os":        os,
 			"arch":      arch,
 			"extension": extension,
@@ -126,7 +125,7 @@ func (i *elasticAgentDEBPackage) Preinstall() error {
 		return err
 	}
 
-	_, err = i.executor(i.service, []string{"apt", "install", "/" + binaryName, "-y"})
+	_, err = i.Exec([]string{"apt", "install", "/" + binaryName, "-y"})
 	if err != nil {
 		return err
 	}

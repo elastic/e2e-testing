@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -15,28 +16,26 @@ import (
 
 // elasticAgentRPMPackage implements operations for a RPM installer
 type elasticAgentRPMPackage struct {
-	service  string
-	executor func(service string, cmd []string) (string, error)
-	copier   func(service string, files []string) error
+	service deploy.ServiceRequest
+	deploy  deploy.Deployment
 }
 
-// NewElasticAgentRPMPackage creates an instance for the RPM installer
-func NewElasticAgentRPMPackage(service string, executor func(service string, cmd []string) (string, error), copier func(service string, files []string) error) Package {
+// AttachElasticAgentRPMPackage creates an instance for the RPM installer
+func AttachElasticAgentRPMPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentRPMPackage{
-		service:  service,
-		executor: executor,
-		copier:   copier,
+		service: service,
+		deploy:  deploy,
 	}
 }
 
 // AddFiles will add files into the service environment, default destination is /
 func (i *elasticAgentRPMPackage) AddFiles(files []string) error {
-	return i.copier(i.service, files)
+	return i.deploy.AddFiles(i.service, files)
 }
 
 // Inspect returns info on package
-func (i *elasticAgentRPMPackage) Inspect() (PackageManifest, error) {
-	return PackageManifest{
+func (i *elasticAgentRPMPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
+	return deploy.ServiceOperatorManifest{
 		WorkDir:    "/var/lib/elastic-agent",
 		CommitFile: "/etc/elastic-agent/.elastic-agent.active.commit",
 	}, nil
@@ -50,7 +49,7 @@ func (i *elasticAgentRPMPackage) Install() error {
 
 // Exec will execute a command within the service environment
 func (i *elasticAgentRPMPackage) Exec(args []string) (string, error) {
-	output, err := i.executor(i.service, args)
+	output, err := i.deploy.ExecIn(i.service, args)
 	return output, err
 }
 
@@ -80,7 +79,7 @@ func (i *elasticAgentRPMPackage) InstallCerts() error {
 		{"update-ca-trust", "extract"},
 	}
 	for _, cmd := range cmds {
-		if _, err := i.executor(i.service, cmd); err != nil {
+		if _, err := i.Exec(cmd); err != nil {
 			return err
 		}
 	}
@@ -94,7 +93,7 @@ func (i *elasticAgentRPMPackage) Logs() error {
 
 // Postinstall executes operations after installing a RPM package
 func (i *elasticAgentRPMPackage) Postinstall() error {
-	_, err := i.executor(i.service, []string{"systemctl", "restart", "elastic-agent"})
+	_, err := i.Exec([]string{"systemctl", "restart", "elastic-agent"})
 	if err != nil {
 		return err
 	}
@@ -108,12 +107,12 @@ func (i *elasticAgentRPMPackage) Preinstall() error {
 	arch := "x86_64"
 	extension := "rpm"
 
-	binaryName := utils.BuildArtifactName(artifact, common.AgentVersion, common.AgentVersionBase, os, arch, extension, false)
-	binaryPath, err := utils.FetchBeatsBinary(binaryName, artifact, common.AgentVersion, common.AgentVersionBase, common.TimeoutFactor, true)
+	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, common.BeatVersionBase, os, arch, extension, false)
+	binaryPath, err := utils.FetchBeatsBinary(binaryName, artifact, common.BeatVersion, common.BeatVersionBase, utils.TimeoutFactor, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
-			"version":   common.AgentVersion,
+			"version":   common.BeatVersion,
 			"os":        os,
 			"arch":      arch,
 			"extension": extension,
@@ -127,7 +126,7 @@ func (i *elasticAgentRPMPackage) Preinstall() error {
 		return err
 	}
 
-	_, err = i.executor(i.service, []string{"yum", "localinstall", "/" + binaryName, "-y"})
+	_, err = i.Exec([]string{"yum", "localinstall", "/" + binaryName, "-y"})
 	if err != nil {
 		return err
 	}

@@ -46,7 +46,7 @@ func (i *ElasticAgentInstaller) ListElasticAgentWorkingDirContent(containerName 
 		"ls", "-l", i.workingDir,
 	}
 
-	content, err := deploy.ExecCommandIntoContainer(context.Background(), deploy.NewServiceRequest(containerName), "root", cmd)
+	content, err := deploy.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
 	if err != nil {
 		return "", err
 	}

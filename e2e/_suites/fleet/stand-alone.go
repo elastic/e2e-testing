@@ -51,7 +51,9 @@ func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
 	minimumHitsCount := 50
 
-	manifest, _ := fts.deployer.Inspect("elastic-agent")
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(fts.Image)
+
+	manifest, _ := fts.deployer.Inspect(agentService)
 	result, err := searchAgentData(manifest.Hostname, fts.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
@@ -80,7 +82,8 @@ func (fts *FleetTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error
 	maxTimeout := time.Duration(30) * time.Second
 	minimumHitsCount := 1
 
-	manifest, _ := fts.deployer.Inspect("elastic-agent")
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+	manifest, _ := fts.deployer.Inspect(agentService)
 	result, err := searchAgentData(manifest.Hostname, fts.AgentStoppedDate, minimumHitsCount, maxTimeout)
 	if err != nil {
 		if strings.Contains(err.Error(), "type:index_not_found_exception") {
@@ -203,7 +206,7 @@ func (fts *FleetTestSuite) installTestTools(containerName string) error {
 		"containerName": containerName,
 	}).Trace("Installing test tools ")
 
-	_, err := deploy.ExecCommandIntoContainer(context.Background(), deploy.NewServiceRequest(containerName), "root", cmd)
+	_, err := deploy.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command":       cmd,

@@ -61,7 +61,7 @@ func (c *dockerDeploymentManifest) Bootstrap(waitCB func() error) error {
 }
 
 // AddFiles - add files to service
-func (c *dockerDeploymentManifest) AddFiles(service string, files []string) error {
+func (c *dockerDeploymentManifest) AddFiles(service ServiceRequest, files []string) error {
 	container, _ := c.Inspect(service)
 	for _, file := range files {
 		isTar := true
@@ -69,7 +69,7 @@ func (c *dockerDeploymentManifest) AddFiles(service string, files []string) erro
 		if fileExt == ".rpm" || fileExt == ".deb" {
 			isTar = false
 		}
-		err := docker.CopyFileToContainer(c.Context, container.Name, file, "/", isTar)
+		err := CopyFileToContainer(c.Context, container.Name, file, "/", isTar)
 		if err != nil {
 			log.WithField("error", err).Fatal("Unable to copy file to service")
 		}
@@ -92,7 +92,8 @@ func (c *dockerDeploymentManifest) Destroy() error {
 
 // ExecIn execute command in service
 func (c *dockerDeploymentManifest) ExecIn(service ServiceRequest, cmd []string) (string, error) {
-	output, err := ExecCommandIntoContainer(c.Context, service, "root", cmd)
+	inspect, _ := c.Inspect(service)
+	output, err := ExecCommandIntoContainer(c.Context, inspect.Name, "root", cmd)
 	if err != nil {
 		return "", err
 	}
@@ -115,37 +116,26 @@ func (c *dockerDeploymentManifest) Inspect(service ServiceRequest) (*ServiceMani
 	}, nil
 }
 
-// Mount will mount a service with ability to perform actions within that services environment
-// TODO: Not a fan of passing in installType here, should think about abstracting that portion out more
-func (c *dockerDeploymentManifest) Mount(service string, installType string) (installer.Package, error) {
-	log.WithFields(log.Fields{
-		"service":     service,
-		"installType": installType,
-	}).Trace("Mounting service for configuration")
+// Logs print logs of service
+func (c *dockerDeploymentManifest) Logs(service ServiceRequest) error {
+	serviceManager := NewServiceManager()
+	profile := NewServiceRequest(common.FleetProfileName)
+	err := serviceManager.RunCommand(profile, []ServiceRequest{service}, []string{"logs", service.Name}, common.ProfileEnv)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"service": service.Name,
+		}).Error("Could not retrieve Elastic Agent logs")
 
-	container, _ := c.Inspect(service)
-	var install installer.Package
-	if strings.EqualFold(service, "elastic-agent") {
-		switch installType {
-		case "tar":
-			install = installer.NewElasticAgentTARPackage(container.Name, c.ExecIn, c.AddFiles)
-			return install, nil
-		case "rpm":
-			install = installer.NewElasticAgentRPMPackage(container.Name, c.ExecIn, c.AddFiles)
-			return install, nil
-		case "deb":
-			install = installer.NewElasticAgentDEBPackage(container.Name, c.ExecIn, c.AddFiles)
-			return install, nil
-		}
+		return err
 	}
-
-	return nil, nil
+	return nil
 }
 
 // Remove remove services from deployment
 func (c *dockerDeploymentManifest) Remove(services []ServiceRequest, env map[string]string) error {
 	for _, service := range services[1:] {
-		manifest, _ := c.Inspect(service.Name)
+		manifest, _ := c.Inspect(service)
 		_, err := shell.Execute(c.Context, ".", "docker", "rm", "-fv", manifest.Name)
 		if err != nil {
 			return err
@@ -156,14 +146,14 @@ func (c *dockerDeploymentManifest) Remove(services []ServiceRequest, env map[str
 
 // Start a container
 func (c *dockerDeploymentManifest) Start(service ServiceRequest) error {
-	manifest, _ := c.Inspect(service.Name)
+	manifest, _ := c.Inspect(service)
 	_, err := shell.Execute(c.Context, ".", "docker", "start", manifest.Name)
 	return err
 }
 
 // Stop a container
 func (c *dockerDeploymentManifest) Stop(service ServiceRequest) error {
-	manifest, _ := c.Inspect(service.Name)
+	manifest, _ := c.Inspect(service)
 	_, err := shell.Execute(c.Context, ".", "docker", "stop", manifest.Name)
 	return err
 }
