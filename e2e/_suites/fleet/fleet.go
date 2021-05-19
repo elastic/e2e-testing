@@ -15,7 +15,6 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/cli/services"
 	curl "github.com/elastic/e2e-testing/cli/shell"
-	shell "github.com/elastic/e2e-testing/cli/shell"
 	"github.com/elastic/e2e-testing/e2e"
 	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/google/uuid"
@@ -137,9 +136,6 @@ func (fts *FleetTestSuite) beforeScenario() {
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
-	s.Step(`^a "([^"]*)" agent "([^"]*)" is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
-	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
-	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
@@ -149,7 +145,6 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
-	s.Step(`^certs are installed$`, fts.installCerts)
 	s.Step(`^a Linux data stream exists with some data$`, fts.checkDataStream)
 
 	// endpoint steps
@@ -161,132 +156,6 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
 	s.Step(`^the policy is updated to have "([^"]*)" in "([^"]*)" mode$`, fts.thePolicyIsUpdatedToHaveMode)
 	s.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
-}
-
-func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, version, installerType string) error {
-	agentVersionBackup := fts.Version
-	defer func() { fts.Version = agentVersionBackup }()
-
-	agentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", agentStaleVersion)
-	// check if stale version is an alias
-	v, err := e2e.GetElasticArtifactVersion(agentStaleVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": agentStaleVersion,
-		}).Error("Failed to get stale version")
-		return err
-	}
-	agentStaleVersion = v
-
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
-	if useCISnapshots && !strings.HasSuffix(agentStaleVersion, "-SNAPSHOT") {
-		agentStaleVersion += "-SNAPSHOT"
-	}
-
-	switch version {
-	case "stale":
-		version = agentStaleVersion
-	case "latest":
-		version = agentVersion
-	default:
-		version = agentStaleVersion
-	}
-
-	fts.Version = version
-
-	// prepare installer for stale version
-	if fts.Version != agentVersionBackup {
-		i := GetElasticAgentInstaller(image, installerType, fts.Version)
-		fts.Installers[fmt.Sprintf("%s-%s-%s", image, installerType, version)] = i
-	}
-
-	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
-}
-
-func (fts *FleetTestSuite) installCerts() error {
-	installer := fts.getInstaller()
-	if installer.InstallCertsFn == nil {
-		log.WithFields(log.Fields{
-			"installer":         installer,
-			"version":           fts.Version,
-			"agentVersion":      agentVersion,
-			"agentStaleVersion": agentStaleVersion,
-		}).Error("No installer found")
-		return errors.New("no installer found")
-	}
-
-	err := installer.InstallCertsFn()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"agentVersion":      agentVersion,
-			"agentStaleVersion": agentStaleVersion,
-			"error":             err,
-			"installer":         installer,
-			"version":           fts.Version,
-		}).Error("Could not install the certificates")
-		return err
-	}
-
-	return nil
-}
-
-func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
-	switch desiredVersion {
-	case "stale":
-		desiredVersion = agentStaleVersion
-	case "latest":
-		desiredVersion = agentVersion
-	default:
-		desiredVersion = agentVersion
-	}
-
-	return fts.upgradeAgent(desiredVersion)
-}
-
-func (fts *FleetTestSuite) agentInVersion(version string) error {
-	switch version {
-	case "stale":
-		version = agentStaleVersion
-	case "latest":
-		version = agentVersion
-	}
-
-	agentInVersionFn := func() error {
-		agentID, err := getAgentID(fts.Hostname)
-		if err != nil {
-			return err
-		}
-
-		r := createDefaultHTTPRequest(fleetAgentsURL + "/" + agentID)
-		body, err := curl.Get(r)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"body":  body,
-				"error": err,
-				"url":   r.GetURL(),
-			}).Error("Could not get agent in Fleet")
-			return err
-		}
-
-		jsonResponse, err := gabs.ParseJSON([]byte(body))
-
-		retrievedVersion := jsonResponse.Path("item.local_metadata.elastic.agent.version").Data().(string)
-		if isSnapshot := jsonResponse.Path("item.local_metadata.elastic.agent.snapshot").Data().(bool); isSnapshot {
-			retrievedVersion += "-SNAPSHOT"
-		}
-
-		if retrievedVersion != version {
-			return fmt.Errorf("version mismatch required '%s' retrieved '%s'", version, retrievedVersion)
-		}
-
-		return nil
-	}
-
-	maxTimeout := time.Duration(timeoutFactor) * time.Minute * 2
-	exp := e2e.GetExponentialBackOff(maxTimeout)
-
-	return backoff.Retry(agentInVersionFn, exp)
 }
 
 // supported installers: tar, systemd

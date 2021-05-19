@@ -26,7 +26,6 @@ type ElasticAgentInstaller struct {
 	image             string // docker image
 	installerType     string
 	InstallFn         func(containerName string, token string) error
-	InstallCertsFn    func() error
 	name              string // the name for the binary
 	processName       string // name of the elastic-agent process
 	profile           string // parent docker-compose file
@@ -196,7 +195,6 @@ func newCentosInstaller(image string, tag string, version string) (ElasticAgentI
 		EnrollFn:          enrollFn,
 		image:             image,
 		InstallFn:         installerPackage.Install,
-		InstallCertsFn:    installerPackage.InstallCerts,
 		installerType:     "rpm",
 		name:              binaryName,
 		PostInstallFn:     installerPackage.Postinstall,
@@ -262,7 +260,6 @@ func newDebianInstaller(image string, tag string, version string) (ElasticAgentI
 		EnrollFn:          enrollFn,
 		image:             image,
 		InstallFn:         installerPackage.Install,
-		InstallCertsFn:    installerPackage.InstallCerts,
 		installerType:     "deb",
 		name:              binaryName,
 		PostInstallFn:     installerPackage.Postinstall,
@@ -340,7 +337,6 @@ func newDockerInstaller(ubi8 bool, version string) (ElasticAgentInstaller, error
 		EnrollFn:          enrollFn,
 		image:             image,
 		InstallFn:         installerPackage.Install,
-		InstallCertsFn:    installerPackage.InstallCerts,
 		installerType:     "docker",
 		name:              binaryName,
 		PostInstallFn:     installerPackage.Postinstall,
@@ -411,7 +407,6 @@ func newTarInstaller(image string, tag string, version string) (ElasticAgentInst
 		EnrollFn:          enrollFn,
 		image:             dockerImage,
 		InstallFn:         installerPackage.Install,
-		InstallCertsFn:    installerPackage.InstallCerts,
 		installerType:     "tar",
 		name:              binaryName,
 		PostInstallFn:     installerPackage.Postinstall,
