@@ -18,7 +18,6 @@ import (
 // InstallerPackage represents the operations that can be performed by an installer package type
 type InstallerPackage interface {
 	Install(containerName string, token string) error
-	InstallCerts() error
 	PrintLogs(containerName string) error
 	Postinstall() error
 	Preinstall() error
@@ -123,23 +122,6 @@ func (i *DEBPackage) Install(containerName string, token string) error {
 	return i.extractPackage([]string{"apt", "install", "/" + i.binaryName, "-y"})
 }
 
-// InstallCerts installs the certificates for a DEB package
-func (i *DEBPackage) InstallCerts() error {
-	return installCertsForDebian(i.profile, i.image, i.service)
-}
-func installCertsForDebian(profile string, image string, service string) error {
-	if err := steps.ExecCommandInService(profile, image, service, []string{"apt-get", "update"}, profileEnv, false); err != nil {
-		return err
-	}
-	if err := steps.ExecCommandInService(profile, image, service, []string{"apt", "install", "ca-certificates", "-y"}, profileEnv, false); err != nil {
-		return err
-	}
-	if err := steps.ExecCommandInService(profile, image, service, []string{"update-ca-certificates", "-f"}, profileEnv, false); err != nil {
-		return err
-	}
-	return nil
-}
-
 // Preinstall executes operations before installing a DEB package
 func (i *DEBPackage) Preinstall() error {
 	log.Trace("No preinstall commands for DEB packages")
@@ -184,12 +166,6 @@ func NewDockerPackage(binaryName string, profile string, image string, service s
 // Install installs a Docker package
 func (i *DockerPackage) Install(containerName string, token string) error {
 	log.Trace("No install commands for Docker packages")
-	return nil
-}
-
-// InstallCerts installs the certificates for a Docker package
-func (i *DockerPackage) InstallCerts() error {
-	log.Trace("No install certs commands for Docker packages")
 	return nil
 }
 
@@ -268,26 +244,6 @@ func (i *RPMPackage) Install(containerName string, token string) error {
 	return i.extractPackage([]string{"yum", "localinstall", "/" + i.binaryName, "-y"})
 }
 
-// InstallCerts installs the certificates for a RPM package
-func (i *RPMPackage) InstallCerts() error {
-	return installCertsForCentos(i.profile, i.image, i.service)
-}
-func installCertsForCentos(profile string, image string, service string) error {
-	if err := steps.ExecCommandInService(profile, image, service, []string{"yum", "check-update"}, profileEnv, false); err != nil {
-		return err
-	}
-	if err := steps.ExecCommandInService(profile, image, service, []string{"yum", "install", "ca-certificates", "-y"}, profileEnv, false); err != nil {
-		return err
-	}
-	if err := steps.ExecCommandInService(profile, image, service, []string{"update-ca-trust", "force-enable"}, profileEnv, false); err != nil {
-		return err
-	}
-	if err := steps.ExecCommandInService(profile, image, service, []string{"update-ca-trust", "extract"}, profileEnv, false); err != nil {
-		return err
-	}
-	return nil
-}
-
 // Preinstall executes operations before installing a RPM package
 func (i *RPMPackage) Preinstall() error {
 	log.Trace("No preinstall commands for RPM packages")
@@ -335,23 +291,6 @@ func (i *TARPackage) Install(containerName string, token string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
 	}
-
-	return nil
-}
-
-// InstallCerts installs the certificates for a TAR package, using the right OS package manager
-func (i *TARPackage) InstallCerts() error {
-	if i.OSFlavour == "centos" {
-		return installCertsForCentos(i.profile, i.image, i.service)
-	} else if i.OSFlavour == "debian" {
-		return installCertsForDebian(i.profile, i.image, i.service)
-	}
-
-	log.WithFields(log.Fields{
-		"arch":      i.arch,
-		"OS":        i.OS,
-		"OSFlavour": i.OSFlavour,
-	}).Debug("Installation of certificates was skipped because of unknown OS flavour")
 
 	return nil
 }
