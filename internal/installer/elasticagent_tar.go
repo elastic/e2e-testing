@@ -62,8 +62,7 @@ func (i *elasticAgentTARPackage) Enroll(token string) error {
 		args = append(args, arg)
 	}
 
-	output, err := i.Exec(args)
-	log.Trace(output)
+	_, err := i.Exec(args)
 	if err != nil {
 		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
 	}

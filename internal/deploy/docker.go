@@ -93,7 +93,11 @@ func (c *dockerDeploymentManifest) Destroy() error {
 // ExecIn execute command in service
 func (c *dockerDeploymentManifest) ExecIn(service ServiceRequest, cmd []string) (string, error) {
 	inspect, _ := c.Inspect(service)
-	output, err := ExecCommandIntoContainer(c.Context, inspect.Name, "root", cmd)
+	args := []string{"exec", "-u", "root", "-i", inspect.Name}
+	for _, cmdArg := range cmd {
+		args = append(args, cmdArg)
+	}
+	output, err := shell.Execute(c.Context, ".", "docker", args...)
 	if err != nil {
 		return "", err
 	}

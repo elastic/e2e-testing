@@ -417,7 +417,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 
 	manifest, _ := fts.deployer.Inspect(agentService)
 
-	return CheckProcessState(fts.deployer, manifest.Name, process, "stopped", 1, utils.TimeoutFactor)
+	return CheckProcessState(fts.deployer, manifest.Name, process, "stopped", 0, utils.TimeoutFactor)
 }
 
 func (fts *FleetTestSuite) setup() error {
@@ -522,6 +522,9 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 
 	content, err := agentInstaller.Exec(cmd)
 	if err != nil {
+		if content == "" || strings.Contains(content, "No such file or directory") {
+			return nil
+		}
 		return err
 	}
 
@@ -530,10 +533,6 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 		"workingDir": pkgManifest.WorkDir,
 		"content":    content,
 	}).Debug("Agent working dir content")
-
-	if content == "" || strings.Contains(content, "No such file or directory") {
-		return nil
-	}
 
 	return fmt.Errorf("The file system directory is not empty")
 }
