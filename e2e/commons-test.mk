@@ -8,8 +8,7 @@ TIMEOUT_FACTOR?=3
 #true by default, allowing developers to set SKIP_SCENARIOS=false
 SKIP_SCENARIOS?=true
 STACK_VERSION?=
-PICKLES_VERSION?="2.20.1"
-VERSION_VALUE=`cat ../cli/VERSION.txt`
+
 ELASTIC_APM_ENVIRONMENT?=local
 
 ifeq ($(ELASTIC_APM_ACTIVE),true)
@@ -41,14 +40,6 @@ TAGS_FLAG=--tags
 TAGS_VALUE="~skip"
 endif
 endif
-
-.PHONT: build-docs
-build-docs:
-	rm -fr docs
-	@docker run --rm --user $$(id -u):$$(id -g) -v $(PWD):/suites docker.elastic.co/observability-ci/picklesdoc:$(PICKLES_VERSION) -f /suites -o /suites/docs --sn "E2E Testing" --sv $(VERSION_VALUE)
-	# because pickledocs is a Windows tool, there is a wrong slash.
-	mv docs/.\\/index.html docs/index.html
-	rm -fr docs/.\\
 
 .PHONY: install
 install:
