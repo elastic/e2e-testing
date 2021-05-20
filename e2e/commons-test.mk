@@ -65,7 +65,3 @@ functional-test: install-godog
 	ELASTIC_APM_SECRET_TOKEN="${APM_SECRET_TOKEN}" \
 	ELASTIC_APM_SERVER_URL="${APM_SERVER_URL}" \
 	godog --format=${FORMAT} ${TAGS_FLAG} ${TAGS_VALUE}
-
-.PHONY: lint
-lint:
-	@docker run -t --rm -v $(PWD):/src -w /src gherkin/lint **/*.feature --disable AvoidOutlineForSingleExample,TooClumsy,TooManySteps,TooManyDifferentTags,TooLongStep,UseBackground

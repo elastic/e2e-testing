@@ -12,6 +12,10 @@ build-docs:
 	mv docs/.\\/index.html docs/index.html
 	rm -fr docs/.\\
 
+.PHONY: lint
+lint:
+	@docker run -t --rm -v $(PWD):/src -w /src gherkin/lint **/*.feature --disable AvoidOutlineForSingleExample,TooClumsy,TooManySteps,TooManyDifferentTags,TooLongStep,UseBackground
+
 ## Test examples
 
 .PHONY: fleet-fleet
