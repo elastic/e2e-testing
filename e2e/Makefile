@@ -1,10 +1,6 @@
 include ../commons.mk
 include ./commons-test.mk
 
-GO_IMAGE_TAG?='stretch'
-GOOS?='linux'
-GOARCH?='amd64'
-
 ## Test examples
 
 .PHONY: fleet-fleet
