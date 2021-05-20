@@ -88,7 +88,7 @@ func (i *elasticAgentRPMPackage) InstallCerts() error {
 
 // Logs prints logs of service
 func (i *elasticAgentRPMPackage) Logs() error {
-	return nil
+	return i.deploy.Logs(i.service)
 }
 
 // Postinstall executes operations after installing a RPM package

@@ -87,7 +87,7 @@ func (i *elasticAgentDEBPackage) InstallCerts() error {
 
 // Logs prints logs of service
 func (i *elasticAgentDEBPackage) Logs() error {
-	return nil
+	return i.deploy.Logs(i.service)
 }
 
 // Postinstall executes operations after installing a DEB package

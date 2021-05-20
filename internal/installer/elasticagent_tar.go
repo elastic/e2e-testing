@@ -76,8 +76,7 @@ func (i *elasticAgentTARPackage) InstallCerts() error {
 
 // Logs prints logs of service
 func (i *elasticAgentTARPackage) Logs() error {
-	log.Trace("No logs to print")
-	return nil
+	return i.deploy.Logs(i.service)
 }
 
 // Postinstall executes operations after installing a TAR package

@@ -50,7 +50,7 @@ type ServiceManifest struct {
 	ID         string
 	Name       string
 	Connection string // a string representing how to connect to service
-	Alias      string // docker network aliases
+	Alias      string // container network aliases
 	Hostname   string
 	Platform   string // running in linux, macos, windows
 }
