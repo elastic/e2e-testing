@@ -65,11 +65,8 @@ func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 }
 
 func (fts *FleetTestSuite) theDockerContainerIsStopped(serviceName string) error {
-	services := []deploy.ServiceRequest{
-		deploy.NewServiceRequest(common.FleetProfileName),
-		deploy.NewServiceRequest(serviceName),
-	}
-	err := fts.deployer.Remove(services, common.ProfileEnv)
+	agentService := deploy.NewServiceRequest(serviceName)
+	err := fts.deployer.Stop(agentService)
 	if err != nil {
 		return err
 	}

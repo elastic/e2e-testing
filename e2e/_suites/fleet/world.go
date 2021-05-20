@@ -24,7 +24,7 @@ type IngestManagerTestSuite struct {
 
 func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
 	ocurrences := "1"
-	if state == "uninstalled" {
+	if state == "uninstalled" || state == "stopped" {
 		ocurrences = "0"
 	}
 	return imts.thereAreInstancesOfTheProcessInTheState(ocurrences, process, state)

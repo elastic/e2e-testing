@@ -76,13 +76,12 @@ func (fts *FleetTestSuite) afterScenario() {
 			}
 		}
 	} else if log.IsLevelEnabled(log.DebugLevel) {
-		service := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		_ = fts.deployer.Logs(service)
+		_ = fts.deployer.Logs(agentService)
 	}
 
-	manifest, _ := fts.deployer.Inspect(agentService)
 	err := fts.unenrollHostname()
 	if err != nil {
+		manifest, _ := fts.deployer.Inspect(agentService)
 		log.WithFields(log.Fields{
 			"err":      err,
 			"hostname": manifest.Hostname,

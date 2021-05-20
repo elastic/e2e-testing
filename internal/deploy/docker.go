@@ -110,6 +110,7 @@ func (c *dockerDeploymentManifest) Inspect(service ServiceRequest) (*ServiceMani
 	if err != nil {
 		return &ServiceManifest{}, err
 	}
+
 	return &ServiceManifest{
 		ID:         inspect.ID,
 		Name:       strings.TrimPrefix(inspect.Name, "/"),
@@ -122,9 +123,8 @@ func (c *dockerDeploymentManifest) Inspect(service ServiceRequest) (*ServiceMani
 
 // Logs print logs of service
 func (c *dockerDeploymentManifest) Logs(service ServiceRequest) error {
-	serviceManager := NewServiceManager()
-	profile := NewServiceRequest(common.FleetProfileName)
-	err := serviceManager.RunCommand(profile, []ServiceRequest{service}, []string{"logs", service.Name}, common.ProfileEnv)
+	manifest, _ := c.Inspect(service)
+	_, err := shell.Execute(c.Context, ".", "docker", "logs", manifest.Name)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
