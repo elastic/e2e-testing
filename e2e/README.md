@@ -83,7 +83,7 @@ The anatomy of a feature file is:
 - **Examples:**: this `markdown table` will represent the elements to interpolate in the existing dynamic variables in the use case, being each column header the name of the different variables in the table. Besides that, each row will result in a test execution.
 
 ### Configuration files
-It's possible that there will exist configuration YAML files in the test suire. We recommend locating them under the `configurations` folder in the suite directory. The name of the file will represent the feature to be tested (i.e. `apache.yml`). In this file we will add those configurations that are exclusive to the feature to be tests.
+It's possible that there will exist configuration YAML files in the test suire. We recommend locating them under the `configurations` folder under the config directory for compose files (both profiles and services). The name of the file will represent the feature to be tested (i.e. `kibana.config.yml`). In this file we will add those configurations that are exclusive to the feature to be tests.
 
 ## Generating documentation about the specifications
 If you want to generate a website for the feature files, please run this command:
