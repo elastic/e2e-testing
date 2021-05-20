@@ -1,3 +1,4 @@
+FEATURES?=
 TAGS?=
 DEVELOPER_MODE?=false
 ELASTIC_APM_ACTIVE?=false
@@ -23,6 +24,12 @@ export APM_SECRET_TOKEN?=
 export APM_SERVER_URL?=http://localhost:8200
 export ELASTIC_APM_GLOBAL_LABELS?=
 endif
+endif
+
+ifneq ($(FEATURES),)
+FEATURES_VALUE=features/$(FEATURES)
+else
+FEATURES_VALUE=
 endif
 
 ifneq ($(TAGS),)
@@ -64,4 +71,4 @@ functional-test: install-godog
 	ELASTIC_APM_ENVIRONMENT="${ELASTIC_APM_ENVIRONMENT}" \
 	ELASTIC_APM_SECRET_TOKEN="${APM_SECRET_TOKEN}" \
 	ELASTIC_APM_SERVER_URL="${APM_SERVER_URL}" \
-	godog --format=${FORMAT} ${TAGS_FLAG} ${TAGS_VALUE}
+	godog --format=${FORMAT} ${FEATURES_VALUE} ${TAGS_FLAG} ${TAGS_VALUE}
