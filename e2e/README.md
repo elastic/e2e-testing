@@ -170,11 +170,10 @@ This example will run the Fleet tests for the 8.0.0-SNAPSHOT stack with the rele
 # Use the proper branch
 git checkout master
 # Run the tests for a specific branch
-SUITE="fleet" \
+TAGS="fleet_mode" \
     TIMEOUT_FACTOR=3 LOG_LEVEL=TRACE \
-    TAGS="fleet_mode" \
     BEAT_VERSION="7.10.1" \
-    make -C e2e functional-test
+    make -C e2e/_suites/fleet functional-test
 ```
 
 When running regression testing locally, please make sure you clean up tool's workspace among runs.
