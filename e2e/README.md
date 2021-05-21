@@ -165,7 +165,7 @@ The following environment variables affect how the tests are run in both the CI 
 
 - `FEATURES`: Set this environment variable to an existing feature file, or a glob expression (`fleet_*.feature`), that will be passed to the test runner to filter the execution, selecting those feature files matching that expression. If empty, all feature files in the `features/` directory will be used. It can be used in combination with `TAGS`.
 - `TAGS`: Set this environment variable to [a Cucumber tag expression](https://github.com/cucumber/godog#tags), that will be passed to the test runner to filter the execution, selecting those scenarios matching that expresion, across any feature file. It can be used in combination with `FEATURES`.
-- `SKIP_SCENARIOS`: Set this environment variable to `false` if it's needed to include the scenarios annotated as `@skip` in the current test execution. Default value: `true`.
+- `SKIP_SCENARIOS`: Set this environment variable to `false` if it's needed to include the scenarios annotated as `@skip` in the current test execution, adding that taf to the `TAGS` variable. Default value: `true`.
 ### Running regressions locally
 This example will run the Fleet tests for the 8.0.0-SNAPSHOT stack with the released 7.10.1 version of the agent.
 
