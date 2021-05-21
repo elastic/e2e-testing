@@ -251,7 +251,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   item.scenarios.each { scenario ->
     def name = scenario.name
     def scenarioPlatforms = scenario.platforms
-    if (scenarioPlatforms && scenarioPlatforms.length() > 0) {
+    if (scenarioPlatforms?.length > 0) {
       // scenario platforms take precedence over suite platforms, overriding them
       platforms = scenarioPlatforms
     }
