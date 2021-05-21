@@ -174,7 +174,7 @@ This example will run the Fleet tests for the 8.0.0-SNAPSHOT stack with the rele
 # Use the proper branch
 git checkout master
 # Run the tests for a specific branch
-TAGS="fleet_mode" \
+TAGS="fleet_mode_agent" \
     TIMEOUT_FACTOR=3 LOG_LEVEL=TRACE \
     BEAT_VERSION="7.10.1" \
     make -C e2e/_suites/fleet functional-test
