@@ -19,6 +19,8 @@ SUITES:
         pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent"
       - name: "Endpoint Integration"
+        platforms:
+          - "ubuntu-18.04"
         pullRequestFilter: " && ~debian"
         tags: "agent_endpoint_integration"
       - name: "Linux Integration"

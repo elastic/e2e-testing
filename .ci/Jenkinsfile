@@ -250,6 +250,11 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   def platforms = item.platforms
   item.scenarios.each { scenario ->
     def name = scenario.name
+    def scenarioPlatforms = scenario.platforms
+    if (scenarioPlatforms && scenarioPlatforms.length() > 0) {
+      // scenario platforms take precedence over suite platforms, overriding them
+      platforms = scenarioPlatforms
+    }
     def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
     def tags = scenario.tags
     def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
