@@ -175,6 +175,15 @@ TAGS="fleet_mode" \
     BEAT_VERSION="7.10.1" \
     make -C e2e/_suites/fleet functional-test
 ```
+Or running by feature file:
+```shell
+# Use the proper branch
+git checkout master
+FEATURES="fleet_mode_agent.feature" \
+    TIMEOUT_FACTOR=3 LOG_LEVEL=TRACE \
+    BEAT_VERSION="7.10.1" \
+    make -C e2e/_suites/fleet functional-test
+```
 
 When running regression testing locally, please make sure you clean up tool's workspace among runs.
 
