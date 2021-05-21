@@ -309,6 +309,9 @@ def generateFunctionalTestStep(Map args = [:]){
     workerLabels = "arm"
   }
 
+  // Skip scenarios per platform
+  tags += " && ~@skip:${goArch}"
+
   return {
     withNode(labels: "${workerLabels}", sleepMax: 20, forceWorkspace: true){
       deleteDir()
