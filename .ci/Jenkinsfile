@@ -311,7 +311,8 @@ def generateFunctionalTestStep(Map args = [:]){
   def workerLabels = "${platform} && immutable"
   if (platform == "arm64") {
     goArch = "arm64"
-    workerLabels = "aarch64"
+    // ARM is not ready as immutable workers
+    workerLabels = "arm"
   }
 
   // Skip scenarios per platform
