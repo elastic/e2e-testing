@@ -88,7 +88,7 @@ There is [a descriptor file for the CI](../.ci/.e2e-tests.yaml) in which we defi
 Adding a new feature file will require to check [the aforementioned descriptor file](../.ci/.e2e-tests.yaml). If the tags in the new file are not there, you should add a new parallel branch under the main test suite, or update the tags to add the new scenarios in an existing parallel branch.
 
 ### Configuration files
-It's possible that there will exist configuration YAML files in the test suire. We recommend locating them under the `configurations` folder under the config directory for compose files (both profiles and services). The name of the file will represent the feature to be tested (i.e. `kibana.config.yml`). In this file we will add those configurations that are exclusive to the feature to be tests.
+It's possible that there will exist configuration YAML files in the test suite. We recommend locating them under the `configurations` folder under the config directory for compose files (both profiles and services). The name of the file will represent the feature to be tested (i.e. `kibana.config.yml`). In this file we will add those configurations that are exclusive to the feature to be tested.
 
 ## Generating documentation about the specifications
 If you want to generate a website for the feature files, please run this command:
