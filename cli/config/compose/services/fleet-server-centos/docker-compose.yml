@@ -4,7 +4,7 @@ services:
     image: docker.elastic.co/observability-ci/centos-systemd:latest
     container_name: ${fleet_server_centosContainerName}
     entrypoint: "/usr/sbin/init"
-    platform: ${elasticAgentPlatform:-linux/amd64}
+    platform: ${stackPlatform:-linux/amd64}
     privileged: true
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro 

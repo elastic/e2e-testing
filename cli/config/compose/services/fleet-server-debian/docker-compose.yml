@@ -4,7 +4,7 @@ services:
     image: docker.elastic.co/observability-ci/debian-systemd:latest
     container_name: ${fleet_server_debianContainerName} 
     entrypoint: "/sbin/init"
-    platform: ${elasticAgentPlatform:-linux/amd64}
+    platform: ${stackPlatform:-linux/amd64}
     privileged: true
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
