@@ -14,6 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+<<<<<<< HEAD
 // Package represents the operations that can be performed by an installer package type
 type Package interface {
 	Install(containerName string, token string) error
@@ -21,6 +22,31 @@ type Package interface {
 	Postinstall() error
 	Preinstall() error
 	Uninstall() error
+=======
+// Attach will attach a installer to a deployment allowing
+// the installation of a package to be transparently configured no matter the backend
+func Attach(deploy deploy.Deployment, service deploy.ServiceRequest, installType string) (deploy.ServiceOperator, error) {
+	log.WithFields(log.Fields{
+		"service":     service,
+		"installType": installType,
+	}).Trace("Attaching service for configuration")
+
+	if strings.EqualFold(service.Name, "elastic-agent") {
+		switch installType {
+		case "tar":
+			install := AttachElasticAgentTARPackage(deploy, service)
+			return install, nil
+		case "rpm":
+			install := AttachElasticAgentRPMPackage(deploy, service)
+			return install, nil
+		case "deb":
+			install := AttachElasticAgentDEBPackage(deploy, service)
+			return install, nil
+		}
+	}
+
+	return nil, nil
+>>>>>>> 584769a (Update installer code to support deployer abstraction (#1163))
 }
 
 // BasePackage holds references to basic state for all installers
@@ -116,7 +142,7 @@ func getElasticAgentHash(containerName string, commitFile string) (string, error
 		"cat", commitFile,
 	}
 
-	fullHash, err := deploy.ExecCommandIntoContainer(context.Background(), deploy.NewServiceRequest(containerName), "root", cmd)
+	fullHash, err := deploy.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
 	if err != nil {
 		return "", err
 	}

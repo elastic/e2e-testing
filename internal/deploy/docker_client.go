@@ -135,18 +135,18 @@ func CopyFileToContainer(ctx context.Context, containerName string, srcPath stri
 }
 
 // ExecCommandIntoContainer executes a command, as a user, into a container
-func ExecCommandIntoContainer(ctx context.Context, container ServiceRequest, user string, cmd []string) (string, error) {
+func ExecCommandIntoContainer(ctx context.Context, container string, user string, cmd []string) (string, error) {
 	return ExecCommandIntoContainerWithEnv(ctx, container, user, cmd, []string{})
 }
 
 // ExecCommandIntoContainerWithEnv executes a command, as a user, with env, into a container
-func ExecCommandIntoContainerWithEnv(ctx context.Context, container ServiceRequest, user string, cmd []string, env []string) (string, error) {
+func ExecCommandIntoContainerWithEnv(ctx context.Context, container string, user string, cmd []string, env []string) (string, error) {
 	dockerClient := getDockerClient()
 
 	detach := false
 	tty := false
 
-	containerName := container.Name
+	containerName := container
 
 	log.WithFields(log.Fields{
 		"container": containerName,
@@ -192,6 +192,8 @@ func ExecCommandIntoContainerWithEnv(ctx context.Context, container ServiceReque
 		Detach: detach,
 		Tty:    tty,
 	})
+	defer resp.Close()
+
 	if err != nil {
 		log.WithFields(log.Fields{
 			"container": containerName,
@@ -203,7 +205,6 @@ func ExecCommandIntoContainerWithEnv(ctx context.Context, container ServiceReque
 		}).Error("Could not execute command in container")
 		return "", err
 	}
-	defer resp.Close()
 
 	// see https://stackoverflow.com/a/57132902
 	var execRes execResult
@@ -268,7 +269,7 @@ func GetContainerHostname(containerName string) (string, error) {
 		"containerName": containerName,
 	}).Trace("Retrieving container name from the Docker client")
 
-	hostname, err := ExecCommandIntoContainer(context.Background(), NewServiceRequest(containerName), "root", []string{"cat", "/etc/hostname"})
+	hostname, err := ExecCommandIntoContainer(context.Background(), containerName, "root", []string{"cat", "/etc/hostname"})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"containerName": containerName,
