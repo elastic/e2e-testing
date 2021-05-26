@@ -23,11 +23,7 @@ type IngestManagerTestSuite struct {
 }
 
 func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state string) error {
-	ocurrences := "1"
-	if state == "uninstalled" || state == "stopped" {
-		ocurrences = "0"
-	}
-	return imts.thereAreInstancesOfTheProcessInTheState(ocurrences, process, state)
+	return imts.thereAreInstancesOfTheProcessInTheState("1", process, state)
 }
 
 func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocurrences string, process string, state string) error {
@@ -38,9 +34,8 @@ func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocur
 	if imts.Fleet.StandAlone {
 		containerName = fmt.Sprintf("%s_%s_%d", profile, common.ElasticAgentServiceName, 1)
 	} else {
-		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		manifest, _ := imts.Fleet.deployer.Inspect(agentService)
-		containerName = manifest.Name
+		agentInstaller := imts.Fleet.getInstaller()
+		containerName = imts.Fleet.getContainerName(agentInstaller)
 	}
 
 	count, err := strconv.Atoi(ocurrences)
@@ -105,22 +100,6 @@ func waitForProcess(deployer deploy.Deployment, service string, process string, 
 		cmds := []string{"pgrep", "-d", ",", process}
 		output, err := deployer.ExecIn(serviceRequest, cmds)
 		if err != nil {
-
-			if !mustBePresent && ocurrences == 0 {
-				log.WithFields(log.Fields{
-					"cmds":          cmds,
-					"desiredState":  desiredState,
-					"elapsedTime":   exp.GetElapsedTime(),
-					"error":         err,
-					"service":       service,
-					"mustBePresent": mustBePresent,
-					"ocurrences":    ocurrences,
-					"process":       process,
-					"retry":         retryCount,
-				}).Warn("Process is not present and number of occurences is 0")
-				return nil
-			}
-
 			log.WithFields(log.Fields{
 				"cmds":          cmds,
 				"desiredState":  desiredState,
