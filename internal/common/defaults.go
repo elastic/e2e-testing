@@ -58,6 +58,7 @@ var Provider = "docker"
 // supporting lazy-loading the versions when needed. Basically, the CLI part does not
 // need to load them
 func InitVersions() {
+	log.Trace("Initializing artifact versions")
 	v, err := utils.GetElasticArtifactVersion(BeatVersionBase)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -68,6 +69,7 @@ func InitVersions() {
 	BeatVersionBase = v
 
 	BeatVersion = shell.GetEnv("BEAT_VERSION", BeatVersionBase)
+	log.Trace(BeatVersion)
 
 	// check if version is an alias
 	v, err = utils.GetElasticArtifactVersion(BeatVersion)
@@ -78,9 +80,11 @@ func InitVersions() {
 		}).Fatal("Failed to get Beat version, aborting")
 	}
 	BeatVersion = v
+	log.Trace(BeatVersion)
 
 	// detects if the BeatVersion is set by the GITHUB_CHECK_SHA1 variable
 	BeatVersion = utils.CheckPRVersion(BeatVersion, BeatVersionBase)
+	log.Trace(BeatVersion)
 
 	StackVersion = shell.GetEnv("STACK_VERSION", BeatVersionBase)
 	v, err = utils.GetElasticArtifactVersion(StackVersion)
@@ -91,4 +95,10 @@ func InitVersions() {
 		}).Fatal("Failed to get stack version, aborting")
 	}
 	StackVersion = v
+
+	log.WithFields(log.Fields{
+		"BeatVersionBase": BeatVersionBase,
+		"BeatVersion":     BeatVersion,
+		"StackVersion":    StackVersion,
+	}).Trace("Initial artifact versions defined")
 }

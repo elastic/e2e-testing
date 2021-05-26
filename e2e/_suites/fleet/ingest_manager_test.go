@@ -115,7 +115,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			return nil
 		})
 
-		imts.Fleet.Version = common.BeatVersionBase
+		imts.Fleet.Version = common.BeatVersion
 		imts.Fleet.RuntimeDependenciesStartDate = time.Now().UTC()
 	})
 
