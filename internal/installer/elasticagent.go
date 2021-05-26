@@ -95,24 +95,10 @@ func GetElasticAgentInstaller(image string, installerType string, version string
 	var err error
 
 	// TODO: convert to new installer code
-	if "docker" == image && "default" == installerType {
-		installer, err = newDockerInstaller(false, version)
-	} else if "docker" == image && "ubi8" == installerType {
-		installer, err = newDockerInstaller(true, version)
-	} else {
-		log.WithFields(log.Fields{
-			"image":     image,
-			"installer": installerType,
-		}).Fatal("Sorry, we currently do not support this installer")
-		return ElasticAgentInstaller{}
-	}
-
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":     err,
-			"image":     image,
-			"installer": installerType,
-		}).Fatal("Sorry, we could not download the installer")
-	}
+	log.WithFields(log.Fields{
+		"error":     err,
+		"image":     image,
+		"installer": installerType,
+	}).Fatal("Sorry, we could not download the installer")
 	return installer
 }

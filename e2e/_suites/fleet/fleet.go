@@ -230,12 +230,6 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 
 	fts.Version = version
 
-	// prepare installer for stale version
-	if fts.Version != agentVersionBackup {
-		i := installer.GetElasticAgentInstaller(image, installerType, fts.Version, deployedAgentsCount)
-		fts.Installers[fmt.Sprintf("%s-%s-%s", image, installerType, version)] = i
-	}
-
 	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
 }
 
