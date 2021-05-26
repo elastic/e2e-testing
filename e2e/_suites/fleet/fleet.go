@@ -37,6 +37,7 @@ type FleetTestSuite struct {
 	CurrentToken        string // current enrollment token
 	CurrentTokenID      string // current enrollment tokenID
 	ElasticAgentStopped bool   // will be used to signal when the agent process can be called again in the tear-down stage
+	Hostname            string // the hostname of the container
 	Image               string // base image used to install the agent
 	InstallerType       string
 	Installers          map[string]installer.ElasticAgentInstaller
@@ -57,43 +58,50 @@ func (fts *FleetTestSuite) afterScenario() {
 	defer func() { deployedAgentsCount = 0 }()
 
 	serviceName := common.ElasticAgentServiceName
-	agentService := deploy.NewServiceRequest(serviceName)
 
 	if !fts.StandAlone {
-		agentInstaller, _ := installer.Attach(fts.deployer, agentService, fts.InstallerType)
+		agentInstaller := fts.getInstaller()
 
 		if log.IsLevelEnabled(log.DebugLevel) {
-			err := agentInstaller.Logs()
+			err := agentInstaller.PrintLogsFn(fts.Hostname)
 			if err != nil {
-				log.WithField("error", err).Warn("Could not get agent logs in the container")
+				log.WithFields(log.Fields{
+					"containerName": fts.Hostname,
+					"error":         err,
+				}).Warn("Could not get agent logs in the container")
 			}
 		}
 		// only call it when the elastic-agent is present
 		if !fts.ElasticAgentStopped {
-			err := agentInstaller.Uninstall()
+			err := agentInstaller.UninstallFn()
 			if err != nil {
 				log.Warnf("Could not uninstall the agent after the scenario: %v", err)
 			}
 		}
 	} else if log.IsLevelEnabled(log.DebugLevel) {
-		_ = fts.deployer.Logs(agentService)
+		_ = fts.getContainerLogs()
 	}
 
 	err := fts.unenrollHostname()
 	if err != nil {
-		manifest, _ := fts.deployer.Inspect(agentService)
 		log.WithFields(log.Fields{
 			"err":      err,
-			"hostname": manifest.Hostname,
+			"hostname": fts.Hostname,
 		}).Warn("The agentIDs for the hostname could not be unenrolled")
 	}
 
 	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
 	if !developerMode {
+		image := ""
+		if !fts.StandAlone {
+			agentInstaller := fts.getInstaller()
+			image = agentInstaller.Image
+		}
+
 		_ = fts.deployer.Remove(
 			[]deploy.ServiceRequest{
 				deploy.NewServiceRequest(common.FleetProfileName),
-				deploy.NewServiceRequest(serviceName),
+				deploy.NewServiceRequest(serviceName).WithFlavour(image),
 			},
 			common.ProfileEnv)
 	} else {
@@ -114,6 +122,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	fts.CurrentTokenID = ""
 	fts.CurrentToken = ""
 	fts.Image = ""
+	fts.Hostname = ""
 	fts.StandAlone = false
 }
 
@@ -240,10 +249,18 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 }
 
 func (fts *FleetTestSuite) installCerts() error {
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	agentInstaller, _ := installer.Attach(fts.deployer, agentService, fts.InstallerType)
+	agentInstaller := fts.getInstaller()
+	if agentInstaller.InstallCertsFn == nil {
+		log.WithFields(log.Fields{
+			"installer":         agentInstaller,
+			"version":           fts.Version,
+			"agentVersion":      common.BeatVersion,
+			"agentStaleVersion": common.AgentStaleVersion,
+		}).Error("No installer found")
+		return errors.New("no installer found")
+	}
 
-	err := agentInstaller.InstallCerts()
+	err := agentInstaller.InstallCertsFn()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"agentVersion":      common.BeatVersion,
@@ -268,9 +285,7 @@ func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
 		desiredVersion = common.BeatVersion
 	}
 
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.deployer.Inspect(agentService)
-	return fts.kibanaClient.UpgradeAgent(manifest.Hostname, desiredVersion)
+	return fts.kibanaClient.UpgradeAgent(fts.Hostname, desiredVersion)
 }
 
 func (fts *FleetTestSuite) agentInVersion(version string) error {
@@ -282,10 +297,7 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	}
 
 	agentInVersionFn := func() error {
-
-		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		manifest, _ := fts.deployer.Inspect(agentService)
-		agent, err := fts.kibanaClient.GetAgentByHostname(manifest.Hostname)
+		agent, err := fts.kibanaClient.GetAgentByHostname(fts.Hostname)
 		if err != nil {
 			return err
 		}
@@ -335,7 +347,11 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	fts.Image = image
 	fts.InstallerType = installerType
 
-	// Grab a new enrollment key for new agent
+	agentInstaller := fts.getInstaller()
+
+	containerName := fts.getContainerName(agentInstaller) // name of the container
+
+	// enroll the agent with a new token
 	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.Policy)
 	if err != nil {
 		return err
@@ -343,46 +359,86 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	fts.CurrentToken = enrollmentKey.APIKey
 	fts.CurrentTokenID = enrollmentKey.ID
 
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(image).WithScale(deployedAgentsCount)
-	services := []deploy.ServiceRequest{
-		deploy.NewServiceRequest(common.FleetProfileName),
-		agentService,
-	}
+	var fleetConfig *kibana.FleetConfig
+	fleetConfig, err = deployAgentToFleet(agentInstaller, fts.deployer, containerName, fts.CurrentToken)
 
-	err = fts.deployer.Add(services, common.ProfileEnv)
 	if err != nil {
 		return err
 	}
 
-	agentInstaller, _ := installer.Attach(fts.deployer, agentService, installerType)
-	err = deployAgentToFleet(agentInstaller, fts.CurrentToken)
+	// the installation process for TAR includes the enrollment
+	if agentInstaller.InstallerType != "tar" {
+		err = agentInstaller.EnrollFn(fleetConfig)
+		if err != nil {
+			return err
+		}
+	}
+
+	// get container hostname once
+	hostname, err := deploy.GetContainerHostname(containerName)
 	if err != nil {
 		return err
 	}
+	fts.Hostname = hostname
+
 	return err
 }
 
+// getContainerName returns the current container name for the service:
+// we are using the Docker client instead of docker-compose because it does not support
+// returning the output of a command: it simply returns error level
+func (fts *FleetTestSuite) getContainerName(i installer.ElasticAgentInstaller) string {
+	return fmt.Sprintf("%s_%s_%d", i.Profile, common.ElasticAgentServiceName, deployedAgentsCount)
+}
+
+// getServiceName returns the current service name, the one defined at the docker compose
+func (fts *FleetTestSuite) getServiceName(i installer.ElasticAgentInstaller) string {
+	return i.Image
+}
+
+func (fts *FleetTestSuite) getInstaller() installer.ElasticAgentInstaller {
+	key := fmt.Sprintf("%s-%s-%s-%d", fts.Image, fts.InstallerType, fts.Version, deployedAgentsCount)
+	// check if the agent is already cached
+	if i, exists := fts.Installers[key]; exists {
+		return i
+	}
+
+	// setting current index for the installer
+	agentInstaller := installer.GetElasticAgentInstaller(fts.Image, fts.InstallerType, fts.Version, deployedAgentsCount)
+
+	// cache the new installer
+	fts.Installers[key] = agentInstaller
+
+	return agentInstaller
+}
+
 func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state string) error {
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	agentInstaller, _ := installer.Attach(fts.deployer, agentService, fts.InstallerType)
+	profile := common.FleetProfileName
+
+	agentInstaller := fts.getInstaller()
+
+	serviceName := agentInstaller.Service // name of the service
+
+	profileService := deploy.NewServiceRequest(profile)
+	imageService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(agentInstaller.Image)
+
 	if state == "started" {
-		err := agentInstaller.Start()
-		return err
+		return installer.SystemctlRun(profileService, imageService, serviceName, "start")
 	} else if state == "restarted" {
-		err := agentInstaller.Stop()
+		err := installer.SystemctlRun(profileService, imageService, serviceName, "stop")
 		if err != nil {
 			return err
 		}
 
 		utils.Sleep(time.Duration(utils.TimeoutFactor) * 10 * time.Second)
 
-		err = agentInstaller.Start()
+		err = installer.SystemctlRun(profileService, imageService, serviceName, "start")
 		if err != nil {
 			return err
 		}
 		return nil
 	} else if state == "uninstalled" {
-		err := agentInstaller.Uninstall()
+		err := agentInstaller.UninstallFn()
 		if err != nil {
 			return err
 		}
@@ -398,25 +454,25 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	}
 
 	log.WithFields(log.Fields{
-		"service": agentService.Name,
+		"service": serviceName,
 		"process": process,
 	}).Trace("Stopping process on the service")
 
-	err := agentInstaller.Stop()
+	err := installer.SystemctlRun(profileService, imageService, serviceName, "stop")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"action":  state,
 			"error":   err,
-			"service": agentService.Name,
+			"service": serviceName,
 			"process": process,
 		}).Error("Could not stop process on the host")
 
 		return err
 	}
 
-	manifest, _ := fts.deployer.Inspect(agentService)
+	containerName := fts.getContainerName(agentInstaller)
 
-	return CheckProcessState(fts.deployer, manifest.Name, process, "stopped", 0, utils.TimeoutFactor)
+	return CheckProcessState(fts.deployer, containerName, process, "stopped", 1, utils.TimeoutFactor)
 }
 
 func (fts *FleetTestSuite) setup() error {
@@ -431,9 +487,7 @@ func (fts *FleetTestSuite) setup() error {
 }
 
 func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.deployer.Inspect(agentService)
-	return theAgentIsListedInFleetWithStatus(desiredStatus, manifest.Hostname)
+	return theAgentIsListedInFleetWithStatus(desiredStatus, fts.Hostname)
 }
 
 func theAgentIsListedInFleetWithStatus(desiredStatus string, hostname string) error {
@@ -511,46 +565,51 @@ func theAgentIsListedInFleetWithStatus(desiredStatus string, hostname string) er
 }
 
 func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	agentInstaller, _ := installer.Attach(fts.deployer, agentService, fts.InstallerType)
+	agentInstaller := fts.getInstaller()
 
-	pkgManifest, _ := agentInstaller.Inspect()
-	cmd := []string{
-		"ls", "-l", pkgManifest.WorkDir,
-	}
+	containerName := fts.getContainerName(agentInstaller)
 
-	content, err := agentInstaller.Exec(cmd)
+	content, err := agentInstaller.ListElasticAgentWorkingDirContent(containerName)
 	if err != nil {
-		if content == "" || strings.Contains(content, "No such file or directory") {
-			return nil
-		}
 		return err
 	}
 
-	log.WithFields(log.Fields{
-		"installer":  agentInstaller,
-		"workingDir": pkgManifest.WorkDir,
-		"content":    content,
-	}).Debug("Agent working dir content")
+	if content == "" || strings.Contains(content, "No such file or directory") {
+		return nil
+	}
 
 	return fmt.Errorf("The file system directory is not empty")
 }
 
 func (fts *FleetTestSuite) theHostIsRestarted() error {
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	err := fts.deployer.Stop(agentService)
+	agentInstaller := fts.getInstaller()
+
+	containerName := fts.getContainerName(agentInstaller)
+	_, err := shell.Execute(context.Background(), ".", "docker", "stop", containerName)
 	if err != nil {
-		log.WithField("err", err).Error("Could not stop the service")
+		log.WithFields(log.Fields{
+			"containerName": containerName,
+			"image":         agentInstaller.Image,
+			"service":       agentInstaller.Service,
+		}).Error("Could not stop the service")
 	}
 
 	utils.Sleep(time.Duration(utils.TimeoutFactor) * 10 * time.Second)
 
-	err = fts.deployer.Start(agentService)
+	_, err = shell.Execute(context.Background(), ".", "docker", "start", containerName)
 	if err != nil {
-		log.WithField("err", err).Error("Could not start the service")
+		log.WithFields(log.Fields{
+			"containerName": containerName,
+			"image":         agentInstaller.Image,
+			"service":       agentInstaller.Service,
+		}).Error("Could not start the service")
 	}
 
-	log.Debug("The elastic-agent service has been restarted")
+	log.WithFields(log.Fields{
+		"containerName": containerName,
+		"image":         agentInstaller.Image,
+		"service":       agentInstaller.Service,
+	}).Debug("The service has been restarted")
 	return nil
 }
 
@@ -621,10 +680,18 @@ func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
 func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 	log.Trace("Re-enrolling the agent on the host with same token")
 
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	agentInstaller, _ := installer.Attach(fts.deployer, agentService, fts.InstallerType)
+	agentInstaller := fts.getInstaller()
 
-	err := agentInstaller.Enroll(fts.CurrentToken)
+	// a re-enroll does need to bootstrap the Fleet Server again
+	// during an unenroll the fleet server exits as there is no longer
+	// and agent id associated with the enrollment. When fleet server
+	// restarts it needs a new agent to associate with the boostrap
+	cfg, err := kibana.NewFleetConfig(fts.CurrentToken)
+	if err != nil {
+		return err
+	}
+
+	err = agentInstaller.EnrollFn(cfg)
 	if err != nil {
 		return err
 	}
@@ -700,15 +767,13 @@ func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp()
 	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	agentListedInSecurityFn := func() error {
-		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		manifest, _ := fts.deployer.Inspect(agentService)
-		host, err := fts.kibanaClient.IsAgentListedInSecurityApp(manifest.Hostname)
+		host, err := fts.kibanaClient.IsAgentListedInSecurityApp(fts.Hostname)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"elapsedTime": exp.GetElapsedTime(),
 				"err":         err,
 				"host":        host,
-				"hostname":    manifest.Hostname,
+				"hostname":    fts.Hostname,
 				"retry":       retryCount,
 			}).Warn("We could not check the agent in the Administration view in the Security App yet")
 
@@ -719,7 +784,7 @@ func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp()
 
 		log.WithFields(log.Fields{
 			"elapsedTime": exp.GetElapsedTime(),
-			"hostname":    manifest.Hostname,
+			"hostname":    fts.Hostname,
 			"retries":     retryCount,
 		}).Info("The Agent is not listed in the Administration view in the Security App")
 		return nil
@@ -742,15 +807,13 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(stat
 	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	agentListedInSecurityFn := func() error {
-		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		manifest, _ := fts.deployer.Inspect(agentService)
-		matches, err := fts.kibanaClient.IsAgentListedInSecurityAppWithStatus(manifest.Hostname, status)
+		matches, err := fts.kibanaClient.IsAgentListedInSecurityAppWithStatus(fts.Hostname, status)
 		if err != nil || !matches {
 			log.WithFields(log.Fields{
 				"elapsedTime":   exp.GetElapsedTime(),
 				"desiredStatus": status,
 				"err":           err,
-				"hostname":      manifest.Hostname,
+				"hostname":      fts.Hostname,
 				"matches":       matches,
 				"retry":         retryCount,
 			}).Warn("The agent is not listed in the Administration view in the Security App in the desired status yet")
@@ -763,7 +826,7 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(stat
 		log.WithFields(log.Fields{
 			"elapsedTime":   exp.GetElapsedTime(),
 			"desiredStatus": status,
-			"hostname":      manifest.Hostname,
+			"hostname":      fts.Hostname,
 			"matches":       matches,
 			"retries":       retryCount,
 		}).Info("The Agent is listed in the Administration view in the Security App in the desired status")
@@ -788,9 +851,7 @@ func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstal
 }
 
 func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.deployer.Inspect(agentService)
-	agentID, err := fts.kibanaClient.GetAgentIDByHostname(manifest.Hostname)
+	agentID, err := fts.kibanaClient.GetAgentIDByHostname(fts.Hostname)
 	if err != nil {
 		return err
 	}
@@ -884,9 +945,7 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMode(name string, mode string
 }
 
 func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error {
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.deployer.Inspect(agentService)
-	agentID, err := fts.kibanaClient.GetAgentIDByHostname(manifest.Hostname)
+	agentID, err := fts.kibanaClient.GetAgentIDByHostname(fts.Hostname)
 	if err != nil {
 		return err
 	}
@@ -956,28 +1015,35 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	// increase the number of agents
 	deployedAgentsCount++
 
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(fts.Image).WithScale(deployedAgentsCount)
-	services := []deploy.ServiceRequest{
-		deploy.NewServiceRequest(common.FleetProfileName),
-		agentService,
-	}
+	agentInstaller := fts.getInstaller()
 
-	err := fts.deployer.Add(services, common.ProfileEnv)
-	if err != nil {
-		return err
-	}
+	containerName := fts.getContainerName(agentInstaller) // name of the new container
 
-	agentInstaller, _ := installer.Attach(fts.deployer, agentService, fts.InstallerType)
-	err = deployAgentToFleet(agentInstaller, fts.CurrentToken)
+	fleetConfig, err := deployAgentToFleet(agentInstaller, fts.deployer, containerName, fts.CurrentToken)
 
-	if err == nil {
-		err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
+	// the installation process for TAR includes the enrollment
+	if agentInstaller.InstallerType != "tar" {
+		if err != nil {
+			return err
+		}
+
+		err = agentInstaller.EnrollFn(fleetConfig)
+		if err == nil {
+			err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
+
+			log.WithFields(log.Fields{
+				"tokenID": fts.CurrentTokenID,
+				"error":   err,
+			}).Error(err.Error())
+
+			return err
+		}
 
 		log.WithFields(log.Fields{
-			"tokenID": fts.CurrentTokenID,
-			"error":   err,
-		}).Error(err.Error())
-		return err
+			"err":   err,
+			"token": fts.CurrentToken,
+		}).Debug("As expected, it's not possible to enroll an agent with a revoked token")
+		return nil
 	}
 
 	// checking the error message produced by the install command in TAR installer
@@ -990,14 +1056,12 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 		return nil
 	}
 
-	return nil
+	return err
 }
 
 // unenrollHostname deletes the statuses for an existing agent, filtering by hostname
 func (fts *FleetTestSuite) unenrollHostname() error {
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.deployer.Inspect(agentService)
-	log.Tracef("Un-enrolling all agentIDs for %s", manifest.Hostname)
+	log.Tracef("Un-enrolling all agentIDs for %s", fts.Hostname)
 
 	agents, err := fts.kibanaClient.ListAgents()
 	if err != nil {
@@ -1005,9 +1069,9 @@ func (fts *FleetTestSuite) unenrollHostname() error {
 	}
 
 	for _, agent := range agents {
-		if agent.LocalMetadata.Host.HostName == manifest.Hostname {
+		if agent.LocalMetadata.Host.HostName == fts.Hostname {
 			log.WithFields(log.Fields{
-				"hostname": manifest.Hostname,
+				"hostname": fts.Hostname,
 			}).Debug("Un-enrolling agent in Fleet")
 
 			err := fts.kibanaClient.UnEnrollAgent(agent.LocalMetadata.Host.HostName)
@@ -1094,23 +1158,56 @@ func (fts *FleetTestSuite) checkDataStream() error {
 	return err
 }
 
-func deployAgentToFleet(agentInstaller deploy.ServiceOperator, token string) error {
-	err := agentInstaller.Preinstall()
+func deployAgentToFleet(agentInstaller installer.ElasticAgentInstaller, deployer deploy.Deployment, containerName string, token string) (*kibana.FleetConfig, error) {
+	profile := agentInstaller.Profile // name of the runtime dependencies compose file
+	service := agentInstaller.Service // name of the service
+	serviceTag := agentInstaller.Tag  // docker tag of the service
+
+	envVarsPrefix := strings.ReplaceAll(service, "-", "_")
+
+	// let's start with Centos 7
+	common.ProfileEnv[envVarsPrefix+"Tag"] = serviceTag
+	// we are setting the container name because Centos service could be reused by any other test suite
+	common.ProfileEnv[envVarsPrefix+"ContainerName"] = containerName
+
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(agentInstaller.Image).WithScale(deployedAgentsCount)
+
+	services := []deploy.ServiceRequest{deploy.NewServiceRequest(profile), agentService}
+
+	err := deployer.Add(services, common.ProfileEnv)
 	if err != nil {
-		return err
+		log.WithFields(log.Fields{
+			"service": service,
+			"tag":     serviceTag,
+		}).Error("Could not run the target box")
+		return nil, err
 	}
 
-	err = agentInstaller.Install()
+	isTar := (agentInstaller.InstallerType == "tar")
+	targetFile := "/"
+
+	// copy downloaded agent to the root dir of the container
+	err = deploy.CopyFileToContainer(context.Background(), containerName, agentInstaller.BinaryPath, targetFile, isTar)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = agentInstaller.Enroll(token)
+	err = agentInstaller.PreInstallFn()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return agentInstaller.Postinstall()
+	cfg, cfgError := kibana.NewFleetConfig(token)
+	if cfgError != nil {
+		return nil, cfgError
+	}
+
+	err = agentInstaller.InstallFn(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg, agentInstaller.PostInstallFn()
 }
 
 func inputs(integration string) []kibana.Input {
@@ -1154,4 +1251,33 @@ func inputs(integration string) []kibana.Input {
 		}
 	}
 	return []kibana.Input{}
+}
+
+func (fts *FleetTestSuite) getContainerLogs() error {
+	serviceManager := deploy.NewServiceManager()
+
+	image := ""
+	if !fts.StandAlone {
+		agentInstaller := fts.getInstaller()
+		image = agentInstaller.Image
+	}
+
+	profile := deploy.NewServiceRequest(common.FleetProfileName)
+	serviceName := common.ElasticAgentServiceName
+
+	services := []deploy.ServiceRequest{
+		profile, // profile name
+		deploy.NewServiceRequest(serviceName).WithFlavour(image), // agent service
+	}
+	err := serviceManager.RunCommand(profile, services, []string{"logs", serviceName}, common.ProfileEnv)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"service": serviceName,
+		}).Error("Could not retrieve Elastic Agent logs")
+
+		return err
+	}
+
+	return nil
 }
