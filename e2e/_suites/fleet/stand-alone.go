@@ -102,14 +102,14 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+
 	if useCISnapshots || beatsLocalPath != "" {
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries
-		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.BeatVersion, deployedAgentsCount)
-
-		dockerInstaller.PreInstallFn()
-
+		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+		dockerInstaller, _ := installer.Attach(fts.deployer, agentService, "docker")
+		dockerInstaller.Preinstall()
 		dockerImageTag += "-amd64"
 	}
 

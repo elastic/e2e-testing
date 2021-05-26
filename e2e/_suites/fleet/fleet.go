@@ -40,7 +40,6 @@ type FleetTestSuite struct {
 	Hostname            string // the hostname of the container
 	Image               string // base image used to install the agent
 	InstallerType       string
-	Installers          map[string]installer.ElasticAgentInstaller
 	Integration         kibana.IntegrationPackage // the installed integration
 	Policy              kibana.Policy
 	PolicyUpdatedAt     string // the moment the policy was updated
@@ -238,12 +237,6 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 	}
 
 	fts.Version = version
-
-	// prepare installer for stale version
-	if fts.Version != agentVersionBackup {
-		i := installer.GetElasticAgentInstaller(image, installerType, fts.Version, deployedAgentsCount)
-		fts.Installers[fmt.Sprintf("%s-%s-%s", image, installerType, version)] = i
-	}
 
 	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
 }
