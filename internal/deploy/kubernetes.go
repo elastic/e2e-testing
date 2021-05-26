@@ -12,7 +12,6 @@ import (
 
 	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 var cluster kubernetes.Cluster
@@ -35,20 +34,6 @@ func (c *kubernetesDeploymentManifest) Add(services []ServiceRequest, env map[st
 		_, err := kubectl.Run(c.Context, "apply", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service.Name))
 		if err != nil {
 			return err
-		}
-	}
-	return nil
-}
-
-// AddFiles - add files to deployment service
-func (c *kubernetesDeploymentManifest) AddFiles(service ServiceRequest, files []string) error {
-	container, _ := c.Inspect(service)
-	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
-
-	for _, file := range files {
-		_, err := kubectl.Run(c.Context, "cp", file, fmt.Sprintf("deployment/%s:.", container.Name))
-		if err != nil {
-			log.WithField("error", err).Fatal("Unable to copy file to service")
 		}
 	}
 	return nil
@@ -117,24 +102,7 @@ func (c *kubernetesDeploymentManifest) Inspect(service ServiceRequest) (*Service
 		Name:       strings.TrimPrefix(inspect.Metadata.Name, "/"),
 		Connection: service.Name,
 		Hostname:   service.Name,
-		Alias:      service.Name,
-		Platform:   "linux",
 	}, nil
-}
-
-// Logs print logs of service
-func (c *kubernetesDeploymentManifest) Logs(service ServiceRequest) error {
-	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
-	_, err := kubectl.Run(c.Context, "logs", "deployment/"+service.Name)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"service": service.Name,
-		}).Error("Could not retrieve Elastic Agent logs")
-
-		return err
-	}
-	return nil
 }
 
 // Remove remove services from deployment
@@ -147,15 +115,5 @@ func (c *kubernetesDeploymentManifest) Remove(services []ServiceRequest, env map
 			return err
 		}
 	}
-	return nil
-}
-
-// Start a container
-func (c *kubernetesDeploymentManifest) Start(service ServiceRequest) error {
-	return nil
-}
-
-// Stop a container
-func (c *kubernetesDeploymentManifest) Stop(service ServiceRequest) error {
 	return nil
 }

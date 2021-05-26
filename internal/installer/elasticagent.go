@@ -5,6 +5,7 @@
 package installer
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
@@ -37,6 +38,26 @@ type ElasticAgentInstaller struct {
 	Tag               string // docker tag
 	UninstallFn       func() error
 	workingDir        string // location of the application
+}
+
+// ListElasticAgentWorkingDirContent list Elastic Agent's working dir content
+func (i *ElasticAgentInstaller) ListElasticAgentWorkingDirContent(containerName string) (string, error) {
+	cmd := []string{
+		"ls", "-l", i.workingDir,
+	}
+
+	content, err := deploy.ExecCommandIntoContainer(context.Background(), deploy.NewServiceRequest(containerName), "root", cmd)
+	if err != nil {
+		return "", err
+	}
+
+	log.WithFields(log.Fields{
+		"workingDir":    i.workingDir,
+		"containerName": containerName,
+		"content":       content,
+	}).Debug("Agent working dir content")
+
+	return content, nil
 }
 
 // runElasticAgentCommandEnv runs a command for the elastic-agent
@@ -93,9 +114,15 @@ func GetElasticAgentInstaller(image string, installerType string, version string
 
 	var installer ElasticAgentInstaller
 	var err error
-
-	// TODO: convert to new installer code
-	if "docker" == image && "default" == installerType {
+	if "centos" == image && "tar" == installerType {
+		installer, err = newTarInstaller("centos", "latest", version, index)
+	} else if "centos" == image && "rpm" == installerType {
+		installer, err = newCentosInstaller("centos", "latest", version)
+	} else if "debian" == image && "tar" == installerType {
+		installer, err = newTarInstaller("debian", "stretch", version, index)
+	} else if "debian" == image && "deb" == installerType {
+		installer, err = newDebianInstaller("debian", "stretch", version)
+	} else if "docker" == image && "default" == installerType {
 		installer, err = newDockerInstaller(false, version)
 	} else if "docker" == image && "ubi8" == installerType {
 		installer, err = newDockerInstaller(true, version)
