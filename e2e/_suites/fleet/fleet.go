@@ -39,7 +39,6 @@ type FleetTestSuite struct {
 	ElasticAgentStopped bool   // will be used to signal when the agent process can be called again in the tear-down stage
 	Image               string // base image used to install the agent
 	InstallerType       string
-	Installers          map[string]installer.ElasticAgentInstaller
 	Integration         kibana.IntegrationPackage // the installed integration
 	Policy              kibana.Policy
 	PolicyUpdatedAt     string // the moment the policy was updated
