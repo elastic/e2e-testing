@@ -31,4 +31,4 @@ mkdir -p outputs
 
 REPORT="$(pwd)/outputs/TEST-${SUITE}"
 
-SUITE=${SUITE} TAGS="${TAGS}" FORMAT=junit:${REPORT}.xml STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} make --no-print-directory -C e2e functional-test
+TAGS="${TAGS}" FORMAT=junit:${REPORT}.xml STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} make --no-print-directory -C e2e/_suites/${SUITE} functional-test
