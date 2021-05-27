@@ -27,7 +27,7 @@ List here all the items you have verified BEFORE sending this PR. Please DO NOT 
 - [ ] I have made corresponding changes to the documentation
 - [ ] I have made corresponding change to the default configuration files
 - [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] I have run the Unit tests for the CLI, and they are passing locally
+- [ ] I have run the Unit tests (`make unit-test`), and they are passing locally
 - [ ] I have run the End-2-End tests for the suite I'm working on, and they are passing locally
 - [ ] I have noticed new Go dependencies (run `make notice` in the proper directory)
 
