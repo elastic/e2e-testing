@@ -40,7 +40,7 @@ func Test_CopyFile(t *testing.T) {
 		err = CopyFileToContainer(ctx, containerName, src, target, false)
 		assert.Nil(t, err)
 
-		output, err := ExecCommandIntoContainer(ctx, NewServiceRequest(containerName), "root", []string{"cat", "/tmp/dockerCopy.txt"})
+		output, err := ExecCommandIntoContainer(ctx, containerName, "root", []string{"cat", "/tmp/dockerCopy.txt"})
 		assert.Nil(t, err)
 		assert.True(t, strings.HasSuffix(output, "OK!"), "File contains the 'OK!' string")
 	})
@@ -76,7 +76,7 @@ func Test_CopyFile(t *testing.T) {
 		err = CopyFileToContainer(ctx, containerName, src, target, true)
 		assert.Nil(t, err)
 
-		output, err := ExecCommandIntoContainer(ctx, NewServiceRequest(containerName), "root", []string{"ls", "/project/txtr/kermit.jpg"})
+		output, err := ExecCommandIntoContainer(ctx, containerName, "root", []string{"ls", "/project/txtr/kermit.jpg"})
 		assert.Nil(t, err)
 		assert.True(t, strings.Contains(output, "/project/txtr/kermit.jpg"), "File '/project/txtr/kermit.jpg' should be present")
 	})

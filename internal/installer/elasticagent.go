@@ -5,16 +5,11 @@
 package installer
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/deploy"
-	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
-	log "github.com/sirupsen/logrus"
 )
 
+<<<<<<< HEAD
 // ElasticAgentInstaller represents how to install an agent, depending of the box type
 type ElasticAgentInstaller struct {
 	artifactArch      string // architecture of the artifact
@@ -86,6 +81,8 @@ func runElasticAgentCommandEnv(profile deploy.ServiceRequest, image deploy.Servi
 	return nil
 }
 
+=======
+>>>>>>> f043003 (Feat installer rework 2 (#1208))
 // downloadAgentBinary it downloads the binary and stores the location of the downloaded file
 // into the installer struct, to be used else where
 // If the environment variable ELASTIC_AGENT_DOWNLOAD_URL exists, then the artifact to be downloaded will
@@ -101,44 +98,4 @@ func downloadAgentBinary(artifactName string, artifact string, version string) (
 	}
 
 	return imagePath, nil
-}
-
-// GetElasticAgentInstaller returns an installer from a docker image
-func GetElasticAgentInstaller(image string, installerType string, version string, index int) ElasticAgentInstaller {
-	log.WithFields(log.Fields{
-		"image":     image,
-		"installer": installerType,
-		"version":   version,
-	}).Debug("Configuring installer for the agent")
-
-	var installer ElasticAgentInstaller
-	var err error
-	if "centos" == image && "tar" == installerType {
-		installer, err = newTarInstaller("centos", "latest", version, index)
-	} else if "centos" == image && "rpm" == installerType {
-		installer, err = newCentosInstaller("centos", "latest", version)
-	} else if "debian" == image && "tar" == installerType {
-		installer, err = newTarInstaller("debian", "stretch", version, index)
-	} else if "debian" == image && "deb" == installerType {
-		installer, err = newDebianInstaller("debian", "stretch", version)
-	} else if "docker" == image && "default" == installerType {
-		installer, err = newDockerInstaller(false, version)
-	} else if "docker" == image && "ubi8" == installerType {
-		installer, err = newDockerInstaller(true, version)
-	} else {
-		log.WithFields(log.Fields{
-			"image":     image,
-			"installer": installerType,
-		}).Fatal("Sorry, we currently do not support this installer")
-		return ElasticAgentInstaller{}
-	}
-
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":     err,
-			"image":     image,
-			"installer": installerType,
-		}).Fatal("Sorry, we could not download the installer")
-	}
-	return installer
 }
