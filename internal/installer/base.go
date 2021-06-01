@@ -12,15 +12,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-<<<<<<< HEAD
-// Package represents the operations that can be performed by an installer package type
-type Package interface {
-	Install(containerName string, token string) error
-	PrintLogs(containerName string) error
-	Postinstall() error
-	Preinstall() error
-	Uninstall() error
-=======
 // Attach will attach a installer to a deployment allowing
 // the installation of a package to be transparently configured no matter the backend
 func Attach(deploy deploy.Deployment, service deploy.ServiceRequest, installType string) (deploy.ServiceOperator, error) {
@@ -47,7 +38,6 @@ func Attach(deploy deploy.Deployment, service deploy.ServiceRequest, installType
 	}
 
 	return nil, nil
->>>>>>> f043003 (Feat installer rework 2 (#1208))
 }
 
 // BasePackage holds references to basic state for all installers

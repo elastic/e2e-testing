@@ -39,18 +39,8 @@ var BeatVersionBase = "7.13.0-SNAPSHOT"
 // It can be overriden by BEAT_VERSION env var
 var BeatVersion = BeatVersionBase
 
-<<<<<<< HEAD
-// AgentStaleVersion is the version of the agent to use as a base during upgrade
-// It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var AgentStaleVersion = "7.12-SNAPSHOT"
-
-// StackVersion is the version of the stack to use
-// It can be overriden by STACK_VERSION env var
-var StackVersion = BeatVersionBase
-=======
 // DeveloperMode if enabled will keep deployments around after test runs
 var DeveloperMode = false
->>>>>>> f043003 (Feat installer rework 2 (#1208))
 
 // KibanaVersion is the version of kibana to use
 // It can be override by KIBANA_VERSION
