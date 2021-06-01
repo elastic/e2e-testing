@@ -87,8 +87,7 @@ func (fts *FleetTestSuite) afterScenario() {
 		}).Warn("The agentIDs for the hostname could not be unenrolled")
 	}
 
-	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
-	if !developerMode {
+	if !common.DeveloperMode {
 		_ = fts.deployer.Remove(
 			[]deploy.ServiceRequest{
 				deploy.NewServiceRequest(common.FleetProfileName),
