@@ -89,6 +89,9 @@ func (i *elasticAgentTARPackage) Preinstall() error {
 	artifact := "elastic-agent"
 	os := "linux"
 	arch := "x86_64"
+	if utils.GetArchitecture() == "arm64" {
+		arch = "arm64"
+	}
 	extension := "tar.gz"
 
 	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, common.BeatVersionBase, os, arch, extension, false)

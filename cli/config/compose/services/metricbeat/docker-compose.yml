@@ -17,6 +17,6 @@ services:
     image: "docker.elastic.co/${metricbeatDockerNamespace:-beats}/metricbeat:${metricbeatTag:-7.13.0-SNAPSHOT}"
     labels:
       co.elastic.logs/module: "${serviceName}"
-    platform: ${metricbeatPlatform:-linux/amd64}
+    platform: ${stackPlatform:-linux/amd64}
     volumes:
       - "${metricbeatConfigFile}:/usr/share/metricbeat/metricbeat.yml"

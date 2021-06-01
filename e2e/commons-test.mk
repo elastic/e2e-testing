@@ -48,6 +48,8 @@ TAGS_VALUE="~skip"
 endif
 endif
 
+GOARCH?=amd64
+
 .PHONY: install
 install:
 	go get -v -t ./...
@@ -55,7 +57,7 @@ install:
 .PHONY: install-godog
 install-godog: export GO111MODULE := on
 install-godog:
-	go get -v github.com/cucumber/godog/cmd/godog@v0.11.0
+	GOARCH=${GOARCH} go get -v github.com/cucumber/godog/cmd/godog@v0.11.0
 
 .PHONY: functional-test
 functional-test: install-godog
