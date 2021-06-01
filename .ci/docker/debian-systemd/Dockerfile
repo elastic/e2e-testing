@@ -56,6 +56,7 @@ RUN apt-get install -y --no-install-recommends \
         systemd      \
         systemd-sysv \
         cron         \
+        procps       \
         anacron
 
 RUN apt-get clean
