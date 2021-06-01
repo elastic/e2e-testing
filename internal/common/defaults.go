@@ -22,6 +22,9 @@ const ElasticAgentServiceName = "elastic-agent"
 // and the title is more readable than the name
 const ElasticEndpointIntegrationTitle = "Endpoint Security"
 
+// ElasticAPMActive if APM is active in the test framework
+var ElasticAPMActive = false
+
 // FleetProfileName the name of the profile to run the runtime, backend services
 const FleetProfileName = "fleet"
 
@@ -56,6 +59,22 @@ var Provider = "docker"
 // StackVersion is the version of the stack to use
 // It can be overriden by STACK_VERSION env var
 var StackVersion = BeatVersionBase
+
+func init() {
+	DeveloperMode = shell.GetEnvBool("DEVELOPER_MODE")
+	if DeveloperMode {
+		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
+	}
+
+	Provider = shell.GetEnv("PROVIDER", Provider)
+
+	ElasticAPMActive = shell.GetEnvBool("ELASTIC_APM_ACTIVE")
+	if ElasticAPMActive {
+		log.WithFields(log.Fields{
+			"apm-environment": shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "local"),
+		}).Info("Current execution will be instrumented 🛠")
+	}
+}
 
 // InitVersions initialise default versions. We do not want to do it in the init phase
 // supporting lazy-loading the versions when needed. Basically, the CLI part does not
@@ -114,4 +133,14 @@ func InitVersions() {
 		"StackVersion":    StackVersion,
 		"KibanaVersion":   KibanaVersion,
 	}).Trace("Initial artifact versions defined")
+}
+
+// IsLocalAPMEnvironment if a local APM environment must be provisioned
+func IsLocalAPMEnvironment() bool {
+	elasticAPMEnvironment := shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "ci")
+	if ElasticAPMActive && elasticAPMEnvironment == "local" {
+		return true
+	}
+
+	return false
 }
