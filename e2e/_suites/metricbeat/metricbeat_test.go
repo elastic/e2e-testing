@@ -231,8 +231,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
 
-		elasticAPMEnvironment := shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "ci")
-		if common.ElasticAPMActive && elasticAPMEnvironment == "local" {
+		if common.IsLocalAPMEnvironment() {
 			steps.AddAPMServicesForInstrumentation(suiteContext, "metricbeat", common.StackVersion, true, env)
 		}
 	})
