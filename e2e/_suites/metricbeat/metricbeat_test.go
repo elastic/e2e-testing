@@ -231,7 +231,8 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		serviceManager := deploy.NewServiceManager()
 
 		env := map[string]string{
-			"stackVersion": common.StackVersion,
+			"stackPlatform": "linux/" + utils.GetArchitecture(),
+			"stackVersion":  common.StackVersion,
 		}
 
 		err := serviceManager.RunCompose(
@@ -371,7 +372,8 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if useCISnapshots || beatsLocalPath != "" {
-		artifactName := utils.BuildArtifactName("metricbeat", mts.Version, common.BeatVersionBase, "linux", "amd64", "tar.gz", true)
+		arch := utils.GetArchitecture()
+		artifactName := utils.BuildArtifactName("metricbeat", mts.Version, common.BeatVersionBase, "linux", arch, "tar.gz", true)
 
 		imagePath, err := utils.FetchBeatsBinary(artifactName, "metricbeat", mts.Version, common.BeatVersionBase, utils.TimeoutFactor, true)
 		if err != nil {
@@ -383,7 +385,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 			return err
 		}
 
-		mts.Version = mts.Version + "-amd64"
+		mts.Version = mts.Version + "-" + arch
 
 		err = deploy.TagImage(
 			"docker.elastic.co/beats/metricbeat:"+common.BeatVersionBase,
@@ -411,6 +413,8 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		logLevel = log.DebugLevel.String()
 	}
 
+	arch := utils.GetArchitecture()
+
 	env := map[string]string{
 		"BEAT_STRICT_PERMS":     "false",
 		"indexName":             mts.getIndexName(),
@@ -423,7 +427,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	}
 
 	env["metricbeatDockerNamespace"] = utils.GetDockerNamespaceEnvVar("beats")
-	env["metricbeatPlatform"] = "linux/amd64"
+	env["metricbeatPlatform"] = "linux/" + arch
 
 	err := serviceManager.AddServicesToCompose(
 		testSuite.currentContext,

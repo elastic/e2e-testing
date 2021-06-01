@@ -1,9 +1,10 @@
 version: '2.4'
 services:
   fleet-server-debian:
-    image: alehaa/debian-systemd:${fleet_server_debianTag:-stretch}
+    image: docker.elastic.co/observability-ci/debian-systemd:latest
     container_name: ${fleet_server_debianContainerName} 
     entrypoint: "/sbin/init"
+    platform: ${stackPlatform:-linux/amd64}
     privileged: true
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro

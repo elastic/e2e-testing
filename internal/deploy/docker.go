@@ -36,6 +36,7 @@ func (c *dockerDeploymentManifest) Bootstrap(waitCB func() error) error {
 	serviceManager := NewServiceManager()
 	common.ProfileEnv = map[string]string{
 		"kibanaVersion": common.KibanaVersion,
+		"stackPlatform": "linux/" + utils.GetArchitecture(),
 		"stackVersion":  common.StackVersion,
 	}
 

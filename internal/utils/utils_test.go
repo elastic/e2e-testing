@@ -48,7 +48,7 @@ func TestBuildArtifactName(t *testing.T) {
 	OS := "linux"
 	version := "7.x-SNAPSHOT"
 
-	t.Run("For RPM", func(t *testing.T) {
+	t.Run("For RPM (amd64)", func(t *testing.T) {
 		arch := "x86_64"
 		extension := "rpm"
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-x86_64.rpm"
@@ -59,8 +59,19 @@ func TestBuildArtifactName(t *testing.T) {
 		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "RPM", false)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
+	t.Run("For RPM (arm64)", func(t *testing.T) {
+		arch := "aarch64"
+		extension := "rpm"
+		expectedFileName := "elastic-agent-7.x-SNAPSHOT-aarch64.rpm"
 
-	t.Run("For DEB", func(t *testing.T) {
+		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "RPM", false)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
+	t.Run("For DEB (amd64)", func(t *testing.T) {
 		arch := "amd64"
 		extension := "deb"
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-amd64.deb"
@@ -71,11 +82,33 @@ func TestBuildArtifactName(t *testing.T) {
 		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "DEB", false)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
+	t.Run("For DEB (arm64)", func(t *testing.T) {
+		arch := "arm64"
+		extension := "deb"
+		expectedFileName := "elastic-agent-7.x-SNAPSHOT-arm64.deb"
 
-	t.Run("For TAR", func(t *testing.T) {
-		arch := "amd64"
+		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "DEB", false)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
+	t.Run("For TAR (amd64)", func(t *testing.T) {
+		arch := "x86_64"
 		extension := "tar.gz"
-		expectedFileName := "elastic-agent-7.x-SNAPSHOT-linux-amd64.tar.gz"
+		expectedFileName := "elastic-agent-7.x-SNAPSHOT-linux-x86_64.tar.gz"
+
+		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", false)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+	t.Run("For TAR (arm64)", func(t *testing.T) {
+		arch := "arm64"
+		extension := "tar.gz"
+		expectedFileName := "elastic-agent-7.x-SNAPSHOT-linux-arm64.tar.gz"
 
 		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -84,7 +117,7 @@ func TestBuildArtifactName(t *testing.T) {
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 
-	t.Run("For Docker from Elastic's repository", func(t *testing.T) {
+	t.Run("For Docker from Elastic's repository (amd64)", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
 		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "false")
 
@@ -99,8 +132,23 @@ func TestBuildArtifactName(t *testing.T) {
 		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
+	t.Run("For Docker from Elastic's repository (arm64)", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
+		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "false")
 
-	t.Run("For Docker UBI8 from Elastic's repository", func(t *testing.T) {
+		artifact = "elastic-agent"
+		arch := "arm64"
+		extension := "tar.gz"
+		expectedFileName := "elastic-agent-7.x-SNAPSHOT-docker-image-linux-arm64.tar.gz"
+
+		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
+	t.Run("For Docker UBI8 from Elastic's repository (amd64)", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
 		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "false")
 
@@ -115,8 +163,23 @@ func TestBuildArtifactName(t *testing.T) {
 		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
+	t.Run("For Docker UBI8 from Elastic's repository (arm64)", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
+		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "false")
 
-	t.Run("For Docker from local repository", func(t *testing.T) {
+		artifact = "elastic-agent-ubi8"
+		arch := "arm64"
+		extension := "tar.gz"
+		expectedFileName := "elastic-agent-ubi8-7.x-SNAPSHOT-docker-image-linux-arm64.tar.gz"
+
+		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
+	t.Run("For Docker from local repository (amd64)", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", "/tmp")
 
@@ -131,8 +194,23 @@ func TestBuildArtifactName(t *testing.T) {
 		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
+	t.Run("For Docker from local repository (arm64)", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", "/tmp")
 
-	t.Run("For Docker UBI8 from local repository", func(t *testing.T) {
+		artifact = "elastic-agent"
+		arch := "arm64"
+		extension := "tar.gz"
+		expectedFileName := "elastic-agent-7.x-SNAPSHOT-linux-arm64.docker.tar.gz"
+
+		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
+	t.Run("For Docker UBI8 from local repository (amd64)", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", "/tmp")
 
@@ -147,8 +225,23 @@ func TestBuildArtifactName(t *testing.T) {
 		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
+	t.Run("For Docker UBI8 from local repository (arm64)", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", "/tmp")
 
-	t.Run("For Docker from GCP", func(t *testing.T) {
+		artifact = "elastic-agent-ubi8"
+		arch := "arm64"
+		extension := "tar.gz"
+		expectedFileName := "elastic-agent-ubi8-7.x-SNAPSHOT-linux-arm64.docker.tar.gz"
+
+		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
+	t.Run("For Docker from GCP (amd64)", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
 		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "true")
 
@@ -163,8 +256,23 @@ func TestBuildArtifactName(t *testing.T) {
 		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
+	t.Run("For Docker from GCP (arm64)", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
+		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "true")
 
-	t.Run("For Docker UBI8 from GCP", func(t *testing.T) {
+		artifact = "elastic-agent"
+		arch := "arm64"
+		extension := "tar.gz"
+		expectedFileName := "elastic-agent-7.x-SNAPSHOT-linux-arm64.docker.tar.gz"
+
+		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
+	t.Run("For Docker UBI8 from GCP (amd64)", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
 		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "true")
 
@@ -179,8 +287,23 @@ func TestBuildArtifactName(t *testing.T) {
 		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
+	t.Run("For Docker UBI8 from GCP (arm64)", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
+		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "true")
 
-	t.Run("For Docker for a Pull Request", func(t *testing.T) {
+		artifact = "elastic-agent-ubi8"
+		arch := "arm64"
+		extension := "tar.gz"
+		expectedFileName := "elastic-agent-ubi8-7.x-SNAPSHOT-linux-arm64.docker.tar.gz"
+
+		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
+	t.Run("For Docker for a Pull Request (amd64)", func(t *testing.T) {
 		defer os.Unsetenv("GITHUB_CHECK_SHA1")
 		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
 
@@ -189,6 +312,22 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "tar.gz"
 		fallbackVersion := "7.x-SNAPSHOT"
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-docker-image-linux-amd64.tar.gz"
+
+		artifactName := BuildArtifactName(artifact, version, fallbackVersion, OS, arch, extension, true)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = BuildArtifactName(artifact, version, fallbackVersion, OS, arch, "TAR.GZ", true)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+	t.Run("For Docker for a Pull Request (arm64)", func(t *testing.T) {
+		defer os.Unsetenv("GITHUB_CHECK_SHA1")
+		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+
+		artifact = "elastic-agent"
+		arch := "arm64"
+		extension := "tar.gz"
+		fallbackVersion := "7.x-SNAPSHOT"
+		expectedFileName := "elastic-agent-7.x-SNAPSHOT-docker-image-linux-arm64.tar.gz"
 
 		artifactName := BuildArtifactName(artifact, version, fallbackVersion, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -221,6 +360,32 @@ func TestDownloadFile(t *testing.T) {
 	defer os.Remove(filepath.Dir(f))
 
 	assert.True(t, strings.HasSuffix(f, "robots.txt"))
+}
+
+func TestGetArchitecture(t *testing.T) {
+	t.Run("Retrieving amd architecture", func(t *testing.T) {
+		fallbackArch := os.Getenv("GOARCH")
+		os.Setenv("GOARCH", "amd64")
+		defer os.Setenv("GOARCH", fallbackArch)
+
+		assert.Equal(t, "amd64", GetArchitecture())
+	})
+
+	t.Run("Retrieving amd architecture as fallback", func(t *testing.T) {
+		fallbackArch := os.Getenv("GOARCH")
+		os.Setenv("GOARCH", "arch-not-found")
+		defer os.Setenv("GOARCH", fallbackArch)
+
+		assert.Equal(t, "amd64", GetArchitecture())
+	})
+
+	t.Run("Retrieving arm architecture", func(t *testing.T) {
+		fallbackArch := os.Getenv("GOARCH")
+		os.Setenv("GOARCH", "arm64")
+		defer os.Setenv("GOARCH", fallbackArch)
+
+		assert.Equal(t, "arm64", GetArchitecture())
+	})
 }
 
 func TestGetBucketSearchNextPageParam_HasMorePages(t *testing.T) {
