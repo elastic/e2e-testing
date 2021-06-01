@@ -62,6 +62,8 @@ func init() {
 	if DeveloperMode {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
+
+	Provider = shell.GetEnv("PROVIDER", Provider)
 }
 
 // InitVersions initialise default versions. We do not want to do it in the init phase

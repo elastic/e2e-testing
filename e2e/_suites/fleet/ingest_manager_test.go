@@ -29,8 +29,6 @@ func setUpSuite() {
 		os.Exit(1)
 	}
 
-	common.Provider = shell.GetEnv("PROVIDER", common.Provider)
-
 	common.InitVersions()
 
 	imts = IngestManagerTestSuite{
