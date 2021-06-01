@@ -12,12 +12,15 @@ SUITES:
         tags: "metricbeat"
   - suite: "fleet"
     platforms:
+      - "arm64"
       - "ubuntu-18.04"
     scenarios:
       - name: "Fleet"
         pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent"
       - name: "Endpoint Integration"
+        platforms:
+          - "ubuntu-18.04"
         pullRequestFilter: " && ~debian"
         tags: "agent_endpoint_integration"
       - name: "Linux Integration"

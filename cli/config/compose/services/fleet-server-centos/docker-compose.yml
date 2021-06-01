@@ -1,9 +1,10 @@
 version: '2.4'
 services:
   fleet-server-centos:
-    image: centos/systemd:${fleet_server_centosTag:-latest} 
+    image: docker.elastic.co/observability-ci/centos-systemd:latest
     container_name: ${fleet_server_centosContainerName}
     entrypoint: "/usr/sbin/init"
+    platform: ${stackPlatform:-linux/amd64}
     privileged: true
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro 

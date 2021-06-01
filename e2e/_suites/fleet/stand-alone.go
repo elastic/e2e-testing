@@ -112,7 +112,9 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 		dockerInstaller, _ := installer.Attach(fts.deployer, agentService, "docker")
 		dockerInstaller.Preinstall()
-		dockerImageTag += "-amd64"
+
+		arch := utils.GetArchitecture()
+		dockerImageTag += "-" + arch
 	}
 
 	common.ProfileEnv["elasticAgentDockerImageSuffix"] = ""
@@ -125,7 +127,6 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 	containerName := fmt.Sprintf("%s_%s_%d", common.FleetProfileName, common.ElasticAgentServiceName, 1)
 
 	common.ProfileEnv["elasticAgentContainerName"] = containerName
-	common.ProfileEnv["elasticAgentPlatform"] = "linux/amd64"
 	common.ProfileEnv["elasticAgentTag"] = dockerImageTag
 
 	for k, v := range env {

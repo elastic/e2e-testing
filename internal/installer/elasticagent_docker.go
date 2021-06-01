@@ -75,7 +75,7 @@ func (i *elasticAgentDockerPackage) Postinstall() error {
 func (i *elasticAgentDockerPackage) Preinstall() error {
 	artifact := "elastic-agent"
 	os := "linux"
-	arch := "x86_64"
+	arch := utils.GetArchitecture()
 	extension := "tar.gz"
 
 	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, common.BeatVersionBase, os, arch, extension, false)
@@ -100,7 +100,7 @@ func (i *elasticAgentDockerPackage) Preinstall() error {
 	// we need to tag the loaded image because its tag relates to the target branch
 	return deploy.TagImage(
 		fmt.Sprintf("docker.elastic.co/beats/%s:%s", artifact, common.BeatVersionBase),
-		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-amd64", artifact, common.BeatVersion),
+		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, common.BeatVersion, arch),
 	)
 }
 

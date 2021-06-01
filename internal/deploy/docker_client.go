@@ -462,9 +462,18 @@ func PullImages(images []string) error {
 	c := getDockerClient()
 	ctx := context.Background()
 
-	log.WithField("images", images).Info("Pulling Docker images...")
+	platform := "linux/" + utils.GetArchitecture()
+
+	log.WithFields(log.Fields{
+		"images":   images,
+		"platform": platform,
+	}).Info("Pulling Docker images...")
+	options := types.ImagePullOptions{
+		Platform: platform,
+	}
+
 	for _, image := range images {
-		r, err := c.ImagePull(ctx, image, types.ImagePullOptions{})
+		r, err := c.ImagePull(ctx, image, options)
 		if err != nil {
 			return err
 		}

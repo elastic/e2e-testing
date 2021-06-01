@@ -66,8 +66,6 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
 		setUpSuite()
 
-		log.Trace("Bootstrapping Fleet Server")
-
 		if !shell.GetEnvBool("SKIP_PULL") {
 			images := []string{
 				"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
