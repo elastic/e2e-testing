@@ -601,7 +601,12 @@ func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 		tx.Context.SetLabel("suite", "helm")
 	})
 
-	ctx.AfterScenario(func(*messages.Pickle, error) {
+	ctx.AfterScenario(func(pickle *messages.Pickle, err error) {
+		if err != nil {
+			e := apm.DefaultTracer.NewError(err)
+			e.Send()
+		}
+
 		f := func() {
 			tx.End()
 
@@ -618,6 +623,11 @@ func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 		testSuite.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
 	})
 	ctx.AfterStep(func(st *godog.Step, err error) {
+		if err != nil {
+			e := apm.DefaultTracer.NewError(err)
+			e.Send()
+		}
+
 		if stepSpan != nil {
 			stepSpan.End()
 		}
