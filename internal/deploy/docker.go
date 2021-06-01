@@ -6,9 +6,11 @@ package deploy
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 
 	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -58,6 +60,23 @@ func (c *dockerDeploymentManifest) Bootstrap(waitCB func() error) error {
 	return nil
 }
 
+// AddFiles - add files to service
+func (c *dockerDeploymentManifest) AddFiles(service ServiceRequest, files []string) error {
+	container, _ := c.Inspect(service)
+	for _, file := range files {
+		isTar := true
+		fileExt := filepath.Ext(file)
+		if fileExt == ".rpm" || fileExt == ".deb" {
+			isTar = false
+		}
+		err := CopyFileToContainer(c.Context, container.Name, file, "/", isTar)
+		if err != nil {
+			log.WithField("error", err).Fatal("Unable to copy file to service")
+		}
+	}
+	return nil
+}
+
 // Destroy teardown docker environment
 func (c *dockerDeploymentManifest) Destroy() error {
 	serviceManager := NewServiceManager()
@@ -73,7 +92,12 @@ func (c *dockerDeploymentManifest) Destroy() error {
 
 // ExecIn execute command in service
 func (c *dockerDeploymentManifest) ExecIn(service ServiceRequest, cmd []string) (string, error) {
-	output, err := ExecCommandIntoContainer(c.Context, service, "root", cmd)
+	inspect, _ := c.Inspect(service)
+	args := []string{"exec", "-u", "root", "-i", inspect.Name}
+	for _, cmdArg := range cmd {
+		args = append(args, cmdArg)
+	}
+	output, err := shell.Execute(c.Context, ".", "docker", args...)
 	if err != nil {
 		return "", err
 	}
@@ -86,17 +110,54 @@ func (c *dockerDeploymentManifest) Inspect(service ServiceRequest) (*ServiceMani
 	if err != nil {
 		return &ServiceManifest{}, err
 	}
+
 	return &ServiceManifest{
 		ID:         inspect.ID,
 		Name:       strings.TrimPrefix(inspect.Name, "/"),
 		Connection: service.Name,
-		Hostname:   inspect.NetworkSettings.Networks["fleet_default"].Aliases[0],
+		Alias:      inspect.NetworkSettings.Networks["fleet_default"].Aliases[0],
+		Hostname:   inspect.Config.Hostname,
+		Platform:   inspect.Platform,
 	}, nil
+}
+
+// Logs print logs of service
+func (c *dockerDeploymentManifest) Logs(service ServiceRequest) error {
+	manifest, _ := c.Inspect(service)
+	_, err := shell.Execute(c.Context, ".", "docker", "logs", manifest.Name)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"service": service.Name,
+		}).Error("Could not retrieve Elastic Agent logs")
+
+		return err
+	}
+	return nil
 }
 
 // Remove remove services from deployment
 func (c *dockerDeploymentManifest) Remove(services []ServiceRequest, env map[string]string) error {
-	serviceManager := NewServiceManager()
+	for _, service := range services[1:] {
+		manifest, _ := c.Inspect(service)
+		_, err := shell.Execute(c.Context, ".", "docker", "rm", "-fv", manifest.Name)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-	return serviceManager.RemoveServicesFromCompose(c.Context, services[0], services[1:], env)
+// Start a container
+func (c *dockerDeploymentManifest) Start(service ServiceRequest) error {
+	manifest, _ := c.Inspect(service)
+	_, err := shell.Execute(c.Context, ".", "docker", "start", manifest.Name)
+	return err
+}
+
+// Stop a container
+func (c *dockerDeploymentManifest) Stop(service ServiceRequest) error {
+	manifest, _ := c.Inspect(service)
+	_, err := shell.Execute(c.Context, ".", "docker", "stop", manifest.Name)
+	return err
 }
