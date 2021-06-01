@@ -174,7 +174,12 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 		tx.Context.SetLabel("suite", "metricbeat")
 	})
 
-	ctx.AfterScenario(func(*messages.Pickle, error) {
+	ctx.AfterScenario(func(pickle *messages.Pickle, err error) {
+		if err != nil {
+			e := apm.DefaultTracer.NewError(err)
+			e.Send()
+		}
+
 		f := func() {
 			tx.End()
 
@@ -183,9 +188,11 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 		defer f()
 
 		log.Trace("After Metricbeat scenario...")
-		err := testSuite.CleanUp()
-		if err != nil {
-			log.Errorf("CleanUp failed: %v", err)
+		cleanUpErr := testSuite.CleanUp()
+		if cleanUpErr != nil {
+			log.Errorf("CleanUp failed: %v", cleanUpErr)
+			e := apm.DefaultTracer.NewError(cleanUpErr)
+			e.Send()
 		}
 	})
 
@@ -194,6 +201,11 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 		testSuite.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
 	})
 	ctx.AfterStep(func(st *godog.Step, err error) {
+		if err != nil {
+			e := apm.DefaultTracer.NewError(err)
+			e.Send()
+		}
+
 		if stepSpan != nil {
 			stepSpan.End()
 		}
