@@ -27,14 +27,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// developerMode tears down the backend services (the k8s cluster)
-// after a test suite. This is the desired behavior, but when developing, we maybe want to keep
-// them running to speed up the development cycle.
-// It can be overriden by the DEVELOPER_MODE env var
-var developerMode = false
-
-var elasticAPMActive = false
-
 var helmManager helm.Manager
 
 //nolint:unused
@@ -56,18 +48,6 @@ var stepSpan *apm.Span
 
 func setupSuite() {
 	config.Init()
-
-	developerMode = shell.GetEnvBool("DEVELOPER_MODE")
-	if developerMode {
-		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
-	}
-
-	elasticAPMActive = shell.GetEnvBool("ELASTIC_APM_ACTIVE")
-	if elasticAPMActive {
-		log.WithFields(log.Fields{
-			"apm-environment": shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "local"),
-		}).Info("Current execution will be instrumented 🛠")
-	}
 
 	helmVersion = shell.GetEnv("HELM_VERSION", helmVersion)
 	helmChartVersion = shell.GetEnv("HELM_CHART_VERSION", helmChartVersion)
@@ -668,8 +648,7 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		elasticAPMEnvironment := shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "ci")
-		if elasticAPMActive && elasticAPMEnvironment == "local" {
+		if common.IsLocalAPMEnvironment() {
 			serviceManager := deploy.NewServiceManager()
 
 			env := map[string]string{
@@ -717,14 +696,14 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		if !developerMode {
+		if !common.DeveloperMode {
 			log.Trace("After Suite...")
 			err := testSuite.destroyCluster(suiteContext)
 			if err != nil {
 				return
 			}
 
-			if elasticAPMActive {
+			if common.ElasticAPMActive {
 				serviceManager := deploy.NewServiceManager()
 				err := serviceManager.StopCompose(suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("helm")})
 				if err != nil {
