@@ -25,8 +25,6 @@ import (
 	"go.elastic.co/apm"
 )
 
-var elasticAPMActive = false
-
 var serviceManager deploy.ServiceManager
 
 var testSuite MetricbeatTestSuite
@@ -36,13 +34,6 @@ var stepSpan *apm.Span
 
 func setupSuite() {
 	config.Init()
-
-	elasticAPMActive = shell.GetEnvBool("ELASTIC_APM_ACTIVE")
-	if elasticAPMActive {
-		log.WithFields(log.Fields{
-			"apm-environment": shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "local"),
-		}).Info("Current execution will be instrumented 🛠")
-	}
 
 	common.InitVersions()
 
@@ -241,7 +232,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		}
 
 		elasticAPMEnvironment := shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "ci")
-		if elasticAPMActive && elasticAPMEnvironment == "local" {
+		if common.ElasticAPMActive && elasticAPMEnvironment == "local" {
 			steps.AddAPMServicesForInstrumentation(suiteContext, "metricbeat", common.StackVersion, true, env)
 		}
 	})

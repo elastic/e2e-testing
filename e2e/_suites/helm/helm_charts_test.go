@@ -27,8 +27,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var elasticAPMActive = false
-
 var helmManager helm.Manager
 
 //nolint:unused
@@ -50,13 +48,6 @@ var stepSpan *apm.Span
 
 func setupSuite() {
 	config.Init()
-
-	elasticAPMActive = shell.GetEnvBool("ELASTIC_APM_ACTIVE")
-	if elasticAPMActive {
-		log.WithFields(log.Fields{
-			"apm-environment": shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "local"),
-		}).Info("Current execution will be instrumented 🛠")
-	}
 
 	helmVersion = shell.GetEnv("HELM_VERSION", helmVersion)
 	helmChartVersion = shell.GetEnv("HELM_CHART_VERSION", helmChartVersion)
@@ -648,7 +639,7 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 		defer suiteParentSpan.End()
 
 		elasticAPMEnvironment := shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "ci")
-		if elasticAPMActive && elasticAPMEnvironment == "local" {
+		if common.ElasticAPMActive && elasticAPMEnvironment == "local" {
 			serviceManager := deploy.NewServiceManager()
 
 			env := map[string]string{
@@ -703,7 +694,7 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 				return
 			}
 
-			if elasticAPMActive {
+			if common.ElasticAPMActive {
 				serviceManager := deploy.NewServiceManager()
 				err := serviceManager.StopCompose(suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("helm")})
 				if err != nil {

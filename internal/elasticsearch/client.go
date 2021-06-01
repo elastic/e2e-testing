@@ -97,6 +97,7 @@ func getElasticsearchClientFromHostPort(ctx context.Context, host string, port i
 		Password:  "changeme",
 	}
 
+	// avoid using common properties to avoid cyclical references
 	elasticAPMActive := shell.GetEnvBool("ELASTIC_APM_ACTIVE")
 	if elasticAPMActive {
 		cfg.Transport = apmelasticsearch.WrapRoundTripper(http.DefaultTransport)

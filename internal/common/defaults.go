@@ -22,6 +22,9 @@ const ElasticAgentServiceName = "elastic-agent"
 // and the title is more readable than the name
 const ElasticEndpointIntegrationTitle = "Endpoint Security"
 
+// ElasticAPMActive if APM is active in the test framework
+var ElasticAPMActive = false
+
 // FleetProfileName the name of the profile to run the runtime, backend services
 const FleetProfileName = "fleet"
 
@@ -64,6 +67,13 @@ func init() {
 	}
 
 	Provider = shell.GetEnv("PROVIDER", Provider)
+
+	ElasticAPMActive = shell.GetEnvBool("ELASTIC_APM_ACTIVE")
+	if ElasticAPMActive {
+		log.WithFields(log.Fields{
+			"apm-environment": shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "local"),
+		}).Info("Current execution will be instrumented 🛠")
+	}
 }
 
 // InitVersions initialise default versions. We do not want to do it in the init phase
