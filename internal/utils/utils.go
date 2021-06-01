@@ -64,8 +64,8 @@ func BuildArtifactName(artifact string, version string, fallbackVersion string, 
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	// we detected that the docker name on CI is using a different structure
-	// CI snapshots on GCP: elastic-agent-$VERSION-linux-amd64.docker.tar.gz
-	// Elastic's snapshots: elastic-agent-$VERSION-docker-image-linux-amd64.tar.gz
+	// CI snapshots on GCP: elastic-agent-$VERSION-linux-$ARCH.docker.tar.gz
+	// Elastic's snapshots: elastic-agent-$VERSION-docker-image-linux-$ARCH.tar.gz
 	if !useCISnapshots && isDocker {
 		dockerString = "docker-image"
 		artifactName = fmt.Sprintf("%s-%s-%s-%s-%s.%s", artifact, artifactVersion, dockerString, OS, arch, lowerCaseExtension)
@@ -163,6 +163,19 @@ func FetchBeatsBinary(artifactName string, artifact string, version string, fall
 	}
 
 	return handleDownload(downloadURL)
+}
+
+// GetArchitecture retrieves if the underlying system platform is arm64 or amd64
+func GetArchitecture() string {
+	arch := "amd64"
+
+	envArch := os.Getenv("GOARCH")
+	if envArch == "arm64" {
+		arch = "arm64"
+	}
+
+	log.Debugf("Golang's architecture is %s (%s)", arch, envArch)
+	return arch
 }
 
 // getGCPBucketCoordinates it calculates the bucket path in GCP
@@ -268,9 +281,9 @@ func GetElasticArtifactVersion(version string) (string, error) {
 
 // GetElasticArtifactURL returns the URL of a released artifact, which its full name is defined in the first argument,
 // from Elastic's artifact repository, building the JSON path query based on the full name
-// i.e. GetElasticArtifactURL("elastic-agent-$VERSION-amd64.deb", "elastic-agent", "$VERSION")
+// i.e. GetElasticArtifactURL("elastic-agent-$VERSION-$ARCH.deb", "elastic-agent", "$VERSION")
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-x86_64.rpm", "elastic-agent","$VERSION")
-// i.e. GetElasticArtifactURL("elastic-agent-$VERSION-linux-amd64.tar.gz", "elastic-agent","$VERSION")
+// i.e. GetElasticArtifactURL("elastic-agent-$VERSION-linux-$ARCH.tar.gz", "elastic-agent","$VERSION")
 func GetElasticArtifactURL(artifactName string, artifact string, version string) (string, error) {
 	exp := GetExponentialBackOff(time.Minute)
 
@@ -324,6 +337,14 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 		}).Error("Could not parse the response body for the artifact")
 		return "", err
 	}
+
+	log.WithFields(log.Fields{
+		"retries":      retryCount,
+		"artifact":     artifact,
+		"artifactName": artifactName,
+		"elapsedTime":  exp.GetElapsedTime(),
+		"version":      version,
+	}).Trace("Artifact found")
 
 	packagesObject := jsonParsed.Path("packages")
 	// we need to get keys with dots using Search instead of Path

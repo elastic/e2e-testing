@@ -103,7 +103,7 @@ func (i *elasticAgentDEBPackage) Postinstall() error {
 func (i *elasticAgentDEBPackage) Preinstall() error {
 	artifact := "elastic-agent"
 	os := "linux"
-	arch := "amd64"
+	arch := utils.GetArchitecture()
 	extension := "deb"
 
 	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, common.BeatVersionBase, os, arch, extension, false)

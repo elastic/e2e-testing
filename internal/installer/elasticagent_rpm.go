@@ -105,6 +105,9 @@ func (i *elasticAgentRPMPackage) Preinstall() error {
 	artifact := "elastic-agent"
 	os := "linux"
 	arch := "x86_64"
+	if utils.GetArchitecture() == "arm64" {
+		arch = "aarch64"
+	}
 	extension := "rpm"
 
 	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, common.BeatVersionBase, os, arch, extension, false)
