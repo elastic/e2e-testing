@@ -13,10 +13,8 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
-	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
-	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -32,31 +30,17 @@ func setUpSuite() {
 	}
 
 	common.Provider = shell.GetEnv("PROVIDER", common.Provider)
-	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
-	if developerMode {
+	common.DeveloperMode = shell.GetEnvBool("DEVELOPER_MODE")
+	if common.DeveloperMode {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
 	}
 
 	common.InitVersions()
 
-	common.KibanaVersion = shell.GetEnv("KIBANA_VERSION", "")
-	if common.KibanaVersion == "" {
-		// we want to deploy a released version for Kibana
-		// if not set, let's use stackVersion
-		common.KibanaVersion, err = utils.GetElasticArtifactVersion(common.StackVersion)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error":   err,
-				"version": common.KibanaVersion,
-			}).Fatal("Failed to get kibana version, aborting")
-		}
-	}
-
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			kibanaClient: kibanaClient,
 			deployer:     deploy.New(common.Provider),
-			Installers:   map[string]installer.ElasticAgentInstaller{}, // do not pre-initialise the map
 		},
 	}
 }
@@ -79,8 +63,6 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 }
 
 func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
-	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
-
 	ctx.BeforeSuite(func() {
 		setUpSuite()
 
@@ -118,30 +100,10 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 	})
 
 	ctx.AfterSuite(func() {
-		if !developerMode {
+		if !common.DeveloperMode {
 			log.Debug("Destroying Fleet runtime dependencies")
 			deployer := deploy.New(common.Provider)
 			deployer.Destroy()
-		}
-
-		installers := imts.Fleet.Installers
-		for k, v := range installers {
-			agentPath := v.BinaryPath
-			if _, err := os.Stat(agentPath); err == nil {
-				err = os.Remove(agentPath)
-				if err != nil {
-					log.WithFields(log.Fields{
-						"err":       err,
-						"installer": k,
-						"path":      agentPath,
-					}).Warn("Elastic Agent binary could not be removed.")
-				} else {
-					log.WithFields(log.Fields{
-						"installer": k,
-						"path":      agentPath,
-					}).Debug("Elastic Agent binary was removed.")
-				}
-			}
 		}
 	})
 }
