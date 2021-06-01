@@ -28,6 +28,10 @@ const FleetProfileName = "fleet"
 // FleetServerAgentServiceName the name of the service for the Elastic Agent
 const FleetServerAgentServiceName = "fleet-server"
 
+// AgentStaleVersion is the version of the agent to use as a base during upgrade
+// It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
+var AgentStaleVersion = "7.13-SNAPSHOT"
+
 // BeatVersionBase is the base version of the Beat to use
 var BeatVersionBase = "7.x-SNAPSHOT"
 
@@ -35,13 +39,8 @@ var BeatVersionBase = "7.x-SNAPSHOT"
 // It can be overriden by BEAT_VERSION env var
 var BeatVersion = BeatVersionBase
 
-// AgentStaleVersion is the version of the agent to use as a base during upgrade
-// It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var AgentStaleVersion = "7.13-SNAPSHOT"
-
-// StackVersion is the version of the stack to use
-// It can be overriden by STACK_VERSION env var
-var StackVersion = BeatVersionBase
+// DeveloperMode if enabled will keep deployments around after test runs
+var DeveloperMode = false
 
 // KibanaVersion is the version of kibana to use
 // It can be override by KIBANA_VERSION
@@ -53,6 +52,10 @@ var ProfileEnv map[string]string
 
 // Provider is the deployment provider used, currently docker is supported
 var Provider = "docker"
+
+// StackVersion is the version of the stack to use
+// It can be overriden by STACK_VERSION env var
+var StackVersion = BeatVersionBase
 
 // InitVersions initialise default versions. We do not want to do it in the init phase
 // supporting lazy-loading the versions when needed. Basically, the CLI part does not
@@ -91,4 +94,24 @@ func InitVersions() {
 		}).Fatal("Failed to get stack version, aborting")
 	}
 	StackVersion = v
+
+	KibanaVersion = shell.GetEnv("KIBANA_VERSION", "")
+	if KibanaVersion == "" {
+		// we want to deploy a released version for Kibana
+		// if not set, let's use StackVersion
+		KibanaVersion, err = utils.GetElasticArtifactVersion(StackVersion)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"version": KibanaVersion,
+			}).Fatal("Failed to get kibana version, aborting")
+		}
+	}
+
+	log.WithFields(log.Fields{
+		"BeatVersionBase": BeatVersionBase,
+		"BeatVersion":     BeatVersion,
+		"StackVersion":    StackVersion,
+		"KibanaVersion":   KibanaVersion,
+	}).Trace("Initial artifact versions defined")
 }
