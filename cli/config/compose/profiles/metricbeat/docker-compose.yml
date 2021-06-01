@@ -9,6 +9,11 @@ services:
       - xpack.monitoring.collection.enabled=true
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=changeme
+<<<<<<< HEAD
     image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion:-7.x-SNAPSHOT}"
+=======
+    image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion:-8.0.0-SNAPSHOT}"
+    platform: ${stackPlatform:-linux/amd64}
+>>>>>>> e1a97f3 (feat: add support for running the tests in ARM (#707))
     ports:
       - "9200:9200"

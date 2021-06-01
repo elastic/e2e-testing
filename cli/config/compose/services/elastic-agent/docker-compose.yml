@@ -11,6 +11,6 @@ services:
     environment:
       - "FLEET_SERVER_ENABLE=${fleetServerMode:-0}"
       - "FLEET_SERVER_INSECURE_HTTP=${fleetServerMode:-0}"
-    platform: ${elasticAgentPlatform:-linux/amd64}
+    platform: ${stackPlatform:-linux/amd64}
     ports:
       - "127.0.0.1:8220:8220"

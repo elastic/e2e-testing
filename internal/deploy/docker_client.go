@@ -461,10 +461,22 @@ func PullImages(images []string) error {
 	c := getDockerClient()
 	ctx := context.Background()
 
+<<<<<<< HEAD
 	log.WithField("images", images).Info("Pulling Docker images...")
+=======
+	platform := "linux/" + utils.GetArchitecture()
+
+	log.WithFields(log.Fields{
+		"images":   images,
+		"platform": platform,
+	}).Info("Pulling Docker images...")
+	options := types.ImagePullOptions{
+		Platform: platform,
+	}
+>>>>>>> e1a97f3 (feat: add support for running the tests in ARM (#707))
 
 	for _, image := range images {
-		r, err := c.ImagePull(ctx, image, types.ImagePullOptions{})
+		r, err := c.ImagePull(ctx, image, options)
 		if err != nil {
 			return err
 		}
