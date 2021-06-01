@@ -106,11 +106,20 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries
+<<<<<<< HEAD
 		dockerInstaller := installer.GetElasticAgentInstaller("docker", image, common.BeatVersion, deployedAgentsCount)
 
 		dockerInstaller.PreInstallFn()
 
 		dockerImageTag += "-amd64"
+=======
+		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+		dockerInstaller, _ := installer.Attach(fts.deployer, agentService, "docker")
+		dockerInstaller.Preinstall()
+
+		arch := utils.GetArchitecture()
+		dockerImageTag += "-" + arch
+>>>>>>> e1a97f3 (feat: add support for running the tests in ARM (#707))
 	}
 
 	common.ProfileEnv["elasticAgentDockerImageSuffix"] = ""
@@ -123,7 +132,6 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 	containerName := fmt.Sprintf("%s_%s_%d", common.FleetProfileName, common.ElasticAgentServiceName, 1)
 
 	common.ProfileEnv["elasticAgentContainerName"] = containerName
-	common.ProfileEnv["elasticAgentPlatform"] = "linux/amd64"
 	common.ProfileEnv["elasticAgentTag"] = dockerImageTag
 
 	for k, v := range env {

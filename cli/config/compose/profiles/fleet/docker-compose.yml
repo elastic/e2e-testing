@@ -16,31 +16,32 @@ services:
       - xpack.security.authc.api_key.enabled=true
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=changeme
+<<<<<<< HEAD
     image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion:-7.13.0-SNAPSHOT}"
+=======
+    image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion:-8.0.0-SNAPSHOT}"
+    platform: ${stackPlatform:-linux/amd64}
+>>>>>>> e1a97f3 (feat: add support for running the tests in ARM (#707))
     ports:
       - "9200:9200"
   kibana:
     depends_on:
       elasticsearch:
         condition: service_healthy
-      package-registry:
-        condition: service_healthy
     healthcheck:
       test: "curl -f http://localhost:5601/login | grep kbn-injected-metadata 2>&1 >/dev/null"
       retries: 600
       interval: 1s
+<<<<<<< HEAD
     image: "docker.elastic.co/${kibanaDockerNamespace:-kibana}/kibana:${kibanaVersion:-7.13.0-SNAPSHOT}"
+=======
+    image: "docker.elastic.co/${kibanaDockerNamespace:-kibana}/kibana:${kibanaVersion:-8.0.0-SNAPSHOT}"
+    platform: ${stackPlatform:-linux/amd64}
+>>>>>>> e1a97f3 (feat: add support for running the tests in ARM (#707))
     ports:
       - "5601:5601"
     volumes:
       - ./configurations/kibana.config.yml:/usr/share/kibana/config/kibana.yml
-  package-registry:
-    image: docker.elastic.co/package-registry/distribution:staging
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
-      retries: 300
-      interval: 1s
-
   fleet-server:
     image: "docker.elastic.co/beats/elastic-agent:${stackVersion:-8.0.0-SNAPSHOT}"
     depends_on:

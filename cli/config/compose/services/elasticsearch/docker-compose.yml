@@ -10,6 +10,7 @@ services:
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=changeme
     image: "docker.elastic.co/observability-ci/elasticsearch:${elasticsearchTag}"
+    platform: ${elasticsearchPlatform:-linux/amd64}
     ports:
       - "9200:9200"
       - "9300:9300"
