@@ -57,6 +57,13 @@ var Provider = "docker"
 // It can be overriden by STACK_VERSION env var
 var StackVersion = BeatVersionBase
 
+func init() {
+	DeveloperMode = shell.GetEnvBool("DEVELOPER_MODE")
+	if DeveloperMode {
+		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
+	}
+}
+
 // InitVersions initialise default versions. We do not want to do it in the init phase
 // supporting lazy-loading the versions when needed. Basically, the CLI part does not
 // need to load them

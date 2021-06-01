@@ -27,12 +27,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// developerMode tears down the backend services (the k8s cluster)
-// after a test suite. This is the desired behavior, but when developing, we maybe want to keep
-// them running to speed up the development cycle.
-// It can be overriden by the DEVELOPER_MODE env var
-var developerMode = false
-
 var elasticAPMActive = false
 
 var helmManager helm.Manager
@@ -56,11 +50,6 @@ var stepSpan *apm.Span
 
 func setupSuite() {
 	config.Init()
-
-	developerMode = shell.GetEnvBool("DEVELOPER_MODE")
-	if developerMode {
-		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
-	}
 
 	elasticAPMActive = shell.GetEnvBool("ELASTIC_APM_ACTIVE")
 	if elasticAPMActive {
@@ -707,7 +696,7 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		if !developerMode {
+		if !common.DeveloperMode {
 			log.Trace("After Suite...")
 			err := testSuite.destroyCluster(suiteContext)
 			if err != nil {

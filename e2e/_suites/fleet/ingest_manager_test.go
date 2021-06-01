@@ -30,10 +30,6 @@ func setUpSuite() {
 	}
 
 	common.Provider = shell.GetEnv("PROVIDER", common.Provider)
-	common.DeveloperMode = shell.GetEnvBool("DEVELOPER_MODE")
-	if common.DeveloperMode {
-		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
-	}
 
 	common.InitVersions()
 

@@ -25,12 +25,6 @@ import (
 	"go.elastic.co/apm"
 )
 
-// developerMode tears down the backend services (the elasticsearch instance)
-// after a test suite. This is the desired behavior, but when developing, we maybe want to keep
-// them running to speed up the development cycle.
-// It can be overriden by the DEVELOPER_MODE env var
-var developerMode = false
-
 var elasticAPMActive = false
 
 var serviceManager deploy.ServiceManager
@@ -42,11 +36,6 @@ var stepSpan *apm.Span
 
 func setupSuite() {
 	config.Init()
-
-	developerMode = shell.GetEnvBool("DEVELOPER_MODE")
-	if developerMode {
-		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
-	}
 
 	elasticAPMActive = shell.GetEnvBool("ELASTIC_APM_ACTIVE")
 	if elasticAPMActive {
@@ -274,7 +263,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		if !developerMode {
+		if !common.DeveloperMode {
 			serviceManager := deploy.NewServiceManager()
 			err := serviceManager.StopCompose(suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")})
 			if err != nil {
@@ -465,7 +454,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 			deploy.NewServiceRequest("metricbeat"), // metricbeat service
 		}
 
-		if developerMode {
+		if common.DeveloperMode {
 			err = serviceManager.RunCommand(deploy.NewServiceRequest("metricbeat"), services, []string{"logs", "metricbeat"}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
