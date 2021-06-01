@@ -249,16 +249,23 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   def suite = item.suite
   def platforms = item.platforms
   item.scenarios.each { scenario ->
+    def name = scenario.name
+    def platformsValue = platforms
+    def scenarioPlatforms = scenario.platforms
+    if (scenarioPlatforms?.size() > 0) {
+      // scenario platforms take precedence over suite platforms, overriding them
+      platformsValue = scenarioPlatforms
+    }
     def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
     def tags = scenario.tags
     def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
     if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
-      platforms.each { platform ->
+      platformsValue.each { platform ->
         log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
-        parallelTasks["${platform}_${suite}_${tags}"] = generateFunctionalTestStep(platform: "${platform}", suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}")
+        parallelTasks["${platform}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: "${platform}", suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}")
       }
     } else {
-      log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed because there are no modified files")
+      log(level: 'WARN', text: "The ${platform}:${suite}:${tags} test suite won't be executed because there are no modified files")
     }
   }
 }
@@ -281,6 +288,7 @@ def doNotifyBuildResult(boolean slackNotify) {
 }
 
 def generateFunctionalTestStep(Map args = [:]){
+  def name = args.get('name')
   def platform = args.get('platform')
   def suite = args.get('suite')
   def tags = args.get('tags')
@@ -298,7 +306,17 @@ def generateFunctionalTestStep(Map args = [:]){
   if (isPR() || isUpstreamTrigger(filter: 'PR-')) {
     tags += pullRequestFilter
   }
-  def workerLabels = "${platform} && immutable && docker"
+
+  def goArch = "amd64"
+  def workerLabels = "${platform} && immutable"
+  if (platform == "arm64") {
+    goArch = "arm64"
+    // ARM is not ready as immutable workers
+    workerLabels = "arm"
+  }
+
+  // Skip scenarios per platform
+  tags += " && ~@skip:${goArch}"
 
   return {
     withNode(labels: "${workerLabels}", sleepMax: 20, forceWorkspace: true){
@@ -309,10 +327,12 @@ def generateFunctionalTestStep(Map args = [:]){
           if(isInstalled(tool: 'docker', flag: '--version')) {
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
           }
-          filebeat(output: "docker_logs_${suite}_${tags}.log", workdir: "${env.WORKSPACE}"){
+          filebeat(image: 'docker.elastic.co/beats/filebeat:7.13.0-SNAPSHOT', output: "docker_logs_${goArch}_${suite}_${name}.log", workdir: "${env.WORKSPACE}"){
             dir("${BASE_DIR}"){
-              withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL"){
-                sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
+              withEnv(["GOARCH=${goArch}"]) {
+                withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL"){
+                  sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
+                }
               }
             }
           }

@@ -12,6 +12,9 @@ set -euxo pipefail
 readonly VERSION="$(cat $(pwd)/.stack-version)"
 
 main() {
+  # remove running containers
+  docker container rm -fv $(docker container ls -a --quiet) || true
+
   # refresh docker images
   cat <<EOF >.tmp_images
 docker.elastic.co/beats/elastic-agent:${VERSION}
