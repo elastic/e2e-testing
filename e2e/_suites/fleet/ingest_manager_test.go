@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -16,9 +17,13 @@ import (
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 var imts IngestManagerTestSuite
+
+var tx *apm.Transaction
+var stepSpan *apm.Span
 
 func setUpSuite() {
 	config.Init()
@@ -40,14 +45,45 @@ func setUpSuite() {
 }
 
 func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
-	ctx.BeforeScenario(func(*messages.Pickle) {
+	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Fleet scenario")
+
+		tx = apm.DefaultTracer.StartTransaction(p.GetName(), "test.scenario")
+		tx.Context.SetLabel("suite", "fleet")
+
 		imts.Fleet.beforeScenario()
 	})
 
-	ctx.AfterScenario(func(*messages.Pickle, error) {
+	ctx.AfterScenario(func(p *messages.Pickle, err error) {
 		log.Trace("After Fleet scenario")
+		if err != nil {
+			e := apm.DefaultTracer.NewError(err)
+			e.Send()
+		}
+
+		f := func() {
+			tx.End()
+
+			apm.DefaultTracer.Flush(nil)
+		}
+		defer f()
+
 		imts.Fleet.afterScenario()
+	})
+
+	ctx.BeforeStep(func(step *godog.Step) {
+		stepSpan = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
+		imts.Fleet.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
+	})
+	ctx.AfterStep(func(st *godog.Step, err error) {
+		if err != nil {
+			e := apm.DefaultTracer.NewError(err)
+			e.Send()
+		}
+
+		if stepSpan != nil {
+			stepSpan.End()
+		}
 	})
 
 	ctx.Step(`^the "([^"]*)" process is in the "([^"]*)" state on the host$`, imts.processStateOnTheHost)
@@ -59,6 +95,18 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
 		setUpSuite()
+
+		var suiteTx *apm.Transaction
+		var suiteParentSpan *apm.Span
+		var suiteContext = context.Background()
+
+		// instrumentation
+		defer apm.DefaultTracer.Flush(nil)
+		suiteTx = apm.DefaultTracer.StartTransaction("Initialise Fleet", "test.suite")
+		defer suiteTx.End()
+		suiteParentSpan = suiteTx.StartSpan("Before Fleet test suite", "test.suite.before", nil)
+		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
+		defer suiteParentSpan.End()
 
 		if !shell.GetEnvBool("SKIP_PULL") {
 			images := []string{
@@ -73,7 +121,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 				"docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion,
 				"docker.elastic.co/observability-ci/kibana-ubi8:" + common.KibanaVersion,
 			}
-			deploy.PullImages(images)
+			deploy.PullImages(suiteContext, images)
 		}
 
 		deployer := deploy.New(common.Provider)
@@ -94,10 +142,26 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 	})
 
 	ctx.AfterSuite(func() {
+		f := func() {
+			apm.DefaultTracer.Flush(nil)
+		}
+		defer f()
+
+		// instrumentation
+		var suiteTx *apm.Transaction
+		var suiteParentSpan *apm.Span
+		var suiteContext = context.Background()
+		defer apm.DefaultTracer.Flush(nil)
+		suiteTx = apm.DefaultTracer.StartTransaction("Tear Down Fleet", "test.suite")
+		defer suiteTx.End()
+		suiteParentSpan = suiteTx.StartSpan("After Fleet test suite", "test.suite.after", nil)
+		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
+		defer suiteParentSpan.End()
+
 		if !common.DeveloperMode {
 			log.Debug("Destroying Fleet runtime dependencies")
 			deployer := deploy.New(common.Provider)
-			deployer.Destroy()
+			deployer.Destroy(suiteContext)
 		}
 	})
 }

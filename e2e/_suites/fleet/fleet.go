@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.elastic.co/apm"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
@@ -49,11 +50,17 @@ type FleetTestSuite struct {
 	// date controls for queries
 	AgentStoppedDate             time.Time
 	RuntimeDependenciesStartDate time.Time
+	// instrumentation
+	currentContext context.Context
 }
 
 // afterScenario destroys the state created by a scenario
 func (fts *FleetTestSuite) afterScenario() {
 	defer func() { deployedAgentsCount = 0 }()
+
+	span := tx.StartSpan("Clean up", "test.scenario.clean", nil)
+	fts.currentContext = apm.ContextWithSpan(context.Background(), span)
+	defer span.End()
 
 	serviceName := common.ElasticAgentServiceName
 	agentService := deploy.NewServiceRequest(serviceName)
