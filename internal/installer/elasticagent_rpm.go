@@ -32,6 +32,11 @@ func AttachElasticAgentRPMPackage(deploy deploy.Deployment, service deploy.Servi
 
 // AddFiles will add files into the service environment, default destination is /
 func (i *elasticAgentRPMPackage) AddFiles(ctx context.Context, files []string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Adding files to the Elastic Agent", "elastic-agent.rpm.add-files", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	return i.deploy.AddFiles(ctx, i.service, files)
 }
 
