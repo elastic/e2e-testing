@@ -28,7 +28,7 @@ func (fts *FleetTestSuite) aStandaloneAgentIsDeployed(image string) error {
 }
 
 func (fts *FleetTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string) error {
-	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(true)
+	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(fts.currentContext, true)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func (fts *FleetTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string
 }
 
 func (fts *FleetTestSuite) aStandaloneAgentIsDeployedWithFleetServerModeOnCloud(image string) error {
-	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(true)
+	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(fts.currentContext, true)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(fts.Image)
 
 	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
-	result, err := searchAgentData(manifest.Hostname, fts.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
+	result, err := searchAgentData(fts.currentContext, manifest.Hostname, fts.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func (fts *FleetTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
-	result, err := searchAgentData(manifest.Hostname, fts.AgentStoppedDate, minimumHitsCount, maxTimeout)
+	result, err := searchAgentData(fts.currentContext, manifest.Hostname, fts.AgentStoppedDate, minimumHitsCount, maxTimeout)
 	if err != nil {
 		if strings.Contains(err.Error(), "type:index_not_found_exception") {
 			return err
@@ -165,7 +165,7 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	configurationIsPresentFn := func() error {
-		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(packageName, fts.Policy)
+		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, packageName, fts.Policy)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"packagePolicy": packagePolicy,
@@ -204,7 +204,7 @@ func (fts *FleetTestSuite) installTestTools(containerName string) error {
 		"containerName": containerName,
 	}).Trace("Installing test tools ")
 
-	_, err := deploy.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
+	_, err := deploy.ExecCommandIntoContainer(fts.currentContext, containerName, "root", cmd)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command":       cmd,
@@ -222,7 +222,7 @@ func (fts *FleetTestSuite) installTestTools(containerName string) error {
 	return nil
 }
 
-func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int, maxTimeout time.Duration) (elasticsearch.SearchResult, error) {
+func searchAgentData(ctx context.Context, hostname string, startDate time.Time, minimumHitsCount int, maxTimeout time.Duration) (elasticsearch.SearchResult, error) {
 	timezone := "America/New_York"
 
 	esQuery := map[string]interface{}{
@@ -299,7 +299,7 @@ func searchAgentData(hostname string, startDate time.Time, minimumHitsCount int,
 
 	indexName := "logs-elastic_agent-default"
 
-	result, err := elasticsearch.WaitForNumberOfHits(context.Background(), indexName, esQuery, minimumHitsCount, maxTimeout)
+	result, err := elasticsearch.WaitForNumberOfHits(ctx, indexName, esQuery, minimumHitsCount, maxTimeout)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,

@@ -6,12 +6,14 @@ package kibana
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // Client is responsible for exporting dashboards from Kibana.
@@ -34,23 +36,28 @@ func NewClient() (*Client, error) {
 	}, nil
 }
 
-func (c *Client) get(resourcePath string) (int, []byte, error) {
-	return c.sendRequest(http.MethodGet, resourcePath, nil)
+func (c *Client) get(ctx context.Context, resourcePath string) (int, []byte, error) {
+	return c.sendRequest(ctx, http.MethodGet, resourcePath, nil)
 }
 
-func (c *Client) post(resourcePath string, body []byte) (int, []byte, error) {
-	return c.sendRequest(http.MethodPost, resourcePath, body)
+func (c *Client) post(ctx context.Context, resourcePath string, body []byte) (int, []byte, error) {
+	return c.sendRequest(ctx, http.MethodPost, resourcePath, body)
 }
 
-func (c *Client) put(resourcePath string, body []byte) (int, []byte, error) {
-	return c.sendRequest(http.MethodPut, resourcePath, body)
+func (c *Client) put(ctx context.Context, resourcePath string, body []byte) (int, []byte, error) {
+	return c.sendRequest(ctx, http.MethodPut, resourcePath, body)
 }
 
-func (c *Client) delete(resourcePath string) (int, []byte, error) {
-	return c.sendRequest(http.MethodDelete, resourcePath, nil)
+func (c *Client) delete(ctx context.Context, resourcePath string) (int, []byte, error) {
+	return c.sendRequest(ctx, http.MethodDelete, resourcePath, nil)
 }
 
-func (c *Client) sendRequest(method, resourcePath string, body []byte) (int, []byte, error) {
+func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, body []byte) (int, []byte, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Sending HTTP request", "http.request."+method, apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	reqBody := bytes.NewReader(body)
 	base, err := url.Parse(c.host)
 	if err != nil {

@@ -51,6 +51,8 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 		tx = apm.DefaultTracer.StartTransaction(p.GetName(), "test.scenario")
 		tx.Context.SetLabel("suite", "fleet")
 
+		// context is initialised at the step hook, we are initialising it here to prevent panics
+		imts.Fleet.currentContext = context.Background()
 		imts.Fleet.beforeScenario()
 	})
 

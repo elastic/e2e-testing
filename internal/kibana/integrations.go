@@ -1,6 +1,7 @@
 package kibana
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -8,6 +9,7 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // IntegrationPackage used to share information about a integration
@@ -19,13 +21,18 @@ type IntegrationPackage struct {
 }
 
 // AddIntegrationToPolicy adds an integration to policy
-func (c *Client) AddIntegrationToPolicy(packageDS PackageDataStream) error {
+func (c *Client) AddIntegrationToPolicy(ctx context.Context, packageDS PackageDataStream) error {
+	span, _ := apm.StartSpanOptions(ctx, "Adding integration to policy", "fleet.package.add-to-policy", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	reqBody, err := json.Marshal(packageDS)
 	if err != nil {
 		return errors.Wrap(err, "could not convert policy-package (request) to JSON")
 	}
 
-	statusCode, respBody, err := c.post(fmt.Sprintf("%s/package_policies", FleetAPI), reqBody)
+	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/package_policies", FleetAPI), reqBody)
 	if err != nil {
 		return errors.Wrap(err, "could not add package to policy")
 	}
@@ -37,9 +44,14 @@ func (c *Client) AddIntegrationToPolicy(packageDS PackageDataStream) error {
 }
 
 // DeleteIntegrationFromPolicy adds an integration to policy
-func (c *Client) DeleteIntegrationFromPolicy(packageDS PackageDataStream) error {
+func (c *Client) DeleteIntegrationFromPolicy(ctx context.Context, packageDS PackageDataStream) error {
+	span, _ := apm.StartSpanOptions(ctx, "Delete integration from policy", "fleet.integration.delete-from-policy", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	reqBody := `{"packagePolicyIds":["` + packageDS.ID + `"]}`
-	statusCode, respBody, err := c.post(fmt.Sprintf("%s/package_policies/delete", FleetAPI), []byte(reqBody))
+	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/package_policies/delete", FleetAPI), []byte(reqBody))
 	if err != nil {
 		return errors.Wrap(err, "could not delete integration from policy")
 	}
@@ -51,8 +63,13 @@ func (c *Client) DeleteIntegrationFromPolicy(packageDS PackageDataStream) error 
 }
 
 // GetIntegrations returns all available integrations
-func (c *Client) GetIntegrations() ([]IntegrationPackage, error) {
-	statusCode, respBody, err := c.get(fmt.Sprintf("%s/epm/packages?experimental=true", FleetAPI))
+func (c *Client) GetIntegrations(ctx context.Context) ([]IntegrationPackage, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Listing integrations", "fleet.integrations.list", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/epm/packages?experimental=true", FleetAPI))
 
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -94,8 +111,13 @@ func (c *Client) GetIntegrations() ([]IntegrationPackage, error) {
 }
 
 // GetIntegrationByPackageName returns metadata from an integration from Fleet
-func (c *Client) GetIntegrationByPackageName(packageName string) (IntegrationPackage, error) {
-	integrationPackages, err := c.GetIntegrations()
+func (c *Client) GetIntegrationByPackageName(ctx context.Context, packageName string) (IntegrationPackage, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Getting integration by package name", "fleet.integration.get-by-name", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	integrationPackages, err := c.GetIntegrations(ctx)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
@@ -113,8 +135,13 @@ func (c *Client) GetIntegrationByPackageName(packageName string) (IntegrationPac
 }
 
 // GetIntegrationFromAgentPolicy get package policy from agent policy
-func (c *Client) GetIntegrationFromAgentPolicy(packageName string, policy Policy) (PackageDataStream, error) {
-	packagePolicies, err := c.ListPackagePolicies()
+func (c *Client) GetIntegrationFromAgentPolicy(ctx context.Context, packageName string, policy Policy) (PackageDataStream, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Getting integration from Elastic Agent policy", "fleet.integration.get-from-policy", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	packagePolicies, err := c.ListPackagePolicies(ctx)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":  err,
@@ -158,9 +185,14 @@ type SecurityEndpoint struct {
 }
 
 // GetMetadataFromSecurityApp sends a POST request to retrieve metadata from Security App
-func (c *Client) GetMetadataFromSecurityApp() ([]SecurityEndpoint, error) {
+func (c *Client) GetMetadataFromSecurityApp(ctx context.Context) ([]SecurityEndpoint, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Getting metadata from Security App", "security.metadata.get", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	reqBody := `{}`
-	statusCode, respBody, err := c.post(fmt.Sprintf("%s/metadata", EndpointAPI), []byte(reqBody))
+	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/metadata", EndpointAPI), []byte(reqBody))
 	if err != nil {
 		return []SecurityEndpoint{}, errors.Wrap(err, "could not get endpoint metadata")
 	}
@@ -186,9 +218,14 @@ func (c *Client) GetMetadataFromSecurityApp() ([]SecurityEndpoint, error) {
 }
 
 // InstallIntegrationAssets sends a POST request to Fleet installing the assets for an integration
-func (c *Client) InstallIntegrationAssets(integration IntegrationPackage) (string, error) {
+func (c *Client) InstallIntegrationAssets(ctx context.Context, integration IntegrationPackage) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Installing assets for integration", "fleet.package.install-assets", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	reqBody := `{}`
-	statusCode, respBody, err := c.post(fmt.Sprintf("%s/epm/packages/%s-%s", FleetAPI, integration.Name, integration.Version), []byte(reqBody))
+	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/epm/packages/%s-%s", FleetAPI, integration.Name, integration.Version), []byte(reqBody))
 	if err != nil {
 		return "", errors.Wrap(err, "could not install integration assets")
 	}
@@ -213,8 +250,13 @@ func (c *Client) InstallIntegrationAssets(integration IntegrationPackage) (strin
 // IsAgentListedInSecurityApp retrieves the hosts from Endpoint to check if a hostname
 // is listed in the Security App. For that, we will inspect the metadata, and will iterate
 // through the hosts, until we get the proper hostname.
-func (c *Client) IsAgentListedInSecurityApp(hostName string) (SecurityEndpoint, error) {
-	hosts, err := c.GetMetadataFromSecurityApp()
+func (c *Client) IsAgentListedInSecurityApp(ctx context.Context, hostName string) (SecurityEndpoint, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Checking Elastic Agent in Security App", "security.elastic-agent.listed", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	hosts, err := c.GetMetadataFromSecurityApp(ctx)
 	if err != nil {
 		return SecurityEndpoint{}, err
 	}
@@ -236,8 +278,8 @@ func (c *Client) IsAgentListedInSecurityApp(hostName string) (SecurityEndpoint, 
 // IsAgentListedInSecurityAppWithStatus inspects the metadata field for a hostname, obtained from
 // the security App. We will check if the status matches the desired status, returning an error
 // if the agent is not present in the Security App
-func (c *Client) IsAgentListedInSecurityAppWithStatus(hostName string, desiredStatus string) (bool, error) {
-	host, err := c.IsAgentListedInSecurityApp(hostName)
+func (c *Client) IsAgentListedInSecurityAppWithStatus(ctx context.Context, hostName string, desiredStatus string) (bool, error) {
+	host, err := c.IsAgentListedInSecurityApp(ctx, hostName)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"hostname": hostName,
@@ -260,8 +302,13 @@ func (c *Client) IsAgentListedInSecurityAppWithStatus(hostName string, desiredSt
 // is listed in the Security App. For that, we will inspect the metadata, and will iterate
 // through the hosts, until we get the policy status, finally checking for the success
 // status.
-func (c *Client) IsPolicyResponseListedInSecurityApp(agentID string) (bool, error) {
-	hosts, err := c.GetMetadataFromSecurityApp()
+func (c *Client) IsPolicyResponseListedInSecurityApp(ctx context.Context, agentID string) (bool, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Checking if policy response is listed in the Security app", "security.policy-response.check", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	hosts, err := c.GetMetadataFromSecurityApp(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -286,12 +333,17 @@ func (c *Client) IsPolicyResponseListedInSecurityApp(agentID string) (bool, erro
 
 // UpdateIntegrationPackagePolicy sends a PUT request to Fleet updating integration
 // configuration
-func (c *Client) UpdateIntegrationPackagePolicy(packageDS PackageDataStream) (string, error) {
+func (c *Client) UpdateIntegrationPackagePolicy(ctx context.Context, packageDS PackageDataStream) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Updating integration package policy", "fleet.package-policy.update", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	// empty the ID as it won't be recoganized in the PUT body
 	id := packageDS.ID
 	packageDS.ID = ""
 	reqBody, _ := json.Marshal(packageDS)
-	statusCode, respBody, err := c.put(fmt.Sprintf("%s/package_policies/%s", FleetAPI, id), reqBody)
+	statusCode, respBody, err := c.put(ctx, fmt.Sprintf("%s/package_policies/%s", FleetAPI, id), reqBody)
 	if err != nil {
 		return "", errors.Wrap(err, "could not update integration package")
 	}

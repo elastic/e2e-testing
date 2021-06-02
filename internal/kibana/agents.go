@@ -38,7 +38,7 @@ type Agent struct {
 
 // GetAgentByHostname get an agent by the local_metadata.host.name property
 func (c *Client) GetAgentByHostname(ctx context.Context, hostname string) (Agent, error) {
-	span, _ := apm.StartSpanOptions(ctx, "Getting Elastic Agent by hostname", "kibana.agent.get-by-hostname", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Getting Elastic Agent by hostname", "fleet.agent.get-by-hostname", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
@@ -76,17 +76,17 @@ func (c *Client) GetAgentIDByHostname(ctx context.Context, hostname string) (str
 
 // GetAgentStatusByHostname gets agent status by hostname
 func (c *Client) GetAgentStatusByHostname(ctx context.Context, hostname string) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Getting Elastic Agent status by hostname", "fleet.agent.get-status-by-hostname", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	agentID, err := c.GetAgentIDByHostname(ctx, hostname)
 	if err != nil {
 		return "", err
 	}
 
-	span, _ := apm.StartSpanOptions(ctx, "Getting Elastic Agent status by hostname", "kibana.agent.get-status-by-hostname", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	defer span.End()
-
-	statusCode, respBody, err := c.get(fmt.Sprintf("%s/agents/%s", FleetAPI, agentID))
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/agents/%s", FleetAPI, agentID))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"body":       respBody,
@@ -112,6 +112,11 @@ func (c *Client) GetAgentStatusByHostname(ctx context.Context, hostname string) 
 
 // GetAgentEvents get events of agent
 func (c *Client) GetAgentEvents(ctx context.Context, applicationName string, agentID string, packagePolicyID string, updatedAt string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Getting agent events", "fleet.elastic-agent.get-events", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{
@@ -195,12 +200,12 @@ func (c *Client) GetAgentEvents(ctx context.Context, applicationName string, age
 
 // ListAgents returns the list of agents enrolled with Fleet.
 func (c *Client) ListAgents(ctx context.Context) ([]Agent, error) {
-	span, _ := apm.StartSpanOptions(ctx, "Listing Elastic Agents", "kibana.agents.list", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Listing Elastic Agents", "fleet.agents.list", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
 
-	statusCode, respBody, err := c.get(fmt.Sprintf("%s/agents", FleetAPI))
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/agents", FleetAPI))
 
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -234,18 +239,18 @@ func (c *Client) ListAgents(ctx context.Context) ([]Agent, error) {
 
 // UnEnrollAgent unenrolls agent from fleet
 func (c *Client) UnEnrollAgent(ctx context.Context, hostname string) error {
+	span, _ := apm.StartSpanOptions(ctx, "UnEnrolling Elastic Agent by hostname", "fleet.agent.un-enroll", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	agentID, err := c.GetAgentIDByHostname(ctx, hostname)
 	if err != nil {
 		return err
 	}
 
-	span, _ := apm.StartSpanOptions(ctx, "UnEnrolling Elastic Agent by hostname", "kibana.agent.un-enroll", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	defer span.End()
-
 	reqBody := `{"revoke": true}`
-	statusCode, respBody, _ := c.post(fmt.Sprintf("%s/agents/%s/unenroll", FleetAPI, agentID), []byte(reqBody))
+	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/agents/%s/unenroll", FleetAPI, agentID), []byte(reqBody))
 	if statusCode != 200 {
 		return fmt.Errorf("could not unenroll agent; API status code = %d, response body = %s", statusCode, respBody)
 	}
@@ -254,18 +259,18 @@ func (c *Client) UnEnrollAgent(ctx context.Context, hostname string) error {
 
 // UpgradeAgent upgrades an agent from to version
 func (c *Client) UpgradeAgent(ctx context.Context, hostname string, version string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Upgrading Elastic Agent by hostname", "fleet.agent.upgrade-by-hostname", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	agentID, err := c.GetAgentIDByHostname(ctx, hostname)
 	if err != nil {
 		return err
 	}
 
-	span, _ := apm.StartSpanOptions(ctx, "Upgrading Elastic Agent by hostname", "kibana.agent.upgrade-by-hostname", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	defer span.End()
-
 	reqBody := `{"version":"` + version + `", "force": true}`
-	statusCode, respBody, err := c.post(fmt.Sprintf("%s/agents/%s/upgrade", FleetAPI, agentID), []byte(reqBody))
+	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/agents/%s/upgrade", FleetAPI, agentID), []byte(reqBody))
 	if statusCode != 200 {
 		log.WithFields(log.Fields{
 			"body":       respBody,
