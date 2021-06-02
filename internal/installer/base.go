@@ -55,28 +55,3 @@ type BasePackage struct {
 	profile    string
 	service    string
 }
-
-// getElasticAgentHash uses Elastic Agent's home dir to read the file with agent's build hash
-// it will return the first six characters of the hash (short hash)
-func getElasticAgentHash(containerName string, commitFile string) (string, error) {
-	cmd := []string{
-		"cat", commitFile,
-	}
-
-	fullHash, err := deploy.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
-	if err != nil {
-		return "", err
-	}
-
-	runes := []rune(fullHash)
-	shortHash := string(runes[0:6])
-
-	log.WithFields(log.Fields{
-		"commitFile":    commitFile,
-		"containerName": containerName,
-		"hash":          fullHash,
-		"shortHash":     shortHash,
-	}).Debug("Agent build hash found")
-
-	return shortHash, nil
-}
