@@ -1,7 +1,7 @@
 version: '2.4'
 services:
-  debian-systemd:
-    image: alehaa/debian-systemd:${debian_systemdTag:-stretch}
+  elastic-agent:
+    image: docker.elastic.co/observability-ci/debian-systemd:latest
     container_name: ${debian_systemdContainerName} 
     entrypoint: "/sbin/init"
     platform: ${stackPlatform:-linux/amd64}

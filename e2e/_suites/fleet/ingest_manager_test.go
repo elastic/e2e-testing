@@ -13,11 +13,8 @@ import (
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
-	"github.com/elastic/e2e-testing/internal/docker"
-	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
-	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -32,62 +29,12 @@ func setUpSuite() {
 		os.Exit(1)
 	}
 
-	common.Provider = shell.GetEnv("PROVIDER", common.Provider)
-	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
-	if developerMode {
-		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
-	}
-
-	// check if base version is an alias
-	v, err := utils.GetElasticArtifactVersion(common.AgentVersionBase)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": common.AgentVersionBase,
-		}).Fatal("Failed to get agent base version, aborting")
-	}
-	common.AgentVersionBase = v
-
-	common.AgentVersion = shell.GetEnv("BEAT_VERSION", common.AgentVersionBase)
-
-	// check if version is an alias
-	v, err = utils.GetElasticArtifactVersion(common.AgentVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": common.AgentVersion,
-		}).Fatal("Failed to get agent version, aborting")
-	}
-	common.AgentVersion = v
-
-	common.StackVersion = shell.GetEnv("STACK_VERSION", common.StackVersion)
-	v, err = utils.GetElasticArtifactVersion(common.StackVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": common.StackVersion,
-		}).Fatal("Failed to get stack version, aborting")
-	}
-	common.StackVersion = v
-
-	common.KibanaVersion = shell.GetEnv("KIBANA_VERSION", "")
-	if common.KibanaVersion == "" {
-		// we want to deploy a released version for Kibana
-		// if not set, let's use stackVersion
-		common.KibanaVersion, err = utils.GetElasticArtifactVersion(common.StackVersion)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error":   err,
-				"version": common.KibanaVersion,
-			}).Fatal("Failed to get kibana version, aborting")
-		}
-	}
+	common.InitVersions()
 
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
 			kibanaClient: kibanaClient,
 			deployer:     deploy.New(common.Provider),
-			Installers:   map[string]installer.ElasticAgentInstaller{}, // do not pre-initialise the map
 		},
 	}
 }
@@ -110,27 +57,23 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 }
 
 func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
-	developerMode := shell.GetEnvBool("DEVELOPER_MODE")
-
 	ctx.BeforeSuite(func() {
 		setUpSuite()
 
-		log.Trace("Bootstrapping Fleet Server")
-
 		if !shell.GetEnvBool("SKIP_PULL") {
 			images := []string{
-				"docker.elastic.co/beats/elastic-agent:" + common.AgentVersion,
-				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.AgentVersion,
+				"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
+				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,
 				"docker.elastic.co/elasticsearch/elasticsearch:" + common.StackVersion,
 				"docker.elastic.co/kibana/kibana:" + common.KibanaVersion,
-				"docker.elastic.co/observability-ci/elastic-agent:" + common.AgentVersion,
-				"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.AgentVersion,
+				"docker.elastic.co/observability-ci/elastic-agent:" + common.BeatVersion,
+				"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.BeatVersion,
 				"docker.elastic.co/observability-ci/elasticsearch:" + common.StackVersion,
 				"docker.elastic.co/observability-ci/elasticsearch-ubi8:" + common.StackVersion,
 				"docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion,
 				"docker.elastic.co/observability-ci/kibana-ubi8:" + common.KibanaVersion,
 			}
-			docker.PullImages(images)
+			deploy.PullImages(images)
 		}
 
 		deployer := deploy.New(common.Provider)
@@ -146,35 +89,15 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			return nil
 		})
 
-		imts.Fleet.Version = common.AgentVersionBase
+		imts.Fleet.Version = common.BeatVersionBase
 		imts.Fleet.RuntimeDependenciesStartDate = time.Now().UTC()
 	})
 
 	ctx.AfterSuite(func() {
-		if !developerMode {
+		if !common.DeveloperMode {
 			log.Debug("Destroying Fleet runtime dependencies")
 			deployer := deploy.New(common.Provider)
 			deployer.Destroy()
-		}
-
-		installers := imts.Fleet.Installers
-		for k, v := range installers {
-			agentPath := v.BinaryPath
-			if _, err := os.Stat(agentPath); err == nil {
-				err = os.Remove(agentPath)
-				if err != nil {
-					log.WithFields(log.Fields{
-						"err":       err,
-						"installer": k,
-						"path":      agentPath,
-					}).Warn("Elastic Agent binary could not be removed.")
-				} else {
-					log.WithFields(log.Fields{
-						"installer": k,
-						"path":      agentPath,
-					}).Debug("Elastic Agent binary was removed.")
-				}
-			}
 		}
 	})
 }

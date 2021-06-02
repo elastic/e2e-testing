@@ -21,7 +21,7 @@ Examples: Debian
 
 @enroll
 Scenario Outline: Deploying the <os> agent with enroll and then run on rpm and deb
-  Given a "<os>" agent is deployed to Fleet with "systemd" installer
+  Given a "<os>" agent is deployed to Fleet
   When the "elastic-agent" process is in the "started" state on the host
   Then the agent is listed in Fleet as "online"
     And system package dashboards are listed in Fleet

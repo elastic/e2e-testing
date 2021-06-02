@@ -2,7 +2,7 @@
 // or more contributor license agreements. Licensed under the Elastic License;
 // you may not use this file except in compliance with the Elastic License.
 
-package docker
+package deploy
 
 import (
 	"archive/tar"
@@ -23,7 +23,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -135,16 +135,18 @@ func CopyFileToContainer(ctx context.Context, containerName string, srcPath stri
 }
 
 // ExecCommandIntoContainer executes a command, as a user, into a container
-func ExecCommandIntoContainer(ctx context.Context, containerName string, user string, cmd []string) (string, error) {
-	return ExecCommandIntoContainerWithEnv(ctx, containerName, user, cmd, []string{})
+func ExecCommandIntoContainer(ctx context.Context, container string, user string, cmd []string) (string, error) {
+	return ExecCommandIntoContainerWithEnv(ctx, container, user, cmd, []string{})
 }
 
 // ExecCommandIntoContainerWithEnv executes a command, as a user, with env, into a container
-func ExecCommandIntoContainerWithEnv(ctx context.Context, containerName string, user string, cmd []string, env []string) (string, error) {
+func ExecCommandIntoContainerWithEnv(ctx context.Context, container string, user string, cmd []string, env []string) (string, error) {
 	dockerClient := getDockerClient()
 
 	detach := false
 	tty := false
+
+	containerName := container
 
 	log.WithFields(log.Fields{
 		"container": containerName,
@@ -190,6 +192,8 @@ func ExecCommandIntoContainerWithEnv(ctx context.Context, containerName string, 
 		Detach: detach,
 		Tty:    tty,
 	})
+	defer resp.Close()
+
 	if err != nil {
 		log.WithFields(log.Fields{
 			"container": containerName,
@@ -201,7 +205,6 @@ func ExecCommandIntoContainerWithEnv(ctx context.Context, containerName string, 
 		}).Error("Could not execute command in container")
 		return "", err
 	}
-	defer resp.Close()
 
 	// see https://stackoverflow.com/a/57132902
 	var execRes execResult
@@ -285,13 +288,13 @@ func GetContainerHostname(containerName string) (string, error) {
 
 // InspectContainer returns the JSON representation of the inspection of a
 // Docker container, identified by its name
-func InspectContainer(name string) (*types.ContainerJSON, error) {
+func InspectContainer(service ServiceRequest) (*types.ContainerJSON, error) {
 	dockerClient := getDockerClient()
 
 	ctx := context.Background()
 
 	labelFilters := filters.NewArgs()
-	labelFilters.Add("name", name)
+	labelFilters.Add("name", service.Name)
 
 	containers, err := dockerClient.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: labelFilters})
 	if err != nil {
@@ -384,8 +387,8 @@ func LoadImage(imagePath string) error {
 func TagImage(src string, target string) error {
 	dockerClient := getDockerClient()
 
-	maxTimeout := 15 * time.Second
-	exp := common.GetExponentialBackOff(maxTimeout)
+	maxTimeout := 5 * time.Second * time.Duration(utils.TimeoutFactor)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 	retryCount := 0
 
 	tagImageFn := func() error {
@@ -459,9 +462,18 @@ func PullImages(images []string) error {
 	c := getDockerClient()
 	ctx := context.Background()
 
-	log.WithField("images", images).Info("Pulling Docker images...")
+	platform := "linux/" + utils.GetArchitecture()
+
+	log.WithFields(log.Fields{
+		"images":   images,
+		"platform": platform,
+	}).Info("Pulling Docker images...")
+	options := types.ImagePullOptions{
+		Platform: platform,
+	}
+
 	for _, image := range images {
-		r, err := c.ImagePull(ctx, image, types.ImagePullOptions{})
+		r, err := c.ImagePull(ctx, image, options)
 		if err != nil {
 			return err
 		}

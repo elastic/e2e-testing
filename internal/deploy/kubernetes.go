@@ -12,6 +12,7 @@ import (
 
 	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 var cluster kubernetes.Cluster
@@ -27,13 +28,27 @@ func newK8sDeploy() Deployment {
 }
 
 // Add adds services deployment
-func (c *kubernetesDeploymentManifest) Add(services []string, env map[string]string) error {
+func (c *kubernetesDeploymentManifest) Add(services []ServiceRequest, env map[string]string) error {
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
 
 	for _, service := range services {
-		_, err := kubectl.Run(c.Context, "apply", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service))
+		_, err := kubectl.Run(c.Context, "apply", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service.Name))
 		if err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+// AddFiles - add files to deployment service
+func (c *kubernetesDeploymentManifest) AddFiles(service ServiceRequest, files []string) error {
+	container, _ := c.Inspect(service)
+	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
+
+	for _, file := range files {
+		_, err := kubectl.Run(c.Context, "cp", file, fmt.Sprintf("deployment/%s:.", container.Name))
+		if err != nil {
+			log.WithField("error", err).Fatal("Unable to copy file to service")
 		}
 	}
 	return nil
@@ -66,9 +81,9 @@ func (c *kubernetesDeploymentManifest) Destroy() error {
 }
 
 // ExecIn execute command in service
-func (c *kubernetesDeploymentManifest) ExecIn(service string, cmd []string) (string, error) {
+func (c *kubernetesDeploymentManifest) ExecIn(service ServiceRequest, cmd []string) (string, error) {
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
-	args := []string{"exec", "deployment/" + service, "--"}
+	args := []string{"exec", "deployment/" + service.Name, "--"}
 	for _, arg := range cmd {
 		args = append(cmd, arg)
 	}
@@ -87,9 +102,9 @@ type kubernetesServiceManifest struct {
 }
 
 // Inspect inspects a service
-func (c *kubernetesDeploymentManifest) Inspect(service string) (*ServiceManifest, error) {
+func (c *kubernetesDeploymentManifest) Inspect(service ServiceRequest) (*ServiceManifest, error) {
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
-	out, err := kubectl.Run(c.Context, "get", "deployment/"+service, "-o", "json")
+	out, err := kubectl.Run(c.Context, "get", "deployment/"+service.Name, "-o", "json")
 	if err != nil {
 		return &ServiceManifest{}, err
 	}
@@ -100,20 +115,47 @@ func (c *kubernetesDeploymentManifest) Inspect(service string) (*ServiceManifest
 	return &ServiceManifest{
 		ID:         inspect.Metadata.ID,
 		Name:       strings.TrimPrefix(inspect.Metadata.Name, "/"),
-		Connection: service,
-		Hostname:   service,
+		Connection: service.Name,
+		Hostname:   service.Name,
+		Alias:      service.Name,
+		Platform:   "linux",
 	}, nil
 }
 
+// Logs print logs of service
+func (c *kubernetesDeploymentManifest) Logs(service ServiceRequest) error {
+	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
+	_, err := kubectl.Run(c.Context, "logs", "deployment/"+service.Name)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"service": service.Name,
+		}).Error("Could not retrieve Elastic Agent logs")
+
+		return err
+	}
+	return nil
+}
+
 // Remove remove services from deployment
-func (c *kubernetesDeploymentManifest) Remove(services []string, env map[string]string) error {
+func (c *kubernetesDeploymentManifest) Remove(services []ServiceRequest, env map[string]string) error {
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
 
 	for _, service := range services {
-		_, err := kubectl.Run(c.Context, "delete", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service))
+		_, err := kubectl.Run(c.Context, "delete", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service.Name))
 		if err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+// Start a container
+func (c *kubernetesDeploymentManifest) Start(service ServiceRequest) error {
+	return nil
+}
+
+// Stop a container
+func (c *kubernetesDeploymentManifest) Stop(service ServiceRequest) error {
 	return nil
 }

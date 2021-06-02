@@ -17,8 +17,8 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/internal/utils"
 )
 
 // Control struct for k8s cluster
@@ -67,7 +67,7 @@ func (c Control) createNamespace(ctx context.Context, namespace string) error {
 	// Wait for default account to be available, if not it is not possible to
 	// deploy pods in this namespace.
 	timeout := 60 * time.Second
-	exp := backoff.WithContext(common.GetExponentialBackOff(timeout), ctx)
+	exp := backoff.WithContext(utils.GetExponentialBackOff(timeout), ctx)
 	return backoff.Retry(func() error {
 		_, err := c.Run(ctx, "get", "serviceaccount", "default")
 		if err != nil {

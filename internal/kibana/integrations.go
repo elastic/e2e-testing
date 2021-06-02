@@ -12,7 +12,7 @@ import (
 
 // IntegrationPackage used to share information about a integration
 type IntegrationPackage struct {
-	ID      string `json:"id,omitempty"`
+	ID      string `json:"-"`
 	Name    string `json:"name"`
 	Title   string `json:"title"`
 	Version string `json:"version"`
