@@ -5,6 +5,7 @@
 package installer
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
@@ -12,6 +13,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // elasticAgentTARPackage implements operations for a RPM installer
@@ -137,7 +139,11 @@ func (i *elasticAgentTARPackage) Stop() error {
 }
 
 // Uninstall uninstalls a TAR package
-func (i *elasticAgentTARPackage) Uninstall() error {
+func (i *elasticAgentTARPackage) Uninstall(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.tar.uninstall", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
 	args := []string{"elastic-agent", "uninstall", "-f"}
 	_, err := i.Exec(args)
 	if err != nil {

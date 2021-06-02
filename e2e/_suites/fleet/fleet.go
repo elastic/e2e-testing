@@ -76,7 +76,7 @@ func (fts *FleetTestSuite) afterScenario() {
 		}
 		// only call it when the elastic-agent is present
 		if !fts.ElasticAgentStopped {
-			err := agentInstaller.Uninstall()
+			err := agentInstaller.Uninstall(fts.currentContext)
 			if err != nil {
 				log.Warnf("Could not uninstall the agent after the scenario: %v", err)
 			}
@@ -381,7 +381,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		}
 		return nil
 	} else if state == "uninstalled" {
-		err := agentInstaller.Uninstall()
+		err := agentInstaller.Uninstall(fts.currentContext)
 		if err != nil {
 			return err
 		}

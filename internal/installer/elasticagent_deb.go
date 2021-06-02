@@ -5,6 +5,7 @@
 package installer
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
@@ -12,6 +13,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // elasticAgentDEBPackage implements operations for a DEB installer
@@ -152,7 +154,12 @@ func (i *elasticAgentDEBPackage) Stop() error {
 }
 
 // Uninstall uninstalls a DEB package
-func (i *elasticAgentDEBPackage) Uninstall() error {
+func (i *elasticAgentDEBPackage) Uninstall(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.debian.uninstall", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	args := []string{"elastic-agent", "uninstall", "-f"}
 	_, err := i.Exec(args)
 	if err != nil {

@@ -37,7 +37,7 @@ type ServiceOperator interface {
 	Preinstall() error
 	Start() error // will start a service
 	Stop() error  // will stop a service
-	Uninstall() error
+	Uninstall(ctx context.Context) error
 }
 
 // ServiceOperatorManifest is state information for each service operator

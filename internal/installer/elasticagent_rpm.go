@@ -5,6 +5,7 @@
 package installer
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
@@ -12,6 +13,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // elasticAgentRPMPackage implements operations for a RPM installer
@@ -156,7 +158,11 @@ func (i *elasticAgentRPMPackage) Stop() error {
 }
 
 // Uninstall uninstalls a RPM package
-func (i *elasticAgentRPMPackage) Uninstall() error {
+func (i *elasticAgentRPMPackage) Uninstall(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.rpm.uninstall", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
 	args := []string{"elastic-agent", "uninstall", "-f"}
 	_, err := i.Exec(args)
 	if err != nil {

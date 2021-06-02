@@ -5,12 +5,14 @@
 package installer
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // elasticAgentDockerPackage implements operations for a docker installer
@@ -122,8 +124,13 @@ func (i *elasticAgentDockerPackage) Stop() error {
 	return nil
 }
 
-// Uninstall uninstalls a TAR package
-func (i *elasticAgentDockerPackage) Uninstall() error {
+// Uninstall uninstalls a Docker package
+func (i *elasticAgentDockerPackage) Uninstall(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.docker.uninstall", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	args := []string{"elastic-agent", "uninstall", "-f"}
 	_, err := i.Exec(args)
 	if err != nil {
