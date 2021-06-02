@@ -111,7 +111,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		// b. fetched from the local beats binaries
 		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 		dockerInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, "docker")
-		dockerInstaller.Preinstall()
+		dockerInstaller.Preinstall(fts.currentContext)
 
 		arch := utils.GetArchitecture()
 		dockerImageTag += "-" + arch
@@ -137,7 +137,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		deploy.NewServiceRequest(common.FleetProfileName),
 		deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(flavour),
 	}
-	err := fts.deployer.Add(services, common.ProfileEnv)
+	err := fts.deployer.Add(fts.currentContext, services, common.ProfileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err

@@ -44,19 +44,28 @@ func (i *elasticAgentRPMPackage) Inspect() (deploy.ServiceOperatorManifest, erro
 }
 
 // Install installs a RPM package
-func (i *elasticAgentRPMPackage) Install() error {
+func (i *elasticAgentRPMPackage) Install(ctx context.Context) error {
 	log.Trace("No additional install commands for RPM")
 	return nil
 }
 
 // Exec will execute a command within the service environment
-func (i *elasticAgentRPMPackage) Exec(args []string) (string, error) {
-	output, err := i.deploy.ExecIn(i.service, args)
+func (i *elasticAgentRPMPackage) Exec(ctx context.Context, args []string) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Executing Elastic Agent command", "elastic-agent.rpm.exec", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	output, err := i.deploy.ExecIn(ctx, i.service, args)
 	return output, err
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentRPMPackage) Enroll(token string) error {
+func (i *elasticAgentRPMPackage) Enroll(ctx context.Context, token string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.rpm.enroll", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
 
 	cfg, _ := kibana.NewFleetConfig(token)
 	args := []string{"elastic-agent", "enroll"}
@@ -64,7 +73,7 @@ func (i *elasticAgentRPMPackage) Enroll(token string) error {
 		args = append(args, arg)
 	}
 
-	output, err := i.Exec(args)
+	output, err := i.Exec(ctx, args)
 	log.Trace(output)
 	if err != nil {
 		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
@@ -73,7 +82,12 @@ func (i *elasticAgentRPMPackage) Enroll(token string) error {
 }
 
 // InstallCerts installs the certificates for a RPM package, using the right OS package manager
-func (i *elasticAgentRPMPackage) InstallCerts() error {
+func (i *elasticAgentRPMPackage) InstallCerts(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Installing certificates for the Elastic Agent", "elastic-agent.rpm.install-certs", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	cmds := [][]string{
 		{"yum", "check-update"},
 		{"yum", "install", "ca-certificates", "-y"},
@@ -81,7 +95,7 @@ func (i *elasticAgentRPMPackage) InstallCerts() error {
 		{"update-ca-trust", "extract"},
 	}
 	for _, cmd := range cmds {
-		if _, err := i.Exec(cmd); err != nil {
+		if _, err := i.Exec(ctx, cmd); err != nil {
 			return err
 		}
 	}
@@ -94,8 +108,13 @@ func (i *elasticAgentRPMPackage) Logs() error {
 }
 
 // Postinstall executes operations after installing a RPM package
-func (i *elasticAgentRPMPackage) Postinstall() error {
-	_, err := i.Exec([]string{"systemctl", "restart", "elastic-agent"})
+func (i *elasticAgentRPMPackage) Postinstall(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Post-install operations for the Elastic Agent", "elastic-agent.rpm.post-install", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	_, err := i.Exec(ctx, []string{"systemctl", "restart", "elastic-agent"})
 	if err != nil {
 		return err
 	}
@@ -103,7 +122,12 @@ func (i *elasticAgentRPMPackage) Postinstall() error {
 }
 
 // Preinstall executes operations before installing a RPM package
-func (i *elasticAgentRPMPackage) Preinstall() error {
+func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Pre-install operations for the Elastic Agent", "elastic-agent.rpm.pre-install", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	artifact := "elastic-agent"
 	os := "linux"
 	arch := "x86_64"
@@ -131,7 +155,7 @@ func (i *elasticAgentRPMPackage) Preinstall() error {
 		return err
 	}
 
-	_, err = i.Exec([]string{"yum", "localinstall", "/" + binaryName, "-y"})
+	_, err = i.Exec(ctx, []string{"yum", "localinstall", "/" + binaryName, "-y"})
 	if err != nil {
 		return err
 	}
@@ -140,8 +164,13 @@ func (i *elasticAgentRPMPackage) Preinstall() error {
 }
 
 // Start will start a service
-func (i *elasticAgentRPMPackage) Start() error {
-	_, err := i.Exec([]string{"systemctl", "start", "elastic-agent"})
+func (i *elasticAgentRPMPackage) Start(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Starting Elastic Agent service", "elastic-agent.rpm.start", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	_, err := i.Exec(ctx, []string{"systemctl", "start", "elastic-agent"})
 	if err != nil {
 		return err
 	}
@@ -149,8 +178,13 @@ func (i *elasticAgentRPMPackage) Start() error {
 }
 
 // Stop will start a service
-func (i *elasticAgentRPMPackage) Stop() error {
-	_, err := i.Exec([]string{"systemctl", "stop", "elastic-agent"})
+func (i *elasticAgentRPMPackage) Stop(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Stopping Elastic Agent service", "elastic-agent.rpm.stop", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	_, err := i.Exec(ctx, []string{"systemctl", "stop", "elastic-agent"})
 	if err != nil {
 		return err
 	}
@@ -164,7 +198,7 @@ func (i *elasticAgentRPMPackage) Uninstall(ctx context.Context) error {
 	})
 	defer span.End()
 	args := []string{"elastic-agent", "uninstall", "-f"}
-	_, err := i.Exec(args)
+	_, err := i.Exec(ctx, args)
 	if err != nil {
 		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
 	}

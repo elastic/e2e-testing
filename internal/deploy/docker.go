@@ -26,7 +26,12 @@ func newDockerDeploy() Deployment {
 }
 
 // Add adds services deployment
-func (c *dockerDeploymentManifest) Add(services []ServiceRequest, env map[string]string) error {
+func (c *dockerDeploymentManifest) Add(ctx context.Context, services []ServiceRequest, env map[string]string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Adding services to Docker Compose deployment", "docker-compose.manifest.add-services", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	serviceManager := NewServiceManager()
 
 	return serviceManager.AddServicesToCompose(c.Context, services[0], services[1:], env)
@@ -108,13 +113,18 @@ func (c *dockerDeploymentManifest) Destroy(ctx context.Context) error {
 }
 
 // ExecIn execute command in service
-func (c *dockerDeploymentManifest) ExecIn(service ServiceRequest, cmd []string) (string, error) {
-	inspect, _ := c.Inspect(context.Background(), service)
+func (c *dockerDeploymentManifest) ExecIn(ctx context.Context, service ServiceRequest, cmd []string) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Executing command in compose deployment", "docker-compose.manifest.execIn", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	inspect, _ := c.Inspect(ctx, service)
 	args := []string{"exec", "-u", "root", "-i", inspect.Name}
 	for _, cmdArg := range cmd {
 		args = append(args, cmdArg)
 	}
-	output, err := shell.Execute(c.Context, ".", "docker", args...)
+	output, err := shell.Execute(ctx, ".", "docker", args...)
 	if err != nil {
 		return "", err
 	}

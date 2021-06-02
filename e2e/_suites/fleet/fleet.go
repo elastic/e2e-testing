@@ -242,7 +242,7 @@ func (fts *FleetTestSuite) installCerts() error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
 
-	err := agentInstaller.InstallCerts()
+	err := agentInstaller.InstallCerts(fts.currentContext)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"agentVersion":      common.BeatVersion,
@@ -348,13 +348,13 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 		agentService,
 	}
 
-	err = fts.deployer.Add(services, common.ProfileEnv)
+	err = fts.deployer.Add(fts.currentContext, services, common.ProfileEnv)
 	if err != nil {
 		return err
 	}
 
 	agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, installerType)
-	err = deployAgentToFleet(agentInstaller, fts.CurrentToken)
+	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken)
 	if err != nil {
 		return err
 	}
@@ -365,17 +365,17 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
 	if state == "started" {
-		err := agentInstaller.Start()
+		err := agentInstaller.Start(fts.currentContext)
 		return err
 	} else if state == "restarted" {
-		err := agentInstaller.Stop()
+		err := agentInstaller.Stop(fts.currentContext)
 		if err != nil {
 			return err
 		}
 
 		utils.Sleep(time.Duration(utils.TimeoutFactor) * 10 * time.Second)
 
-		err = agentInstaller.Start()
+		err = agentInstaller.Start(fts.currentContext)
 		if err != nil {
 			return err
 		}
@@ -401,7 +401,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		"process": process,
 	}).Trace("Stopping process on the service")
 
-	err := agentInstaller.Stop()
+	err := agentInstaller.Stop(fts.currentContext)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"action":  state,
@@ -518,7 +518,7 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 		"ls", "-l", pkgManifest.WorkDir,
 	}
 
-	content, err := agentInstaller.Exec(cmd)
+	content, err := agentInstaller.Exec(fts.currentContext, cmd)
 	if err != nil {
 		if content == "" || strings.Contains(content, "No such file or directory") {
 			return nil
@@ -623,7 +623,7 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
 
-	err := agentInstaller.Enroll(fts.CurrentToken)
+	err := agentInstaller.Enroll(fts.currentContext, fts.CurrentToken)
 	if err != nil {
 		return err
 	}
@@ -961,13 +961,13 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 		agentService,
 	}
 
-	err := fts.deployer.Add(services, common.ProfileEnv)
+	err := fts.deployer.Add(fts.currentContext, services, common.ProfileEnv)
 	if err != nil {
 		return err
 	}
 
 	agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
-	err = deployAgentToFleet(agentInstaller, fts.CurrentToken)
+	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken)
 
 	if err == nil {
 		err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
@@ -1098,23 +1098,23 @@ func (fts *FleetTestSuite) checkDataStream() error {
 	return err
 }
 
-func deployAgentToFleet(agentInstaller deploy.ServiceOperator, token string) error {
-	err := agentInstaller.Preinstall()
+func deployAgentToFleet(ctx context.Context, agentInstaller deploy.ServiceOperator, token string) error {
+	err := agentInstaller.Preinstall(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = agentInstaller.Install()
+	err = agentInstaller.Install(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = agentInstaller.Enroll(token)
+	err = agentInstaller.Enroll(ctx, token)
 	if err != nil {
 		return err
 	}
 
-	return agentInstaller.Postinstall()
+	return agentInstaller.Postinstall(ctx)
 }
 
 func inputs(integration string) []kibana.Input {

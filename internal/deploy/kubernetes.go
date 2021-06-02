@@ -29,11 +29,16 @@ func newK8sDeploy() Deployment {
 }
 
 // Add adds services deployment
-func (c *kubernetesDeploymentManifest) Add(services []ServiceRequest, env map[string]string) error {
-	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
+func (c *kubernetesDeploymentManifest) Add(ctx context.Context, services []ServiceRequest, env map[string]string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Adding services to kubernetes deployment", "kubernetes.manifest.add-services", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
 
 	for _, service := range services {
-		_, err := kubectl.Run(c.Context, "apply", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service.Name))
+		_, err := kubectl.Run(ctx, "apply", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service.Name))
 		if err != nil {
 			return err
 		}
@@ -97,13 +102,18 @@ func (c *kubernetesDeploymentManifest) Destroy(ctx context.Context) error {
 }
 
 // ExecIn execute command in service
-func (c *kubernetesDeploymentManifest) ExecIn(service ServiceRequest, cmd []string) (string, error) {
-	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
+func (c *kubernetesDeploymentManifest) ExecIn(ctx context.Context, service ServiceRequest, cmd []string) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Executing command in kubernetes deployment", "kubernetes.manifest.execIn", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
 	args := []string{"exec", "deployment/" + service.Name, "--"}
 	for _, arg := range cmd {
 		args = append(cmd, arg)
 	}
-	output, err := kubectl.Run(c.Context, args...)
+	output, err := kubectl.Run(ctx, args...)
 	if err != nil {
 		return "", err
 	}

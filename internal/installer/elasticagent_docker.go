@@ -43,23 +43,28 @@ func (i *elasticAgentDockerPackage) Inspect() (deploy.ServiceOperatorManifest, e
 }
 
 // Install installs a package
-func (i *elasticAgentDockerPackage) Install() error {
+func (i *elasticAgentDockerPackage) Install(ctx context.Context) error {
 	return nil
 }
 
 // Exec will execute a command within the service environment
-func (i *elasticAgentDockerPackage) Exec(args []string) (string, error) {
-	output, err := i.deploy.ExecIn(i.service, args)
+func (i *elasticAgentDockerPackage) Exec(ctx context.Context, args []string) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Executing Elastic Agent command", "elastic-agent.docker.exec", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	output, err := i.deploy.ExecIn(ctx, i.service, args)
 	return output, err
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentDockerPackage) Enroll(token string) error {
+func (i *elasticAgentDockerPackage) Enroll(ctx context.Context, token string) error {
 	return nil
 }
 
 // InstallCerts installs the certificates for a package, using the right OS package manager
-func (i *elasticAgentDockerPackage) InstallCerts() error {
+func (i *elasticAgentDockerPackage) InstallCerts(ctx context.Context) error {
 	return nil
 }
 
@@ -69,12 +74,17 @@ func (i *elasticAgentDockerPackage) Logs() error {
 }
 
 // Postinstall executes operations after installing a package
-func (i *elasticAgentDockerPackage) Postinstall() error {
+func (i *elasticAgentDockerPackage) Postinstall(ctx context.Context) error {
 	return nil
 }
 
 // Preinstall executes operations before installing a package
-func (i *elasticAgentDockerPackage) Preinstall() error {
+func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Pre-install operations for the Elastic Agent", "elastic-agent.docker.pre-install", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	artifact := "elastic-agent"
 	os := "linux"
 	arch := utils.GetArchitecture()
@@ -107,8 +117,13 @@ func (i *elasticAgentDockerPackage) Preinstall() error {
 }
 
 // Start will start a service
-func (i *elasticAgentDockerPackage) Start() error {
-	_, err := i.Exec([]string{"systemctl", "start", "elastic-agent"})
+func (i *elasticAgentDockerPackage) Start(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Starting Elastic Agent service", "elastic-agent.docker.start", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	_, err := i.Exec(ctx, []string{"systemctl", "start", "elastic-agent"})
 	if err != nil {
 		return err
 	}
@@ -116,8 +131,13 @@ func (i *elasticAgentDockerPackage) Start() error {
 }
 
 // Stop will start a service
-func (i *elasticAgentDockerPackage) Stop() error {
-	_, err := i.Exec([]string{"systemctl", "stop", "elastic-agent"})
+func (i *elasticAgentDockerPackage) Stop(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Stopping Elastic Agent service", "elastic-agent.docker.stop", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	_, err := i.Exec(ctx, []string{"systemctl", "stop", "elastic-agent"})
 	if err != nil {
 		return err
 	}
@@ -132,7 +152,7 @@ func (i *elasticAgentDockerPackage) Uninstall(ctx context.Context) error {
 	defer span.End()
 
 	args := []string{"elastic-agent", "uninstall", "-f"}
-	_, err := i.Exec(args)
+	_, err := i.Exec(ctx, args)
 	if err != nil {
 		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
 	}
