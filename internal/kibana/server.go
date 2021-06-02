@@ -236,8 +236,13 @@ func (c *Client) RecreateFleet() error {
 }
 
 // WaitForFleet waits for fleet server to be ready
-func (c *Client) WaitForFleet() error {
+func (c *Client) WaitForFleet(ctx context.Context) error {
 	waitForFleet := func() error {
+		span, _ := apm.StartSpanOptions(ctx, "Fleet setup", "kibana.fleet.setup", apm.SpanOptions{
+			Parent: apm.SpanFromContext(ctx).TraceContext(),
+		})
+		defer span.End()
+
 		statusCode, respBody, err := c.get(fmt.Sprintf("%s/agents/setup", FleetAPI))
 		if err != nil {
 			log.WithFields(log.Fields{

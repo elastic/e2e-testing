@@ -130,7 +130,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			if err != nil {
 				log.WithField("error", err).Fatal("Unable to create kibana client")
 			}
-			err = kibanaClient.WaitForFleet()
+			err = kibanaClient.WaitForFleet(suiteContext)
 			if err != nil {
 				log.WithField("error", err).Fatal("Fleet could not be initialized")
 			}
