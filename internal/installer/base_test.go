@@ -5,6 +5,7 @@
 package installer
 
 import (
+	"context"
 	"os"
 	"path"
 	"path/filepath"
@@ -19,11 +20,13 @@ func TestDownloadAgentBinary(t *testing.T) {
 	distributionsDir, _ := filepath.Abs(path.Join(beatsDir, "x-pack", "elastic-agent", "build", "distributions"))
 	version := "8.0.0-SNAPSHOT"
 
+	ctx := context.Background()
+
 	t.Run("Fetching non-existent binary from local Beats dir throws an error", func(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
-		_, err := downloadAgentBinary("foo_fileName", artifact, version)
+		_, err := downloadAgentBinary(ctx, "foo_fileName", artifact, version)
 		assert.NotNil(t, err)
 	})
 
@@ -34,7 +37,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		downloadedFilePath, err := downloadAgentBinary(ctx, artifactName, artifact, version)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -45,7 +48,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-aarch64.rpm"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		downloadedFilePath, err := downloadAgentBinary(ctx, artifactName, artifact, version)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -57,7 +60,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-amd64.deb"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		downloadedFilePath, err := downloadAgentBinary(ctx, artifactName, artifact, version)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -68,7 +71,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-arm64.deb"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		downloadedFilePath, err := downloadAgentBinary(ctx, artifactName, artifact, version)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -80,7 +83,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		downloadedFilePath, err := downloadAgentBinary(ctx, artifactName, artifact, version)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -91,7 +94,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		downloadedFilePath, err := downloadAgentBinary(ctx, artifactName, artifact, version)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -102,7 +105,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-arm64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		downloadedFilePath, err := downloadAgentBinary(ctx, artifactName, artifact, version)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -114,7 +117,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		downloadedFilePath, err := downloadAgentBinary(ctx, artifactName, artifact, version)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -125,7 +128,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-arm64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		downloadedFilePath, err := downloadAgentBinary(ctx, artifactName, artifact, version)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -137,7 +140,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		artifactName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		downloadedFilePath, err := downloadAgentBinary(ctx, artifactName, artifact, version)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -148,7 +151,7 @@ func TestDownloadAgentBinary(t *testing.T) {
 		artifactName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-arm64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := downloadAgentBinary(artifactName, artifact, version)
+		downloadedFilePath, err := downloadAgentBinary(ctx, artifactName, artifact, version)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})

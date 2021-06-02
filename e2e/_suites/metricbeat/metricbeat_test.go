@@ -366,7 +366,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		arch := utils.GetArchitecture()
 		artifactName := utils.BuildArtifactName("metricbeat", mts.Version, common.BeatVersionBase, "linux", arch, "tar.gz", true)
 
-		imagePath, err := utils.FetchBeatsBinary(artifactName, "metricbeat", mts.Version, common.BeatVersionBase, utils.TimeoutFactor, true)
+		imagePath, err := utils.FetchBeatsBinary(mts.currentContext, artifactName, "metricbeat", mts.Version, common.BeatVersionBase, utils.TimeoutFactor, true)
 		if err != nil {
 			return err
 		}

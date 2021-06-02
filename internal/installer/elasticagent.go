@@ -5,6 +5,8 @@
 package installer
 
 import (
+	"context"
+
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/utils"
 )
@@ -17,8 +19,8 @@ import (
 // to be used will be defined by the local snapshot produced by the local build.
 // Else, if the environment variable BEATS_USE_CI_SNAPSHOTS is set, then the artifact
 // to be downloaded will be defined by the latest snapshot produced by the Beats CI.
-func downloadAgentBinary(artifactName string, artifact string, version string) (string, error) {
-	imagePath, err := utils.FetchBeatsBinary(artifactName, artifact, version, common.BeatVersionBase, utils.TimeoutFactor, true)
+func downloadAgentBinary(ctx context.Context, artifactName string, artifact string, version string) (string, error) {
+	imagePath, err := utils.FetchBeatsBinary(ctx, artifactName, artifact, version, common.BeatVersionBase, utils.TimeoutFactor, true)
 	if err != nil {
 		return "", err
 	}
