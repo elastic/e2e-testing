@@ -30,8 +30,8 @@ func AttachElasticAgentDockerPackage(deploy deploy.Deployment, service deploy.Se
 }
 
 // AddFiles will add files into the service environment, default destination is /
-func (i *elasticAgentDockerPackage) AddFiles(files []string) error {
-	return i.deploy.AddFiles(i.service, files)
+func (i *elasticAgentDockerPackage) AddFiles(ctx context.Context, files []string) error {
+	return i.deploy.AddFiles(ctx, i.service, files)
 }
 
 // Inspect returns info on package

@@ -31,8 +31,8 @@ func AttachElasticAgentRPMPackage(deploy deploy.Deployment, service deploy.Servi
 }
 
 // AddFiles will add files into the service environment, default destination is /
-func (i *elasticAgentRPMPackage) AddFiles(files []string) error {
-	return i.deploy.AddFiles(i.service, files)
+func (i *elasticAgentRPMPackage) AddFiles(ctx context.Context, files []string) error {
+	return i.deploy.AddFiles(ctx, i.service, files)
 }
 
 // Inspect returns info on package
@@ -126,7 +126,7 @@ func (i *elasticAgentRPMPackage) Preinstall() error {
 		return err
 	}
 
-	err = i.AddFiles([]string{binaryPath})
+	err = i.AddFiles(context.Background(), []string{binaryPath})
 	if err != nil {
 		return err
 	}

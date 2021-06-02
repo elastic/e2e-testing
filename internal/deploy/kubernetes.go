@@ -42,12 +42,17 @@ func (c *kubernetesDeploymentManifest) Add(services []ServiceRequest, env map[st
 }
 
 // AddFiles - add files to deployment service
-func (c *kubernetesDeploymentManifest) AddFiles(service ServiceRequest, files []string) error {
-	container, _ := c.Inspect(service)
-	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
+func (c *kubernetesDeploymentManifest) AddFiles(ctx context.Context, service ServiceRequest, files []string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Adding files to kubernetes deployment", "kubernetes.files.add", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	container, _ := c.Inspect(ctx, service)
+	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
 
 	for _, file := range files {
-		_, err := kubectl.Run(c.Context, "cp", file, fmt.Sprintf("deployment/%s:.", container.Name))
+		_, err := kubectl.Run(ctx, "cp", file, fmt.Sprintf("deployment/%s:.", container.Name))
 		if err != nil {
 			log.WithField("error", err).Fatal("Unable to copy file to service")
 		}
@@ -113,9 +118,14 @@ type kubernetesServiceManifest struct {
 }
 
 // Inspect inspects a service
-func (c *kubernetesDeploymentManifest) Inspect(service ServiceRequest) (*ServiceManifest, error) {
-	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
-	out, err := kubectl.Run(c.Context, "get", "deployment/"+service.Name, "-o", "json")
+func (c *kubernetesDeploymentManifest) Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Inspecting kubernetes deployment", "kubernetes.manifest.inspect", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
+	out, err := kubectl.Run(ctx, "get", "deployment/"+service.Name, "-o", "json")
 	if err != nil {
 		return &ServiceManifest{}, err
 	}

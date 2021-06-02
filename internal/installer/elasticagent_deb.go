@@ -31,8 +31,8 @@ func AttachElasticAgentDEBPackage(deploy deploy.Deployment, service deploy.Servi
 }
 
 // AddFiles will add files into the service environment, default destination is /
-func (i *elasticAgentDEBPackage) AddFiles(files []string) error {
-	return i.deploy.AddFiles(i.service, files)
+func (i *elasticAgentDEBPackage) AddFiles(ctx context.Context, files []string) error {
+	return i.deploy.AddFiles(ctx, i.service, files)
 }
 
 // Inspect returns info on package
@@ -122,7 +122,7 @@ func (i *elasticAgentDEBPackage) Preinstall() error {
 		return err
 	}
 
-	err = i.AddFiles([]string{binaryPath})
+	err = i.AddFiles(context.Background(), []string{binaryPath})
 	if err != nil {
 		return err
 	}

@@ -53,7 +53,7 @@ func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(fts.Image)
 
-	manifest, _ := fts.deployer.Inspect(agentService)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 	result, err := searchAgentData(manifest.Hostname, fts.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func (fts *FleetTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error
 	minimumHitsCount := 1
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.deployer.Inspect(agentService)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 	result, err := searchAgentData(manifest.Hostname, fts.AgentStoppedDate, minimumHitsCount, maxTimeout)
 	if err != nil {
 		if strings.Contains(err.Error(), "type:index_not_found_exception") {

@@ -31,8 +31,8 @@ func AttachElasticAgentTARPackage(deploy deploy.Deployment, service deploy.Servi
 }
 
 // AddFiles will add files into the service environment, default destination is /
-func (i *elasticAgentTARPackage) AddFiles(files []string) error {
-	return i.deploy.AddFiles(i.service, files)
+func (i *elasticAgentTARPackage) AddFiles(ctx context.Context, files []string) error {
+	return i.deploy.AddFiles(ctx, i.service, files)
 }
 
 // Inspect returns info on package
@@ -110,7 +110,7 @@ func (i *elasticAgentTARPackage) Preinstall() error {
 		return err
 	}
 
-	err = i.AddFiles([]string{binaryPath})
+	err = i.AddFiles(context.Background(), []string{binaryPath})
 	if err != nil {
 		return err
 	}

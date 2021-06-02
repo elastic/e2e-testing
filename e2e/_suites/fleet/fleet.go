@@ -87,7 +87,7 @@ func (fts *FleetTestSuite) afterScenario() {
 
 	err := fts.unenrollHostname()
 	if err != nil {
-		manifest, _ := fts.deployer.Inspect(agentService)
+		manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 		log.WithFields(log.Fields{
 			"err":      err,
 			"hostname": manifest.Hostname,
@@ -268,7 +268,7 @@ func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
 	}
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.deployer.Inspect(agentService)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 	return fts.kibanaClient.UpgradeAgent(manifest.Hostname, desiredVersion)
 }
 
@@ -283,7 +283,7 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	agentInVersionFn := func() error {
 
 		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		manifest, _ := fts.deployer.Inspect(agentService)
+		manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 		agent, err := fts.kibanaClient.GetAgentByHostname(manifest.Hostname)
 		if err != nil {
 			return err
@@ -413,7 +413,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		return err
 	}
 
-	manifest, _ := fts.deployer.Inspect(agentService)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 
 	return CheckProcessState(fts.deployer, manifest.Name, process, "stopped", 0, utils.TimeoutFactor)
 }
@@ -431,7 +431,7 @@ func (fts *FleetTestSuite) setup() error {
 
 func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.deployer.Inspect(agentService)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 	return theAgentIsListedInFleetWithStatus(desiredStatus, manifest.Hostname)
 }
 
@@ -700,7 +700,7 @@ func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp()
 
 	agentListedInSecurityFn := func() error {
 		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		manifest, _ := fts.deployer.Inspect(agentService)
+		manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 		host, err := fts.kibanaClient.IsAgentListedInSecurityApp(manifest.Hostname)
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -742,7 +742,7 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(stat
 
 	agentListedInSecurityFn := func() error {
 		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		manifest, _ := fts.deployer.Inspect(agentService)
+		manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 		matches, err := fts.kibanaClient.IsAgentListedInSecurityAppWithStatus(manifest.Hostname, status)
 		if err != nil || !matches {
 			log.WithFields(log.Fields{
@@ -788,7 +788,7 @@ func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstal
 
 func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.deployer.Inspect(agentService)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 	agentID, err := fts.kibanaClient.GetAgentIDByHostname(manifest.Hostname)
 	if err != nil {
 		return err
@@ -884,7 +884,7 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMode(name string, mode string
 
 func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.deployer.Inspect(agentService)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 	agentID, err := fts.kibanaClient.GetAgentIDByHostname(manifest.Hostname)
 	if err != nil {
 		return err
@@ -994,8 +994,13 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 // unenrollHostname deletes the statuses for an existing agent, filtering by hostname
 func (fts *FleetTestSuite) unenrollHostname() error {
+	span, _ := apm.StartSpanOptions(fts.currentContext, "Unenrolling hostname", "elastic-agent.hostname.unenroll", apm.SpanOptions{
+		Parent: apm.SpanFromContext(fts.currentContext).TraceContext(),
+	})
+	defer span.End()
+
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.deployer.Inspect(agentService)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 	log.Tracef("Un-enrolling all agentIDs for %s", manifest.Hostname)
 
 	agents, err := fts.kibanaClient.ListAgents()

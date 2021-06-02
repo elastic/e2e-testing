@@ -68,8 +68,13 @@ func (c *dockerDeploymentManifest) Bootstrap(ctx context.Context, waitCB func() 
 }
 
 // AddFiles - add files to service
-func (c *dockerDeploymentManifest) AddFiles(service ServiceRequest, files []string) error {
-	container, _ := c.Inspect(service)
+func (c *dockerDeploymentManifest) AddFiles(ctx context.Context, service ServiceRequest, files []string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Adding files to Docker Compose deployment", "docker-compose.files.add", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	container, _ := c.Inspect(ctx, service)
 	for _, file := range files {
 		isTar := true
 		fileExt := filepath.Ext(file)
@@ -104,7 +109,7 @@ func (c *dockerDeploymentManifest) Destroy(ctx context.Context) error {
 
 // ExecIn execute command in service
 func (c *dockerDeploymentManifest) ExecIn(service ServiceRequest, cmd []string) (string, error) {
-	inspect, _ := c.Inspect(service)
+	inspect, _ := c.Inspect(context.Background(), service)
 	args := []string{"exec", "-u", "root", "-i", inspect.Name}
 	for _, cmdArg := range cmd {
 		args = append(args, cmdArg)
@@ -117,7 +122,12 @@ func (c *dockerDeploymentManifest) ExecIn(service ServiceRequest, cmd []string) 
 }
 
 // Inspect inspects a service
-func (c *dockerDeploymentManifest) Inspect(service ServiceRequest) (*ServiceManifest, error) {
+func (c *dockerDeploymentManifest) Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Inspecting compose deployment", "docker-compose.manifest.inspect", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	inspect, err := InspectContainer(service)
 	if err != nil {
 		return &ServiceManifest{}, err
@@ -135,7 +145,7 @@ func (c *dockerDeploymentManifest) Inspect(service ServiceRequest) (*ServiceMani
 
 // Logs print logs of service
 func (c *dockerDeploymentManifest) Logs(service ServiceRequest) error {
-	manifest, _ := c.Inspect(service)
+	manifest, _ := c.Inspect(context.Background(), service)
 	_, err := shell.Execute(c.Context, ".", "docker", "logs", manifest.Name)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -151,7 +161,7 @@ func (c *dockerDeploymentManifest) Logs(service ServiceRequest) error {
 // Remove remove services from deployment
 func (c *dockerDeploymentManifest) Remove(services []ServiceRequest, env map[string]string) error {
 	for _, service := range services[1:] {
-		manifest, _ := c.Inspect(service)
+		manifest, _ := c.Inspect(context.Background(), service)
 		_, err := shell.Execute(c.Context, ".", "docker", "rm", "-fv", manifest.Name)
 		if err != nil {
 			return err
@@ -162,14 +172,14 @@ func (c *dockerDeploymentManifest) Remove(services []ServiceRequest, env map[str
 
 // Start a container
 func (c *dockerDeploymentManifest) Start(service ServiceRequest) error {
-	manifest, _ := c.Inspect(service)
+	manifest, _ := c.Inspect(context.Background(), service)
 	_, err := shell.Execute(c.Context, ".", "docker", "start", manifest.Name)
 	return err
 }
 
 // Stop a container
 func (c *dockerDeploymentManifest) Stop(service ServiceRequest) error {
-	manifest, _ := c.Inspect(service)
+	manifest, _ := c.Inspect(context.Background(), service)
 	_, err := shell.Execute(c.Context, ".", "docker", "stop", manifest.Name)
 	return err
 }

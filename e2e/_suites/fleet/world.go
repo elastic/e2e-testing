@@ -39,7 +39,7 @@ func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocur
 		containerName = fmt.Sprintf("%s_%s_%d", profile, common.ElasticAgentServiceName, 1)
 	} else {
 		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		manifest, _ := imts.Fleet.deployer.Inspect(agentService)
+		manifest, _ := imts.Fleet.deployer.Inspect(imts.Fleet.currentContext, agentService)
 		containerName = manifest.Name
 	}
 
