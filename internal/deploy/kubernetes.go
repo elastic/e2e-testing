@@ -74,8 +74,8 @@ func (c *kubernetesDeploymentManifest) Bootstrap(waitCB func() error) error {
 }
 
 // Destroy teardown kubernetes environment
-func (c *kubernetesDeploymentManifest) Destroy() error {
-	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
+func (c *kubernetesDeploymentManifest) Destroy(ctx context.Context) error {
+	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
 	cluster.Cleanup(c.Context)
 	return nil
 }

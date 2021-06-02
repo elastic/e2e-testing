@@ -79,9 +79,9 @@ func (c *dockerDeploymentManifest) AddFiles(service ServiceRequest, files []stri
 }
 
 // Destroy teardown docker environment
-func (c *dockerDeploymentManifest) Destroy() error {
+func (c *dockerDeploymentManifest) Destroy(ctx context.Context) error {
 	serviceManager := NewServiceManager()
-	err := serviceManager.StopCompose(c.Context, true, []ServiceRequest{NewServiceRequest(common.FleetProfileName)})
+	err := serviceManager.StopCompose(ctx, true, []ServiceRequest{NewServiceRequest(common.FleetProfileName)})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,

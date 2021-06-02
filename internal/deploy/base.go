@@ -5,6 +5,7 @@
 package deploy
 
 import (
+	"context"
 	"strings"
 )
 
@@ -14,7 +15,7 @@ type Deployment interface {
 	Add(services []ServiceRequest, env map[string]string) error    // adds a service to deployment
 	AddFiles(service ServiceRequest, files []string) error         // adds files to a service
 	Bootstrap(waitCB func() error) error                           // will bootstrap or reuse existing cluster if kubernetes is selected
-	Destroy() error                                                // Teardown deployment
+	Destroy(ctx context.Context) error                             // Teardown deployment
 	ExecIn(service ServiceRequest, cmd []string) (string, error)   // Execute arbitrary commands in service
 	Inspect(service ServiceRequest) (*ServiceManifest, error)      // inspects service
 	Logs(service ServiceRequest) error                             // prints logs of deployed service
