@@ -33,7 +33,12 @@ func (c *dockerDeploymentManifest) Add(services []ServiceRequest, env map[string
 }
 
 // Bootstrap sets up environment with docker compose
-func (c *dockerDeploymentManifest) Bootstrap(waitCB func() error) error {
+func (c *dockerDeploymentManifest) Bootstrap(ctx context.Context, waitCB func() error) error {
+	span, _ := apm.StartSpanOptions(ctx, "Bootstrapping Docker Compose deployment", "docker-compose.manifest.bootstrap", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	serviceManager := NewServiceManager()
 	common.ProfileEnv = map[string]string{
 		"kibanaVersion": common.KibanaVersion,
@@ -48,7 +53,7 @@ func (c *dockerDeploymentManifest) Bootstrap(waitCB func() error) error {
 	}
 
 	profile := NewServiceRequest(common.FleetProfileName)
-	err := serviceManager.RunCompose(c.Context, true, []ServiceRequest{profile}, common.ProfileEnv)
+	err := serviceManager.RunCompose(ctx, true, []ServiceRequest{profile}, common.ProfileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"profile": profile,

@@ -56,14 +56,19 @@ func (c *kubernetesDeploymentManifest) AddFiles(service ServiceRequest, files []
 }
 
 // Bootstrap sets up environment with kind
-func (c *kubernetesDeploymentManifest) Bootstrap(waitCB func() error) error {
-	err := cluster.Initialize(c.Context, "../../../cli/config/kubernetes/kind.yaml")
+func (c *kubernetesDeploymentManifest) Bootstrap(ctx context.Context, waitCB func() error) error {
+	span, _ := apm.StartSpanOptions(ctx, "Bootstrapping kubernetes deployment", "kubernetes.manifest.bootstrap", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	err := cluster.Initialize(ctx, "../../../cli/config/kubernetes/kind.yaml")
 	if err != nil {
 		return err
 	}
 
-	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
-	_, err = kubectl.Run(c.Context, "apply", "-k", "../../../cli/config/kubernetes/base")
+	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
+	_, err = kubectl.Run(ctx, "apply", "-k", "../../../cli/config/kubernetes/base")
 	if err != nil {
 		return err
 	}

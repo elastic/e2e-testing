@@ -125,7 +125,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		}
 
 		deployer := deploy.New(common.Provider)
-		deployer.Bootstrap(func() error {
+		deployer.Bootstrap(suiteContext, func() error {
 			kibanaClient, err := kibana.NewClient()
 			if err != nil {
 				log.WithField("error", err).Fatal("Unable to create kibana client")
