@@ -10,11 +10,17 @@ import (
 
 	"github.com/elastic/e2e-testing/internal/deploy"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // Attach will attach a installer to a deployment allowing
 // the installation of a package to be transparently configured no matter the backend
-func Attach(deploy deploy.Deployment, service deploy.ServiceRequest, installType string) (deploy.ServiceOperator, error) {
+func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.ServiceRequest, installType string) (deploy.ServiceOperator, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Attaching installer to host", "elastic-agent.installer.attach", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	log.WithFields(log.Fields{
 		"service":     service,
 		"installType": installType,
