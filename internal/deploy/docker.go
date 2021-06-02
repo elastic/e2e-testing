@@ -13,6 +13,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // DockerDeploymentManifest deploy manifest for docker
@@ -80,6 +81,11 @@ func (c *dockerDeploymentManifest) AddFiles(service ServiceRequest, files []stri
 
 // Destroy teardown docker environment
 func (c *dockerDeploymentManifest) Destroy(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Destroying compose deployment", "docker-compose.manifest.destroy", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	serviceManager := NewServiceManager()
 	err := serviceManager.StopCompose(ctx, true, []ServiceRequest{NewServiceRequest(common.FleetProfileName)})
 	if err != nil {

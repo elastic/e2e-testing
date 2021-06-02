@@ -13,6 +13,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 var cluster kubernetes.Cluster
@@ -75,6 +76,11 @@ func (c *kubernetesDeploymentManifest) Bootstrap(waitCB func() error) error {
 
 // Destroy teardown kubernetes environment
 func (c *kubernetesDeploymentManifest) Destroy(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Destroying kubernetes deployment", "kubernetes.manifest.destroy", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
 	cluster.Cleanup(c.Context)
 	return nil
