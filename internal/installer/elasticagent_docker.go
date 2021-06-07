@@ -34,6 +34,7 @@ func (i *elasticAgentDockerPackage) AddFiles(ctx context.Context, files []string
 	span, _ := apm.StartSpanOptions(ctx, "Adding files to the Elastic Agent", "elastic-agent.docker.add-files", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("files", files)
 	defer span.End()
 
 	return i.deploy.AddFiles(ctx, i.service, files)
@@ -57,6 +58,7 @@ func (i *elasticAgentDockerPackage) Exec(ctx context.Context, args []string) (st
 	span, _ := apm.StartSpanOptions(ctx, "Executing Elastic Agent command", "elastic-agent.docker.exec", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("arguments", args)
 	defer span.End()
 
 	output, err := i.deploy.ExecIn(ctx, i.service, args)
@@ -123,12 +125,14 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 
 // Start will start a service
 func (i *elasticAgentDockerPackage) Start(ctx context.Context) error {
+	cmds := []string{"systemctl", "start", "elastic-agent"}
 	span, _ := apm.StartSpanOptions(ctx, "Starting Elastic Agent service", "elastic-agent.docker.start", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("arguments", cmds)
 	defer span.End()
 
-	_, err := i.Exec(ctx, []string{"systemctl", "start", "elastic-agent"})
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return err
 	}
@@ -137,12 +141,14 @@ func (i *elasticAgentDockerPackage) Start(ctx context.Context) error {
 
 // Stop will start a service
 func (i *elasticAgentDockerPackage) Stop(ctx context.Context) error {
+	cmds := []string{"systemctl", "stop", "elastic-agent"}
 	span, _ := apm.StartSpanOptions(ctx, "Stopping Elastic Agent service", "elastic-agent.docker.stop", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("arguments", cmds)
 	defer span.End()
 
-	_, err := i.Exec(ctx, []string{"systemctl", "stop", "elastic-agent"})
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return err
 	}
@@ -151,13 +157,14 @@ func (i *elasticAgentDockerPackage) Stop(ctx context.Context) error {
 
 // Uninstall uninstalls a Docker package
 func (i *elasticAgentDockerPackage) Uninstall(ctx context.Context) error {
+	cmds := []string{"elastic-agent", "uninstall", "-f"}
 	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.docker.uninstall", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("arguments", cmds)
 	defer span.End()
 
-	args := []string{"elastic-agent", "uninstall", "-f"}
-	_, err := i.Exec(ctx, args)
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
 	}

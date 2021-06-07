@@ -35,6 +35,7 @@ func (i *elasticAgentRPMPackage) AddFiles(ctx context.Context, files []string) e
 	span, _ := apm.StartSpanOptions(ctx, "Adding files to the Elastic Agent", "elastic-agent.rpm.add-files", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("files", files)
 	defer span.End()
 
 	return i.deploy.AddFiles(ctx, i.service, files)
@@ -59,6 +60,7 @@ func (i *elasticAgentRPMPackage) Exec(ctx context.Context, args []string) (strin
 	span, _ := apm.StartSpanOptions(ctx, "Executing Elastic Agent command", "elastic-agent.rpm.exec", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("arguments", args)
 	defer span.End()
 
 	output, err := i.deploy.ExecIn(ctx, i.service, args)
@@ -67,18 +69,19 @@ func (i *elasticAgentRPMPackage) Exec(ctx context.Context, args []string) (strin
 
 // Enroll will enroll the agent into fleet
 func (i *elasticAgentRPMPackage) Enroll(ctx context.Context, token string) error {
+	cmds := []string{"elastic-agent", "enroll"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.rpm.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("arguments", cmds)
 	defer span.End()
 
 	cfg, _ := kibana.NewFleetConfig(token)
-	args := []string{"elastic-agent", "enroll"}
-	for _, arg := range cfg.Flags() {
-		args = append(args, arg)
+	for _, cmd := range cfg.Flags() {
+		cmds = append(cmds, cmd)
 	}
 
-	output, err := i.Exec(ctx, args)
+	output, err := i.Exec(ctx, cmds)
 	log.Trace(output)
 	if err != nil {
 		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
@@ -114,12 +117,14 @@ func (i *elasticAgentRPMPackage) Logs() error {
 
 // Postinstall executes operations after installing a RPM package
 func (i *elasticAgentRPMPackage) Postinstall(ctx context.Context) error {
+	cmds := []string{"systemctl", "restart", "elastic-agent"}
 	span, _ := apm.StartSpanOptions(ctx, "Post-install operations for the Elastic Agent", "elastic-agent.rpm.post-install", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("arguments", cmds)
 	defer span.End()
 
-	_, err := i.Exec(ctx, []string{"systemctl", "restart", "elastic-agent"})
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return err
 	}
@@ -170,12 +175,14 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 
 // Start will start a service
 func (i *elasticAgentRPMPackage) Start(ctx context.Context) error {
+	cmds := []string{"systemctl", "start", "elastic-agent"}
 	span, _ := apm.StartSpanOptions(ctx, "Starting Elastic Agent service", "elastic-agent.rpm.start", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("arguments", cmds)
 	defer span.End()
 
-	_, err := i.Exec(ctx, []string{"systemctl", "start", "elastic-agent"})
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return err
 	}
@@ -184,12 +191,14 @@ func (i *elasticAgentRPMPackage) Start(ctx context.Context) error {
 
 // Stop will start a service
 func (i *elasticAgentRPMPackage) Stop(ctx context.Context) error {
+	cmds := []string{"systemctl", "stop", "elastic-agent"}
 	span, _ := apm.StartSpanOptions(ctx, "Stopping Elastic Agent service", "elastic-agent.rpm.stop", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("arguments", cmds)
 	defer span.End()
 
-	_, err := i.Exec(ctx, []string{"systemctl", "stop", "elastic-agent"})
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return err
 	}
@@ -198,12 +207,13 @@ func (i *elasticAgentRPMPackage) Stop(ctx context.Context) error {
 
 // Uninstall uninstalls a RPM package
 func (i *elasticAgentRPMPackage) Uninstall(ctx context.Context) error {
+	cmds := []string{"elastic-agent", "uninstall", "-f"}
 	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.rpm.uninstall", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("arguments", cmds)
 	defer span.End()
-	args := []string{"elastic-agent", "uninstall", "-f"}
-	_, err := i.Exec(ctx, args)
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
 	}
