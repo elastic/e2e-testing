@@ -33,6 +33,7 @@ func (c *kubernetesDeploymentManifest) Add(ctx context.Context, services []Servi
 	span, _ := apm.StartSpanOptions(ctx, "Adding services to kubernetes deployment", "kubernetes.manifest.add-services", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("services", services)
 	defer span.End()
 
 	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
@@ -51,6 +52,8 @@ func (c *kubernetesDeploymentManifest) AddFiles(ctx context.Context, service Ser
 	span, _ := apm.StartSpanOptions(ctx, "Adding files to kubernetes deployment", "kubernetes.files.add", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("files", files)
+	span.Context.SetLabel("service", service)
 	defer span.End()
 
 	container, _ := c.Inspect(ctx, service)
@@ -106,6 +109,8 @@ func (c *kubernetesDeploymentManifest) ExecIn(ctx context.Context, service Servi
 	span, _ := apm.StartSpanOptions(ctx, "Executing command in kubernetes deployment", "kubernetes.manifest.execIn", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("service", service)
+	span.Context.SetLabel("arguments", cmd)
 	defer span.End()
 
 	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
@@ -132,6 +137,7 @@ func (c *kubernetesDeploymentManifest) Inspect(ctx context.Context, service Serv
 	span, _ := apm.StartSpanOptions(ctx, "Inspecting kubernetes deployment", "kubernetes.manifest.inspect", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("service", service)
 	defer span.End()
 
 	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")

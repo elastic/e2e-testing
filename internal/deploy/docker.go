@@ -30,6 +30,7 @@ func (c *dockerDeploymentManifest) Add(ctx context.Context, services []ServiceRe
 	span, _ := apm.StartSpanOptions(ctx, "Adding services to Docker Compose deployment", "docker-compose.manifest.add-services", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("services", services)
 	defer span.End()
 
 	serviceManager := NewServiceManager()
@@ -77,6 +78,8 @@ func (c *dockerDeploymentManifest) AddFiles(ctx context.Context, service Service
 	span, _ := apm.StartSpanOptions(ctx, "Adding files to Docker Compose deployment", "docker-compose.files.add", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("files", files)
+	span.Context.SetLabel("service", service)
 	defer span.End()
 
 	container, _ := c.Inspect(ctx, service)
@@ -117,6 +120,8 @@ func (c *dockerDeploymentManifest) ExecIn(ctx context.Context, service ServiceRe
 	span, _ := apm.StartSpanOptions(ctx, "Executing command in compose deployment", "docker-compose.manifest.execIn", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("service", service)
+	span.Context.SetLabel("arguments", cmd)
 	defer span.End()
 
 	inspect, _ := c.Inspect(ctx, service)
@@ -136,6 +141,7 @@ func (c *dockerDeploymentManifest) Inspect(ctx context.Context, service ServiceR
 	span, _ := apm.StartSpanOptions(ctx, "Inspecting compose deployment", "docker-compose.manifest.inspect", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("service", service)
 	defer span.End()
 
 	inspect, err := InspectContainer(service)
