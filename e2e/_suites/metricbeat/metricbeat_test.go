@@ -457,7 +457,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		}
 
 		if common.DeveloperMode {
-			err = serviceManager.RunCommand(deploy.NewServiceRequest("metricbeat"), services, []string{"logs", "metricbeat"}, env)
+			err = serviceManager.RunCommand(mts.currentContext, deploy.NewServiceRequest("metricbeat"), services, []string{"logs", "metricbeat"}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error":             err,
