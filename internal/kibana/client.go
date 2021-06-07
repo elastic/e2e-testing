@@ -56,6 +56,9 @@ func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, b
 	span, _ := apm.StartSpanOptions(ctx, "Sending HTTP request", "http.request."+method, apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("method", method)
+	span.Context.SetLabel("base", c.host)
+	span.Context.SetLabel("resourcePath", resourcePath)
 	defer span.End()
 
 	reqBody := bytes.NewReader(body)
