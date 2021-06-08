@@ -5,6 +5,7 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"math/rand"
@@ -23,6 +24,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // to avoid fetching the same Elastic artifacts version, we are adding this map to cache the version of the Elastic artifacts,
@@ -89,9 +91,14 @@ func CheckPRVersion(version string, fallbackVersion string) string {
 // to be used will be defined by the local snapshot produced by the local build.
 // Else, if the environment variable BEATS_USE_CI_SNAPSHOTS is set, then the artifact
 // to be downloaded will be defined by the latest snapshot produced by the Beats CI.
-func FetchBeatsBinary(artifactName string, artifact string, version string, fallbackVersion string, timeoutFactor int, xpack bool) (string, error) {
+func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, fallbackVersion string, timeoutFactor int, xpack bool) (string, error) {
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if beatsLocalPath != "" {
+		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.local.fetch", apm.SpanOptions{
+			Parent: apm.SpanFromContext(ctx).TraceContext(),
+		})
+		defer span.End()
+
 		distributions := path.Join(beatsLocalPath, artifact, "build", "distributions")
 		if xpack {
 			distributions = path.Join(beatsLocalPath, "x-pack", artifact, "build", "distributions")
@@ -109,6 +116,11 @@ func FetchBeatsBinary(artifactName string, artifact string, version string, fall
 	}
 
 	handleDownload := func(URL string) (string, error) {
+		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.url.fetch", apm.SpanOptions{
+			Parent: apm.SpanFromContext(ctx).TraceContext(),
+		})
+		defer span.End()
+
 		if val, ok := binariesCache[URL]; ok {
 			log.WithFields(log.Fields{
 				"URL":  URL,
@@ -143,6 +155,11 @@ func FetchBeatsBinary(artifactName string, artifact string, version string, fall
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	if useCISnapshots {
+		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.gcp.fetch", apm.SpanOptions{
+			Parent: apm.SpanFromContext(ctx).TraceContext(),
+		})
+		defer span.End()
+
 		log.Debugf("Using CI snapshots for %s", artifact)
 
 		bucket, prefix, object := getGCPBucketCoordinates(artifactName, artifact, version, fallbackVersion)

@@ -5,6 +5,7 @@
 package installer
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
@@ -12,6 +13,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // elasticAgentDEBPackage implements operations for a DEB installer
@@ -29,8 +31,14 @@ func AttachElasticAgentDEBPackage(deploy deploy.Deployment, service deploy.Servi
 }
 
 // AddFiles will add files into the service environment, default destination is /
-func (i *elasticAgentDEBPackage) AddFiles(files []string) error {
-	return i.deploy.AddFiles(i.service, files)
+func (i *elasticAgentDEBPackage) AddFiles(ctx context.Context, files []string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Adding files to the Elastic Agent", "elastic-agent.debian.add-files", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("files", files)
+	defer span.End()
+
+	return i.deploy.AddFiles(ctx, i.service, files)
 }
 
 // Inspect returns info on package
@@ -42,27 +50,38 @@ func (i *elasticAgentDEBPackage) Inspect() (deploy.ServiceOperatorManifest, erro
 }
 
 // Install installs a DEB package
-func (i *elasticAgentDEBPackage) Install() error {
+func (i *elasticAgentDEBPackage) Install(ctx context.Context) error {
 	log.Trace("No additional install commands for DEB")
 	return nil
 }
 
 // Exec will execute a command within the service environment
-func (i *elasticAgentDEBPackage) Exec(args []string) (string, error) {
-	output, err := i.deploy.ExecIn(i.service, args)
+func (i *elasticAgentDEBPackage) Exec(ctx context.Context, args []string) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Executing Elastic Agent command", "elastic-agent.debian.exec", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", args)
+	defer span.End()
+
+	output, err := i.deploy.ExecIn(ctx, i.service, args)
 	return output, err
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentDEBPackage) Enroll(token string) error {
+func (i *elasticAgentDEBPackage) Enroll(ctx context.Context, token string) error {
+	cmds := []string{"elastic-agent", "enroll"}
+	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.debian.enroll", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
 
 	cfg, _ := kibana.NewFleetConfig(token)
-	args := []string{"elastic-agent", "enroll"}
 	for _, arg := range cfg.Flags() {
-		args = append(args, arg)
+		cmds = append(cmds, arg)
 	}
 
-	output, err := i.Exec(args)
+	output, err := i.Exec(ctx, cmds)
 	log.Trace(output)
 	if err != nil {
 		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
@@ -71,14 +90,19 @@ func (i *elasticAgentDEBPackage) Enroll(token string) error {
 }
 
 // InstallCerts installs the certificates for a DEB package, using the right OS package manager
-func (i *elasticAgentDEBPackage) InstallCerts() error {
+func (i *elasticAgentDEBPackage) InstallCerts(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Installing certificates for the Elastic Agent", "elastic-agent.debian.install-certs", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	cmds := [][]string{
 		{"apt-get", "update"},
 		{"apt", "install", "ca-certificates", "-y"},
 		{"update-ca-certificates", "-f"},
 	}
 	for _, cmd := range cmds {
-		if _, err := i.Exec(cmd); err != nil {
+		if _, err := i.Exec(ctx, cmd); err != nil {
 			return err
 		}
 	}
@@ -91,8 +115,15 @@ func (i *elasticAgentDEBPackage) Logs() error {
 }
 
 // Postinstall executes operations after installing a DEB package
-func (i *elasticAgentDEBPackage) Postinstall() error {
-	_, err := i.Exec([]string{"systemctl", "restart", "elastic-agent"})
+func (i *elasticAgentDEBPackage) Postinstall(ctx context.Context) error {
+	cmds := []string{"systemctl", "restart", "elastic-agent"}
+	span, _ := apm.StartSpanOptions(ctx, "Post-install operations for the Elastic Agent", "elastic-agent.debian.post-install", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return err
 	}
@@ -100,14 +131,19 @@ func (i *elasticAgentDEBPackage) Postinstall() error {
 }
 
 // Preinstall executes operations before installing a DEB package
-func (i *elasticAgentDEBPackage) Preinstall() error {
+func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Pre-install operations for the Elastic Agent", "elastic-agent.debian.pre-install", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	artifact := "elastic-agent"
 	os := "linux"
 	arch := utils.GetArchitecture()
 	extension := "deb"
 
 	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, common.BeatVersionBase, os, arch, extension, false)
-	binaryPath, err := utils.FetchBeatsBinary(binaryName, artifact, common.BeatVersion, common.BeatVersionBase, utils.TimeoutFactor, true)
+	binaryPath, err := utils.FetchBeatsBinary(ctx, binaryName, artifact, common.BeatVersion, common.BeatVersionBase, utils.TimeoutFactor, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -120,12 +156,12 @@ func (i *elasticAgentDEBPackage) Preinstall() error {
 		return err
 	}
 
-	err = i.AddFiles([]string{binaryPath})
+	err = i.AddFiles(ctx, []string{binaryPath})
 	if err != nil {
 		return err
 	}
 
-	_, err = i.Exec([]string{"apt", "install", "/" + binaryName, "-y"})
+	_, err = i.Exec(ctx, []string{"apt", "install", "/" + binaryName, "-y"})
 	if err != nil {
 		return err
 	}
@@ -134,8 +170,15 @@ func (i *elasticAgentDEBPackage) Preinstall() error {
 }
 
 // Start will start a service
-func (i *elasticAgentDEBPackage) Start() error {
-	_, err := i.Exec([]string{"systemctl", "start", "elastic-agent"})
+func (i *elasticAgentDEBPackage) Start(ctx context.Context) error {
+	cmds := []string{"systemctl", "start", "elastic-agent"}
+	span, _ := apm.StartSpanOptions(ctx, "Starting Elastic Agent service", "elastic-agent.debian.start", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return err
 	}
@@ -143,8 +186,15 @@ func (i *elasticAgentDEBPackage) Start() error {
 }
 
 // Stop will start a service
-func (i *elasticAgentDEBPackage) Stop() error {
-	_, err := i.Exec([]string{"systemctl", "stop", "elastic-agent"})
+func (i *elasticAgentDEBPackage) Stop(ctx context.Context) error {
+	cmds := []string{"systemctl", "stop", "elastic-agent"}
+	span, _ := apm.StartSpanOptions(ctx, "Stopping Elastic Agent service", "elastic-agent.debian.stop", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return err
 	}
@@ -152,9 +202,15 @@ func (i *elasticAgentDEBPackage) Stop() error {
 }
 
 // Uninstall uninstalls a DEB package
-func (i *elasticAgentDEBPackage) Uninstall() error {
-	args := []string{"elastic-agent", "uninstall", "-f"}
-	_, err := i.Exec(args)
+func (i *elasticAgentDEBPackage) Uninstall(ctx context.Context) error {
+	cmds := []string{"elastic-agent", "uninstall", "-f"}
+	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.debian.uninstall", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
 	}

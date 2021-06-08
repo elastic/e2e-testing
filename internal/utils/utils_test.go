@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path"
@@ -360,6 +361,149 @@ func TestDownloadFile(t *testing.T) {
 	defer os.Remove(filepath.Dir(f))
 
 	assert.True(t, strings.HasSuffix(f, "robots.txt"))
+}
+
+func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
+	artifact := "elastic-agent"
+	beatsDir := path.Join("..", "_testresources", "beats")
+	distributionsDir, _ := filepath.Abs(path.Join(beatsDir, "x-pack", "elastic-agent", "build", "distributions"))
+	version := "7.x-SNAPSHOT"
+
+	ctx := context.Background()
+
+	t.Run("Fetching non-existent binary from local Beats dir throws an error", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		_, err := FetchBeatsBinary(ctx, "foo_fileName", artifact, version, version, TimeoutFactor, true)
+		assert.NotNil(t, err)
+	})
+
+	t.Run("Fetching RPM binary (amd64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-7.x-SNAPSHOT-x86_64.rpm"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+	t.Run("Fetching RPM binary (arm64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-7.x-SNAPSHOT-aarch64.rpm"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+
+	t.Run("Fetching DEB binary (amd64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-7.x-SNAPSHOT-amd64.deb"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+	t.Run("Fetching DEB binary (arm64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-7.x-SNAPSHOT-arm64.deb"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+
+	t.Run("Fetching TAR binary (amd64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-7.x-SNAPSHOT-linux-amd64.tar.gz"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+	t.Run("Fetching TAR binary (x86_64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-7.x-SNAPSHOT-linux-x86_64.tar.gz"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+	t.Run("Fetching TAR binary (arm64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-7.x-SNAPSHOT-linux-arm64.tar.gz"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+
+	t.Run("Fetching Docker binary (amd64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-7.x-SNAPSHOT-linux-amd64.docker.tar.gz"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+	t.Run("Fetching Docker binary (arm64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-7.x-SNAPSHOT-linux-arm64.docker.tar.gz"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+
+	t.Run("Fetching ubi8 Docker binary (amd64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-ubi8-7.x-SNAPSHOT-linux-amd64.docker.tar.gz"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
+	t.Run("Fetching ubi8 Docker binary (arm64) from local Beats dir", func(t *testing.T) {
+		defer os.Unsetenv("BEATS_LOCAL_PATH")
+		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+
+		artifactName := "elastic-agent-ubi8-7.x-SNAPSHOT-linux-arm64.docker.tar.gz"
+		expectedFilePath := path.Join(distributionsDir, artifactName)
+
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		assert.Nil(t, err)
+		assert.Equal(t, downloadedFilePath, expectedFilePath)
+	})
 }
 
 func TestGetArchitecture(t *testing.T) {
