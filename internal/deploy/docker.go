@@ -182,23 +182,6 @@ func (c *dockerDeploymentManifest) Logs(service ServiceRequest) error {
 
 // PreBootstrap sets up environment with docker compose
 func (c *dockerDeploymentManifest) PreBootstrap(ctx context.Context) error {
-	// grab latest docker images
-	if !shell.GetEnvBool("SKIP_PULL") {
-		images := []string{
-			"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
-			"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,
-			"docker.elastic.co/elasticsearch/elasticsearch:" + common.StackVersion,
-			"docker.elastic.co/kibana/kibana:" + common.KibanaVersion,
-			"docker.elastic.co/observability-ci/elastic-agent:" + common.BeatVersion,
-			"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.BeatVersion,
-			"docker.elastic.co/observability-ci/elasticsearch:" + common.StackVersion,
-			"docker.elastic.co/observability-ci/elasticsearch-ubi8:" + common.StackVersion,
-			"docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion,
-			"docker.elastic.co/observability-ci/kibana-ubi8:" + common.KibanaVersion,
-		}
-		PullImages(ctx, images)
-	}
-
 	// Check for a docker connection string, this could be a remote docker
 	// instance accessible via ssh.
 	if c.ConnectionString != "" {
@@ -232,6 +215,23 @@ func (c *dockerDeploymentManifest) PreBootstrap(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// grab latest docker images
+	if !shell.GetEnvBool("SKIP_PULL") {
+		images := []string{
+			"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
+			"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,
+			"docker.elastic.co/elasticsearch/elasticsearch:" + common.StackVersion,
+			"docker.elastic.co/kibana/kibana:" + common.KibanaVersion,
+			"docker.elastic.co/observability-ci/elastic-agent:" + common.BeatVersion,
+			"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.BeatVersion,
+			"docker.elastic.co/observability-ci/elasticsearch:" + common.StackVersion,
+			"docker.elastic.co/observability-ci/elasticsearch-ubi8:" + common.StackVersion,
+			"docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion,
+			"docker.elastic.co/observability-ci/kibana-ubi8:" + common.KibanaVersion,
+		}
+		PullImages(ctx, images)
 	}
 
 	return nil

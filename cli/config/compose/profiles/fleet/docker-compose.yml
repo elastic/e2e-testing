@@ -32,8 +32,21 @@ services:
     platform: ${stackPlatform:-linux/amd64}
     ports:
       - "5601:5601"
-    volumes:
-      - ./configurations/kibana.config.yml:/usr/share/kibana/config/kibana.yml
+    environment:
+      - "SERVER_NAME=kibana"
+      - "SERVER_HOST=0.0.0.0"
+      - "TELEMETRY_ENABLED=false"
+      - "ELASTICSEARCH_HOSTS=http://elasticsearch:9200"
+      - "ELASTICSEARCH_USERNAME=elastic"
+      - "ELASTICSEARCH_PASSWORD=changeme"
+      - "MONITORING_UI_CONTAINER_ELASTICSEARCH_ENABLED=true"
+      - "XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY='12345678901234567890123456789012'"
+      - "XPACK_FLEET_ENABLED=true"
+      - "XPACK_FLEET_REGISTRYURL=https://epr-staging.elastic.co"
+      - "XPACK_FLEET_AGENTS_ENABLED=true"
+      - "XPACK_FLEET_AGENTS_ELASTICSEARCH_HOST=http://elasticsearch:9200"
+      - "XPACK_FLEET_AGENTS_FLEET_SERVER_HOSTS=http://fleet-server:8220"
+      - "XPACK_FLEET_AGENTS_TLSCHECKDISABLED=true"
   fleet-server:
     image: "docker.elastic.co/beats/elastic-agent:${stackVersion:-8.0.0-SNAPSHOT}"
     depends_on:

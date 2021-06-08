@@ -6,6 +6,7 @@ package kibana
 
 const (
 	// BaseURL Kibana host address
+	// FIXME: Must take into account a remote docker instance
 	BaseURL = "http://localhost:5601"
 
 	// FleetAPI is the prefix for all Kibana Fleet API resources.
