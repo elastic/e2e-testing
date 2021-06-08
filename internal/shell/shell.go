@@ -46,6 +46,9 @@ func ExecuteWithStdin(ctx context.Context, workspace string, stdin io.Reader, co
 	span, _ := apm.StartSpanOptions(ctx, "Executing shell command", "shell.command.execute", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("workspace", workspace)
+	span.Context.SetLabel("command", command)
+	span.Context.SetLabel("arguments", args)
 	defer span.End()
 
 	log.WithFields(log.Fields{

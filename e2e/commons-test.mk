@@ -13,17 +13,10 @@ STACK_VERSION?=
 ELASTIC_APM_ENVIRONMENT?=local
 
 ifeq ($(ELASTIC_APM_ACTIVE),true)
-ifeq ($(ELASTIC_APM_ENVIRONMENT),ci)
 JENKINS_STATS_SECRET?=secret/observability-team/ci/jenkins-stats
 export APM_SECRET_TOKEN?=$(shell vault read -field apmServerToken "$(JENKINS_STATS_SECRET)")
 export APM_SERVER_URL?=$(shell vault read -field apmServerUrl "$(JENKINS_STATS_SECRET)")
-endif
-
-ifeq ($(ELASTIC_APM_ENVIRONMENT),local)
-export APM_SECRET_TOKEN?=
-export APM_SERVER_URL?=http://localhost:8200
 export ELASTIC_APM_GLOBAL_LABELS?=
-endif
 endif
 
 ifneq ($(FEATURES),)

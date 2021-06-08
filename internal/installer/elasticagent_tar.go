@@ -5,6 +5,7 @@
 package installer
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
@@ -12,6 +13,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // elasticAgentTARPackage implements operations for a RPM installer
@@ -29,8 +31,14 @@ func AttachElasticAgentTARPackage(deploy deploy.Deployment, service deploy.Servi
 }
 
 // AddFiles will add files into the service environment, default destination is /
-func (i *elasticAgentTARPackage) AddFiles(files []string) error {
-	return i.deploy.AddFiles(i.service, files)
+func (i *elasticAgentTARPackage) AddFiles(ctx context.Context, files []string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Adding files to the Elastic Agent", "elastic-agent.tar.add-files", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("files", files)
+	defer span.End()
+
+	return i.deploy.AddFiles(ctx, i.service, files)
 }
 
 // Inspect returns info on package
@@ -42,27 +50,38 @@ func (i *elasticAgentTARPackage) Inspect() (deploy.ServiceOperatorManifest, erro
 }
 
 // Install installs a TAR package
-func (i *elasticAgentTARPackage) Install() error {
+func (i *elasticAgentTARPackage) Install(ctx context.Context) error {
 	log.Trace("No TAR install instructions")
 	return nil
 }
 
 // Exec will execute a command within the service environment
-func (i *elasticAgentTARPackage) Exec(args []string) (string, error) {
-	output, err := i.deploy.ExecIn(i.service, args)
+func (i *elasticAgentTARPackage) Exec(ctx context.Context, args []string) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Executing Elastic Agent command", "elastic-agent.tar.exec", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", args)
+	defer span.End()
+
+	output, err := i.deploy.ExecIn(ctx, i.service, args)
 	return output, err
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentTARPackage) Enroll(token string) error {
+func (i *elasticAgentTARPackage) Enroll(ctx context.Context, token string) error {
+	cmds := []string{"/elastic-agent/elastic-agent", "install"}
+	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.tar.enroll", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
 
 	cfg, _ := kibana.NewFleetConfig(token)
-	args := []string{"/elastic-agent/elastic-agent", "install"}
 	for _, arg := range cfg.Flags() {
-		args = append(args, arg)
+		cmds = append(cmds, arg)
 	}
 
-	_, err := i.Exec(args)
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
 	}
@@ -70,7 +89,7 @@ func (i *elasticAgentTARPackage) Enroll(token string) error {
 }
 
 // InstallCerts installs the certificates for a TAR package, using the right OS package manager
-func (i *elasticAgentTARPackage) InstallCerts() error {
+func (i *elasticAgentTARPackage) InstallCerts(ctx context.Context) error {
 	return nil
 }
 
@@ -80,12 +99,17 @@ func (i *elasticAgentTARPackage) Logs() error {
 }
 
 // Postinstall executes operations after installing a TAR package
-func (i *elasticAgentTARPackage) Postinstall() error {
+func (i *elasticAgentTARPackage) Postinstall(ctx context.Context) error {
 	return nil
 }
 
 // Preinstall executes operations before installing a TAR package
-func (i *elasticAgentTARPackage) Preinstall() error {
+func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Pre-install operations for the Elastic Agent", "elastic-agent.tar.pre-install", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	artifact := "elastic-agent"
 	os := "linux"
 	arch := "x86_64"
@@ -95,7 +119,7 @@ func (i *elasticAgentTARPackage) Preinstall() error {
 	extension := "tar.gz"
 
 	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, common.BeatVersionBase, os, arch, extension, false)
-	binaryPath, err := utils.FetchBeatsBinary(binaryName, artifact, common.BeatVersion, common.BeatVersionBase, utils.TimeoutFactor, true)
+	binaryPath, err := utils.FetchBeatsBinary(ctx, binaryName, artifact, common.BeatVersion, common.BeatVersionBase, utils.TimeoutFactor, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -108,19 +132,26 @@ func (i *elasticAgentTARPackage) Preinstall() error {
 		return err
 	}
 
-	err = i.AddFiles([]string{binaryPath})
+	err = i.AddFiles(context.Background(), []string{binaryPath})
 	if err != nil {
 		return err
 	}
 
-	output, _ := i.Exec([]string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, common.BeatVersion, os, arch), "/elastic-agent"})
+	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, common.BeatVersion, os, arch), "/elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
 
 // Start will start a service
-func (i *elasticAgentTARPackage) Start() error {
-	_, err := i.Exec([]string{"systemctl", "start", "elastic-agent"})
+func (i *elasticAgentTARPackage) Start(ctx context.Context) error {
+	cmds := []string{"systemctl", "start", "elastic-agent"}
+	span, _ := apm.StartSpanOptions(ctx, "Starting Elastic Agent service", "elastic-agent.tar.start", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return err
 	}
@@ -128,8 +159,15 @@ func (i *elasticAgentTARPackage) Start() error {
 }
 
 // Stop will start a service
-func (i *elasticAgentTARPackage) Stop() error {
-	_, err := i.Exec([]string{"systemctl", "stop", "elastic-agent"})
+func (i *elasticAgentTARPackage) Stop(ctx context.Context) error {
+	cmds := []string{"systemctl", "stop", "elastic-agent"}
+	span, _ := apm.StartSpanOptions(ctx, "Stopping Elastic Agent service", "elastic-agent.tar.stop", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return err
 	}
@@ -137,9 +175,14 @@ func (i *elasticAgentTARPackage) Stop() error {
 }
 
 // Uninstall uninstalls a TAR package
-func (i *elasticAgentTARPackage) Uninstall() error {
-	args := []string{"elastic-agent", "uninstall", "-f"}
-	_, err := i.Exec(args)
+func (i *elasticAgentTARPackage) Uninstall(ctx context.Context) error {
+	cmds := []string{"elastic-agent", "uninstall", "-f"}
+	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.tar.uninstall", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
 	}

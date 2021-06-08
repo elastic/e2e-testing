@@ -16,6 +16,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
@@ -127,6 +128,11 @@ func (c Cluster) isAvailable(ctx context.Context) error {
 
 // Initialize detect existing cluster contexts, otherwise will create one via Kind
 func (c *Cluster) Initialize(ctx context.Context, kindConfigPath string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Initialising kubernetes cluster", "kubernetes.cluster.initialize", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	err := c.isAvailable(ctx)
 	if err == nil {
 		return nil
@@ -172,6 +178,11 @@ func (c *Cluster) Initialize(ctx context.Context, kindConfigPath string) error {
 
 // Cleanup deletes the kind cluster if available
 func (c *Cluster) Cleanup(ctx context.Context) {
+	span, _ := apm.StartSpanOptions(ctx, "Cleanup cluster", "docker-compose.cluster.cleanup", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	if c.kindName != "" {
 		_, err := shell.Execute(ctx, ".", "kind", "delete", "cluster", "--name", c.kindName)
 		if err != nil {

@@ -121,7 +121,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		// this method will detect if the GITHUB_CHECK_SHA1 variable is set
 		artifactName := utils.BuildArtifactName(podName, common.BeatVersion, common.BeatVersionBase, "linux", "amd64", "tar.gz", true)
 
-		imagePath, err := utils.FetchBeatsBinary(artifactName, podName, common.BeatVersion, common.BeatVersionBase, utils.TimeoutFactor, true)
+		imagePath, err := utils.FetchBeatsBinary(context.Background(), artifactName, podName, common.BeatVersion, common.BeatVersionBase, utils.TimeoutFactor, true)
 		if err != nil {
 			return err
 		}

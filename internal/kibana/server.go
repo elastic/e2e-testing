@@ -29,10 +29,14 @@ type EnrollmentAPIKey struct {
 }
 
 // CreateEnrollmentAPIKey creates an enrollment api key
-func (c *Client) CreateEnrollmentAPIKey(policy Policy) (EnrollmentAPIKey, error) {
+func (c *Client) CreateEnrollmentAPIKey(ctx context.Context, policy Policy) (EnrollmentAPIKey, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Creating enrollment API Key", "fleet.api-key.create", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
 
 	reqBody := `{"policy_id": "` + policy.ID + `"}`
-	statusCode, respBody, _ := c.post(fmt.Sprintf("%s/enrollment-api-keys", FleetAPI), []byte(reqBody))
+	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/enrollment-api-keys", FleetAPI), []byte(reqBody))
 	if statusCode != 200 {
 		jsonParsed, err := gabs.ParseJSON([]byte(respBody))
 		log.WithFields(log.Fields{
@@ -63,10 +67,14 @@ type ServiceToken struct {
 }
 
 // CreateServiceToken creates a fleet service token
-func (c *Client) CreateServiceToken() (ServiceToken, error) {
+func (c *Client) CreateServiceToken(ctx context.Context) (ServiceToken, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Creating service token", "fleet.service-token.create", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
 
 	reqBody := `{}`
-	statusCode, respBody, _ := c.post(fmt.Sprintf("%s/service-tokens", FleetAPI), []byte(reqBody))
+	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/service-tokens", FleetAPI), []byte(reqBody))
 	if statusCode != 200 {
 		jsonParsed, err := gabs.ParseJSON([]byte(respBody))
 		log.WithFields(log.Fields{
@@ -89,8 +97,13 @@ func (c *Client) CreateServiceToken() (ServiceToken, error) {
 }
 
 // DeleteEnrollmentAPIKey deletes the enrollment api key
-func (c *Client) DeleteEnrollmentAPIKey(enrollmentID string) error {
-	statusCode, respBody, err := c.delete(fmt.Sprintf("%s/enrollment-api-keys/%s", FleetAPI, enrollmentID))
+func (c *Client) DeleteEnrollmentAPIKey(ctx context.Context, enrollmentID string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Deleting enrollment API Key", "fleet.api-key.delete", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	statusCode, respBody, err := c.delete(ctx, fmt.Sprintf("%s/enrollment-api-keys/%s", FleetAPI, enrollmentID))
 
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -113,8 +126,13 @@ func (c *Client) DeleteEnrollmentAPIKey(enrollmentID string) error {
 }
 
 // GetDataStreams get data streams from deployed agents
-func (c *Client) GetDataStreams() (*gabs.Container, error) {
-	statusCode, respBody, err := c.get(fmt.Sprintf("%s/data_streams", FleetAPI))
+func (c *Client) GetDataStreams(ctx context.Context) (*gabs.Container, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Getting data streams", "kibana.data-streams.list", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/data_streams", FleetAPI))
 
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -154,8 +172,13 @@ func (c *Client) GetDataStreams() (*gabs.Container, error) {
 }
 
 // ListEnrollmentAPIKeys list the enrollment api keys
-func (c *Client) ListEnrollmentAPIKeys() ([]EnrollmentAPIKey, error) {
-	statusCode, respBody, err := c.get(fmt.Sprintf("%s/enrollment-api-keys", FleetAPI))
+func (c *Client) ListEnrollmentAPIKeys(ctx context.Context) ([]EnrollmentAPIKey, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Listing enrollment API Keys", "fleet.api-keys.list", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/enrollment-api-keys", FleetAPI))
 
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -188,10 +211,15 @@ func (c *Client) ListEnrollmentAPIKeys() ([]EnrollmentAPIKey, error) {
 }
 
 // RecreateFleet this will force recreate the fleet configuration
-func (c *Client) RecreateFleet() error {
+func (c *Client) RecreateFleet(ctx context.Context) error {
 	waitForFleet := func() error {
+		span, _ := apm.StartSpanOptions(ctx, "Recreating Fleet configuration", "fleet.config.recreate", apm.SpanOptions{
+			Parent: apm.SpanFromContext(ctx).TraceContext(),
+		})
+		defer span.End()
+
 		reqBody := `{ "forceRecreate": true }`
-		statusCode, respBody, err := c.post(fmt.Sprintf("%s/setup", FleetAPI), []byte(reqBody))
+		statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/setup", FleetAPI), []byte(reqBody))
 		if err != nil {
 			log.WithFields(log.Fields{
 				"body":       respBody,
@@ -236,9 +264,14 @@ func (c *Client) RecreateFleet() error {
 }
 
 // WaitForFleet waits for fleet server to be ready
-func (c *Client) WaitForFleet() error {
+func (c *Client) WaitForFleet(ctx context.Context) error {
 	waitForFleet := func() error {
-		statusCode, respBody, err := c.get(fmt.Sprintf("%s/agents/setup", FleetAPI))
+		span, _ := apm.StartSpanOptions(ctx, "Fleet setup", "kibana.fleet.setup", apm.SpanOptions{
+			Parent: apm.SpanFromContext(ctx).TraceContext(),
+		})
+		defer span.End()
+
+		statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/agents/setup", FleetAPI))
 		if err != nil {
 			log.WithFields(log.Fields{
 				"body":       respBody,
@@ -288,11 +321,9 @@ func (c *Client) WaitForFleet() error {
 }
 
 // WaitForReady waits for Kibana to be healthy and accept connections
-func (c *Client) WaitForReady(maxTimeoutMinutes time.Duration) (bool, error) {
+func (c *Client) WaitForReady(ctx context.Context, maxTimeoutMinutes time.Duration) (bool, error) {
 	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
 	exp := utils.GetExponentialBackOff(maxTimeout)
-
-	ctx := context.Background()
 
 	retryCount := 1
 
@@ -302,7 +333,7 @@ func (c *Client) WaitForReady(maxTimeoutMinutes time.Duration) (bool, error) {
 		})
 		defer span.End()
 
-		statusCode, respBody, err := c.get("status")
+		statusCode, respBody, err := c.get(ctx, "status")
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":          err,
