@@ -15,7 +15,6 @@ import (
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
-	"github.com/elastic/e2e-testing/internal/shell"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -110,23 +109,13 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		if !shell.GetEnvBool("SKIP_PULL") {
-			images := []string{
-				"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
-				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,
-				"docker.elastic.co/elasticsearch/elasticsearch:" + common.StackVersion,
-				"docker.elastic.co/kibana/kibana:" + common.KibanaVersion,
-				"docker.elastic.co/observability-ci/elastic-agent:" + common.BeatVersion,
-				"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.BeatVersion,
-				"docker.elastic.co/observability-ci/elasticsearch:" + common.StackVersion,
-				"docker.elastic.co/observability-ci/elasticsearch-ubi8:" + common.StackVersion,
-				"docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion,
-				"docker.elastic.co/observability-ci/kibana-ubi8:" + common.KibanaVersion,
-			}
-			deploy.PullImages(suiteContext, images)
+		deployer := deploy.New(common.Provider)
+
+		err := deployer.PreBootstrap(suiteContext)
+		if err != nil {
+			log.WithField("error", err).Fatal("Unable to run pre-bootstrap initialization")
 		}
 
-		deployer := deploy.New(common.Provider)
 		deployer.Bootstrap(suiteContext, func() error {
 			kibanaClient, err := kibana.NewClient()
 			if err != nil {

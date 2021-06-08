@@ -174,6 +174,11 @@ func (c *kubernetesDeploymentManifest) Logs(service ServiceRequest) error {
 	return nil
 }
 
+// PreBootstrap sets up environment with kind
+func (c *kubernetesDeploymentManifest) PreBootstrap(ctx context.Context) error {
+	return nil
+}
+
 // Remove remove services from deployment
 func (c *kubernetesDeploymentManifest) Remove(services []ServiceRequest, env map[string]string) error {
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
