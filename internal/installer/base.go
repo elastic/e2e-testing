@@ -10,11 +10,17 @@ import (
 
 	"github.com/elastic/e2e-testing/internal/deploy"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // Attach will attach a installer to a deployment allowing
 // the installation of a package to be transparently configured no matter the backend
-func Attach(deploy deploy.Deployment, service deploy.ServiceRequest, installType string) (deploy.ServiceOperator, error) {
+func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.ServiceRequest, installType string) (deploy.ServiceOperator, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Attaching installer to host", "elastic-agent.installer.attach", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	log.WithFields(log.Fields{
 		"service":     service,
 		"installType": installType,
@@ -48,29 +54,4 @@ type BasePackage struct {
 	logFile    string
 	profile    string
 	service    string
-}
-
-// getElasticAgentHash uses Elastic Agent's home dir to read the file with agent's build hash
-// it will return the first six characters of the hash (short hash)
-func getElasticAgentHash(containerName string, commitFile string) (string, error) {
-	cmd := []string{
-		"cat", commitFile,
-	}
-
-	fullHash, err := deploy.ExecCommandIntoContainer(context.Background(), containerName, "root", cmd)
-	if err != nil {
-		return "", err
-	}
-
-	runes := []rune(fullHash)
-	shortHash := string(runes[0:6])
-
-	log.WithFields(log.Fields{
-		"commitFile":    commitFile,
-		"containerName": containerName,
-		"hash":          fullHash,
-		"shortHash":     shortHash,
-	}).Debug("Agent build hash found")
-
-	return shortHash, nil
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 var instance *client.Client
@@ -458,9 +459,13 @@ func getDockerClient() *client.Client {
 }
 
 // PullImages pulls images
-func PullImages(images []string) error {
+func PullImages(ctx context.Context, images []string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Pulling images using Docker client", "docker.images.pull", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	c := getDockerClient()
-	ctx := context.Background()
 
 	platform := "linux/" + utils.GetArchitecture()
 
