@@ -13,6 +13,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // Agent represents an Elastic Agent enrolled with fleet.
@@ -36,8 +37,13 @@ type Agent struct {
 }
 
 // GetAgentByHostname get an agent by the local_metadata.host.name property
-func (c *Client) GetAgentByHostname(hostname string) (Agent, error) {
-	agents, err := c.ListAgents()
+func (c *Client) GetAgentByHostname(ctx context.Context, hostname string) (Agent, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Getting Elastic Agent by hostname", "fleet.agent.get-by-hostname", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	agents, err := c.ListAgents(ctx)
 	if err != nil {
 		return Agent{}, err
 	}
@@ -57,8 +63,8 @@ func (c *Client) GetAgentByHostname(hostname string) (Agent, error) {
 }
 
 // GetAgentIDByHostname gets agent id by hostname
-func (c *Client) GetAgentIDByHostname(hostname string) (string, error) {
-	agent, err := c.GetAgentByHostname(hostname)
+func (c *Client) GetAgentIDByHostname(ctx context.Context, hostname string) (string, error) {
+	agent, err := c.GetAgentByHostname(ctx, hostname)
 	if err != nil {
 		return "", err
 	}
@@ -69,13 +75,18 @@ func (c *Client) GetAgentIDByHostname(hostname string) (string, error) {
 }
 
 // GetAgentStatusByHostname gets agent status by hostname
-func (c *Client) GetAgentStatusByHostname(hostname string) (string, error) {
-	agentID, err := c.GetAgentIDByHostname(hostname)
+func (c *Client) GetAgentStatusByHostname(ctx context.Context, hostname string) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Getting Elastic Agent status by hostname", "fleet.agent.get-status-by-hostname", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	agentID, err := c.GetAgentIDByHostname(ctx, hostname)
 	if err != nil {
 		return "", err
 	}
 
-	statusCode, respBody, err := c.get(fmt.Sprintf("%s/agents/%s", FleetAPI, agentID))
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/agents/%s", FleetAPI, agentID))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"body":       respBody,
@@ -100,7 +111,12 @@ func (c *Client) GetAgentStatusByHostname(hostname string) (string, error) {
 }
 
 // GetAgentEvents get events of agent
-func (c *Client) GetAgentEvents(applicationName string, agentID string, packagePolicyID string, updatedAt string) error {
+func (c *Client) GetAgentEvents(ctx context.Context, applicationName string, agentID string, packagePolicyID string, updatedAt string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Getting agent events", "fleet.elastic-agent.get-events", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{
@@ -136,7 +152,7 @@ func (c *Client) GetAgentEvents(applicationName string, agentID string, packageP
 
 	indexName := "logs-elastic_agent-default"
 
-	searchResult, err := elasticsearch.Search(context.Background(), indexName, query)
+	searchResult, err := elasticsearch.Search(ctx, indexName, query)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"agentID":         agentID,
@@ -183,8 +199,13 @@ func (c *Client) GetAgentEvents(applicationName string, agentID string, packageP
 }
 
 // ListAgents returns the list of agents enrolled with Fleet.
-func (c *Client) ListAgents() ([]Agent, error) {
-	statusCode, respBody, err := c.get(fmt.Sprintf("%s/agents", FleetAPI))
+func (c *Client) ListAgents(ctx context.Context) ([]Agent, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Listing Elastic Agents", "fleet.agents.list", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/agents", FleetAPI))
 
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -217,13 +238,19 @@ func (c *Client) ListAgents() ([]Agent, error) {
 }
 
 // UnEnrollAgent unenrolls agent from fleet
-func (c *Client) UnEnrollAgent(hostname string) error {
-	agentID, err := c.GetAgentIDByHostname(hostname)
+func (c *Client) UnEnrollAgent(ctx context.Context, hostname string) error {
+	span, _ := apm.StartSpanOptions(ctx, "UnEnrolling Elastic Agent by hostname", "fleet.agent.un-enroll", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	agentID, err := c.GetAgentIDByHostname(ctx, hostname)
 	if err != nil {
 		return err
 	}
+
 	reqBody := `{"revoke": true}`
-	statusCode, respBody, _ := c.post(fmt.Sprintf("%s/agents/%s/unenroll", FleetAPI, agentID), []byte(reqBody))
+	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/agents/%s/unenroll", FleetAPI, agentID), []byte(reqBody))
 	if statusCode != 200 {
 		return fmt.Errorf("could not unenroll agent; API status code = %d, response body = %s", statusCode, respBody)
 	}
@@ -231,13 +258,19 @@ func (c *Client) UnEnrollAgent(hostname string) error {
 }
 
 // UpgradeAgent upgrades an agent from to version
-func (c *Client) UpgradeAgent(hostname string, version string) error {
-	agentID, err := c.GetAgentIDByHostname(hostname)
+func (c *Client) UpgradeAgent(ctx context.Context, hostname string, version string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Upgrading Elastic Agent by hostname", "fleet.agent.upgrade-by-hostname", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	agentID, err := c.GetAgentIDByHostname(ctx, hostname)
 	if err != nil {
 		return err
 	}
+
 	reqBody := `{"version":"` + version + `", "force": true}`
-	statusCode, respBody, err := c.post(fmt.Sprintf("%s/agents/%s/upgrade", FleetAPI, agentID), []byte(reqBody))
+	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/agents/%s/upgrade", FleetAPI, agentID), []byte(reqBody))
 	if statusCode != 200 {
 		log.WithFields(log.Fields{
 			"body":       respBody,

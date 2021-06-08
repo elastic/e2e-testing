@@ -243,10 +243,6 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 				"minutes": minutesToBeHealthy,
 			}).Fatal("The Elasticsearch cluster could not get the healthy status")
 		}
-
-		if common.IsLocalAPMEnvironment() {
-			steps.AddAPMServicesForInstrumentation(suiteContext, "metricbeat", common.StackVersion, true, env)
-		}
 	})
 
 	ctx.AfterSuite(func() {
@@ -366,7 +362,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		arch := utils.GetArchitecture()
 		artifactName := utils.BuildArtifactName("metricbeat", mts.Version, common.BeatVersionBase, "linux", arch, "tar.gz", true)
 
-		imagePath, err := utils.FetchBeatsBinary(artifactName, "metricbeat", mts.Version, common.BeatVersionBase, utils.TimeoutFactor, true)
+		imagePath, err := utils.FetchBeatsBinary(mts.currentContext, artifactName, "metricbeat", mts.Version, common.BeatVersionBase, utils.TimeoutFactor, true)
 		if err != nil {
 			return err
 		}
@@ -461,7 +457,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		}
 
 		if common.DeveloperMode {
-			err = serviceManager.RunCommand(deploy.NewServiceRequest("metricbeat"), services, []string{"logs", "metricbeat"}, env)
+			err = serviceManager.RunCommand(mts.currentContext, deploy.NewServiceRequest("metricbeat"), services, []string{"logs", "metricbeat"}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error":             err,

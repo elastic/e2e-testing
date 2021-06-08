@@ -134,13 +134,3 @@ func InitVersions() {
 		"KibanaVersion":   KibanaVersion,
 	}).Trace("Initial artifact versions defined")
 }
-
-// IsLocalAPMEnvironment if a local APM environment must be provisioned
-func IsLocalAPMEnvironment() bool {
-	elasticAPMEnvironment := shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "ci")
-	if ElasticAPMActive && elasticAPMEnvironment == "local" {
-		return true
-	}
-
-	return false
-}

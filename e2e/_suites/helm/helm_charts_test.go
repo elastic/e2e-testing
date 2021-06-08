@@ -13,7 +13,6 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/helm"
@@ -647,23 +646,6 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 		suiteParentSpan = suiteTx.StartSpan("Before Helm test suite", "test.suite.before", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
-
-		if common.IsLocalAPMEnvironment() {
-			serviceManager := deploy.NewServiceManager()
-
-			env := map[string]string{
-				"stackVersion": common.StackVersion,
-			}
-
-			err := serviceManager.RunCompose(
-				suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("helm")}, env)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"profile": "metricbeat",
-				}).Warn("Could not run the profile.")
-			}
-			steps.AddAPMServicesForInstrumentation(suiteContext, "helm", common.StackVersion, true, env)
-		}
 
 		err := testSuite.createCluster(suiteContext, testSuite.KubernetesVersion)
 		if err != nil {

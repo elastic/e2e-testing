@@ -36,6 +36,12 @@ type SearchResult map[string]interface{}
 
 // DeleteIndex deletes an index from the elasticsearch running in the host
 func DeleteIndex(ctx context.Context, index string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Search", "elasticsearch.index.delete", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("index", index)
+	defer span.End()
+
 	esClient, err := getElasticsearchClient(ctx)
 	if err != nil {
 		return err
@@ -121,6 +127,8 @@ func Search(ctx context.Context, indexName string, query map[string]interface{})
 	span, _ := apm.StartSpanOptions(ctx, "Search", "elasticsearch.search", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("index", indexName)
+	span.Context.SetLabel("query", query)
 	defer span.End()
 
 	result := SearchResult{}
