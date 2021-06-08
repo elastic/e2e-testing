@@ -178,7 +178,7 @@ func (c *Cluster) Initialize(ctx context.Context, kindConfigPath string) error {
 
 // Cleanup deletes the kind cluster if available
 func (c *Cluster) Cleanup(ctx context.Context) {
-	span, _ := apm.StartSpanOptions(ctx, "Cleanup cluster", "docker-compose.cluster.cleanup", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Cleanup cluster", "kubernetes.cluster.cleanup", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
