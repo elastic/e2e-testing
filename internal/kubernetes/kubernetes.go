@@ -128,7 +128,7 @@ func (c Cluster) isAvailable(ctx context.Context) error {
 
 // Initialize detect existing cluster contexts, otherwise will create one via Kind
 func (c *Cluster) Initialize(ctx context.Context, kindConfigPath string) error {
-	span, _ := apm.StartSpanOptions(ctx, "Initialising kubernetes cluster", "kubernetes.cluster.initialize", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Initialising kubernetes cluster", "kind.cluster.initialize", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
@@ -160,6 +160,8 @@ func (c *Cluster) Initialize(ctx context.Context, kindConfigPath string) error {
 		"--config", kindConfigPath,
 		"--kubeconfig", c.kubeconfig,
 	}
+	span.Context.SetLabel("arguments", args)
+
 	if version, ok := os.LookupEnv("KUBERNETES_VERSION"); ok && version != "" {
 		log.Infof("Installing Kubernetes v%s", version)
 		args = append(args, "--image", "kindest/node:v"+version)
@@ -178,7 +180,7 @@ func (c *Cluster) Initialize(ctx context.Context, kindConfigPath string) error {
 
 // Cleanup deletes the kind cluster if available
 func (c *Cluster) Cleanup(ctx context.Context) {
-	span, _ := apm.StartSpanOptions(ctx, "Cleanup cluster", "kubernetes.cluster.cleanup", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Cleanup cluster", "kind.cluster.cleanup", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
@@ -203,6 +205,12 @@ func (c *Cluster) Cleanup(ctx context.Context) {
 // It does not check cluster availability because a pull error could be present in the pod,
 // which will need the load of the requested image, causing a chicken-egg error.
 func (c *Cluster) LoadImage(ctx context.Context, image string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Loading image into cluster", "kind.image.load", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("image", image)
+	defer span.End()
+
 	shell.CheckInstalledSoftware("kind")
 
 	loadArgs := []string{"load", "docker-image", image}
