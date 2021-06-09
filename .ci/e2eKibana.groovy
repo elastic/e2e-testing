@@ -116,7 +116,7 @@ def buildKibanaPlatformImage(String platform) {
   // the platformTag is the one needed to build the multiplatform image
   def platformTag = "${env.DOCKER_TAG}" + "-" + platform
 
-  buildKibanaDockerImage(refspec: getBranch(), platformTag: platformTag)
+  buildKibanaDockerImage(refspec: getBranch(), targetTag: platformTag)
 }
 
 def checkPermissions(){
