@@ -16,6 +16,7 @@ Examples: default
 | default |
 
 @ubi8
+@skip:arm64
 Examples: Ubi8
 | image   |
 | ubi8    |
@@ -31,6 +32,7 @@ Examples: default
 | default |
 
 @ubi8
+@skip:arm64
 Examples: Ubi8
 | image   |
 | ubi8    |
@@ -47,6 +49,7 @@ Examples: default
 | default |
 
 @ubi8
+@skip:arm64
 Examples: Ubi8
 | image   |
 | ubi8    |
@@ -63,6 +66,7 @@ Examples: default
   | default |
 
 @ubi8
+@skip:arm64
 Examples: Ubi8
   | image   |
   | ubi8    |
