@@ -91,8 +91,8 @@ pipeline {
         unstash 'source'
         dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
         dir("${BASE_DIR}") {
-          sh(label: 'Push multiplatform manifest', script: '.ci/scripts/push-multiplatform-manifest.sh centos-systemd')
-          sh(label: 'Push multiplatform manifest', script: '.ci/scripts/push-multiplatform-manifest.sh debian-systemd')
+          sh(label: 'Push multiplatform manifest', script: '.ci/scripts/push-multiplatform-manifest.sh centos-systemd latest')
+          sh(label: 'Push multiplatform manifest', script: '.ci/scripts/push-multiplatform-manifest.sh debian-systemd latest')
         }
       }
     }
