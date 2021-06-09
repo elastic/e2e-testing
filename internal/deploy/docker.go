@@ -13,6 +13,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // DockerDeploymentManifest deploy manifest for docker
@@ -25,14 +26,25 @@ func newDockerDeploy() Deployment {
 }
 
 // Add adds services deployment
-func (c *dockerDeploymentManifest) Add(services []ServiceRequest, env map[string]string) error {
+func (c *dockerDeploymentManifest) Add(ctx context.Context, services []ServiceRequest, env map[string]string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Adding services to Docker Compose deployment", "docker-compose.manifest.add-services", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("services", services)
+	defer span.End()
+
 	serviceManager := NewServiceManager()
 
 	return serviceManager.AddServicesToCompose(c.Context, services[0], services[1:], env)
 }
 
 // Bootstrap sets up environment with docker compose
-func (c *dockerDeploymentManifest) Bootstrap(waitCB func() error) error {
+func (c *dockerDeploymentManifest) Bootstrap(ctx context.Context, waitCB func() error) error {
+	span, _ := apm.StartSpanOptions(ctx, "Bootstrapping Docker Compose deployment", "docker-compose.manifest.bootstrap", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	serviceManager := NewServiceManager()
 	common.ProfileEnv = map[string]string{
 		"kibanaVersion": common.KibanaVersion,
@@ -47,7 +59,7 @@ func (c *dockerDeploymentManifest) Bootstrap(waitCB func() error) error {
 	}
 
 	profile := NewServiceRequest(common.FleetProfileName)
-	err := serviceManager.RunCompose(c.Context, true, []ServiceRequest{profile}, common.ProfileEnv)
+	err := serviceManager.RunCompose(ctx, true, []ServiceRequest{profile}, common.ProfileEnv)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"profile": profile,
@@ -62,8 +74,15 @@ func (c *dockerDeploymentManifest) Bootstrap(waitCB func() error) error {
 }
 
 // AddFiles - add files to service
-func (c *dockerDeploymentManifest) AddFiles(service ServiceRequest, files []string) error {
-	container, _ := c.Inspect(service)
+func (c *dockerDeploymentManifest) AddFiles(ctx context.Context, service ServiceRequest, files []string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Adding files to Docker Compose deployment", "docker-compose.files.add", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("files", files)
+	span.Context.SetLabel("service", service)
+	defer span.End()
+
+	container, _ := c.Inspect(ctx, service)
 	for _, file := range files {
 		isTar := true
 		fileExt := filepath.Ext(file)
@@ -79,9 +98,14 @@ func (c *dockerDeploymentManifest) AddFiles(service ServiceRequest, files []stri
 }
 
 // Destroy teardown docker environment
-func (c *dockerDeploymentManifest) Destroy() error {
+func (c *dockerDeploymentManifest) Destroy(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Destroying compose deployment", "docker-compose.manifest.destroy", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	serviceManager := NewServiceManager()
-	err := serviceManager.StopCompose(c.Context, true, []ServiceRequest{NewServiceRequest(common.FleetProfileName)})
+	err := serviceManager.StopCompose(ctx, true, []ServiceRequest{NewServiceRequest(common.FleetProfileName)})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -92,13 +116,20 @@ func (c *dockerDeploymentManifest) Destroy() error {
 }
 
 // ExecIn execute command in service
-func (c *dockerDeploymentManifest) ExecIn(service ServiceRequest, cmd []string) (string, error) {
-	inspect, _ := c.Inspect(service)
+func (c *dockerDeploymentManifest) ExecIn(ctx context.Context, service ServiceRequest, cmd []string) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Executing command in compose deployment", "docker-compose.manifest.execIn", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("service", service)
+	span.Context.SetLabel("arguments", cmd)
+	defer span.End()
+
+	inspect, _ := c.Inspect(ctx, service)
 	args := []string{"exec", "-u", "root", "-i", inspect.Name}
 	for _, cmdArg := range cmd {
 		args = append(args, cmdArg)
 	}
-	output, err := shell.Execute(c.Context, ".", "docker", args...)
+	output, err := shell.Execute(ctx, ".", "docker", args...)
 	if err != nil {
 		return "", err
 	}
@@ -106,7 +137,13 @@ func (c *dockerDeploymentManifest) ExecIn(service ServiceRequest, cmd []string) 
 }
 
 // Inspect inspects a service
-func (c *dockerDeploymentManifest) Inspect(service ServiceRequest) (*ServiceManifest, error) {
+func (c *dockerDeploymentManifest) Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Inspecting compose deployment", "docker-compose.manifest.inspect", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("service", service)
+	defer span.End()
+
 	inspect, err := InspectContainer(service)
 	if err != nil {
 		return &ServiceManifest{}, err
@@ -124,7 +161,7 @@ func (c *dockerDeploymentManifest) Inspect(service ServiceRequest) (*ServiceMani
 
 // Logs print logs of service
 func (c *dockerDeploymentManifest) Logs(service ServiceRequest) error {
-	manifest, _ := c.Inspect(service)
+	manifest, _ := c.Inspect(context.Background(), service)
 	_, err := shell.Execute(c.Context, ".", "docker", "logs", manifest.Name)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -140,7 +177,7 @@ func (c *dockerDeploymentManifest) Logs(service ServiceRequest) error {
 // Remove remove services from deployment
 func (c *dockerDeploymentManifest) Remove(services []ServiceRequest, env map[string]string) error {
 	for _, service := range services[1:] {
-		manifest, _ := c.Inspect(service)
+		manifest, _ := c.Inspect(context.Background(), service)
 		_, err := shell.Execute(c.Context, ".", "docker", "rm", "-fv", manifest.Name)
 		if err != nil {
 			return err
@@ -151,14 +188,14 @@ func (c *dockerDeploymentManifest) Remove(services []ServiceRequest, env map[str
 
 // Start a container
 func (c *dockerDeploymentManifest) Start(service ServiceRequest) error {
-	manifest, _ := c.Inspect(service)
+	manifest, _ := c.Inspect(context.Background(), service)
 	_, err := shell.Execute(c.Context, ".", "docker", "start", manifest.Name)
 	return err
 }
 
 // Stop a container
 func (c *dockerDeploymentManifest) Stop(service ServiceRequest) error {
-	manifest, _ := c.Inspect(service)
+	manifest, _ := c.Inspect(context.Background(), service)
 	_, err := shell.Execute(c.Context, ".", "docker", "stop", manifest.Name)
 	return err
 }

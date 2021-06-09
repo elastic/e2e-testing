@@ -5,12 +5,14 @@
 package installer
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // elasticAgentDockerPackage implements operations for a docker installer
@@ -28,8 +30,14 @@ func AttachElasticAgentDockerPackage(deploy deploy.Deployment, service deploy.Se
 }
 
 // AddFiles will add files into the service environment, default destination is /
-func (i *elasticAgentDockerPackage) AddFiles(files []string) error {
-	return i.deploy.AddFiles(i.service, files)
+func (i *elasticAgentDockerPackage) AddFiles(ctx context.Context, files []string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Adding files to the Elastic Agent", "elastic-agent.docker.add-files", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("files", files)
+	defer span.End()
+
+	return i.deploy.AddFiles(ctx, i.service, files)
 }
 
 // Inspect returns info on package
@@ -41,23 +49,29 @@ func (i *elasticAgentDockerPackage) Inspect() (deploy.ServiceOperatorManifest, e
 }
 
 // Install installs a package
-func (i *elasticAgentDockerPackage) Install() error {
+func (i *elasticAgentDockerPackage) Install(ctx context.Context) error {
 	return nil
 }
 
 // Exec will execute a command within the service environment
-func (i *elasticAgentDockerPackage) Exec(args []string) (string, error) {
-	output, err := i.deploy.ExecIn(i.service, args)
+func (i *elasticAgentDockerPackage) Exec(ctx context.Context, args []string) (string, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Executing Elastic Agent command", "elastic-agent.docker.exec", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", args)
+	defer span.End()
+
+	output, err := i.deploy.ExecIn(ctx, i.service, args)
 	return output, err
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentDockerPackage) Enroll(token string) error {
+func (i *elasticAgentDockerPackage) Enroll(ctx context.Context, token string) error {
 	return nil
 }
 
 // InstallCerts installs the certificates for a package, using the right OS package manager
-func (i *elasticAgentDockerPackage) InstallCerts() error {
+func (i *elasticAgentDockerPackage) InstallCerts(ctx context.Context) error {
 	return nil
 }
 
@@ -67,19 +81,24 @@ func (i *elasticAgentDockerPackage) Logs() error {
 }
 
 // Postinstall executes operations after installing a package
-func (i *elasticAgentDockerPackage) Postinstall() error {
+func (i *elasticAgentDockerPackage) Postinstall(ctx context.Context) error {
 	return nil
 }
 
 // Preinstall executes operations before installing a package
-func (i *elasticAgentDockerPackage) Preinstall() error {
+func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Pre-install operations for the Elastic Agent", "elastic-agent.docker.pre-install", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	artifact := "elastic-agent"
 	os := "linux"
 	arch := utils.GetArchitecture()
 	extension := "tar.gz"
 
 	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, common.BeatVersionBase, os, arch, extension, false)
-	binaryPath, err := utils.FetchBeatsBinary(binaryName, artifact, common.BeatVersion, common.BeatVersionBase, utils.TimeoutFactor, true)
+	binaryPath, err := utils.FetchBeatsBinary(ctx, binaryName, artifact, common.BeatVersion, common.BeatVersionBase, utils.TimeoutFactor, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -105,8 +124,15 @@ func (i *elasticAgentDockerPackage) Preinstall() error {
 }
 
 // Start will start a service
-func (i *elasticAgentDockerPackage) Start() error {
-	_, err := i.Exec([]string{"systemctl", "start", "elastic-agent"})
+func (i *elasticAgentDockerPackage) Start(ctx context.Context) error {
+	cmds := []string{"systemctl", "start", "elastic-agent"}
+	span, _ := apm.StartSpanOptions(ctx, "Starting Elastic Agent service", "elastic-agent.docker.start", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return err
 	}
@@ -114,18 +140,31 @@ func (i *elasticAgentDockerPackage) Start() error {
 }
 
 // Stop will start a service
-func (i *elasticAgentDockerPackage) Stop() error {
-	_, err := i.Exec([]string{"systemctl", "stop", "elastic-agent"})
+func (i *elasticAgentDockerPackage) Stop(ctx context.Context) error {
+	cmds := []string{"systemctl", "stop", "elastic-agent"}
+	span, _ := apm.StartSpanOptions(ctx, "Stopping Elastic Agent service", "elastic-agent.docker.stop", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// Uninstall uninstalls a TAR package
-func (i *elasticAgentDockerPackage) Uninstall() error {
-	args := []string{"elastic-agent", "uninstall", "-f"}
-	_, err := i.Exec(args)
+// Uninstall uninstalls a Docker package
+func (i *elasticAgentDockerPackage) Uninstall(ctx context.Context) error {
+	cmds := []string{"elastic-agent", "uninstall", "-f"}
+	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.docker.uninstall", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+
+	_, err := i.Exec(ctx, cmds)
 	if err != nil {
 		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
 	}
