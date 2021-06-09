@@ -46,6 +46,17 @@ pipeline {
     string(name: 'kibana_pr', defaultValue: "master", description: "PR ID to use to build the Docker image. (e.g 10000)")
   }
   stages {
+    stage('Initialize'){
+      agent { label 'ubuntu-20 && immutable' }
+      environment {
+        HOME = "${env.WORKSPACE}/${BASE_DIR}"
+      }
+      steps {
+        deleteDir()
+        checkPermissions()
+        setEnvVar('DOCKER_TAG', getDockerTagFromPayload())
+      }
+    }
     stage('Process GitHub Event') {
       environment {
         HOME = "${env.WORKSPACE}/${BASE_DIR}"
@@ -95,12 +106,9 @@ pipeline {
 }
 
 def buildKibanaPlatformImage(String platform) {
-  def dockerTag = getDockerTagFromPayload()
-
   // the platformTag is the one needed to build the multiplatform image
-  def platformTag = dockerTag + "-" + platform
+  def platformTag = "${env.DOCKER_TAG}" + "-" + platform
 
-  checkPermissions()
   buildKibanaDockerImage(refspec: getBranch(), platformTag: platformTag)
 }
 
@@ -149,13 +157,13 @@ def getID(){
 }
 
 def pushMultiPlatformManifest() {
-  def dockerTag = getDockerTagFromPayload()
+  def dockerTag = "${env.DOCKER_TAG}"
 
   sh(label: 'Push multiplatform manifest', script: ".ci/scripts/push-multiplatform-manifest.sh kibana ${dockerTag}")
 }
 
 def runE2ETests(String suite) {
-  def dockerTag = getDockerTagFromPayload()
+  def dockerTag = "${env.DOCKER_TAG}"
 
   log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for PR-${prID} using '${dockerTag}' as Docker tag")
 
