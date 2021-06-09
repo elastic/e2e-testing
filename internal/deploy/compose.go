@@ -22,7 +22,7 @@ type ServiceManager interface {
 	AddServicesToCompose(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error
 	ExecCommandInService(ctx context.Context, profile ServiceRequest, image ServiceRequest, serviceName string, cmds []string, env map[string]string, detach bool) error
 	RemoveServicesFromCompose(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error
-	RunCommand(ctx context.Context, profile ServiceRequest, services []ServiceRequest, composeArgs []string, env map[string]string) error
+	RunCommand(ctx context.Context, services []ServiceRequest, composeArgs []string, env map[string]string) error
 	RunCompose(ctx context.Context, isProfile bool, services []ServiceRequest, env map[string]string) error
 	StopCompose(ctx context.Context, isProfile bool, services []ServiceRequest) error
 }
@@ -91,7 +91,7 @@ func (sm *DockerServiceManager) ExecCommandInService(ctx context.Context, profil
 	composeArgs = append(composeArgs, serviceName)
 	composeArgs = append(composeArgs, cmds...)
 
-	err := sm.RunCommand(ctx, profile, services, composeArgs, env)
+	err := sm.RunCommand(ctx, services, composeArgs, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"command": cmds,
@@ -151,7 +151,7 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(ctx context.Context, p
 }
 
 // RunCommand executes a docker-compose command in a running a docker compose
-func (sm *DockerServiceManager) RunCommand(ctx context.Context, profile ServiceRequest, services []ServiceRequest, composeArgs []string, env map[string]string) error {
+func (sm *DockerServiceManager) RunCommand(ctx context.Context, services []ServiceRequest, composeArgs []string, env map[string]string) error {
 	return executeCompose(ctx, true, services, composeArgs, env)
 }
 
