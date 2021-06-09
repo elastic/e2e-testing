@@ -48,6 +48,7 @@ pipeline {
   stages {
     stage('Initialize'){
       agent { label 'ubuntu-20 && immutable' }
+      options { skipDefaultCheckout() }
       environment {
         HOME = "${env.WORKSPACE}/${BASE_DIR}"
       }
@@ -58,6 +59,7 @@ pipeline {
       }
     }
     stage('Process GitHub Event') {
+      options { skipDefaultCheckout() }
       environment {
         HOME = "${env.WORKSPACE}/${BASE_DIR}"
         PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
@@ -65,12 +67,14 @@ pipeline {
       parallel {
         stage('AMD build') {
           agent { label 'ubuntu-20' }
+          options { skipDefaultCheckout() }
           steps {
             buildKibanaPlatformImage('amd64')
           }
         }
         stage('ARM build') {
           agent { label 'arm' }
+          options { skipDefaultCheckout() }
           steps {
             buildKibanaPlatformImage('arm64')
           }
@@ -79,11 +83,13 @@ pipeline {
     }
     stage('Push image and Run tests'){
       agent { label 'ubuntu-20 && immutable && docker' }
+      options { skipDefaultCheckout() }
       environment {
         HOME = "${env.WORKSPACE}/${BASE_DIR}"
       }
       stages {
         stage('Push multiplatform manifest'){
+          options { skipDefaultCheckout() }
           steps {
             deleteDir()
             unstash 'source'
@@ -94,6 +100,7 @@ pipeline {
           }
         }
         stage('Run E2E Tests') {
+          options { skipDefaultCheckout() }
           steps {
             catchError(buildResult: 'UNSTABLE', message: 'Unable to run e2e tests', stageResult: 'FAILURE') {
               runE2ETests('fleet')
