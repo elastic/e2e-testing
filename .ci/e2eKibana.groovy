@@ -60,14 +60,14 @@ pipeline {
     }
     stage('Process GitHub Event') {
       options { skipDefaultCheckout() }
-      environment {
-        HOME = "${env.WORKSPACE}/${BASE_DIR}"
-        PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
-      }
       parallel {
         stage('AMD build') {
           agent { label 'ubuntu-20' }
           options { skipDefaultCheckout() }
+          environment {
+            HOME = "${env.WORKSPACE}/${BASE_DIR}"
+            PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
+          }
           steps {
             buildKibanaPlatformImage('amd64')
           }
@@ -75,6 +75,10 @@ pipeline {
         stage('ARM build') {
           agent { label 'arm' }
           options { skipDefaultCheckout() }
+          environment {
+            HOME = "${env.WORKSPACE}/${BASE_DIR}"
+            PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
+          }
           steps {
             buildKibanaPlatformImage('arm64')
           }
