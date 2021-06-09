@@ -57,7 +57,8 @@ func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profil
 		}
 	}
 
-	persistedEnv := state.Recover(profile.Name+"-profile", config.Op.Workspace)
+	run := state.Recover(profile.Name+"-profile", config.Op.Workspace)
+	persistedEnv := run.Env
 	for k, v := range env {
 		persistedEnv[k] = v
 	}
@@ -121,7 +122,8 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(ctx context.Context, p
 	newServices := []ServiceRequest{profile}
 	newServices = append(newServices, services...)
 
-	persistedEnv := state.Recover(profile.Name+"-profile", config.Op.Workspace)
+	run := state.Recover(profile.Name+"-profile", config.Op.Workspace)
+	persistedEnv := run.Env
 	for k, v := range env {
 		persistedEnv[k] = v
 	}
@@ -196,7 +198,8 @@ func (sm *DockerServiceManager) StopCompose(ctx context.Context, isProfile bool,
 	if isProfile {
 		ID = services[0].Name + "-profile"
 	}
-	persistedEnv := state.Recover(ID, config.Op.Workspace)
+	run := state.Recover(ID, config.Op.Workspace)
+	persistedEnv := run.Env
 
 	err := executeCompose(ctx, isProfile, services, []string{"down", "--remove-orphans"}, persistedEnv)
 	if err != nil {

@@ -29,7 +29,7 @@ type Service struct {
 }
 
 // Recover recovers the state for a run
-func Recover(id string, workdir string) map[string]string {
+func Recover(id string, workdir string) CurrentRun {
 	run := CurrentRun{
 		Env: map[string]string{},
 	}
@@ -37,7 +37,7 @@ func Recover(id string, workdir string) map[string]string {
 	stateFile := filepath.Join(workdir, id+".run")
 	bytes, err := io.ReadFile(stateFile) //nolint
 	if err != nil {
-		return run.Env
+		return run
 	}
 
 	err = yaml.Unmarshal(bytes, &run)
@@ -47,7 +47,7 @@ func Recover(id string, workdir string) map[string]string {
 		}).Error("Could not unmarshal state")
 	}
 
-	return run.Env
+	return run
 }
 
 // Destroy destroys the state for a run
