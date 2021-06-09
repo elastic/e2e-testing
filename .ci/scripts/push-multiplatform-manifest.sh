@@ -11,8 +11,9 @@ readonly MANIFEST_TOOL_IMAGE="${ELASTIC_REGISTRY}/infra/manifest-tool:latest"
 readonly OBSERVABILITY_CI_REGISTRY="${ELASTIC_REGISTRY}/observability-ci"
 
 main() {
-  _push_multiplatform_manifest "centos-systemd"
-  _push_multiplatform_manifest "debian-systemd"
+  local image="${1}"
+
+  _push_multiplatform_manifest ${image}
 }
 
 _push_multiplatform_manifest() {
