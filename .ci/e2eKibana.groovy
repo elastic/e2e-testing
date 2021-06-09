@@ -46,21 +46,70 @@ pipeline {
     string(name: 'kibana_pr', defaultValue: "master", description: "PR ID to use to build the Docker image. (e.g 10000)")
   }
   stages {
+    stage('Initialize'){
+      agent { label 'ubuntu-20 && immutable' }
+      environment {
+        HOME = "${env.WORKSPACE}/${BASE_DIR}"
+      }
+      steps {
+        deleteDir()
+        checkPermissions()
+        setEnvVar('DOCKER_TAG', getDockerTagFromPayload())
+      }
+    }
     stage('Process GitHub Event') {
-      agent { label 'ubuntu-20' }
       environment {
         HOME = "${env.WORKSPACE}/${BASE_DIR}"
         PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
       }
-      steps {
-        checkPermissions()
-        buildKibanaDockerImage(refspec: getBranch())
-        catchError(buildResult: 'UNSTABLE', message: 'Unable to run e2e tests', stageResult: 'FAILURE') {
-          runE2ETests('fleet')
+      parallel {
+        stage('AMD build') {
+          agent { label 'ubuntu-20' }
+          steps {
+            buildKibanaPlatformImage('amd64')
+          }
+        }
+        stage('ARM build') {
+          agent { label 'arm' }
+          steps {
+            buildKibanaPlatformImage('arm64')
+          }
+        }
+      }
+    }
+    stage('Push image and Run tests'){
+      agent { label 'ubuntu-20 && immutable && docker' }
+      environment {
+        HOME = "${env.WORKSPACE}/${BASE_DIR}"
+      }
+      stages {
+        stage('Push multiplatform manifest'){
+          steps {
+            deleteDir()
+            unstash 'source'
+            dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
+            dir("${BASE_DIR}") {
+              pushMultiPlatformManifest()
+            }
+          }
+        }
+        stage('Run E2E Tests') {
+          steps {
+            catchError(buildResult: 'UNSTABLE', message: 'Unable to run e2e tests', stageResult: 'FAILURE') {
+              runE2ETests('fleet')
+            }
+          }
         }
       }
     }
   }
+}
+
+def buildKibanaPlatformImage(String platform) {
+  // the platformTag is the one needed to build the multiplatform image
+  def platformTag = "${env.DOCKER_TAG}" + "-" + platform
+
+  buildKibanaDockerImage(refspec: getBranch(), platformTag: platformTag)
 }
 
 def checkPermissions(){
@@ -79,15 +128,7 @@ def getBranch(){
   return "PR/" + getID()
 }
 
-def getID(){
-  if(env.GT_PR){
-    return "${env.GT_PR}"
-  }
-  
-  return "${params.kibana_pr}"
-}
-
-def runE2ETests(String suite) {
+def getDockerTagFromPayload() {
   // we need a second API request, as the issue_comment API does not retrieve data about the pull request
   // See https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#issue_comment
   def prID = getID()
@@ -103,6 +144,26 @@ def runE2ETests(String suite) {
     // it's a PR: we are going to use its head SHA as tag
     dockerTag = headSha
   }
+
+  return dockerTag
+}
+
+def getID(){
+  if(env.GT_PR){
+    return "${env.GT_PR}"
+  }
+  
+  return "${params.kibana_pr}"
+}
+
+def pushMultiPlatformManifest() {
+  def dockerTag = "${env.DOCKER_TAG}"
+
+  sh(label: 'Push multiplatform manifest', script: ".ci/scripts/push-multiplatform-manifest.sh kibana ${dockerTag}")
+}
+
+def runE2ETests(String suite) {
+  def dockerTag = "${env.DOCKER_TAG}"
 
   log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for PR-${prID} using '${dockerTag}' as Docker tag")
 
