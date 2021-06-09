@@ -47,19 +47,33 @@ pipeline {
   }
   stages {
     stage('Process GitHub Event') {
-      agent { label 'ubuntu-20' }
       environment {
         HOME = "${env.WORKSPACE}/${BASE_DIR}"
         PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
       }
-      steps {
-        checkPermissions()
-        buildKibanaDockerImage(refspec: getBranch())
-        catchError(buildResult: 'UNSTABLE', message: 'Unable to run e2e tests', stageResult: 'FAILURE') {
-          runE2ETests('fleet')
+      parallel {
+        stage('AMD build') {
+          agent { label 'ubuntu-20' }
+          steps {
+            buildPlatformImage()
+          }
+        }
+        stage('ARM build') {
+          agent { label 'arm' }
+          steps {
+            buildPlatformImage()
+          }
         }
       }
     }
+  }
+}
+
+def buildPlatformImage() {
+  checkPermissions()
+  buildKibanaDockerImage(refspec: getBranch())
+  catchError(buildResult: 'UNSTABLE', message: 'Unable to run e2e tests', stageResult: 'FAILURE') {
+    runE2ETests('fleet')
   }
 }
 
