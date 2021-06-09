@@ -15,8 +15,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// stateRun represents a Run
-type stateRun struct {
+// CurrentRun represents the current Run
+type CurrentRun struct {
 	ID       string            // ID of the run
 	Profile  stateService      // profile of the run (Optional)
 	Env      map[string]string // environment for the run
@@ -30,7 +30,7 @@ type stateService struct {
 
 // Recover recovers the state for a run
 func Recover(id string, workdir string) map[string]string {
-	run := stateRun{
+	run := CurrentRun{
 		Env: map[string]string{},
 	}
 
@@ -79,7 +79,7 @@ func Update(id string, workdir string, composeFilePaths []string, env map[string
 		"stateFile": stateFile,
 	}).Trace("Updating state")
 
-	run := stateRun{
+	run := CurrentRun{
 		ID:       id,
 		Env:      env,
 		Services: []stateService{},
