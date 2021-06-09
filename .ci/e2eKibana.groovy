@@ -77,28 +77,28 @@ pipeline {
         }
       }
     }
-    stage('Push multiplatform manifest'){
+    stage('Push image and Run tests'){
       agent { label 'ubuntu-20 && immutable && docker' }
       environment {
         HOME = "${env.WORKSPACE}/${BASE_DIR}"
       }
-      steps {
-        deleteDir()
-        unstash 'source'
-        dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
-        dir("${BASE_DIR}") {
-          pushMultiPlatformManifest()
+      stages {
+        stage('Push multiplatform manifest'){
+          steps {
+            deleteDir()
+            unstash 'source'
+            dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
+            dir("${BASE_DIR}") {
+              pushMultiPlatformManifest()
+            }
+          }
         }
-      }
-    }
-    stage('Run E2E Tests') {
-      agent { label 'ubuntu-20 && immutable' }
-      environment {
-        HOME = "${env.WORKSPACE}/${BASE_DIR}"
-      }
-      steps {
-        catchError(buildResult: 'UNSTABLE', message: 'Unable to run e2e tests', stageResult: 'FAILURE') {
-          runE2ETests('fleet')
+        stage('Run E2E Tests') {
+          steps {
+            catchError(buildResult: 'UNSTABLE', message: 'Unable to run e2e tests', stageResult: 'FAILURE') {
+              runE2ETests('fleet')
+            }
+          }
         }
       }
     }
