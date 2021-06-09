@@ -52,47 +52,46 @@ pipeline {
       environment {
         HOME = "${env.WORKSPACE}/${BASE_DIR}"
       }
-      steps {
-        deleteDir()
-        checkPermissions()
-        setEnvVar('DOCKER_TAG', getDockerTagFromPayload())
-      }
-    }
-    stage('Process GitHub Event') {
-      options { skipDefaultCheckout() }
-      environment {
-        HOME = "${env.WORKSPACE}/${BASE_DIR}"
-        PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
-      }
-      parallel {
-        stage('AMD build') {
-          agent { label 'ubuntu-20' }
-          options { skipDefaultCheckout() }
-          steps {
-            buildKibanaPlatformImage('amd64')
-          }
-        }
-        stage('ARM build') {
-          agent { label 'arm' }
-          options { skipDefaultCheckout() }
-          steps {
-            buildKibanaPlatformImage('arm64')
-          }
-        }
-      }
-    }
-    stage('Push image and Run tests'){
-      agent { label 'ubuntu-20 && immutable && docker' }
-      options { skipDefaultCheckout() }
-      environment {
-        HOME = "${env.WORKSPACE}/${BASE_DIR}"
-      }
       stages {
-        stage('Push multiplatform manifest'){
-          options { skipDefaultCheckout() }
+        stage('Check permissions') {
           steps {
             deleteDir()
-            unstash 'source'
+            checkPermissions()
+            setEnvVar('DOCKER_TAG', getDockerTagFromPayload())
+          }
+        }
+        stage('Process GitHub Event') {
+          options { skipDefaultCheckout() }
+          parallel {
+            stage('AMD build') {
+              options { skipDefaultCheckout() }
+              environment {
+                HOME = "${env.WORKSPACE}/${BASE_DIR}"
+                PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
+              }
+              steps {
+                buildKibanaPlatformImage('amd64')
+              }
+            }
+            stage('ARM build') {
+              agent { label 'arm' }
+              options { skipDefaultCheckout() }
+              environment {
+                HOME = "${env.WORKSPACE}/${BASE_DIR}"
+                PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
+              }
+              steps {
+                buildKibanaPlatformImage('arm64')
+              }
+            }
+          }
+        }
+        stage('Push multiplatform manifest'){
+          options { skipDefaultCheckout() }
+          environment {
+            HOME = "${env.WORKSPACE}/${BASE_DIR}"
+          }
+          steps {
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
             dir("${BASE_DIR}") {
               pushMultiPlatformManifest()
@@ -116,7 +115,8 @@ def buildKibanaPlatformImage(String platform) {
   // the platformTag is the one needed to build the multiplatform image
   def platformTag = "${env.DOCKER_TAG}" + "-" + platform
 
-  buildKibanaDockerImage(refspec: getBranch(), platformTag: platformTag)
+  // baseDir could be used here, because there is no git repository
+  buildKibanaDockerImage(refspec: getBranch(), targetTag: platformTag, baseDir: "${env.BASE_DIR}")
 }
 
 def checkPermissions(){
