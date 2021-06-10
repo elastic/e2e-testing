@@ -7,9 +7,11 @@ package deploy
 import (
 	"context"
 	"fmt"
+	"path"
 	"path/filepath"
 
 	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/internal/io"
 	state "github.com/elastic/e2e-testing/internal/state"
 	"go.elastic.co/apm"
 
@@ -187,7 +189,7 @@ func (sm *DockerServiceManager) StopCompose(ctx context.Context, isProfile bool,
 			serviceIncludingFlavour = filepath.Join(srv.Name, srv.Flavour)
 		}
 
-		composeFilePath, err := config.GetComposeFile(b, serviceIncludingFlavour)
+		composeFilePath, err := getComposeFile(b, serviceIncludingFlavour)
 		if err != nil {
 			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
 		}
@@ -236,7 +238,7 @@ func executeCompose(ctx context.Context, isProfile bool, services []ServiceReque
 			serviceIncludingFlavour = filepath.Join(srv.Name, srv.Flavour)
 		}
 
-		composeFilePath, err := config.GetComposeFile(b, serviceIncludingFlavour)
+		composeFilePath, err := getComposeFile(b, serviceIncludingFlavour)
 		if err != nil {
 			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
 		}
@@ -268,4 +270,44 @@ func executeCompose(ctx context.Context, isProfile bool, services []ServiceReque
 	}).Debug("Docker compose executed.")
 
 	return nil
+}
+
+// getComposeFile returns the path of the compose file, looking up the
+// tool's workdir
+func getComposeFile(isProfile bool, composeName string) (string, error) {
+	composeFileName := "docker-compose.yml"
+	serviceType := "services"
+	if isProfile {
+		serviceType = "profiles"
+	}
+
+	composeFilePath := path.Join(config.Op.Workspace, "compose", serviceType, composeName, composeFileName)
+	found, err := io.Exists(composeFilePath)
+	if found && err == nil {
+		log.WithFields(log.Fields{
+			"composeFilePath": composeFilePath,
+			"type":            serviceType,
+		}).Trace("Compose file found at workdir")
+
+		return composeFilePath, nil
+	}
+
+	log.WithFields(log.Fields{
+		"composeFilePath": composeFilePath,
+		"error":           err,
+		"type":            serviceType,
+	}).Trace("Compose file not found. Please make sure the file exists at the location")
+
+	if err != nil {
+		log.WithFields(log.Fields{
+			"composeFileName": composeFileName,
+			"error":           err,
+			"isProfile":       isProfile,
+			"type":            serviceType,
+		}).Error("Could not find compose file.")
+
+		return "", err
+	}
+
+	return composeFilePath, nil
 }
