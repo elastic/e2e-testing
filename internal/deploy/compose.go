@@ -171,7 +171,7 @@ func (sm *DockerServiceManager) StopCompose(ctx context.Context, profile Service
 	span.Context.SetLabel("profile", profile)
 	defer span.End()
 
-	ID := profile.Name + "-service"
+	ID := profile.Name + "-profile"
 	run := state.Recover(ID, config.OpDir())
 	persistedEnv := run.Env
 
