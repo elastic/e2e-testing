@@ -63,7 +63,7 @@ func (i *elasticAgentDEBPackage) Exec(ctx context.Context, args []string) (strin
 	span.Context.SetLabel("arguments", args)
 	defer span.End()
 
-	output, err := i.deploy.ExecIn(ctx, i.service, args)
+	output, err := i.deploy.ExecIn(ctx, common.FleetProfileName, i.service, args)
 	return output, err
 }
 

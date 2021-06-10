@@ -106,7 +106,7 @@ func (c *dockerDeploymentManifest) Destroy(ctx context.Context, profile string) 
 }
 
 // ExecIn execute command in service
-func (c *dockerDeploymentManifest) ExecIn(ctx context.Context, service ServiceRequest, cmd []string) (string, error) {
+func (c *dockerDeploymentManifest) ExecIn(ctx context.Context, profile string, service ServiceRequest, cmd []string) (string, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Executing command in compose deployment", "docker-compose.manifest.execIn", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})

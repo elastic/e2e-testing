@@ -108,7 +108,7 @@ func (c *kubernetesDeploymentManifest) Destroy(ctx context.Context, profile stri
 }
 
 // ExecIn execute command in service
-func (c *kubernetesDeploymentManifest) ExecIn(ctx context.Context, service ServiceRequest, cmd []string) (string, error) {
+func (c *kubernetesDeploymentManifest) ExecIn(ctx context.Context, profile string, service ServiceRequest, cmd []string) (string, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Executing command in kubernetes deployment", "kubernetes.manifest.execIn", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -116,7 +116,7 @@ func (c *kubernetesDeploymentManifest) ExecIn(ctx context.Context, service Servi
 	span.Context.SetLabel("arguments", cmd)
 	defer span.End()
 
-	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
+	kubectl = cluster.Kubectl().WithNamespace(ctx, getNamespaceFromProfile(profile))
 	args := []string{"exec", "deployment/" + service.Name, "--"}
 	for _, arg := range cmd {
 		args = append(cmd, arg)
