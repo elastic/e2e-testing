@@ -93,13 +93,18 @@ func (c *kubernetesDeploymentManifest) Bootstrap(ctx context.Context, waitCB fun
 }
 
 // Destroy teardown kubernetes environment
-func (c *kubernetesDeploymentManifest) Destroy(ctx context.Context) error {
+func (c *kubernetesDeploymentManifest) Destroy(ctx context.Context, profile string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Destroying kubernetes deployment", "kubernetes.manifest.destroy", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
 
-	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
+	namespace := profile
+	if namespace == "" {
+		namespace = "default"
+	}
+
+	kubectl = cluster.Kubectl().WithNamespace(ctx, namespace)
 	cluster.Cleanup(c.Context)
 	return nil
 }

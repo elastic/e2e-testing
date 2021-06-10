@@ -98,18 +98,18 @@ func (c *dockerDeploymentManifest) AddFiles(ctx context.Context, service Service
 }
 
 // Destroy teardown docker environment
-func (c *dockerDeploymentManifest) Destroy(ctx context.Context) error {
+func (c *dockerDeploymentManifest) Destroy(ctx context.Context, profile string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Destroying compose deployment", "docker-compose.manifest.destroy", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
 
 	serviceManager := NewServiceManager()
-	err := serviceManager.StopCompose(ctx, NewServiceRequest(common.FleetProfileName))
+	err := serviceManager.StopCompose(ctx, NewServiceRequest(profile))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
-			"profile": common.FleetProfileName,
+			"profile": profile,
 		}).Fatal("Could not destroy the runtime dependencies for the profile.")
 	}
 	return nil

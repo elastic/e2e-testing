@@ -163,7 +163,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		if !common.DeveloperMode {
 			log.Debug("Destroying Fleet runtime dependencies")
 			deployer := deploy.New(common.Provider)
-			deployer.Destroy(suiteContext)
+			deployer.Destroy(suiteContext, common.FleetProfileName)
 		}
 	})
 }
