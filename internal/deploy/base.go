@@ -16,15 +16,15 @@ type Deployment interface {
 	// Add adds service deployments
 	//    - for compose-based deployments: the first service in the list must be the profile in which to deploy the service
 	Add(ctx context.Context, services []ServiceRequest, env map[string]string) error
-	AddFiles(ctx context.Context, service ServiceRequest, files []string) error       // adds files to a service
-	Bootstrap(ctx context.Context, waitCB func() error) error                         // will bootstrap or reuse existing cluster if kubernetes is selected
-	Destroy(ctx context.Context, profile string) error                                // Teardown deployment
-	ExecIn(ctx context.Context, service ServiceRequest, cmd []string) (string, error) // Execute arbitrary commands in service
-	Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error)    // inspects service
-	Logs(service ServiceRequest) error                                                // prints logs of deployed service
-	Remove(services []ServiceRequest, env map[string]string) error                    // Removes services from deployment
-	Start(service ServiceRequest) error                                               // Starts a service or container depending on Deployment
-	Stop(service ServiceRequest) error                                                // Stop a service or container depending on deployment
+	AddFiles(ctx context.Context, service ServiceRequest, files []string) error                      // adds files to a service
+	Bootstrap(ctx context.Context, profile string, env map[string]string, waitCB func() error) error // will bootstrap or reuse existing cluster if kubernetes is selected
+	Destroy(ctx context.Context, profile string) error                                               // Teardown deployment
+	ExecIn(ctx context.Context, service ServiceRequest, cmd []string) (string, error)                // Execute arbitrary commands in service
+	Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error)                   // inspects service
+	Logs(service ServiceRequest) error                                                               // prints logs of deployed service
+	Remove(services []ServiceRequest, env map[string]string) error                                   // Removes services from deployment
+	Start(service ServiceRequest) error                                                              // Starts a service or container depending on Deployment
+	Stop(service ServiceRequest) error                                                               // Stop a service or container depending on deployment
 }
 
 // ServiceOperator represents the operations that can be performed by a service

@@ -9,9 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/shell"
-	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -39,27 +37,16 @@ func (c *dockerDeploymentManifest) Add(ctx context.Context, services []ServiceRe
 }
 
 // Bootstrap sets up environment with docker compose
-func (c *dockerDeploymentManifest) Bootstrap(ctx context.Context, waitCB func() error) error {
+func (c *dockerDeploymentManifest) Bootstrap(ctx context.Context, profile string, env map[string]string, waitCB func() error) error {
 	span, _ := apm.StartSpanOptions(ctx, "Bootstrapping Docker Compose deployment", "docker-compose.manifest.bootstrap", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
 
 	serviceManager := NewServiceManager()
-	common.ProfileEnv = map[string]string{
-		"kibanaVersion": common.KibanaVersion,
-		"stackPlatform": "linux/" + utils.GetArchitecture(),
-		"stackVersion":  common.StackVersion,
-	}
 
-	common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
-	if strings.HasPrefix(common.KibanaVersion, "pr") || utils.IsCommit(common.KibanaVersion) {
-		// because it comes from a PR
-		common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
-	}
-
-	profile := NewServiceRequest(common.FleetProfileName)
-	err := serviceManager.RunCompose(ctx, true, []ServiceRequest{profile}, common.ProfileEnv)
+	serviceProfile := NewServiceRequest(profile)
+	err := serviceManager.RunCompose(ctx, true, []ServiceRequest{serviceProfile}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"profile": profile,

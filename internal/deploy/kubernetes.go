@@ -69,7 +69,7 @@ func (c *kubernetesDeploymentManifest) AddFiles(ctx context.Context, service Ser
 }
 
 // Bootstrap sets up environment with kind
-func (c *kubernetesDeploymentManifest) Bootstrap(ctx context.Context, waitCB func() error) error {
+func (c *kubernetesDeploymentManifest) Bootstrap(ctx context.Context, profile string, env map[string]string, waitCB func() error) error {
 	span, _ := apm.StartSpanOptions(ctx, "Bootstrapping kubernetes deployment", "kubernetes.manifest.bootstrap", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -80,7 +80,13 @@ func (c *kubernetesDeploymentManifest) Bootstrap(ctx context.Context, waitCB fun
 		return err
 	}
 
-	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
+	// TODO: we would need to understand how to pass the environment argument to anything running in the namespace
+	namespace := profile
+	if namespace == "" {
+		namespace = "default"
+	}
+
+	kubectl = cluster.Kubectl().WithNamespace(ctx, namespace)
 	_, err = kubectl.Run(ctx, "apply", "-k", "../../../cli/config/kubernetes/base")
 	if err != nil {
 		return err
