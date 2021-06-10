@@ -220,28 +220,26 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		serviceManager := deploy.NewServiceManager()
-
 		env := map[string]string{
 			"stackPlatform": "linux/" + utils.GetArchitecture(),
 			"stackVersion":  common.StackVersion,
 		}
 
-		err := serviceManager.RunCompose(
-			suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")}, env)
+		deployer := deploy.New(common.Provider)
+		err := deployer.Bootstrap(suiteContext, "metricbeat", env, func() error {
+			minutesToBeHealthy := time.Duration(utils.TimeoutFactor) * time.Minute
+			healthy, err := elasticsearch.WaitForElasticsearch(suiteContext, minutesToBeHealthy)
+			if !healthy {
+				return fmt.Errorf("the Elasticsearch cluster could not get the healthy status")
+			}
+
+			return err
+		})
 		if err != nil {
 			log.WithFields(log.Fields{
-				"profile": "metricbeat",
-			}).Fatal("Could not run the profile.")
-		}
-
-		minutesToBeHealthy := time.Duration(utils.TimeoutFactor) * time.Minute
-		healthy, err := elasticsearch.WaitForElasticsearch(suiteContext, minutesToBeHealthy)
-		if !healthy {
-			log.WithFields(log.Fields{
 				"error":   err,
-				"minutes": minutesToBeHealthy,
-			}).Fatal("The Elasticsearch cluster could not get the healthy status")
+				"profile": "metricbeat",
+			}).Fatal("Could not run the profile")
 		}
 	})
 
@@ -263,8 +261,8 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		defer suiteParentSpan.End()
 
 		if !common.DeveloperMode {
-			serviceManager := deploy.NewServiceManager()
-			err := serviceManager.StopCompose(suiteContext, deploy.NewServiceRequest("metricbeat"))
+			deployer := deploy.New(common.Provider)
+			err := deployer.Destroy(suiteContext, "metricbeat")
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": "metricbeat",
