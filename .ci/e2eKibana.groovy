@@ -7,6 +7,9 @@ pipeline {
   environment {
     REPO = 'kibana'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
+    DOCKER_REGISTRY = 'docker.elastic.co'
+    DOCKER_REGISTRY_NAMESPACE = 'observability-ci'
+    DOCKER_ELASTIC_SECRET = 'secret/observability-team/ci/docker-registry/prod'
     ELASTIC_REPO = "elastic/${env.REPO}"
     GITHUB_APP_SECRET = 'secret/observability-team/ci/github-app'
     GITHUB_CHECK_E2E_TESTS_NAME = 'E2E Tests'
@@ -112,11 +115,18 @@ pipeline {
 }
 
 def buildKibanaPlatformImage(String platform) {
-  // the platformTag is the one needed to build the multiplatform image
-  def platformTag = "${env.DOCKER_TAG}" + "-" + platform
+  // the dockerImageTarget is the needed to append the platform to the multiplatform image:
+  // format: registry/namespace/image-platform:tag
+  // this is the format needed by the push multiplatform tool:
+  //     docker run --rm --mount src=$HOME/.docker,target=/docker-config,type=bind \
+  //         docker.elastic.co/infra/manifest-tool:latest --docker-cfg /docker-config \
+  //         push from-args --platforms linux/amd64,linux/arm64 \
+  //         --template docker.elastic.co/observability-ci/kibana-ARCH:pr97366 \
+  //         --target docker.elastic.co/observability-ci/kibana:pr97366
+  def dockerImageTarget = "${env.DOCKER_REGISTRY}/${env.DOCKER_REGISTRY_NAMESPACE}/kibana-" + platform
 
   // baseDir could be used here, because there is no git repository
-  buildKibanaDockerImage(refspec: getBranch(), targetTag: platformTag, baseDir: "${env.BASE_DIR}")
+  buildKibanaDockerImage(refspec: getBranch(), dockerImageTarget: dockerImageTarget, targetTag: "${env.DOCKER_TAG}", baseDir: "${env.BASE_DIR}")
 }
 
 def checkPermissions(){
