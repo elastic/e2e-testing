@@ -25,7 +25,7 @@ func newDockerDeploy() Deployment {
 	return &dockerDeploymentManifest{Context: context.Background()}
 }
 
-// Add adds services deployment
+// Add adds services deployment: the first service in the list must be the profile in which to deploy the service
 func (c *dockerDeploymentManifest) Add(ctx context.Context, services []ServiceRequest, env map[string]string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Adding services to Docker Compose deployment", "docker-compose.manifest.add-services", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),

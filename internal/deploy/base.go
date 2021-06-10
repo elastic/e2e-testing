@@ -13,7 +13,9 @@ import (
 // Deployment interface for operations dealing with deployments of the bits
 // required for testing
 type Deployment interface {
-	Add(ctx context.Context, services []ServiceRequest, env map[string]string) error  // adds a service to deployment
+	// Add adds service deployments
+	//    - for compose-based deployments: the first service in the list must be the profile in which to deploy the service
+	Add(ctx context.Context, services []ServiceRequest, env map[string]string) error
 	AddFiles(ctx context.Context, service ServiceRequest, files []string) error       // adds files to a service
 	Bootstrap(ctx context.Context, waitCB func() error) error                         // will bootstrap or reuse existing cluster if kubernetes is selected
 	Destroy(ctx context.Context) error                                                // Teardown deployment
