@@ -25,7 +25,7 @@ type Client struct {
 
 // NewClient creates a new instance of the client.
 func NewClient() (*Client, error) {
-	host := BaseURL
+	host := getBaseURL()
 	username := "elastic"
 	password := "changeme"
 
