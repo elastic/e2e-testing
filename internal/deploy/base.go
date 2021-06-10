@@ -22,7 +22,7 @@ type Deployment interface {
 	ExecIn(ctx context.Context, service ServiceRequest, cmd []string) (string, error)                // Execute arbitrary commands in service
 	Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error)                   // inspects service
 	Logs(service ServiceRequest) error                                                               // prints logs of deployed service
-	Remove(services []ServiceRequest, env map[string]string) error                                   // Removes services from deployment
+	Remove(profile string, services []ServiceRequest, env map[string]string) error                   // Removes services from deployment
 	Start(service ServiceRequest) error                                                              // Starts a service or container depending on Deployment
 	Stop(service ServiceRequest) error                                                               // Stop a service or container depending on deployment
 }

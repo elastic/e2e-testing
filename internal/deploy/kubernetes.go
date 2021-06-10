@@ -186,8 +186,12 @@ func (c *kubernetesDeploymentManifest) Logs(service ServiceRequest) error {
 }
 
 // Remove remove services from deployment
-func (c *kubernetesDeploymentManifest) Remove(services []ServiceRequest, env map[string]string) error {
-	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
+func (c *kubernetesDeploymentManifest) Remove(profile string, services []ServiceRequest, env map[string]string) error {
+	namespace := profile
+	if namespace == "" {
+		namespace = "default"
+	}
+	kubectl = cluster.Kubectl().WithNamespace(c.Context, namespace)
 
 	for _, service := range services {
 		_, err := kubectl.Run(c.Context, "delete", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service.Name))

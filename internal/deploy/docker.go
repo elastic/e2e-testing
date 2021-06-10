@@ -162,8 +162,9 @@ func (c *dockerDeploymentManifest) Logs(service ServiceRequest) error {
 }
 
 // Remove remove services from deployment
-func (c *dockerDeploymentManifest) Remove(services []ServiceRequest, env map[string]string) error {
-	for _, service := range services[1:] {
+func (c *dockerDeploymentManifest) Remove(profile string, services []ServiceRequest, env map[string]string) error {
+	// TODO: profile is not used because we are using the docker client, not docker-compose, to reach the service
+	for _, service := range services {
 		manifest, _ := c.Inspect(context.Background(), service)
 		_, err := shell.Execute(c.Context, ".", "docker", "rm", "-fv", manifest.Name)
 		if err != nil {

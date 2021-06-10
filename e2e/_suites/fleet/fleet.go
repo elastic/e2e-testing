@@ -96,8 +96,8 @@ func (fts *FleetTestSuite) afterScenario() {
 
 	if !common.DeveloperMode {
 		_ = fts.deployer.Remove(
+			common.FleetProfileName,
 			[]deploy.ServiceRequest{
-				deploy.NewServiceRequest(common.FleetProfileName),
 				deploy.NewServiceRequest(serviceName),
 			},
 			common.ProfileEnv)
