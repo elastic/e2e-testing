@@ -230,14 +230,14 @@ func newConfig(workspace string) {
 		return
 	}
 
-	checkConfigDirs(workspace)
-
 	opConfig := OpConfig{
 		Services:  map[string]Service{},
 		Profiles:  map[string]Profile{},
 		workspace: workspace,
 	}
 	Op = &opConfig
+
+	checkConfigDirs(Op.workspace)
 
 	box := packFiles(Op)
 	if box == nil {
