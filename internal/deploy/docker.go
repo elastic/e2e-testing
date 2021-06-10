@@ -105,7 +105,7 @@ func (c *dockerDeploymentManifest) Destroy(ctx context.Context) error {
 	defer span.End()
 
 	serviceManager := NewServiceManager()
-	err := serviceManager.StopCompose(ctx, true, []ServiceRequest{NewServiceRequest(common.FleetProfileName)})
+	err := serviceManager.StopCompose(ctx, NewServiceRequest(common.FleetProfileName))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,

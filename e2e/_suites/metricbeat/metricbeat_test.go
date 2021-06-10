@@ -264,7 +264,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 
 		if !common.DeveloperMode {
 			serviceManager := deploy.NewServiceManager()
-			err := serviceManager.StopCompose(suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")})
+			err := serviceManager.StopCompose(suiteContext, deploy.NewServiceRequest("metricbeat"))
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": "metricbeat",
