@@ -6,6 +6,7 @@ package deploy
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 )
 
@@ -69,6 +70,17 @@ func NewServiceRequest(n string) ServiceRequest {
 		Name:  n,
 		Scale: 1,
 	}
+}
+
+// GetName returns the name of the service request, including flavour if needed
+func (sr ServiceRequest) GetName() string {
+	serviceIncludingFlavour := sr.Name
+	if sr.Flavour != "" {
+		// discover the flavour in the subdir
+		serviceIncludingFlavour = filepath.Join(sr.Name, sr.Flavour)
+	}
+
+	return serviceIncludingFlavour
 }
 
 // WithFlavour adds a flavour for the service, resulting in a look-up of the service in the config directory,

@@ -183,13 +183,7 @@ func (sm *DockerServiceManager) StopCompose(ctx context.Context, isProfile bool,
 			b = true
 		}
 
-		serviceIncludingFlavour := srv.Name
-		if srv.Flavour != "" {
-			// discover the flavour in the subdir
-			serviceIncludingFlavour = filepath.Join(srv.Name, srv.Flavour)
-		}
-
-		composeFilePath, err := getComposeFile(b, serviceIncludingFlavour)
+		composeFilePath, err := getComposeFile(b, srv.GetName())
 		if err != nil {
 			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
 		}
@@ -232,13 +226,7 @@ func executeCompose(ctx context.Context, isProfile bool, services []ServiceReque
 			b = true
 		}
 
-		serviceIncludingFlavour := srv.Name
-		if srv.Flavour != "" {
-			// discover the flavour in the subdir
-			serviceIncludingFlavour = filepath.Join(srv.Name, srv.Flavour)
-		}
-
-		composeFilePath, err := getComposeFile(b, serviceIncludingFlavour)
+		composeFilePath, err := getComposeFile(b, srv.GetName())
 		if err != nil {
 			return fmt.Errorf("Could not get compose file: %s - %v", composeFilePath, err)
 		}
