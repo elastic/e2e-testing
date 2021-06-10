@@ -29,14 +29,15 @@ func newK8sDeploy() Deployment {
 }
 
 // Add adds services deployment
-func (c *kubernetesDeploymentManifest) Add(ctx context.Context, services []ServiceRequest, env map[string]string) error {
+func (c *kubernetesDeploymentManifest) Add(ctx context.Context, profile string, services []ServiceRequest, env map[string]string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Adding services to kubernetes deployment", "kubernetes.manifest.add-services", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("profile", profile)
 	span.Context.SetLabel("services", services)
 	defer span.End()
 
-	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
+	kubectl = cluster.Kubectl().WithNamespace(ctx, getNamespaceFromProfile(profile))
 
 	for _, service := range services {
 		_, err := kubectl.Run(ctx, "apply", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service.Name))

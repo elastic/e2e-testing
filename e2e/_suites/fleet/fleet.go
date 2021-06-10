@@ -343,11 +343,10 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(image).WithScale(deployedAgentsCount)
 	services := []deploy.ServiceRequest{
-		deploy.NewServiceRequest(common.FleetProfileName),
 		agentService,
 	}
 
-	err = fts.deployer.Add(fts.currentContext, services, common.ProfileEnv)
+	err = fts.deployer.Add(fts.currentContext, common.FleetProfileName, services, common.ProfileEnv)
 	if err != nil {
 		return err
 	}
@@ -956,11 +955,10 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(fts.Image).WithScale(deployedAgentsCount)
 	services := []deploy.ServiceRequest{
-		deploy.NewServiceRequest(common.FleetProfileName),
 		agentService,
 	}
 
-	err := fts.deployer.Add(fts.currentContext, services, common.ProfileEnv)
+	err := fts.deployer.Add(fts.currentContext, common.FleetProfileName, services, common.ProfileEnv)
 	if err != nil {
 		return err
 	}

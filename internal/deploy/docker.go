@@ -24,16 +24,17 @@ func newDockerDeploy() Deployment {
 }
 
 // Add adds services deployment: the first service in the list must be the profile in which to deploy the service
-func (c *dockerDeploymentManifest) Add(ctx context.Context, services []ServiceRequest, env map[string]string) error {
+func (c *dockerDeploymentManifest) Add(ctx context.Context, profile string, services []ServiceRequest, env map[string]string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Adding services to Docker Compose deployment", "docker-compose.manifest.add-services", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("profile", profile)
 	span.Context.SetLabel("services", services)
 	defer span.End()
 
 	serviceManager := NewServiceManager()
 
-	return serviceManager.AddServicesToCompose(c.Context, services[0], services[1:], env)
+	return serviceManager.AddServicesToCompose(c.Context, NewServiceRequest(profile), services, env)
 }
 
 // Bootstrap sets up environment with docker compose
