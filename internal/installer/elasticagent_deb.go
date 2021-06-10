@@ -38,7 +38,7 @@ func (i *elasticAgentDEBPackage) AddFiles(ctx context.Context, files []string) e
 	span.Context.SetLabel("files", files)
 	defer span.End()
 
-	return i.deploy.AddFiles(ctx, i.service, files)
+	return i.deploy.AddFiles(ctx, common.FleetProfileName, i.service, files)
 }
 
 // Inspect returns info on package

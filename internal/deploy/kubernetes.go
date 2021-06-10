@@ -49,16 +49,17 @@ func (c *kubernetesDeploymentManifest) Add(ctx context.Context, profile string, 
 }
 
 // AddFiles - add files to deployment service
-func (c *kubernetesDeploymentManifest) AddFiles(ctx context.Context, service ServiceRequest, files []string) error {
+func (c *kubernetesDeploymentManifest) AddFiles(ctx context.Context, profile string, service ServiceRequest, files []string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Adding files to kubernetes deployment", "kubernetes.files.add", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	span.Context.SetLabel("files", files)
+	span.Context.SetLabel("profile", profile)
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
 	container, _ := c.Inspect(ctx, service)
-	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
+	kubectl = cluster.Kubectl().WithNamespace(ctx, getNamespaceFromProfile(profile))
 
 	for _, file := range files {
 		_, err := kubectl.Run(ctx, "cp", file, fmt.Sprintf("deployment/%s:.", container.Name))

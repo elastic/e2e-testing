@@ -14,7 +14,7 @@ import (
 // required for testing
 type Deployment interface {
 	Add(ctx context.Context, profile string, services []ServiceRequest, env map[string]string) error // adds service deployments
-	AddFiles(ctx context.Context, service ServiceRequest, files []string) error                      // adds files to a service
+	AddFiles(ctx context.Context, profile string, service ServiceRequest, files []string) error      // adds files to a service
 	Bootstrap(ctx context.Context, profile string, env map[string]string, waitCB func() error) error // will bootstrap or reuse existing cluster if kubernetes is selected
 	Destroy(ctx context.Context, profile string) error                                               // Teardown deployment
 	ExecIn(ctx context.Context, service ServiceRequest, cmd []string) (string, error)                // Execute arbitrary commands in service

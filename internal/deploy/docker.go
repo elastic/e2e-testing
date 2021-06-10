@@ -62,11 +62,13 @@ func (c *dockerDeploymentManifest) Bootstrap(ctx context.Context, profile string
 }
 
 // AddFiles - add files to service
-func (c *dockerDeploymentManifest) AddFiles(ctx context.Context, service ServiceRequest, files []string) error {
+func (c *dockerDeploymentManifest) AddFiles(ctx context.Context, profile string, service ServiceRequest, files []string) error {
+	// TODO: profile is not used because we are using the docker client, not docker-compose, to reach the service
 	span, _ := apm.StartSpanOptions(ctx, "Adding files to Docker Compose deployment", "docker-compose.files.add", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	span.Context.SetLabel("files", files)
+	span.Context.SetLabel("profile", profile)
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
