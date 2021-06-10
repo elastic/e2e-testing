@@ -293,7 +293,7 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 			"service": mts.ServiceName,
 		}).Debug("Could not retrieve configuration file under test workspace. Looking up tool's workspace")
 
-		configFile = path.Join(config.Op.Workspace, "compose", "services", mts.ServiceName, "_meta", "config.yml")
+		configFile = path.Join(config.OpDir(), "compose", "services", mts.ServiceName, "_meta", "config.yml")
 		ok, err := config.FileExists(configFile)
 		if !ok {
 			return fmt.Errorf("The configuration file for %s does not exist", mts.ServiceName)

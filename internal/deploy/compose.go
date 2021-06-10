@@ -59,7 +59,7 @@ func (sm *DockerServiceManager) AddServicesToCompose(ctx context.Context, profil
 		}
 	}
 
-	run := state.Recover(profile.Name+"-profile", config.Op.Workspace)
+	run := state.Recover(profile.Name+"-profile", config.OpDir())
 	persistedEnv := run.Env
 	for k, v := range env {
 		persistedEnv[k] = v
@@ -124,7 +124,7 @@ func (sm *DockerServiceManager) RemoveServicesFromCompose(ctx context.Context, p
 	newServices := []ServiceRequest{profile}
 	newServices = append(newServices, services...)
 
-	run := state.Recover(profile.Name+"-profile", config.Op.Workspace)
+	run := state.Recover(profile.Name+"-profile", config.OpDir())
 	persistedEnv := run.Env
 	for k, v := range env {
 		persistedEnv[k] = v
@@ -200,14 +200,14 @@ func (sm *DockerServiceManager) StopCompose(ctx context.Context, isProfile bool,
 	if isProfile {
 		ID = services[0].Name + "-profile"
 	}
-	run := state.Recover(ID, config.Op.Workspace)
+	run := state.Recover(ID, config.OpDir())
 	persistedEnv := run.Env
 
 	err := executeCompose(ctx, isProfile, services, []string{"down", "--remove-orphans"}, persistedEnv)
 	if err != nil {
 		return fmt.Errorf("Could not stop compose file: %v - %v", composeFilePaths, err)
 	}
-	defer state.Destroy(ID, config.Op.Workspace)
+	defer state.Destroy(ID, config.OpDir())
 
 	log.WithFields(log.Fields{
 		"composeFilePath": composeFilePaths,
@@ -260,7 +260,7 @@ func executeCompose(ctx context.Context, isProfile bool, services []ServiceReque
 		suffix = "-profile"
 	}
 	ID := filepath.Base(filepath.Dir(composeFilePaths[0])) + suffix
-	defer state.Update(ID, config.Op.Workspace, composeFilePaths, env)
+	defer state.Update(ID, config.OpDir(), composeFilePaths, env)
 
 	log.WithFields(log.Fields{
 		"cmd":              command,
@@ -281,7 +281,7 @@ func getComposeFile(isProfile bool, composeName string) (string, error) {
 		serviceType = "profiles"
 	}
 
-	composeFilePath := path.Join(config.Op.Workspace, "compose", serviceType, composeName, composeFileName)
+	composeFilePath := path.Join(config.OpDir(), "compose", serviceType, composeName, composeFileName)
 	found, err := io.Exists(composeFilePath)
 	if found && err == nil {
 		log.WithFields(log.Fields{
