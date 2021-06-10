@@ -90,15 +90,6 @@ func Init() {
 	}
 	shell.CheckInstalledSoftware(binaries...)
 
-	initConfig()
-}
-
-// initConfig initialises configuration
-func initConfig() {
-	if Op != nil {
-		return
-	}
-
 	home, err := homedir.Dir()
 	if err != nil {
 		log.WithFields(log.Fields{
