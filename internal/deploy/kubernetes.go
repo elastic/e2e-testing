@@ -81,12 +81,7 @@ func (c *kubernetesDeploymentManifest) Bootstrap(ctx context.Context, profile st
 	}
 
 	// TODO: we would need to understand how to pass the environment argument to anything running in the namespace
-	namespace := profile
-	if namespace == "" {
-		namespace = "default"
-	}
-
-	kubectl = cluster.Kubectl().WithNamespace(ctx, namespace)
+	kubectl = cluster.Kubectl().WithNamespace(ctx, getNamespaceFromProfile(profile))
 	_, err = kubectl.Run(ctx, "apply", "-k", "../../../cli/config/kubernetes/base")
 	if err != nil {
 		return err
@@ -105,12 +100,7 @@ func (c *kubernetesDeploymentManifest) Destroy(ctx context.Context, profile stri
 	})
 	defer span.End()
 
-	namespace := profile
-	if namespace == "" {
-		namespace = "default"
-	}
-
-	kubectl = cluster.Kubectl().WithNamespace(ctx, namespace)
+	kubectl = cluster.Kubectl().WithNamespace(ctx, getNamespaceFromProfile(profile))
 	cluster.Cleanup(c.Context)
 	return nil
 }
@@ -187,11 +177,7 @@ func (c *kubernetesDeploymentManifest) Logs(service ServiceRequest) error {
 
 // Remove remove services from deployment
 func (c *kubernetesDeploymentManifest) Remove(profile string, services []ServiceRequest, env map[string]string) error {
-	namespace := profile
-	if namespace == "" {
-		namespace = "default"
-	}
-	kubectl = cluster.Kubectl().WithNamespace(c.Context, namespace)
+	kubectl = cluster.Kubectl().WithNamespace(c.Context, getNamespaceFromProfile(profile))
 
 	for _, service := range services {
 		_, err := kubectl.Run(c.Context, "delete", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service.Name))
@@ -210,4 +196,12 @@ func (c *kubernetesDeploymentManifest) Start(service ServiceRequest) error {
 // Stop a container
 func (c *kubernetesDeploymentManifest) Stop(service ServiceRequest) error {
 	return nil
+}
+
+func getNamespaceFromProfile(profile string) string {
+	if profile == "" {
+		return "default"
+	}
+
+	return profile
 }
