@@ -217,12 +217,12 @@ func executeCompose(ctx context.Context, profile ServiceRequest, services []Serv
 
 	// apply wait strategies for profile
 	for _, w := range profile.WaitStrategies {
-		dc = dc.WithExposedService(w.service, w.port, w.strategy)
+		dc = dc.WithExposedService(w.Service, w.Port, w.Strategy)
 	}
 	// apply wait strategies for all services
 	for _, srv := range services {
 		for _, w := range srv.WaitStrategies {
-			dc = dc.WithExposedService(w.service, w.port, w.strategy)
+			dc = dc.WithExposedService(w.Service, w.Port, w.Strategy)
 		}
 	}
 

@@ -61,9 +61,9 @@ type ServiceManifest struct {
 
 // WaitForServiceRequest list of wait strategies for a service, including host, port and the strategy itself
 type WaitForServiceRequest struct {
-	service  string
-	port     int
-	strategy wait.Strategy
+	Service  string
+	Port     int
+	Strategy wait.Strategy
 }
 
 // ServiceRequest represents the service to be created using the provider
@@ -111,8 +111,8 @@ func (sr ServiceRequest) WithScale(s int) ServiceRequest {
 	return sr
 }
 
-// Waitingfor adds the waitingFor strategy from testcontainers-go
-func (sr ServiceRequest) Waitingfor(w ...WaitForServiceRequest) ServiceRequest {
+// WaitingFor adds the waitingFor strategy from testcontainers-go
+func (sr ServiceRequest) WaitingFor(w ...WaitForServiceRequest) ServiceRequest {
 	if sr.WaitStrategies == nil {
 		sr.WaitStrategies = []WaitForServiceRequest{}
 	}
