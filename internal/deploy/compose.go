@@ -211,10 +211,22 @@ func executeCompose(ctx context.Context, profile ServiceRequest, services []Serv
 	}
 
 	compose := tc.NewLocalDockerCompose(composeFilePaths, profile.Name)
-	execError := compose.
+	dc := compose.
 		WithCommand(command).
-		WithEnv(env).
-		Invoke()
+		WithEnv(env)
+
+	// apply wait strategies for profile
+	for _, w := range profile.WaitStrategies {
+		dc = dc.WithExposedService(w.service, w.port, w.strategy)
+	}
+	// apply wait strategies for all services
+	for _, srv := range services {
+		for _, w := range srv.WaitStrategies {
+			dc = dc.WithExposedService(w.service, w.port, w.strategy)
+		}
+	}
+
+	execError := dc.Invoke()
 	err = execError.Error
 	if err != nil {
 		return fmt.Errorf("could not run compose file: %v - %v", composeFilePaths, err)
