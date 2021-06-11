@@ -14,10 +14,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var versionToStop string
+
 func init() {
 	config.Init()
 
 	rootCmd.AddCommand(stopCmd)
+
+	for k := range config.AvailableServices() {
+		serviceSubcommand := buildStopServiceCommand(k)
+
+		serviceSubcommand.Flags().StringVarP(&versionToStop, "version", "v", "latest", "Sets the image version to stop")
+
+		stopServiceCmd.AddCommand(serviceSubcommand)
+	}
+
+	stopCmd.AddCommand(stopServiceCmd)
 
 	for k, profile := range config.AvailableProfiles() {
 		profileSubcommand := buildStopProfileCommand(k, profile)
@@ -37,6 +49,25 @@ var stopCmd = &cobra.Command{
 	},
 }
 
+func buildStopServiceCommand(srv string) *cobra.Command {
+	return &cobra.Command{
+		Use:   srv,
+		Short: `Stops a ` + srv + ` service`,
+		Long:  `Stops a ` + srv + ` service, stoppping its Docker container`,
+		Run: func(cmd *cobra.Command, args []string) {
+			serviceManager := deploy.NewServiceManager()
+
+			err := serviceManager.StopCompose(
+				context.Background(), false, []deploy.ServiceRequest{deploy.NewServiceRequest(srv)})
+			if err != nil {
+				log.WithFields(log.Fields{
+					"service": srv,
+				}).Error("Could not stop the service.")
+			}
+		},
+	}
+}
+
 func buildStopProfileCommand(key string, profile config.Profile) *cobra.Command {
 	return &cobra.Command{
 		Use:   key,
@@ -53,6 +84,15 @@ func buildStopProfileCommand(key string, profile config.Profile) *cobra.Command 
 			}
 		},
 	}
+}
+
+var stopServiceCmd = &cobra.Command{
+	Use:   "service",
+	Short: "Allows to stop a service, defined as subcommands",
+	Long:  `Allows to stop a service, defined as subcommands, stopping the Docker containers for them.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		// NOOP
+	},
 }
 
 var stopProfileCmd = &cobra.Command{
