@@ -8,6 +8,8 @@ import (
 	"context"
 	"path/filepath"
 	"strings"
+
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 // Deployment interface for operations dealing with deployments of the bits
@@ -57,18 +59,27 @@ type ServiceManifest struct {
 	Platform   string // running in linux, macos, windows
 }
 
+// WaitForServiceRequest list of wait strategies for a service, including host, port and the strategy itself
+type WaitForServiceRequest struct {
+	service  string
+	port     int
+	strategy wait.Strategy
+}
+
 // ServiceRequest represents the service to be created using the provider
 type ServiceRequest struct {
-	Name    string
-	Flavour string // optional, configured using builder method
-	Scale   int    // default: 1
+	Name           string
+	Flavour        string                  // optional, configured using builder method
+	Scale          int                     // default: 1
+	WaitStrategies []WaitForServiceRequest // wait strategies for the service
 }
 
 // NewServiceRequest creates a request for a service
 func NewServiceRequest(n string) ServiceRequest {
 	return ServiceRequest{
-		Name:  n,
-		Scale: 1,
+		Name:           n,
+		Scale:          1,
+		WaitStrategies: []WaitForServiceRequest{},
 	}
 }
 
@@ -97,6 +108,16 @@ func (sr ServiceRequest) WithScale(s int) ServiceRequest {
 	}
 
 	sr.Scale = s
+	return sr
+}
+
+// Waitingfor adds the waitingFor strategy from testcontainers-go
+func (sr ServiceRequest) Waitingfor(w ...WaitForServiceRequest) ServiceRequest {
+	if sr.WaitStrategies == nil {
+		sr.WaitStrategies = []WaitForServiceRequest{}
+	}
+
+	sr.WaitStrategies = append(sr.WaitStrategies, w...)
 	return sr
 }
 
