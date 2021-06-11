@@ -46,8 +46,7 @@ func (c *dockerDeploymentManifest) Bootstrap(ctx context.Context, profile string
 
 	serviceManager := NewServiceManager()
 
-	serviceProfile := NewServiceRequest(profile)
-	err := serviceManager.RunCompose(ctx, true, []ServiceRequest{serviceProfile}, env)
+	err := serviceManager.RunCompose(ctx, NewServiceRequest(profile), []ServiceRequest{}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"profile": profile,

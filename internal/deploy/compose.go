@@ -25,7 +25,7 @@ type ServiceManager interface {
 	ExecCommandInService(ctx context.Context, profile ServiceRequest, image ServiceRequest, serviceName string, cmds []string, env map[string]string, detach bool) error
 	RemoveServicesFromCompose(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error
 	RunCommand(ctx context.Context, services []ServiceRequest, composeArgs []string, env map[string]string) error
-	RunCompose(ctx context.Context, isProfile bool, services []ServiceRequest, env map[string]string) error
+	RunCompose(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error
 	StopCompose(ctx context.Context, profile ServiceRequest) error
 }
 
@@ -153,14 +153,14 @@ func (sm *DockerServiceManager) RunCommand(ctx context.Context, services []Servi
 }
 
 // RunCompose runs a docker compose by its name
-func (sm *DockerServiceManager) RunCompose(ctx context.Context, isProfile bool, services []ServiceRequest, env map[string]string) error {
+func (sm *DockerServiceManager) RunCompose(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Starting Docker Compose files", "docker-compose.services.up", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	span.Context.SetLabel("services", services)
 	defer span.End()
 
-	return executeCompose(ctx, services[0], services[1:], []string{"up", "-d"}, env)
+	return executeCompose(ctx, profile, services, []string{"up", "-d"}, env)
 }
 
 // StopCompose stops a docker compose by profile name, including all orphan services
