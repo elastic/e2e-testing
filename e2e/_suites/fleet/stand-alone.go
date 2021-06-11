@@ -136,7 +136,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 	services := []deploy.ServiceRequest{
 		deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(flavour),
 	}
-	err := fts.deployer.Add(fts.currentContext, common.FleetProfileName, services, common.ProfileEnv)
+	err := fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, common.ProfileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err

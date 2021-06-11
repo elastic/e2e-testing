@@ -104,7 +104,7 @@ func waitForProcess(deployer deploy.Deployment, service string, process string, 
 		// pgrep -d: -d, --delimiter <string>  specify output delimiter
 		//i.e. "pgrep -d , metricbeat": 483,519
 		cmds := []string{"pgrep", "-d", ",", process}
-		output, err := deployer.ExecIn(context.Background(), common.FleetProfileName, serviceRequest, cmds)
+		output, err := deployer.ExecIn(context.Background(), deploy.NewServiceRequest(common.FleetProfileName), serviceRequest, cmds)
 		if err != nil {
 
 			if !mustBePresent && ocurrences == 0 {
@@ -160,7 +160,7 @@ func waitForProcess(deployer deploy.Deployment, service string, process string, 
 
 		for _, pid := range pids {
 			pidStateCmds := []string{"ps", "-q", pid, "-o", "state", "--no-headers"}
-			pidState, err := deployer.ExecIn(context.Background(), common.FleetProfileName, serviceRequest, pidStateCmds)
+			pidState, err := deployer.ExecIn(context.Background(), deploy.NewServiceRequest(common.FleetProfileName), serviceRequest, pidStateCmds)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"cmds":          cmds,

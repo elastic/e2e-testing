@@ -29,7 +29,7 @@ func newK8sDeploy() Deployment {
 }
 
 // Add adds services deployment
-func (c *kubernetesDeploymentManifest) Add(ctx context.Context, profile string, services []ServiceRequest, env map[string]string) error {
+func (c *kubernetesDeploymentManifest) Add(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Adding services to kubernetes deployment", "kubernetes.manifest.add-services", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -49,7 +49,7 @@ func (c *kubernetesDeploymentManifest) Add(ctx context.Context, profile string, 
 }
 
 // AddFiles - add files to deployment service
-func (c *kubernetesDeploymentManifest) AddFiles(ctx context.Context, profile string, service ServiceRequest, files []string) error {
+func (c *kubernetesDeploymentManifest) AddFiles(ctx context.Context, profile ServiceRequest, service ServiceRequest, files []string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Adding files to kubernetes deployment", "kubernetes.files.add", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -71,7 +71,7 @@ func (c *kubernetesDeploymentManifest) AddFiles(ctx context.Context, profile str
 }
 
 // Bootstrap sets up environment with kind
-func (c *kubernetesDeploymentManifest) Bootstrap(ctx context.Context, profile string, env map[string]string, waitCB func() error) error {
+func (c *kubernetesDeploymentManifest) Bootstrap(ctx context.Context, profile ServiceRequest, env map[string]string, waitCB func() error) error {
 	span, _ := apm.StartSpanOptions(ctx, "Bootstrapping kubernetes deployment", "kubernetes.manifest.bootstrap", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -96,7 +96,7 @@ func (c *kubernetesDeploymentManifest) Bootstrap(ctx context.Context, profile st
 }
 
 // Destroy teardown kubernetes environment
-func (c *kubernetesDeploymentManifest) Destroy(ctx context.Context, profile string) error {
+func (c *kubernetesDeploymentManifest) Destroy(ctx context.Context, profile ServiceRequest) error {
 	span, _ := apm.StartSpanOptions(ctx, "Destroying kubernetes deployment", "kubernetes.manifest.destroy", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -108,10 +108,11 @@ func (c *kubernetesDeploymentManifest) Destroy(ctx context.Context, profile stri
 }
 
 // ExecIn execute command in service
-func (c *kubernetesDeploymentManifest) ExecIn(ctx context.Context, profile string, service ServiceRequest, cmd []string) (string, error) {
+func (c *kubernetesDeploymentManifest) ExecIn(ctx context.Context, profile ServiceRequest, service ServiceRequest, cmd []string) (string, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Executing command in kubernetes deployment", "kubernetes.manifest.execIn", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("profile", profile)
 	span.Context.SetLabel("service", service)
 	span.Context.SetLabel("arguments", cmd)
 	defer span.End()
@@ -178,7 +179,7 @@ func (c *kubernetesDeploymentManifest) Logs(service ServiceRequest) error {
 }
 
 // Remove remove services from deployment
-func (c *kubernetesDeploymentManifest) Remove(profile string, services []ServiceRequest, env map[string]string) error {
+func (c *kubernetesDeploymentManifest) Remove(profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, getNamespaceFromProfile(profile))
 
 	for _, service := range services {
@@ -200,10 +201,10 @@ func (c *kubernetesDeploymentManifest) Stop(service ServiceRequest) error {
 	return nil
 }
 
-func getNamespaceFromProfile(profile string) string {
-	if profile == "" {
+func getNamespaceFromProfile(profile ServiceRequest) string {
+	if profile.Name == "" {
 		return "default"
 	}
 
-	return profile
+	return profile.GetName()
 }

@@ -226,7 +226,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		}
 
 		deployer := deploy.New(common.Provider)
-		err := deployer.Bootstrap(suiteContext, "metricbeat", env, func() error {
+		err := deployer.Bootstrap(suiteContext, deploy.NewServiceRequest("metricbeat"), env, func() error {
 			minutesToBeHealthy := time.Duration(utils.TimeoutFactor) * time.Minute
 			healthy, err := elasticsearch.WaitForElasticsearch(suiteContext, minutesToBeHealthy)
 			if !healthy {
@@ -262,7 +262,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 
 		if !common.DeveloperMode {
 			deployer := deploy.New(common.Provider)
-			err := deployer.Destroy(suiteContext, "metricbeat")
+			err := deployer.Destroy(suiteContext, deploy.NewServiceRequest("metricbeat"))
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": "metricbeat",

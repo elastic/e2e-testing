@@ -15,16 +15,16 @@ import (
 // Deployment interface for operations dealing with deployments of the bits
 // required for testing
 type Deployment interface {
-	Add(ctx context.Context, profile string, services []ServiceRequest, env map[string]string) error  // adds service deployments
-	AddFiles(ctx context.Context, profile string, service ServiceRequest, files []string) error       // adds files to a service
-	Bootstrap(ctx context.Context, profile string, env map[string]string, waitCB func() error) error  // will bootstrap or reuse existing cluster if kubernetes is selected
-	Destroy(ctx context.Context, profile string) error                                                // Teardown deployment
-	ExecIn(ctx context.Context, profile string, service ServiceRequest, cmd []string) (string, error) // Execute arbitrary commands in service
-	Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error)                    // inspects service
-	Logs(service ServiceRequest) error                                                                // prints logs of deployed service
-	Remove(profile string, services []ServiceRequest, env map[string]string) error                    // Removes services from deployment
-	Start(service ServiceRequest) error                                                               // Starts a service or container depending on Deployment
-	Stop(service ServiceRequest) error                                                                // Stop a service or container depending on deployment
+	Add(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error  // adds service deployments
+	AddFiles(ctx context.Context, profile ServiceRequest, service ServiceRequest, files []string) error       // adds files to a service
+	Bootstrap(ctx context.Context, profile ServiceRequest, env map[string]string, waitCB func() error) error  // will bootstrap or reuse existing cluster if kubernetes is selected
+	Destroy(ctx context.Context, profile ServiceRequest) error                                                // Teardown deployment
+	ExecIn(ctx context.Context, profile ServiceRequest, service ServiceRequest, cmd []string) (string, error) // Execute arbitrary commands in service
+	Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error)                            // inspects service
+	Logs(service ServiceRequest) error                                                                        // prints logs of deployed service
+	Remove(profile ServiceRequest, services []ServiceRequest, env map[string]string) error                    // Removes services from deployment
+	Start(service ServiceRequest) error                                                                       // Starts a service or container depending on Deployment
+	Stop(service ServiceRequest) error                                                                        // Stop a service or container depending on deployment
 }
 
 // ServiceOperator represents the operations that can be performed by a service

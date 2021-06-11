@@ -24,7 +24,7 @@ func newDockerDeploy() Deployment {
 }
 
 // Add adds services deployment: the first service in the list must be the profile in which to deploy the service
-func (c *dockerDeploymentManifest) Add(ctx context.Context, profile string, services []ServiceRequest, env map[string]string) error {
+func (c *dockerDeploymentManifest) Add(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Adding services to Docker Compose deployment", "docker-compose.manifest.add-services", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -34,11 +34,11 @@ func (c *dockerDeploymentManifest) Add(ctx context.Context, profile string, serv
 
 	serviceManager := NewServiceManager()
 
-	return serviceManager.AddServicesToCompose(c.Context, NewServiceRequest(profile), services, env)
+	return serviceManager.AddServicesToCompose(c.Context, profile, services, env)
 }
 
 // Bootstrap sets up environment with docker compose
-func (c *dockerDeploymentManifest) Bootstrap(ctx context.Context, profile string, env map[string]string, waitCB func() error) error {
+func (c *dockerDeploymentManifest) Bootstrap(ctx context.Context, profile ServiceRequest, env map[string]string, waitCB func() error) error {
 	span, _ := apm.StartSpanOptions(ctx, "Bootstrapping Docker Compose deployment", "docker-compose.manifest.bootstrap", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -46,7 +46,7 @@ func (c *dockerDeploymentManifest) Bootstrap(ctx context.Context, profile string
 
 	serviceManager := NewServiceManager()
 
-	err := serviceManager.RunCompose(ctx, NewServiceRequest(profile), []ServiceRequest{}, env)
+	err := serviceManager.RunCompose(ctx, profile, []ServiceRequest{}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"profile": profile,
@@ -61,7 +61,7 @@ func (c *dockerDeploymentManifest) Bootstrap(ctx context.Context, profile string
 }
 
 // AddFiles - add files to service
-func (c *dockerDeploymentManifest) AddFiles(ctx context.Context, profile string, service ServiceRequest, files []string) error {
+func (c *dockerDeploymentManifest) AddFiles(ctx context.Context, profile ServiceRequest, service ServiceRequest, files []string) error {
 	// TODO: profile is not used because we are using the docker client, not docker-compose, to reach the service
 	span, _ := apm.StartSpanOptions(ctx, "Adding files to Docker Compose deployment", "docker-compose.files.add", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -87,14 +87,15 @@ func (c *dockerDeploymentManifest) AddFiles(ctx context.Context, profile string,
 }
 
 // Destroy teardown docker environment
-func (c *dockerDeploymentManifest) Destroy(ctx context.Context, profile string) error {
+func (c *dockerDeploymentManifest) Destroy(ctx context.Context, profile ServiceRequest) error {
 	span, _ := apm.StartSpanOptions(ctx, "Destroying compose deployment", "docker-compose.manifest.destroy", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("profile", profile)
 	defer span.End()
 
 	serviceManager := NewServiceManager()
-	err := serviceManager.StopCompose(ctx, NewServiceRequest(profile))
+	err := serviceManager.StopCompose(ctx, profile)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -105,10 +106,12 @@ func (c *dockerDeploymentManifest) Destroy(ctx context.Context, profile string) 
 }
 
 // ExecIn execute command in service
-func (c *dockerDeploymentManifest) ExecIn(ctx context.Context, profile string, service ServiceRequest, cmd []string) (string, error) {
+func (c *dockerDeploymentManifest) ExecIn(ctx context.Context, profile ServiceRequest, service ServiceRequest, cmd []string) (string, error) {
+	// TODO: profile is not used because we are using the docker client, not docker-compose, to reach the service
 	span, _ := apm.StartSpanOptions(ctx, "Executing command in compose deployment", "docker-compose.manifest.execIn", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("profile", profile)
 	span.Context.SetLabel("service", service)
 	span.Context.SetLabel("arguments", cmd)
 	defer span.End()
@@ -164,7 +167,7 @@ func (c *dockerDeploymentManifest) Logs(service ServiceRequest) error {
 }
 
 // Remove remove services from deployment
-func (c *dockerDeploymentManifest) Remove(profile string, services []ServiceRequest, env map[string]string) error {
+func (c *dockerDeploymentManifest) Remove(profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
 	// TODO: profile is not used because we are using the docker client, not docker-compose, to reach the service
 	for _, service := range services {
 		manifest, _ := c.Inspect(context.Background(), service)

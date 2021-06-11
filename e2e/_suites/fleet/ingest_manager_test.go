@@ -141,7 +141,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		}
 
 		deployer := deploy.New(common.Provider)
-		deployer.Bootstrap(suiteContext, common.FleetProfileName, common.ProfileEnv, func() error {
+		deployer.Bootstrap(suiteContext, deploy.NewServiceRequest(common.FleetProfileName), common.ProfileEnv, func() error {
 			kibanaClient, err := kibana.NewClient()
 			if err != nil {
 				log.WithField("error", err).Fatal("Unable to create kibana client")
@@ -177,7 +177,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		if !common.DeveloperMode {
 			log.Debug("Destroying Fleet runtime dependencies")
 			deployer := deploy.New(common.Provider)
-			deployer.Destroy(suiteContext, common.FleetProfileName)
+			deployer.Destroy(suiteContext, deploy.NewServiceRequest(common.FleetProfileName))
 		}
 	})
 }
