@@ -450,12 +450,11 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 
 	if log.IsLevelEnabled(log.DebugLevel) {
 		services := []deploy.ServiceRequest{
-			deploy.NewServiceRequest("metricbeat"), // profile name
 			deploy.NewServiceRequest("metricbeat"), // metricbeat service
 		}
 
 		if common.DeveloperMode {
-			err = serviceManager.RunCommand(mts.currentContext, services, []string{"logs", "metricbeat"}, env)
+			err = serviceManager.RunCommand(mts.currentContext, deploy.NewServiceRequest("metricbeat"), services, []string{"logs", "metricbeat"}, env)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error":             err,
