@@ -220,28 +220,26 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		serviceManager := deploy.NewServiceManager()
-
 		env := map[string]string{
 			"stackPlatform": "linux/" + utils.GetArchitecture(),
 			"stackVersion":  common.StackVersion,
 		}
 
-		err := serviceManager.RunCompose(
-			suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")}, env)
+		deployer := deploy.New(common.Provider)
+		err := deployer.Bootstrap(suiteContext, deploy.NewServiceRequest("metricbeat"), env, func() error {
+			minutesToBeHealthy := time.Duration(utils.TimeoutFactor) * time.Minute
+			healthy, err := elasticsearch.WaitForElasticsearch(suiteContext, minutesToBeHealthy)
+			if !healthy {
+				return fmt.Errorf("the Elasticsearch cluster could not get the healthy status")
+			}
+
+			return err
+		})
 		if err != nil {
 			log.WithFields(log.Fields{
-				"profile": "metricbeat",
-			}).Fatal("Could not run the profile.")
-		}
-
-		minutesToBeHealthy := time.Duration(utils.TimeoutFactor) * time.Minute
-		healthy, err := elasticsearch.WaitForElasticsearch(suiteContext, minutesToBeHealthy)
-		if !healthy {
-			log.WithFields(log.Fields{
 				"error":   err,
-				"minutes": minutesToBeHealthy,
-			}).Fatal("The Elasticsearch cluster could not get the healthy status")
+				"profile": "metricbeat",
+			}).Fatal("Could not run the profile")
 		}
 	})
 
@@ -263,8 +261,8 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		defer suiteParentSpan.End()
 
 		if !common.DeveloperMode {
-			serviceManager := deploy.NewServiceManager()
-			err := serviceManager.StopCompose(suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("metricbeat")})
+			deployer := deploy.New(common.Provider)
+			err := deployer.Destroy(suiteContext, deploy.NewServiceRequest("metricbeat"))
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": "metricbeat",
@@ -293,7 +291,7 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 			"service": mts.ServiceName,
 		}).Debug("Could not retrieve configuration file under test workspace. Looking up tool's workspace")
 
-		configFile = path.Join(config.Op.Workspace, "compose", "services", mts.ServiceName, "_meta", "config.yml")
+		configFile = path.Join(config.OpDir(), "compose", "services", mts.ServiceName, "_meta", "config.yml")
 		ok, err := config.FileExists(configFile)
 		if !ok {
 			return fmt.Errorf("The configuration file for %s does not exist", mts.ServiceName)
@@ -360,9 +358,9 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if useCISnapshots || beatsLocalPath != "" {
 		arch := utils.GetArchitecture()
-		artifactName := utils.BuildArtifactName("metricbeat", mts.Version, common.BeatVersionBase, "linux", arch, "tar.gz", true)
 
-		imagePath, err := utils.FetchBeatsBinary(mts.currentContext, artifactName, "metricbeat", mts.Version, common.BeatVersionBase, utils.TimeoutFactor, true)
+		artifactName := utils.BuildArtifactName("metricbeat", mts.Version, "linux", arch, "tar.gz", true)
+		imagePath, err := utils.FetchBeatsBinary(mts.currentContext, artifactName, "metricbeat", mts.Version, utils.TimeoutFactor, true)
 		if err != nil {
 			return err
 		}
@@ -452,7 +450,6 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 
 	if log.IsLevelEnabled(log.DebugLevel) {
 		services := []deploy.ServiceRequest{
-			deploy.NewServiceRequest("metricbeat"), // profile name
 			deploy.NewServiceRequest("metricbeat"), // metricbeat service
 		}
 

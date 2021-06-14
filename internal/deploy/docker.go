@@ -10,9 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/shell"
-	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -31,41 +29,30 @@ func newDockerDeploy() Deployment {
 	}
 }
 
-// Add adds services deployment
-func (c *dockerDeploymentManifest) Add(ctx context.Context, services []ServiceRequest, env map[string]string) error {
+// Add adds services deployment: the first service in the list must be the profile in which to deploy the service
+func (c *dockerDeploymentManifest) Add(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Adding services to Docker Compose deployment", "docker-compose.manifest.add-services", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("profile", profile)
 	span.Context.SetLabel("services", services)
 	defer span.End()
 
 	serviceManager := NewServiceManager()
 
-	return serviceManager.AddServicesToCompose(c.Context, services[0], services[1:], env)
+	return serviceManager.AddServicesToCompose(c.Context, profile, services, env)
 }
 
 // Bootstrap sets up environment with docker compose
-func (c *dockerDeploymentManifest) Bootstrap(ctx context.Context, waitCB func() error) error {
+func (c *dockerDeploymentManifest) Bootstrap(ctx context.Context, profile ServiceRequest, env map[string]string, waitCB func() error) error {
 	span, _ := apm.StartSpanOptions(ctx, "Bootstrapping Docker Compose deployment", "docker-compose.manifest.bootstrap", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
 
 	serviceManager := NewServiceManager()
-	common.ProfileEnv = map[string]string{
-		"kibanaVersion": common.KibanaVersion,
-		"stackPlatform": "linux/" + utils.GetArchitecture(),
-		"stackVersion":  common.StackVersion,
-	}
 
-	common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
-	if strings.HasPrefix(common.KibanaVersion, "pr") || utils.IsCommit(common.KibanaVersion) {
-		// because it comes from a PR
-		common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
-	}
-
-	profile := NewServiceRequest(common.FleetProfileName)
-	err := serviceManager.RunCompose(ctx, true, []ServiceRequest{profile}, common.ProfileEnv)
+	err := serviceManager.RunCompose(ctx, profile, []ServiceRequest{}, env)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"profile": profile,
@@ -80,11 +67,13 @@ func (c *dockerDeploymentManifest) Bootstrap(ctx context.Context, waitCB func() 
 }
 
 // AddFiles - add files to service
-func (c *dockerDeploymentManifest) AddFiles(ctx context.Context, service ServiceRequest, files []string) error {
+func (c *dockerDeploymentManifest) AddFiles(ctx context.Context, profile ServiceRequest, service ServiceRequest, files []string) error {
+	// TODO: profile is not used because we are using the docker client, not docker-compose, to reach the service
 	span, _ := apm.StartSpanOptions(ctx, "Adding files to Docker Compose deployment", "docker-compose.files.add", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	span.Context.SetLabel("files", files)
+	span.Context.SetLabel("profile", profile)
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
@@ -104,28 +93,31 @@ func (c *dockerDeploymentManifest) AddFiles(ctx context.Context, service Service
 }
 
 // Destroy teardown docker environment
-func (c *dockerDeploymentManifest) Destroy(ctx context.Context) error {
+func (c *dockerDeploymentManifest) Destroy(ctx context.Context, profile ServiceRequest) error {
 	span, _ := apm.StartSpanOptions(ctx, "Destroying compose deployment", "docker-compose.manifest.destroy", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("profile", profile)
 	defer span.End()
 
 	serviceManager := NewServiceManager()
-	err := serviceManager.StopCompose(ctx, true, []ServiceRequest{NewServiceRequest(common.FleetProfileName)})
+	err := serviceManager.StopCompose(ctx, profile)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
-			"profile": common.FleetProfileName,
+			"profile": profile,
 		}).Fatal("Could not destroy the runtime dependencies for the profile.")
 	}
 	return nil
 }
 
 // ExecIn execute command in service
-func (c *dockerDeploymentManifest) ExecIn(ctx context.Context, service ServiceRequest, cmd []string) (string, error) {
+func (c *dockerDeploymentManifest) ExecIn(ctx context.Context, profile ServiceRequest, service ServiceRequest, cmd []string) (string, error) {
+	// TODO: profile is not used because we are using the docker client, not docker-compose, to reach the service
 	span, _ := apm.StartSpanOptions(ctx, "Executing command in compose deployment", "docker-compose.manifest.execIn", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("profile", profile)
 	span.Context.SetLabel("service", service)
 	span.Context.SetLabel("arguments", cmd)
 	defer span.End()
@@ -238,8 +230,9 @@ func (c *dockerDeploymentManifest) PreBootstrap(ctx context.Context) error {
 }
 
 // Remove remove services from deployment
-func (c *dockerDeploymentManifest) Remove(services []ServiceRequest, env map[string]string) error {
-	for _, service := range services[1:] {
+func (c *dockerDeploymentManifest) Remove(profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
+	// TODO: profile is not used because we are using the docker client, not docker-compose, to reach the service
+	for _, service := range services {
 		manifest, _ := c.Inspect(context.Background(), service)
 		_, err := shell.Execute(c.Context, ".", "docker", "rm", "-fv", manifest.Name)
 		if err != nil {

@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
@@ -15,6 +16,8 @@ import (
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
+	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -116,7 +119,19 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			log.WithField("error", err).Fatal("Unable to run pre-bootstrap initialization")
 		}
 
-		deployer.Bootstrap(suiteContext, func() error {
+		common.ProfileEnv = map[string]string{
+			"kibanaVersion": common.KibanaVersion,
+			"stackPlatform": "linux/" + utils.GetArchitecture(),
+			"stackVersion":  common.StackVersion,
+		}
+
+		common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
+		if strings.HasPrefix(common.KibanaVersion, "pr") || utils.IsCommit(common.KibanaVersion) {
+			// because it comes from a PR
+			common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
+		}
+
+		deployer.Bootstrap(suiteContext, common.FleetProfileServiceRequest, common.ProfileEnv, func() error {
 			kibanaClient, err := kibana.NewClient()
 			if err != nil {
 				log.WithField("error", err).Fatal("Unable to create kibana client")
@@ -152,7 +167,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		if !common.DeveloperMode {
 			log.Debug("Destroying Fleet runtime dependencies")
 			deployer := deploy.New(common.Provider)
-			deployer.Destroy(suiteContext)
+			deployer.Destroy(suiteContext, common.FleetProfileServiceRequest)
 		}
 	})
 }
