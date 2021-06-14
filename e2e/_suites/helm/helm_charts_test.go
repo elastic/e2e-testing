@@ -14,7 +14,6 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/helm"
 	"github.com/elastic/e2e-testing/internal/kubectl"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -683,16 +682,6 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 			err := testSuite.destroyCluster(suiteContext)
 			if err != nil {
 				return
-			}
-
-			if common.ElasticAPMActive {
-				serviceManager := deploy.NewServiceManager()
-				err := serviceManager.StopCompose(suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("helm")})
-				if err != nil {
-					log.WithFields(log.Fields{
-						"profile": "helm",
-					}).Error("Could not stop the profile.")
-				}
 			}
 		}
 	})
