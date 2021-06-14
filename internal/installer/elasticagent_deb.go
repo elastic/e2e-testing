@@ -143,7 +143,7 @@ func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
 	extension := "deb"
 
 	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, os, arch, extension, false)
-	binaryPath, err := utils.FetchBeatsBinary(ctx, binaryName, artifact, common.BeatVersion, common.BeatVersion, utils.TimeoutFactor, true)
+	binaryPath, err := utils.FetchBeatsBinary(ctx, binaryName, artifact, common.BeatVersion, utils.TimeoutFactor, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,

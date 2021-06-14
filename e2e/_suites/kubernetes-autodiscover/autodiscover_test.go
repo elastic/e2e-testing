@@ -136,7 +136,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		log.Debugf("Configuring Docker image for %s", podName)
 
 		artifactName := utils.BuildArtifactName(podName, common.BeatVersion, "linux", "amd64", "tar.gz", true)
-		imagePath, err := utils.FetchBeatsBinary(m.ctx, artifactName, podName, common.BeatVersion, common.BeatVersion, utils.TimeoutFactor, true)
+		imagePath, err := utils.FetchBeatsBinary(m.ctx, artifactName, podName, common.BeatVersion, utils.TimeoutFactor, true)
 		if err != nil {
 			return err
 		}

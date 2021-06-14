@@ -373,7 +373,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
-		_, err := FetchBeatsBinary(ctx, "foo_fileName", artifact, version, version, TimeoutFactor, true)
+		_, err := FetchBeatsBinary(ctx, "foo_fileName", artifact, version, TimeoutFactor, true)
 		assert.NotNil(t, err)
 	})
 
@@ -384,7 +384,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -395,7 +395,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-aarch64.rpm"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -407,7 +407,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-amd64.deb"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -418,7 +418,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-arm64.deb"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -430,7 +430,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -441,7 +441,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -452,7 +452,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-arm64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -464,7 +464,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -475,7 +475,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := "elastic-agent-8.0.0-SNAPSHOT-linux-arm64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -487,7 +487,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -498,7 +498,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-arm64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, version, TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -568,7 +568,7 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 
 		fileName := "elastic-agent-" + testVersion + "-x86_64.rpm"
 
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "commits/0123456789")
 		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-x86_64.rpm")
@@ -580,7 +580,7 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 
 		fileName := "elastic-agent-" + testVersion + "-amd64.deb"
 
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "commits/0123456789")
 		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-amd64.deb")
@@ -592,7 +592,7 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 
 		fileName := "elastic-agent-" + testVersion + "-linux-x86_64.tar.gz"
 
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "commits/0123456789")
 		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-linux-x86_64.tar.gz")
@@ -606,7 +606,7 @@ func TestGetGCPBucketCoordinates_Snapshots(t *testing.T) {
 	t.Run("Fetching snapshots bucket for RPM package", func(t *testing.T) {
 		fileName := "elastic-agent-" + testVersion + "-x86_64.rpm"
 
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "snapshots/elastic-agent")
 		assert.Equal(t, object, "elastic-agent-"+testVersion+"-x86_64.rpm")
@@ -615,7 +615,7 @@ func TestGetGCPBucketCoordinates_Snapshots(t *testing.T) {
 	t.Run("Fetching snapshots bucket for DEB package", func(t *testing.T) {
 		fileName := "elastic-agent-" + testVersion + "-amd64.deb"
 
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "snapshots/elastic-agent")
 		assert.Equal(t, object, "elastic-agent-"+testVersion+"-amd64.deb")
@@ -624,7 +624,7 @@ func TestGetGCPBucketCoordinates_Snapshots(t *testing.T) {
 	t.Run("Fetching snapshots bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
 		fileName := "elastic-agent-" + testVersion + "-linux-x86_64.tar.gz"
 
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version, testVersion)
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "snapshots/elastic-agent")
 		assert.Equal(t, object, "elastic-agent-"+testVersion+"-linux-x86_64.tar.gz")
