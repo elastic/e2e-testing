@@ -44,13 +44,11 @@ const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // BuildArtifactName builds the artifact name from the different coordinates for the artifact
-func BuildArtifactName(artifact string, version string, fallbackVersion string, OS string, arch string, extension string, isDocker bool) string {
+func BuildArtifactName(artifact string, artifactVersion string, OS string, arch string, extension string, isDocker bool) string {
 	dockerString := ""
 	if isDocker {
 		dockerString = ".docker"
 	}
-
-	artifactVersion := CheckPRVersion(version, fallbackVersion)
 
 	lowerCaseExtension := strings.ToLower(extension)
 
@@ -91,7 +89,7 @@ func CheckPRVersion(version string, fallbackVersion string) string {
 // to be used will be defined by the local snapshot produced by the local build.
 // Else, if the environment variable BEATS_USE_CI_SNAPSHOTS is set, then the artifact
 // to be downloaded will be defined by the latest snapshot produced by the Beats CI.
-func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, fallbackVersion string, timeoutFactor int, xpack bool) (string, error) {
+func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool) (string, error) {
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if beatsLocalPath != "" {
 		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.local.fetch", apm.SpanOptions{
@@ -162,7 +160,7 @@ func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 
 		log.Debugf("Using CI snapshots for %s", artifact)
 
-		bucket, prefix, object := getGCPBucketCoordinates(artifactName, artifact, version, fallbackVersion)
+		bucket, prefix, object := getGCPBucketCoordinates(artifactName, artifact, version)
 
 		maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
@@ -196,7 +194,7 @@ func GetArchitecture() string {
 }
 
 // getGCPBucketCoordinates it calculates the bucket path in GCP
-func getGCPBucketCoordinates(fileName string, artifact string, version string, fallbackVersion string) (string, string, string) {
+func getGCPBucketCoordinates(fileName string, artifact string, version string) (string, string, string) {
 	bucket := "beats-ci-artifacts"
 	prefix := fmt.Sprintf("snapshots/%s", artifact)
 	object := fileName
@@ -206,8 +204,7 @@ func getGCPBucketCoordinates(fileName string, artifact string, version string, f
 	if commitSHA != "" {
 		log.WithFields(log.Fields{
 			"commit":  commitSHA,
-			"PR":      version,
-			"version": fallbackVersion,
+			"version": version,
 		}).Debug("Using CI snapshots for a commit")
 		prefix = fmt.Sprintf("commits/%s", commitSHA)
 		object = artifact + "/" + fileName
