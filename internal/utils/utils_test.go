@@ -311,12 +311,7 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "amd64"
 		extension := "tar.gz"
-<<<<<<< HEAD
-		fallbackVersion := "7.13.0-SNAPSHOT"
 		expectedFileName := "elastic-agent-7.13.0-SNAPSHOT-docker-image-linux-amd64.tar.gz"
-=======
-		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-docker-image-linux-amd64.tar.gz"
->>>>>>> 55156f1 (fix: use beat_version as fallback if it's provided (#1256))
 
 		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -331,12 +326,7 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "arm64"
 		extension := "tar.gz"
-<<<<<<< HEAD
-		fallbackVersion := "7.13.0-SNAPSHOT"
 		expectedFileName := "elastic-agent-7.13.0-SNAPSHOT-docker-image-linux-arm64.tar.gz"
-=======
-		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-docker-image-linux-arm64.tar.gz"
->>>>>>> 55156f1 (fix: use beat_version as fallback if it's provided (#1256))
 
 		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
