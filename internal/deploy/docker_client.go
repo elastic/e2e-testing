@@ -75,6 +75,7 @@ func buildTarForDeployment(file *os.File) (bytes.Buffer, error) {
 // CopyFileToContainer copies a file to the running container
 func CopyFileToContainer(ctx context.Context, containerName string, srcPath string, parentDir string, isTar bool) error {
 	dockerClient := getDockerClient()
+	defer dockerClient.Close()
 
 	log.WithFields(log.Fields{
 		"container": containerName,
@@ -146,6 +147,7 @@ func ExecCommandIntoContainer(ctx context.Context, container string, user string
 // ExecCommandIntoContainerWithEnv executes a command, as a user, with env, into a container
 func ExecCommandIntoContainerWithEnv(ctx context.Context, container string, user string, cmd []string, env []string) (string, error) {
 	dockerClient := getDockerClient()
+	defer dockerClient.Close()
 
 	detach := false
 	tty := false
@@ -294,6 +296,7 @@ func GetContainerHostname(containerName string) (string, error) {
 // Docker container, identified by its name
 func InspectContainer(service ServiceRequest) (*types.ContainerJSON, error) {
 	dockerClient := getDockerClient()
+	defer dockerClient.Close()
 
 	ctx := context.Background()
 
@@ -319,6 +322,7 @@ func InspectContainer(service ServiceRequest) (*types.ContainerJSON, error) {
 // ListContainers returns a list of running containers
 func ListContainers() ([]types.Container, error) {
 	dockerClient := getDockerClient()
+	defer dockerClient.Close()
 	ctx := context.Background()
 
 	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{})
@@ -331,7 +335,7 @@ func ListContainers() ([]types.Container, error) {
 // RemoveContainer removes a container identified by its container name
 func RemoveContainer(containerName string) error {
 	dockerClient := getDockerClient()
-
+	defer dockerClient.Close()
 	ctx := context.Background()
 
 	options := types.ContainerRemoveOptions{
@@ -368,6 +372,7 @@ func LoadImage(imagePath string) error {
 	}
 
 	dockerClient := getDockerClient()
+	defer dockerClient.Close()
 	file, err := os.Open(imagePath)
 
 	input, err := gzip.NewReader(file)
@@ -390,7 +395,7 @@ func LoadImage(imagePath string) error {
 // TagImage tags an existing src image into a target one
 func TagImage(src string, target string) error {
 	dockerClient := getDockerClient()
-
+	defer dockerClient.Close()
 	maxTimeout := 5 * time.Second * time.Duration(utils.TimeoutFactor)
 	exp := utils.GetExponentialBackOff(maxTimeout)
 	retryCount := 0
@@ -425,7 +430,7 @@ func TagImage(src string, target string) error {
 // RemoveDevNetwork removes the developer network
 func RemoveDevNetwork() error {
 	dockerClient := getDockerClient()
-
+	defer dockerClient.Close()
 	ctx := context.Background()
 
 	log.WithFields(log.Fields{
@@ -490,6 +495,7 @@ func PullImages(ctx context.Context, images []string) error {
 	defer span.End()
 
 	c := getDockerClient()
+	defer c.Close()
 
 	platform := "linux/" + utils.GetArchitecture()
 
