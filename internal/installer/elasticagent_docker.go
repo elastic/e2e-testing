@@ -97,7 +97,7 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 	arch := utils.GetArchitecture()
 	extension := "tar.gz"
 
-	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, common.BeatVersion, os, arch, extension, false)
+	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, os, arch, extension, false)
 	binaryPath, err := utils.FetchBeatsBinary(ctx, binaryName, artifact, common.BeatVersion, common.BeatVersion, utils.TimeoutFactor, true)
 	if err != nil {
 		log.WithFields(log.Fields{

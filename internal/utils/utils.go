@@ -44,13 +44,11 @@ const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // BuildArtifactName builds the artifact name from the different coordinates for the artifact
-func BuildArtifactName(artifact string, version string, fallbackVersion string, OS string, arch string, extension string, isDocker bool) string {
+func BuildArtifactName(artifact string, artifactVersion string, OS string, arch string, extension string, isDocker bool) string {
 	dockerString := ""
 	if isDocker {
 		dockerString = ".docker"
 	}
-
-	artifactVersion := CheckPRVersion(version, fallbackVersion)
 
 	lowerCaseExtension := strings.ToLower(extension)
 

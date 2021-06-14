@@ -54,10 +54,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "rpm"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-x86_64.rpm"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "RPM", false)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "RPM", false)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For RPM (arm64)", func(t *testing.T) {
@@ -65,10 +65,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "rpm"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-aarch64.rpm"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "RPM", false)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "RPM", false)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 
@@ -77,10 +77,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "deb"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-amd64.deb"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "DEB", false)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "DEB", false)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For DEB (arm64)", func(t *testing.T) {
@@ -88,10 +88,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "deb"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-arm64.deb"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "DEB", false)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "DEB", false)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 
@@ -100,10 +100,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", false)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", false)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For TAR (arm64)", func(t *testing.T) {
@@ -111,10 +111,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-arm64.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, false)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", false)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", false)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 
@@ -127,10 +127,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-docker-image-linux-amd64.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker from Elastic's repository (arm64)", func(t *testing.T) {
@@ -142,10 +142,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-docker-image-linux-arm64.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 
@@ -158,10 +158,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-docker-image-linux-amd64.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker UBI8 from Elastic's repository (arm64)", func(t *testing.T) {
@@ -173,10 +173,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-docker-image-linux-arm64.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 
@@ -189,10 +189,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker from local repository (arm64)", func(t *testing.T) {
@@ -204,10 +204,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-arm64.docker.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 
@@ -220,10 +220,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker UBI8 from local repository (arm64)", func(t *testing.T) {
@@ -235,10 +235,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-arm64.docker.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 
@@ -251,10 +251,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker from GCP (arm64)", func(t *testing.T) {
@@ -266,10 +266,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-linux-arm64.docker.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 
@@ -282,10 +282,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-amd64.docker.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker UBI8 from GCP (arm64)", func(t *testing.T) {
@@ -297,10 +297,10 @@ func TestBuildArtifactName(t *testing.T) {
 		extension := "tar.gz"
 		expectedFileName := "elastic-agent-ubi8-8.0.0-SNAPSHOT-linux-arm64.docker.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, version, OS, arch, extension, true)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, version, OS, arch, "TAR.GZ", true)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 
@@ -311,13 +311,12 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "amd64"
 		extension := "tar.gz"
-		fallbackVersion := "8.0.0-SNAPSHOT"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-docker-image-linux-amd64.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, fallbackVersion, OS, arch, extension, true)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, fallbackVersion, OS, arch, "TAR.GZ", true)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker for a Pull Request (arm64)", func(t *testing.T) {
@@ -327,13 +326,12 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "arm64"
 		extension := "tar.gz"
-		fallbackVersion := "8.0.0-SNAPSHOT"
 		expectedFileName := "elastic-agent-8.0.0-SNAPSHOT-docker-image-linux-arm64.tar.gz"
 
-		artifactName := BuildArtifactName(artifact, version, fallbackVersion, OS, arch, extension, true)
+		artifactName := BuildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
 
-		artifactName = BuildArtifactName(artifact, version, fallbackVersion, OS, arch, "TAR.GZ", true)
+		artifactName = BuildArtifactName(artifact, version, OS, arch, "TAR.GZ", true)
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 }
