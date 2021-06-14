@@ -24,10 +24,10 @@ type dockerDeploymentManifest struct {
 }
 
 func newDockerDeploy() Deployment {
-	isConnectionString := shell.GetEnv("DOCKER_HOST", "")
+	connectionString := shell.GetEnv("DOCKER_HOST", "")
 	return &dockerDeploymentManifest{
 		Context:          context.Background(),
-		ConnectionString: isConnectionString,
+		ConnectionString: connectionString,
 	}
 }
 
