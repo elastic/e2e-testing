@@ -57,7 +57,7 @@ var syncIntegrationsCmd = &cobra.Command{
 		return errors.New("invalid 'user:branch' format: " + remote + ". Example: 'elastic:master'")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		workspace := config.Op.Workspace
+		workspace := config.OpDir()
 
 		// BeatsRepo default object representing Beats project
 		var BeatsRepo = git.ProjectBuilder.

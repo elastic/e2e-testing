@@ -15,29 +15,29 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// stateRun represents a Run
-type stateRun struct {
+// CurrentRun represents the current Run
+type CurrentRun struct {
 	ID       string            // ID of the run
-	Profile  stateService      // profile of the run (Optional)
+	Profile  Service           // profile of the run (Optional)
 	Env      map[string]string // environment for the run
-	Services []stateService    // services in the run
+	Services []Service         // services in the run
 }
 
-// stateService represents a service in a Run
-type stateService struct {
+// Service represents a service in a Run
+type Service struct {
 	Name string
 }
 
 // Recover recovers the state for a run
-func Recover(id string, workdir string) map[string]string {
-	run := stateRun{
+func Recover(id string, workdir string) CurrentRun {
+	run := CurrentRun{
 		Env: map[string]string{},
 	}
 
 	stateFile := filepath.Join(workdir, id+".run")
 	bytes, err := io.ReadFile(stateFile) //nolint
 	if err != nil {
-		return run.Env
+		return run
 	}
 
 	err = yaml.Unmarshal(bytes, &run)
@@ -47,7 +47,7 @@ func Recover(id string, workdir string) map[string]string {
 		}).Error("Could not unmarshal state")
 	}
 
-	return run.Env
+	return run
 }
 
 // Destroy destroys the state for a run
@@ -79,21 +79,21 @@ func Update(id string, workdir string, composeFilePaths []string, env map[string
 		"stateFile": stateFile,
 	}).Trace("Updating state")
 
-	run := stateRun{
+	run := CurrentRun{
 		ID:       id,
 		Env:      env,
-		Services: []stateService{},
+		Services: []Service{},
 	}
 
 	if strings.HasSuffix(id, "-profile") {
-		run.Profile = stateService{
+		run.Profile = Service{
 			Name: filepath.Base(filepath.Dir(composeFilePaths[0])),
 		}
 	}
 
 	for i, f := range composeFilePaths {
 		if i > 0 {
-			run.Services = append(run.Services, stateService{
+			run.Services = append(run.Services, Service{
 				Name: filepath.Base(filepath.Dir(f)),
 			})
 		}
