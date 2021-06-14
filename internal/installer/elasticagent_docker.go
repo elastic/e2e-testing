@@ -37,7 +37,7 @@ func (i *elasticAgentDockerPackage) AddFiles(ctx context.Context, files []string
 	span.Context.SetLabel("files", files)
 	defer span.End()
 
-	return i.deploy.AddFiles(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, files)
+	return i.deploy.AddFiles(ctx, common.FleetProfileServiceRequest, i.service, files)
 }
 
 // Inspect returns info on package
@@ -61,7 +61,7 @@ func (i *elasticAgentDockerPackage) Exec(ctx context.Context, args []string) (st
 	span.Context.SetLabel("arguments", args)
 	defer span.End()
 
-	output, err := i.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, args)
+	output, err := i.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, i.service, args)
 	return output, err
 }
 

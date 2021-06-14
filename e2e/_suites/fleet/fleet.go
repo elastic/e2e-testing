@@ -96,7 +96,7 @@ func (fts *FleetTestSuite) afterScenario() {
 
 	if !common.DeveloperMode {
 		_ = fts.deployer.Remove(
-			deploy.NewServiceRequest(common.FleetProfileName),
+			common.FleetProfileServiceRequest,
 			[]deploy.ServiceRequest{
 				deploy.NewServiceRequest(serviceName),
 			},
@@ -346,7 +346,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 		agentService,
 	}
 
-	err = fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, common.ProfileEnv)
+	err = fts.deployer.Add(fts.currentContext, common.FleetProfileServiceRequest, services, common.ProfileEnv)
 	if err != nil {
 		return err
 	}
@@ -958,7 +958,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 		agentService,
 	}
 
-	err := fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, common.ProfileEnv)
+	err := fts.deployer.Add(fts.currentContext, common.FleetProfileServiceRequest, services, common.ProfileEnv)
 	if err != nil {
 		return err
 	}
