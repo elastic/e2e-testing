@@ -57,8 +57,7 @@ func buildStopServiceCommand(srv string) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := deploy.NewServiceManager()
 
-			err := serviceManager.StopCompose(
-				context.Background(), false, []deploy.ServiceRequest{deploy.NewServiceRequest(srv)})
+			err := serviceManager.StopCompose(context.Background(), deploy.NewServiceRequest(srv))
 			if err != nil {
 				log.WithFields(log.Fields{
 					"service": srv,
@@ -76,8 +75,7 @@ func buildStopProfileCommand(key string, profile config.Profile) *cobra.Command 
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceManager := deploy.NewServiceManager()
 
-			err := serviceManager.StopCompose(
-				context.Background(), true, []deploy.ServiceRequest{deploy.NewServiceRequest(key)})
+			err := serviceManager.StopCompose(context.Background(), deploy.NewServiceRequest(key))
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": key,
