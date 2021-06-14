@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/shell"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
