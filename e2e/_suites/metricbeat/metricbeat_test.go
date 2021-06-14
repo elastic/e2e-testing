@@ -360,9 +360,9 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if useCISnapshots || beatsLocalPath != "" {
 		arch := utils.GetArchitecture()
-		artifactName := utils.BuildArtifactName("metricbeat", mts.Version, common.BeatVersionBase, "linux", arch, "tar.gz", true)
 
-		imagePath, err := utils.FetchBeatsBinary(mts.currentContext, artifactName, "metricbeat", mts.Version, common.BeatVersionBase, utils.TimeoutFactor, true)
+		artifactName := utils.BuildArtifactName("metricbeat", mts.Version, common.BeatVersion, "linux", arch, "tar.gz", true)
+		imagePath, err := utils.FetchBeatsBinary(mts.currentContext, artifactName, "metricbeat", mts.Version, common.BeatVersion, utils.TimeoutFactor, true)
 		if err != nil {
 			return err
 		}
