@@ -6,6 +6,7 @@ package deploy
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -16,11 +17,16 @@ import (
 
 // DockerDeploymentManifest deploy manifest for docker
 type dockerDeploymentManifest struct {
-	Context context.Context
+	Context          context.Context
+	ConnectionString string
 }
 
 func newDockerDeploy() Deployment {
-	return &dockerDeploymentManifest{Context: context.Background()}
+	connectionString := shell.GetEnv("DOCKER_HOST", "")
+	return &dockerDeploymentManifest{
+		Context:          context.Background(),
+		ConnectionString: connectionString,
+	}
 }
 
 // Add adds services deployment: the first service in the list must be the profile in which to deploy the service
@@ -163,6 +169,46 @@ func (c *dockerDeploymentManifest) Logs(service ServiceRequest) error {
 
 		return err
 	}
+	return nil
+}
+
+// PreBootstrap sets up environment with docker compose
+func (c *dockerDeploymentManifest) PreBootstrap(ctx context.Context) error {
+	// Check for a docker connection string, this could be a remote docker
+	// instance accessible via ssh.
+	if c.ConnectionString != "" {
+		remoteContextName := "e2e-remote"
+		// clear out existing remote context
+		args := []string{"context", "rm", remoteContextName}
+		_, err := shell.Execute(ctx, ".", "docker", args...)
+		if err != nil {
+			log.WithField("error", err).Warn("Could not find remote context to remove")
+		}
+
+		log.WithField("connectionString", c.ConnectionString).Trace("Connecting to remote docker")
+		args = []string{"context", "create", remoteContextName, "--docker", fmt.Sprintf("host=%s", c.ConnectionString)}
+		_, err = shell.Execute(ctx, ".", "docker", args...)
+		if err != nil {
+			return err
+		}
+
+		// Switch to the context
+		args = []string{"context", "use", remoteContextName}
+		_, err = shell.Execute(ctx, ".", "docker", args...)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Trace("Using docker default context")
+		// Always make sure we use the default docker context if no connection ConnectionString
+		// is defined
+		args := []string{"context", "use", "default"}
+		_, err := shell.Execute(ctx, ".", "docker", args...)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
