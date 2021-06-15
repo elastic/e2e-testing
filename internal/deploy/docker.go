@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/shell"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
@@ -208,23 +207,6 @@ func (c *dockerDeploymentManifest) PreBootstrap(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-	}
-
-	// grab latest docker images
-	if !shell.GetEnvBool("SKIP_PULL") {
-		images := []string{
-			"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
-			"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,
-			"docker.elastic.co/elasticsearch/elasticsearch:" + common.StackVersion,
-			"docker.elastic.co/kibana/kibana:" + common.KibanaVersion,
-			"docker.elastic.co/observability-ci/elastic-agent:" + common.BeatVersion,
-			"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.BeatVersion,
-			"docker.elastic.co/observability-ci/elasticsearch:" + common.StackVersion,
-			"docker.elastic.co/observability-ci/elasticsearch-ubi8:" + common.StackVersion,
-			"docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion,
-			"docker.elastic.co/observability-ci/kibana-ubi8:" + common.KibanaVersion,
-		}
-		PullImages(ctx, images)
 	}
 
 	return nil

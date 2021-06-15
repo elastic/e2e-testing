@@ -119,6 +119,24 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			log.WithField("error", err).Fatal("Unable to run pre-bootstrap initialization")
 		}
 
+		// FIXME: This needs to go into deployer code for docker somehow. Must resolve
+		// cyclic imports since common.defaults now imports deploy module
+		if !shell.GetEnvBool("SKIP_PULL") {
+			images := []string{
+				"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
+				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,
+				"docker.elastic.co/elasticsearch/elasticsearch:" + common.StackVersion,
+				"docker.elastic.co/kibana/kibana:" + common.KibanaVersion,
+				"docker.elastic.co/observability-ci/elastic-agent:" + common.BeatVersion,
+				"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.BeatVersion,
+				"docker.elastic.co/observability-ci/elasticsearch:" + common.StackVersion,
+				"docker.elastic.co/observability-ci/elasticsearch-ubi8:" + common.StackVersion,
+				"docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion,
+				"docker.elastic.co/observability-ci/kibana-ubi8:" + common.KibanaVersion,
+			}
+			deploy.PullImages(suiteContext, images)
+		}
+
 		common.ProfileEnv = map[string]string{
 			"kibanaVersion": common.KibanaVersion,
 			"stackPlatform": "linux/" + utils.GetArchitecture(),
