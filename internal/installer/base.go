@@ -31,6 +31,9 @@ func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.Servic
 		case "tar":
 			install := AttachElasticAgentTARPackage(deploy, service)
 			return install, nil
+		case "exe":
+			install := AttachElasticAgentEXEPackage(deploy, service)
+			return install, nil
 		case "rpm":
 			install := AttachElasticAgentRPMPackage(deploy, service)
 			return install, nil

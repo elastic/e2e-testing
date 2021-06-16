@@ -6,9 +6,11 @@ package kibana
 
 import (
 	"fmt"
+	"net"
 	"net/url"
 
 	"github.com/elastic/e2e-testing/internal/shell"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -24,6 +26,18 @@ const (
 
 // getBaseURL will pull in the baseurl or an alternative host based on settings
 func getBaseURL() string {
+	// If a custom KIBANA URL is passed, use that instead
+	remoteKibanaHost := shell.GetEnv("KIBANA_URL", "")
+	if remoteKibanaHost != "" {
+		u, err := url.Parse(remoteKibanaHost)
+		host, port, err := net.SplitHostPort(u.Host)
+		if err != nil {
+			log.Fatal("Could not determine host/port from KIBANA_URL")
+		}
+		endpoint := fmt.Sprintf("http://%s:%s", host, port)
+		return endpoint
+	}
+
 	// If a remote docker host is set we need to make sure that kibana is pointed there
 	// since API calls happen outside of the docker network
 	dockerHost := shell.GetEnv("DOCKER_HOST", "")

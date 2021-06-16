@@ -8,9 +8,11 @@ import (
 	"context"
 	"os"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/cucumber/godog"
+	"github.com/cucumber/godog/colors"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
@@ -19,6 +21,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
+	flag "github.com/spf13/pflag"
 	"go.elastic.co/apm"
 )
 
@@ -121,7 +124,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		// FIXME: This needs to go into deployer code for docker somehow. Must resolve
 		// cyclic imports since common.defaults now imports deploy module
-		if !shell.GetEnvBool("SKIP_PULL") {
+		if !shell.GetEnvBool("SKIP_PULL") && shell.GetEnv("PROVIDER", "docker") != "manual" {
 			images := []string{
 				"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
 				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,
@@ -188,4 +191,32 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			deployer.Destroy(suiteContext, common.FleetProfileServiceRequest)
 		}
 	})
+}
+
+var opts = godog.Options{
+	Output: colors.Colored(os.Stdout),
+	Format: "progress", // can define default values
+}
+
+func init() {
+	godog.BindCommandLineFlags("godog.", &opts) // godog v0.11.0 (latest)
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	opts.Paths = flag.Args()
+
+	status := godog.TestSuite{
+		Name:                 "godogs",
+		TestSuiteInitializer: InitializeIngestManagerTestSuite,
+		ScenarioInitializer:  InitializeIngestManagerTestScenario,
+		Options:              &opts,
+	}.Run()
+
+	// Optional: Run `testing` package's logic besides godog.
+	if st := m.Run(); st > status {
+		status = st
+	}
+
+	os.Exit(status)
 }
