@@ -112,6 +112,15 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
+		deployer := deploy.New(common.Provider)
+
+		err := deployer.PreBootstrap(suiteContext)
+		if err != nil {
+			log.WithField("error", err).Fatal("Unable to run pre-bootstrap initialization")
+		}
+
+		// FIXME: This needs to go into deployer code for docker somehow. Must resolve
+		// cyclic imports since common.defaults now imports deploy module
 		if !shell.GetEnvBool("SKIP_PULL") {
 			images := []string{
 				"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
@@ -140,7 +149,6 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
 		}
 
-		deployer := deploy.New(common.Provider)
 		deployer.Bootstrap(suiteContext, common.FleetProfileServiceRequest, common.ProfileEnv, func() error {
 			kibanaClient, err := kibana.NewClient()
 			if err != nil {
