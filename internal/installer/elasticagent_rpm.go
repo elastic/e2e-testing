@@ -146,8 +146,7 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 	}
 	extension := "rpm"
 
-	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, os, arch, extension, false)
-	binaryPath, err := utils.FetchBeatsBinary(ctx, binaryName, artifact, common.BeatVersion, utils.TimeoutFactor, true)
+	binaryName, binaryPath, err := utils.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,

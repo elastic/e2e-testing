@@ -43,8 +43,8 @@ const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 //nolint:unused
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-// BuildArtifactName builds the artifact name from the different coordinates for the artifact
-func BuildArtifactName(artifact string, artifactVersion string, OS string, arch string, extension string, isDocker bool) string {
+// buildArtifactName builds the artifact name from the different coordinates for the artifact
+func buildArtifactName(artifact string, artifactVersion string, OS string, arch string, extension string, isDocker bool) string {
 	dockerString := ""
 	if isDocker {
 		dockerString = ".docker"
@@ -84,12 +84,31 @@ func CheckPRVersion(version string, fallbackVersion string) string {
 	return version
 }
 
-// FetchBeatsBinary it downloads the binary and returns the location of the downloaded file
+// FetchElasticArtifact fetches an artifact from the right repository, returning binary name, path and error
+func FetchElasticArtifact(ctx context.Context, artifact string, version string, os string, arch string, extension string, isDocker bool, xpack bool) (string, string, error) {
+	binaryName := buildArtifactName(artifact, version, os, arch, extension, isDocker)
+	binaryPath, err := fetchBeatsBinary(ctx, binaryName, artifact, version, TimeoutFactor, xpack)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"artifact":  artifact,
+			"version":   version,
+			"os":        os,
+			"arch":      arch,
+			"extension": extension,
+			"error":     err,
+		}).Error("Could not download the binary for the agent")
+		return "", "", err
+	}
+
+	return binaryName, binaryPath, nil
+}
+
+// fetchBeatsBinary it downloads the binary and returns the location of the downloaded file
 // If the environment variable BEATS_LOCAL_PATH is set, then the artifact
 // to be used will be defined by the local snapshot produced by the local build.
 // Else, if the environment variable BEATS_USE_CI_SNAPSHOTS is set, then the artifact
 // to be downloaded will be defined by the latest snapshot produced by the Beats CI.
-func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool) (string, error) {
+func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool) (string, error) {
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if beatsLocalPath != "" {
 		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.local.fetch", apm.SpanOptions{

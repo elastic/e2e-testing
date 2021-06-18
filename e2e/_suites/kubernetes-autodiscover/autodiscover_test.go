@@ -135,8 +135,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 	if useCISnapshots || beatsLocalPath != "" {
 		log.Debugf("Configuring Docker image for %s", podName)
 
-		artifactName := utils.BuildArtifactName(podName, common.BeatVersion, "linux", "amd64", "tar.gz", true)
-		imagePath, err := utils.FetchBeatsBinary(m.ctx, artifactName, podName, common.BeatVersion, utils.TimeoutFactor, true)
+		_, imagePath, err := utils.FetchElasticArtifact(m.ctx, podName, common.BeatVersion, "linux", "amd64", "tar.gz", true, true)
 		if err != nil {
 			return err
 		}
