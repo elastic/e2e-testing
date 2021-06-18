@@ -16,12 +16,21 @@ func Test_ServiceRequest_GetName(t *testing.T) {
 		srv := NewServiceRequest("foo")
 
 		assert.Equal(t, "foo", srv.GetName(), "Service name has no flavour")
+		assert.Equal(t, "foo", srv.GetRealFlavour(), "Flavour matches with service name")
 	})
 
 	t.Run("ServiceRequest including flavour", func(t *testing.T) {
 		srv := NewServiceRequest("foo").WithFlavour("bar")
 
 		assert.Equal(t, filepath.Join("foo", "bar"), srv.GetName(), "Service name includes flavour")
+		assert.Equal(t, "bar", srv.GetRealFlavour(), "Flavour matches with latest flavour")
+	})
+
+	t.Run("ServiceRequest including flavour with subdirs", func(t *testing.T) {
+		srv := NewServiceRequest("foo").WithFlavour("bar-baaz")
+
+		assert.Equal(t, filepath.Join("foo", "bar", "baaz"), srv.GetName(), "Service name includes flavour with subdir")
+		assert.Equal(t, "baaz", srv.GetRealFlavour(), "Flavour matches with latest flavour")
 	})
 }
 

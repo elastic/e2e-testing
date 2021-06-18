@@ -71,6 +71,7 @@ type WaitForServiceRequest struct {
 type ServiceRequest struct {
 	Name           string
 	Flavour        string                  // optional, configured using builder method
+	flavourPath    []string                // full path to the flavour
 	Scale          int                     // default: 1
 	WaitStrategies []WaitForServiceRequest // wait strategies for the service
 }
@@ -79,17 +80,23 @@ type ServiceRequest struct {
 func NewServiceRequest(n string) ServiceRequest {
 	return ServiceRequest{
 		Name:           n,
+		flavourPath:    []string{n},
 		Scale:          1,
 		WaitStrategies: []WaitForServiceRequest{},
 	}
+}
+
+// GetRealFlavour returns the name of the last element in the flavour chain
+func (sr ServiceRequest) GetRealFlavour() string {
+	return sr.flavourPath[len(sr.flavourPath)-1]
 }
 
 // GetName returns the name of the service request, including flavour if needed
 func (sr ServiceRequest) GetName() string {
 	serviceIncludingFlavour := sr.Name
 	if sr.Flavour != "" {
-		// discover the flavour in the subdir
-		serviceIncludingFlavour = filepath.Join(sr.Name, sr.Flavour)
+		// discover the flavours in the subdirs
+		serviceIncludingFlavour = filepath.Join(sr.flavourPath...)
 	}
 
 	return serviceIncludingFlavour
@@ -99,6 +106,20 @@ func (sr ServiceRequest) GetName() string {
 // using flavour as a subdir of the service
 func (sr ServiceRequest) WithFlavour(f string) ServiceRequest {
 	sr.Flavour = f
+
+	sr.flavourPath = []string{sr.Name}
+
+	if sr.Flavour != "" {
+		// discover the flavour in the subdir
+		// we will use the '-' character to represent a subdir in the Gherkin files.
+		// This way we will abstract from the underlying OS path separator, nesting
+		// subdirs with each occurrente. I.e. 'a-b-c' will look up the file name under
+		// "name/a/b/c" in Linux and "name\a\b\c" in Windows.
+		flavourPath := strings.Split(sr.Flavour, "-")
+
+		sr.flavourPath = append(sr.flavourPath, flavourPath...)
+	}
+
 	return sr
 }
 
