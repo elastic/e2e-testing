@@ -14,6 +14,7 @@ This repository contains:
     - [Fleet](./e2e/_suites/fleet)
         - Stand-Alone mode
         - Fleet mode
+        - and more!
     - [Metricbeat Integrations](./e2e/_suites/metricbeat)
         - Apache
         - MySQL
