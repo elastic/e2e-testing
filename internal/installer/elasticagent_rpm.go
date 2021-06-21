@@ -7,6 +7,7 @@ package installer
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
@@ -117,75 +118,86 @@ func (i *elasticAgentRPMPackage) Logs() error {
 
 // Postinstall executes operations after installing a RPM package
 func (i *elasticAgentRPMPackage) Postinstall(ctx context.Context) error {
-	cmds := []string{"systemctl", "restart", "elastic-agent"}
-	span, _ := apm.StartSpanOptions(ctx, "Post-install operations for the Elastic Agent", "elastic-agent.rpm.post-install", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	span.Context.SetLabel("arguments", cmds)
-	defer span.End()
-
-	_, err := i.Exec(ctx, cmds)
-	if err != nil {
-		return err
+	for _, bp := range i.service.BackgroundProcesses {
+		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
+			// post-install the dependant binary first
+			err := systemCtlPostInstall(ctx, "centos", bp, i.Exec)
+			if err != nil {
+				return err
+			}
+		}
 	}
-	return nil
+
+	return systemCtlPostInstall(ctx, "centos", "elastic-agent", i.Exec)
 }
 
 // Preinstall executes operations before installing a RPM package
 func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
-	span, _ := apm.StartSpanOptions(ctx, "Pre-install operations for the Elastic Agent", "elastic-agent.rpm.pre-install", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	defer span.End()
+	installArtifactFn := func(ctx context.Context, artifact string) error {
+		span, _ := apm.StartSpanOptions(ctx, "Pre-install "+artifact, artifact+".rpm.pre-install", apm.SpanOptions{
+			Parent: apm.SpanFromContext(ctx).TraceContext(),
+		})
+		defer span.End()
 
-	artifact := "elastic-agent"
-	os := "linux"
-	arch := "x86_64"
-	if utils.GetArchitecture() == "arm64" {
-		arch = "aarch64"
+		os := "linux"
+		arch := "x86_64"
+		if utils.GetArchitecture() == "arm64" {
+			arch = "aarch64"
+		}
+		extension := "rpm"
+
+		binaryName, binaryPath, err := utils.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"artifact":  artifact,
+				"version":   common.BeatVersion,
+				"os":        os,
+				"arch":      arch,
+				"extension": extension,
+				"error":     err,
+			}).Error("Could not download the binary for the agent")
+			return err
+		}
+
+		err = i.AddFiles(ctx, []string{binaryPath})
+		if err != nil {
+			return err
+		}
+
+		_, err = i.Exec(ctx, []string{"yum", "localinstall", "/" + binaryName, "-y"})
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
-	extension := "rpm"
 
-	binaryName, binaryPath, err := utils.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"artifact":  artifact,
-			"version":   common.BeatVersion,
-			"os":        os,
-			"arch":      arch,
-			"extension": extension,
-			"error":     err,
-		}).Error("Could not download the binary for the agent")
-		return err
+	for _, bp := range i.service.BackgroundProcesses {
+		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
+			// pre-install the dependant binary first
+			err := installArtifactFn(ctx, bp)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
-	err = i.AddFiles(context.Background(), []string{binaryPath})
-	if err != nil {
-		return err
-	}
-
-	_, err = i.Exec(ctx, []string{"yum", "localinstall", "/" + binaryName, "-y"})
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return installArtifactFn(ctx, "elastic-agent")
 }
 
 // Start will start a service
 func (i *elasticAgentRPMPackage) Start(ctx context.Context) error {
-	cmds := []string{"systemctl", "start", "elastic-agent"}
-	span, _ := apm.StartSpanOptions(ctx, "Starting Elastic Agent service", "elastic-agent.rpm.start", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	span.Context.SetLabel("arguments", cmds)
-	defer span.End()
-
-	_, err := i.Exec(ctx, cmds)
-	if err != nil {
-		return err
+	for _, bp := range i.service.BackgroundProcesses {
+		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
+			// start the dependant binary first
+			err := systemCtlStart(ctx, "centos", bp, i.Exec)
+			if err != nil {
+				return err
+			}
+		}
 	}
-	return nil
+
+	return systemCtlStart(ctx, "centos", "elastic-agent", i.Exec)
 }
 
 // Stop will start a service
