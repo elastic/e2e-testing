@@ -45,13 +45,3 @@ func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.Servic
 
 	return nil, nil
 }
-
-// BasePackage holds references to basic state for all installers
-type BasePackage struct {
-	binaryName string
-	commitFile string
-	image      string
-	logFile    string
-	profile    string
-	service    string
-}
