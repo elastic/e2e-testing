@@ -12,17 +12,20 @@ SUITES:
         tags: "metricbeat"
   - suite: "fleet"
     platforms:
+      - "arm64"
       - "ubuntu-18.04"
     scenarios:
       - name: "Fleet"
         pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent"
-      - name: "Fleet Server"
-        pullRequestFilter: " && ~debian"
-        tags: "fleet_server"
       - name: "Endpoint Integration"
+        platforms:
+          - "ubuntu-18.04"
         pullRequestFilter: " && ~debian"
         tags: "agent_endpoint_integration"
+      - name: "Linux Integration"
+        pullRequestFilter: " && ~debian"
+        tags: "linux_integration"
       - name: "Stand-alone"
         pullRequestFilter: " && ~ubi8"
         tags: "stand_alone_agent"
@@ -62,3 +65,13 @@ SUITES:
         tags: "integrations && redisenterprise"
       - name: "vSphere"
         tags: "integrations && vsphere"
+  - suite: "kubernetes-autodiscover"
+    platforms:
+      - "ubuntu-18.04"
+    scenarios:
+      - name: "kubernetes autodiscover with filebeat"
+        tags: "kubernetes-autodiscover && filebeat"
+      - name: "kubernetes autodiscover with heartbeat"
+        tags: "kubernetes-autodiscover && heartbeat"
+      - name: "kubernetes autodiscover with metricbeat"
+        tags: "kubernetes-autodiscover && metricbeat"

@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/cli/services"
+	"github.com/elastic/e2e-testing/internal/deploy"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
@@ -55,9 +55,9 @@ func buildStopServiceCommand(srv string) *cobra.Command {
 		Short: `Stops a ` + srv + ` service`,
 		Long:  `Stops a ` + srv + ` service, stoppping its Docker container`,
 		Run: func(cmd *cobra.Command, args []string) {
-			serviceManager := services.NewServiceManager()
+			serviceManager := deploy.NewServiceManager()
 
-			err := serviceManager.StopCompose(context.Background(), false, []string{srv})
+			err := serviceManager.StopCompose(context.Background(), deploy.NewServiceRequest(srv))
 			if err != nil {
 				log.WithFields(log.Fields{
 					"service": srv,
@@ -73,9 +73,9 @@ func buildStopProfileCommand(key string, profile config.Profile) *cobra.Command 
 		Short: `Stops the ` + profile.Name + ` profile`,
 		Long:  `Stops the ` + profile.Name + ` profile, stopping the Services that compound it`,
 		Run: func(cmd *cobra.Command, args []string) {
-			serviceManager := services.NewServiceManager()
+			serviceManager := deploy.NewServiceManager()
 
-			err := serviceManager.StopCompose(context.Background(), true, []string{key})
+			err := serviceManager.StopCompose(context.Background(), deploy.NewServiceRequest(key))
 			if err != nil {
 				log.WithFields(log.Fields{
 					"profile": key,

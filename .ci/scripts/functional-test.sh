@@ -12,14 +12,17 @@ set -euxo pipefail
 # Parameters:
 #   - SUITE - that's the suite to be tested. Default '' which means all of them.
 #   - TAGS - that's the tags to be tested. Default '' which means all of them.
-#   - STACK_VERSION - that's the version of the stack to be tested. Default '8.0.0-SNAPSHOT'.
-#   - BEAT_VERSION - that's the version of the metricbeat to be tested. Default '8.0.0-SNAPSHOT'.
+#   - STACK_VERSION - that's the version of the stack to be tested. Default is stored in '.stack-version'.
+#   - BEAT_VERSION - that's the version of the metricbeat to be tested. Default is stored in '.stack-version'.
 #
+
+BASE_VERSION="$(cat $(pwd)/.stack-version)"
 
 SUITE=${1:-''}
 TAGS=${2:-''}
-STACK_VERSION=${3:-'8.0.0-SNAPSHOT'}
-BEAT_VERSION=${4:-'8.0.0-SNAPSHOT'}
+STACK_VERSION=${3:-"${BASE_VERSION}"}
+BEAT_VERSION=${4:-"${BASE_VERSION}"}
+GOARCH=${GOARCH:-"amd64"}
 
 ## Install the required dependencies for the given SUITE
 .ci/scripts/install-test-dependencies.sh "${SUITE}"
@@ -27,6 +30,6 @@ BEAT_VERSION=${4:-'8.0.0-SNAPSHOT'}
 rm -rf outputs || true
 mkdir -p outputs
 
-REPORT="$(pwd)/outputs/TEST-${SUITE}"
+REPORT="$(pwd)/outputs/TEST-${GOARCH}-${SUITE}"
 
-SUITE=${SUITE} TAGS="${TAGS}" FORMAT=junit:${REPORT}.xml STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} make --no-print-directory -C e2e functional-test
+TAGS="${TAGS}" FORMAT=junit:${REPORT}.xml GOARCH=${GOARCH} STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} make --no-print-directory -C e2e/_suites/${SUITE} functional-test

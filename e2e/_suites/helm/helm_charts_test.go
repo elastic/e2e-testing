@@ -13,11 +13,11 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/cli/services"
-	k8s "github.com/elastic/e2e-testing/cli/services"
-	shell "github.com/elastic/e2e-testing/cli/shell"
-	"github.com/elastic/e2e-testing/e2e"
-	"github.com/elastic/e2e-testing/e2e/steps"
+	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/helm"
+	"github.com/elastic/e2e-testing/internal/kubectl"
+	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/internal/utils"
 	"go.elastic.co/apm"
 
 	"github.com/cucumber/godog"
@@ -25,22 +25,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// developerMode tears down the backend services (the k8s cluster)
-// after a test suite. This is the desired behavior, but when developing, we maybe want to keep
-// them running to speed up the development cycle.
-// It can be overriden by the DEVELOPER_MODE env var
-var developerMode = false
-
-var elasticAPMActive = false
-
-var helm k8s.HelmManager
-
-// timeoutFactor a multiplier for the max timeout when doing backoff retries.
-// It can be overriden by TIMEOUT_FACTOR env var
-var timeoutFactor = 2
+var helmManager helm.Manager
 
 //nolint:unused
-var kubectl k8s.Kubectl
+var kubectlClient kubectl.Kubectl
 
 // helmVersion represents the default version used for Helm
 var helmVersion = "3.x"
@@ -51,10 +39,6 @@ var helmChartVersion = "7.11.2"
 // kubernetesVersion represents the default version used for Kubernetes
 var kubernetesVersion = "1.18.2"
 
-// stackVersion is the version of the stack to use
-// It can be overriden by STACK_VERSION env var
-var stackVersion = "8.0.0-SNAPSHOT"
-
 var testSuite HelmChartTestSuite
 
 var tx *apm.Transaction
@@ -63,38 +47,18 @@ var stepSpan *apm.Span
 func setupSuite() {
 	config.Init()
 
-	developerMode = shell.GetEnvBool("DEVELOPER_MODE")
-	if developerMode {
-		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
-	}
-
-	elasticAPMActive = shell.GetEnvBool("ELASTIC_APM_ACTIVE")
-	if elasticAPMActive {
-		log.WithFields(log.Fields{
-			"apm-environment": shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "local"),
-		}).Info("Current execution will be instrumented 🛠")
-	}
-
 	helmVersion = shell.GetEnv("HELM_VERSION", helmVersion)
 	helmChartVersion = shell.GetEnv("HELM_CHART_VERSION", helmChartVersion)
-	kubernetesVersion = shell.GetEnv("HELM_KUBERNETES_VERSION", kubernetesVersion)
-	timeoutFactor = shell.GetEnvInteger("TIMEOUT_FACTOR", timeoutFactor)
+	kubernetesVersion = shell.GetEnv("KUBERNETES_VERSION", kubernetesVersion)
 
-	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
-	v, err := e2e.GetElasticArtifactVersion(stackVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": stackVersion,
-		}).Fatal("Failed to get stack version, aborting")
-	}
-	stackVersion = v
+	common.InitVersions()
 
-	h, err := k8s.HelmFactory(helmVersion)
+	h, err := helm.Factory(helmVersion)
 	if err != nil {
 		log.Fatalf("Helm could not be initialised: %v", err)
 	}
-	helm = h
+
+	helmManager = h
 
 	testSuite = HelmChartTestSuite{
 		ClusterName:       "helm-charts-test-suite",
@@ -132,7 +96,7 @@ func (ts *HelmChartTestSuite) aClusterIsRunning() error {
 }
 
 func (ts *HelmChartTestSuite) addElasticRepo(ctx context.Context) error {
-	err := helm.AddRepo(ctx, "elastic", "https://helm.elastic.co")
+	err := helmManager.AddRepo(ctx, "elastic", "https://helm.elastic.co")
 	if err != nil {
 		log.WithField("error", err).Error("Could not add Elastic Helm repo")
 	}
@@ -143,7 +107,7 @@ func (ts *HelmChartTestSuite) aResourceContainsTheKey(resource string, key strin
 	lowerResource := strings.ToLower(resource)
 	escapedKey := strings.ReplaceAll(key, ".", `\.`)
 
-	output, err := kubectl.Run(ts.currentContext, "get", lowerResource, ts.getResourceName(resource), "-o", `jsonpath="{.data['`+escapedKey+`']}"`)
+	output, err := kubectlClient.Run(ts.currentContext, "get", lowerResource, ts.getResourceName(resource), "-o", `jsonpath="{.data['`+escapedKey+`']}"`)
 	if err != nil {
 		return err
 	}
@@ -162,7 +126,7 @@ func (ts *HelmChartTestSuite) aResourceContainsTheKey(resource string, key strin
 func (ts *HelmChartTestSuite) aResourceManagesRBAC(resource string) error {
 	lowerResource := strings.ToLower(resource)
 
-	output, err := kubectl.Run(ts.currentContext, "get", lowerResource, ts.getResourceName(resource), "-o", `jsonpath="'{.metadata.labels.chart}'"`)
+	output, err := kubectlClient.Run(ts.currentContext, "get", lowerResource, ts.getResourceName(resource), "-o", `jsonpath="'{.metadata.labels.chart}'"`)
 	if err != nil {
 		return err
 	}
@@ -179,18 +143,18 @@ func (ts *HelmChartTestSuite) aResourceManagesRBAC(resource string) error {
 }
 
 func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error {
-	selector, err := kubectl.GetResourceSelector(ts.currentContext, "deployment", ts.Name+"-"+ts.Name)
+	selector, err := kubectlClient.GetResourceSelector(ts.currentContext, "deployment", ts.Name+"-"+ts.Name)
 	if err != nil {
 		return err
 	}
 
-	maxTimeout := time.Duration(timeoutFactor) * time.Minute
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 
-	exp := e2e.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 	retryCount := 1
 
 	checkEndpointsFn := func() error {
-		output, err := kubectl.GetStringResourcesBySelector(ts.currentContext, "endpoints", selector)
+		output, err := kubectlClient.GetStringResourcesBySelector(ts.currentContext, "endpoints", selector)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"elapsedTime": exp.GetElapsedTime(),
@@ -254,7 +218,7 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 }
 
 func (ts *HelmChartTestSuite) aResourceWillManagePods(resourceType string) error {
-	selector, err := kubectl.GetResourceSelector(ts.currentContext, "deployment", ts.Name+"-"+ts.Name)
+	selector, err := kubectlClient.GetResourceSelector(ts.currentContext, "deployment", ts.Name+"-"+ts.Name)
 	if err != nil {
 		return err
 	}
@@ -273,7 +237,7 @@ func (ts *HelmChartTestSuite) aResourceWillManagePods(resourceType string) error
 }
 
 func (ts *HelmChartTestSuite) checkResources(resourceType, selector string, min int) ([]interface{}, error) {
-	resources, err := kubectl.GetResourcesBySelector(ts.currentContext, resourceType, selector)
+	resources, err := kubectlClient.GetResourcesBySelector(ts.currentContext, resourceType, selector)
 	if err != nil {
 		return nil, err
 	}
@@ -315,7 +279,7 @@ func (ts *HelmChartTestSuite) createCluster(ctx context.Context, k8sVersion stri
 }
 
 func (ts *HelmChartTestSuite) deleteChart() {
-	err := helm.DeleteChart(ts.currentContext, ts.Name)
+	err := helmManager.DeleteChart(ts.currentContext, ts.Name)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"chart": ts.Name,
@@ -364,23 +328,23 @@ func (ts *HelmChartTestSuite) getPodName() string {
 
 // getResourceName returns the name of the service, in lowercase, based on the k8s resource
 func (ts *HelmChartTestSuite) getResourceName(resource string) string {
-	if resource == k8s.ResourceTypes.ClusterRole {
+	if resource == kubectl.ResourceTypes.ClusterRole {
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role")
-	} else if resource == k8s.ResourceTypes.ClusterRoleBinding {
+	} else if resource == kubectl.ResourceTypes.ClusterRoleBinding {
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-cluster-role-binding")
-	} else if resource == k8s.ResourceTypes.ConfigMap {
+	} else if resource == kubectl.ResourceTypes.ConfigMap {
 		if ts.Name == "filebeat" || ts.Name == "metricbeat" {
 			return strings.ToLower(ts.Name + "-" + ts.Name + "-daemonset-config")
 		}
 		return strings.ToLower(ts.Name + "-" + ts.Name + "-config")
-	} else if resource == k8s.ResourceTypes.Daemonset {
+	} else if resource == kubectl.ResourceTypes.Daemonset {
 		return strings.ToLower(ts.Name + "-" + ts.Name)
-	} else if resource == k8s.ResourceTypes.Deployment {
+	} else if resource == kubectl.ResourceTypes.Deployment {
 		if ts.Name == "metricbeat" {
 			return strings.ToLower(ts.Name + "-" + ts.Name + "-metrics")
 		}
 		return strings.ToLower(ts.Name + "-" + ts.Name)
-	} else if resource == k8s.ResourceTypes.ServiceAccount {
+	} else if resource == kubectl.ResourceTypes.ServiceAccount {
 		return strings.ToLower(ts.Name + "-" + ts.Name)
 	}
 
@@ -400,7 +364,7 @@ func (ts *HelmChartTestSuite) install(ctx context.Context, chart string) error {
 		defer span.End()
 
 		// Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes
-		_, err := kubectl.Run(ctx, "apply", "-f", "https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml")
+		_, err := kubectlClient.Run(ctx, "apply", "-f", "https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml")
 		if err != nil {
 			log.Errorf("Could not apply Rancher Local Path Provisioner: %v", err)
 			return err
@@ -409,13 +373,13 @@ func (ts *HelmChartTestSuite) install(ctx context.Context, chart string) error {
 			"chart": ts.Name,
 		}).Info("Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes installed")
 
-		maxTimeout := timeoutFactor * 100
+		maxTimeout := utils.TimeoutFactor * 100
 
 		log.Debug("Applying workaround to use Rancher's local-path storage class for Elasticsearch volumes")
 		flags = []string{"--wait", fmt.Sprintf("--timeout=%ds", maxTimeout), "--values", "https://raw.githubusercontent.com/elastic/helm-charts/master/elasticsearch/examples/kubernetes-kind/values.yaml"}
 	}
 
-	return helm.InstallChart(ctx, ts.Name, elasticChart, ts.Version, flags)
+	return helmManager.InstallChart(ctx, ts.Name, elasticChart, ts.Version, flags)
 }
 
 func (ts *HelmChartTestSuite) installRuntimeDependencies(ctx context.Context, dependencies ...string) error {
@@ -435,7 +399,7 @@ func (ts *HelmChartTestSuite) installRuntimeDependencies(ctx context.Context, de
 }
 
 func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
-	output, err := kubectl.Run(ts.currentContext, "get", "daemonset", "--namespace=default", "-l", "app="+ts.Name+"-"+ts.Name, "-o", "jsonpath='{.items[0].metadata.labels.chart}'")
+	output, err := kubectlClient.Run(ts.currentContext, "get", "daemonset", "--namespace=default", "-l", "app="+ts.Name+"-"+ts.Name, "-o", "jsonpath='{.items[0].metadata.labels.chart}'")
 	if err != nil {
 		return err
 	}
@@ -452,7 +416,7 @@ func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
 }
 
 func (ts *HelmChartTestSuite) resourceConstraintsAreApplied(constraint string) error {
-	output, err := kubectl.Run(ts.currentContext, "get", "pods", "-l", "app="+ts.getPodName(), "-o", "jsonpath='{.items[0].spec.containers[0].resources."+constraint+"}'")
+	output, err := kubectlClient.Run(ts.currentContext, "get", "pods", "-l", "app="+ts.getPodName(), "-o", "jsonpath='{.items[0].spec.containers[0].resources."+constraint+"}'")
 	if err != nil {
 		return err
 	}
@@ -472,7 +436,7 @@ func (ts *HelmChartTestSuite) resourceConstraintsAreApplied(constraint string) e
 func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(resource string) error {
 	lowerResource := strings.ToLower(resource)
 
-	output, err := kubectl.Run(ts.currentContext, "get", lowerResource, ts.getResourceName(resource), "-o", "jsonpath='{.metadata.labels.chart}'")
+	output, err := kubectlClient.Run(ts.currentContext, "get", lowerResource, ts.getResourceName(resource), "-o", "jsonpath='{.metadata.labels.chart}'")
 	if err != nil {
 		return err
 	}
@@ -489,7 +453,7 @@ func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(reso
 }
 
 func (ts *HelmChartTestSuite) strategyCanBeUsedDuringUpdates(strategy string) error {
-	return ts.strategyCanBeUsedForResourceDuringUpdates(strategy, k8s.ResourceTypes.Daemonset)
+	return ts.strategyCanBeUsedForResourceDuringUpdates(strategy, kubectl.ResourceTypes.Daemonset)
 }
 
 func (ts *HelmChartTestSuite) strategyCanBeUsedForResourceDuringUpdates(strategy string, resource string) error {
@@ -497,11 +461,11 @@ func (ts *HelmChartTestSuite) strategyCanBeUsedForResourceDuringUpdates(strategy
 	strategyKey := "strategy"
 	name := ts.getResourceName(resource)
 
-	if resource == k8s.ResourceTypes.Daemonset {
+	if resource == kubectl.ResourceTypes.Daemonset {
 		strategyKey = "updateStrategy"
 	}
 
-	output, err := kubectl.Run(ts.currentContext, "get", lowerResource, name, "-o", `go-template={{.spec.`+strategyKey+`.type}}`)
+	output, err := kubectlClient.Run(ts.currentContext, "get", lowerResource, name, "-o", `go-template={{.spec.`+strategyKey+`.type}}`)
 	if err != nil {
 		return err
 	}
@@ -526,7 +490,7 @@ func (ts *HelmChartTestSuite) volumeMountedWithSubpath(name string, mountPath st
 
 	getMountValues := func(key string) ([]string, error) {
 		// build the arguments for capturing the volume mounts
-		output, err := kubectl.Run(ts.currentContext, "get", "pods", "-l", "app="+ts.getPodName(), "-o", `jsonpath="{.items[0].spec.containers[0].volumeMounts[*]['`+key+`']}"`)
+		output, err := kubectlClient.Run(ts.currentContext, "get", "pods", "-l", "app="+ts.getPodName(), "-o", `jsonpath="{.items[0].spec.containers[0].volumeMounts[*]['`+key+`']}"`)
 		if err != nil {
 			return []string{}, err
 		}
@@ -591,7 +555,7 @@ func (ts *HelmChartTestSuite) volumeMountedWithSubpath(name string, mountPath st
 func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) error {
 	kubeStateMetrics := "kube-state-metrics"
 
-	output, err := kubectl.Run(ts.currentContext, "get", "deployment", ts.Name+"-"+kubeStateMetrics, "-o", "jsonpath='{.metadata.name}'")
+	output, err := kubectlClient.Run(ts.currentContext, "get", "deployment", ts.Name+"-"+kubeStateMetrics, "-o", "jsonpath='{.metadata.name}'")
 	if err != nil {
 		return err
 	}
@@ -615,7 +579,12 @@ func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 		tx.Context.SetLabel("suite", "helm")
 	})
 
-	ctx.AfterScenario(func(*messages.Pickle, error) {
+	ctx.AfterScenario(func(pickle *messages.Pickle, err error) {
+		if err != nil {
+			e := apm.DefaultTracer.NewError(err)
+			e.Send()
+		}
+
 		f := func() {
 			tx.End()
 
@@ -632,6 +601,11 @@ func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 		testSuite.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
 	})
 	ctx.AfterStep(func(st *godog.Step, err error) {
+		if err != nil {
+			e := apm.DefaultTracer.NewError(err)
+			e.Send()
+		}
+
 		if stepSpan != nil {
 			stepSpan.End()
 		}
@@ -672,22 +646,6 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		if elasticAPMActive {
-			serviceManager := services.NewServiceManager()
-
-			env := map[string]string{
-				"stackVersion": stackVersion,
-			}
-
-			err := serviceManager.RunCompose(suiteContext, true, []string{"helm"}, env)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"profile": "metricbeat",
-				}).Warn("Could not run the profile.")
-			}
-			steps.AddAPMServicesForInstrumentation(suiteContext, "helm", stackVersion, true, env)
-		}
-
 		err := testSuite.createCluster(suiteContext, testSuite.KubernetesVersion)
 		if err != nil {
 			return
@@ -719,21 +677,11 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		if !developerMode {
+		if !common.DeveloperMode {
 			log.Trace("After Suite...")
 			err := testSuite.destroyCluster(suiteContext)
 			if err != nil {
 				return
-			}
-
-			if elasticAPMActive {
-				serviceManager := services.NewServiceManager()
-				err := serviceManager.StopCompose(suiteContext, true, []string{"helm"})
-				if err != nil {
-					log.WithFields(log.Fields{
-						"profile": "helm",
-					}).Error("Could not stop the profile.")
-				}
 			}
 		}
 	})
@@ -748,5 +696,5 @@ func toolsAreInstalled() {
 		"helm",
 	}
 
-	shell.CheckInstalledSoftware(binaries)
+	shell.CheckInstalledSoftware(binaries...)
 }
