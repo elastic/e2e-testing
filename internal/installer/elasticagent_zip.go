@@ -16,41 +16,41 @@ import (
 	"go.elastic.co/apm"
 )
 
-// elasticAgentEXEPackage implements operations for a RPM installer
-type elasticAgentEXEPackage struct {
+// elasticAgentZIPPackage implements operations for a ZIP installer
+type elasticAgentZIPPackage struct {
 	service deploy.ServiceRequest
 	deploy  deploy.Deployment
 }
 
-// AttachElasticAgentEXEPackage creates an instance for the RPM installer
-func AttachElasticAgentEXEPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
-	return &elasticAgentEXEPackage{
+// AttachElasticAgentZIPPackage creates an instance for the ZIP installer
+func AttachElasticAgentZIPPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+	return &elasticAgentZIPPackage{
 		service: service,
 		deploy:  deploy,
 	}
 }
 
 // AddFiles will add files into the service environment, default destination is /
-func (i *elasticAgentEXEPackage) AddFiles(ctx context.Context, files []string) error {
+func (i *elasticAgentZIPPackage) AddFiles(ctx context.Context, files []string) error {
 	return nil
 }
 
 // Inspect returns info on package
-func (i *elasticAgentEXEPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
+func (i *elasticAgentZIPPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
 	return deploy.ServiceOperatorManifest{
 		WorkDir:    "C:\\Program Files\\Elastic\\Agent",
 		CommitFile: "C:\\elastic-agent\\.elastic-agent.active.commit",
 	}, nil
 }
 
-// Install installs a EXE package
-func (i *elasticAgentEXEPackage) Install(ctx context.Context) error {
+// Install installs a package
+func (i *elasticAgentZIPPackage) Install(ctx context.Context) error {
 	log.Trace("No EXE install instructions")
 	return nil
 }
 
 // Exec will execute a command within the service environment
-func (i *elasticAgentEXEPackage) Exec(ctx context.Context, args []string) (string, error) {
+func (i *elasticAgentZIPPackage) Exec(ctx context.Context, args []string) (string, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Executing Elastic Agent command", "elastic-agent.exe.exec", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -62,7 +62,7 @@ func (i *elasticAgentEXEPackage) Exec(ctx context.Context, args []string) (strin
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentEXEPackage) Enroll(ctx context.Context, token string) error {
+func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string) error {
 	cmds := []string{"C:\\elastic-agent\\elastic-agent.exe", "install"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.exe.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -82,23 +82,23 @@ func (i *elasticAgentEXEPackage) Enroll(ctx context.Context, token string) error
 	return nil
 }
 
-// InstallCerts installs the certificates for a EXE package, using the right OS package manager
-func (i *elasticAgentEXEPackage) InstallCerts(ctx context.Context) error {
+// InstallCerts installs the certificates for a ZIP package, using the right OS package manager
+func (i *elasticAgentZIPPackage) InstallCerts(ctx context.Context) error {
 	return nil
 }
 
 // Logs prints logs of service
-func (i *elasticAgentEXEPackage) Logs() error {
+func (i *elasticAgentZIPPackage) Logs() error {
 	return i.deploy.Logs(i.service)
 }
 
 // Postinstall executes operations after installing a EXE package
-func (i *elasticAgentEXEPackage) Postinstall(ctx context.Context) error {
+func (i *elasticAgentZIPPackage) Postinstall(ctx context.Context) error {
 	return nil
 }
 
 // Preinstall executes operations before installing a EXE package
-func (i *elasticAgentEXEPackage) Preinstall(ctx context.Context) error {
+func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 	span, _ := apm.StartSpanOptions(ctx, "Pre-install operations for the Elastic Agent", "elastic-agent.exe.pre-install", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -107,9 +107,6 @@ func (i *elasticAgentEXEPackage) Preinstall(ctx context.Context) error {
 	artifact := "elastic-agent"
 	os := "windows"
 	arch := "x86_64"
-	if utils.GetArchitecture() == "arm64" {
-		arch = "arm64"
-	}
 	extension := "zip"
 
 	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, os, arch, extension, false)
@@ -137,17 +134,17 @@ func (i *elasticAgentEXEPackage) Preinstall(ctx context.Context) error {
 }
 
 // Start will start a service
-func (i *elasticAgentEXEPackage) Start(ctx context.Context) error {
+func (i *elasticAgentZIPPackage) Start(ctx context.Context) error {
 	return nil
 }
 
 // Stop will start a service
-func (i *elasticAgentEXEPackage) Stop(ctx context.Context) error {
+func (i *elasticAgentZIPPackage) Stop(ctx context.Context) error {
 	return nil
 }
 
 // Uninstall uninstalls a EXE package
-func (i *elasticAgentEXEPackage) Uninstall(ctx context.Context) error {
+func (i *elasticAgentZIPPackage) Uninstall(ctx context.Context) error {
 	cmds := []string{"C:\\elastic-agent\\elastic-agent.exe", "uninstall", "-f"}
 	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.exe.uninstall", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
