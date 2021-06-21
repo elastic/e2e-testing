@@ -72,7 +72,6 @@ type ServiceRequest struct {
 	Name                string
 	BackgroundProcesses []string                // optional, configured using builder method to add processes that must be installed in the service
 	Flavour             string                  // optional, configured using builder method
-	flavourPath         []string                // full path to the flavour
 	Scale               int                     // default: 1
 	WaitStrategies      []WaitForServiceRequest // wait strategies for the service
 }
@@ -82,7 +81,6 @@ func NewServiceRequest(n string) ServiceRequest {
 	return ServiceRequest{
 		Name:                n,
 		BackgroundProcesses: []string{},
-		flavourPath:         []string{n},
 		Scale:               1,
 		WaitStrategies:      []WaitForServiceRequest{},
 	}
@@ -92,8 +90,8 @@ func NewServiceRequest(n string) ServiceRequest {
 func (sr ServiceRequest) GetName() string {
 	serviceIncludingFlavour := sr.Name
 	if sr.Flavour != "" {
-		// discover the flavours in the subdirs
-		serviceIncludingFlavour = filepath.Join(sr.flavourPath...)
+		// discover the flavour in the subdir
+		serviceIncludingFlavour = filepath.Join(sr.Name, sr.Flavour)
 	}
 
 	return serviceIncludingFlavour
@@ -109,20 +107,6 @@ func (sr ServiceRequest) WithBackgroundProcess(bp ...string) ServiceRequest {
 // using flavour as a subdir of the service
 func (sr ServiceRequest) WithFlavour(f string) ServiceRequest {
 	sr.Flavour = f
-
-	sr.flavourPath = []string{sr.Name}
-
-	if sr.Flavour != "" {
-		// discover the flavour in the subdir
-		// we will use the '-' character to represent a subdir in the Gherkin files.
-		// This way we will abstract from the underlying OS path separator, nesting
-		// subdirs with each occurrente. I.e. 'a-b-c' will look up the file name under
-		// "name/a/b/c" in Linux and "name\a\b\c" in Windows.
-		flavourPath := strings.Split(sr.Flavour, "-")
-
-		sr.flavourPath = append(sr.flavourPath, flavourPath...)
-	}
-
 	return sr
 }
 

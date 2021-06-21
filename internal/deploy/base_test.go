@@ -23,12 +23,6 @@ func Test_ServiceRequest_GetName(t *testing.T) {
 
 		assert.Equal(t, filepath.Join("foo", "bar"), srv.GetName(), "Service name includes flavour")
 	})
-
-	t.Run("ServiceRequest including flavour with subdirs", func(t *testing.T) {
-		srv := NewServiceRequest("foo").WithFlavour("bar-baaz")
-
-		assert.Equal(t, filepath.Join("foo", "bar", "baaz"), srv.GetName(), "Service name includes flavour with subdir")
-	})
 }
 
 func Test_ServiceRequest_WithScale(t *testing.T) {
