@@ -111,7 +111,7 @@ func FetchElasticArtifact(ctx context.Context, artifact string, version string, 
 func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool) (string, error) {
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if beatsLocalPath != "" {
-		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.local.fetch", apm.SpanOptions{
+		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.local.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
 		defer span.End()
@@ -133,7 +133,7 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 	}
 
 	handleDownload := func(URL string) (string, error) {
-		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.url.fetch", apm.SpanOptions{
+		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.url.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
 		defer span.End()
@@ -172,7 +172,7 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	if useCISnapshots {
-		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.gcp.fetch", apm.SpanOptions{
+		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.gcp.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
 		defer span.End()

@@ -333,7 +333,7 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 	mts.Version = common.BeatVersion
 	mts.setIndexName()
 
-	configurationFilePath, err := steps.FetchBeatConfiguration(false, "metricbeat", configuration+".yml")
+	configurationFilePath, err := steps.FetchBeatConfiguration(mts.currentContext, false, "metricbeat", configuration+".yml")
 	if err != nil {
 		return err
 	}
