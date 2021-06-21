@@ -69,26 +69,23 @@ type WaitForServiceRequest struct {
 
 // ServiceRequest represents the service to be created using the provider
 type ServiceRequest struct {
-	Name           string
-	Flavour        string                  // optional, configured using builder method
-	flavourPath    []string                // full path to the flavour
-	Scale          int                     // default: 1
-	WaitStrategies []WaitForServiceRequest // wait strategies for the service
+	Name                string
+	BackgroundProcesses []string                // optional, configured using builder method to add processes that must be installed in the service
+	Flavour             string                  // optional, configured using builder method
+	flavourPath         []string                // full path to the flavour
+	Scale               int                     // default: 1
+	WaitStrategies      []WaitForServiceRequest // wait strategies for the service
 }
 
 // NewServiceRequest creates a request for a service
 func NewServiceRequest(n string) ServiceRequest {
 	return ServiceRequest{
-		Name:           n,
-		flavourPath:    []string{n},
-		Scale:          1,
-		WaitStrategies: []WaitForServiceRequest{},
+		Name:                n,
+		BackgroundProcesses: []string{},
+		flavourPath:         []string{n},
+		Scale:               1,
+		WaitStrategies:      []WaitForServiceRequest{},
 	}
-}
-
-// GetRealFlavour returns the name of the last element in the flavour chain
-func (sr ServiceRequest) GetRealFlavour() string {
-	return sr.flavourPath[len(sr.flavourPath)-1]
 }
 
 // GetName returns the name of the service request, including flavour if needed
@@ -100,6 +97,12 @@ func (sr ServiceRequest) GetName() string {
 	}
 
 	return serviceIncludingFlavour
+}
+
+// WithBackgroundProcess adds a background process to the service. Each implementation should define how to install the process
+func (sr ServiceRequest) WithBackgroundProcess(bp ...string) ServiceRequest {
+	sr.BackgroundProcesses = append(sr.BackgroundProcesses, bp...)
+	return sr
 }
 
 // WithFlavour adds a flavour for the service, resulting in a look-up of the service in the config directory,
