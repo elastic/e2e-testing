@@ -58,7 +58,6 @@ pipeline {
       stages {
         stage('Check permissions') {
           steps {
-            deleteDir()
             checkPermissions()
             setEnvVar('DOCKER_TAG', getDockerTagFromPayload())
           }
