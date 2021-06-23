@@ -583,9 +583,11 @@ func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 		tx.Context.SetLabel("suite", "helm")
 	})
 
-	ctx.AfterScenario(func(pickle *messages.Pickle, err error) {
+	ctx.AfterScenario(func(p *messages.Pickle, err error) {
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
+			e.Context.SetLabel("scenario", p.GetName())
+			e.Context.SetLabel("gherkin_type", "scenario")
 			e.Send()
 		}
 
@@ -607,6 +609,8 @@ func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 	ctx.AfterStep(func(st *godog.Step, err error) {
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
+			e.Context.SetLabel("step", st.GetText())
+			e.Context.SetLabel("gherkin_type", "step")
 			e.Send()
 		}
 

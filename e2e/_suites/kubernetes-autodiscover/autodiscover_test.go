@@ -575,6 +575,8 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.AfterScenario(func(p *messages.Pickle, err error) {
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
+			e.Context.SetLabel("scenario", p.GetName())
+			e.Context.SetLabel("gherkin_type", "scenario")
 			e.Send()
 		}
 
@@ -596,6 +598,8 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.AfterStep(func(st *godog.Step, err error) {
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
+			e.Context.SetLabel("step", st.GetText())
+			e.Context.SetLabel("gherkin_type", "step")
 			e.Send()
 		}
 
