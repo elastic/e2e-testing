@@ -97,9 +97,9 @@ func (i *elasticAgentZIPPackage) Postinstall(ctx context.Context) error {
 	return nil
 }
 
-// Preinstall executes operations before installing a EXE package
+// Preinstall executes operations before installing a ZIP package
 func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
-	span, _ := apm.StartSpanOptions(ctx, "Pre-install operations for the Elastic Agent", "elastic-agent.exe.pre-install", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Pre-install operations for the Elastic Agent", "elastic-agent.zip.pre-install", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
