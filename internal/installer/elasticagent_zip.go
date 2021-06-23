@@ -64,7 +64,7 @@ func (i *elasticAgentZIPPackage) Exec(ctx context.Context, args []string) (strin
 // Enroll will enroll the agent into fleet
 func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string) error {
 	cmds := []string{"C:\\elastic-agent\\elastic-agent.exe", "install"}
-	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.exe.enroll", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.zip.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	span.Context.SetLabel("arguments", cmds)
