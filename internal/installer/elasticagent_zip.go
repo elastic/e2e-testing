@@ -92,7 +92,7 @@ func (i *elasticAgentZIPPackage) Logs() error {
 	return i.deploy.Logs(i.service)
 }
 
-// Postinstall executes operations after installing a EXE package
+// Postinstall executes operations after installing a ZIP package
 func (i *elasticAgentZIPPackage) Postinstall(ctx context.Context) error {
 	return nil
 }
