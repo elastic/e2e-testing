@@ -51,7 +51,7 @@ func (i *elasticAgentZIPPackage) Install(ctx context.Context) error {
 
 // Exec will execute a command within the service environment
 func (i *elasticAgentZIPPackage) Exec(ctx context.Context, args []string) (string, error) {
-	span, _ := apm.StartSpanOptions(ctx, "Executing Elastic Agent command", "elastic-agent.exe.exec", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Executing Elastic Agent command", "elastic-agent.zip.exec", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	span.Context.SetLabel("arguments", args)
