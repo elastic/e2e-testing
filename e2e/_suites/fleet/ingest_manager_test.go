@@ -128,7 +128,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		// FIXME: This needs to go into deployer code for docker somehow. Must resolve
 		// cyclic imports since common.defaults now imports deploy module
-		if !shell.GetEnvBool("SKIP_PULL") && shell.GetEnv("PROVIDER", "docker") != "manual" {
+		if !shell.GetEnvBool("SKIP_PULL") && shell.GetEnv("PROVIDER", "docker") != "remote" {
 			images := []string{
 				"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
 				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,

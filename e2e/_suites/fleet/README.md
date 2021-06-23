@@ -54,12 +54,12 @@ $ ulimit -n
 500000
 ```
 
-## Running against a manually deployed stack
+## Running against a remote deployed stack
 
 If an existing Elasticsearch, Kibana, Fleet server is already up and running, you can run the e2e tests against that existing cluster. The following environment variables are required:
 
 ```
-PROVIDER=manual
+PROVIDER=remote
 ```
 
 We set the provider to manual, meaning there is no bootstrapping or deploying of required services as it is expected that those requirements be met prior to running the tests. Next, we need to point our tests to the service endpoints in order to perform the necessary operations against the Fleet server:
@@ -70,7 +70,7 @@ ELASTICSEARCH_URL=https://a.public.ip:a.public.port
 FLEET_URL=https://a.public.ip:a.public.port
 ```
 
-The above variables need to be accessible by the tests, if running the stack behind a firewall, ports may need to be exposed manually.
+The above variables need to be accessible by the tests, if running the stack behind a firewall, ports may need to be exposed manually. The usage of `http` vs `https` is not important as our tests primarily deal with self signed certficates that are not validated against a true certficate authority.
 
 ### Diagnosing test failures
 
