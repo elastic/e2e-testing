@@ -34,8 +34,7 @@ services:
       - "5601:5601"
     volumes:
       - ./configurations/kibana.config.yml:/usr/share/kibana/config/kibana.yml
-    # There is a bug in Kibana that is translating XPACK_FLEET_AGENTS_FLEET_SERVER_HOSTS
-    # incorrectly
+    # FIXME: revert back once https://github.com/elastic/kibana/issues/103084 is fixed
     # environment:
     #   - "SERVER_NAME=kibana"
     #   - "SERVER_HOST=0.0.0.0"
