@@ -45,7 +45,7 @@ func (i *elasticAgentZIPPackage) Inspect() (deploy.ServiceOperatorManifest, erro
 
 // Install installs a package
 func (i *elasticAgentZIPPackage) Install(ctx context.Context) error {
-	log.Trace("No EXE install instructions")
+	log.Trace("No ZIP install instructions")
 	return nil
 }
 
