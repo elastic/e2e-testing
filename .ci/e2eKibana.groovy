@@ -96,7 +96,7 @@ pipeline {
           }
           steps {
             deleteDir()
-            gitCheckout(basedir: BASE_DIR, branch: 'master', repo: 'git@github.com:elastic/e2e-testing.git', credentialsId: env.JOB_GIT_CREDENTIALS)
+            gitCheckout(basedir: BASE_DIR, branch: 'master', githubNotifyFirstTimeContributor: true, repo: 'git@github.com:elastic/e2e-testing.git', credentialsId: env.JOB_GIT_CREDENTIALS)
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
             dir("${BASE_DIR}") {
               pushMultiPlatformManifest()
