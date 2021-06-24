@@ -94,6 +94,8 @@ pipeline {
             HOME = "${env.WORKSPACE}/${BASE_DIR}"
           }
           steps {
+            deleteDir()
+            gitCheckout(basedir: BASE_DIR, githubNotifyFirstTimeContributor: true)
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
             dir("${BASE_DIR}") {
               pushMultiPlatformManifest()
