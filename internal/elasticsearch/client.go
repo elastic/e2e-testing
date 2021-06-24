@@ -9,7 +9,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
+	"net/url"
+	"strconv"
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v4"
@@ -84,6 +87,16 @@ func DeleteIndex(ctx context.Context, index string) error {
 // random port at localhost, we will build the URL with the bound port at localhost.
 //nolint:unused
 func getElasticsearchClient(ctx context.Context) (*es.Client, error) {
+	remoteESHost := shell.GetEnv("ELASTICSEARCH_URL", "")
+	if remoteESHost != "" {
+		u, err := url.Parse(remoteESHost)
+		host, port, err := net.SplitHostPort(u.Host)
+		if err != nil {
+			log.Fatal("Could not determine host/port from ELASTICSEARCH_URL")
+		}
+		remoteESHostPort, _ := strconv.Atoi(port)
+		return getElasticsearchClientFromHostPort(ctx, host, remoteESHostPort)
+	}
 	return getElasticsearchClientFromHostPort(ctx, "localhost", 9200)
 }
 
