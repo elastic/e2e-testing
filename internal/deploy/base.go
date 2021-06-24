@@ -130,5 +130,9 @@ func New(provider string) Deployment {
 	if strings.EqualFold(provider, "kubernetes") {
 		return newK8sDeploy()
 	}
+	if strings.EqualFold(provider, "remote") {
+		return newRemoteDeploy()
+	}
+
 	return nil
 }

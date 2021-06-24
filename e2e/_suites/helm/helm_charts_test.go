@@ -7,7 +7,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
@@ -21,8 +23,10 @@ import (
 	"go.elastic.co/apm"
 
 	"github.com/cucumber/godog"
+	"github.com/cucumber/godog/colors"
 	messages "github.com/cucumber/messages-go/v10"
 	log "github.com/sirupsen/logrus"
+	flag "github.com/spf13/pflag"
 )
 
 var helmManager helm.Manager
@@ -701,4 +705,32 @@ func toolsAreInstalled() {
 	}
 
 	shell.CheckInstalledSoftware(binaries...)
+}
+
+var opts = godog.Options{
+	Output: colors.Colored(os.Stdout),
+	Format: "progress", // can define default values
+}
+
+func init() {
+	godog.BindCommandLineFlags("godog.", &opts) // godog v0.11.0 (latest)
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	opts.Paths = flag.Args()
+
+	status := godog.TestSuite{
+		Name:                 "godogs",
+		TestSuiteInitializer: InitializeHelmChartTestSuite,
+		ScenarioInitializer:  InitializeHelmChartScenario,
+		Options:              &opts,
+	}.Run()
+
+	// Optional: Run `testing` package's logic besides godog.
+	if st := m.Run(); st > status {
+		status = st
+	}
+
+	os.Exit(status)
 }
