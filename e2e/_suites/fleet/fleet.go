@@ -1166,7 +1166,7 @@ func inputs(integration string) []kibana.Input {
 }
 
 func metricsInputs(integration string, set string) []kibana.Input {
-	data := readJsonFile("metrics.json", integration, set)
+	data := readJSONFile("metrics.json", integration, set)
 	return []kibana.Input{
 		{
 			Type:    integration,
@@ -1178,7 +1178,7 @@ func metricsInputs(integration string, set string) []kibana.Input {
 	return []kibana.Input{}
 }
 
-func readJsonFile(file string, integration string, set string) []interface{} {
+func readJSONFile(file string, integration string, set string) []interface{} {
 	jsonFile, err := os.Open(file)
 	if err != nil {
 		fmt.Println(err)
@@ -1270,8 +1270,6 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		return err
 	}
 
-	//we use a string because we are not able to process what comes in the event, so we will do
-	//an alphabetical order, as they share same layout but different millis and timezone format
 	fts.PolicyUpdatedAt = updatedAt
 
 	log.WithFields(log.Fields{
