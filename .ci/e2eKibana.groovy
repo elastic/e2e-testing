@@ -13,6 +13,7 @@ pipeline {
     ELASTIC_REPO = "elastic/${env.REPO}"
     GITHUB_APP_SECRET = 'secret/observability-team/ci/github-app'
     GITHUB_CHECK_E2E_TESTS_NAME = 'E2E Tests'
+    JOB_GIT_CREDENTIALS = "2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken"
     PIPELINE_LOG_LEVEL = "INFO"
   }
   options {
@@ -95,7 +96,7 @@ pipeline {
           }
           steps {
             deleteDir()
-            gitCheckout(basedir: BASE_DIR, githubNotifyFirstTimeContributor: true)
+            gitCheckout(basedir: BASE_DIR, branch: 'master', githubNotifyFirstTimeContributor: true, repo: 'git@github.com:elastic/e2e-testing.git', credentialsId: env.JOB_GIT_CREDENTIALS)
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
             dir("${BASE_DIR}") {
               pushMultiPlatformManifest()
