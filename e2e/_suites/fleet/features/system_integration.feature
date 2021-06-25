@@ -1,5 +1,5 @@
 @deploy-system_integration
-Feature: System Integration package metrics
+Feature: System Integration
 Scenarios for System Integration logs and metrics packages.
 
 @deploy-system_integration-with-core
