@@ -1,4 +1,4 @@
-@deploy-system_integration
+@system_integration
 Feature: System Integration
 Scenarios for System Integration logs and metrics packages.
 
@@ -17,7 +17,7 @@ Examples: Centos
 @debian
 Examples: Debian
 | os     |
- | debian |
+| debian |
 
 @deploy-system_integration-with-cpu
 Scenario Outline: Adding cpu System Integration to an Policy
