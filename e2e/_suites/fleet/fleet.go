@@ -173,7 +173,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 
 	// System Integration steps
 	s.Step(`^the policy is updated to have "([^"]*)" set to "([^"]*)"$`, fts.thePolicyIsUpdatedToHaveSystemSet)
-	s.Step(`^we verify that "([^"]*)" with "([^"]*)" metrics in the datastreams$`, fts.theMetricsInTheDataStream)
+	s.Step(`^"([^"]*)" with "([^"]*)" metrics are present in the datastreams$`, fts.theMetricsInTheDataStream)
 
 	// stand-alone only steps
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed$`, fts.aStandaloneAgentIsDeployed)
