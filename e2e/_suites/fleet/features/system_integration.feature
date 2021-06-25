@@ -7,7 +7,7 @@ Scenario Outline: Adding core System Integration to an Policy
   Given a "<os>" agent is deployed to Fleet with "tar" installer
     And the agent is listed in Fleet as "online"
   When the policy is updated to have "system/metrics" set to "core"
-    And verify that "system/metrics" with "core" metrics in the datastreams
+  Then "system/metrics" with "core" metrics are present in the datastreams
 
 @centos
 Examples: Centos
