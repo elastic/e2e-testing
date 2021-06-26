@@ -160,7 +160,7 @@ Scenario Outline: Adding uptime System Integration to an Policy
   Given a "<os>" agent is deployed to Fleet with "tar" installer
     And the agent is listed in Fleet as "online"
   When the policy is updated to have "system/metrics" set to "uptime"
-  Then "system/metrics" with "uptime" metrics are present in the datastreamsms
+  Then "system/metrics" with "uptime" metrics are present in the datastreams
 
 @centos
 Examples: Centos
