@@ -7,6 +7,7 @@ package installer
 import (
 	"context"
 	"fmt"
+	"runtime"
 
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
@@ -55,6 +56,7 @@ func (i *elasticAgentTARDarwinPackage) Exec(ctx context.Context, args []string) 
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	span.Context.SetLabel("arguments", args)
+	span.Context.SetLabel("runtime", runtime.GOOS)
 	defer span.End()
 
 	output, err := i.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, i.service, args)
@@ -68,6 +70,7 @@ func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string)
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	span.Context.SetLabel("arguments", cmds)
+	span.Context.SetLabel("runtime", runtime.GOOS)
 	defer span.End()
 
 	cfg, _ := kibana.NewFleetConfig(token)
@@ -102,6 +105,7 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 	span, _ := apm.StartSpanOptions(ctx, "Pre-install operations for the Elastic Agent", "elastic-agent.tar.pre-install", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("runtime", runtime.GOOS)
 	defer span.End()
 
 	artifact := "elastic-agent"
@@ -143,6 +147,7 @@ func (i *elasticAgentTARDarwinPackage) Start(ctx context.Context) error {
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	span.Context.SetLabel("arguments", cmds)
+	span.Context.SetLabel("runtime", runtime.GOOS)
 	defer span.End()
 
 	_, err := i.Exec(ctx, cmds)
@@ -159,6 +164,7 @@ func (i *elasticAgentTARDarwinPackage) Stop(ctx context.Context) error {
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	span.Context.SetLabel("arguments", cmds)
+	span.Context.SetLabel("runtime", runtime.GOOS)
 	defer span.End()
 
 	_, err := i.Exec(ctx, cmds)
@@ -175,6 +181,7 @@ func (i *elasticAgentTARDarwinPackage) Uninstall(ctx context.Context) error {
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	span.Context.SetLabel("arguments", cmds)
+	span.Context.SetLabel("runtime", runtime.GOOS)
 	defer span.End()
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
