@@ -45,8 +45,8 @@ This is an example of the optional configuration:
 
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch)
-   export STACK_VERSION="8.0.0-SNAPSHOT"
-   export BEAT_VERSION="8.0.0-SNAPSHOT"
+   export STACK_VERSION="7.14.0-SNAPSHOT"
+   export BEAT_VERSION="7.14.0-SNAPSHOT"
    # or
    # This environment variable will use the snapshots produced by Beats CI
    export BEATS_USE_CI_SNAPSHOTS="true"

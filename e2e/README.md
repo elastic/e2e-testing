@@ -114,6 +114,7 @@ In order to debug the `godog` tests, 1) you must have the `runner_test.go` file 
 We have built the project and the CI job in a manner that it is possible to override different parameters about projects versions, so that we can set i.e. the version of the Elastic Stack to be used, or the version of the Elastic Agent. We have built and maintain branches to test the most recent versions of the stack, each release that comes out we maintain for a brief period and drop support for the oldest, while always keeping 'master' (8.0) and the 7.x maintainenace line, too:
 
 - **7.13.x**: (for example): will use `7.13.x` alias for the Elastic Stack (including Fleet Server), Agent and Endpoint / Beats
+- **7.14.x**: (for example): will use `7.14.x` alias for the Elastic Stack (including Fleet Server), Agent and Endpoint / Beats
 - **7.x**: will use `7.x` alias for the all noted components, always being on the cusp of development, ahead of / newer than the .x release that came before it
 - **master**: will use `8.0.0-SNAPSHOT` for the Elastic Stack, the Agent and Metricbeat, representing the current development version of the different products under test.
 
