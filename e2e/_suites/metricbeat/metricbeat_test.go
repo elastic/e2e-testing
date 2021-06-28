@@ -342,7 +342,7 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 	mts.Version = common.BeatVersion
 	mts.setIndexName()
 
-	configurationFilePath, err := steps.FetchBeatConfiguration(false, "metricbeat", configuration+".yml")
+	configurationFilePath, err := steps.FetchBeatConfiguration(mts.currentContext, false, "metricbeat", configuration+".yml")
 	if err != nil {
 		return err
 	}
@@ -368,8 +368,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	if useCISnapshots || beatsLocalPath != "" {
 		arch := utils.GetArchitecture()
 
-		artifactName := utils.BuildArtifactName("metricbeat", mts.Version, "linux", arch, "tar.gz", true)
-		imagePath, err := utils.FetchBeatsBinary(mts.currentContext, artifactName, "metricbeat", mts.Version, utils.TimeoutFactor, true)
+		_, imagePath, err := utils.FetchElasticArtifact(mts.currentContext, "metricbeat", mts.Version, "linux", arch, "tar.gz", true, true)
 		if err != nil {
 			return err
 		}
