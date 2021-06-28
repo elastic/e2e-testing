@@ -31,6 +31,9 @@ func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.Servic
 		case "tar":
 			install := AttachElasticAgentTARPackage(deploy, service)
 			return install, nil
+		case "zip":
+			install := AttachElasticAgentZIPPackage(deploy, service)
+			return install, nil
 		case "rpm":
 			install := AttachElasticAgentRPMPackage(deploy, service)
 			return install, nil
@@ -46,12 +49,37 @@ func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.Servic
 	return nil, nil
 }
 
-// BasePackage holds references to basic state for all installers
-type BasePackage struct {
-	binaryName string
-	commitFile string
-	image      string
-	logFile    string
-	profile    string
-	service    string
+func systemCtlPostInstall(ctx context.Context, linux string, artifact string, execFn func(ctx context.Context, args []string) (string, error)) error {
+	cmds := []string{"systemctl", "restart", artifact}
+	span, _ := apm.StartSpanOptions(ctx, "Post-install operations for the "+artifact, artifact+"."+linux+".post-install", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	span.Context.SetLabel("artifact", artifact)
+	span.Context.SetLabel("linux", linux)
+	defer span.End()
+
+	_, err := execFn(ctx, cmds)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func systemCtlStart(ctx context.Context, linux string, artifact string, execFn func(ctx context.Context, args []string) (string, error)) error {
+	cmds := []string{"systemctl", "start", artifact}
+	span, _ := apm.StartSpanOptions(ctx, "Starting "+artifact+" service", artifact+"."+linux+".start", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	span.Context.SetLabel("artifact", artifact)
+	span.Context.SetLabel("linux", linux)
+	defer span.End()
+
+	_, err := execFn(ctx, cmds)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

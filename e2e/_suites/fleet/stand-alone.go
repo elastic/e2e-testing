@@ -49,7 +49,7 @@ func (fts *FleetTestSuite) aStandaloneAgentIsDeployedWithFleetServerModeOnCloud(
 
 func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
-	minimumHitsCount := 50
+	minimumHitsCount := 25
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(fts.Image)
 
@@ -134,10 +134,9 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 	}
 
 	services := []deploy.ServiceRequest{
-		deploy.NewServiceRequest(common.FleetProfileName),
 		deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(flavour),
 	}
-	err := fts.deployer.Add(fts.currentContext, services, common.ProfileEnv)
+	err := fts.deployer.Add(fts.currentContext, common.FleetProfileServiceRequest, services, common.ProfileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err

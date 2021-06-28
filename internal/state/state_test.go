@@ -39,8 +39,13 @@ func TestRecover(t *testing.T) {
 	e, _ := io.Exists(runFile)
 	assert.True(t, e)
 
-	env := Recover(ID, workspace)
+	run := Recover(ID, workspace)
 
+	assert.Equal(t, run.ID, ID)
+	assert.Equal(t, run.Profile.Name, "a")
+	assert.Equal(t, len(run.Services), 3)
+
+	env := run.Env
 	value, e := env["foo"]
 	assert.True(t, e)
 	assert.Equal(t, "bar", value)

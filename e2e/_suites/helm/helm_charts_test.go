@@ -7,14 +7,15 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/helm"
 	"github.com/elastic/e2e-testing/internal/kubectl"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -22,8 +23,10 @@ import (
 	"go.elastic.co/apm"
 
 	"github.com/cucumber/godog"
+	"github.com/cucumber/godog/colors"
 	messages "github.com/cucumber/messages-go/v10"
 	log "github.com/sirupsen/logrus"
+	flag "github.com/spf13/pflag"
 )
 
 var helmManager helm.Manager
@@ -580,9 +583,11 @@ func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 		tx.Context.SetLabel("suite", "helm")
 	})
 
-	ctx.AfterScenario(func(pickle *messages.Pickle, err error) {
+	ctx.AfterScenario(func(p *messages.Pickle, err error) {
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
+			e.Context.SetLabel("scenario", p.GetName())
+			e.Context.SetLabel("gherkin_type", "scenario")
 			e.Send()
 		}
 
@@ -604,6 +609,8 @@ func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 	ctx.AfterStep(func(st *godog.Step, err error) {
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
+			e.Context.SetLabel("step", st.GetText())
+			e.Context.SetLabel("gherkin_type", "step")
 			e.Send()
 		}
 
@@ -684,16 +691,6 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 			if err != nil {
 				return
 			}
-
-			if common.ElasticAPMActive {
-				serviceManager := deploy.NewServiceManager()
-				err := serviceManager.StopCompose(suiteContext, true, []deploy.ServiceRequest{deploy.NewServiceRequest("helm")})
-				if err != nil {
-					log.WithFields(log.Fields{
-						"profile": "helm",
-					}).Error("Could not stop the profile.")
-				}
-			}
 		}
 	})
 
@@ -708,4 +705,32 @@ func toolsAreInstalled() {
 	}
 
 	shell.CheckInstalledSoftware(binaries...)
+}
+
+var opts = godog.Options{
+	Output: colors.Colored(os.Stdout),
+	Format: "progress", // can define default values
+}
+
+func init() {
+	godog.BindCommandLineFlags("godog.", &opts) // godog v0.11.0 (latest)
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	opts.Paths = flag.Args()
+
+	status := godog.TestSuite{
+		Name:                 "godogs",
+		TestSuiteInitializer: InitializeHelmChartTestSuite,
+		ScenarioInitializer:  InitializeHelmChartScenario,
+		Options:              &opts,
+	}.Run()
+
+	// Optional: Run `testing` package's logic besides godog.
+	if st := m.Run(); st > status {
+		status = st
+	}
+
+	os.Exit(status)
 }

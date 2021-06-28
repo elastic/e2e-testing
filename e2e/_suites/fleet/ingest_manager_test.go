@@ -7,16 +7,21 @@ package main
 import (
 	"context"
 	"os"
+	"strings"
+	"testing"
 	"time"
 
 	"github.com/cucumber/godog"
+	"github.com/cucumber/godog/colors"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
+	flag "github.com/spf13/pflag"
 	"go.elastic.co/apm"
 )
 
@@ -60,6 +65,8 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 		log.Trace("After Fleet scenario")
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
+			e.Context.SetLabel("scenario", p.GetName())
+			e.Context.SetLabel("gherkin_type", "scenario")
 			e.Send()
 		}
 
@@ -80,6 +87,8 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	ctx.AfterStep(func(st *godog.Step, err error) {
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
+			e.Context.SetLabel("step", st.GetText())
+			e.Context.SetLabel("gherkin_type", "step")
 			e.Send()
 		}
 
@@ -110,7 +119,16 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		if !shell.GetEnvBool("SKIP_PULL") {
+		deployer := deploy.New(common.Provider)
+
+		err := deployer.PreBootstrap(suiteContext)
+		if err != nil {
+			log.WithField("error", err).Fatal("Unable to run pre-bootstrap initialization")
+		}
+
+		// FIXME: This needs to go into deployer code for docker somehow. Must resolve
+		// cyclic imports since common.defaults now imports deploy module
+		if !shell.GetEnvBool("SKIP_PULL") && shell.GetEnv("PROVIDER", "docker") != "remote" {
 			images := []string{
 				"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
 				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,
@@ -126,8 +144,19 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			deploy.PullImages(suiteContext, images)
 		}
 
-		deployer := deploy.New(common.Provider)
-		deployer.Bootstrap(suiteContext, func() error {
+		common.ProfileEnv = map[string]string{
+			"kibanaVersion": common.KibanaVersion,
+			"stackPlatform": "linux/" + utils.GetArchitecture(),
+			"stackVersion":  common.StackVersion,
+		}
+
+		common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
+		if strings.HasPrefix(common.KibanaVersion, "pr") || utils.IsCommit(common.KibanaVersion) {
+			// because it comes from a PR
+			common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
+		}
+
+		deployer.Bootstrap(suiteContext, common.FleetProfileServiceRequest, common.ProfileEnv, func() error {
 			kibanaClient, err := kibana.NewClient()
 			if err != nil {
 				log.WithField("error", err).Fatal("Unable to create kibana client")
@@ -163,7 +192,35 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		if !common.DeveloperMode {
 			log.Debug("Destroying Fleet runtime dependencies")
 			deployer := deploy.New(common.Provider)
-			deployer.Destroy(suiteContext)
+			deployer.Destroy(suiteContext, common.FleetProfileServiceRequest)
 		}
 	})
+}
+
+var opts = godog.Options{
+	Output: colors.Colored(os.Stdout),
+	Format: "progress", // can define default values
+}
+
+func init() {
+	godog.BindCommandLineFlags("godog.", &opts) // godog v0.11.0 (latest)
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	opts.Paths = flag.Args()
+
+	status := godog.TestSuite{
+		Name:                 "godogs",
+		TestSuiteInitializer: InitializeIngestManagerTestSuite,
+		ScenarioInitializer:  InitializeIngestManagerTestScenario,
+		Options:              &opts,
+	}.Run()
+
+	// Optional: Run `testing` package's logic besides godog.
+	if st := m.Run(); st > status {
+		status = st
+	}
+
+	os.Exit(status)
 }

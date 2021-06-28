@@ -70,7 +70,7 @@ We will create use cases for the module in a separate `.feature` file, ideally n
 
 The anatomy of a feature file is:
 
-- **@tag_name**: A `@` character indicates a tag. And tags are used to filter the test execution. Tags could be placed on Features (applying the entire file), or on Scenarios (applying just to them). At this moment we are tagging each feature file with a tag using module's name, so that we can instrument the test runner to just run one.
+- **@tag_name**: A `@` character indicates a tag. And tags are used to filter the test execution. Tags could be placed on Features (applying the entire file), or on Scenarios (applying just to them). At this moment we are tagging each feature file with a tag using module's name, so that we can instrument the test runner to just run one. *more below.
 - **Feature: Blah, blah**: Description in plain English of the group of uses cases (scenarios) in this feature file. The feature file should contain just one.
 - **Scenario**: the name in plain English of a specific use case.
 - **Scenario Outline**: exactly the same as above, but we are are telling Cucumber that this use case has a matrix, so it has to iterate through the **Examples** table, interpolating those values into the placeholders in the scenario.
@@ -81,6 +81,8 @@ The anatomy of a feature file is:
     - **And**: Used within any of the above clauses, it must tell an ocational reader a secondary preparation (Given), trigger (When), or output (Then) that must be present.
     - **But**: Used within any of the above clauses, it must tell an ocational reader a secondary preparation (Given), trigger (When), or output (Then) that must not be present.
 - **Examples:**: this `markdown table` will represent the elements to interpolate in the existing dynamic variables in the use case, being each column header the name of the different variables in the table. Besides that, each row will result in a test execution.
+
+ *Note, as of this PR: https://github.com/elastic/e2e-testing/pull/669/files we have implemented a mechanism to NOT run tests marked as `@nightly` during PR CI test runs, if they, for any reason, are not capable of successfully finishing for a given reason.  The foremost example is the Agent upgrade tests which do not run on PR CI due to the lack of proper signing for the binaries needed.  The tag is implemented basically as a "nightly only" citation.
 
 #### Feature files and the CI
 There is [a descriptor file for the CI](../.ci/.e2e-tests.yaml) in which we define the parallel branches that will be created in the execution of a job. This YAML file defines suites and tags. A suite represents each test suite directory under the `e2e/_suites` directory, and the tags represent the tags will be passed to the test runner to filter the test execution. Another configuration we define in this file is related to the capabilities to run certain tags at the pull request stage, using the `pullRequestFilter` child element. This element will be appended to the tags used to filter the test runner.
@@ -109,11 +111,10 @@ In order to debug the `godog` tests, 1) you must have the `runner_test.go` file 
 ![](./debug.png)
 
 ## Regression testing
-We have built the project and the CI job in a manner that it is possible to override different parameters about projects versions, so that we can set i.e. the version of the Elastic Stack to be used, or the version of the Elastic Agent. There also exist maintenance branches where we set the specific versions used for the tests:
+We have built the project and the CI job in a manner that it is possible to override different parameters about projects versions, so that we can set i.e. the version of the Elastic Stack to be used, or the version of the Elastic Agent. We have built and maintain branches to test the most recent versions of the stack, each release that comes out we maintain for a brief period and drop support for the oldest, while always keeping 'master' (8.0) and the 7.x maintainenace line, too:
 
-- **7.10.x**: will use `7.10.x` alias for the Elastic Stack, the Agent and Metricbeat
-- **7.11.x**: will use `7.11.x` alias for the Elastic Stack, the Agent and Metricbeat
-- **7.x**: will use `7.x` alias for the Elastic Stack, the Agent and Metricbeat
+- **7.13.x**: (for example): will use `7.13.x` alias for the Elastic Stack (including Fleet Server), Agent and Endpoint / Beats
+- **7.x**: will use `7.x` alias for the all noted components, always being on the cusp of development, ahead of / newer than the .x release that came before it
 - **master**: will use `8.0.0-SNAPSHOT` for the Elastic Stack, the Agent and Metricbeat, representing the current development version of the different products under test.
 
 With that in mind, the project supports setting these versions in environment variables, overriding the pre-branch default ones.

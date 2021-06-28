@@ -7,6 +7,7 @@ package installer
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
@@ -38,7 +39,7 @@ func (i *elasticAgentDEBPackage) AddFiles(ctx context.Context, files []string) e
 	span.Context.SetLabel("files", files)
 	defer span.End()
 
-	return i.deploy.AddFiles(ctx, i.service, files)
+	return i.deploy.AddFiles(ctx, common.FleetProfileServiceRequest, i.service, files)
 }
 
 // Inspect returns info on package
@@ -63,7 +64,7 @@ func (i *elasticAgentDEBPackage) Exec(ctx context.Context, args []string) (strin
 	span.Context.SetLabel("arguments", args)
 	defer span.End()
 
-	output, err := i.deploy.ExecIn(ctx, i.service, args)
+	output, err := i.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, i.service, args)
 	return output, err
 }
 
@@ -116,73 +117,83 @@ func (i *elasticAgentDEBPackage) Logs() error {
 
 // Postinstall executes operations after installing a DEB package
 func (i *elasticAgentDEBPackage) Postinstall(ctx context.Context) error {
-	cmds := []string{"systemctl", "restart", "elastic-agent"}
-	span, _ := apm.StartSpanOptions(ctx, "Post-install operations for the Elastic Agent", "elastic-agent.debian.post-install", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	span.Context.SetLabel("arguments", cmds)
-	defer span.End()
-
-	_, err := i.Exec(ctx, cmds)
-	if err != nil {
-		return err
+	for _, bp := range i.service.BackgroundProcesses {
+		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
+			// post-install the dependant binary first
+			err := systemCtlPostInstall(ctx, "debian", bp, i.Exec)
+			if err != nil {
+				return err
+			}
+		}
 	}
-	return nil
+
+	return systemCtlPostInstall(ctx, "debian", "elastic-agent", i.Exec)
 }
 
 // Preinstall executes operations before installing a DEB package
 func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
-	span, _ := apm.StartSpanOptions(ctx, "Pre-install operations for the Elastic Agent", "elastic-agent.debian.pre-install", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	defer span.End()
+	installArtifactFn := func(ctx context.Context, artifact string) error {
+		span, _ := apm.StartSpanOptions(ctx, "Pre-install "+artifact, artifact+".debian.pre-install", apm.SpanOptions{
+			Parent: apm.SpanFromContext(ctx).TraceContext(),
+		})
+		defer span.End()
 
-	artifact := "elastic-agent"
-	os := "linux"
-	arch := utils.GetArchitecture()
-	extension := "deb"
+		os := "linux"
+		arch := utils.GetArchitecture()
+		extension := "deb"
 
-	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, common.BeatVersionBase, os, arch, extension, false)
-	binaryPath, err := utils.FetchBeatsBinary(ctx, binaryName, artifact, common.BeatVersion, common.BeatVersionBase, utils.TimeoutFactor, true)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"artifact":  artifact,
-			"version":   common.BeatVersion,
-			"os":        os,
-			"arch":      arch,
-			"extension": extension,
-			"error":     err,
-		}).Error("Could not download the binary for the agent")
-		return err
+		binaryName, binaryPath, err := utils.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"artifact":  artifact,
+				"version":   common.BeatVersion,
+				"os":        os,
+				"arch":      arch,
+				"extension": extension,
+				"error":     err,
+			}).Error("Could not download the binary for the agent")
+			return err
+		}
+
+		err = i.AddFiles(ctx, []string{binaryPath})
+		if err != nil {
+			return err
+		}
+
+		_, err = i.Exec(ctx, []string{"apt", "install", "/" + binaryName, "-y"})
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 
-	err = i.AddFiles(ctx, []string{binaryPath})
-	if err != nil {
-		return err
+	for _, bp := range i.service.BackgroundProcesses {
+		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
+			// pre-install the dependant binary first
+			err := installArtifactFn(ctx, bp)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
-	_, err = i.Exec(ctx, []string{"apt", "install", "/" + binaryName, "-y"})
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return installArtifactFn(ctx, "elastic-agent")
 }
 
 // Start will start a service
 func (i *elasticAgentDEBPackage) Start(ctx context.Context) error {
-	cmds := []string{"systemctl", "start", "elastic-agent"}
-	span, _ := apm.StartSpanOptions(ctx, "Starting Elastic Agent service", "elastic-agent.debian.start", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	span.Context.SetLabel("arguments", cmds)
-	defer span.End()
-
-	_, err := i.Exec(ctx, cmds)
-	if err != nil {
-		return err
+	for _, bp := range i.service.BackgroundProcesses {
+		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
+			// start the dependant binary first
+			err := systemCtlStart(ctx, "debian", bp, i.Exec)
+			if err != nil {
+				return err
+			}
+		}
 	}
-	return nil
+
+	return systemCtlStart(ctx, "debian", "elastic-agent", i.Exec)
 }
 
 // Stop will start a service
