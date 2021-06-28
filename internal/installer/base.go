@@ -6,9 +6,11 @@ package installer
 
 import (
 	"context"
+	"runtime"
 	"strings"
 
 	"github.com/elastic/e2e-testing/internal/deploy"
+	"github.com/elastic/e2e-testing/internal/shell"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -29,6 +31,12 @@ func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.Servic
 	if strings.EqualFold(service.Name, "elastic-agent") {
 		switch installType {
 		case "tar":
+			// Since both Linux and macOS distribute elastic-agent using TAR format we must
+			// determine the runtime to figure out which tar installer to use here
+			if runtime.GOOS == "darwin" && shell.GetEnv("PROVIDER", "docker") == "remote" {
+				install := AttachElasticAgentTARDarwinPackage(deploy, service)
+				return install, nil
+			}
 			install := AttachElasticAgentTARPackage(deploy, service)
 			return install, nil
 		case "zip":
