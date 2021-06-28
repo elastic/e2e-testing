@@ -109,8 +109,7 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 	arch := "x86_64"
 	extension := "zip"
 
-	binaryName := utils.BuildArtifactName(artifact, common.BeatVersion, os, arch, extension, false)
-	binaryPath, err := utils.FetchBeatsBinary(ctx, binaryName, artifact, common.BeatVersion, utils.TimeoutFactor, true)
+	_, binaryPath, err := utils.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
