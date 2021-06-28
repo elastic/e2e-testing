@@ -16,7 +16,7 @@ services:
       - xpack.security.authc.api_key.enabled=true
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=changeme
-    image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion:-7.13.0-SNAPSHOT}"
+    image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion:-7.13-SNAPSHOT}"
     platform: ${stackPlatform:-linux/amd64}
     ports:
       - "9200:9200"

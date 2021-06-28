@@ -35,12 +35,8 @@ var FleetProfileServiceRequest = deploy.NewServiceRequest(FleetProfileName)
 // FleetServerAgentServiceName the name of the service for the Elastic Agent
 const FleetServerAgentServiceName = "fleet-server"
 
-// AgentStaleVersion is the version of the agent to use as a base during upgrade
-// It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var AgentStaleVersion = "7.13-SNAPSHOT"
-
 // BeatVersionBase is the base version of the Beat to use
-var BeatVersionBase = "7.13.0-SNAPSHOT"
+var BeatVersionBase = "7.13-SNAPSHOT"
 
 // BeatVersion is the version of the Beat to use
 // It can be overriden by BEAT_VERSION env var
