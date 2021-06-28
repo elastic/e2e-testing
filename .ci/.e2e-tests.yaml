@@ -37,6 +37,9 @@ SUITES:
       - name: "Backend Processes"
         pullRequestFilter: " && ~debian"
         tags: "backend_processes"
+      - name: "Beats Background Processes"
+        pullRequestFilter: " && ~debian"
+        tags: "running_on_beats"
   - suite: "metricbeat"
     platforms:
       - "ubuntu-18.04"
