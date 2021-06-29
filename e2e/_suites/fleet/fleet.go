@@ -1210,11 +1210,7 @@ func readJSONFile(file string, integration string, set string) []interface{} {
 						true,
 						fmt.Sprintf("inputs.%d.streams.%d.enabled", i, idx),
 					)
-					fmt.Println("Set values for id and enabled")
-					fmt.Println("ID:", jsonParsed.Path(fmt.Sprintf("inputs.%d.streams.%d.id", i, idx)))
-					fmt.Println("ENABLED:", jsonParsed.Path(fmt.Sprintf("inputs.%d.streams.%d.enabled", i, idx)))
 					dataStreamOut, _ := jsonParsed.Path(fmt.Sprintf("inputs.%d.streams", i)).Data().([]interface{})
-					//fmt.Println("DATA STREAM OUT", dataStreamOut)
 					return dataStreamOut
 				}
 			}
