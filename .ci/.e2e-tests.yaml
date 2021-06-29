@@ -27,6 +27,8 @@ SUITES:
         pullRequestFilter: " && ~debian"
         tags: "linux_integration"
       - name: "System Integration"
+        platforms:
+          - "ubuntu-18.04"
         pullRequestFilter: " && ~debian"
         tags: "system_integration"
       - name: "Stand-alone"
@@ -35,6 +37,9 @@ SUITES:
       - name: "Backend Processes"
         pullRequestFilter: " && ~debian"
         tags: "backend_processes"
+      - name: "Beats Background Processes"
+        pullRequestFilter: " && ~debian"
+        tags: "running_on_beats"
   - suite: "metricbeat"
     platforms:
       - "ubuntu-18.04"

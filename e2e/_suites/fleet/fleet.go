@@ -51,6 +51,7 @@ type FleetTestSuite struct {
 	Version             string // current elastic-agent version
 	kibanaClient        *kibana.Client
 	deployer            deploy.Deployment
+	BeatsProcess        string // (optional) name of the Beats that must be present before installing the elastic-agent
 	// date controls for queries
 	AgentStoppedDate             time.Time
 	RuntimeDependenciesStartDate time.Time
@@ -124,6 +125,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	fts.CurrentToken = ""
 	fts.Image = ""
 	fts.StandAlone = false
+	fts.BeatsProcess = ""
 }
 
 // beforeScenario creates the state needed by a scenario
@@ -145,6 +147,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
+	s.Step(`^a "([^"]*)" agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
 	s.Step(`^a "([^"]*)" agent "([^"]*)" is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
 	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
@@ -321,12 +324,25 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
 	if image == "debian" {
 		installerType = "deb"
 	}
+	fts.BeatsProcess = ""
+
+	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType)
+}
+
+func (fts *FleetTestSuite) anAgentIsDeployedToFleetOnTopOfBeat(image string, beatsProcess string) error {
+	installerType := "rpm"
+	if image == "debian" {
+		installerType = "deb"
+	}
+
+	fts.BeatsProcess = beatsProcess
 
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType)
 }
 
 // supported installers: tar, rpm, deb
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, installerType string) error {
+	fts.BeatsProcess = ""
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType)
 }
 
@@ -350,6 +366,10 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	fts.CurrentTokenID = enrollmentKey.ID
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(image).WithScale(deployedAgentsCount)
+	if fts.BeatsProcess != "" {
+		agentService = agentService.WithBackgroundProcess(fts.BeatsProcess)
+	}
+
 	services := []deploy.ServiceRequest{
 		agentService,
 	}
