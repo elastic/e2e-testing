@@ -32,6 +32,11 @@ func TestGetConfigSanitizer(t *testing.T) {
 			expectedContent: ": /metrics",
 		},
 		{
+			service:         "mssql",
+			content:         `username: domain\username\n password: verysecurepassword`,
+			expectedContent: `username: sa\n password: 1234_asdf`,
+		},
+		{
 			service:         "mysql",
 			content:         `hosts: ["root:secret@tcp(mysql:3306)/"]`,
 			expectedContent: `hosts: ["root:test@tcp(mysql:3306)/"]`,
