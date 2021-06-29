@@ -66,6 +66,12 @@ Examples: Kafka
 | kafka       | 1.1.0    |
 | kafka       | 0.10.2.2 |
 
+@mssql
+@xpack
+Examples: MS SQL Server
+| integration | version        |
+| mssql       | 2017-GA-ubuntu |
+
 @oracle
 @skip
 @xpack
