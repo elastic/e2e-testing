@@ -57,6 +57,8 @@ SUITES:
         tags: "integrations && kafka"
       - name: "Metricbeat"
         tags: "metricbeat"
+      - name: "MS SQL Server"
+        tags: "integrations && mssql"
       - name: "MySQL"
         pullRequestFilter: " && ~old_versions"
         tags: "integrations && mysql"
