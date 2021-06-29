@@ -22,6 +22,8 @@ func GetConfigSanitizer(serviceType string) ConfigSanitizer {
 		return DockerComposeSanitizer{}
 	} else if strings.ToLower(serviceType) == "dropwizard" {
 		return DropwizardSanitizer{}
+	} else if strings.ToLower(serviceType) == "mssql" {
+		return MSSQLSanitizer{}
 	} else if strings.ToLower(serviceType) == "mysql" {
 		return MySQLSanitizer{}
 	}
@@ -54,6 +56,18 @@ type DropwizardSanitizer struct{}
 func (s DropwizardSanitizer) Sanitize(content string) string {
 	log.Debug("Sanitising dropwizard")
 	return strings.ReplaceAll(content, "metrics_path: /metrics/metrics", "metrics_path: /test/metrics")
+}
+
+// MSSQLSanitizer represents a sanitizer for MSSQL Server
+type MSSQLSanitizer struct{}
+
+// Sanitize prepends test application context
+func (s MSSQLSanitizer) Sanitize(content string) string {
+	log.Debug("Sanitising mssql")
+	replacedContent := strings.ReplaceAll(content, `domain\username`, "sa")
+	replacedContent = strings.ReplaceAll(replacedContent, "verysecurepassword", "1234_asdf")
+
+	return replacedContent
 }
 
 // MySQLSanitizer represents a sanitizer for Dropwizard
