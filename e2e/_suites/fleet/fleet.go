@@ -69,50 +69,52 @@ func (fts *FleetTestSuite) afterScenario() {
 	fts.currentContext = apm.ContextWithSpan(context.Background(), span)
 	defer span.End()
 
-	serviceName := common.ElasticAgentServiceName
-	agentService := deploy.NewServiceRequest(serviceName)
+	if fts.InstallerType != "" {
+		serviceName := common.ElasticAgentServiceName
+		agentService := deploy.NewServiceRequest(serviceName)
 
-	if !fts.StandAlone {
-		agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
+		if !fts.StandAlone {
+			agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
 
-		if log.IsLevelEnabled(log.DebugLevel) {
-			err := agentInstaller.Logs()
-			if err != nil {
-				log.WithField("error", err).Warn("Could not get agent logs in the container")
+			if log.IsLevelEnabled(log.DebugLevel) {
+				err := agentInstaller.Logs()
+				if err != nil {
+					log.WithField("error", err).Warn("Could not get agent logs in the container")
+				}
 			}
-		}
-		// only call it when the elastic-agent is present
-		if !fts.ElasticAgentStopped {
-			err := agentInstaller.Uninstall(fts.currentContext)
-			if err != nil {
-				log.Warnf("Could not uninstall the agent after the scenario: %v", err)
+			// only call it when the elastic-agent is present
+			if !fts.ElasticAgentStopped {
+				err := agentInstaller.Uninstall(fts.currentContext)
+				if err != nil {
+					log.Warnf("Could not uninstall the agent after the scenario: %v", err)
+				}
 			}
+		} else if log.IsLevelEnabled(log.DebugLevel) {
+			_ = fts.deployer.Logs(agentService)
 		}
-	} else if log.IsLevelEnabled(log.DebugLevel) {
-		_ = fts.deployer.Logs(agentService)
+
+		err := fts.unenrollHostname()
+		if err != nil {
+			manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+			log.WithFields(log.Fields{
+				"err":      err,
+				"hostname": manifest.Hostname,
+			}).Warn("The agentIDs for the hostname could not be unenrolled")
+		}
+
+		if !common.DeveloperMode {
+			_ = fts.deployer.Remove(
+				common.FleetProfileServiceRequest,
+				[]deploy.ServiceRequest{
+					deploy.NewServiceRequest(serviceName),
+				},
+				common.ProfileEnv)
+		} else {
+			log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
+		}
 	}
 
-	err := fts.unenrollHostname()
-	if err != nil {
-		manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
-		log.WithFields(log.Fields{
-			"err":      err,
-			"hostname": manifest.Hostname,
-		}).Warn("The agentIDs for the hostname could not be unenrolled")
-	}
-
-	if !common.DeveloperMode {
-		_ = fts.deployer.Remove(
-			common.FleetProfileServiceRequest,
-			[]deploy.ServiceRequest{
-				deploy.NewServiceRequest(serviceName),
-			},
-			common.ProfileEnv)
-	} else {
-		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
-	}
-
-	err = fts.kibanaClient.DeleteEnrollmentAPIKey(fts.currentContext, fts.CurrentTokenID)
+	err := fts.kibanaClient.DeleteEnrollmentAPIKey(fts.currentContext, fts.CurrentTokenID)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err":     err,
@@ -125,6 +127,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	// clean up fields
 	fts.CurrentTokenID = ""
 	fts.CurrentToken = ""
+	fts.InstallerType = ""
 	fts.Image = ""
 	fts.StandAlone = false
 	fts.BeatsProcess = ""
