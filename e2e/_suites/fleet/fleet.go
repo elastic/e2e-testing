@@ -1186,7 +1186,7 @@ func inputs(integration string) []kibana.Input {
 }
 
 func metricsInputs(integration string, set string) []kibana.Input {
-	data := readJSONFile("metrics.json", integration, set)
+	data := readJSONFile("./features/metrics.json", integration, set)
 	return []kibana.Input{
 		{
 			Type:    integration,
