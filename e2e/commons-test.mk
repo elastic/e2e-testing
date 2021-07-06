@@ -26,7 +26,7 @@ FEATURES_VALUE=
 endif
 
 ifneq ($(TAGS),)
-TAGS_FLAG=--tags
+TAGS_FLAG=--godog.tags=
 ifeq ($(SKIP_SCENARIOS),true)
 ## We always want to skip scenarios tagged with @skip
 TAGS+= && ~skip
@@ -36,7 +36,7 @@ endif
 TAGS_VALUE="$(TAGS)"
 else
 ifeq ($(SKIP_SCENARIOS),true)
-TAGS_FLAG=--tags
+TAGS_FLAG=--godog.tags=
 TAGS_VALUE="~skip"
 endif
 endif
@@ -66,4 +66,4 @@ functional-test: install-godog
 	ELASTIC_APM_ENVIRONMENT="${ELASTIC_APM_ENVIRONMENT}" \
 	ELASTIC_APM_SECRET_TOKEN="${APM_SECRET_TOKEN}" \
 	ELASTIC_APM_SERVER_URL="${APM_SERVER_URL}" \
-	godog --format=${FORMAT} ${FEATURES_VALUE} ${TAGS_FLAG} ${TAGS_VALUE}
+	go test -v --godog.format=${FORMAT} ${TAGS_FLAG}${TAGS_VALUE}
