@@ -66,4 +66,4 @@ functional-test: install-godog
 	ELASTIC_APM_ENVIRONMENT="${ELASTIC_APM_ENVIRONMENT}" \
 	ELASTIC_APM_SECRET_TOKEN="${APM_SECRET_TOKEN}" \
 	ELASTIC_APM_SERVER_URL="${APM_SERVER_URL}" \
-	go test -v --godog.format=${FORMAT} ${TAGS_FLAG}${TAGS_VALUE}
+	go test -timeout 60m -v --godog.format=${FORMAT} ${TAGS_FLAG}${TAGS_VALUE}
