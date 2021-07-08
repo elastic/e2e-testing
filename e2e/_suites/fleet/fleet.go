@@ -1203,7 +1203,10 @@ func readJSONFile(file string, integration string, set string) []interface{} {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("Successfully Opened metrics.json")
+	log.WithFields(log.Fields{
+		"file": file,
+	}).Info("Successfully Opened " + file)
+
 	defer jsonFile.Close()
 	data, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
@@ -1250,7 +1253,7 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 	if name != "log" {
 		condition = true
 	}
-	fmt.Println(condition)
+
 	if condition != true {
 		log.WithFields(log.Fields{
 			"name": name,
@@ -1269,8 +1272,6 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		"type":    name,
 		"dataset": "system." + set,
 	}).Info("Getting information about Policy package type " + name + " name with dataset system." + set)
-
-	fmt.Println(fts.Integration)
 
 	for _, item := range packageDS.Inputs {
 		if item.Type == name {
