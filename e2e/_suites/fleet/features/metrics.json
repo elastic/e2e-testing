@@ -273,7 +273,7 @@
         {
           "data_stream":{
             "type":"metrics",
-            "dataset":"system.process_summary"
+            "dataset":"system.process.summary"
           },
           "vars":{
             "period":{
@@ -281,7 +281,7 @@
               "value":"10s"
             }
           },
-          "id":"system/metrics-system.process_summary-1f74735e-47d3-407f-9664-4ab119f1d5e4",
+          "id":"system/metrics-system.process.summary-1f74735e-47d3-407f-9664-4ab119f1d5e4",
           "enabled":false
         },
         {

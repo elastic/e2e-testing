@@ -172,38 +172,38 @@ Examples: Debian
 | os     |
 | debian |
 
-#  @deploy-system_integration-with-process_summary
-#  Scenario Outline: Adding process_summary System Integration to an Policy
-#    Given a "<os>" agent is deployed to Fleet with "tar" installer
-#    And the agent is listed in Fleet as "online"
-#    When the policy is updated to have "system/metrics" set to "process_summary"
-#    And verify that "system/metrics" with "process_summary" metrics in the datastreams
-#
-#    @centos
-#    Examples: Centos
-#      | os     |
-#      | centos |
-#
-#    @debian
-#    Examples: Debian
-#      | os     |
-#      | debian |
+@deploy-system_integration-with-process_summary
+Scenario Outline: Adding process_summary System Integration to an Policy
+  Given a "<os>" agent is deployed to Fleet with "tar" installer
+    And the agent is listed in Fleet as "online"
+  When the policy is updated to have "system/metrics" set to "process.summary"
+  Then "system/metrics" with "process.summary" metrics are present in the datastreams
 
-#  @deploy-system_integration-with-filesystem
-#  Scenario Outline: Adding the System Integration to an Policy
-#    Given a "<os>" agent is deployed to Fleet with "tar" installer
-#    And the agent is listed in Fleet as "online"
-#    When the policy is updated to have "system/metrics" set to "filesystem"
-#    And verify that "system/metrics" with "filesystem" metrics in the datastreams
-#
-#    @centos
-#    Examples: Centos
-#      | os     |
-#      | centos |
+@centos
+Examples: Centos
+| os     |
+| centos |
 
-#    @debian
-#    Examples: Debian
-#      | os     |
+@debian
+Examples: Debian
+| os     |
+| debian |
+
+#@deploy-system_integration-with-filesystem
+#Scenario Outline: Adding the System Integration to an Policy
+#   Given a "<os>" agent is deployed to Fleet with "tar" installer
+#   And the agent is listed in Fleet as "online"
+#   When the policy is updated to have "system/metrics" set to "filesystem"
+#   Then "system/metrics" with "filesystem" metrics are present in the datastreams
+#
+#@centos
+#Examples: Centos
+#| os     |
+#| centos |
+
+#@debian
+#Examples: Debian
+#| os     |
 #      | debian |
 
 #  @deploy-logfile-for-system-auth
