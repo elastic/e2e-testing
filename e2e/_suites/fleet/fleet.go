@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -32,6 +33,7 @@ import (
 
 const actionADDED = "added"
 const actionREMOVED = "removed"
+const testResourcesDir = "./testresources"
 
 var deployedAgentsCount = 0
 
@@ -1186,7 +1188,8 @@ func inputs(integration string) []kibana.Input {
 }
 
 func metricsInputs(integration string, set string) []kibana.Input {
-	data := readJSONFile("./testresources/metrics.json", integration, set)
+	metricsFile := filepath.Join(testResourcesDir, "/metrics.json")
+	data := readJSONFile(metricsFile, integration, set)
 	return []kibana.Input{
 		{
 			Type:    integration,
