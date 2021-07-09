@@ -675,6 +675,8 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 		"tokenID": fts.CurrentTokenID,
 	}).Debug("Token was revoked")
 
+	// FIXME: Remove once https://github.com/elastic/kibana/issues/105078 is addressed
+	utils.Sleep(time.Duration(utils.TimeoutFactor) * 20 * time.Second)
 	return nil
 }
 
