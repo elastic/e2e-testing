@@ -1186,7 +1186,7 @@ func inputs(integration string) []kibana.Input {
 }
 
 func metricsInputs(integration string, set string) []kibana.Input {
-	data := readJSONFile("./features/metrics.json", integration, set)
+	data := readJSONFile("./testresources/metrics.json", integration, set)
 	return []kibana.Input{
 		{
 			Type:    integration,
@@ -1218,12 +1218,9 @@ func readJSONFile(file string, integration string, set string) []interface{} {
 	}
 	children := jsonParsed.S("inputs").Children()
 	for i, item := range children {
-		//fmt.Println("TYPE: ", item.Path("type").Data().(string))
 		if item.Path("type").Data().(string) == integration {
 			for idx, stream := range item.S("streams").Children() {
-				//fmt.Println("STREAM: ", stream)
 				dataSet, _ := stream.Path("data_stream.dataset").Data().(string)
-				//fmt.Println("DATASET: ", dataSet)
 				if dataSet == "system."+set {
 					jsonParsed.SetP(
 						integration+"-system."+set+"-"+uuid.New().String(),
@@ -1308,7 +1305,6 @@ func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) er
 		dataStreams, _ := fts.kibanaClient.GetDataStreams(fts.currentContext)
 
 		for _, item := range dataStreams.Children() {
-			//fmt.Println(item.Path("dataset"))
 			if item.Path("dataset").Data().(string) == "system."+set {
 				log.WithFields(log.Fields{
 					"dataset": "system." + set,
