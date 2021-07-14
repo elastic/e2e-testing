@@ -24,17 +24,13 @@ else
 	SED="sed -i"
 fi
 
-FILES="cli/config/compose/profiles/fleet/docker-compose.yml
-cli/config/compose/profiles/helm/docker-compose.yml
-cli/config/compose/profiles/metricbeat/docker-compose.yml
-cli/config/compose/services/kibana/docker-compose.yml
-"
-
 echo "Update stack with version ${VERSION}"
-for FILE in ${FILES} ; do
-	${SED} -E -e "s#(image: docker\.elastic\.co/.*):[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1:${VERSION}#g" $FILE
-	## TODO: sed "docker.elastic.co/kibana/kibana:${kibanaTag:-8.0.0-SNAPSHOT}" ??
-done
+find . -name 'docker-compose.yml' -print0 |
+	while IFS= read -r -d '' FILE ; do
+		${SED} -E -e "s#(image: (\")?docker\.elastic\.co/.*):-[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1:-${VERSION}#g" $FILE
+	done
+
+exit 0
 
 echo "Commit changes"
 if [ "$CREATE_BRANCH" = "true" ]; then
