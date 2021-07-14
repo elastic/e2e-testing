@@ -6,8 +6,8 @@ Feature: Backend Processes
 Scenario Outline: Deploying the <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the "elastic-agent" process is in the "started" state on the host
-  Then the "filebeat" process is in the "started" state on the host
-    And the "metricbeat" process is in the "started" state on the host
+  Then there are "2" instances of the "filebeat" process in the "started" state
+    And there are "2" instances of the "metricbeat" process in the "started" state
 
 @centos
 Examples: Centos
@@ -21,10 +21,10 @@ Examples: Debian
 
 @enroll
 Scenario Outline: Deploying the <os> agent with enroll and then run on rpm and deb
-  Given a "<os>" agent is deployed to Fleet with "systemd" installer
+  Given a "<os>" agent is deployed to Fleet
   When the "elastic-agent" process is in the "started" state on the host
-  Then the "filebeat" process is in the "started" state on the host
-    And the "metricbeat" process is in the "started" state on the host
+  Then there are "2" instances of the "filebeat" process in the "started" state
+    And there are "2" instances of the "metricbeat" process in the "started" state
 
 @centos
 Examples: Centos
@@ -57,8 +57,8 @@ Examples: Debian
 Scenario Outline: Restarting the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the "elastic-agent" process is "restarted" on the host
-  Then the "filebeat" process is in the "started" state on the host
-    And the "metricbeat" process is in the "started" state on the host
+  Then there are "2" instances of the "filebeat" process in the "started" state
+    And there are "2" instances of the "metricbeat" process in the "started" state
 
 @centos
 Examples: Centos
@@ -75,8 +75,8 @@ Scenario Outline: Restarting the <os> host with persistent agent restarts backen
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the host is restarted
   Then the "elastic-agent" process is in the "started" state on the host
-    And the "filebeat" process is in the "started" state on the host
-    And the "metricbeat" process is in the "started" state on the host
+    And there are "2" instances of the "filebeat" process in the "started" state
+    And there are "2" instances of the "metricbeat" process in the "started" state
 
 @centos
 Examples: Centos
@@ -144,7 +144,7 @@ Examples: Debian
 
 @deploy-endpoint-then-unenroll-agent
 Scenario Outline: Un-enrolling Elastic Agent stops Elastic Endpoint
-  Given an Endpoint is successfully deployed with a "<os>" Agent using "tar" installer
+  Given an "Endpoint" is successfully deployed with a "<os>" Agent using "tar" installer
   When the agent is un-enrolled
   Then the "elastic-endpoint" process is in the "stopped" state on the host
 
@@ -160,7 +160,7 @@ Examples: Debian
 
 @deploy-endpoint-then-remove-it-from-policy
 Scenario Outline: Removing Endpoint from Agent policy stops the connected Endpoint
-  Given an Endpoint is successfully deployed with a "<os>" Agent using "tar" installer
+  Given an "Endpoint" is successfully deployed with a "<os>" Agent using "tar" installer
   When the "Endpoint Security" integration is "removed" in the policy
   Then the "elastic-endpoint" process is in the "stopped" state on the host
 

@@ -30,9 +30,10 @@ pipeline {
     quietPeriod(10)
   }
   triggers {
-    issueCommentTrigger('(?i).*(?:jenkins\\W+)?run\\W+(?:the\\W+)?tests(?:\\W+please)?.*')
+    issueCommentTrigger('(?i)(.*(?:jenkins\\W+)?run\\W+(?:the\\W+)?tests(?:\\W+please)?.*|^/test(?:\\W+.*)?$)')
   }
   parameters {
+    booleanParam(name: 'Run_As_Master_Branch', defaultValue: false, description: 'Allow to run any steps on a PR, some steps normally only run on master branch.')
     booleanParam(name: "SKIP_SCENARIOS", defaultValue: true, description: "If it's needed to skip those scenarios marked as @skip. Default true")
     booleanParam(name: "NIGHTLY_SCENARIOS", defaultValue: false, description: "If it's needed to include the scenarios marked as @nightly in the test execution. Default false")
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
@@ -42,7 +43,7 @@ pipeline {
     string(name: 'SLACK_CHANNEL', defaultValue: 'observablt-bots', description: 'The Slack channel(s) where errors will be posted. For multiple channels, use a comma-separated list of channels')
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
     string(name: 'BEAT_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
-    string(name: 'ELASTIC_AGENT_STALE_VERSION', defaultValue: '7.11-SNAPSHOT', description: 'SemVer version of the stale stand-alone elastic-agent to be used for Fleet upgrade tests.')
+    string(name: 'ELASTIC_AGENT_STALE_VERSION', defaultValue: '7.13-SNAPSHOT', description: 'SemVer version of the stale stand-alone elastic-agent to be used for Fleet upgrade tests.')
     booleanParam(name: "BEATS_USE_CI_SNAPSHOTS", defaultValue: false, description: "If it's needed to use the binary snapshots produced by Beats CI instead of the official releases")
     choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'TRACE', 'INFO'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
@@ -50,8 +51,8 @@ pipeline {
     string(name: 'STACK_VERSION', defaultValue: '8.0.0-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
     string(name: 'HELM_CHART_VERSION', defaultValue: '7.11.2', description: 'SemVer version of Helm chart to be used.')
     string(name: 'HELM_VERSION', defaultValue: '3.5.2', description: 'SemVer version of Helm to be used.')
-    string(name: 'HELM_KIND_VERSION', defaultValue: '0.10.0', description: 'SemVer version of Kind to be used.')
-    string(name: 'HELM_KUBERNETES_VERSION', defaultValue: '1.18.2', description: 'SemVer version of Kubernetes to be used.')
+    string(name: 'KIND_VERSION', defaultValue: '0.10.0', description: 'SemVer version of Kind to be used.')
+    string(name: 'KUBERNETES_VERSION', defaultValue: '1.18.2', description: 'SemVer version of Kubernetes to be used.')
     string(name: 'GITHUB_CHECK_NAME', defaultValue: '', description: 'Name of the GitHub check to be updated. Only if this build is triggered from another parent stream.')
     string(name: 'GITHUB_CHECK_REPO', defaultValue: '', description: 'Name of the GitHub repo to be updated. Only if this build is triggered from another parent stream.')
     string(name: 'GITHUB_CHECK_SHA1', defaultValue: '', description: 'Git SHA for the Beats upstream project (branch or PR)')
@@ -61,7 +62,6 @@ pipeline {
       options { skipDefaultCheckout() }
       environment {
         HOME = "${env.WORKSPACE}"
-        ELASTIC_APM_GLOBAL_LABELS="build_pr=${isPR()},build_id=${env.BUILD_ID}"
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
         GO111MODULE = 'on'
         SKIP_SCENARIOS = "${params.SKIP_SCENARIOS}"
@@ -76,8 +76,8 @@ pipeline {
         FORCE_SKIP_PRESUBMIT = "${params.forceSkipPresubmit}"
         HELM_CHART_VERSION = "${params.HELM_CHART_VERSION.trim()}"
         HELM_VERSION = "${params.HELM_VERSION.trim()}"
-        HELM_KIND_VERSION = "${params.HELM_KIND_VERSION.trim()}"
-        HELM_KUBERNETES_VERSION = "${params.HELM_KUBERNETES_VERSION.trim()}"
+        KIND_VERSION = "${params.KIND_VERSION.trim()}"
+        KUBERNETES_VERSION = "${params.KUBERNETES_VERSION.trim()}"
         LOG_LEVEL = "${params.LOG_LEVEL.trim()}"
         TIMEOUT_FACTOR = "${params.TIMEOUT_FACTOR.trim()}"
       }
@@ -249,16 +249,23 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   def suite = item.suite
   def platforms = item.platforms
   item.scenarios.each { scenario ->
+    def name = scenario.name
+    def platformsValue = platforms
+    def scenarioPlatforms = scenario.platforms
+    if (scenarioPlatforms?.size() > 0) {
+      // scenario platforms take precedence over suite platforms, overriding them
+      platformsValue = scenarioPlatforms
+    }
     def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
     def tags = scenario.tags
-    def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go" ]
+    def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
     if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
-      platforms.each { platform ->
+      platformsValue.each { platform ->
         log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
-        parallelTasks["${platform}_${suite}_${tags}"] = generateFunctionalTestStep(platform: "${platform}", suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}")
+        parallelTasks["${platform}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: "${platform}", suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}")
       }
     } else {
-      log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed because there are no modified files")
+      log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed in any platform because there are no modified files")
     }
   }
 }
@@ -281,6 +288,7 @@ def doNotifyBuildResult(boolean slackNotify) {
 }
 
 def generateFunctionalTestStep(Map args = [:]){
+  def name = args.get('name')
   def platform = args.get('platform')
   def suite = args.get('suite')
   def tags = args.get('tags')
@@ -296,9 +304,24 @@ def generateFunctionalTestStep(Map args = [:]){
   tags += excludeNightlyTag
 
   if (isPR() || isUpstreamTrigger(filter: 'PR-')) {
-    tags += pullRequestFilter
+    // when the "Run_As_Master_Branch" param is disabled, we will honour the PR filters, which
+    // basically exclude some less frequent platforms or operative systems. If the user enabled
+    // this param, the pipeline will remove the filters from the test runner.
+    if (!params.Run_As_Master_Branch) {
+      tags += pullRequestFilter
+    }
   }
-  def workerLabels = "${platform} && immutable && docker"
+
+  def goArch = "amd64"
+  def workerLabels = "${platform} && immutable"
+  if (platform == "arm64") {
+    goArch = "arm64"
+    // ARM is not ready as immutable workers
+    workerLabels = "arm"
+  }
+
+  // Skip scenarios per platform
+  tags += " && ~@skip:${goArch}"
 
   return {
     withNode(labels: "${workerLabels}", sleepMax: 20, forceWorkspace: true){
@@ -309,10 +332,12 @@ def generateFunctionalTestStep(Map args = [:]){
           if(isInstalled(tool: 'docker', flag: '--version')) {
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
           }
-          filebeat(output: "docker_logs_${suite}_${tags}.log", workdir: "${env.WORKSPACE}"){
+          filebeat(image: 'docker.elastic.co/beats/filebeat:7.13.0-SNAPSHOT', output: "docker_logs_${goArch}_${suite}_${name}.log", workdir: "${env.WORKSPACE}"){
             dir("${BASE_DIR}"){
-              withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL"){
-                sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
+              withEnv(["GOARCH=${goArch}", "ELASTIC_APM_GLOBAL_LABELS=build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}"]) {
+                withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL"){
+                  sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
+                }
               }
             }
           }

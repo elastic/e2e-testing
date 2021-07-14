@@ -8,8 +8,8 @@
     "prTitle": "{commitMessages} backport for {targetBranch}",
     "targetBranchChoices": [
         { "name": "7.x", "checked": true },
-        { "name": "7.12.x", "checked": true },
-        { "name": "7.11.x", "checked": true }
+        { "name": "7.14.x", "checked": true },
+        { "name": "7.13.x", "checked": true }
     ],
     "targetPRLabels": ["backport"],
     "upstream": "elastic/e2e-testing"

@@ -21,6 +21,57 @@ Because this framework uses Docker as the provisioning tool, all the services ar
 
 For Windows or other platform support, we should build Windows images and containers or, given the cross-platform nature of Golang, should add the building blocks in the test framework to run the code in the ephemeral CI workers for the underlaying platform.
 
+## Running against remote Docker
+
+This framework supports running tests against a remote docker daemon. To enable this feature a passwordless ssh key is required for unattended test runs. To run the test against a remote docker the environment variable **DOCKER_HOST** should be set, for example:
+
+```shell
+DOCKER_HOST="ssh://user@192.168.1.15"
+```
+
+This will tell the test framework to connect to the remote docker daemon over ssh and will also correctly set the base urls for accessing Kibana and Elasticsearch api endpoints from your local machine.
+
+You may be able to speed up tests run this way by altering some ssh settings in **~/.ssh/config** on your local machine:
+
+```
+Host 192.168.1.15 # replace with your remote host
+  controlmaster yes
+  controlpath ~/.ssh/sockets/%r@%h-%p
+  controlpersist yes
+```
+
+- Note that **~/.ssh/sockets** directory must already exist.
+- Note that docker uses an incredibly large number of ssh connections this way, it may require increasing the max open files on the remote host (Linux). To do so edit **/etc/security/limits.conf** and append the following:
+
+```
+* - nofile 500000
+```
+
+To verify this took place, logout and back in and run `ulimit -n`
+
+```
+$ ulimit -n
+500000
+```
+
+## Running against a remote deployed stack
+
+If an existing Elasticsearch, Kibana, Fleet server is already up and running, you can run the e2e tests against that existing cluster. The following environment variables are required:
+
+```
+PROVIDER=remote
+```
+
+We set the provider to manual, meaning there is no bootstrapping or deploying of required services as it is expected that those requirements be met prior to running the tests. Next, we need to point our tests to the service endpoints in order to perform the necessary operations against the Fleet server:
+
+```
+KIBANA_URL=https://a.public.ip:a.public.port
+ELASTICSEARCH_URL=https://a.public.ip:a.public.port
+FLEET_URL=https://a.public.ip:a.public.port
+```
+
+The above variables need to be accessible by the tests, if running the stack behind a firewall, ports may need to be exposed manually. The usage of `http` vs `https` is not important as our tests primarily deal with self signed certficates that are not validated against a true certficate authority.
+
 ### Diagnosing test failures
 
 The first step in determining the exact failure is to try and reproduce the test run locally, ideally using the DEBUG log level to enhance the log output. Once you've done that, look at the output from the test run.
@@ -66,8 +117,7 @@ This is an example of the optional configuration:
 
 4. Install dependencies.
 
-   - Install Go: `https://golang.org/doc/install` _(The CI uses [GVM](https://github.com/andrewkroh/gvm))_
-   - Install integrations `make -C e2e sync-integrations`
+   - Install Go, using the language version defined in the `.go-version` file at the root directory. We recommend using [GVM](https://github.com/andrewkroh/gvm), same as done in the CI, which will allow you to install multiple versions of Go, setting the Go environment in consequence: `eval "$(gvm 1.15.9)"`
    - Install godog (from project's root directory): `make -C e2e install-godog`
 
 5. Run the tests.
@@ -75,13 +125,13 @@ This is an example of the optional configuration:
    If you want to run the tests in Developer mode, which means reusing bakend services between test runs, please set this environment variable first:
 
    ```shell
-   # It won't tear down the backend services (ES, Kibana, Package Registry) or agent services after a test suite. 
+   # It won't tear down the backend services (ES, Kibana, Package Registry) or agent services after a test suite.
    export DEVELOPER_MODE=true
    ```
 
    ```shell
    cd e2e/_suites/fleet
-   OP_LOG_LEVEL=DEBUG godog
+   OP_LOG_LEVEL=DEBUG go test -v
    ```
 
    The tests will take a few minutes to run, spinning up a few Docker containers representing the various products in this framework and performing the test steps outlined earlier.
@@ -99,13 +149,15 @@ See the sections below on how to run the tests locally.
 Check if the scenario has an annotation/tag supporting the test runner to filter the execution by that tag. Godog will run those scenarios. For more information about tags: https://github.com/cucumber/godog/#tags
 
    ```shell
-   OP_LOG_LEVEL=DEBUG godog -t '@annotation'
+   cd e2e/_suites/fleet
+   OP_LOG_LEVEL=DEBUG go test -v --godog.tags='@annotation'
    ```
 
 Example:
 
    ```shell
-   OP_LOG_LEVEL=DEBUG godog -t '@stand_alone_mode'
+   cd e2e/_suites/fleet
+   OP_LOG_LEVEL=DEBUG go test -v --godog.tags='@stand_alone_mode'
    ```
 
 ### Setup failures

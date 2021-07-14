@@ -61,7 +61,8 @@ This is an example of the optional configuration:
 
 4. Install dependencies.
 
-   - Install Go: `https://golang.org/doc/install` _(The CI uses [GVM](https://github.com/andrewkroh/gvm))_
+   - Install Go, using the language version defined in the `.go-version` file at the root directory. We recommend using [GVM](https://github.com/andrewkroh/gvm), same as done in the CI, which will allow you to install multiple versions of Go, setting the Go environment in consequence: `eval "$(gvm 1.15.9)"`
+   - Install integrations `make -C cli sync-integrations`
    - Install godog (from project's root directory): `make -C e2e install-godog`
 
 5. Run the tests.
@@ -69,13 +70,13 @@ This is an example of the optional configuration:
    If you want to run the tests in Developer mode, which means reusing bakend services between test runs, please set this environment variable first:
 
    ```shell
-   # It won't tear down the backend services (Elasticsearch) after a test suite. 
+   # It won't tear down the backend services (Elasticsearch) after a test suite.
    export DEVELOPER_MODE=true
    ```
 
    ```shell
    cd e2e/_suites/metricbeat
-   OP_LOG_LEVEL=DEBUG godog
+   OP_LOG_LEVEL=DEBUG go test -v
    ```
 
    The tests will take a few minutes to run, spinning up a few Docker containers representing the various products in this framework and performing the test steps outlined earlier.
@@ -93,18 +94,20 @@ See the sections below on how to run the tests locally.
 Check if the scenario has an annotation/tag supporting the test runner to filter the execution by that tag. Godog will run those scenarios. For more information about tags: https://github.com/cucumber/godog/#tags
 
    ```shell
-   OP_LOG_LEVEL=DEBUG godog -t '@annotation'
+   cd e2e/_suites/metricbeat
+   OP_LOG_LEVEL=DEBUG go test -v --godog.tags='@annotation'
    ```
 
 Example:
 
    ```shell
-   OP_LOG_LEVEL=DEBUG godog -t '@apache'
+   cd e2e/_suites/metricbeat
+   OP_LOG_LEVEL=DEBUG go test -v --godog.tags='@apache'
    ```
 
 ### Setup failures
 
-Sometimes the tests coulf fail to configure or start a product such as Metricbeat, Elasticsearch, etc. To determine why 
+Sometimes the tests coulf fail to configure or start a product such as Metricbeat, Elasticsearch, etc. To determine why
 this happened, look at your terminal log in DEBUG mode. If a `docker-compose.yml` file is not present please execute this command:
 
 ```shell

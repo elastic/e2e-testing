@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	io "github.com/elastic/e2e-testing/cli/internal"
-	shell "github.com/elastic/e2e-testing/cli/shell"
+	io "github.com/elastic/e2e-testing/internal/io"
+	shell "github.com/elastic/e2e-testing/internal/shell"
 
 	packr "github.com/gobuffalo/packr/v2"
 	homedir "github.com/mitchellh/go-homedir"
@@ -33,7 +33,7 @@ var Op *OpConfig
 type OpConfig struct {
 	Profiles  map[string]Profile `mapstructure:"profiles"`
 	Services  map[string]Service `mapstructure:"services"`
-	Workspace string             `mapstructure:"workspace"`
+	workspace string             `mapstructure:"workspace"`
 }
 
 // GetServiceConfig configuration of a service
@@ -71,46 +71,6 @@ func FileExists(configFile string) (bool, error) {
 	return io.Exists(configFile)
 }
 
-// GetComposeFile returns the path of the compose file, looking up the
-// tool's workdir
-func GetComposeFile(isProfile bool, composeName string) (string, error) {
-	composeFileName := "docker-compose.yml"
-	serviceType := "services"
-	if isProfile {
-		serviceType = "profiles"
-	}
-
-	composeFilePath := path.Join(Op.Workspace, "compose", serviceType, composeName, composeFileName)
-	found, err := io.Exists(composeFilePath)
-	if found && err == nil {
-		log.WithFields(log.Fields{
-			"composeFilePath": composeFilePath,
-			"type":            serviceType,
-		}).Trace("Compose file found at workdir")
-
-		return composeFilePath, nil
-	}
-
-	log.WithFields(log.Fields{
-		"composeFilePath": composeFilePath,
-		"error":           err,
-		"type":            serviceType,
-	}).Trace("Compose file not found. Please make sure the file exists at the location")
-
-	if err != nil {
-		log.WithFields(log.Fields{
-			"composeFileName": composeFileName,
-			"error":           err,
-			"isProfile":       isProfile,
-			"type":            serviceType,
-		}).Error("Could not find compose file.")
-
-		return "", err
-	}
-
-	return composeFilePath, nil
-}
-
 // GetServiceConfig configuration of a service
 func GetServiceConfig(service string) (Service, bool) {
 	return Op.GetServiceConfig(service)
@@ -128,16 +88,7 @@ func Init() {
 		"docker",
 		"docker-compose",
 	}
-	shell.CheckInstalledSoftware(binaries)
-
-	InitConfig()
-}
-
-// InitConfig initialises configuration
-func InitConfig() {
-	if Op != nil {
-		return
-	}
+	shell.CheckInstalledSoftware(binaries...)
 
 	home, err := homedir.Dir()
 	if err != nil {
@@ -146,9 +97,14 @@ func InitConfig() {
 		}).Fatal("Could not get current user's HOME dir")
 	}
 
-	w := filepath.Join(home, ".op")
+	workspace := filepath.Join(home, ".op")
 
-	newConfig(w)
+	newConfig(workspace)
+}
+
+// OpDir returns the directory to copy to
+func OpDir() string {
+	return Op.workspace
 }
 
 // PutServiceEnvironment puts the environment variables for the service, replacing "SERVICE_"
@@ -186,7 +142,7 @@ func PutServiceVariantEnvironment(env map[string]string, service string, service
 	}
 
 	versionsPath := path.Join(
-		Op.Workspace, "compose", "services", service, "_meta", "supported-versions.yml")
+		OpDir(), "compose", "services", service, "_meta", "supported-versions.yml")
 
 	bytes, err := io.ReadFile(versionsPath)
 	if err != nil {
@@ -274,14 +230,14 @@ func newConfig(workspace string) {
 		return
 	}
 
-	checkConfigDirs(workspace)
-
 	opConfig := OpConfig{
 		Services:  map[string]Service{},
 		Profiles:  map[string]Profile{},
-		Workspace: workspace,
+		workspace: workspace,
 	}
 	Op = &opConfig
+
+	checkConfigDirs(Op.workspace)
 
 	box := packFiles(Op)
 	if box == nil {
@@ -306,7 +262,7 @@ func newConfig(workspace string) {
 // the default deployments, create a new directory and copy the existing files over.
 func extractProfileServiceConfig(op *OpConfig, box *packr.Box) error {
 	var walkFn = func(s string, file packr.File) error {
-		p := filepath.Join(op.Workspace, "compose", s)
+		p := filepath.Join(OpDir(), "compose", s)
 		dir := filepath.Dir(p)
 		if _, err := os.Stat(dir); os.IsNotExist(err) {
 			err := os.MkdirAll(dir, 0755)
@@ -355,7 +311,7 @@ func packFiles(op *OpConfig) *packr.Box {
 // reads the docker-compose in the workspace, merging them with what it's
 // already boxed in the binary
 func readFilesFromFileSystem(serviceType string) {
-	basePath := path.Join(Op.Workspace, "compose", serviceType)
+	basePath := path.Join(OpDir(), "compose", serviceType)
 	files, err := io.ReadDir(basePath)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -374,7 +330,7 @@ func readFilesFromFileSystem(serviceType string) {
 				log.WithFields(log.Fields{
 					"service": name,
 					"path":    composeFilePath,
-				}).Trace("Workspace file")
+				}).Trace("workspace file")
 
 				if serviceType == "services" {
 					// add a service or a profile

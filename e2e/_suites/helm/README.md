@@ -35,14 +35,14 @@ This is an example of the optional configuration:
    # Depending on the versions used,
    export HELM_VERSION="3.5.2"        # Helm version: for Helm v2.x.x we have to initialise Tiller right after the k8s cluster
    export HELM_CHART_VERSION="7.11.2"  # version of the Elastic's Observability Helm charts
-   export HELM_KUBERNETES_VERSION="1.18.2" # version of the cluster to be passed to kind
+   export KUBERNETES_VERSION="1.18.2" # version of the cluster to be passed to kind
    ```
 
 3. Install dependencies.
 
    - Install Helm 3.5.2
    - Install Kind 0.10.0
-   - Install Go: `https://golang.org/doc/install` _(The CI uses [GVM](https://github.com/andrewkroh/gvm))_
+   - Install Go, using the language version defined in the `.go-version` file at the root directory. We recommend using [GVM](https://github.com/andrewkroh/gvm), same as done in the CI, which will allow you to install multiple versions of Go, setting the Go environment in consequence: `eval "$(gvm 1.15.9)"`
    - Install godog (from project's root directory): `make -C e2e install-godog`
 
 4. Run the tests.
@@ -56,7 +56,7 @@ This is an example of the optional configuration:
 
    ```shell
    cd e2e/_suites/helm
-   OP_LOG_LEVEL=DEBUG godog
+   OP_LOG_LEVEL=DEBUG go test -v
    ```
 
    The tests will take a few minutes to run, spinning up the Kubernetes cluster, installing the helm charts, and performing the test steps outlined earlier.
@@ -74,13 +74,15 @@ See the sections below on how to run the tests locally.
 Check if the scenario has an annotation/tag supporting the test runner to filter the execution by that tag. Godog will run those scenarios. For more information about tags: https://github.com/cucumber/godog/#tags
 
    ```shell
-   OP_LOG_LEVEL=DEBUG godog -t '@annotation'
+   cd e2e/_suites/helm
+   OP_LOG_LEVEL=DEBUG go test -v --godog.tags='@annotation'
    ```
 
 Example:
 
    ```shell
-   OP_LOG_LEVEL=DEBUG godog -t '@apm-server'
+   cd e2e/_suites/helm
+   OP_LOG_LEVEL=DEBUG go test -v --godog.tags='@apm-server'
    ```
 
 ### Setup failures
