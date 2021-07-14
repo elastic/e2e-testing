@@ -351,6 +351,62 @@ def generateFunctionalTestStep(Map args = [:]){
   }
 }
 
+def generateStepForWindows(Map params = [:]){
+    def name = params.get('name')
+    def suite = params.get('suite')
+    def tags = params.get('tags')
+    return {
+        def linuxIp = grabWorkerIP()
+        withNode(labels: 'windows-2019-immutable', forceWorkspace: true, forceWorker: true) {
+            withEnv([
+                "GO111MODULE=on",
+                "PATH=${env.HOME}:${env.WORKSPACE}\\${env.WORKSPACE}\\bin:${env.PATH}",
+                "KIBANA_URL=https://${linuxIp}:5601",
+                "ELASTICSEARCH_URL=https://${linuxIp}:9200",
+                "FLEET_URL=https://${linuxIp}:8220",
+                "STACK_VERSION=${env.STACK_VERSION}",
+                "BEAT_VERSION=${env.BEAT_VERSION}",
+                "PROVIDER=remote",
+                "LOG_LEVEL=${env.LOG_LEVEL}",
+                "ELASTIC_APM_GLOBAL_LABELS=build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=amd64,beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}"]){
+                try {
+                    deleteDir()
+                    unstash 'source'
+                    withGoEnv(version: "${GO_VERSION}") {
+                        // TODO: expand beyond fleet
+                        dir("${env.WORKSPACE}\\e2e\\_suites\\fleet"){
+                            withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL"){
+                                retryWithSleep(retries: 15, seconds: 30, backoff: true){
+                                    powershell(label: "Check for running elasticsearch", script: "Test-NetConnection ${linuxIp} -Port 9200")
+                                    powershell(label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601")
+                                    powershell(label: "Check for running fleet server", script: "Test-NetConnection ${linuxIp} -Port 8220")
+                                }
+                                cmd label: "Run functional tests for ${suite}:${tags}", script: "go test -timeout 60m -v --godog.tags=\"${tags}\""
+                            }
+                        }
+                    }
+                } finally {
+                    junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${env.WORKSPACE}\\outputs\\TEST-*.xml")
+                    archiveArtifacts allowEmptyArchive: true, artifacts: "${env.WORKSPACE}\\outputs\\TEST-*.xml"
+                }
+            }
+        }
+    }
+}
+
+def grabWorkerIP(){
+  def linuxIp = ''
+  retryWithSleep(retries: 3, seconds: 5, backoff: true){
+    linuxIp = sh(label: 'Get IP', script: '''hostname -I | awk '{print $1}' ''', returnStdout: true)?.trim()
+    log(level: 'INFO', text: "Worker IP '${linuxIp}'")
+    if(!linuxIp?.trim()){
+      error('Unable to get the Linux worker IP')
+    }
+  }
+  return linuxIp
+}
+
+
 /**
 * Tear down the setup for the static workers.
 */
