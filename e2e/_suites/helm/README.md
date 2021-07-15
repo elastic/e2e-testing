@@ -56,7 +56,7 @@ This is an example of the optional configuration:
 
    ```shell
    cd e2e/_suites/helm
-   OP_LOG_LEVEL=DEBUG godog
+   OP_LOG_LEVEL=DEBUG go test -v
    ```
 
    The tests will take a few minutes to run, spinning up the Kubernetes cluster, installing the helm charts, and performing the test steps outlined earlier.
@@ -74,13 +74,15 @@ See the sections below on how to run the tests locally.
 Check if the scenario has an annotation/tag supporting the test runner to filter the execution by that tag. Godog will run those scenarios. For more information about tags: https://github.com/cucumber/godog/#tags
 
    ```shell
-   OP_LOG_LEVEL=DEBUG godog -t '@annotation'
+   cd e2e/_suites/helm
+   OP_LOG_LEVEL=DEBUG go test -v --godog.tags='@annotation'
    ```
 
 Example:
 
    ```shell
-   OP_LOG_LEVEL=DEBUG godog -t '@apm-server'
+   cd e2e/_suites/helm
+   OP_LOG_LEVEL=DEBUG go test -v --godog.tags='@apm-server'
    ```
 
 ### Setup failures
