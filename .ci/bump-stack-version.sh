@@ -28,12 +28,14 @@ echo "Update stack with version ${VERSION} in docker-compose.yml"
 find . -name 'docker-compose.yml' -path './cli/config/compose/profiles/*' -print0 |
 	while IFS= read -r -d '' FILE ; do
 		${SED} -E -e "s#(image: (\")?docker\.elastic\.co/.*):-[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1:-${VERSION}#g" $FILE
+		git add $FILE
 	done
 
 echo "Update stack with version ${VERSION} in deployment.yaml"
 find . -name 'deployment.yaml' -print0 |
 	while IFS= read -r -d '' FILE ; do
 		${SED} -E -e "s#(image: docker\.elastic\.co/.*):[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1:${VERSION}#g" $FILE
+		git add $FILE
 	done
 
 echo "Commit changes"
@@ -42,9 +44,6 @@ if [ "$CREATE_BRANCH" = "true" ]; then
 else
 	echo "Branch creation disabled."
 fi
-for FILE in ${FILES} ; do
-	echo "git add $FILE"
-done
 git diff --staged --quiet || git commit -m "bump stack version ${VERSION}"
 git --no-pager log -1
 
