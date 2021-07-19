@@ -1,7 +1,6 @@
 version: '2.4'
 services:
   elastic-agent:
-<<<<<<< HEAD
     image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-7.x-SNAPSHOT}"
     container_name: ${elasticAgentContainerName}
     depends_on:
