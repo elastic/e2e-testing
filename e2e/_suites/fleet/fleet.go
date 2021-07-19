@@ -7,9 +7,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/Jeffail/gabs/v2"
 	"github.com/google/uuid"
 	"go.elastic.co/apm"
 
@@ -22,12 +26,14 @@ import (
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
 const actionADDED = "added"
 const actionREMOVED = "removed"
+const testResourcesDir = "./testresources"
 
 var deployedAgentsCount = 0
 
@@ -169,6 +175,10 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
 	s.Step(`^the policy is updated to have "([^"]*)" in "([^"]*)" mode$`, fts.thePolicyIsUpdatedToHaveMode)
 	s.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
+
+	// System Integration steps
+	s.Step(`^the policy is updated to have "([^"]*)" set to "([^"]*)"$`, fts.thePolicyIsUpdatedToHaveSystemSet)
+	s.Step(`^"([^"]*)" with "([^"]*)" metrics are present in the datastreams$`, fts.theMetricsInTheDataStream)
 
 	// stand-alone only steps
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed$`, fts.aStandaloneAgentIsDeployed)
@@ -1177,4 +1187,159 @@ func inputs(integration string) []kibana.Input {
 		}
 	}
 	return []kibana.Input{}
+}
+
+func metricsInputs(integration string, set string) []kibana.Input {
+	metricsFile := filepath.Join(testResourcesDir, "/metrics.json")
+	data := readJSONFile(metricsFile, integration, set)
+	return []kibana.Input{
+		{
+			Type:    integration,
+			Enabled: true,
+			Streams: data,
+		},
+	}
+
+	return []kibana.Input{}
+}
+
+func readJSONFile(file string, integration string, set string) []interface{} {
+	jsonFile, err := os.Open(file)
+	if err != nil {
+		fmt.Println(err)
+	}
+	log.WithFields(log.Fields{
+		"file": file,
+	}).Info("Successfully Opened " + file)
+
+	defer jsonFile.Close()
+	data, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	jsonParsed, err := gabs.ParseJSON(data)
+	if err != nil {
+		log.Fatal("Unable to parse json")
+	}
+	children := jsonParsed.S("inputs").Children()
+	for i, item := range children {
+		if item.Path("type").Data().(string) == integration {
+			for idx, stream := range item.S("streams").Children() {
+				dataSet, _ := stream.Path("data_stream.dataset").Data().(string)
+				if dataSet == "system."+set {
+					jsonParsed.SetP(
+						integration+"-system."+set+"-"+uuid.New().String(),
+						fmt.Sprintf("inputs.%d.streams.%d.id", i, idx),
+					)
+					jsonParsed.SetP(
+						true,
+						fmt.Sprintf("inputs.%d.streams.%d.enabled", i, idx),
+					)
+					dataStreamOut, _ := jsonParsed.Path(fmt.Sprintf("inputs.%d.streams", i)).Data().([]interface{})
+					return dataStreamOut
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set string) error {
+	var condition = false
+	if name != "system/metrics" {
+		condition = true
+	}
+	if name != "logfile" {
+		condition = true
+	}
+	if name != "log" {
+		condition = true
+	}
+
+	if condition != true {
+		log.WithFields(log.Fields{
+			"name": name,
+		}).Warn("We only support system system/metrics, log and logfile policy to be updated")
+		return godog.ErrPending
+	}
+
+	packageDS, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, "system", fts.Policy)
+
+	if err != nil {
+		return err
+	}
+	fts.Integration = packageDS.Package
+
+	log.WithFields(log.Fields{
+		"type":    name,
+		"dataset": "system." + set,
+	}).Info("Getting information about Policy package type " + name + " name with dataset system." + set)
+
+	for _, item := range packageDS.Inputs {
+		if item.Type == name {
+			packageDS.Inputs = metricsInputs(name, set)
+		}
+	}
+	log.WithFields(log.Fields{
+		"inputs": packageDS.Inputs,
+	}).Info("Updating integration package config")
+
+	updatedAt, err := fts.kibanaClient.UpdateIntegrationPackagePolicy(fts.currentContext, packageDS)
+	if err != nil {
+		return err
+	}
+
+	fts.PolicyUpdatedAt = updatedAt
+
+	log.WithFields(log.Fields{
+		"dataset": "system." + set,
+		"enabled": "true",
+		"type":    "metrics",
+	}).Info("Policy Updated with package name system." + set)
+
+	return nil
+}
+
+func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) error {
+	var TimeoutFactor = 3
+	timeNow := time.Now()
+	startTime := timeNow.Unix()
+
+	waitForDataStreams := func() error {
+		var exist = false
+		dataStreams, _ := fts.kibanaClient.GetDataStreams(fts.currentContext)
+
+		for _, item := range dataStreams.Children() {
+			if item.Path("dataset").Data().(string) == "system."+set {
+				log.WithFields(log.Fields{
+					"dataset": "system." + set,
+					"enabled": "true",
+					"type":    name,
+				}).Info("The " + name + "with value system." + set + " in the metrics")
+
+				if int64(int64(item.Path("last_activity_ms").Data().(float64))) > startTime {
+					log.WithField(
+						"Activity Time stamp for the "+name+"system."+name, "Is valid",
+					).Info("The " + name + "with value system." + set + " in the metrics")
+				}
+				exist = true
+				break
+			}
+		}
+
+		if exist != true {
+			return errors.New("No " + name + " with value system." + set + " found in the metrics")
+		}
+		return nil
+
+	}
+	maxTimeout := time.Duration(TimeoutFactor) * time.Minute * 2
+	exp := utils.GetExponentialBackOff(maxTimeout)
+
+	err := backoff.Retry(waitForDataStreams, exp)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
