@@ -2,10 +2,7 @@ version: '2.4'
 services:
   elastic-agent:
 <<<<<<< HEAD
-    image: docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-7.x-SNAPSHOT}
-=======
-    image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.0.0-SNAPSHOT}"
->>>>>>> 66dad0c (Bump elastic stack version automation and auto-merge with mergify (#1062))
+    image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-7.x-SNAPSHOT}"
     container_name: ${elasticAgentContainerName}
     depends_on:
       elasticsearch:
