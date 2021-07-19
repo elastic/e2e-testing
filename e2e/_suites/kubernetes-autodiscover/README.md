@@ -60,7 +60,7 @@ template, such as the following ones:
 Any of these steps can be parameterized with an option that can be used to
 select different configuration blocks in the template. For example the following
 step would select the configuration block marked as `monitor annotations` in
-the template: 
+the template:
 ```shell
   `"a service" is deployed with "monitor annotations"
 ```
@@ -126,13 +126,13 @@ This is an example of the optional configuration:
 4. Run the tests.
    ```shell
    cd e2e/_suites/kubernetes-autodiscover
-   OP_LOG_LEVEL=DEBUG godog
+   OP_LOG_LEVEL=DEBUG go test -v
    ```
 
    Optionally, you can run only one of the feature files
    ```shell
    cd e2e/_suites/kubernetes-autodiscover
-   OP_LOG_LEVEL=DEBUG godog features/filebeat.feature
+   OP_LOG_LEVEL=DEBUG go test -v --godog.tags='@filebeat'
    ```
 
    The tests will take a few minutes to run, spinning up the Kubernetes cluster
@@ -151,8 +151,8 @@ created by this suite will follow the pattern `kind-<random uuid>`.
 The temporary configuration file is logged by the suite at the info level. If a
 cluster is created by the suite, you will see something like this:
 ```shell
-INFO[0000] Kubernetes cluster not available, will start one using kind 
-INFO[0000] Using kind v0.10.0 go1.15.7 linux/amd64      
+INFO[0000] Kubernetes cluster not available, will start one using kind
+INFO[0000] Using kind v0.10.0 go1.15.7 linux/amd64
 INFO[0046] Kubeconfig in /tmp/test-252418601/kubeconfig
 ```
 
