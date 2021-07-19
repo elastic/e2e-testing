@@ -28,11 +28,6 @@ func (fts *FleetTestSuite) aStandaloneAgentIsDeployed(image string) error {
 }
 
 func (fts *FleetTestSuite) aStandaloneAgentIsDeployedOnCloud(image string) error {
-	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(fts.currentContext, true)
-	if err != nil {
-		return err
-	}
-	fts.FleetServerPolicy = fleetPolicy
 	volume := path.Join(config.OpDir(), "compose", "services", "elastic-agent", "apm-legacy")
 	return fts.startStandAloneAgent(image, "cloud", map[string]string{"apmVolume": volume})
 }
