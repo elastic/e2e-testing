@@ -246,28 +246,29 @@ pipeline {
 }
 
 def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
-  def suite = item.suite
-  def platforms = item.platforms
-  item.scenarios.each { scenario ->
-    def name = scenario.name
-    def platformsValue = platforms
-    def scenarioPlatforms = scenario.platforms
-    if (scenarioPlatforms?.size() > 0) {
-      // scenario platforms take precedence over suite platforms, overriding them
-      platformsValue = scenarioPlatforms
+    def suite = item.suite
+    def platforms = item.platforms
+
+    item.scenarios.each { scenario ->
+        def name = scenario.name
+        def platformsValue = platforms
+        def scenarioPlatforms = scenario.platforms
+        if (scenarioPlatforms?.size() > 0) {
+            // scenario platforms take precedence over suite platforms, overriding them
+            platformsValue = scenarioPlatforms
+        }
+        def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
+        def tags = scenario.tags
+        def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
+        if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
+            platformsValue.each { platform ->
+                log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
+                parallelTasks["${platform}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: "${platform}", suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}")
+            }
+        } else {
+            log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed in any platform because there are no modified files")
+        }
     }
-    def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
-    def tags = scenario.tags
-    def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
-    if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
-      platformsValue.each { platform ->
-        log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
-        parallelTasks["${platform}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: "${platform}", suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}")
-      }
-    } else {
-      log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed in any platform because there are no modified files")
-    }
-  }
 }
 
 def doNotifyBuildResult(boolean slackNotify) {
@@ -314,11 +315,25 @@ def generateFunctionalTestStep(Map args = [:]){
 
   def goArch = "amd64"
   def workerLabels = "${platform} && immutable"
+  def linuxIp = null
   if (platform == "arm64") {
     goArch = "arm64"
     // ARM is not ready as immutable workers
     workerLabels = "arm"
   }
+
+    if(platform.contains("windows")) {
+        workerLabels = "windows-2019"
+        // Boot up a linux VM to deploy Elastic Stack to be tested with a
+        // Windows/MacOS agent utilizing remote provider option
+        withNode(labels: "ubuntu-18.04") {
+            deleteDir()
+            unstash 'source'
+            sh script: "git clone https://github.com/elastic/e2e-testing", label: "Checking out e2e-testing for deployment script"
+            sh script: "cd e2e-testing/cli/config/compose/profiles/fleet && docker-compose up -d", label: "Deploying fleet via docker"
+            linuxIp = grabWorkerIP()
+        }
+    }
 
   // Skip scenarios per platform
   tags += " && ~@skip:${goArch}"
@@ -332,14 +347,32 @@ def generateFunctionalTestStep(Map args = [:]){
           if(isInstalled(tool: 'docker', flag: '--version')) {
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
           }
-          filebeat(image: 'docker.elastic.co/beats/filebeat:7.13.0-SNAPSHOT', output: "docker_logs_${goArch}_${suite}_${name}.log", workdir: "${env.WORKSPACE}"){
-            dir("${BASE_DIR}"){
-              withEnv(["GOARCH=${goArch}", "ELASTIC_APM_GLOBAL_LABELS=build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}"]) {
-                withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL"){
-                  sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${suite}:${tags}"
-                }
+          filebeat(image: 'docker.elastic.co/beats/filebeat:7.13.0-SNAPSHOT', output: "docker_logs_${goArch}_${suite}_${name}.log", workdir: "${env.WORKSPACE}") {
+              dir("${BASE_DIR}") {
+                  def envContext = []
+                  if (platform.contains("windows")) {
+                       envContext = [
+                         "KIBANA_URL=https://${linuxIp}:5601",
+                         "ELASTICSEARCH_URL=https://${linuxIp}:9200",
+                         "FLEET_URL=https://${linuxIp}:8220",
+                         "PROVIDER=remote",
+                         "GOARCH=${goArch}",
+                         "ELASTIC_APM_GLOBAL_LABELS=build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}"
+                       ]
+                       withEnv(envContext) {
+                           withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL"){
+                               cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=${tags}", label: "Run functional tests for ${platform}:${suite}:${tags}"
+                           }
+                       }
+                   } else {
+                       envContext = ["GOARCH=${goArch}", "ELASTIC_APM_GLOBAL_LABELS=build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}"]
+                       withEnv(envContext) {
+                           withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL"){
+                               sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${platform}:${suite}:${tags}"
+                           }
+                       }
+                   }
               }
-            }
           }
         } finally {
           junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
@@ -349,49 +382,6 @@ def generateFunctionalTestStep(Map args = [:]){
       }
     }
   }
-}
-
-def generateStepForWindows(Map params = [:]){
-    def name = params.get('name')
-    def suite = params.get('suite')
-    def tags = params.get('tags')
-    return {
-        def linuxIp = grabWorkerIP()
-        withNode(labels: 'windows-2019-immutable', forceWorkspace: true, forceWorker: true) {
-            withEnv([
-                "GO111MODULE=on",
-                "PATH=${env.HOME}:${env.WORKSPACE}\\${env.WORKSPACE}\\bin:${env.PATH}",
-                "KIBANA_URL=https://${linuxIp}:5601",
-                "ELASTICSEARCH_URL=https://${linuxIp}:9200",
-                "FLEET_URL=https://${linuxIp}:8220",
-                "STACK_VERSION=${env.STACK_VERSION}",
-                "BEAT_VERSION=${env.BEAT_VERSION}",
-                "PROVIDER=remote",
-                "LOG_LEVEL=${env.LOG_LEVEL}",
-                "ELASTIC_APM_GLOBAL_LABELS=build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=amd64,beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}"]){
-                try {
-                    deleteDir()
-                    unstash 'source'
-                    withGoEnv(version: "${GO_VERSION}") {
-                        // TODO: expand beyond fleet
-                        dir("${env.WORKSPACE}\\e2e\\_suites\\fleet"){
-                            withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL"){
-                                retryWithSleep(retries: 15, seconds: 30, backoff: true){
-                                    powershell(label: "Check for running elasticsearch", script: "Test-NetConnection ${linuxIp} -Port 9200")
-                                    powershell(label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601")
-                                    powershell(label: "Check for running fleet server", script: "Test-NetConnection ${linuxIp} -Port 8220")
-                                }
-                                cmd label: "Run functional tests for ${suite}:${tags}", script: "go test -timeout 60m -v --godog.tags=\"${tags}\""
-                            }
-                        }
-                    }
-                } finally {
-                    junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${env.WORKSPACE}\\outputs\\TEST-*.xml")
-                    archiveArtifacts allowEmptyArchive: true, artifacts: "${env.WORKSPACE}\\outputs\\TEST-*.xml"
-                }
-            }
-        }
-    }
 }
 
 def grabWorkerIP(){
