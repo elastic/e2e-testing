@@ -26,6 +26,11 @@ SUITES:
       - name: "Linux Integration"
         pullRequestFilter: " && ~debian"
         tags: "linux_integration"
+      - name: "System Integration"
+        platforms:
+          - "ubuntu-18.04"
+        pullRequestFilter: " && ~debian"
+        tags: "system_integration"
       - name: "Stand-alone"
         pullRequestFilter: " && ~ubi8"
         tags: "stand_alone_agent"
