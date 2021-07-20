@@ -316,8 +316,8 @@ def generateFunctionalTestStep(Map args = [:]){
   def workerLabels = "${platform} && immutable"
   if (platform == "arm64") {
     goArch = "arm64"
-    // ARM is not ready as immutable workers
-    workerLabels = "arm"
+    // let's use centos8 ARM as base VM, trying to mitigate the flakiness described in https://github.com/elastic/e2e-testing/issues/1271
+    workerLabels = "centos-8-aarch64"
   }
 
   // Skip scenarios per platform
