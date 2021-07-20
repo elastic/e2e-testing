@@ -1244,6 +1244,16 @@ func readJSONFile(file string, integration string, set string) []interface{} {
 	return nil
 }
 
+func (fts *FleetTestSuite) getAgentOSData() (string, error) {
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+	agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
+	if err != nil {
+		return agent.LocalMetadata.OS.Platform, err
+	}
+	return agent.LocalMetadata.OS.Platform, nil
+}
+
 func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set string) error {
 	var condition = false
 	if name != "system/metrics" {
@@ -1262,6 +1272,8 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		}).Warn("We only support system system/metrics, log and logfile policy to be updated")
 		return godog.ErrPending
 	}
+
+	os, _ := fts.getAgentOSData()
 
 	packageDS, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, "system", fts.Policy)
 
@@ -1295,6 +1307,7 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		"dataset": "system." + set,
 		"enabled": "true",
 		"type":    "metrics",
+		"os":      os,
 	}).Info("Policy Updated with package name system." + set)
 
 	return nil
@@ -1304,6 +1317,7 @@ func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) er
 	var TimeoutFactor = 3
 	timeNow := time.Now()
 	startTime := timeNow.Unix()
+	os, _ := fts.getAgentOSData()
 
 	waitForDataStreams := func() error {
 		var exist = false
@@ -1315,12 +1329,14 @@ func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) er
 					"dataset": "system." + set,
 					"enabled": "true",
 					"type":    name,
+					"os":      os,
 				}).Info("The " + name + "with value system." + set + " in the metrics")
 
 				if int64(int64(item.Path("last_activity_ms").Data().(float64))) > startTime {
-					log.WithField(
-						"Activity Time stamp for the "+name+"system."+name, "Is valid",
-					).Info("The " + name + "with value system." + set + " in the metrics")
+					log.WithFields(log.Fields{
+						"Activity Time stamp for the " + name + "system." + name: "Is valid",
+						"os": os,
+					}).Info("The " + name + " with value system." + set + " in the metrics")
 				}
 				exist = true
 				break
