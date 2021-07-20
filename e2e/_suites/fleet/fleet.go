@@ -376,9 +376,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 		agentService,
 	}
 
-	containerName := fmt.Sprintf("%s_%s_%d", common.FleetProfileName, common.ElasticAgentServiceName, agentService.Scale)
-	common.ProfileEnv["elasticAgentContainerName"] = containerName
-
 	err = fts.deployer.Add(fts.currentContext, common.FleetProfileServiceRequest, services, common.ProfileEnv)
 	if err != nil {
 		return err
@@ -992,9 +989,6 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	services := []deploy.ServiceRequest{
 		agentService,
 	}
-
-	containerName := fmt.Sprintf("%s_%s_%d", common.FleetProfileName, common.ElasticAgentServiceName, agentService.Scale)
-	common.ProfileEnv["elasticAgentContainerName"] = containerName
 
 	err := fts.deployer.Add(fts.currentContext, common.FleetProfileServiceRequest, services, common.ProfileEnv)
 	if err != nil {

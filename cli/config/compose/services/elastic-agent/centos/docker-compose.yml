@@ -2,7 +2,6 @@ version: '2.4'
 services:
   elastic-agent:
     image: docker.elastic.co/observability-ci/centos-systemd:latest
-    container_name: ${elasticAgentContainerName}
     entrypoint: "/usr/sbin/init"
     platform: ${stackPlatform:-linux/amd64}
     privileged: true
