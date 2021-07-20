@@ -1,5 +1,4 @@
-@agent_endpoint_integration
-@skip:arm64
+@agent_endpoint_integration @skip:arm64
 Feature: Agent Endpoint Integration
   Scenarios for Agent to deploy Endpoint and sending data to Fleet and Elasticsearch.
 
