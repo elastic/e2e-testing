@@ -1,8 +1,12 @@
 version: '2.4'
 services:
   elastic-agent:
+<<<<<<< HEAD
     image: docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-7.13.0-SNAPSHOT}
     container_name: ${elasticAgentContainerName}
+=======
+    image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.0.0-SNAPSHOT}"
+>>>>>>> 787b976 (fix: apply container name to elastic-agent Docker services (#1336))
     depends_on:
       elasticsearch:
         condition: service_healthy
