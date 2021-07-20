@@ -32,6 +32,10 @@ func (fts *FleetTestSuite) aStandaloneAgentIsDeployedOnCloud(image string) error
 	return fts.startStandAloneAgent(image, "cloud", map[string]string{"apmVolume": volume})
 }
 
+func (fts *FleetTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string) error {
+	return fts.startStandAloneAgent(image, "", map[string]string{"fleetServerMode": "1"})
+}
+
 func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
 	minimumHitsCount := 25
