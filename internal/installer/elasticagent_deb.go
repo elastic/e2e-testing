@@ -112,7 +112,7 @@ func (i *elasticAgentDEBPackage) InstallCerts(ctx context.Context) error {
 
 // Logs prints logs of service
 func (i *elasticAgentDEBPackage) Logs() error {
-	return i.deploy.Logs(i.service)
+	return systemCtlLog(context.Background(), "debian", i.Exec)
 }
 
 // Postinstall executes operations after installing a DEB package

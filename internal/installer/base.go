@@ -6,11 +6,14 @@ package installer
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 	"strings"
 
+	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/internal/systemd"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -55,6 +58,25 @@ func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.Servic
 	}
 
 	return nil, nil
+}
+
+func systemCtlLog(ctx context.Context, OS string, execFn func(ctx context.Context, args []string) (string, error)) error {
+	cmds := systemd.LogCmds(common.ElasticAgentServiceName)
+	span, _ := apm.StartSpanOptions(ctx, "Retrieving logs for the Elastic Agent service", "elastic-agent."+OS+".log", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+
+	logs, err := execFn(ctx, cmds)
+	if err != nil {
+		return err
+	}
+
+	// print logs as is, including tabs and line breaks
+	fmt.Println(logs)
+
+	return nil
 }
 
 func systemCtlPostInstall(ctx context.Context, linux string, artifact string, execFn func(ctx context.Context, args []string) (string, error)) error {

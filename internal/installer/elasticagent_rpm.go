@@ -113,7 +113,7 @@ func (i *elasticAgentRPMPackage) InstallCerts(ctx context.Context) error {
 
 // Logs prints logs of service
 func (i *elasticAgentRPMPackage) Logs() error {
-	return i.deploy.Logs(i.service)
+	return systemCtlLog(context.Background(), "rpm", i.Exec)
 }
 
 // Postinstall executes operations after installing a RPM package
