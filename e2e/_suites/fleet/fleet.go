@@ -1316,6 +1316,7 @@ func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) er
 	var TimeoutFactor = 3
 	timeNow := time.Now()
 	startTime := timeNow.Unix()
+
 	os, _ := fts.getAgentOSData()
 
 	waitForDataStreams := func() error {
