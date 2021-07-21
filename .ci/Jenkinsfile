@@ -328,9 +328,10 @@ def generateFunctionalTestStep(Map args = [:]){
         withNode(labels: "ubuntu-18.04") {
             deleteDir()
             unstash 'source'
-            sh script: "git clone https://github.com/elastic/e2e-testing", label: "Checking out e2e-testing for deployment script"
-            sh script: "cd e2e-testing/cli/config/compose/profiles/fleet && docker-compose up -d", label: "Deploying fleet via docker"
-            linuxIp = grabWorkerIP()
+            dir("${BASE_DIR}"){
+              sh script: "cd cli/config/compose/profiles/fleet && docker-compose up -d", label: "Deploying fleet via docker"
+              linuxIp = grabWorkerIP()
+            }
         }
     }
 
