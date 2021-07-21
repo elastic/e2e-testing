@@ -20,7 +20,7 @@ SUITES:
         tags: "fleet_mode_agent"
         platforms:
           - "ubuntu-18.04"
-          - "windows-2019"
+          - "windows-2019-docker-immutable"
       - name: "Endpoint Integration"
         platforms:
           - "ubuntu-18.04"

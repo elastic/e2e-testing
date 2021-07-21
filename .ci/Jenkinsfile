@@ -323,7 +323,7 @@ def generateFunctionalTestStep(Map args = [:]){
   }
 
     if(platform.contains("windows")) {
-        workerLabels = "windows-2019"
+        workerLabels = "windows-2019-docker-immutable"
         // Boot up a linux VM to deploy Elastic Stack to be tested with a
         // Windows/MacOS agent utilizing remote provider option
         withNode(labels: "ubuntu-18.04") {
