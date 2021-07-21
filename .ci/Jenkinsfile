@@ -329,8 +329,9 @@ def generateFunctionalTestStep(Map args = [:]){
             deleteDir()
             unstash 'source'
             dir("${BASE_DIR}"){
-              sh script: "cd cli/config/compose/profiles/fleet && docker-compose up -d", label: "Deploying fleet via docker"
-              linuxIp = grabWorkerIP()
+                sh script: "cd cli/config/compose/profiles/fleet && docker-compose up -d", label: "Deploying fleet via docker"
+                sh script: "docker ps"
+                linuxIp = grabWorkerIP()
             }
         }
     }
@@ -351,7 +352,6 @@ def generateFunctionalTestStep(Map args = [:]){
             "FLEET_URL=https://${linuxIp}:8220",
             "PROVIDER=remote",
             "PATH=${path}",
-            "SKIP_PULL=1"
         ]
     }
     envContext.add("GOARCH=${goArch}")
@@ -371,6 +371,10 @@ def generateFunctionalTestStep(Map args = [:]){
                             if (platform.contains("windows")) {
                                 withGoEnvWindows(version: "${GO_VERSION}"){
                                     echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
+                                    powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${linuxIp} -Port 9200"
+                                    powershell label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601"
+                                    powershell label: "Check for running fleet server", script: "Test-NetConnection ${linuxIp} -Port 8220"
+
                                     cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platform}:${suite}:${tags}"
                                 }
                             } else {
