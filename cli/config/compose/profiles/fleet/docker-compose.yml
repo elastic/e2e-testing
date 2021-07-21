@@ -16,7 +16,7 @@ services:
       - xpack.security.authc.api_key.enabled=true
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=changeme
-    image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion:-8.0.0-SNAPSHOT}"
+    image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion:-8.0.0-1e9bea0f-SNAPSHOT}"
     platform: ${stackPlatform:-linux/amd64}
     ports:
       - "9200:9200"
@@ -28,7 +28,7 @@ services:
       test: "curl -f http://localhost:5601/login | grep kbn-injected-metadata 2>&1 >/dev/null"
       retries: 600
       interval: 1s
-    image: "docker.elastic.co/${kibanaDockerNamespace:-kibana}/kibana:${kibanaVersion:-8.0.0-SNAPSHOT}"
+    image: "docker.elastic.co/${kibanaDockerNamespace:-kibana}/kibana:${kibanaVersion:-8.0.0-1e9bea0f-SNAPSHOT}"
     platform: ${stackPlatform:-linux/amd64}
     ports:
       - "5601:5601"
@@ -48,7 +48,7 @@ services:
       - "XPACK_FLEET_AGENTS_FLEET_SERVER_HOSTS=[\"http://fleet-server:8220\"]"
       - "XPACK_FLEET_AGENTS_TLSCHECKDISABLED=true"
   fleet-server:
-    image: "docker.elastic.co/beats/elastic-agent:${stackVersion:-8.0.0-SNAPSHOT}"
+    image: "docker.elastic.co/beats/elastic-agent:${stackVersion:-8.0.0-1e9bea0f-SNAPSHOT}"
     depends_on:
       elasticsearch:
         condition: service_healthy
