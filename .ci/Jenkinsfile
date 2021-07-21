@@ -341,11 +341,16 @@ def generateFunctionalTestStep(Map args = [:]){
     // Setup environment for platform
     def envContext = []
     if (platform.contains("windows")) {
+        def mingwArch = is32() ? '32' : '64'
+        def chocoPath = 'C:\\ProgramData\\chocolatey\\bin'
+        def chocoPython3Path = 'C:\\Python38;C:\\Python38\\Scripts'
+        path = "${env.WORKSPACE}\\bin;${chocoPath};${chocoPython3Path};C:\\tools\\mingw${mingwArch}\\bin;${env.PATH}"
         envContext = [
             "KIBANA_URL=https://${linuxIp}:5601",
             "ELASTICSEARCH_URL=https://${linuxIp}:9200",
             "FLEET_URL=https://${linuxIp}:8220",
             "PROVIDER=remote",
+            "PATH=${path}"
         ]
     }
     envContext.add("GOARCH=${goArch}")
