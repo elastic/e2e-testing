@@ -344,7 +344,7 @@ def generateFunctionalTestStep(Map args = [:]){
         def mingwArch = is32() ? '32' : '64'
         def chocoPath = 'C:\\ProgramData\\chocolatey\\bin'
         def chocoPython3Path = 'C:\\Python38;C:\\Python38\\Scripts'
-        path = "${env.WORKSPACE}\\bin;${chocoPath};${chocoPython3Path};C:\\tools\\mingw${mingwArch}\\bin;C:\\windows\\system32;${env.PATH}"
+        path = "${env.WORKSPACE}\\bin;${chocoPath};${chocoPython3Path};C:\\tools\\mingw${mingwArch}\\bin;C:\\windows\\system32;"
         envContext = [
             "KIBANA_URL=https://${linuxIp}:5601",
             "ELASTICSEARCH_URL=https://${linuxIp}:9200",
@@ -370,12 +370,7 @@ def generateFunctionalTestStep(Map args = [:]){
                         withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL") {
                             if (platform.contains("windows")) {
                                 withGoEnvWindows(version: "${GO_VERSION}"){
-                                    echo "The PATH is: ${PATH}"
-                                    echo "Provider is: ${PROVIDER}"
-                                    echo "KIBANA URL: ${KIBANA_URL}"
-                                    echo "ES URL: ${ELASTICSEARCH_URL}"
-                                    echo "FLEET URL: ${FLEET_URL}"
-                                    echo "SKIP PULL: ${SKIP_PULL}"
+                                    echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
                                     cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platform}:${suite}:${tags}"
                                 }
                             } else {
