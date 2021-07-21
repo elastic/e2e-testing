@@ -350,7 +350,8 @@ def generateFunctionalTestStep(Map args = [:]){
             "ELASTICSEARCH_URL=https://${linuxIp}:9200",
             "FLEET_URL=https://${linuxIp}:8220",
             "PROVIDER=remote",
-            "PATH=${path}"
+            "PATH=${path}",
+            "SKIP_PULL=1"
         ]
     }
     envContext.add("GOARCH=${goArch}")
@@ -369,7 +370,13 @@ def generateFunctionalTestStep(Map args = [:]){
                         withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL") {
                             if (platform.contains("windows")) {
                                 withGoEnvWindows(version: "${GO_VERSION}"){
-                                    cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=${tags}", label: "Run functional tests for ${platform}:${suite}:${tags}"
+                                    echo "The PATH is: ${PATH}"
+                                    echo "Provider is: ${PROVIDER}"
+                                    echo "KIBANA URL: ${KIBANA_URL}"
+                                    echo "ES URL: ${ELASTICSEARCH_URL}"
+                                    echo "FLEET URL: ${FLEET_URL}"
+                                    echo "SKIP PULL: ${SKIP_PULL}"
+                                    cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platform}:${suite}:${tags}"
                                 }
                             } else {
                                 filebeat(image: 'docker.elastic.co/beats/filebeat:7.13.0-SNAPSHOT', output: "docker_logs_${goArch}_${suite}_${name}.log", workdir: "${env.WORKSPACE}") {
