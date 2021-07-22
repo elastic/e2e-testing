@@ -15,7 +15,7 @@ import (
 )
 
 var artifact = "elastic-agent"
-var testVersion = "8.0.0-SNAPSHOT"
+var testVersion = "BEATS_VERSION"
 var ubi8VersionPrefix = artifact + "-ubi8-" + testVersion
 var versionPrefix = artifact + "-" + testVersion
 
