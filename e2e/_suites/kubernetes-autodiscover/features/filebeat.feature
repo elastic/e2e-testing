@@ -35,3 +35,10 @@ Scenario: Logs collection from a pod with an ephemeral container
     And "filebeat" collects events with "kubernetes.container.name:container-in-pod"
    When an ephemeral container is started in "a pod"
    Then "filebeat" collects events with "kubernetes.container.name:ephemeral-container"
+
+# Not really autodiscover, but this is a frequent use case in autodiscover-like
+# scenarios for logs collection.
+Scenario: Enrichment of normal input using add_kubernetes_metadata
+  Given "filebeat" is running with "input and add_kubernetes_metadata"
+   When "a pod" is deployed
+   Then "filebeat" collects events with "kubernetes.pod.name:a-pod"
