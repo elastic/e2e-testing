@@ -27,24 +27,13 @@ func (fts *FleetTestSuite) aStandaloneAgentIsDeployed(image string) error {
 	return fts.startStandAloneAgent(image, "", nil)
 }
 
-func (fts *FleetTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string) error {
-	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(fts.currentContext, true)
-	if err != nil {
-		return err
-	}
-
-	fts.FleetServerPolicy = fleetPolicy
-	return fts.startStandAloneAgent(image, "", map[string]string{"fleetServerMode": "1"})
-}
-
-func (fts *FleetTestSuite) aStandaloneAgentIsDeployedWithFleetServerModeOnCloud(image string) error {
-	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(fts.currentContext, true)
-	if err != nil {
-		return err
-	}
-	fts.FleetServerPolicy = fleetPolicy
+func (fts *FleetTestSuite) aStandaloneAgentIsDeployedOnCloud(image string) error {
 	volume := path.Join(config.OpDir(), "compose", "services", "elastic-agent", "apm-legacy")
 	return fts.startStandAloneAgent(image, "cloud", map[string]string{"apmVolume": volume})
+}
+
+func (fts *FleetTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string) error {
+	return fts.startStandAloneAgent(image, "", map[string]string{"fleetServerMode": "1"})
 }
 
 func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
