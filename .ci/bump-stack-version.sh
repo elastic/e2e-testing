@@ -25,7 +25,7 @@ else
 fi
 
 echo "Update stack with version ${VERSION} in .stack-version"
-echo "${VERSION}" > .stack-version
+echo "${VERSION}-SNAPSHOT" > .stack-version
 git add .stack-version
 
 echo "Update stack with version ${VERSION} in Go files"
