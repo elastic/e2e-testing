@@ -1,8 +1,7 @@
 version: '2.4'
 services:
   elastic-agent:
-    image: docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.0.0-SNAPSHOT}
-    container_name: ${elasticAgentContainerName}
+    image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.0.0-SNAPSHOT}"
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -13,4 +12,4 @@ services:
       - "FLEET_SERVER_INSECURE_HTTP=${fleetServerMode:-0}"
     platform: ${stackPlatform:-linux/amd64}
     ports:
-      - "127.0.0.1:8220:8220"
+      - "127.0.0.1:${fleetServerPort:-8220}:8220"
