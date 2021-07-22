@@ -24,6 +24,10 @@ else
 	SED="sed -i"
 fi
 
+echo "Update stack with version ${VERSION} in .stack-version"
+echo "${VERSION}" > .stack-version
+git add .stack-version
+
 echo "Update stack with version ${VERSION} in Go files"
 find . -name 'defaults.go' -path './internal/common/*' -print0 |
 	while IFS= read -r -d '' FILE ; do
