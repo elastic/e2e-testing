@@ -24,6 +24,21 @@ else
 	SED="sed -i"
 fi
 
+echo "Update stack with version ${VERSION} in .stack-version"
+echo "${VERSION}-SNAPSHOT" > .stack-version
+git add .stack-version
+
+echo "Update stack with version ${VERSION} in Go files"
+FILE="./internal/common/defaults.go"
+${SED} -E -e "s#(var BeatVersionBase = (\"))[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1${VERSION}#g" $FILE
+git add $FILE
+
+echo "Update stack with version ${VERSION} in Jenkinsfile"
+FILE="./.ci/Jenkinsfile"
+${SED} -E -e "s#(name: 'BEAT_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1${VERSION}#g" $FILE
+${SED} -E -e "s#(name: 'STACK_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1${VERSION}#g" $FILE
+git add $FILE
+
 echo "Update stack with version ${VERSION} in docker-compose.yml"
 find . -name 'docker-compose.yml' -path './cli/config/compose/profiles/*' -print0 |
 	while IFS= read -r -d '' FILE ; do
