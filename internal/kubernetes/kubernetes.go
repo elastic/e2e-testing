@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -122,8 +123,15 @@ func (c Cluster) Kubectl() Control {
 }
 
 func (c Cluster) isAvailable(ctx context.Context) error {
-	_, err := c.Kubectl().Run(ctx, "api-versions")
-	return err
+	out, err := c.Kubectl().Run(ctx, "api-versions")
+	if err != nil {
+		return err
+	}
+	if len(strings.TrimSpace(out)) == 0 {
+		return fmt.Errorf("no api versions?")
+	}
+
+	return nil
 }
 
 // Initialize detect existing cluster contexts, otherwise will create one via Kind
