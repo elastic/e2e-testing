@@ -14,7 +14,14 @@ import (
 	gabs "github.com/Jeffail/gabs/v2"
 )
 
+<<<<<<< HEAD
 var testVersion = "7.x-SNAPSHOT"
+=======
+var artifact = "elastic-agent"
+var testVersion = "BEATS_VERSION"
+var ubi8VersionPrefix = artifact + "-ubi8-" + testVersion
+var versionPrefix = artifact + "-" + testVersion
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 const bucket = "beats-ci-artifacts"
 const commits = "commits"
@@ -45,14 +52,21 @@ func init() {
 }
 
 func TestBuildArtifactName(t *testing.T) {
-	artifact := "elastic-agent"
 	OS := "linux"
+<<<<<<< HEAD
 	version := "7.x-SNAPSHOT"
+=======
+	version := testVersion
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 	t.Run("For RPM (amd64)", func(t *testing.T) {
 		arch := "x86_64"
 		extension := "rpm"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-x86_64.rpm"
+=======
+		expectedFileName := versionPrefix + "-x86_64.rpm"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -63,7 +77,11 @@ func TestBuildArtifactName(t *testing.T) {
 	t.Run("For RPM (arm64)", func(t *testing.T) {
 		arch := "aarch64"
 		extension := "rpm"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-aarch64.rpm"
+=======
+		expectedFileName := versionPrefix + "-aarch64.rpm"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -75,7 +93,11 @@ func TestBuildArtifactName(t *testing.T) {
 	t.Run("For DEB (amd64)", func(t *testing.T) {
 		arch := "amd64"
 		extension := "deb"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-amd64.deb"
+=======
+		expectedFileName := versionPrefix + "-amd64.deb"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -86,7 +108,11 @@ func TestBuildArtifactName(t *testing.T) {
 	t.Run("For DEB (arm64)", func(t *testing.T) {
 		arch := "arm64"
 		extension := "deb"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-arm64.deb"
+=======
+		expectedFileName := versionPrefix + "-arm64.deb"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -98,7 +124,11 @@ func TestBuildArtifactName(t *testing.T) {
 	t.Run("For TAR (amd64)", func(t *testing.T) {
 		arch := "x86_64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-linux-x86_64.tar.gz"
+=======
+		expectedFileName := versionPrefix + "-linux-x86_64.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -109,7 +139,11 @@ func TestBuildArtifactName(t *testing.T) {
 	t.Run("For TAR (arm64)", func(t *testing.T) {
 		arch := "arm64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-linux-arm64.tar.gz"
+=======
+		expectedFileName := versionPrefix + "-linux-arm64.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, false)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -125,7 +159,11 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "amd64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-docker-image-linux-amd64.tar.gz"
+=======
+		expectedFileName := versionPrefix + "-docker-image-linux-amd64.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -140,7 +178,11 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "arm64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-docker-image-linux-arm64.tar.gz"
+=======
+		expectedFileName := versionPrefix + "-docker-image-linux-arm64.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -156,7 +198,11 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent-ubi8"
 		arch := "amd64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-ubi8-7.x-SNAPSHOT-docker-image-linux-amd64.tar.gz"
+=======
+		expectedFileName := ubi8VersionPrefix + "-docker-image-linux-amd64.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -171,7 +217,11 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent-ubi8"
 		arch := "arm64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-ubi8-7.x-SNAPSHOT-docker-image-linux-arm64.tar.gz"
+=======
+		expectedFileName := ubi8VersionPrefix + "-docker-image-linux-arm64.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -187,7 +237,11 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "amd64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-linux-amd64.docker.tar.gz"
+=======
+		expectedFileName := versionPrefix + "-linux-amd64.docker.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -202,7 +256,11 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "arm64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-linux-arm64.docker.tar.gz"
+=======
+		expectedFileName := versionPrefix + "-linux-arm64.docker.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -218,7 +276,11 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent-ubi8"
 		arch := "amd64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-ubi8-7.x-SNAPSHOT-linux-amd64.docker.tar.gz"
+=======
+		expectedFileName := ubi8VersionPrefix + "-linux-amd64.docker.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -233,7 +295,11 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent-ubi8"
 		arch := "arm64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-ubi8-7.x-SNAPSHOT-linux-arm64.docker.tar.gz"
+=======
+		expectedFileName := ubi8VersionPrefix + "-linux-arm64.docker.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -249,7 +315,11 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "amd64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-linux-amd64.docker.tar.gz"
+=======
+		expectedFileName := versionPrefix + "-linux-amd64.docker.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -264,7 +334,11 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "arm64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-linux-arm64.docker.tar.gz"
+=======
+		expectedFileName := versionPrefix + "-linux-arm64.docker.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -280,7 +354,11 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent-ubi8"
 		arch := "amd64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-ubi8-7.x-SNAPSHOT-linux-amd64.docker.tar.gz"
+=======
+		expectedFileName := ubi8VersionPrefix + "-linux-amd64.docker.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -295,7 +373,11 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent-ubi8"
 		arch := "arm64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-ubi8-7.x-SNAPSHOT-linux-arm64.docker.tar.gz"
+=======
+		expectedFileName := ubi8VersionPrefix + "-linux-arm64.docker.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -311,7 +393,11 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "amd64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-docker-image-linux-amd64.tar.gz"
+=======
+		expectedFileName := versionPrefix + "-docker-image-linux-amd64.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -326,7 +412,11 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "arm64"
 		extension := "tar.gz"
+<<<<<<< HEAD
 		expectedFileName := "elastic-agent-7.x-SNAPSHOT-docker-image-linux-arm64.tar.gz"
+=======
+		expectedFileName := versionPrefix + "-docker-image-linux-arm64.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -365,7 +455,11 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 	artifact := "elastic-agent"
 	beatsDir := path.Join("..", "_testresources", "beats")
 	distributionsDir, _ := filepath.Abs(path.Join(beatsDir, "x-pack", "elastic-agent", "build", "distributions"))
+<<<<<<< HEAD
 	version := "7.x-SNAPSHOT"
+=======
+	version := testVersion
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 	ctx := context.Background()
 
@@ -381,7 +475,11 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
+<<<<<<< HEAD
 		artifactName := "elastic-agent-7.x-SNAPSHOT-x86_64.rpm"
+=======
+		artifactName := versionPrefix + "-x86_64.rpm"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
@@ -392,7 +490,11 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
+<<<<<<< HEAD
 		artifactName := "elastic-agent-7.x-SNAPSHOT-aarch64.rpm"
+=======
+		artifactName := versionPrefix + "-aarch64.rpm"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
@@ -404,7 +506,11 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
+<<<<<<< HEAD
 		artifactName := "elastic-agent-7.x-SNAPSHOT-amd64.deb"
+=======
+		artifactName := versionPrefix + "-amd64.deb"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
@@ -415,7 +521,11 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
+<<<<<<< HEAD
 		artifactName := "elastic-agent-7.x-SNAPSHOT-arm64.deb"
+=======
+		artifactName := versionPrefix + "-arm64.deb"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
@@ -427,7 +537,11 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
+<<<<<<< HEAD
 		artifactName := "elastic-agent-7.x-SNAPSHOT-linux-amd64.tar.gz"
+=======
+		artifactName := versionPrefix + "-linux-amd64.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
@@ -438,7 +552,11 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
+<<<<<<< HEAD
 		artifactName := "elastic-agent-7.x-SNAPSHOT-linux-x86_64.tar.gz"
+=======
+		artifactName := versionPrefix + "-linux-x86_64.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
@@ -449,7 +567,11 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
+<<<<<<< HEAD
 		artifactName := "elastic-agent-7.x-SNAPSHOT-linux-arm64.tar.gz"
+=======
+		artifactName := versionPrefix + "-linux-arm64.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
@@ -461,7 +583,11 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
+<<<<<<< HEAD
 		artifactName := "elastic-agent-7.x-SNAPSHOT-linux-amd64.docker.tar.gz"
+=======
+		artifactName := versionPrefix + "-linux-amd64.docker.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
@@ -472,7 +598,11 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
+<<<<<<< HEAD
 		artifactName := "elastic-agent-7.x-SNAPSHOT-linux-arm64.docker.tar.gz"
+=======
+		artifactName := versionPrefix + "-linux-arm64.docker.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
@@ -484,7 +614,11 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
+<<<<<<< HEAD
 		artifactName := "elastic-agent-ubi8-7.x-SNAPSHOT-linux-amd64.docker.tar.gz"
+=======
+		artifactName := ubi8VersionPrefix + "-linux-amd64.docker.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
@@ -495,7 +629,11 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		defer os.Unsetenv("BEATS_LOCAL_PATH")
 		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
 
+<<<<<<< HEAD
 		artifactName := "elastic-agent-ubi8-7.x-SNAPSHOT-linux-arm64.docker.tar.gz"
+=======
+		artifactName := ubi8VersionPrefix + "-linux-arm64.docker.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, TimeoutFactor, true)
@@ -649,6 +787,7 @@ func TestIsCommit(t *testing.T) {
 
 func TestProcessBucketSearchPage_CommitFound(t *testing.T) {
 	// retrieving last element in commits.json
+<<<<<<< HEAD
 	object := "024b732844d40bdb2bf806480af2b03fcb8fbdbe/elastic-agent/elastic-agent-7.x-SNAPSHOT-darwin-x86_64.tar.gz"
 
 	mediaLink, err := processBucketSearchPage(commitsJSON, 1, bucket, commits, object)
@@ -658,6 +797,17 @@ func TestProcessBucketSearchPage_CommitFound(t *testing.T) {
 
 func TestProcessBucketSearchPage_CommitsNotFound(t *testing.T) {
 	object := "foo/elastic-agent-7.x-SNAPSHOT-linux-amd64.docker.tar.gz"
+=======
+	object := "024b732844d40bdb2bf806480af2b03fcb8fbdbe/elastic-agent/" + versionPrefix + "-darwin-x86_64.tar.gz"
+
+	mediaLink, err := processBucketSearchPage(commitsJSON, 1, bucket, commits, object)
+	assert.Nil(t, err)
+	assert.True(t, mediaLink == "https://storage.googleapis.com/download/storage/v1/b/beats-ci-artifacts/o/commits%2F024b732844d40bdb2bf806480af2b03fcb8fbdbe%2Felastic-agent%2F"+versionPrefix+"-darwin-x86_64.tar.gz?generation=1612983859986704&alt=media")
+}
+
+func TestProcessBucketSearchPage_CommitsNotFound(t *testing.T) {
+	object := "foo/" + versionPrefix + "-linux-amd64.docker.tar.gz"
+>>>>>>> 395bdb2 (chore: improve the automation for the stack version bump (#1351))
 
 	mediaLink, err := processBucketSearchPage(commitsJSON, 1, bucket, commits, object)
 	assert.NotNil(t, err)
