@@ -84,11 +84,14 @@ func Init() {
 
 	configureLogger()
 
-	binaries := []string{
-		"docker",
-		"docker-compose",
+	// Remote provider does not require the use of docker
+	if shell.GetEnv("PROVIDER", "docker") != "remote" {
+		binaries := []string{
+			"docker",
+			"docker-compose",
+		}
+		shell.CheckInstalledSoftware(binaries...)
 	}
-	shell.CheckInstalledSoftware(binaries...)
 
 	home, err := homedir.Dir()
 	if err != nil {
