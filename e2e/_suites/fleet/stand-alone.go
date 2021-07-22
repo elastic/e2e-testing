@@ -117,6 +117,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		dockerImageTag += "-" + arch
 	}
 
+	common.ProfileEnv["fleetServerPort"] = "8221"
 	common.ProfileEnv["elasticAgentDockerImageSuffix"] = ""
 	if image != "default" {
 		common.ProfileEnv["elasticAgentDockerImageSuffix"] = "-" + image
