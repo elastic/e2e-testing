@@ -189,22 +189,22 @@ Examples: Debian
 | os     |
 | debian |
 
-#@deploy-system_integration-with-filesystem
-#Scenario Outline: Adding the System Integration to an Policy
-#   Given a "<os>" agent is deployed to Fleet with "tar" installer
-#   And the agent is listed in Fleet as "online"
-#   When the policy is updated to have "system/metrics" set to "filesystem"
-#   Then "system/metrics" with "filesystem" metrics are present in the datastreams
-#
+@deploy-system_integration-with-filesystem
+Scenario Outline: Adding the System Integration to an Policy
+   Given a "<os>" agent is deployed to Fleet with "tar" installer
+   And the agent is listed in Fleet as "online"
+   When the policy is updated to have "system/metrics" set to "filesystem"
+   Then "system/metrics" with "filesystem" metrics are present in the datastreams
+
 #@centos
 #Examples: Centos
 #| os     |
 #| centos |
 
-#@debian
-#Examples: Debian
-#| os     |
-#      | debian |
+@debian
+Examples: Debian
+| os     |
+| debian |
 
 #  @deploy-logfile-for-system-auth
 #  Scenario Outline: Adding the System Integration to an Policy
