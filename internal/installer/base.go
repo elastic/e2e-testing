@@ -6,9 +6,20 @@ package installer
 
 import (
 	"context"
+<<<<<<< HEAD
+=======
+	"fmt"
+	"runtime"
+>>>>>>> 6f122d9 (chore: read elastic-agent logs using native OS' log manager (#1368))
 	"strings"
 
+	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
+<<<<<<< HEAD
+=======
+	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/internal/systemd"
+>>>>>>> 6f122d9 (chore: read elastic-agent logs using native OS' log manager (#1368))
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -49,8 +60,27 @@ func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.Servic
 	return nil, nil
 }
 
+func systemCtlLog(ctx context.Context, OS string, execFn func(ctx context.Context, args []string) (string, error)) error {
+	cmds := systemd.LogCmds(common.ElasticAgentServiceName)
+	span, _ := apm.StartSpanOptions(ctx, "Retrieving logs for the Elastic Agent service", "elastic-agent."+OS+".log", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+
+	logs, err := execFn(ctx, cmds)
+	if err != nil {
+		return err
+	}
+
+	// print logs as is, including tabs and line breaks
+	fmt.Println(logs)
+
+	return nil
+}
+
 func systemCtlPostInstall(ctx context.Context, linux string, artifact string, execFn func(ctx context.Context, args []string) (string, error)) error {
-	cmds := []string{"systemctl", "restart", artifact}
+	cmds := systemd.RestartCmds(artifact)
 	span, _ := apm.StartSpanOptions(ctx, "Post-install operations for the "+artifact, artifact+"."+linux+".post-install", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -67,7 +97,7 @@ func systemCtlPostInstall(ctx context.Context, linux string, artifact string, ex
 }
 
 func systemCtlStart(ctx context.Context, linux string, artifact string, execFn func(ctx context.Context, args []string) (string, error)) error {
-	cmds := []string{"systemctl", "start", artifact}
+	cmds := systemd.StartCmds(artifact)
 	span, _ := apm.StartSpanOptions(ctx, "Starting "+artifact+" service", artifact+"."+linux+".start", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
