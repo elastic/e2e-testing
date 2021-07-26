@@ -80,7 +80,7 @@ func systemCtlLog(ctx context.Context, OS string, execFn func(ctx context.Contex
 }
 
 func systemCtlPostInstall(ctx context.Context, linux string, artifact string, execFn func(ctx context.Context, args []string) (string, error)) error {
-	cmds := []string{"systemctl", "restart", artifact}
+	cmds := systemd.RestartCmds(artifact)
 	span, _ := apm.StartSpanOptions(ctx, "Post-install operations for the "+artifact, artifact+"."+linux+".post-install", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -97,7 +97,7 @@ func systemCtlPostInstall(ctx context.Context, linux string, artifact string, ex
 }
 
 func systemCtlStart(ctx context.Context, linux string, artifact string, execFn func(ctx context.Context, args []string) (string, error)) error {
-	cmds := []string{"systemctl", "start", artifact}
+	cmds := systemd.StartCmds(artifact)
 	span, _ := apm.StartSpanOptions(ctx, "Starting "+artifact+" service", artifact+"."+linux+".start", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})

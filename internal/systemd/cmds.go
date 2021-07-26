@@ -10,3 +10,13 @@ func LogCmds(unit string) []string {
 	// -u --unit=UNIT    Show logs from the specified unit
 	return []string{"journalctl", "-m", "-u", unit}
 }
+
+// RestartCmds represents the command and base arguments to restart a unit
+func RestartCmds(unit string) []string {
+	return []string{"systemctl", "restart", unit}
+}
+
+// StartCmds represents the command and base arguments to start a unit
+func StartCmds(unit string) []string {
+	return []string{"systemctl", "start", unit}
+}
