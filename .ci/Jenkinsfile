@@ -96,83 +96,6 @@ pipeline {
             }
           }
         }
-        stage('Pre-Submit') {
-          when {
-            beforeAgent true
-            expression { return env.FORCE_SKIP_PRESUBMIT == "false" }
-          }
-          parallel {
-            stage('Sanity checks') {
-              agent { label 'ubuntu-18.04 && immutable && docker' }
-              environment {
-                PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.PATH}"
-                GO111MODULE = 'auto'
-              }
-              options { skipDefaultCheckout() }
-              steps {
-                withGithubNotify(context: 'Sanity checks', tab: 'tests') {
-                  deleteDir()
-                  unstash 'source'
-                  withGoEnv(version: "${GO_VERSION}"){
-                    dir(BASE_DIR){
-                      retryWithSleep(retries: 2, seconds: 5, backoff: true){ sh script: '.ci/scripts/install-dependencies.sh', label: 'Install dependencies' }
-                      preCommit(commit: "${GIT_BASE_COMMIT}", junit: true)
-                    }
-                  }
-                }
-              }
-            }
-            stage('Unit Tests') {
-              options { skipDefaultCheckout() }
-              when {
-                beforeAgent true
-                expression { return env.SKIP_TESTS == "false" }
-              }
-              steps {
-                withGithubNotify(context: 'Tests', tab: 'tests') {
-                  deleteDir()
-                  unstash 'source'
-                  withGoEnv(version: "${GO_VERSION}"){
-                    dir(BASE_DIR){
-                      sh script: '.ci/scripts/build-test.sh', label: 'Build and test'
-                    }
-                  }
-                }
-              }
-              post {
-                always {
-                  junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-unit-*.xml")
-                  archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-unit-*.xml"
-                }
-              }
-            }
-          }
-        }
-        stage('Build Docs') {
-          options { skipDefaultCheckout() }
-          when {
-            beforeAgent true
-            anyOf {
-              expression { return env.FORCE_SKIP_GIT_CHECKS == "true" }
-              expression { return env.SKIP_TESTS == "false" }
-            }
-          }
-          steps {
-            deleteDir()
-            unstash 'source'
-            dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
-            dir("${BASE_DIR}/e2e") {
-              sh(label: 'Build docs', script: 'make build-docs')
-            }
-          }
-          post {
-            always {
-              dir("${BASE_DIR}") {
-                archiveArtifacts allowEmptyArchive: true, artifacts: "e2e/docs/**"
-              }
-            }
-          }
-        }
         stage('End-To-End Tests') {
           failFast true
           options { skipDefaultCheckout() }
@@ -213,25 +136,6 @@ pipeline {
                   parallel(parallelTasks)
                 }
               }
-            }
-          }
-        }
-        stage('Release') {
-          options { skipDefaultCheckout() }
-          when { tag "v*" }
-          steps {
-            deleteDir()
-            unstash 'source'
-            dir("${BASE_DIR}") {
-              setEnvVar("GITHUB_TOKEN", getGithubToken())
-              retryWithSleep(retries: 2, seconds: 5, backoff: true) {
-                sh(label: 'Release binaries with gorelease', script: 'curl -sL https://git.io/goreleaser | bash -s -- --rm-dist', returnStatus: true)
-              }
-            }
-          }
-          post {
-            always {
-              archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/cli/dist/**"
             }
           }
         }
