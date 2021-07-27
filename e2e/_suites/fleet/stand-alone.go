@@ -16,6 +16,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/installer"
+	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 
@@ -106,7 +107,28 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		dockerImageTag += "-" + arch
 	}
 
-	common.ProfileEnv["fleetServerPort"] = "8221"
+	// Grab a new enrollment key for new agent
+	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.currentContext, fts.Policy)
+	if err != nil {
+		return err
+	}
+	fts.CurrentToken = enrollmentKey.APIKey
+	fts.CurrentTokenID = enrollmentKey.ID
+
+	cfg, err := kibana.NewFleetConfig(fts.CurrentToken)
+	if err != nil {
+		return err
+	}
+
+	// See https://github.com/elastic/beats/blob/4accfa8/x-pack/elastic-agent/pkg/agent/cmd/container.go#L73-L85
+	// to understand the environment variables used by the elastic-agent to automatically
+	// enroll the new agent container in Fleet
+	common.ProfileEnv["fleetInsecure"] = "1"
+	common.ProfileEnv["fleetUrl"] = cfg.FleetServerURL()
+	common.ProfileEnv["fleetEnroll"] = "1"
+	common.ProfileEnv["fleetEnrollmentToken"] = cfg.EnrollmentToken
+
+	common.ProfileEnv["fleetServerPort"] = "8221" // fixed port to avoid collitions with the stack's fleet-server
 	common.ProfileEnv["elasticAgentDockerImageSuffix"] = ""
 	if image != "default" {
 		common.ProfileEnv["elasticAgentDockerImageSuffix"] = "-" + image
@@ -125,7 +147,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 	services := []deploy.ServiceRequest{
 		deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(flavour),
 	}
-	err := fts.deployer.Add(fts.currentContext, common.FleetProfileServiceRequest, services, common.ProfileEnv)
+	err = fts.deployer.Add(fts.currentContext, common.FleetProfileServiceRequest, services, common.ProfileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err
