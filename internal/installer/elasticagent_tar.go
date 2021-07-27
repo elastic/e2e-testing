@@ -95,7 +95,8 @@ func (i *elasticAgentTARPackage) InstallCerts(ctx context.Context) error {
 
 // Logs prints logs of service
 func (i *elasticAgentTARPackage) Logs() error {
-	return i.deploy.Logs(i.service)
+	// TODO: we could read "/opt/Elastic/Agent/data/elastic-agent-*/logs/elastic-agent-json.log*"
+	return systemCtlLog(context.Background(), "tar", i.Exec)
 }
 
 // Postinstall executes operations after installing a TAR package
