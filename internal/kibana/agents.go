@@ -26,6 +26,11 @@ type Agent struct {
 			Name     string `json:"name"`
 			HostName string `json:"hostname"`
 		} `json:"host"`
+		OS struct {
+			Family   string `json:"family"`
+			Full     string `json:"full"`
+			Platform string `json:"platform"`
+		} `json:"os"`	
 		Elastic struct {
 			Agent struct {
 				Version  string `json:"version"`
