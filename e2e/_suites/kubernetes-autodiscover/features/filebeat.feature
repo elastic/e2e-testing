@@ -46,6 +46,6 @@ Scenario: Logs collection from running pod and metadata enrichment using add_kub
 # Not really autodiscover, but this is a frequent use case in autodiscover-like
 # scenarios for logs collection.
 Scenario: Enrichment of normal input using add_kubernetes_metadata
-  Given "filebeat" is running with "input" and "add_kubernetes_metadata"
+  Given "filebeat" is running with "input with add_kubernetes_metadata"
    When "a pod" is deployed
    Then "filebeat" collects events with "kubernetes.pod.name:a-pod"
