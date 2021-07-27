@@ -1330,13 +1330,14 @@ func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) er
 					"enabled": "true",
 					"type":    name,
 					"os":      os,
-				}).Info("The " + name + "with value system." + set + " in the metrics")
+				}).Info("The " + name + " with value system." + set + " in the metrics")
 
 				if int64(int64(item.Path("last_activity_ms").Data().(float64))) > startTime {
 					log.WithFields(log.Fields{
-						"Activity Time stamp for the " + name + "system." + name: "Is valid",
-						"os": os,
-					}).Info("The " + name + "with value system." + set + " in the metrics")
+						"last_activity_ms": item.Path("last_activity_ms").Data().(float64),
+						"startTime":        startTime,
+						"os":               os,
+					}).Info("The " + name + " with value system." + set + " in the metrics")
 				}
 				exist = true
 				break
