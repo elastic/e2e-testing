@@ -615,6 +615,9 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^"([^"]*)" is ([a-z]*) with "([^"]*)"$`, func(name, state, option string) error {
 		return pods.resourceIs(name, state, option)
 	})
+	ctx.Step(`^"([^"]*)" is ([a-z]*) with "([^"]*)" and "([^"]*)"$`, func(name, state, option1, option2 string) error {
+		return pods.resourceIs(name, state, option1, option2)
+	})
 
 	ctx.Step(`^"([^"]*)" collects events with "([^"]*:[^"]*)"$`, pods.collectsEventsWith)
 	ctx.Step(`^"([^"]*)" does not collect events with "([^"]*)" during "([^"]*)"$`, pods.doesNotCollectEvents)

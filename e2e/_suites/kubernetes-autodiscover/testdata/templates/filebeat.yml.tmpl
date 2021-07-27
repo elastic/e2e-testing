@@ -7,18 +7,12 @@ metadata:
     k8s-app: filebeat
 data:
   filebeat.yml: |-
-{{ if option "input and add_kubernetes_metadata" }}
+{{ if option "input" }}
     filebeat.inputs:
     - type: container
       paths:
         # Getting only logs from the namespace of the test.
         - /var/log/containers/*_{{ namespace }}_*.log
-      processors:
-        - add_kubernetes_metadata:
-            host: ${NODE_NAME}
-            matchers:
-            - logs_path:
-                logs_path: "/var/log/containers/"
 {{ else }}
     filebeat.autodiscover:
       providers:
@@ -31,6 +25,14 @@ data:
             paths:
               - /var/log/containers/*${data.kubernetes.container.id}.log
 {{ end }}
+{{ end }}
+{{ if option "add_kubernetes_metadata" }}
+    processors:
+      - add_kubernetes_metadata:
+          host: ${NODE_NAME}
+          matchers:
+          - logs_path:
+              logs_path: "/var/log/containers/"
 {{ end }}
 
     output.file:
