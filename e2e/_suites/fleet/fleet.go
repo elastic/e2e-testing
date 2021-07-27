@@ -193,7 +193,16 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 }
 
 func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredStatus string) error {
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
+	exp := utils.GetExponentialBackOff(maxTimeout)
+	retryCount := 0
+
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+
 	waitForAgents := func() error {
+		retryCount++
+
 		agents, err := fts.kibanaClient.ListAgents(fts.currentContext)
 		if err != nil {
 			return err
@@ -203,13 +212,23 @@ func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredSt
 			return errors.New("No agents found")
 		}
 
-		agentZero := agents[0]
-		hostname := agentZero.LocalMetadata.Host.HostName
+		for _, agent := range agents {
+			hostname := agent.LocalMetadata.Host.HostName
 
-		return theAgentIsListedInFleetWithStatus(fts.currentContext, desiredStatus, hostname)
+			if hostname == manifest.Hostname {
+				return theAgentIsListedInFleetWithStatus(fts.currentContext, desiredStatus, hostname)
+			}
+		}
+
+		err = errors.New("Agent not found in Fleet")
+		log.WithFields(log.Fields{
+			"elapsedTime": exp.GetElapsedTime(),
+			"hostname":    manifest.Hostname,
+			"retries":     retryCount,
+		}).Warn(err)
+
+		return err
 	}
-	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
-	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	err := backoff.Retry(waitForAgents, exp)
 	if err != nil {
