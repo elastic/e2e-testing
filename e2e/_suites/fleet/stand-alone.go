@@ -39,7 +39,7 @@ func (fts *FleetTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string
 
 func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
-	minimumHitsCount := 25
+	minimumHitsCount := 20
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(fts.Image)
 
