@@ -29,7 +29,7 @@ func (fts *FleetTestSuite) aStandaloneAgentIsDeployed(image string) error {
 }
 
 func (fts *FleetTestSuite) aStandaloneAgentIsDeployedOnCloud(image string) error {
-	volume := path.Join(config.OpDir(), "compose", "services", "elastic-agent", "apm-legacy")
+	volume := path.Join(config.OpDir(), "compose", "services", "elastic-agent", "cloud")
 	return fts.startStandAloneAgent(image, "cloud", map[string]string{"apmVolume": volume})
 }
 
