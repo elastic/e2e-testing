@@ -49,7 +49,7 @@ pipeline {
             string(name: 'SLACK_CHANNEL', value: "beats-build"),
           ],
           propagate: true,
-          wait: false
+          wait: true
         )
       }
     }

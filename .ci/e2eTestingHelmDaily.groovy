@@ -48,7 +48,7 @@ pipeline {
             string(name: 'SLACK_CHANNEL', value: "infra-release-notify,integrations"),
           ],
           propagate: true,
-          wait: false
+          wait: true
         )
       }
     }
