@@ -184,7 +184,6 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 
 	// stand-alone only steps
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed$`, fts.aStandaloneAgentIsDeployed)
-	s.Step(`^a "([^"]*)" stand-alone agent is deployed on cloud$`, fts.aStandaloneAgentIsDeployedOnCloud)
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode$`, fts.bootstrapFleetServerFromAStandaloneAgent)
 	s.Step(`^there is new data in the index from agent$`, fts.thereIsNewDataInTheIndexFromAgent)
 	s.Step(`^the "([^"]*)" docker container is stopped$`, fts.theDockerContainerIsStopped)

@@ -19,19 +19,3 @@ Examples: default
 Examples: Ubi8
 | image   |
 | ubi8    |
-
-@cloud
-Scenario Outline: Deploying a <image> stand-alone agent on cloud
-  When a "<image>" stand-alone agent is deployed on cloud
-  Then the "apm-server" process is in the "started" state on the host
-
-@default
-Examples: default
-  | image   |
-  | default |
-
-@ubi8
-@skip:arm64
-Examples: Ubi8
-| image   |
-| ubi8    |

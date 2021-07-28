@@ -7,12 +7,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"path"
 	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/installer"
@@ -26,11 +24,6 @@ import (
 
 func (fts *FleetTestSuite) aStandaloneAgentIsDeployed(image string) error {
 	return fts.startStandAloneAgent(image, "", nil)
-}
-
-func (fts *FleetTestSuite) aStandaloneAgentIsDeployedOnCloud(image string) error {
-	volume := path.Join(config.OpDir(), "compose", "services", "elastic-agent", "cloud", "apm-legacy")
-	return fts.startStandAloneAgent(image, "cloud", map[string]string{"apmVolume": volume})
 }
 
 func (fts *FleetTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string) error {
