@@ -6,8 +6,7 @@ Scenario Outline: Adding the Endpoint Integration to an Agent makes the host to 
   Given a "<os>" agent is deployed to Fleet with "tar" installer
     And the agent is listed in Fleet as "online"
   When the "Endpoint Security" integration is "added" in the policy
-  Then the "Endpoint Security" datasource is shown in the policy as added
-    And the host name is shown in the Administration view in the Security App as "online"
+  Then the host name is shown in the Administration view in the Security App as "online"
 
 @centos
 Examples: Centos
