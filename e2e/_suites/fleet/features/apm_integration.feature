@@ -14,6 +14,12 @@ Examples: default
   | image   |
   | default |
 
+@ubi8
+@skip:arm64
+Examples: Ubi8
+| image   |
+| ubi8    |
+
 @cloud
 Scenario Outline: Deploying a <image> stand-alone agent on cloud
   When a "<image>" stand-alone agent is deployed on cloud
@@ -23,3 +29,9 @@ Scenario Outline: Deploying a <image> stand-alone agent on cloud
 Examples: default
   | image   |
   | default |
+
+@ubi8
+@skip:arm64
+Examples: Ubi8
+| image   |
+| ubi8    |
