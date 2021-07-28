@@ -50,7 +50,7 @@ pipeline {
             string(name: 'SLACK_CHANNEL', value: "elastic-agent"),
           ],
           propagate: true,
-          wait: false
+          wait: true
         )
       }
     }
