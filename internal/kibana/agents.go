@@ -30,7 +30,7 @@ type Agent struct {
 			Family   string `json:"family"`
 			Full     string `json:"full"`
 			Platform string `json:"platform"`
-		} `json:"os"`	
+		} `json:"os"`
 		Elastic struct {
 			Agent struct {
 				Version  string `json:"version"`
