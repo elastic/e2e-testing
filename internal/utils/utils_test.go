@@ -647,6 +647,10 @@ func TestIsCommit(t *testing.T) {
 		assert.False(t, IsCommit("7.11.x"))
 		assert.False(t, IsCommit("pr12345"))
 	})
+
+	t.Run("Returns false with commits in snapshots", func(t *testing.T) {
+		assert.False(t, IsCommit("8.0.0-a12345-SNAPSHOT"))
+	})
 }
 
 func TestProcessBucketSearchPage_CommitFound(t *testing.T) {
@@ -681,4 +685,15 @@ func TestProcessBucketSearchPage_SnapshotsNotFound(t *testing.T) {
 	mediaLink, err := processBucketSearchPage(snapshotsJSON, 1, bucket, snapshots, object)
 	assert.NotNil(t, err)
 	assert.True(t, mediaLink == "")
+}
+
+func TestSnapshotHasCommit(t *testing.T) {
+	t.Run("Returns true with commits in snapshots", func(t *testing.T) {
+		assert.True(t, SnapshotHasCommit("8.0.0-a12345-SNAPSHOT"))
+	})
+
+	t.Run("Returns false with commits in snapshots", func(t *testing.T) {
+		assert.False(t, SnapshotHasCommit("7.x-SNAPSHOT"))
+		assert.False(t, SnapshotHasCommit("8.0.0-SNAPSHOT"))
+	})
 }
