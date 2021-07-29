@@ -234,8 +234,8 @@ func getGCPBucketCoordinates(fileName string, artifact string, version string) (
 
 // GetElasticArtifactVersion returns the current version:
 // 1. Elastic's artifact repository, building the JSON path query based
-// If the version is a PR, then it will return the version without checking the artifacts API
-// i.e. GetElasticArtifactVersion("$VERSION")
+// If the version is a SNAPSHOT including a commit, then it will directly use the version without checking the artifacts API
+// i.e. GetElasticArtifactVersion("$VERSION-abcdef-SNAPSHOT")
 func GetElasticArtifactVersion(version string) (string, error) {
 	cacheKey := fmt.Sprintf("https://artifacts-api.elastic.co/v1/versions/%s/?x-elastic-no-kpi=true", version)
 
@@ -245,6 +245,11 @@ func GetElasticArtifactVersion(version string) (string, error) {
 			"version": val,
 		}).Debug("Retrieving version from local cache")
 		return val, nil
+	}
+
+	if SnapshotHasCommit(version) {
+		elasticVersionsCache[cacheKey] = version
+		return version, nil
 	}
 
 	exp := GetExponentialBackOff(time.Minute)
@@ -589,7 +594,7 @@ func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
 
 // IsCommit returns true if the string matches commit format
 func IsCommit(s string) bool {
-	re := regexp.MustCompile(`\b[0-9a-f]{5,40}\b`)
+	re := regexp.MustCompile(`^\b[0-9a-f]{5,40}\b`)
 
 	return re.MatchString(s)
 }
@@ -642,6 +647,14 @@ func Sleep(duration time.Duration) error {
 	time.Sleep(duration)
 
 	return nil
+}
+
+// SnapshotHasCommit returns true if the snapshot version contains a commit format
+func SnapshotHasCommit(s string) bool {
+	// regex = X.Y.Z-commit-SNAPSHOT
+	re := regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-\b[0-9a-f]{5,40}\b)(-SNAPSHOT)`)
+
+	return re.MatchString(s)
 }
 
 // GetDockerNamespaceEnvVar returns the Docker namespace whether we use one of the CI snapshots or
