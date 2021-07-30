@@ -44,20 +44,6 @@ From Godog's website:
 
 For this test framework, we have chosen Godog over any other test framework because the Beats team (the team we started working with) is already using Go, so it seems reasonable to choose it.
 
-## Test Specification
-
-All the Gherkin (Cucumber) specifications are written in `.feature` files.
-
-A good example could be [this one](./_suites/metricbeat/features/integrations.feature).
-
-## Test Implementation
-
-We are using Godog + Cucumber to implement the tests, where we create connections to the `Given`, `When`, `Then`, `And`, etc. in a well-known file structure.
-
-As an example, the Go implementation of the `./_suites/metricbeat/features/metricbeat.feature` is located under the [metricbeat_test.go](./_suites/metricbeat/metricbeat_test.go) file.
-
-Each module will define its own file for specificacions, adding specific feature context functions that will allow filtering the execution, if needed. 
-
 ## Technology stack
 
 ## Build system
@@ -95,6 +81,20 @@ Adding a new feature file will require to check [the aforementioned descriptor f
 
 ### Configuration files
 It's possible that the configuration YAML files will exist in the test suite. We recommend locating them under the `configurations` folder under the config directory for compose files (both profiles and services). The name of the file will represent the feature to be tested (i.e. `kibana.config.yml`). In this file we will add those configurations that are exclusive to the feature to be tested.
+
+## Test Specification
+
+All the Gherkin (Cucumber) specifications are written in `.feature` files.
+
+A good example could be [this one](./_suites/metricbeat/features/integrations.feature).
+
+## Test Implementation
+
+We are using Godog + Cucumber to implement the tests, where we create connections to the `Given`, `When`, `Then`, `And`, etc. in a well-known file structure.
+
+As an example, the Go implementation of the `./_suites/metricbeat/features/metricbeat.feature` is located under the [metricbeat_test.go](./_suites/metricbeat/metricbeat_test.go) file.
+
+Each module will define its own file for specificacions, adding specific feature context functions that will allow filtering the execution, if needed. 
 
 ## Generating documentation about the specifications
 If you want to generate a website for the feature files, please run this command:
