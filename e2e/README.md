@@ -46,7 +46,7 @@ For this test framework, we have chosen Godog over any other test framework beca
 
 ## Technology stack
 
-## Build system
+### Build system
 The test framework makes use of `Make` to prepare the environment to run the `Cucumber` tests. Although it's still possible using the `godog` binary, or the idiomatic `go test`, to run the test suites and scenarios, we recommend using the proper `Make` goals, in particular the [`functional-test` goal](https://github.com/elastic/e2e-testing/blob/05cdf195dfae0cb886d30b1cf6a1ccd95ddba9f5/e2e/commons-test.mk#L56). We also provide [a set of example goals](https://github.com/elastic/e2e-testing/blob/05cdf195dfae0cb886d30b1cf6a1ccd95ddba9f5/e2e/Makefile#L22-L35) with different use cases for running most common scenarios.
 
 Each test suite, which lives under the `e2e/_suites` directory, has it's own Makefile to control the build life cycle of the test project.
