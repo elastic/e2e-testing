@@ -22,7 +22,7 @@ We are going to use Go for writing the End-2-End tests, so we would need the Go 
 
 ### Cucumber: BDD at its core
 
-The specification of these E2E tests has been done using the `BDD` (Behaviour-Driven Development) principles, where:
+The specification of these E2E tests has been done using `BDD` (Behaviour-Driven Development) principles, where:
 
 >BDD aims to narrow the communication gaps between team members, foster better understanding of the customer and promote continuous communication with real world examples.
 
