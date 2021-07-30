@@ -12,7 +12,7 @@ Finally, the test framework must be responsible for creating and destroying the 
 
 As we want to run _E2E tests_, we need a manner to describe the functionality to implement in a _functional manner_. And it would be great if we are able to use plain English to specify how our software behaves, instead of using code. And if it's possible to automate the execution of that specification, even better.
 
-The most accepted manner to achieve this automatable specification in the software industry, using a high level approach that anybody in the team could understand and backed by a testing framework, is [`Cucumber`](https://cucumber.io). So we will use `Cucumber` to set the behaviours (use cases) of our software.
+The most accepted manner to achieve this executable specification in the software industry, using a high level approach that anybody in the team could understand and backed by a testing framework, is [`Cucumber`](https://cucumber.io). So we will use `Cucumber` to set the behaviours (use cases) of our software.
 
 Then we need a manner to connect that plain English feature specification with code. Fortunately, `Cucumber` has a wide number of implementations (Java, Ruby, NodeJS, Go...), so we can choose one of them to implement our tests.
 
