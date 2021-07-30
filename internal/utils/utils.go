@@ -330,9 +330,11 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 	body := ""
 
 	tmpVersion := version
-	hasCommit := SnapshotHasCommit(version)
-	if hasCommit {
-		log.Trace("Removing SNAPSHOT from commit")
+	if SnapshotHasCommit(version) {
+		log.WithFields(log.Fields{
+			"version": version,
+		}).Trace("Removing SNAPSHOT from version including commit")
+
 		// remove the SNAPSHOT from the VERSION as the artifacts API supports commits in the version, but without the snapshot suffix
 		tmpVersion = strings.ReplaceAll(version, "-SNAPSHOT", "")
 	}
