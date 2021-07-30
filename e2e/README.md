@@ -16,9 +16,9 @@ The most accepted manner to achieve this automatable specification in the softwa
 
 Then we need a manner to connect that plain English feature specification with code. Fortunately, `Cucumber` has a wide number of implementations (Java, Ruby, NodeJS, Go...), so we can choose one of them to implement our tests.
 
-We are going to use Go for writing the End-2-End tests, so we would need the Go implementation for `Cucumber`. That implementation is [`Godog`](https://github.com/cucumber/godog), which is the glue between the specs files and the Go code. Godog is a wrapper over the traditional `go test` command, adding the ability to run the functional steps defined in the feature files.
+We are going to use Go for writing the End-2-End tests, so we would need the Go implementation for `Cucumber`. That implementation is [`Godog`](https://github.com/cucumber/godog), which is the glue between the spec files and the Go code. `Godog` is a wrapper over the `go test` command, so they are almost interchangeable when running the tests.
 
-The implementation of these smoke tests has been done with [Godog](https://github.com/cucumber/godog) + [Cucumber](https://cucumber.io/).
+> In this test framework, we are running Godog with `go test`, as explained [here](https://github.com/cucumber/godog#running-godog-with-go-test).
 
 ### Cucumber: BDD at its core
 
