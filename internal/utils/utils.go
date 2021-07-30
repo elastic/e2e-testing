@@ -330,7 +330,8 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 	body := ""
 
 	tmpVersion := version
-	if SnapshotHasCommit(version) {
+	hasCommit := SnapshotHasCommit(version)
+	if hasCommit {
 		log.WithFields(log.Fields{
 			"version": version,
 		}).Trace("Removing SNAPSHOT from version including commit")
@@ -393,6 +394,11 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 		"elapsedTime":  exp.GetElapsedTime(),
 		"version":      tmpVersion,
 	}).Trace("Artifact found")
+
+	if hasCommit {
+		// remove commit from the artifact as it comes like this: elastic-agent-8.0.0-abcdef-SNAPSHOT-darwin-x86_64.tar.gz
+		artifactName = RemoveCommitFromSnapshot(artifactName)
+	}
 
 	packagesObject := jsonParsed.Path("packages")
 	// we need to get keys with dots using Search instead of Path
@@ -645,6 +651,14 @@ func randomStringWithCharset(length int, charset string) string {
 // RandomString generates a random string with certain length
 func RandomString(length int) string {
 	return randomStringWithCharset(length, charset)
+}
+
+// RemoveCommitFromSnapshot removes the commit from a version including commit and SNAPSHOT
+func RemoveCommitFromSnapshot(s string) string {
+	// regex = X.Y.Z-commit-SNAPSHOT
+	re := regexp.MustCompile(`-\b[0-9a-f]{5,40}\b`)
+
+	return re.ReplaceAllString(s, "")
 }
 
 // Sleep sleeps a duration, including logs
