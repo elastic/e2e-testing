@@ -20,6 +20,7 @@ This repository contains:
         - MySQL
         - Redis
         - vSphere
+1. A [collection of utilities and helpers used in tests](../internal).
 
 ## Building
 
