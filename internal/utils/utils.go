@@ -673,6 +673,15 @@ func Sleep(duration time.Duration) error {
 	return nil
 }
 
+// SanitiseVersion returns the version, removing the git commit if it's present
+func SanitiseVersion(version string) string {
+	if SnapshotHasCommit(version) {
+		return RemoveCommitFromSnapshot(version)
+	}
+
+	return version
+}
+
 // SnapshotHasCommit returns true if the snapshot version contains a commit format
 func SnapshotHasCommit(s string) bool {
 	// regex = X.Y.Z-commit-SNAPSHOT
