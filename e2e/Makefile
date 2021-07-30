@@ -12,6 +12,15 @@ build-docs:
 	mv docs/.\\/index.html docs/index.html
 	rm -fr docs/.\\
 
+## @help:create-suite:Creates a new test suite. It's mandatory to add SUITE=name to the invocation
+.PHONY: create-suite
+create-suite:
+	mkdir -p _suites/$(SUITE)
+	echo "include ../../commons-test.mk" > _suites/$(SUITE)/Makefile
+	envsubst < templates/suite_test.go.tmpl > _suites/$(SUITE)/$(SUITE)_test.go
+	mkdir -p _suites/$(SUITE)/features
+	envsubst < templates/suite.feature.tmpl > _suites/$(SUITE)/features/$(SUITE).feature
+
 .PHONY: lint
 lint:
 	@docker run -t --rm -v $(PWD):/src -w /src gherkin/lint **/*.feature --disable AvoidOutlineForSingleExample,TooClumsy,TooManySteps,TooManyDifferentTags,TooLongStep,UseBackground
