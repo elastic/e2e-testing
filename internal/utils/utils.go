@@ -329,9 +329,17 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 
 	body := ""
 
+	tmpVersion := version
+	hasCommit := SnapshotHasCommit(version)
+	if hasCommit {
+		log.Trace("Removing SNAPSHOT from commit")
+		// remove the SNAPSHOT from the VERSION as the artifacts API supports commits in the version, but without the snapshot suffix
+		tmpVersion = strings.ReplaceAll(version, "-SNAPSHOT", "")
+	}
+
 	apiStatus := func() error {
 		r := curl.HTTPRequest{
-			URL: fmt.Sprintf("https://artifacts-api.elastic.co/v1/search/%s/%s?x-elastic-no-kpi=true", version, artifact),
+			URL: fmt.Sprintf("https://artifacts-api.elastic.co/v1/search/%s/%s?x-elastic-no-kpi=true", tmpVersion, artifact),
 		}
 
 		response, err := curl.Get(r)
@@ -339,7 +347,7 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 			log.WithFields(log.Fields{
 				"artifact":       artifact,
 				"artifactName":   artifactName,
-				"version":        version,
+				"version":        tmpVersion,
 				"error":          err,
 				"retry":          retryCount,
 				"statusEndpoint": r.URL,
@@ -371,7 +379,7 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 		log.WithFields(log.Fields{
 			"artifact":     artifact,
 			"artifactName": artifactName,
-			"version":      version,
+			"version":      tmpVersion,
 		}).Error("Could not parse the response body for the artifact")
 		return "", err
 	}
@@ -381,7 +389,7 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 		"artifact":     artifact,
 		"artifactName": artifactName,
 		"elapsedTime":  exp.GetElapsedTime(),
-		"version":      version,
+		"version":      tmpVersion,
 	}).Trace("Artifact found")
 
 	packagesObject := jsonParsed.Path("packages")
