@@ -1,10 +1,12 @@
 # End-2-End tests for Observability projects
 
-## Smoke Tests
+## Main goals
 
-We want to make sure that the different test suites in this project are covering the main use cases for their core functionalities. So for that reason we are adding [smoke tests](http://softwaretestingfundamentals.com/smoke-testing/) to verify that each test suite meets the specifications described here with certain grade of satisfaction.
+We want to make sure that the different test suites in this project are covering the main use cases for their core functionalities. So for that reason we are adding different test suites acting as [smoke tests](http://softwaretestingfundamentals.com/smoke-testing/) to verify that each test suite meets the specifications described here with certain grade of satisfaction.
 
 >Smoke Testing, also known as “Build Verification Testing”, is a type of software testing that comprises of a non-exhaustive set of tests that aim at ensuring that the most important functions work. The result of this testing is used to decide if a build is stable enough to proceed with further testing.
+
+Finally, the test framework must be responsible for creating and destroying the run-time dependencies, basically the Elastic Stack, and provide a minimal set of shared utilities that can be reused across different test suites, such as a Kibana client, an Elasticsearch client, a Service provider, etc.
 
 ## Tooling
 
