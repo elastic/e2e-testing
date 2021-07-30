@@ -19,7 +19,7 @@ The tests will follow this general high-level approach:
 
 Because this framework uses Docker as the provisioning tool, all the services are based on Linux containers. That's why we consider this tool very suitable while developing the product, but would not cover the entire support matrix for the product: Linux, Windows, Mac, ARM, etc.
 
-For Windows or other platform support, we should build Windows images and containers or, given the cross-platform nature of Golang, should add the building blocks in the test framework to run the code in the ephemeral CI workers for the underlaying platform.
+For Windows or other platform support, we should build Windows images and containers or, given the cross-platform nature of Go, should add the building blocks in the test framework to run the code in the ephemeral CI workers for the underlaying platform.
 
 ### Diagnosing test failures
 

@@ -12,7 +12,7 @@ As we want to run _functional tests_, we need a manner to describe the functiona
 
 Then we need a manner to connect that plain English feature specification with code. Fortunately, `Cucumber` has a wide number of implementations (Java, Ruby, NodeJS, Go...), so we can choose one of them to implement our tests.
 
-We are going to use Golang for writing the functional tests, so we would need the Golang implementation for `Cucumber`. That implementation is [`Godog`](https://github.com/cucumber/godog), which is the glue between the specs files and the Go code. Godog is a wrapper over the traditional `go test` command, adding the ability to run the functional steps defined in the feature files.
+We are going to use Go for writing the functional tests, so we would need the Go implementation for `Cucumber`. That implementation is [`Godog`](https://github.com/cucumber/godog), which is the glue between the specs files and the Go code. Godog is a wrapper over the traditional `go test` command, adding the ability to run the functional steps defined in the feature files.
 
 The implementation of these smoke tests has been done with [Godog](https://github.com/cucumber/godog) + [Cucumber](https://cucumber.io/).
 
@@ -32,13 +32,13 @@ The way we are going to specify our software is using [`Gherkin`](https://cucumb
 
 The key part here is **executable specifications**: we will be able to automate the verification of the specifications and potentially get a coverage of these specs.
 
-### Godog: Cucumber for Golang
+### Godog: Cucumber for Go
 
 From Godog's website:
 
->Package godog is the official Cucumber BDD framework for Golang, it merges specification and test documentation into one cohesive whole.
+>Package godog is the official Cucumber BDD framework for Go, it merges specification and test documentation into one cohesive whole.
 
-For this test framework, we have chosen Godog over any other test framework because the team is already using Golang, so it seems reasonable to choose it.
+For this test framework, we have chosen Godog over any other test framework because the team is already using Go, so it seems reasonable to choose it.
 
 ## Test Specification
 
@@ -50,7 +50,7 @@ A good example could be [this one](./_suites/metricbeat/features/metricbeat.feat
 
 We are using Godog + Cucumber to implement the tests, where we create connections to the `Given`, `When`, `Then`, `And`, etc. in a well-known file structure.
 
-As an example, the Golang implementation of the `./_suites/metricbeat/features/metricbeat.feature` is located under the [metricbeat_test.go](./_suites/metricbeat/metricbeat_test.go) file.
+As an example, the Go implementation of the `./_suites/metricbeat/features/metricbeat.feature` is located under the [metricbeat_test.go](./_suites/metricbeat/metricbeat_test.go) file.
 
 Each module will define its own file for specificacions, adding specific feature context functions that will allow filtering the execution, if needed. 
 
@@ -66,7 +66,7 @@ The services supported by some of the test suites in this framework will be star
 In many cases, we want to store the metrics in Elasticsearch, so at some point we must start up an Elasticsearch instance. Besides that, we want to query the Elasticsearch to perform assertions on the metrics, such as there are no errors, or the field `f.foo` takes the value `bar`. For that reason we need an Elasticsearch in a well-known location. Here it appears the usage of the [Observability Provisioner CLI tool](../cli/README.md), which is a CLI writen in Go which exposes an API to query the specific runtime resources needed to run the tests. In our case, Metricbeat, we need just an Elasticsearch, but a Kibana could be needed in the case of verifying the dashboards are correct.
 
 ### Feature files
-We will create use cases for the module in a separate `.feature` file, ideally named after the name of the feature to test (i.e. _apache.feature_), and located under the `features` directory of each test suite. This feature file is a Cucumber requirement, that will be parsed by the Godog test runner and matched against the Golang code implementing the tests.
+We will create use cases for the module in a separate `.feature` file, ideally named after the name of the feature to test (i.e. _apache.feature_), and located under the `features` directory of each test suite. This feature file is a Cucumber requirement, that will be parsed by the Godog test runner and matched against the Go code implementing the tests.
 
 The anatomy of a feature file is:
 

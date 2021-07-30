@@ -4,7 +4,7 @@ As described in the [design issue](https://github.com/elastic/observability-dev/
 
 - execute metricbeat module tests in isolation: one module at a time
 - verify that the metricbeat module is able to send metrics to an ~~output file~~ Elasticsearch
-- allow the verification of both compiled Golang code, and the build artefact (in a Docker image/container format)
+- allow the verification of both compiled Go code, and the build artefact (in a Docker image/container format)
 - run tests locally in the same manner as in the CI
 - improve developer experience (more third-party developers adoption?)
 - run tests against the integrations compatibility matrix (MySQL 5.6, 5.7, 8.0, etc)
