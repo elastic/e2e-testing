@@ -42,7 +42,7 @@ From Godog's website:
 
 >Package godog is the official Cucumber BDD framework for Go, it merges specification and test documentation into one cohesive whole.
 
-For this test framework, we have chosen Godog over any other test framework because the team is already using Go, so it seems reasonable to choose it.
+For this test framework, we have chosen Godog over any other test framework because the Beats team (the team we started working with) is already using Go, so it seems reasonable to choose it.
 
 ## Test Specification
 
