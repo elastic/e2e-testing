@@ -6,7 +6,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"os"
 	"testing"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/cucumber/godog/colors"
 	messages "github.com/cucumber/messages-go/v10"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/pflag" // godog v0.11.0 (latest)
 	"go.elastic.co/apm"
 )
 
@@ -38,8 +38,8 @@ func init() {
 }
 
 func TestMain(m *testing.M) {
-	flag.Parse()
-	opts.Paths = flag.Args()
+	pflag.Parse()
+	opts.Paths = pflag.Args()
 
 	status := godog.TestSuite{
 		Name:                 "godogs",
