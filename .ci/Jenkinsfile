@@ -337,6 +337,7 @@ def generateFunctionalTestStep(Map args = [:]){
         def chocoPath = 'C:\\ProgramData\\chocolatey\\bin'
         def chocoPython3Path = 'C:\\Python38;C:\\Python38\\Scripts'
         path = "${env.WORKSPACE}\\bin;${chocoPath};${chocoPython3Path};C:\\tools\\mingw${mingwArch}\\bin;C:\\windows\\system32;C:\\windows\\system32\\WindowsPowerShell\\v1.0\\"
+        linuxIp = grabWorkerIP()
         envContext = [
             "KIBANA_URL=https://${linuxIp}:5601",
             "ELASTICSEARCH_URL=https://${linuxIp}:9200",
