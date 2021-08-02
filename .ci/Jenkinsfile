@@ -325,7 +325,7 @@ def generateFunctionalTestStep(Map args = [:]){
     if(platform.contains("windows")) {
         // Boot up a linux VM to deploy Elastic Stack to be tested with a
         // Windows/MacOS agent utilizing remote provider option
-        withNode(labels: "ubuntu-18.04") {
+        withNode(labels: "ubuntu-20.04") {
             deleteDir()
             unstash 'source'
             dir("${BASE_DIR}"){
@@ -371,6 +371,7 @@ def generateFunctionalTestStep(Map args = [:]){
                             if (platform.contains("windows")) {
                                 withGoEnvWindows(version: "${GO_VERSION}"){
                                     echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
+                                    powershell label: "Pinging Linux VM", script: "ping -n 2 ${linuxIp}"
                                     powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${linuxIp} -Port 9200"
                                     powershell label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601"
                                     powershell label: "Check for running fleet server", script: "Test-NetConnection ${linuxIp} -Port 8220"
