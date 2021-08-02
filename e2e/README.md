@@ -77,6 +77,12 @@ Because this framework uses Docker as the provisioning tool, all the services ar
 
 For Windows or other platform support, we are providing support to run the tests in the ephemeral CI workers for the underlaying platform: in other words, we are going to install the platform-specific binaries under test in a CI worker, connecting to the runtime dependencies of the test suite in a remote location (another worker, Elastic Cloud, etc.).
 
+#### (For Mac) Docker is not able to save files in a temporary directory
+
+It's important to configure `Docker for Mac` to allow it accessing the `/var/folders` directory, as this framework uses Mac's default temporary directory for storing tempoorary files.
+
+To change it, please use Docker UI, go to `Preferences > Resources > File Sharing`, and add there `/var/folders` to the list of paths that can be mounted into Docker containers. For more information, please read https://docs.docker.com/docker-for-mac/#file-sharing.
+
 ## Test Specification
 
 All the Gherkin (Cucumber) specifications are written in `.feature` files. The anatomy of a feature file is:
