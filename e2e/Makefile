@@ -20,6 +20,8 @@ create-suite:
 	envsubst < templates/suite_test.go.tmpl > _suites/$(SUITE)/$(SUITE)_test.go
 	mkdir -p _suites/$(SUITE)/features
 	envsubst < templates/suite.feature.tmpl > _suites/$(SUITE)/features/$(SUITE).feature
+	mkdir -p ../cli/config/compose/profiles/$(SUITE)
+	envsubst < templates/profile.yml.tmpl > ../cli/config/compose/profiles/$(SUITE)/docker-compose.yml
 
 .PHONY: lint
 lint:
