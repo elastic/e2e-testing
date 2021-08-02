@@ -357,10 +357,13 @@ def generateFunctionalTestStep(Map args = [:]){
                     dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
                 }
                 dir("${BASE_DIR}") {
+                    // Doing a windows agent test, start up docker before the new environment is applied for windows
+                    if (platform.contains("windows")) {
+                        sh script: "docker-compose -f cli/config/compose/profiles/fleet/docker-compose.yml up -d", label: "Deploying fleet via docker"
+                    }
                     withEnv(envContext) {
                         withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL") {
                             if (platform.contains("windows")) {
-                                sh script: "docker-compose -f cli/config/compose/profiles/fleet/docker-compose.yml up -d", label: "Deploying fleet via docker"
                                 linuxIp = grabWorkerIP()
                                 // Boot up a windows VM to deploy Elastic Agent to be tested against
                                 // a remote deployed stack
