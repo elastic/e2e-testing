@@ -51,7 +51,7 @@ The test framework makes use of `Make` to prepare the environment to run the `Cu
 
 Each test suite, which lives under the `e2e/_suites` directory, has it's own Makefile to control the build life cycle of the test project.
 
-> It's possible to create a new test suite with `SUITE=name make create-suite`, which creates the build files and the scaffolding for the first test suite.
+> It's possible to create a new test suite with `SUITE=name make -C e2e create-suite`, which creates the build files and the scaffolding for the first test suite.
 
 ### Services as Docker containers
 The services provided by the test suites in this framework will be started in the form of Docker containers. To manage the life cycle of those containers in test time we are going to use [`Testcontainers`](https://golang.testcontainers.org), a set of libraries to simplify the usage of the Docker client, attaching container life cycles to the tests, so whenever the tests finish, the containers will stop in consequence.
