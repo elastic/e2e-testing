@@ -17,8 +17,15 @@ import (
 	"go.elastic.co/apm"
 )
 
+var testSuite ${SUITE}TestSuite
+
+var tx *apm.Transaction
+var stepSpan *apm.Span
+
 // ${SUITE}TestSuite represents a test suite for ${SUITE}
 type ${SUITE}TestSuite struct {
+	// instrumentation
+	currentContext context.Context
 }
 
 var opts = godog.Options{
@@ -73,14 +80,6 @@ func Initialize${SUITE}Scenarios(ctx *godog.ScenarioContext) {
 		defer f()
 
 		log.Trace("After ${SUITE} scenario...")
-		cleanUpErr := testSuite.CleanUp()
-		if cleanUpErr != nil {
-			log.Errorf("CleanUp failed: %v", cleanUpErr)
-			e := apm.DefaultTracer.NewError(cleanUpErr)
-			e.Context.SetLabel("step", p.GetName())
-			e.Context.SetLabel("gherkin_type", "step")
-			e.Send()
-		}
 	})
 
 	ctx.BeforeStep(func(step *godog.Step) {
