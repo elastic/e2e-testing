@@ -64,8 +64,13 @@ func NewFleetConfig(token string) (*FleetConfig, error) {
 func (cfg FleetConfig) Flags() []string {
 	flags := []string{
 		"-e", "-v", "--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken,
-		"--url", fmt.Sprintf("http://%s:%d", cfg.FleetServerURI, cfg.FleetServerPort),
+		"--url", cfg.FleetServerURL(),
 	}
 
 	return flags
+}
+
+// FleetServerURL returns the fleet-server URL in the config
+func (cfg FleetConfig) FleetServerURL() string {
+	return fmt.Sprintf("http://%s:%d", cfg.FleetServerURI, cfg.FleetServerPort)
 }

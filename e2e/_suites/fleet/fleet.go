@@ -49,7 +49,6 @@ type FleetTestSuite struct {
 	Integration         kibana.IntegrationPackage // the installed integration
 	Policy              kibana.Policy
 	PolicyUpdatedAt     string // the moment the policy was updated
-	FleetServerPolicy   kibana.Policy
 	Version             string // current elastic-agent version
 	kibanaClient        *kibana.Client
 	deployer            deploy.Deployment
@@ -69,50 +68,52 @@ func (fts *FleetTestSuite) afterScenario() {
 	fts.currentContext = apm.ContextWithSpan(context.Background(), span)
 	defer span.End()
 
-	serviceName := common.ElasticAgentServiceName
-	agentService := deploy.NewServiceRequest(serviceName)
+	if fts.InstallerType != "" {
+		serviceName := common.ElasticAgentServiceName
+		agentService := deploy.NewServiceRequest(serviceName)
 
-	if !fts.StandAlone {
-		agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
+		if !fts.StandAlone {
+			agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
 
-		if log.IsLevelEnabled(log.DebugLevel) {
-			err := agentInstaller.Logs()
-			if err != nil {
-				log.WithField("error", err).Warn("Could not get agent logs in the container")
+			if log.IsLevelEnabled(log.DebugLevel) {
+				err := agentInstaller.Logs()
+				if err != nil {
+					log.WithField("error", err).Warn("Could not get agent logs in the container")
+				}
 			}
-		}
-		// only call it when the elastic-agent is present
-		if !fts.ElasticAgentStopped {
-			err := agentInstaller.Uninstall(fts.currentContext)
-			if err != nil {
-				log.Warnf("Could not uninstall the agent after the scenario: %v", err)
+			// only call it when the elastic-agent is present
+			if !fts.ElasticAgentStopped {
+				err := agentInstaller.Uninstall(fts.currentContext)
+				if err != nil {
+					log.Warnf("Could not uninstall the agent after the scenario: %v", err)
+				}
 			}
+		} else if log.IsLevelEnabled(log.DebugLevel) {
+			_ = fts.deployer.Logs(agentService)
 		}
-	} else if log.IsLevelEnabled(log.DebugLevel) {
-		_ = fts.deployer.Logs(agentService)
+
+		err := fts.unenrollHostname()
+		if err != nil {
+			manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+			log.WithFields(log.Fields{
+				"err":      err,
+				"hostname": manifest.Hostname,
+			}).Warn("The agentIDs for the hostname could not be unenrolled")
+		}
+
+		if !common.DeveloperMode {
+			_ = fts.deployer.Remove(
+				common.FleetProfileServiceRequest,
+				[]deploy.ServiceRequest{
+					deploy.NewServiceRequest(serviceName),
+				},
+				common.ProfileEnv)
+		} else {
+			log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
+		}
 	}
 
-	err := fts.unenrollHostname()
-	if err != nil {
-		manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
-		log.WithFields(log.Fields{
-			"err":      err,
-			"hostname": manifest.Hostname,
-		}).Warn("The agentIDs for the hostname could not be unenrolled")
-	}
-
-	if !common.DeveloperMode {
-		_ = fts.deployer.Remove(
-			common.FleetProfileServiceRequest,
-			[]deploy.ServiceRequest{
-				deploy.NewServiceRequest(serviceName),
-			},
-			common.ProfileEnv)
-	} else {
-		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
-	}
-
-	err = fts.kibanaClient.DeleteEnrollmentAPIKey(fts.currentContext, fts.CurrentTokenID)
+	err := fts.kibanaClient.DeleteEnrollmentAPIKey(fts.currentContext, fts.CurrentTokenID)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err":     err,
@@ -125,6 +126,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	// clean up fields
 	fts.CurrentTokenID = ""
 	fts.CurrentToken = ""
+	fts.InstallerType = ""
 	fts.Image = ""
 	fts.StandAlone = false
 	fts.BeatsProcess = ""
@@ -183,7 +185,6 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	// stand-alone only steps
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed$`, fts.aStandaloneAgentIsDeployed)
 	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode$`, fts.bootstrapFleetServerFromAStandaloneAgent)
-	s.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode on cloud$`, fts.aStandaloneAgentIsDeployedWithFleetServerModeOnCloud)
 	s.Step(`^there is new data in the index from agent$`, fts.thereIsNewDataInTheIndexFromAgent)
 	s.Step(`^the "([^"]*)" docker container is stopped$`, fts.theDockerContainerIsStopped)
 	s.Step(`^there is no new data in the index after agent shuts down$`, fts.thereIsNoNewDataInTheIndexAfterAgentShutsDown)
@@ -191,7 +192,16 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 }
 
 func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredStatus string) error {
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
+	exp := utils.GetExponentialBackOff(maxTimeout)
+	retryCount := 0
+
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+
 	waitForAgents := func() error {
+		retryCount++
+
 		agents, err := fts.kibanaClient.ListAgents(fts.currentContext)
 		if err != nil {
 			return err
@@ -201,13 +211,23 @@ func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredSt
 			return errors.New("No agents found")
 		}
 
-		agentZero := agents[0]
-		hostname := agentZero.LocalMetadata.Host.HostName
+		for _, agent := range agents {
+			hostname := agent.LocalMetadata.Host.HostName
 
-		return theAgentIsListedInFleetWithStatus(fts.currentContext, desiredStatus, hostname)
+			if hostname == manifest.Hostname {
+				return theAgentIsListedInFleetWithStatus(fts.currentContext, desiredStatus, hostname)
+			}
+		}
+
+		err = errors.New("Agent not found in Fleet")
+		log.WithFields(log.Fields{
+			"elapsedTime": exp.GetElapsedTime(),
+			"hostname":    manifest.Hostname,
+			"retries":     retryCount,
+		}).Warn(err)
+
+		return err
 	}
-	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
-	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	err := backoff.Retry(waitForAgents, exp)
 	if err != nil {
@@ -1189,6 +1209,16 @@ func inputs(integration string) []kibana.Input {
 	return []kibana.Input{}
 }
 
+func (fts *FleetTestSuite) getAgentOSData() (string, error) {
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+	agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
+	if err != nil {
+		return "", err
+	}
+	return agent.LocalMetadata.OS.Platform, nil
+}
+
 func metricsInputs(integration string, set string) []kibana.Input {
 	metricsFile := filepath.Join(testResourcesDir, "/metrics.json")
 	data := readJSONFile(metricsFile, integration, set)
@@ -1262,6 +1292,7 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		}).Warn("We only support system system/metrics, log and logfile policy to be updated")
 		return godog.ErrPending
 	}
+	os, _ := fts.getAgentOSData()
 
 	packageDS, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, "system", fts.Policy)
 
@@ -1295,6 +1326,7 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		"dataset": "system." + set,
 		"enabled": "true",
 		"type":    "metrics",
+		"os":      os,
 	}).Info("Policy Updated with package name system." + set)
 
 	return nil
@@ -1304,6 +1336,8 @@ func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) er
 	var TimeoutFactor = 3
 	timeNow := time.Now()
 	startTime := timeNow.Unix()
+
+	os, _ := fts.getAgentOSData()
 
 	waitForDataStreams := func() error {
 		var exist = false
@@ -1315,12 +1349,15 @@ func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) er
 					"dataset": "system." + set,
 					"enabled": "true",
 					"type":    name,
-				}).Info("The " + name + "with value system." + set + " in the metrics")
+					"os":      os,
+				}).Info("The " + name + " with value system." + set + " in the metrics")
 
 				if int64(int64(item.Path("last_activity_ms").Data().(float64))) > startTime {
-					log.WithField(
-						"Activity Time stamp for the "+name+"system."+name, "Is valid",
-					).Info("The " + name + "with value system." + set + " in the metrics")
+					log.WithFields(log.Fields{
+						"last_activity_ms": item.Path("last_activity_ms").Data().(float64),
+						"startTime":        startTime,
+						"os":               os,
+					}).Info("The " + name + " with value system." + set + " in the metrics")
 				}
 				exist = true
 				break

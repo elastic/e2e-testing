@@ -234,8 +234,8 @@ func getGCPBucketCoordinates(fileName string, artifact string, version string) (
 
 // GetElasticArtifactVersion returns the current version:
 // 1. Elastic's artifact repository, building the JSON path query based
-// If the version is a PR, then it will return the version without checking the artifacts API
-// i.e. GetElasticArtifactVersion("$VERSION")
+// If the version is a SNAPSHOT including a commit, then it will directly use the version without checking the artifacts API
+// i.e. GetElasticArtifactVersion("$VERSION-abcdef-SNAPSHOT")
 func GetElasticArtifactVersion(version string) (string, error) {
 	cacheKey := fmt.Sprintf("https://artifacts-api.elastic.co/v1/versions/%s/?x-elastic-no-kpi=true", version)
 
@@ -245,6 +245,11 @@ func GetElasticArtifactVersion(version string) (string, error) {
 			"version": val,
 		}).Debug("Retrieving version from local cache")
 		return val, nil
+	}
+
+	if SnapshotHasCommit(version) {
+		elasticVersionsCache[cacheKey] = version
+		return version, nil
 	}
 
 	exp := GetExponentialBackOff(time.Minute)
@@ -324,9 +329,19 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 
 	body := ""
 
+	tmpVersion := version
+	if SnapshotHasCommit(version) {
+		log.WithFields(log.Fields{
+			"version": version,
+		}).Trace("Removing SNAPSHOT from version including commit")
+
+		// remove the SNAPSHOT from the VERSION as the artifacts API supports commits in the version, but without the snapshot suffix
+		tmpVersion = strings.ReplaceAll(version, "-SNAPSHOT", "")
+	}
+
 	apiStatus := func() error {
 		r := curl.HTTPRequest{
-			URL: fmt.Sprintf("https://artifacts-api.elastic.co/v1/search/%s/%s?x-elastic-no-kpi=true", version, artifact),
+			URL: fmt.Sprintf("https://artifacts-api.elastic.co/v1/search/%s/%s?x-elastic-no-kpi=true", tmpVersion, artifact),
 		}
 
 		response, err := curl.Get(r)
@@ -334,7 +349,7 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 			log.WithFields(log.Fields{
 				"artifact":       artifact,
 				"artifactName":   artifactName,
-				"version":        version,
+				"version":        tmpVersion,
 				"error":          err,
 				"retry":          retryCount,
 				"statusEndpoint": r.URL,
@@ -366,7 +381,7 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 		log.WithFields(log.Fields{
 			"artifact":     artifact,
 			"artifactName": artifactName,
-			"version":      version,
+			"version":      tmpVersion,
 		}).Error("Could not parse the response body for the artifact")
 		return "", err
 	}
@@ -376,7 +391,7 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 		"artifact":     artifact,
 		"artifactName": artifactName,
 		"elapsedTime":  exp.GetElapsedTime(),
-		"version":      version,
+		"version":      tmpVersion,
 	}).Trace("Artifact found")
 
 	packagesObject := jsonParsed.Path("packages")
@@ -589,7 +604,7 @@ func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
 
 // IsCommit returns true if the string matches commit format
 func IsCommit(s string) bool {
-	re := regexp.MustCompile(`\b[0-9a-f]{5,40}\b`)
+	re := regexp.MustCompile(`^\b[0-9a-f]{5,40}\b`)
 
 	return re.MatchString(s)
 }
@@ -642,6 +657,14 @@ func Sleep(duration time.Duration) error {
 	time.Sleep(duration)
 
 	return nil
+}
+
+// SnapshotHasCommit returns true if the snapshot version contains a commit format
+func SnapshotHasCommit(s string) bool {
+	// regex = X.Y.Z-commit-SNAPSHOT
+	re := regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-\b[0-9a-f]{5,40}\b)(-SNAPSHOT)`)
+
+	return re.MatchString(s)
 }
 
 // GetDockerNamespaceEnvVar returns the Docker namespace whether we use one of the CI snapshots or

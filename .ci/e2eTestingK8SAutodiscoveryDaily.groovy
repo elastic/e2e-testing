@@ -47,8 +47,8 @@ pipeline {
             string(name: 'runTestsSuites', value: 'kubernetes-autodiscover'),
             string(name: 'SLACK_CHANNEL', value: "integrations"),
           ],
-          propagate: false,
-          wait: false
+          propagate: true,
+          wait: true
         )
       }
     }

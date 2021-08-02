@@ -7,15 +7,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"path"
 	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/installer"
+	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 
@@ -28,28 +27,12 @@ func (fts *FleetTestSuite) aStandaloneAgentIsDeployed(image string) error {
 }
 
 func (fts *FleetTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string) error {
-	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(fts.currentContext, true)
-	if err != nil {
-		return err
-	}
-
-	fts.FleetServerPolicy = fleetPolicy
 	return fts.startStandAloneAgent(image, "", map[string]string{"fleetServerMode": "1"})
-}
-
-func (fts *FleetTestSuite) aStandaloneAgentIsDeployedWithFleetServerModeOnCloud(image string) error {
-	fleetPolicy, err := fts.kibanaClient.GetDefaultPolicy(fts.currentContext, true)
-	if err != nil {
-		return err
-	}
-	fts.FleetServerPolicy = fleetPolicy
-	volume := path.Join(config.OpDir(), "compose", "services", "elastic-agent", "apm-legacy")
-	return fts.startStandAloneAgent(image, "cloud", map[string]string{"apmVolume": volume})
 }
 
 func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
-	minimumHitsCount := 25
+	minimumHitsCount := 20
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(fts.Image)
 
@@ -117,7 +100,28 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		dockerImageTag += "-" + arch
 	}
 
-	common.ProfileEnv["fleetServerPort"] = "8221"
+	// Grab a new enrollment key for new agent
+	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.currentContext, fts.Policy)
+	if err != nil {
+		return err
+	}
+	fts.CurrentToken = enrollmentKey.APIKey
+	fts.CurrentTokenID = enrollmentKey.ID
+
+	cfg, err := kibana.NewFleetConfig(fts.CurrentToken)
+	if err != nil {
+		return err
+	}
+
+	// See https://github.com/elastic/beats/blob/4accfa8/x-pack/elastic-agent/pkg/agent/cmd/container.go#L73-L85
+	// to understand the environment variables used by the elastic-agent to automatically
+	// enroll the new agent container in Fleet
+	common.ProfileEnv["fleetInsecure"] = "1"
+	common.ProfileEnv["fleetUrl"] = cfg.FleetServerURL()
+	common.ProfileEnv["fleetEnroll"] = "1"
+	common.ProfileEnv["fleetEnrollmentToken"] = cfg.EnrollmentToken
+
+	common.ProfileEnv["fleetServerPort"] = "8221" // fixed port to avoid collitions with the stack's fleet-server
 	common.ProfileEnv["elasticAgentDockerImageSuffix"] = ""
 	if image != "default" {
 		common.ProfileEnv["elasticAgentDockerImageSuffix"] = "-" + image
@@ -136,7 +140,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 	services := []deploy.ServiceRequest{
 		deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(flavour),
 	}
-	err := fts.deployer.Add(fts.currentContext, common.FleetProfileServiceRequest, services, common.ProfileEnv)
+	err = fts.deployer.Add(fts.currentContext, common.FleetProfileServiceRequest, services, common.ProfileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err
