@@ -77,24 +77,6 @@ Because this framework uses Docker as the provisioning tool, all the services ar
 
 For Windows or other platform support, we are providing support to run the tests in the ephemeral CI workers for the underlaying platform: in other words, we are going to install the platform-specific binaries under test in a CI worker, connecting to the runtime dependencies of the test suite in a remote location (another worker, Elastic Cloud, etc.).
 
-## Test Specification
-
-All the Gherkin (Cucumber) specifications are written in `.feature` files. The anatomy of a feature file is:
-
-- **@tag_name**: A `@` character indicates a tag. And tags are used to filter the test execution. Tags could be placed on Features (applying the entire file), or on Scenarios (applying just to them). At this moment we are tagging each feature file with a tag using module's name, so that we can instrument the test runner to just run one. *more below.
-- **Feature: Blah, blah**: Description in plain English of the group of uses cases (scenarios) in this feature file. The feature file should contain just one.
-- **Scenario**: the name in plain English of a specific use case. The feature file can contain multiple scenarios.
-- **Scenario Outline**: exactly the same as above, but we are are telling Cucumber that this use case has a matrix, so it has to iterate through the **Examples** table, interpolating those values into the placeholders in the scenario. The feature file can contain multiple outlined scenarios.
-- **Given, Then, When, And, But keywords**: Their meaning is extremely important in order to understand the use case they are part of, although they have no real impact in how we use them. If we use `doble quotes` around one or more words, that will tell Cucumber the presence of a fixed variable, with value the word/s among the double quotes. These variables will be the input parameters of the implementation functions in Go code. If we use `angles` around one or more words, that will tell Cucumber the presence of a dynamic variable, taken from the examples table.
-    - **Given** (Optional): It must tell an ocational reader what state must be in place for the use case to be valid.
-    - **When** (Mandatory): It must tell an ocational reader what action or actions trigger the use case.
-    - **Then** (Mandatory): It must tell an ocational reader what outcome has been generated after the use case happens.
-    - **And** (Optional): Used within any of the above clauses, it must tell an ocational reader a secondary preparation (Given), trigger (When), or output (Then) that must be present.
-    - **But** (Optional): Used within any of the above clauses, it must tell an ocational reader a secondary preparation (Given), trigger (When), or output (Then) that must not be present.
-- **Examples:** (Mandatory with Scenario Outline): this `markdown table` will represent the elements to interpolate in the existing dynamic variables in the use case, being each column header the name of the different variables in the table. Besides that, each row will result in a test execution.
-
-A good example could be [this one](./_suites/metricbeat/features/integrations.feature).
-
 ## Test Implementation
 
 We are using Cucumber + Godog to implement the tests, which implies that the implementation files are using Go as programming language. In these Go files we are going to create the connections to the `Given`, `When`, `Then`, `And`, etc. clauses in a well-known file structure. If you have a feature file created, and any well-formatted scenario on it, running `godog` (or `make functional-test`) for that test suite will print out a Go snippet with empty test methods implementing the scenarios that are present in your feature file.
