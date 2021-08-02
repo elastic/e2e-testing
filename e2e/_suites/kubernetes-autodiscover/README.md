@@ -131,6 +131,8 @@ This is an example of the optional configuration:
    The tests will take a few minutes to run, spinning up the Kubernetes cluster
    if needed.
 
+## Diagnosing test failures
+
 ### Problems with the environment
 
 If a Kubernetes cluster is pre-configured in kubectl, you can directly use this

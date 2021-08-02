@@ -69,6 +69,6 @@ This is an example of the optional configuration:
    OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@mysql'
    ```
 
-### I cannot move on
+## Need help?
 
 Please open an issue here: https://github.com/elastic/e2e-testing/issues/new

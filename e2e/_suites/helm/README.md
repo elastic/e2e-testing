@@ -61,6 +61,8 @@ This is an example of the optional configuration:
    OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@apm-server'
    ```
 
+## Diagnosing test failures
+
 ### Setup failures
 
 Sometimes the tests could fail to configure or start the kubernetes cluster, etc. To determine why
