@@ -59,7 +59,7 @@ The services provided by the test suites in this framework will be started in th
 ### Runtime dependencies
 In many cases, we want to store the metrics in Elasticsearch, so at some point we must start up an Elasticsearch instance. Besides that, we want to query the Elasticsearch to perform assertions on the metrics, such as there are no errors, or the field `f.foo` takes the value `bar`. For that reason we need an Elasticsearch instance in a well-known location. We are going to group this Elasticsearch instance, and any other runtime dependencies, under the concept of a `profile`, which is a represented by a `docker-compose.yml` file under the `cli/config/compose/profiles/` and the name of the test suite.
 
-As an example, the Metricbeat test suite will need just an Elasticsearch instance; the Fleet test suite will need an Elasticsearch instance and Kibana, which is used to perform verifications using its API.
+As an example, the Metricbeat test suite will need just an Elasticsearch instance; the Fleet test suite will need an Elasticsearch instance, Kibana and Fleet Server.
 
 ### Feature files
 We will create use cases for the module in a separate `.feature` file, ideally named after the name of the feature to test (i.e. _apache.feature_), and located under the `features` directory of each test suite. This feature file is a Cucumber requirement, that will be parsed by the Godog test runner and matched against the Go code implementing the tests.
