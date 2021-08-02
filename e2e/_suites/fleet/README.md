@@ -66,10 +66,6 @@ FLEET_URL=https://a.public.ip:a.public.port
 
 The above variables need to be accessible by the tests, if running the stack behind a firewall, ports may need to be exposed manually. The usage of `http` vs `https` is not important as our tests primarily deal with self signed certficates that are not validated against a true certficate authority.
 
-### Diagnosing test failures
-
-The first step in determining the exact failure is to try and reproduce the test run locally, ideally using the DEBUG log level to enhance the log output. Once you've done that, look at the output from the test run.
-
 ### Running the tests
 
 1. Clone this repository, say into a folder named `e2e-testing`.

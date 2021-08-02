@@ -15,10 +15,6 @@ The tests will follow this general high-level approach:
 1. Install runtime dependencies as Docker containers via Docker Compose, happening at before the test suite runs. These runtime dependencies are defined in a specific `profile` for Metricbeat, in the form of a `docker-compose.yml` file.
 1. Execute BDD steps representing each scenario. Each step will return an Error if the behavior is not satisfied, marking the step and the scenario as failed, or will return `nil`.
 
-### Diagnosing test failures
-
-The first step in determining the exact failure is to try and reproduce the test run locally, ideally using the DEBUG log level to enhance the log output. Once you've done that, look at the output from the test run.
-
 ### Running the tests
 
 1. Clone this repository, say into a folder named `e2e-testing`.

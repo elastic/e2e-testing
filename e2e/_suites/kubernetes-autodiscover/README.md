@@ -90,13 +90,6 @@ with the label `k8s-app`.
 There are other more specific steps. Examples for them can be found in the
 feature files.
 
-
-### Diagnosing test failures
-
-The first step in determining the exact failure is to try and reproduce the test run
-locally, ideally using the DEBUG log level to enhance the log output. Once you've
-done that, look at the output from the test run.
-
 ### Running the tests
 
 1. Clone this repository, say into a folder named `e2e-testing`.
