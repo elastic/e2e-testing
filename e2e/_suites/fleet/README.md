@@ -124,10 +124,6 @@ This is an example of the optional configuration:
    OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@fleet_mode_agent'
    ```
 
-   The tests will take a few minutes to run, spinning up a few Docker containers representing the various products in this framework and performing the test steps outlined earlier.
-
-   As the tests are running they will output the results in your terminal console. This will be quite verbose and you can ignore most of it until the tests finish. Then inspect at the output of the last play that ran and failed. On the contrary, you could use a different log level for the `OP_LOG_LEVEL` variable, being it possible to use `DEBUG`, `INFO (default)`, `WARN`, `ERROR`, `FATAL` as log levels.
-
 ### Setup failures
 
 Sometimes the tests could fail to configure or start a product such as Metricbeat, Elasticsearch, etc. To determine why 

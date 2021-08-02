@@ -197,7 +197,12 @@ The following environment variables affect how the tests are run in both the CI 
 - `SKIP_SCENARIOS`: Set this environment variable to `false` if it's needed to include the scenarios annotated as `@skip` in the current test execution, adding that taf to the `TAGS` variable. Default value: `true`.
 
 ### Running regressions locally
-This example will run the Fleet tests for the 8.0.0-SNAPSHOT stack with the released 7.10.1 version of the agent.
+
+The tests will take a few minutes to run, spinning up a few Docker containers (or Kubernetes pods) representing the various runtime dependencies for the test suite and performing the test steps outlined earlier.
+
+As the tests are running they will output the results in your terminal console. This will be quite verbose and you can ignore most of it until the tests finish. Then inspect at the output of the last play that ran and failed. On the contrary, you could use a different log level for the `OP_LOG_LEVEL` variable, being it possible to use `DEBUG`, `INFO (default)`, `WARN`, `ERROR`, `FATAL` as log levels.
+
+In the following example, we will run the Fleet tests for the 8.0.0-SNAPSHOT stack with the released 7.10.1 version of the agent.
 
 ```shell
 # Use the proper branch
