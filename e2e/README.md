@@ -61,6 +61,9 @@ In many cases, we want to store the metrics in Elasticsearch, so at some point w
 
 As an example, the Metricbeat test suite will need just an Elasticsearch instance; the Fleet test suite will need an Elasticsearch instance, Kibana and Fleet Server.
 
+#### Configuration files
+If the profile needs certain configuration files, we recommend locating them under a `configurations` folder in the profile directory. As an example, see `kibana.config.yml` in the `fleet` profile.
+
 ### Feature files
 We will create use cases for the module in a separate `.feature` file, ideally named after the name of the feature to test (i.e. _apache.feature_), and located under the `features` directory of each test suite. This feature file is a Cucumber requirement, that will be parsed by the Godog test runner and matched against the Go code implementing the tests.
 
@@ -84,9 +87,6 @@ The anatomy of a feature file is:
 There is [a descriptor file for the CI](../.ci/.e2e-tests.yaml) in which we define the parallel branches that will be created in the execution of a job. This YAML file defines suites and tags. A suite represents each test suite directory under the `e2e/_suites` directory, and the tags represent the tags will be passed to the test runner to filter the test execution. Another configuration we define in this file is related to the capabilities to run certain tags at the pull request stage, using the `pullRequestFilter` child element. This element will be appended to the tags used to filter the test runner.
 
 Adding a new feature file will require to check [the aforementioned descriptor file](../.ci/.e2e-tests.yaml). If the tags in the new file are not there, you should add a new parallel branch under the main test suite, or update the tags to add the new scenarios in an existing parallel branch.
-
-### Configuration files
-It's possible that the configuration YAML files will exist in the test suite. We recommend locating them under the `configurations` folder under the config directory for compose files (both profiles and services). The name of the file will represent the feature to be tested (i.e. `kibana.config.yml`). In this file we will add those configurations that are exclusive to the feature to be tested.
 
 ## Test Specification
 
