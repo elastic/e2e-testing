@@ -322,19 +322,10 @@ def generateFunctionalTestStep(Map args = [:]){
     workerLabels = "centos-8-aarch64"
   }
 
-    if(platform.contains("windows")) {
-        // Boot up a linux VM to deploy Elastic Stack to be tested with a
-        // Windows/MacOS agent utilizing remote provider option
-        withNode(labels: "ubuntu-20.04") {
-            deleteDir()
-            unstash 'source'
-            dir("${BASE_DIR}"){
-                sh script: "cd cli/config/compose/profiles/fleet && docker-compose up -d", label: "Deploying fleet via docker"
-                sh script: "docker ps"
-                linuxIp = grabWorkerIP()
-            }
-        }
-    }
+  if (platform.contains("windows")) {
+      // For windows testing we need to make sure that the host executor is a linux machine and nest the windows withNode within that
+      workerLabels = "ubuntu-20.04"
+  }
 
   // Skip scenarios per platform
   tags += " && ~@skip:${goArch}"
@@ -369,14 +360,24 @@ def generateFunctionalTestStep(Map args = [:]){
                     withEnv(envContext) {
                         withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL") {
                             if (platform.contains("windows")) {
-                                withGoEnvWindows(version: "${GO_VERSION}"){
-                                    echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
-                                    powershell label: "Pinging Linux VM", script: "ping -n 2 ${linuxIp}"
-                                    powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${linuxIp} -Port 9200"
-                                    powershell label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601"
-                                    powershell label: "Check for running fleet server", script: "Test-NetConnection ${linuxIp} -Port 8220"
-
-                                    cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platform}:${suite}:${tags}"
+                                sh script: "cd cli/config/compose/profiles/fleet && docker-compose up -d", label: "Deploying fleet via docker"
+                                sh script: "docker ps"
+                                linuxIp = grabWorkerIP()
+                                // Boot up a windows VM to deploy Elastic Agent to be tested against
+                                // a remote deployed stack
+                                withNode(labels: platform) {
+                                    deleteDir()
+                                    unstash 'source'
+                                    dir("${BASE_DIR}"){
+                                        withGoEnvWindows(version: "${GO_VERSION}"){
+                                            echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
+                                            powershell label: "Pinging Linux VM", script: "ping -n 2 ${linuxIp}"
+                                            powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${linuxIp} -Port 9200"
+                                            powershell label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601"
+                                            powershell label: "Check for running fleet server", script: "Test-NetConnection ${linuxIp} -Port 8220"
+                                            cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platform}:${suite}:${tags}"
+                                        }
+                                    }
                                 }
                             } else {
                                 filebeat(image: 'docker.elastic.co/beats/filebeat:7.13.0-SNAPSHOT', output: "docker_logs_${goArch}_${suite}_${name}.log", workdir: "${env.WORKSPACE}") {
