@@ -102,6 +102,8 @@ func Initialize${CAPITAL_SUITE}Scenarios(ctx *godog.ScenarioContext) {
 
 // Initialize${CAPITAL_SUITE}TestSuite adds steps to the Godog test suite
 func Initialize${CAPITAL_SUITE}TestSuite(ctx *godog.TestSuiteContext) {
+	testSuite = ${CAPITAL_SUITE}TestSuite{}
+
 	ctx.BeforeSuite(func() {
 		log.Trace("Before ${CAPITAL_SUITE} Suite...")
 
@@ -115,6 +117,9 @@ func Initialize${CAPITAL_SUITE}TestSuite(ctx *godog.TestSuiteContext) {
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("Before ${CAPITAL_SUITE} test suite", "test.suite.before", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
+
+		testSuite.currentContext = suiteContext
+
 		defer suiteParentSpan.End()
 	})
 
@@ -133,6 +138,9 @@ func Initialize${CAPITAL_SUITE}TestSuite(ctx *godog.TestSuiteContext) {
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("After ${CAPITAL_SUITE} test suite", "test.suite.after", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
+
+		testSuite.currentContext = suiteContext
+
 		defer suiteParentSpan.End()
 	})
 }
