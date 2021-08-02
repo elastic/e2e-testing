@@ -128,6 +128,9 @@ It will generate the website under the `./docs` directory (which is ignored in G
 ### Diagnosing test failures
 The first step in determining the exact failure is to try and reproduce the test run locally, ideally using the DEBUG log level to enhance the log output. Once you've done that, look at the output from the test run.
 
+#### Tests fail because the product could not be configured or run correctly
+This type of failure usually indicates that code for these tests itself needs to be changed. See the sections on how to run the tests locally in the specific test suite.
+
 ## Regression testing
 We have built the project and the CI job in a manner that it is possible to override different parameters about projects versions, so that we can set i.e. the version of the Elastic Stack to be used, or the version of the Elastic Agent. We have built and maintain branches to test the most recent versions of the stack, each release that comes out we maintain for a brief period and drop support for the oldest, while always keeping 'master' (8.0) and the 7.x maintainenace line, too:
 
