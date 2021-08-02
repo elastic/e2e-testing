@@ -65,9 +65,16 @@ As an example, the Metricbeat test suite will need just an Elasticsearch instanc
 If the profile needs certain configuration files, we recommend locating them under a `configurations` folder in the profile directory. As an example, see `kibana.config.yml` in the `fleet` profile.
 
 ### Feature files
-We will create use cases for the module in a separate `.feature` file, ideally named after the name of the feature to test (i.e. _apache.feature_), and located under the `features` directory of each test suite. This feature file is a Cucumber requirement, that will be parsed by the Godog test runner and matched against the Go code implementing the tests.
+We will create use cases for the module in a separate `.feature` file, ideally named after the name of the feature to test (i.e. _apache.feature_), and located under the `features` directory of each test suite. These feature files are considered as requirement for Cucumber, and they will be parsed by the Godog test runner and matched against the Go code implementing the tests.
 
-The anatomy of a feature file is:
+#### Feature files and the CI
+There is [a descriptor file for the CI](../.ci/.e2e-tests.yaml) in which we define the parallel branches that will be created in the execution of a job. This YAML file defines suites and tags. A suite represents each test suite directory under the `e2e/_suites` directory, and the tags represent the tags will be passed to the test runner to filter the test execution. Another configuration we define in this file is related to the capabilities to run certain tags at the pull request stage, using the `pullRequestFilter` child element. This element will be appended to the tags used to filter the test runner.
+
+Adding a new feature file will require to check [the aforementioned descriptor file](../.ci/.e2e-tests.yaml). If the tags in the new file are not there, you should add a new parallel branch under the main test suite, or update the tags to add the new scenarios in an existing parallel branch.
+
+## Test Specification
+
+All the Gherkin (Cucumber) specifications are written in `.feature` files. The anatomy of a feature file is:
 
 - **@tag_name**: A `@` character indicates a tag. And tags are used to filter the test execution. Tags could be placed on Features (applying the entire file), or on Scenarios (applying just to them). At this moment we are tagging each feature file with a tag using module's name, so that we can instrument the test runner to just run one. *more below.
 - **Feature: Blah, blah**: Description in plain English of the group of uses cases (scenarios) in this feature file. The feature file should contain just one.
@@ -82,15 +89,6 @@ The anatomy of a feature file is:
 - **Examples:** (Mandatory with Scenario Outline): this `markdown table` will represent the elements to interpolate in the existing dynamic variables in the use case, being each column header the name of the different variables in the table. Besides that, each row will result in a test execution.
 
  *Note, as of this PR: https://github.com/elastic/e2e-testing/pull/669/files we have implemented a mechanism to NOT run tests marked as `@nightly` during PR CI test runs, if they, for any reason, are not capable of successfully finishing for a given reason.  The foremost example is the Agent upgrade tests which do not run on PR CI due to the lack of proper signing for the binaries needed.  The tag is implemented basically as a "nightly only" citation.
-
-#### Feature files and the CI
-There is [a descriptor file for the CI](../.ci/.e2e-tests.yaml) in which we define the parallel branches that will be created in the execution of a job. This YAML file defines suites and tags. A suite represents each test suite directory under the `e2e/_suites` directory, and the tags represent the tags will be passed to the test runner to filter the test execution. Another configuration we define in this file is related to the capabilities to run certain tags at the pull request stage, using the `pullRequestFilter` child element. This element will be appended to the tags used to filter the test runner.
-
-Adding a new feature file will require to check [the aforementioned descriptor file](../.ci/.e2e-tests.yaml). If the tags in the new file are not there, you should add a new parallel branch under the main test suite, or update the tags to add the new scenarios in an existing parallel branch.
-
-## Test Specification
-
-All the Gherkin (Cucumber) specifications are written in `.feature` files.
 
 A good example could be [this one](./_suites/metricbeat/features/integrations.feature).
 
