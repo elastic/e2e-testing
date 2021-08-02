@@ -64,7 +64,7 @@ This is an example of the optional configuration:
 ### Setup failures
 
 Sometimes the tests could fail to configure or start the kubernetes cluster, etc. To determine why
-this happened, look at your terminal log in DEBUG mode. make sure there is not another test cluster:
+this happened, look at your terminal log in DEBUG/TRACE mode. make sure there is not another test cluster:
 
 ```shell
 # Will remove existing test cluster
