@@ -55,6 +55,12 @@ This is an example of the optional configuration:
    OP_LOG_LEVEL=DEBUG go test -v
    ```
 
+   Optionally, you can run only one of the feature files
+   ```shell
+   cd e2e/_suites/helm
+   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@apm-server'
+   ```
+
    The tests will take a few minutes to run, spinning up the Kubernetes cluster, installing the helm charts, and performing the test steps outlined earlier.
 
    As the tests are running they will output the results in your terminal console. This will be quite verbose and you can ignore most of it until the tests finish. Then inspect at the output of the last play that ran and failed. On the contrary, you could use a different log level for the `OP_LOG_LEVEL` variable, being it possible to use `DEBUG`, `INFO (default)`, `WARN`, `ERROR`, `FATAL` as log levels.

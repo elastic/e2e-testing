@@ -119,13 +119,13 @@ This is an example of the optional configuration:
 4. Run the tests.
    ```shell
    cd e2e/_suites/kubernetes-autodiscover
-   OP_LOG_LEVEL=DEBUG go test -v
+   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v
    ```
 
    Optionally, you can run only one of the feature files
    ```shell
    cd e2e/_suites/kubernetes-autodiscover
-   OP_LOG_LEVEL=DEBUG go test -v --godog.tags='@filebeat'
+   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@filebeat'
    ```
 
    The tests will take a few minutes to run, spinning up the Kubernetes cluster
