@@ -75,7 +75,7 @@ Adding a new feature file will require to check [the aforementioned descriptor f
 ### Known Limitations
 Because this framework uses Docker as the provisioning tool, all the services are based on Linux containers. That's why we consider this tool very suitable while developing the product, but would not cover the entire support matrix for the product: Linux, Windows, Mac, ARM, etc.
 
-For Windows or other platform support, we should build Windows images and containers or, given the cross-platform nature of Go, should add the building blocks in the test framework to run the code in the ephemeral CI workers for the underlaying platform.
+For Windows or other platform support, we are providing support to run the tests in the ephemeral CI workers for the underlaying platform: in other words, we are going to install the platform-specific binaries under test in a CI worker, connecting to the runtime dependencies of the test suite in a remote location (another worker, Elastic Cloud, etc.).
 
 ## Test Specification
 
