@@ -168,6 +168,7 @@ The following environment variables affect how the tests are run in both the CI 
 - `FEATURES`: Set this environment variable to an existing feature file, or a glob expression (`fleet_*.feature`), that will be passed to the test runner to filter the execution, selecting those feature files matching that expression. If empty, all feature files in the `features/` directory will be used. It can be used in combination with `TAGS`.
 - `TAGS`: Set this environment variable to [a Cucumber tag expression](https://github.com/cucumber/godog#tags), that will be passed to the test runner to filter the execution, selecting those scenarios matching that expresion, across any feature file. It can be used in combination with `FEATURES`.
 - `SKIP_SCENARIOS`: Set this environment variable to `false` if it's needed to include the scenarios annotated as `@skip` in the current test execution, adding that taf to the `TAGS` variable. Default value: `true`.
+
 ### Running regressions locally
 This example will run the Fleet tests for the 8.0.0-SNAPSHOT stack with the released 7.10.1 version of the agent.
 
@@ -213,7 +214,7 @@ To do so:
 
 1. Navigate to Jenkins: https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-mbp/
 1. Login as a user
-1. Select the base branch for the test code: 7.9.x, 7.10.x, 7.x or master.
+1. Select the base branch for the test code: master (for 8.0.0-SNAPSHOT), 7.x, or any other maintenance branch.
 1. In the left menu, click on `Buid with Parameters`.
 1. In the input parameters form, set the stack version (for Fleet or Metricbeat) using the specific variables for the test suite.
 1. (Optional) Set the product version (Fleet, Helm charts or Metricbeat) using the specific variables for the test suite if you want to consume a different artifact.
@@ -237,7 +238,8 @@ To do so:
 1. In the input parameters form, keep the stack version (for Fleet and Metricbeat) as is, to use each branch's default version.
 1. In the input parameters form, set the `GITHUB_CHECK_NAME` to `E2E Tests`. This value will appear as the label for the Github check for the E2E tests.
 1. In the input parameters form, set the `GITHUB_CHECK_REPO` to `beats`.
-1. In the input parameters form, set the `GITHUB_CHECK_SHA1` to the `SHA1` of the last commit in your pull request. This value will allow us to modify the mergeable status of that commit with the Github check.
+1. In the input parameters form, check the `BEATS_USE_CI_SNAPSHOTS` checkbox. This value will instrument the test framework to download the binaries from the CI bucket on Google Cloud Platform Storage.
+1. In the input parameters form, set the `GITHUB_CHECK_SHA1` to the `SHA1` of the last commit in your pull request. This value will allow us to modify the mergeable status of that commit with the Github check. Besides that, it will set the specific directory in the GCP bucket to look up the CI binaries.
 1. Click the `Build` button at the bottom of the parameters form.
 
 ## Noticing the test framework
