@@ -106,13 +106,13 @@ If you created the test suite using the build system (`SUITE=foo make create-sui
     - InitializeScenarios: contains the life cycle hooks for each test scenario (`BeforeScenario, AfterScenario, BeforeStep and AfterStep`)
 
 ## Generating documentation about the specifications
-If you want to generate a website for the feature files, please run this command:
+If you want to transform your feature files into a nicer representation using HTML, please run this command from the root `e2e` directory to build a website for all test suites:
 
 ```shell
 $ make build-docs
 ```
 
-It will generate the website under the `./docs` directory (which is ignored in Git). You'll be able to navigate through the feature files and scenarios in a website.
+It will generate the website under the `./docs` directory (which is ignored in Git). You'll be able to navigate through any feature file and test scenario in a website.
 
 ## Debugging the tests
 
