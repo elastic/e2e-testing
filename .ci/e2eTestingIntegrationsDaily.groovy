@@ -48,8 +48,8 @@ pipeline {
             string(name: 'runTestsSuites', value: 'metricbeat'),
             string(name: 'SLACK_CHANNEL', value: "beats-build"),
           ],
-          propagate: false,
-          wait: false
+          propagate: true,
+          wait: true
         )
       }
     }

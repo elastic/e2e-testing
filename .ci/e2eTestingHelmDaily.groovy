@@ -47,8 +47,8 @@ pipeline {
             string(name: 'runTestsSuites', value: 'helm'),
             string(name: 'SLACK_CHANNEL', value: "infra-release-notify,integrations"),
           ],
-          propagate: false,
-          wait: false
+          propagate: true,
+          wait: true
         )
       }
     }
