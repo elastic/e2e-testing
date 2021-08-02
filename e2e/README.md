@@ -1,5 +1,7 @@
 # End-2-End tests for Observability projects
 
+If you don't want to deep dive into the theory about BDD and the internals of this test framework, please read [the quickstart guide][./QUICKSTART.md], but don't forget to come back here to better understand the framework.
+
 ## Main goals
 
 We want to make sure that the different test suites in this project are covering the main use cases for their core functionalities. So for that reason we are adding different test suites acting as [smoke tests](http://softwaretestingfundamentals.com/smoke-testing/) to verify that each test suite meets the specifications described here with certain grade of satisfaction.

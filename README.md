@@ -22,6 +22,8 @@ This repository contains:
         - vSphere
 1. A [collection of utilities and helpers used in tests](../internal).
 
+> If you want to start writing E2E tests, please jump to our quickstart guide [here](./e2e/QUICKSTART.md).
+
 ## Building
 
 This project utilizes `goreleaser` to build the cli binaries for all supported
