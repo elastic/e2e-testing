@@ -126,8 +126,8 @@ def runE2ETests(String suite) {
 
   build(job: "${e2eTestsPipeline}",
     parameters: parameters,
-    propagate: false,
-    wait: false
+    propagate: true,
+    wait: true
   )
 
 /*
