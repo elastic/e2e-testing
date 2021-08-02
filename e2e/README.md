@@ -72,6 +72,11 @@ There is [a descriptor file for the CI](../.ci/.e2e-tests.yaml) in which we defi
 
 Adding a new feature file will require to check [the aforementioned descriptor file](../.ci/.e2e-tests.yaml). If the tags in the new file are not there, you should add a new parallel branch under the main test suite, or update the tags to add the new scenarios in an existing parallel branch.
 
+### Known Limitations
+Because this framework uses Docker as the provisioning tool, all the services are based on Linux containers. That's why we consider this tool very suitable while developing the product, but would not cover the entire support matrix for the product: Linux, Windows, Mac, ARM, etc.
+
+For Windows or other platform support, we should build Windows images and containers or, given the cross-platform nature of Go, should add the building blocks in the test framework to run the code in the ephemeral CI workers for the underlaying platform.
+
 ## Test Specification
 
 All the Gherkin (Cucumber) specifications are written in `.feature` files. The anatomy of a feature file is:

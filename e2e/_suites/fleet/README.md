@@ -15,12 +15,6 @@ The tests will follow this general high-level approach:
 1. Install runtime dependencies as Docker containers via Docker Compose, happening at before the test suite runs. These runtime dependencies are defined in a specific `profile` for Fleet, in the form of a `docker-compose.yml` file.
 1. Execute BDD steps representing each scenario. Each step will return an Error if the behavior is not satisfied, marking the step and the scenario as failed, or will return `nil`.
 
-## Known Limitations
-
-Because this framework uses Docker as the provisioning tool, all the services are based on Linux containers. That's why we consider this tool very suitable while developing the product, but would not cover the entire support matrix for the product: Linux, Windows, Mac, ARM, etc.
-
-For Windows or other platform support, we should build Windows images and containers or, given the cross-platform nature of Go, should add the building blocks in the test framework to run the code in the ephemeral CI workers for the underlaying platform.
-
 ## Running against remote Docker
 
 This framework supports running tests against a remote docker daemon. To enable this feature a passwordless ssh key is required for unattended test runs. To run the test against a remote docker the environment variable **DOCKER_HOST** should be set, for example:
