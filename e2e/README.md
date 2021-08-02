@@ -77,19 +77,6 @@ Because this framework uses Docker as the provisioning tool, all the services ar
 
 For Windows or other platform support, we are providing support to run the tests in the ephemeral CI workers for the underlaying platform: in other words, we are going to install the platform-specific binaries under test in a CI worker, connecting to the runtime dependencies of the test suite in a remote location (another worker, Elastic Cloud, etc.).
 
-## Test Implementation
-
-We are using Cucumber + Godog to implement the tests, which implies that the implementation files are using Go as programming language. In these Go files we are going to create the connections to the `Given`, `When`, `Then`, `And`, etc. clauses in a well-known file structure. If you have a feature file created, and any well-formatted scenario on it, running `godog` (or `make functional-test`) for that test suite will print out a Go snippet with empty test methods implementing the scenarios that are present in your feature file.
-
-If you created the test suite using the build system (`SUITE=foo make create-suite`), then a Go file named after the test suite will exist under the suite's root directory. This Go file will represent the main program to be executed in the tests, containing a boilerplate structure that includes:
-
-- a `TestMain` method representing the test suite.
-- a Go struct representing the state to be passed across steps in the same scenario.
-- global variables to be passed across steps and scenarios, creating APM traces and spans for the life cycle methods of Godog (before/after Step/Scenario/Suite)
-- initialisation methods for `godog`'s life cycle hooks: _InitializeScenarios_ and _InitializeTestSuite_.
-    - InitializeTestSuite: contains the life cycle hooks for the suite (`BeforeSuite and AfterSuite`)
-    - InitializeScenarios: contains the life cycle hooks for each test scenario (`BeforeScenario, AfterScenario, BeforeStep and AfterStep`)
-
 ## Generating documentation about the specifications
 If you want to transform your feature files into a nicer representation using HTML, please run this command from the root `e2e` directory to build a website for all test suites:
 
