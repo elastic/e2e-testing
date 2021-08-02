@@ -324,7 +324,7 @@ def generateFunctionalTestStep(Map args = [:]){
 
   if (platform.contains("windows")) {
       // For windows testing we need to make sure that the host executor is a linux machine and nest the windows withNode within that
-      workerLabels = "ubuntu-20.04"
+      workerLabels = "ubuntu-18.04"
   }
 
   // Skip scenarios per platform
