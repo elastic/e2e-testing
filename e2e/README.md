@@ -71,12 +71,12 @@ The anatomy of a feature file is:
 - **Scenario**: the name in plain English of a specific use case. The feature file can contain multiple scenarios.
 - **Scenario Outline**: exactly the same as above, but we are are telling Cucumber that this use case has a matrix, so it has to iterate through the **Examples** table, interpolating those values into the placeholders in the scenario. The feature file can contain multiple outlined scenarios.
 - **Given, Then, When, And, But keywords**: Their meaning is extremely important in order to understand the use case they are part of, although they have no real impact in how we use them. If we use `doble quotes` around one or more words, that will tell Cucumber the presence of a fixed variable, with value the word/s among the double quotes. These variables will be the input parameters of the implementation functions in Go code. If we use `angles` around one or more words, that will tell Cucumber the presence of a dynamic variable, taken from the examples table.
-    - **Given**: It must tell an ocational reader what state must be in place for the use case to be valid.
-    - **When**: It must tell an ocational reader what action or actions trigger the use case.
-    - **Then**: It must tell an ocational reader what outcome has been generated after the use case happens.
-    - **And**: Used within any of the above clauses, it must tell an ocational reader a secondary preparation (Given), trigger (When), or output (Then) that must be present.
-    - **But**: Used within any of the above clauses, it must tell an ocational reader a secondary preparation (Given), trigger (When), or output (Then) that must not be present.
-- **Examples:**: this `markdown table` will represent the elements to interpolate in the existing dynamic variables in the use case, being each column header the name of the different variables in the table. Besides that, each row will result in a test execution.
+    - **Given** (Optional): It must tell an ocational reader what state must be in place for the use case to be valid.
+    - **When** (Mandatory): It must tell an ocational reader what action or actions trigger the use case.
+    - **Then** (Mandatory): It must tell an ocational reader what outcome has been generated after the use case happens.
+    - **And** (Optional): Used within any of the above clauses, it must tell an ocational reader a secondary preparation (Given), trigger (When), or output (Then) that must be present.
+    - **But** (Optional): Used within any of the above clauses, it must tell an ocational reader a secondary preparation (Given), trigger (When), or output (Then) that must not be present.
+- **Examples:** (Mandatory with Scenario Outline): this `markdown table` will represent the elements to interpolate in the existing dynamic variables in the use case, being each column header the name of the different variables in the table. Besides that, each row will result in a test execution.
 
  *Note, as of this PR: https://github.com/elastic/e2e-testing/pull/669/files we have implemented a mechanism to NOT run tests marked as `@nightly` during PR CI test runs, if they, for any reason, are not capable of successfully finishing for a given reason.  The foremost example is the Agent upgrade tests which do not run on PR CI due to the lack of proper signing for the binaries needed.  The tag is implemented basically as a "nightly only" citation.
 
