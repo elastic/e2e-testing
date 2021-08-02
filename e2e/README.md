@@ -94,11 +94,16 @@ A good example could be [this one](./_suites/metricbeat/features/integrations.fe
 
 ## Test Implementation
 
-We are using Godog + Cucumber to implement the tests, where we create connections to the `Given`, `When`, `Then`, `And`, etc. in a well-known file structure.
+We are using Cucumber + Godog to implement the tests, which implies that the implementation files are using Go as programming language. In these Go files we are going to create the connections to the `Given`, `When`, `Then`, `And`, etc. clauses in a well-known file structure. If you have a feature file created, and any well-formatted scenario on it, running `godog` (or `make functional-test`) for that test suite will print out a Go snippet with empty test methods implementing the scenarios that are present in your feature file.
 
-As an example, the Go implementation of the `./_suites/metricbeat/features/metricbeat.feature` is located under the [metricbeat_test.go](./_suites/metricbeat/metricbeat_test.go) file.
+If you created the test suite using the build system (`SUITE=foo make create-suite`), then a Go file named after the test suite will exist under the suite's root directory. This Go file will represent the main program to be executed in the tests, containing a boilerplate structure that includes:
 
-Each module will define its own file for specificacions, adding specific feature context functions that will allow filtering the execution, if needed. 
+- a `TestMain` method representing the test suite.
+- a Go struct representing the state to be passed across steps in the same scenario.
+- global variables to be passed across steps and scenarios, creating APM traces and spans for the life cycle methods of Godog (before/after Step/Scenario/Suite)
+- initialisation methods for `godog`'s life cycle hooks: _InitializeScenarios_ and _InitializeTestSuite_.
+    - InitializeTestSuite: contains the life cycle hooks for the suite (`BeforeSuite and AfterSuite`)
+    - InitializeScenarios: contains the life cycle hooks for each test scenario (`BeforeScenario, AfterScenario, BeforeStep and AfterStep`)
 
 ## Generating documentation about the specifications
 If you want to generate a website for the feature files, please run this command:
