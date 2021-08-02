@@ -72,16 +72,10 @@ There is [a descriptor file for the CI](../.ci/.e2e-tests.yaml) in which we defi
 
 Adding a new feature file will require to check [the aforementioned descriptor file](../.ci/.e2e-tests.yaml). If the tags in the new file are not there, you should add a new parallel branch under the main test suite, or update the tags to add the new scenarios in an existing parallel branch.
 
-### Known Limitations
+## Known Limitations
 Because this framework uses Docker as the provisioning tool, all the services are based on Linux containers. That's why we consider this tool very suitable while developing the product, but would not cover the entire support matrix for the product: Linux, Windows, Mac, ARM, etc.
 
 For Windows or other platform support, we are providing support to run the tests in the ephemeral CI workers for the underlaying platform: in other words, we are going to install the platform-specific binaries under test in a CI worker, connecting to the runtime dependencies of the test suite in a remote location (another worker, Elastic Cloud, etc.).
-
-#### (For Mac) Docker is not able to save files in a temporary directory
-
-It's important to configure `Docker for Mac` to allow it accessing the `/var/folders` directory, as this framework uses Mac's default temporary directory for storing tempoorary files.
-
-To change it, please use Docker UI, go to `Preferences > Resources > File Sharing`, and add there `/var/folders` to the list of paths that can be mounted into Docker containers. For more information, please read https://docs.docker.com/docker-for-mac/#file-sharing.
 
 ## Test Specification
 
@@ -124,22 +118,6 @@ $ make build-docs
 ```
 
 It will generate the website under the `./docs` directory (which is ignored in Git). You'll be able to navigate through any feature file and test scenario in a website.
-
-### Diagnosing test failures
-The first step in determining the exact failure is to try and reproduce the test run locally, ideally using the DEBUG log level to enhance the log output. Once you've done that, look at the output from the test run.
-
-#### Tests fail because the product could not be configured or run correctly
-This type of failure usually indicates that code for these tests itself needs to be changed. See the sections on how to run the tests locally in the specific test suite.
-
-#### One or more scenarios fail
-Check if the scenario has an annotation/tag supporting the test runner to filter the execution by that tag. Godog will run those scenarios. For more information about tags: https://github.com/cucumber/godog/#tags
-
-   ```shell
-   cd e2e/_suites/metricbeat
-   OP_LOG_LEVEL=TRACE go test -v --godog.tags='@annotation'
-   ```
-
-`@annotation` relates to the scenario or scenarios that failed.
 
 ## Regression testing
 We have built the project and the CI job in a manner that it is possible to override different parameters about projects versions, so that we can set i.e. the version of the Elastic Stack to be used, or the version of the Elastic Agent. We have built and maintain branches to test the most recent versions of the stack, each release that comes out we maintain for a brief period and drop support for the oldest, while always keeping 'master' (8.0) and the 7.x maintainenace line, too:
