@@ -69,6 +69,9 @@ This is an example of the optional configuration:
    OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@mysql'
    ```
 
+## Integrations compatibility matrix
+With the Scenario outline approach we chose, where we provide a table with variables and possible values, we achieved the creation of a compatibility matrix for each version of the integration module. Because of the nature of the Scenario outline, each row in the table generates a different scenario, one per version in the support matrix.
+
 ## Need help?
 
 Please open an issue here: https://github.com/elastic/e2e-testing/issues/new
