@@ -367,7 +367,7 @@ def generateFunctionalTestStep(Map args = [:]){
                             if (platform.contains("windows")) {
                                 // Boot up a windows VM to deploy Elastic Agent to be tested against
                                 // a remote deployed stack
-                                withNode(labels: platform) {
+                                withNode(labels: platform, forceWorkspace: true) {
                                     deleteDir()
                                     unstash 'source'
                                     dir("${BASE_DIR}"){
