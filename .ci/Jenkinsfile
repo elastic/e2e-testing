@@ -357,6 +357,7 @@ def generateFunctionalTestStep(Map args = [:]){
                         envContext.add("ELASTICSEARCH_URL=https://${linuxIp}:9200")
                         envContext.add("FLEET_URL=https://${linuxIp}:8220")
                         envContext.add("PROVIDER=remote")
+                        envContext.add("OP_LOG_LEVEL=TRACE")
                         envContext.add("PATH=${path}")
                     }
                     withEnv(envContext) {
