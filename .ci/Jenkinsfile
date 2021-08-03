@@ -372,7 +372,7 @@ def generateFunctionalTestStep(Map args = [:]){
                                         withGoEnvWindows(version: "${GO_VERSION}"){
                                             installTools([[tool: 'unzip', version: '6.0', provider: 'choco']])
                                             echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
-                                            powershell label: "Dize Informatio", script: "Get-PSDrive"
+                                            powershell label: "Disk Information", script: "Get-PSDrive"
                                             powershell label: "Pinging Linux VM", script: "ping -n 1 ${linuxIp}"
                                             powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${linuxIp} -Port 9200"
                                             powershell label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601"
