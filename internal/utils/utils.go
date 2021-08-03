@@ -146,20 +146,20 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 			return val, nil
 		}
 
-		filePath, err := DownloadFile(URL)
+		filePathFull, err := DownloadFile(URL)
 		if err != nil {
-			return filePath, err
+			return filePathFull, err
 		}
 
 		// use artifact name as file name to avoid having URL params in the name
-		sanitizedFilePath := path.Join(path.Dir(filePath), artifactName)
-		err = os.Rename(filePath, sanitizedFilePath)
+		sanitizedFilePath := filepath.Join(path.Dir(filePathFull), artifactName)
+		err = os.Rename(filePathFull, sanitizedFilePath)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"fileName":          filePath,
+				"fileName":          filePathFull,
 				"sanitizedFileName": sanitizedFilePath,
 			}).Warn("Could not sanitize downloaded file name. Keeping old name")
-			sanitizedFilePath = filePath
+			sanitizedFilePath = filePathFull
 		}
 
 		binariesCache[URL] = sanitizedFilePath
@@ -517,10 +517,10 @@ func GetObjectURLFromBucket(bucket string, prefix string, object string, maxtime
 // It writes to the destination file as it downloads it, without
 // loading the entire file into memory.
 func DownloadFile(url string) (string, error) {
-	tempParentDir := path.Join(os.TempDir(), uuid.NewString())
+	tempParentDir := filepath.Join(os.TempDir(), uuid.NewString())
 	internalio.MkdirAll(tempParentDir)
 
-	tempFile, err := os.Create(path.Join(tempParentDir, path.Base(url)))
+	tempFile, err := os.Create(filepath.Join(tempParentDir, path.Base(url)))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
@@ -530,7 +530,7 @@ func DownloadFile(url string) (string, error) {
 	}
 	defer tempFile.Close()
 
-	filepath := tempFile.Name()
+	filepathFull := tempFile.Name()
 
 	exp := GetExponentialBackOff(3)
 
@@ -543,7 +543,7 @@ func DownloadFile(url string) (string, error) {
 			log.WithFields(log.Fields{
 				"elapsedTime": exp.GetElapsedTime(),
 				"error":       err,
-				"path":        filepath,
+				"path":        filepathFull,
 				"retry":       retryCount,
 				"url":         url,
 			}).Warn("Could not download the file")
@@ -556,7 +556,7 @@ func DownloadFile(url string) (string, error) {
 		log.WithFields(log.Fields{
 			"elapsedTime": exp.GetElapsedTime(),
 			"retries":     retryCount,
-			"path":        filepath,
+			"path":        filepathFull,
 			"url":         url,
 		}).Trace("File downloaded")
 
@@ -567,7 +567,7 @@ func DownloadFile(url string) (string, error) {
 
 	log.WithFields(log.Fields{
 		"url":  url,
-		"path": filepath,
+		"path": filepathFull,
 	}).Trace("Downloading file")
 
 	err = backoff.Retry(download, exp)
@@ -581,15 +581,15 @@ func DownloadFile(url string) (string, error) {
 		log.WithFields(log.Fields{
 			"error": err,
 			"url":   url,
-			"path":  filepath,
+			"path":  filepathFull,
 		}).Error("Could not write file")
 
-		return filepath, err
+		return filepathFull, err
 	}
 
 	_ = os.Chmod(tempFile.Name(), 0666)
 
-	return filepath, nil
+	return filepathFull, nil
 }
 
 func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {

@@ -124,12 +124,12 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	output, err := i.Exec(ctx, []string{"unzip", binaryPath})
+	output, err := i.Exec(ctx, []string{"powershell.exe", "Expand-Archive", "-LiteralPath", binaryPath, "-DestinationPath", "C:\\", "-Force"})
 	if err != nil {
 		return err
 	}
 
-	output, _ = i.Exec(ctx, []string{"powershell.exe", "Move-Item", fmt.Sprintf("%s-%s-%s-%s", artifact, common.BeatVersion, os, arch), "C:\\elastic-agent"})
+	output, _ = i.Exec(ctx, []string{"powershell.exe", "Move-Item", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, common.BeatVersion, os, arch), "C:\\elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
