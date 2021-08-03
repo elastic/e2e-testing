@@ -1,6 +1,3 @@
-# Get current directory of a Makefile: https://stackoverflow.com/a/23324703
-ROOT_DIR:=$(CURDIR)
-
 include ../commons.mk
 
 TEST_TIMEOUT?=5m

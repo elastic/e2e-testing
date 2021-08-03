@@ -4,7 +4,7 @@ A strong requirement by the team is to simplify the already existing tool `apm-i
 
 An example could be to spin up a Docker container representing a MySQL 5.6 instance, or an Apache 2.4 instance to be monitored by Metricbeat. Or to start an Elastic Stack (Elasticsearch + Kibana) in a specific version.
 
-The tool will use Golang's de-facto standard for writing CLIs [`Cobra`](https://github.com/spf13/cobra), which will allow to create a nice experience running commands and subcommands. In that sense, running a service would mean executing:
+The tool will use Go's de-facto standard for writing CLIs [`Cobra`](https://github.com/spf13/cobra), which will allow to create a nice experience running commands and subcommands. In that sense, running a service would mean executing:
 
 ```sh
 # if you are in the Go development world

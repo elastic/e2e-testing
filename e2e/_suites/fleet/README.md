@@ -15,12 +15,6 @@ The tests will follow this general high-level approach:
 1. Install runtime dependencies as Docker containers via Docker Compose, happening at before the test suite runs. These runtime dependencies are defined in a specific `profile` for Fleet, in the form of a `docker-compose.yml` file.
 1. Execute BDD steps representing each scenario. Each step will return an Error if the behavior is not satisfied, marking the step and the scenario as failed, or will return `nil`.
 
-## Known Limitations
-
-Because this framework uses Docker as the provisioning tool, all the services are based on Linux containers. That's why we consider this tool very suitable while developing the product, but would not cover the entire support matrix for the product: Linux, Windows, Mac, ARM, etc.
-
-For Windows or other platform support, we should build Windows images and containers or, given the cross-platform nature of Golang, should add the building blocks in the test framework to run the code in the ephemeral CI workers for the underlaying platform.
-
 ## Running against remote Docker
 
 This framework supports running tests against a remote docker daemon. To enable this feature a passwordless ssh key is required for unattended test runs. To run the test against a remote docker the environment variable **DOCKER_HOST** should be set, for example:
@@ -71,16 +65,6 @@ FLEET_URL=https://a.public.ip:a.public.port
 ```
 
 The above variables need to be accessible by the tests, if running the stack behind a firewall, ports may need to be exposed manually. The usage of `http` vs `https` is not important as our tests primarily deal with self signed certficates that are not validated against a true certficate authority.
-
-### Diagnosing test failures
-
-The first step in determining the exact failure is to try and reproduce the test run locally, ideally using the DEBUG log level to enhance the log output. Once you've done that, look at the output from the test run.
-
-#### (For Mac) Docker is not able to save files in a temporary directory
-
-It's important to configure `Docker for Mac` to allow it accessing the `/var/folders` directory, as this framework uses Mac's default temporary directory for storing tempoorary files.
-
-To change it, please use Docker UI, go to `Preferences > Resources > File Sharing`, and add there `/var/folders` to the list of paths that can be mounted into Docker containers. For more information, please read https://docs.docker.com/docker-for-mac/#file-sharing.
 
 ### Running the tests
 
@@ -134,51 +118,12 @@ This is an example of the optional configuration:
    OP_LOG_LEVEL=DEBUG go test -v
    ```
 
-   The tests will take a few minutes to run, spinning up a few Docker containers representing the various products in this framework and performing the test steps outlined earlier.
-
-   As the tests are running they will output the results in your terminal console. This will be quite verbose and you can ignore most of it until the tests finish. Then inspect at the output of the last play that ran and failed. On the contrary, you could use a different log level for the `OP_LOG_LEVEL` variable, being it possible to use `DEBUG`, `INFO (default)`, `WARN`, `ERROR`, `FATAL` as log levels.
-
-### Tests fail because the product could not be configured or run correctly
-
-This type of failure usually indicates that code for these tests itself needs to be changed.
-
-See the sections below on how to run the tests locally.
-
-### One or more scenarios fail
-
-Check if the scenario has an annotation/tag supporting the test runner to filter the execution by that tag. Godog will run those scenarios. For more information about tags: https://github.com/cucumber/godog/#tags
-
+   Optionally, you can run only one of the feature files
    ```shell
    cd e2e/_suites/fleet
-   OP_LOG_LEVEL=DEBUG go test -v --godog.tags='@annotation'
+   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@fleet_mode_agent'
    ```
 
-Example:
-
-   ```shell
-   cd e2e/_suites/fleet
-   OP_LOG_LEVEL=DEBUG go test -v --godog.tags='@stand_alone_mode'
-   ```
-
-### Setup failures
-
-Sometimes the tests could fail to configure or start a product such as Metricbeat, Elasticsearch, etc. To determine why 
-this happened, look at your terminal log in DEBUG mode. If a `docker-compose.yml` file is not present please execute this command:
-
-```shell
-## Will remove tool's existing default files and will update them with the bundled ones.
-make clean-workspace
-```
-
-If you see the docker images are outdated, please execute this command:
-
-```shell
-## Will refresh stack images
-make clean-docker
-```
-
-Note what you find and file a bug in the `elastic/e2e-testing` repository, requiring a fix to the Fleet suite to properly configure and start the product.
-
-### I cannot move on
+### Need help?
 
 Please open an issue here: https://github.com/elastic/e2e-testing/issues/new
