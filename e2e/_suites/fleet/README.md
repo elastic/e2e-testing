@@ -96,7 +96,7 @@ This is an example of the optional configuration:
 
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch, package registry)
-   export STACK_VERSION=7.14.0-SNAPSHOT
+   export STACK_VERSION=7.14.x-SNAPSHOT
    # There should be a Docker image for the runtime dependencies (kibana)
    export KIBANA_VERSION=pr12345
    # (Fleet mode) This environment variable will use a fixed version of the Elastic agent binary, obtained from
