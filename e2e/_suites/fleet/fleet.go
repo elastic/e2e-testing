@@ -363,6 +363,12 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetOnTopOfBeat(image string, bea
 		installerType = "deb"
 	}
 
+	// FIXME: We need to cleanup the steps to support different operating systems
+	// for now we will force the zip installer type when the agent is running on windows
+	if runtime.GOOS == "windows" && shell.GetEnv("PROVIDER", "docker") == "remote" {
+		installerType = "zip"
+	}
+
 	fts.BeatsProcess = beatsProcess
 
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType)
@@ -371,6 +377,13 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetOnTopOfBeat(image string, bea
 // supported installers: tar, rpm, deb
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, installerType string) error {
 	fts.BeatsProcess = ""
+
+	// FIXME: We need to cleanup the steps to support different operating systems
+	// for now we will force the zip installer type when the agent is running on windows
+	if runtime.GOOS == "windows" && shell.GetEnv("PROVIDER", "docker") == "remote" {
+		installerType = "zip"
+	}
+
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType)
 }
 
