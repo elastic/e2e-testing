@@ -90,13 +90,6 @@ with the label `k8s-app`.
 There are other more specific steps. Examples for them can be found in the
 feature files.
 
-
-### Diagnosing test failures
-
-The first step in determining the exact failure is to try and reproduce the test run
-locally, ideally using the DEBUG log level to enhance the log output. Once you've
-done that, look at the output from the test run.
-
 ### Running the tests
 
 1. Clone this repository, say into a folder named `e2e-testing`.
@@ -126,17 +119,19 @@ This is an example of the optional configuration:
 4. Run the tests.
    ```shell
    cd e2e/_suites/kubernetes-autodiscover
-   OP_LOG_LEVEL=DEBUG go test -v
+   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v
    ```
 
    Optionally, you can run only one of the feature files
    ```shell
    cd e2e/_suites/kubernetes-autodiscover
-   OP_LOG_LEVEL=DEBUG go test -v --godog.tags='@filebeat'
+   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@filebeat'
    ```
 
    The tests will take a few minutes to run, spinning up the Kubernetes cluster
    if needed.
+
+## Diagnosing test failures
 
 ### Problems with the environment
 
