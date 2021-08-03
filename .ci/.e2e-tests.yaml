@@ -18,6 +18,9 @@ SUITES:
       - name: "Fleet"
         pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent"
+        platforms:
+          - "ubuntu-18.04"
+          - "windows-2019"
       - name: "Integrations"
         pullRequestFilter: " && ~debian"
         tags: "integrations"
