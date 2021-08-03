@@ -63,27 +63,12 @@ In many cases, we want to store the metrics in Elasticsearch, so at some point w
 
 As an example, the Metricbeat test suite will need just an Elasticsearch instance; the Fleet test suite will need an Elasticsearch instance, Kibana and Fleet Server.
 
-<<<<<<< HEAD
-- **@tag_name**: A `@` character indicates a tag. And tags are used to filter the test execution. Tags could be placed on Features (applying the entire file), or on Scenarios (applying just to them). At this moment we are tagging each feature file with a tag using module's name, so that we can instrument the test runner to just run one.
-- **Feature: Blah, blah**: Description in plain English of the group of uses cases (scenarios) in this feature file. The feature file should contain just one.
-- **Scenario**: the name in plain English of a specific use case.
-- **Scenario Outline**: exactly the same as above, but we are are telling Cucumber that this use case has a matrix, so it has to iterate through the **Examples** table, interpolating those values into the placeholders in the scenario.
-- **Given, Then, When, And, But keywords**: Their meaning is extremely important in order to understand the use case they are part of, although they have no real impact in how we use them. If we use `doble quotes` around one or more words, that will tell Cucumber the presence of a fixed variable, with value the word/s among the double quotes. These variables will be the input parameters of the implementation functions in Go code. If we use `angles` around one or more words, that will tell Cucumber the presence of a dynamic variable, taken from the examples table.
-    - **Given**: It must tell an ocational reader what state must be in place for the use case to be valid.
-    - **When**: It must tell an ocational reader what action or actions trigger the use case.
-    - **Then**: It must tell an ocational reader what outcome has been generated after the use case happens.
-    - **And**: Used within any of the above clauses, it must tell an ocational reader a secondary preparation (Given), trigger (When), or output (Then) that must be present.
-    - **But**: Used within any of the above clauses, it must tell an ocational reader a secondary preparation (Given), trigger (When), or output (Then) that must not be present.
-- **Examples:**: this `markdown table` will represent the elements to interpolate in the existing dynamic variables in the use case, being each column header the name of the different variables in the table. Besides that, each row will result in a test execution.
-
-=======
 #### Configuration files
 If the profile needs certain configuration files, we recommend locating them under a `configurations` folder in the profile directory. As an example, see `kibana.config.yml` in the `fleet` profile.
 
 ### Feature files
 We will create use cases for the module in a separate `.feature` file, ideally named after the name of the feature to test (i.e. _apache.feature_), and located under the `features` directory of each test suite. These feature files are considered as requirement for Cucumber, and they will be parsed by the Godog test runner and matched against the Go code implementing the tests.
 
->>>>>>> ac2a563 (docs: revamp docs (#1425))
 #### Feature files and the CI
 There is [a descriptor file for the CI](../.ci/.e2e-tests.yaml) in which we define the parallel branches that will be created in the execution of a job. This YAML file defines suites and tags. A suite represents each test suite directory under the `e2e/_suites` directory, and the tags represent the tags will be passed to the test runner to filter the test execution. Another configuration we define in this file is related to the capabilities to run certain tags at the pull request stage, using the `pullRequestFilter` child element. This element will be appended to the tags used to filter the test runner.
 
