@@ -697,12 +697,6 @@ func TestRemoveCommitFromSnapshot(t *testing.T) {
 	assert.Equal(t, "7.14.x-SNAPSHOT", RemoveCommitFromSnapshot("7.14.x-SNAPSHOT"))
 }
 
-func TestSanitiseVersion(t *testing.T) {
-	assert.Equal(t, "8.0.0-SNAPSHOT", SanitiseVersion("8.0.0-a12345-SNAPSHOT"))
-	assert.Equal(t, "elastic-agent-8.0.0-SNAPSHOT-darwin-x86_64.tar.gz", SanitiseVersion("elastic-agent-8.0.0-abcdef-SNAPSHOT-darwin-x86_64.tar.gz"))
-	assert.Equal(t, "elastic-agent-8.0.0-SNAPSHOT-darwin-x86_64.tar.gz", SanitiseVersion("elastic-agent-8.0.0-SNAPSHOT-darwin-x86_64.tar.gz"))
-}
-
 func TestSnapshotHasCommit(t *testing.T) {
 	t.Run("Returns true with commits in snapshots", func(t *testing.T) {
 		assert.True(t, SnapshotHasCommit("8.0.0-a12345-SNAPSHOT"))
