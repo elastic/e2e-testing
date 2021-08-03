@@ -55,7 +55,7 @@ Feature: eat godogs
 
 **NOTE:** same as **go test**, `godog` respects package level isolation. All your step definitions should be in your test suite root directory. In this case: **foo**.
 
-If we run godog inside the test suite: - `godog`. We can either use Go tools: - `go test -v --godog.format=pretty`
+From the test suite directory, you can directly run Go commands to run the tests: - `go test -v --godog.format=pretty`, or leverage the build system: - `make functional-test`
 
 You should see that the steps are undefined:
 
