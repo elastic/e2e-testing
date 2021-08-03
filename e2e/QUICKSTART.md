@@ -53,7 +53,7 @@ Feature: eat godogs
 
 ### Step 4 - Create godog step definitions
 
-**NOTE:** same as **go test**, godog respects package level isolation. All your step definitions should be in your test suite root directory. In this case: **foos**.
+**NOTE:** same as **go test**, `godog` respects package level isolation. All your step definitions should be in your test suite root directory. In this case: **foo**.
 
 If we run godog inside the test suite: - `godog`. We can either use Go tools: - `go test -v --godog.format=pretty`
 
