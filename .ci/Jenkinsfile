@@ -361,7 +361,6 @@ def generateFunctionalTestStep(Map args = [:]){
                     // Doing a windows agent test, start up docker before the new environment is applied for windows
                     if (platform.contains("windows")) {
                         sh script: "docker-compose -f cli/config/compose/profiles/fleet/docker-compose.yml up -d", label: "Deploying fleet via docker"
-                        linuxIp = grabWorkerIP()
                     }
                     withEnv(envContext) {
                         withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL") {
