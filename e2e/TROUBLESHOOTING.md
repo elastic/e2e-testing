@@ -16,8 +16,14 @@ Check if the scenario has an annotation/tag supporting the test runner to filter
    OP_LOG_LEVEL=TRACE go test -v --godog.tags='@YOUR_ANNOTATION'
    ```
 
+### (For Mac) Docker containers are not healthy
+
+It's important to configure `Docker for Mac` with enough resources (memory and CPU).
+
+To change it, please use Docker UI, go to `Preferences > Resources > Advanced`, and increase the  `memory` and `CPUs`.
+
 ### (For Mac) Docker is not able to save files in a temporary directory
 
-It's important to configure `Docker for Mac` to allow it accessing the `/var/folders` directory, as this framework uses Mac's default temporary directory for storing tempoorary files.
+It's important to configure `Docker for Mac` to allow it accessing the `/var/folders` directory, as this framework uses Mac's default temporary directory for storing temporary files.
 
 To change it, please use Docker UI, go to `Preferences > Resources > File Sharing`, and add there `/var/folders` to the list of paths that can be mounted into Docker containers. For more information, please read https://docs.docker.com/docker-for-mac/#file-sharing.
