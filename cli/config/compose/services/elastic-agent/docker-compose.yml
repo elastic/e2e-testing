@@ -10,6 +10,10 @@ services:
     environment:
       - "FLEET_SERVER_ENABLE=${fleetServerMode:-0}"
       - "FLEET_SERVER_INSECURE_HTTP=${fleetServerMode:-0}"
+      - "FLEET_ENROLL=${fleetEnroll:-1}"
+      - "FLEET_ENROLLMENT_TOKEN=${fleetEnrollmentToken:-}"
+      - "FLEET_INSECURE=${fleetInsecure:-0}"
+      - "FLEET_URL=${fleetUrl:-}"
     platform: ${stackPlatform:-linux/amd64}
     ports:
-      - "127.0.0.1:8220:8220"
+      - "127.0.0.1:${fleetServerPort:-8220}:8220"

@@ -89,6 +89,8 @@ func (i *elasticAgentZIPPackage) InstallCerts(ctx context.Context) error {
 
 // Logs prints logs of service
 func (i *elasticAgentZIPPackage) Logs() error {
+	// TODO: we need to find a way to read Winidows logs for the service
+	// or we could read "C:\Program Files\Elastic\Agent\data\elastic-agent-*\logs\elastic-agent-json.log*"
 	return i.deploy.Logs(i.service)
 }
 
@@ -122,12 +124,12 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	output, err := i.Exec(ctx, []string{"unzip", binaryPath})
+	output, err := i.Exec(ctx, []string{"powershell.exe", "Expand-Archive", "-LiteralPath", binaryPath, "-DestinationPath", "C:\\", "-Force"})
 	if err != nil {
 		return err
 	}
 
-	output, _ = i.Exec(ctx, []string{"powershell.exe", "Move-Item", fmt.Sprintf("%s-%s-%s-%s", artifact, common.BeatVersion, os, arch), "C:\\elastic-agent"})
+	output, _ = i.Exec(ctx, []string{"powershell.exe", "Move-Item", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, common.BeatVersion, os, arch), "C:\\elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }

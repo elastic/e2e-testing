@@ -49,8 +49,8 @@ pipeline {
             string(name: 'runTestsSuites', value: 'fleet'),
             string(name: 'SLACK_CHANNEL', value: "elastic-agent"),
           ],
-          propagate: false,
-          wait: false
+          propagate: true,
+          wait: true
         )
       }
     }

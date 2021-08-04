@@ -146,20 +146,20 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 			return val, nil
 		}
 
-		filePath, err := DownloadFile(URL)
+		filePathFull, err := DownloadFile(URL)
 		if err != nil {
-			return filePath, err
+			return filePathFull, err
 		}
 
 		// use artifact name as file name to avoid having URL params in the name
-		sanitizedFilePath := path.Join(path.Dir(filePath), artifactName)
-		err = os.Rename(filePath, sanitizedFilePath)
+		sanitizedFilePath := filepath.Join(path.Dir(filePathFull), artifactName)
+		err = os.Rename(filePathFull, sanitizedFilePath)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"fileName":          filePath,
+				"fileName":          filePathFull,
 				"sanitizedFileName": sanitizedFilePath,
 			}).Warn("Could not sanitize downloaded file name. Keeping old name")
-			sanitizedFilePath = filePath
+			sanitizedFilePath = filePathFull
 		}
 
 		binariesCache[URL] = sanitizedFilePath
@@ -208,7 +208,7 @@ func GetArchitecture() string {
 		arch = "arm64"
 	}
 
-	log.Debugf("Golang's architecture is %s (%s)", arch, envArch)
+	log.Debugf("Go's architecture is %s (%s)", arch, envArch)
 	return arch
 }
 
@@ -234,8 +234,8 @@ func getGCPBucketCoordinates(fileName string, artifact string, version string) (
 
 // GetElasticArtifactVersion returns the current version:
 // 1. Elastic's artifact repository, building the JSON path query based
-// If the version is a PR, then it will return the version without checking the artifacts API
-// i.e. GetElasticArtifactVersion("$VERSION")
+// If the version is a SNAPSHOT including a commit, then it will directly use the version without checking the artifacts API
+// i.e. GetElasticArtifactVersion("$VERSION-abcdef-SNAPSHOT")
 func GetElasticArtifactVersion(version string) (string, error) {
 	cacheKey := fmt.Sprintf("https://artifacts-api.elastic.co/v1/versions/%s/?x-elastic-no-kpi=true", version)
 
@@ -245,6 +245,11 @@ func GetElasticArtifactVersion(version string) (string, error) {
 			"version": val,
 		}).Debug("Retrieving version from local cache")
 		return val, nil
+	}
+
+	if SnapshotHasCommit(version) {
+		elasticVersionsCache[cacheKey] = version
+		return version, nil
 	}
 
 	exp := GetExponentialBackOff(time.Minute)
@@ -324,9 +329,19 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 
 	body := ""
 
+	tmpVersion := version
+	if SnapshotHasCommit(version) {
+		log.WithFields(log.Fields{
+			"version": version,
+		}).Trace("Removing SNAPSHOT from version including commit")
+
+		// remove the SNAPSHOT from the VERSION as the artifacts API supports commits in the version, but without the snapshot suffix
+		tmpVersion = strings.ReplaceAll(version, "-SNAPSHOT", "")
+	}
+
 	apiStatus := func() error {
 		r := curl.HTTPRequest{
-			URL: fmt.Sprintf("https://artifacts-api.elastic.co/v1/search/%s/%s?x-elastic-no-kpi=true", version, artifact),
+			URL: fmt.Sprintf("https://artifacts-api.elastic.co/v1/search/%s/%s?x-elastic-no-kpi=true", tmpVersion, artifact),
 		}
 
 		response, err := curl.Get(r)
@@ -334,7 +349,7 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 			log.WithFields(log.Fields{
 				"artifact":       artifact,
 				"artifactName":   artifactName,
-				"version":        version,
+				"version":        tmpVersion,
 				"error":          err,
 				"retry":          retryCount,
 				"statusEndpoint": r.URL,
@@ -366,7 +381,7 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 		log.WithFields(log.Fields{
 			"artifact":     artifact,
 			"artifactName": artifactName,
-			"version":      version,
+			"version":      tmpVersion,
 		}).Error("Could not parse the response body for the artifact")
 		return "", err
 	}
@@ -376,7 +391,7 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 		"artifact":     artifact,
 		"artifactName": artifactName,
 		"elapsedTime":  exp.GetElapsedTime(),
-		"version":      version,
+		"version":      tmpVersion,
 	}).Trace("Artifact found")
 
 	packagesObject := jsonParsed.Path("packages")
@@ -502,10 +517,10 @@ func GetObjectURLFromBucket(bucket string, prefix string, object string, maxtime
 // It writes to the destination file as it downloads it, without
 // loading the entire file into memory.
 func DownloadFile(url string) (string, error) {
-	tempParentDir := path.Join(os.TempDir(), uuid.NewString())
+	tempParentDir := filepath.Join(os.TempDir(), uuid.NewString())
 	internalio.MkdirAll(tempParentDir)
 
-	tempFile, err := os.Create(path.Join(tempParentDir, path.Base(url)))
+	tempFile, err := os.Create(filepath.Join(tempParentDir, path.Base(url)))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
@@ -515,7 +530,7 @@ func DownloadFile(url string) (string, error) {
 	}
 	defer tempFile.Close()
 
-	filepath := tempFile.Name()
+	filepathFull := tempFile.Name()
 
 	exp := GetExponentialBackOff(3)
 
@@ -528,7 +543,7 @@ func DownloadFile(url string) (string, error) {
 			log.WithFields(log.Fields{
 				"elapsedTime": exp.GetElapsedTime(),
 				"error":       err,
-				"path":        filepath,
+				"path":        filepathFull,
 				"retry":       retryCount,
 				"url":         url,
 			}).Warn("Could not download the file")
@@ -541,7 +556,7 @@ func DownloadFile(url string) (string, error) {
 		log.WithFields(log.Fields{
 			"elapsedTime": exp.GetElapsedTime(),
 			"retries":     retryCount,
-			"path":        filepath,
+			"path":        filepathFull,
 			"url":         url,
 		}).Trace("File downloaded")
 
@@ -552,7 +567,7 @@ func DownloadFile(url string) (string, error) {
 
 	log.WithFields(log.Fields{
 		"url":  url,
-		"path": filepath,
+		"path": filepathFull,
 	}).Trace("Downloading file")
 
 	err = backoff.Retry(download, exp)
@@ -566,15 +581,15 @@ func DownloadFile(url string) (string, error) {
 		log.WithFields(log.Fields{
 			"error": err,
 			"url":   url,
-			"path":  filepath,
+			"path":  filepathFull,
 		}).Error("Could not write file")
 
-		return filepath, err
+		return filepathFull, err
 	}
 
 	_ = os.Chmod(tempFile.Name(), 0666)
 
-	return filepath, nil
+	return filepathFull, nil
 }
 
 func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
@@ -589,7 +604,7 @@ func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
 
 // IsCommit returns true if the string matches commit format
 func IsCommit(s string) bool {
-	re := regexp.MustCompile(`\b[0-9a-f]{5,40}\b`)
+	re := regexp.MustCompile(`^\b[0-9a-f]{5,40}\b`)
 
 	return re.MatchString(s)
 }
@@ -642,6 +657,14 @@ func Sleep(duration time.Duration) error {
 	time.Sleep(duration)
 
 	return nil
+}
+
+// SnapshotHasCommit returns true if the snapshot version contains a commit format
+func SnapshotHasCommit(s string) bool {
+	// regex = X.Y.Z-commit-SNAPSHOT
+	re := regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-\b[0-9a-f]{5,40}\b)(-SNAPSHOT)`)
+
+	return re.MatchString(s)
 }
 
 // GetDockerNamespaceEnvVar returns the Docker namespace whether we use one of the CI snapshots or

@@ -3,6 +3,7 @@ Feature: Fleet Mode Agent
   Scenarios for the Agent in Fleet mode connecting to Fleet application.
 
 @install
+@skip:windows
 Scenario Outline: Deploying the <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the "elastic-agent" process is in the "started" state on the host
@@ -20,6 +21,7 @@ Examples: Debian
 | debian |
 
 @enroll
+@skip:windows
 Scenario Outline: Deploying the <os> agent with enroll and then run on rpm and deb
   Given a "<os>" agent is deployed to Fleet
   When the "elastic-agent" process is in the "started" state on the host
@@ -38,6 +40,7 @@ Examples: Debian
 
 # @upgrade-agent
 @nightly
+@skip:windows
 Scenario Outline: Upgrading the installed <os> agent
   Given a "<os>" agent "stale" is deployed to Fleet with "tar" installer
     And certs are installed
@@ -51,6 +54,7 @@ Examples: Debian
 | debian |
 
 @restart-agent
+@skip:windows
 Scenario Outline: Restarting the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the "elastic-agent" process is "restarted" on the host
@@ -67,6 +71,7 @@ Examples: Debian
 | debian |
 
 @unenroll
+@skip:windows
 Scenario Outline: Un-enrolling the <os> agent deactivates the agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the agent is un-enrolled
@@ -83,6 +88,7 @@ Examples: Debian
 | debian |
 
 @reenroll
+@skip:windows
 Scenario Outline: Re-enrolling the <os> agent activates the agent in Fleet
   Given a "<os>" agent is deployed to Fleet with "tar" installer
     And the agent is un-enrolled
@@ -118,6 +124,7 @@ Examples: Debian
 | debian |
 
 @uninstall-host
+@skip:windows
 Scenario Outline: Un-installing the installed <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the "elastic-agent" process is "uninstalled" on the host
