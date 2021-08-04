@@ -38,24 +38,6 @@ Examples: Debian
 | os     |
 | debian |
 
-<<<<<<< HEAD
-=======
-# @upgrade-agent
-@nightly
-@skip:windows
-Scenario Outline: Upgrading the installed <os> agent
-  Given a "<os>" agent "stale" is deployed to Fleet with "tar" installer
-    And certs are installed
-    And the "elastic-agent" process is "restarted" on the host
-  When agent is upgraded to version "latest"
-  Then agent is in version "latest"
-
-@debian
-Examples: Debian
-| os     |
-| debian |
-
->>>>>>> ea6980b (Enables Windows elastic-agent test in CI (#1330))
 @restart-agent
 @skip:windows
 Scenario Outline: Restarting the installed <os> agent
