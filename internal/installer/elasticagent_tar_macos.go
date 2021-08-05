@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
@@ -136,7 +137,7 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	output, _ = i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, common.GetSnapshotVersion(common.BeatVersion), os, arch), "/elastic-agent"})
+	output, _ = i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, internal.GetSnapshotVersion(common.BeatVersion), os, arch), "/elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
