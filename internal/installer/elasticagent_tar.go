@@ -137,7 +137,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, common.BeatVersion, os, arch), "/elastic-agent"})
+	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, common.GetSnapshotVersion(common.BeatVersion), os, arch), "/elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
