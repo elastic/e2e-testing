@@ -50,6 +50,15 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 		dockerString = ".docker"
 	}
 
+	hasCommit := SnapshotHasCommit(artifactVersion)
+	if hasCommit {
+		log.WithFields(log.Fields{
+			"version": artifactVersion,
+		}).Trace("Removing commit from version including commit")
+
+		artifactVersion = RemoveCommitFromSnapshot(artifactVersion)
+	}
+
 	lowerCaseExtension := strings.ToLower(extension)
 
 	artifactName := fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, artifactVersion, OS, arch, dockerString, lowerCaseExtension)

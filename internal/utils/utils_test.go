@@ -51,6 +51,19 @@ func TestBuildArtifactName(t *testing.T) {
 	OS := "linux"
 	version := testVersion
 
+	t.Run("For Git commits in version", func(t *testing.T) {
+		arch := "x86_64"
+		extension := "rpm"
+		expectedFileName := "elastic-agent-1.2.3-SNAPSHOT-x86_64.rpm"
+		versionWithCommit := "1.2.3-abcdef-SNAPSHOT"
+
+		artifactName := buildArtifactName(artifact, versionWithCommit, OS, arch, extension, false)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = buildArtifactName(artifact, versionWithCommit, OS, arch, "RPM", false)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
 	t.Run("For RPM (amd64)", func(t *testing.T) {
 		arch := "x86_64"
 		extension := "rpm"
