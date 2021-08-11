@@ -70,3 +70,219 @@ Examples: default
 Examples: Ubi8
   | image   |
   | ubi8    |
+
+@start-stand-alone-agent-with-process_summary
+Scenario Outline: Starting the <image> stand-alone-agent and check process.summary in datastreams
+  Given a "<image>" stand-alone agent is deployed
+  When the stand-alone agent is listed in Fleet as "online"
+    And the policy is updated to have "system/metrics" set to "process.summary"
+  Then "system/metrics" with "process.summary" metrics are present in the datastreams
+
+@ubi8
+@skip:arm64
+Examples: Ubi8
+| image   |
+| ubi8 |
+
+@default
+Examples: default
+| image     |
+| default |
+
+@start-stand-alone-agent-with-core
+Scenario Outline: Starting the <image> stand-alone-agent and check core in datastreams
+  Given a "<image>" stand-alone agent is deployed
+  When the stand-alone agent is listed in Fleet as "online"
+    And the policy is updated to have "system/metrics" set to "core"
+  Then "system/metrics" with "core" metrics are present in the datastreams
+
+@ubi8
+@skip:arm64
+Examples: Ubi8
+| image |
+| ubi8  |
+
+@default
+Examples: default
+| image   |
+| default |
+
+@start-stand-alone-agent-with-cpu
+Scenario Outline: Starting the <image> stand-alone-agent and check cpu in datastreams
+  Given a "<image>" stand-alone agent is deployed
+  When the stand-alone agent is listed in Fleet as "online"
+    And the policy is updated to have "system/metrics" set to "cpu"
+  Then "system/metrics" with "cpu" metrics are present in the datastreams
+
+@ubi8
+@skip:arm64
+Examples: Ubi8
+| image |
+| ubi8  |
+
+@default
+Examples: default
+| image   |
+| default |
+
+@start-stand-alone-agent-with-diskio
+Scenario Outline: Starting the <image> stand-alone-agent and check diskio in datastreams
+  Given a "<image>" stand-alone agent is deployed
+  When the stand-alone agent is listed in Fleet as "online"
+    And the policy is updated to have "system/metrics" set to "diskio"
+  Then "system/metrics" with "diskio" metrics are present in the datastreams
+
+@ubi8
+@skip:arm64
+Examples: Ubi8
+| image |
+| ubi8  |
+
+@default
+Examples: default
+| image   |
+| default |
+
+@start-stand-alone-agent-with-fsstat
+Scenario Outline: Starting the <image> stand-alone-agent and check fsstat in datastreams
+  Given a "<image>" stand-alone agent is deployed
+  When the stand-alone agent is listed in Fleet as "online"
+    And the policy is updated to have "system/metrics" set to "fsstat"
+  Then "system/metrics" with "fsstat" metrics are present in the datastreams
+
+@ubi8
+@skip:arm64
+Examples: Ubi8
+| image |
+| ubi8  |
+
+@default
+Examples: default
+| image   |
+| default |
+
+@start-stand-alone-agent-with-load
+Scenario Outline: Starting the <image> stand-alone-agent and check load in datastreams
+  Given a "<image>" stand-alone agent is deployed
+  When the stand-alone agent is listed in Fleet as "online"
+    And the policy is updated to have "system/metrics" set to "load"
+  Then "system/metrics" with "load" metrics are present in the datastreams
+
+@ubi8
+@skip:arm64
+Examples: Ubi8
+| image |
+| ubi8  |
+
+@default
+Examples: default
+| image   |
+| default |
+
+@start-stand-alone-agent-with-memory
+Scenario Outline: Starting the <image> stand-alone-agent and check memory in datastreams
+  Given a "<image>" stand-alone agent is deployed
+  When the stand-alone agent is listed in Fleet as "online"
+    And the policy is updated to have "system/metrics" set to "memory"
+  Then "system/metrics" with "memory" metrics are present in the datastreams
+
+@ubi8
+@skip:arm64
+Examples: Ubi8
+| image |
+| ubi8  |
+
+@default
+Examples: default
+| image   |
+| default |
+
+@start-stand-alone-agent-with-network
+Scenario Outline: Starting the <image> stand-alone-agent and check network in datastreams
+  Given a "<image>" stand-alone agent is deployed
+  When the stand-alone agent is listed in Fleet as "online"
+    And the policy is updated to have "system/metrics" set to "network"
+  Then "system/metrics" with "network" metrics are present in the datastreams
+
+@ubi8
+@skip:arm64
+Examples: Ubi8
+| image |
+| ubi8  |
+
+@default
+Examples: default
+| image   |
+| default |
+
+@start-stand-alone-agent-with-process
+Scenario Outline: Starting the <image> stand-alone-agent and check process in datastreams
+  Given a "<image>" stand-alone agent is deployed
+  When the stand-alone agent is listed in Fleet as "online"
+    And the policy is updated to have "system/metrics" set to "process"
+  Then "system/metrics" with "process" metrics are present in the datastreams
+
+@ubi8
+@skip:arm64
+Examples: Ubi8
+| image |
+| ubi8  |
+
+@default
+Examples: default
+| image   |
+| default |
+
+@start-stand-alone-agent-with-socket_summary
+Scenario Outline: Starting the <image> stand-alone-agent and check socket_summary in datastreams
+  Given a "<image>" stand-alone agent is deployed
+  When the stand-alone agent is listed in Fleet as "online"
+    And the policy is updated to have "system/metrics" set to "socket_summary"
+  Then "system/metrics" with "socket_summary" metrics are present in the datastreams
+
+@ubi8
+@skip:arm64
+Examples: Ubi8
+| image |
+| ubi8  |
+
+@default
+Examples: default
+| image   |
+| default |
+
+@start-stand-alone-agent-with-uptime
+Scenario Outline: Starting the <image> stand-alone-agent and check uptime in datastreams
+  Given a "<image>" stand-alone agent is deployed
+  When the stand-alone agent is listed in Fleet as "online"
+    And the policy is updated to have "system/metrics" set to "uptime"
+  Then "system/metrics" with "uptime" metrics are present in the datastreams
+
+@ubi8
+@skip:arm64
+Examples: Ubi8
+| image |
+| ubi8  |
+
+@default
+Examples: default
+| image   |
+| default |
+
+#@start-stand-alone-agent-with-filesystem
+#Scenario Outline: Starting the <image> stand-alone-agent and check filesystem in datastreams
+#  Given a "<image>" stand-alone agent is deployed
+#  When the stand-alone agent is listed in Fleet as "online"
+#    And the policy is updated to have "system/metrics" set to "filesystem"
+#  Then "system/metrics" with "filesystem" metrics are present in the datastreams
+#
+#@ubi8
+#@skip:arm64
+#Examples: Ubi8
+#| image |
+#| ubi8  |
+#
+#@default
+#Examples: default
+#| image   |
+#| default |
