@@ -194,7 +194,8 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		if !common.DeveloperMode {
+		runtimeDepsProvider := shell.GetEnv("PROVIDER", "docker")
+		if !common.DeveloperMode && runtimeDepsProvider != "remote" {
 			log.Debug("Destroying Fleet runtime dependencies")
 			deployer := deploy.New(common.Provider)
 			deployer.Destroy(suiteContext, common.FleetProfileServiceRequest)
