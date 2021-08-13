@@ -24,11 +24,6 @@ SUITES:
       - name: "APM Integration"
         pullRequestFilter: " && ~debian"
         tags: "apm_server"
-      - name: "Endpoint Integration"
-        platforms:
-          - "ubuntu-18.04"
-        pullRequestFilter: " && ~debian"
-        tags: "agent_endpoint_integration"
       - name: "Linux Integration"
         pullRequestFilter: " && ~debian"
         tags: "linux_integration"
