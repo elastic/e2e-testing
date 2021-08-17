@@ -5,9 +5,8 @@
 package internal
 
 import (
+	"regexp"
 	"strings"
-
-	"github.com/elastic/e2e-testing/internal/utils"
 )
 
 // elasticVersion represents a version
@@ -19,7 +18,7 @@ type elasticVersion struct {
 }
 
 func newElasticVersion(version string) *elasticVersion {
-	versionWithoutCommit := utils.RemoveCommitFromSnapshot(version)
+	versionWithoutCommit := RemoveCommitFromSnapshot(version)
 	versionWithoutSnapshot := strings.ReplaceAll(version, "-SNAPSHOT", "")
 	versionWithoutCommitAndSnapshot := strings.ReplaceAll(versionWithoutCommit, "-SNAPSHOT", "")
 
@@ -30,7 +29,7 @@ func newElasticVersion(version string) *elasticVersion {
 		Version:         versionWithoutCommitAndSnapshot,
 	}
 
-	if utils.SnapshotHasCommit(version) {
+	if SnapshotHasCommit(version) {
 		ev.HashedVersion = versionWithoutSnapshot
 	}
 
@@ -55,4 +54,20 @@ func GetSnapshotVersion(version string) string {
 // GetVersion returns a version without snapshot or commit
 func GetVersion(version string) string {
 	return newElasticVersion(version).Version
+}
+
+// RemoveCommitFromSnapshot removes the commit from a version including commit and SNAPSHOT
+func RemoveCommitFromSnapshot(s string) string {
+	// regex = X.Y.Z-commit-SNAPSHOT
+	re := regexp.MustCompile(`-\b[0-9a-f]{5,40}\b`)
+
+	return re.ReplaceAllString(s, "")
+}
+
+// SnapshotHasCommit returns true if the snapshot version contains a commit format
+func SnapshotHasCommit(s string) bool {
+	// regex = X.Y.Z-commit-SNAPSHOT
+	re := regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-\b[0-9a-f]{5,40}\b)(-SNAPSHOT)`)
+
+	return re.MatchString(s)
 }

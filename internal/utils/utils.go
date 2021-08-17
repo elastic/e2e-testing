@@ -19,6 +19,7 @@ import (
 
 	"github.com/Jeffail/gabs/v2"
 	backoff "github.com/cenkalti/backoff/v4"
+	elasticversion "github.com/elastic/e2e-testing/internal"
 	curl "github.com/elastic/e2e-testing/internal/curl"
 	internalio "github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -50,13 +51,13 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 		dockerString = ".docker"
 	}
 
-	hasCommit := SnapshotHasCommit(artifactVersion)
+	hasCommit := elasticversion.SnapshotHasCommit(artifactVersion)
 	if hasCommit {
 		log.WithFields(log.Fields{
 			"version": artifactVersion,
 		}).Trace("Removing commit from version including commit")
 
-		artifactVersion = RemoveCommitFromSnapshot(artifactVersion)
+		artifactVersion = elasticversion.RemoveCommitFromSnapshot(artifactVersion)
 	}
 
 	lowerCaseExtension := strings.ToLower(extension)
@@ -256,7 +257,7 @@ func GetElasticArtifactVersion(version string) (string, error) {
 		return val, nil
 	}
 
-	if SnapshotHasCommit(version) {
+	if elasticversion.SnapshotHasCommit(version) {
 		elasticVersionsCache[cacheKey] = version
 		return version, nil
 	}
@@ -339,14 +340,14 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 	body := ""
 
 	tmpVersion := version
-	hasCommit := SnapshotHasCommit(version)
+	hasCommit := elasticversion.SnapshotHasCommit(version)
 	if hasCommit {
 		log.WithFields(log.Fields{
 			"version": version,
 		}).Trace("Removing SNAPSHOT from version including commit")
 
 		// remove the SNAPSHOT from the VERSION as the artifacts API supports commits in the version, but without the snapshot suffix
-		tmpVersion = strings.ReplaceAll(version, "-SNAPSHOT", "")
+		tmpVersion = elasticversion.GetCommitVersion(version)
 	}
 
 	apiStatus := func() error {
@@ -406,7 +407,7 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 
 	if hasCommit {
 		// remove commit from the artifact as it comes like this: elastic-agent-8.0.0-abcdef-SNAPSHOT-darwin-x86_64.tar.gz
-		artifactName = RemoveCommitFromSnapshot(artifactName)
+		artifactName = elasticversion.RemoveCommitFromSnapshot(artifactName)
 	}
 
 	packagesObject := jsonParsed.Path("packages")
@@ -662,14 +663,6 @@ func RandomString(length int) string {
 	return randomStringWithCharset(length, charset)
 }
 
-// RemoveCommitFromSnapshot removes the commit from a version including commit and SNAPSHOT
-func RemoveCommitFromSnapshot(s string) string {
-	// regex = X.Y.Z-commit-SNAPSHOT
-	re := regexp.MustCompile(`-\b[0-9a-f]{5,40}\b`)
-
-	return re.ReplaceAllString(s, "")
-}
-
 // Sleep sleeps a duration, including logs
 func Sleep(duration time.Duration) error {
 	fields := log.Fields{
@@ -680,14 +673,6 @@ func Sleep(duration time.Duration) error {
 	time.Sleep(duration)
 
 	return nil
-}
-
-// SnapshotHasCommit returns true if the snapshot version contains a commit format
-func SnapshotHasCommit(s string) bool {
-	// regex = X.Y.Z-commit-SNAPSHOT
-	re := regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-\b[0-9a-f]{5,40}\b)(-SNAPSHOT)`)
-
-	return re.MatchString(s)
 }
 
 // GetDockerNamespaceEnvVar returns the Docker namespace whether we use one of the CI snapshots or
