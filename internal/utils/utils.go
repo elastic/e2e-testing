@@ -208,7 +208,7 @@ func GetArchitecture() string {
 		arch = "arm64"
 	}
 
-	log.Debugf("Golang's architecture is %s (%s)", arch, envArch)
+	log.Debugf("Go's architecture is %s (%s)", arch, envArch)
 	return arch
 }
 

@@ -1,24 +1,30 @@
-# Functional tests for Observability projects
+# End-2-End tests for Observability projects
 
-## Smoke Tests
+If you don't want to deep dive into the theory about BDD and the internals of this test framework, please read [the quickstart guide](./QUICKSTART.md), but don't forget to come back here to better understand the framework.
 
-We want to make sure that the different test suites in this project are covering the main use cases for their core functionalities. So for that reason we are adding [smoke tests](http://softwaretestingfundamentals.com/smoke-testing/) to verify that each test suite meets the specifications described here with certain grade of satisfaction.
+## Main goals
+
+We want to make sure that the different test suites in this project are covering the main use cases for their core functionalities. So for that reason we are adding different test suites acting as [smoke tests](http://softwaretestingfundamentals.com/smoke-testing/) to verify that each test suite meets the specifications described here with certain grade of satisfaction.
 
 >Smoke Testing, also known as “Build Verification Testing”, is a type of software testing that comprises of a non-exhaustive set of tests that aim at ensuring that the most important functions work. The result of this testing is used to decide if a build is stable enough to proceed with further testing.
 
+Finally, the test framework must be responsible for creating and destroying the run-time dependencies, basically the Elastic Stack, and provide a minimal set of shared utilities that can be reused across different test suites, such as a Kibana client, an Elasticsearch client, a Service provider, etc.
+
 ## Tooling
 
-As we want to run _functional tests_, we need a manner to describe the functionality to implement in a _functional manner_, which means using plain English to specify how our software behaves. The most accepted manner to achieve this specification in the software industry, using a high level approach that anybody in the team could understand and backed by a testing framework, is [`Cucumber`](https://cucumber.io). So we will use `Cucumber` to set the behaviour (use cases) of our software.
+As we want to run _E2E tests_, we need a manner to describe the functionality to implement in a _functional manner_. And it would be great if we are able to use plain English to specify how our software behaves, instead of using code. And if it's possible to automate the execution of that specification, even better.
+
+The most accepted manner to achieve this executable specification in the software industry, using a high level approach that anybody in the team could understand and backed by a testing framework, is [`Cucumber`](https://cucumber.io). So we will use `Cucumber` to set the behaviours (use cases) of our software.
 
 Then we need a manner to connect that plain English feature specification with code. Fortunately, `Cucumber` has a wide number of implementations (Java, Ruby, NodeJS, Go...), so we can choose one of them to implement our tests.
 
-We are going to use Golang for writing the functional tests, so we would need the Golang implementation for `Cucumber`. That implementation is [`Godog`](https://github.com/cucumber/godog), which is the glue between the specs files and the Go code. Godog is a wrapper over the traditional `go test` command, adding the ability to run the functional steps defined in the feature files.
+We are going to use Go for writing the End-2-End tests, so we would need the Go implementation for `Cucumber`. That implementation is [`Godog`](https://github.com/cucumber/godog), which is the glue between the spec files and the Go code. `Godog` is a wrapper over the `go test` command, so they are almost interchangeable when running the tests.
 
-The implementation of these smoke tests has been done with [Godog](https://github.com/cucumber/godog) + [Cucumber](https://cucumber.io/).
+> In this test framework, we are running Godog with `go test`, as explained [here](https://github.com/cucumber/godog#running-godog-with-go-test).
 
 ### Cucumber: BDD at its core
 
-The specification of these smoke tests has been done using the `BDD` (Behaviour-Driven Development) principles, where:
+The specification of these E2E tests has been done using `BDD` (Behaviour-Driven Development) principles, where:
 
 >BDD aims to narrow the communication gaps between team members, foster better understanding of the customer and promote continuous communication with real world examples.
 
@@ -32,81 +38,55 @@ The way we are going to specify our software is using [`Gherkin`](https://cucumb
 
 The key part here is **executable specifications**: we will be able to automate the verification of the specifications and potentially get a coverage of these specs.
 
-### Godog: Cucumber for Golang
+### Godog: Cucumber for Go
 
 From Godog's website:
 
->Package godog is the official Cucumber BDD framework for Golang, it merges specification and test documentation into one cohesive whole.
+>Package godog is the official Cucumber BDD framework for Go, it merges specification and test documentation into one cohesive whole.
 
-For this test framework, we have chosen Godog over any other test framework because the team is already using Golang, so it seems reasonable to choose it.
-
-## Test Specification
-
-All the Gherkin (Cucumber) specifications are written in `.feature` files.
-
-A good example could be [this one](./_suites/metricbeat/features/metricbeat.feature).
-
-## Test Implementation
-
-We are using Godog + Cucumber to implement the tests, where we create connections to the `Given`, `When`, `Then`, `And`, etc. in a well-known file structure.
-
-As an example, the Golang implementation of the `./_suites/metricbeat/features/metricbeat.feature` is located under the [metricbeat_test.go](./_suites/metricbeat/metricbeat_test.go) file.
-
-Each module will define its own file for specificacions, adding specific feature context functions that will allow filtering the execution, if needed. 
+For this test framework, we have chosen Godog over any other test framework because the Beats team (the team we started working with) is already using Go, so it seems reasonable to choose it.
 
 ## Technology stack
 
-## Build system
-The test framework makes use of `Make` to prepare the environment to run the `godog` tests. Although it's still possible using the `godog` binary to run the test suites and scenarios, we recommend using the proper `Make` goals, in particular the [`functional-test` goal](https://github.com/elastic/e2e-testing/blob/70b1d3ddaf39567aeb4c322054b93ad7ce53e825/e2e/Makefile#L70). We also provide [a set of example goals](https://github.com/elastic/e2e-testing/blob/70b1d3ddaf39567aeb4c322054b93ad7ce53e825/e2e/Makefile#L108) with different use cases for running most common scenarios.
+### Build system
+The test framework makes use of `Make` to prepare the environment to run the `Cucumber` tests. Although it's still possible using the `godog` binary, or the idiomatic `go test`, to run the test suites and scenarios, we recommend using the proper `Make` goals, in particular the [`functional-test` goal](https://github.com/elastic/e2e-testing/blob/05cdf195dfae0cb886d30b1cf6a1ccd95ddba9f5/e2e/commons-test.mk#L56). We also provide [a set of example goals](https://github.com/elastic/e2e-testing/blob/05cdf195dfae0cb886d30b1cf6a1ccd95ddba9f5/e2e/Makefile#L22-L35) with different use cases for running most common scenarios.
 
-### Docker containers
-The services supported by some of the test suites in this framework will be started in the form of Docker containers. To manage the life cycle of those containers in test time we are going to use [`Testcontainers`](https://testcontainers.org), a set of libraries to simplify the usage of the Docker client, attaching container life cycles to the tests, so whenever the tests finish, the containers will stop in consequence.
+Each test suite, which lives under the `e2e/_suites` directory, has it's own Makefile to control the build life cycle of the test project.
+
+> It's possible to create a new test suite with `SUITE=name make -C e2e create-suite`, which creates the build files and the scaffolding for the first test suite.
+
+### Services as Docker containers
+The services provided by the test suites in this framework will be started in the form of Docker containers. To manage the life cycle of those containers in test time we are going to use [`Testcontainers`](https://golang.testcontainers.org), a set of libraries to simplify the usage of the Docker client, attaching container life cycles to the tests, so whenever the tests finish, the containers will stop in consequence.
 
 ### Runtime dependencies
-In many cases, we want to store the metrics in Elasticsearch, so at some point we must start up an Elasticsearch instance. Besides that, we want to query the Elasticsearch to perform assertions on the metrics, such as there are no errors, or the field `f.foo` takes the value `bar`. For that reason we need an Elasticsearch in a well-known location. Here it appears the usage of the [Observability Provisioner CLI tool](../cli/README.md), which is a CLI writen in Go which exposes an API to query the specific runtime resources needed to run the tests. In our case, Metricbeat, we need just an Elasticsearch, but a Kibana could be needed in the case of verifying the dashboards are correct.
+In many cases, we want to store the metrics in Elasticsearch, so at some point we must start up an Elasticsearch instance. Besides that, we want to query the Elasticsearch to perform assertions on the metrics, such as there are no errors, or the field `f.foo` takes the value `bar`. For that reason we need an Elasticsearch instance in a well-known location. We are going to group this Elasticsearch instance, and any other runtime dependencies, under the concept of a `profile`, which is a represented by a `docker-compose.yml` file under the `cli/config/compose/profiles/` and the name of the test suite.
+
+As an example, the Metricbeat test suite will need just an Elasticsearch instance; the Fleet test suite will need an Elasticsearch instance, Kibana and Fleet Server.
+
+#### Configuration files
+If the profile needs certain configuration files, we recommend locating them under a `configurations` folder in the profile directory. As an example, see `kibana.config.yml` in the `fleet` profile.
 
 ### Feature files
-We will create use cases for the module in a separate `.feature` file, ideally named after the name of the feature to test (i.e. _apache.feature_), and located under the `features` directory of each test suite. This feature file is a Cucumber requirement, that will be parsed by the Godog test runner and matched against the Golang code implementing the tests.
-
-The anatomy of a feature file is:
-
-- **@tag_name**: A `@` character indicates a tag. And tags are used to filter the test execution. Tags could be placed on Features (applying the entire file), or on Scenarios (applying just to them). At this moment we are tagging each feature file with a tag using module's name, so that we can instrument the test runner to just run one.
-- **Feature: Blah, blah**: Description in plain English of the group of uses cases (scenarios) in this feature file. The feature file should contain just one.
-- **Scenario**: the name in plain English of a specific use case.
-- **Scenario Outline**: exactly the same as above, but we are are telling Cucumber that this use case has a matrix, so it has to iterate through the **Examples** table, interpolating those values into the placeholders in the scenario.
-- **Given, Then, When, And, But keywords**: Their meaning is extremely important in order to understand the use case they are part of, although they have no real impact in how we use them. If we use `doble quotes` around one or more words, that will tell Cucumber the presence of a fixed variable, with value the word/s among the double quotes. These variables will be the input parameters of the implementation functions in Go code. If we use `angles` around one or more words, that will tell Cucumber the presence of a dynamic variable, taken from the examples table.
-    - **Given**: It must tell an ocational reader what state must be in place for the use case to be valid.
-    - **When**: It must tell an ocational reader what action or actions trigger the use case.
-    - **Then**: It must tell an ocational reader what outcome has been generated after the use case happens.
-    - **And**: Used within any of the above clauses, it must tell an ocational reader a secondary preparation (Given), trigger (When), or output (Then) that must be present.
-    - **But**: Used within any of the above clauses, it must tell an ocational reader a secondary preparation (Given), trigger (When), or output (Then) that must not be present.
-- **Examples:**: this `markdown table` will represent the elements to interpolate in the existing dynamic variables in the use case, being each column header the name of the different variables in the table. Besides that, each row will result in a test execution.
+We will create use cases for the module in a separate `.feature` file, ideally named after the name of the feature to test (i.e. _apache.feature_), and located under the `features` directory of each test suite. These feature files are considered as requirement for Cucumber, and they will be parsed by the Godog test runner and matched against the Go code implementing the tests.
 
 #### Feature files and the CI
 There is [a descriptor file for the CI](../.ci/.e2e-tests.yaml) in which we define the parallel branches that will be created in the execution of a job. This YAML file defines suites and tags. A suite represents each test suite directory under the `e2e/_suites` directory, and the tags represent the tags will be passed to the test runner to filter the test execution. Another configuration we define in this file is related to the capabilities to run certain tags at the pull request stage, using the `pullRequestFilter` child element. This element will be appended to the tags used to filter the test runner.
 
 Adding a new feature file will require to check [the aforementioned descriptor file](../.ci/.e2e-tests.yaml). If the tags in the new file are not there, you should add a new parallel branch under the main test suite, or update the tags to add the new scenarios in an existing parallel branch.
 
-### Configuration files
-It's possible that the configuration YAML files will exist in the test suite. We recommend locating them under the `configurations` folder under the config directory for compose files (both profiles and services). The name of the file will represent the feature to be tested (i.e. `kibana.config.yml`). In this file we will add those configurations that are exclusive to the feature to be tested.
+## Known Limitations
+Because this framework uses Docker as the provisioning tool, all the services are based on Linux containers. That's why we consider this tool very suitable while developing the product, but would not cover the entire support matrix for the product: Linux, Windows, Mac, ARM, etc.
+
+For Windows or other platform support, we are providing support to run the tests in the ephemeral CI workers for the underlaying platform: in other words, we are going to install the platform-specific binaries under test in a CI worker, connecting to the runtime dependencies of the test suite in a remote location (another worker, Elastic Cloud, etc.).
 
 ## Generating documentation about the specifications
-If you want to generate a website for the feature files, please run this command:
+If you want to transform your feature files into a nicer representation using HTML, please run this command from the root `e2e` directory to build a website for all test suites:
 
 ```shell
 $ make build-docs
 ```
 
-It will generate the website under the `./docs` directory (which is ignored in Git). You'll be able to navigate through the feature files and scenarios in a website.
-
-## Debugging the tests
-
-### VSCode
-When using VSCode as editor, it's possible to debug the project using the existing VSCode configurations for debug.
-
-In order to debug the `godog` tests, 1) you must have the `runner_test.go` file opened as the current file in the IDE, 2) Use the Run/Debug module of VSCode, and 3) select the `Godog Tests` debug configuration to be executed.
-
-![](./debug.png)
+It will generate the website under the `./docs` directory (which is ignored in Git). You'll be able to navigate through any feature file and test scenario in a website.
 
 ## Regression testing
 We have built the project and the CI job in a manner that it is possible to override different parameters about projects versions, so that we can set i.e. the version of the Elastic Stack to be used, or the version of the Elastic Agent. There also exist maintenance branches where we set the specific versions used for the tests:
@@ -149,9 +129,6 @@ We are going to enumerate the variables that will affect the product versions us
 The following environment variables affect how the tests are run in both the CI and a local machine.
 
 - `ELASTIC_APM_ACTIVE`: Set this environment variable to `true` if you want to send instrumentation data to our CI clusters. When the tests are run in our CI, this variable will always be enabled. Default value: `false`.
-
->"ELASTIC_APM_ACTIVE" only affects Helm and Metricbeat test suites.
-
 - `ELASTIC_APM_ENVIRONMENT`: Set this environment variable to `ci` to send APM data to Elastic Cloud. Otherwise, the framework will spin up local APM Server and Kibana instances. For the CI, it will read credentials from Vault. Default value: `local`.
 - `SKIP_PULL`: Set this environment variable to prevent the test suite to pull Docker images for all components. Default: `false` 
 - `BEATS_LOCAL_PATH`: Set this environment variable to the base path to your local clone of Beats if it's needed to use the binary snapshots produced by your local build instead of the official releases. The snapshots will be fetched from the `${BEATS_LOCAL_PATH}/${THE_BEAT}/build/distributions` local directory. This variable is intended to be used by Beats developers, when testing locally the artifacts generated its own build. Default: empty.
@@ -167,8 +144,14 @@ The following environment variables affect how the tests are run in both the CI 
 - `FEATURES`: Set this environment variable to an existing feature file, or a glob expression (`fleet_*.feature`), that will be passed to the test runner to filter the execution, selecting those feature files matching that expression. If empty, all feature files in the `features/` directory will be used. It can be used in combination with `TAGS`.
 - `TAGS`: Set this environment variable to [a Cucumber tag expression](https://github.com/cucumber/godog#tags), that will be passed to the test runner to filter the execution, selecting those scenarios matching that expresion, across any feature file. It can be used in combination with `FEATURES`.
 - `SKIP_SCENARIOS`: Set this environment variable to `false` if it's needed to include the scenarios annotated as `@skip` in the current test execution, adding that taf to the `TAGS` variable. Default value: `true`.
+
 ### Running regressions locally
-This example will run the Fleet tests for the 8.0.0-SNAPSHOT stack with the released 7.10.1 version of the agent.
+
+The tests will take a few minutes to run, spinning up a few Docker containers (or Kubernetes pods) representing the various runtime dependencies for the test suite and performing the test steps outlined earlier.
+
+As the tests are running they will output the results in your terminal console. This will be quite verbose and you can ignore most of it until the tests finish. Then inspect at the output of the last play that ran and failed. On the contrary, you could use a different log level for the `OP_LOG_LEVEL` variable, being it possible to use `DEBUG`, `INFO (default)`, `WARN`, `ERROR`, `FATAL` as log levels.
+
+In the following example, we will run the Fleet tests for the 8.0.0-SNAPSHOT stack with the released 7.10.1 version of the agent.
 
 ```shell
 # Use the proper branch
@@ -208,11 +191,13 @@ make clean-docker
 ### Running regressions on CI
 Because we are able to parameterize a CI job, it's possible to run regression testing with different versions of the stack and the products under test. To achieve it we must navigate to Jenkins and run the tests with different combinations for each product.
 
+> Note, as of this PR: https://github.com/elastic/e2e-testing/pull/669/files we have implemented a mechanism to NOT run tests marked as `@nightly` during PR CI test runs, if they, for any reason, are not capable of successfully finishing for a given reason.  The foremost example is the Agent upgrade tests which do not run on PR CI due to the lack of proper signing for the binaries needed.  The tag is implemented basically as a "nightly only" citation.
+
 To do so:
 
 1. Navigate to Jenkins: https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-mbp/
 1. Login as a user
-1. Select the base branch for the test code: 7.9.x, 7.10.x, 7.x or master.
+1. Select the base branch for the test code: master (for 8.0.0-SNAPSHOT), 7.x, or any other maintenance branch.
 1. In the left menu, click on `Buid with Parameters`.
 1. In the input parameters form, set the stack version (for Fleet or Metricbeat) using the specific variables for the test suite.
 1. (Optional) Set the product version (Fleet, Helm charts or Metricbeat) using the specific variables for the test suite if you want to consume a different artifact.
@@ -236,7 +221,8 @@ To do so:
 1. In the input parameters form, keep the stack version (for Fleet and Metricbeat) as is, to use each branch's default version.
 1. In the input parameters form, set the `GITHUB_CHECK_NAME` to `E2E Tests`. This value will appear as the label for the Github check for the E2E tests.
 1. In the input parameters form, set the `GITHUB_CHECK_REPO` to `beats`.
-1. In the input parameters form, set the `GITHUB_CHECK_SHA1` to the `SHA1` of the last commit in your pull request. This value will allow us to modify the mergeable status of that commit with the Github check.
+1. In the input parameters form, check the `BEATS_USE_CI_SNAPSHOTS` checkbox. This value will instrument the test framework to download the binaries from the CI bucket on Google Cloud Platform Storage.
+1. In the input parameters form, set the `GITHUB_CHECK_SHA1` to the `SHA1` of the last commit in your pull request. This value will allow us to modify the mergeable status of that commit with the Github check. Besides that, it will set the specific directory in the GCP bucket to look up the CI binaries.
 1. Click the `Build` button at the bottom of the parameters form.
 
 ## Noticing the test framework

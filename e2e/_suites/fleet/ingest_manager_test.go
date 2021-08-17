@@ -126,9 +126,11 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			log.WithField("error", err).Fatal("Unable to run pre-bootstrap initialization")
 		}
 
+		runtimeDepsProvider := shell.GetEnv("PROVIDER", "docker")
+
 		// FIXME: This needs to go into deployer code for docker somehow. Must resolve
 		// cyclic imports since common.defaults now imports deploy module
-		if !shell.GetEnvBool("SKIP_PULL") && shell.GetEnv("PROVIDER", "docker") != "remote" {
+		if !shell.GetEnvBool("SKIP_PULL") && runtimeDepsProvider != "remote" {
 			images := []string{
 				"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
 				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,
@@ -156,17 +158,20 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
 		}
 
-		deployer.Bootstrap(suiteContext, common.FleetProfileServiceRequest, common.ProfileEnv, func() error {
-			kibanaClient, err := kibana.NewClient()
-			if err != nil {
-				log.WithField("error", err).Fatal("Unable to create kibana client")
-			}
-			err = kibanaClient.WaitForFleet(suiteContext)
-			if err != nil {
-				log.WithField("error", err).Fatal("Fleet could not be initialized")
-			}
-			return nil
-		})
+		if runtimeDepsProvider != "remote" {
+			// the runtime dependencies must be started only in non-remote executions
+			deployer.Bootstrap(suiteContext, common.FleetProfileServiceRequest, common.ProfileEnv, func() error {
+				kibanaClient, err := kibana.NewClient()
+				if err != nil {
+					log.WithField("error", err).Fatal("Unable to create kibana client")
+				}
+				err = kibanaClient.WaitForFleet(suiteContext)
+				if err != nil {
+					log.WithField("error", err).Fatal("Fleet could not be initialized")
+				}
+				return nil
+			})
+		}
 
 		imts.Fleet.Version = common.BeatVersionBase
 		imts.Fleet.RuntimeDependenciesStartDate = time.Now().UTC()
@@ -189,7 +194,8 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		if !common.DeveloperMode {
+		runtimeDepsProvider := shell.GetEnv("PROVIDER", "docker")
+		if !common.DeveloperMode && runtimeDepsProvider != "remote" {
 			log.Debug("Destroying Fleet runtime dependencies")
 			deployer := deploy.New(common.Provider)
 			deployer.Destroy(suiteContext, common.FleetProfileServiceRequest)
