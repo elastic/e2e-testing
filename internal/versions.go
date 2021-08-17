@@ -22,21 +22,15 @@ func newElasticVersion(version string) *elasticVersion {
 	versionWithoutSnapshot := strings.ReplaceAll(version, "-SNAPSHOT", "")
 	versionWithoutCommitAndSnapshot := strings.ReplaceAll(versionWithoutCommit, "-SNAPSHOT", "")
 
-	ev := &elasticVersion{
+	return &elasticVersion{
 		FullVersion:     version,
 		HashedVersion:   versionWithoutSnapshot,
 		SnapshotVersion: versionWithoutCommit,
 		Version:         versionWithoutCommitAndSnapshot,
 	}
-
-	if SnapshotHasCommit(version) {
-		ev.HashedVersion = versionWithoutSnapshot
-	}
-
-	return ev
 }
 
-// GetCommitVersion returns a version including the version and the git commit
+// GetCommitVersion returns a version including the version and the git commit, if it exists
 func GetCommitVersion(version string) string {
 	return newElasticVersion(version).HashedVersion
 }
