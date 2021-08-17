@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 
+	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
@@ -129,7 +130,11 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
+<<<<<<< HEAD
 	output, _ = i.Exec(ctx, []string{"powershell.exe", "Move-Item", fmt.Sprintf("%s-%s-%s-%s", artifact, common.BeatVersion, os, arch), "C:\\elastic-agent"})
+=======
+	output, _ = i.Exec(ctx, []string{"powershell.exe", "Move-Item", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "C:\\elastic-agent"})
+>>>>>>> 2becdb3 (chore: calculate version in context (#1459))
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }

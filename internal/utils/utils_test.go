@@ -51,6 +51,19 @@ func TestBuildArtifactName(t *testing.T) {
 	OS := "linux"
 	version := testVersion
 
+	t.Run("For Git commits in version", func(t *testing.T) {
+		arch := "x86_64"
+		extension := "rpm"
+		expectedFileName := "elastic-agent-1.2.3-SNAPSHOT-x86_64.rpm"
+		versionWithCommit := "1.2.3-abcdef-SNAPSHOT"
+
+		artifactName := buildArtifactName(artifact, versionWithCommit, OS, arch, extension, false)
+		assert.Equal(t, expectedFileName, artifactName)
+
+		artifactName = buildArtifactName(artifact, versionWithCommit, OS, arch, "RPM", false)
+		assert.Equal(t, expectedFileName, artifactName)
+	})
+
 	t.Run("For RPM (amd64)", func(t *testing.T) {
 		arch := "x86_64"
 		extension := "rpm"
@@ -685,15 +698,4 @@ func TestProcessBucketSearchPage_SnapshotsNotFound(t *testing.T) {
 	mediaLink, err := processBucketSearchPage(snapshotsJSON, 1, bucket, snapshots, object)
 	assert.NotNil(t, err)
 	assert.True(t, mediaLink == "")
-}
-
-func TestSnapshotHasCommit(t *testing.T) {
-	t.Run("Returns true with commits in snapshots", func(t *testing.T) {
-		assert.True(t, SnapshotHasCommit("8.0.0-a12345-SNAPSHOT"))
-	})
-
-	t.Run("Returns false with commits in snapshots", func(t *testing.T) {
-		assert.False(t, SnapshotHasCommit("7.x-SNAPSHOT"))
-		assert.False(t, SnapshotHasCommit("8.0.0-SNAPSHOT"))
-	})
 }
