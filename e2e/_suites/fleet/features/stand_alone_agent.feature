@@ -266,23 +266,5 @@ Examples: Ubi8
 
 @default
 Examples: default
-| image   |
-| default |
-
-#@start-stand-alone-agent-with-filesystem
-#Scenario Outline: Starting the <image> stand-alone-agent and check filesystem in datastreams
-#  Given a "<image>" stand-alone agent is deployed
-#  When the stand-alone agent is listed in Fleet as "online"
-#    And the policy is updated to have "system/metrics" set to "filesystem"
-#  Then "system/metrics" with "filesystem" metrics are present in the datastreams
-#
-#@ubi8
-#@skip:arm64
-#Examples: Ubi8
-#| image |
-#| ubi8  |
-#
-#@default
-#Examples: default
-#| image   |
-#| default |
+  | image   |
+  | default |
