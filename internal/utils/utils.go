@@ -51,14 +51,7 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 		dockerString = ".docker"
 	}
 
-	hasCommit := elasticversion.SnapshotHasCommit(artifactVersion)
-	if hasCommit {
-		log.WithFields(log.Fields{
-			"version": artifactVersion,
-		}).Trace("Removing commit from version including commit")
-
-		artifactVersion = elasticversion.RemoveCommitFromSnapshot(artifactVersion)
-	}
+	artifactVersion = elasticversion.GetSnapshotVersion(artifactVersion)
 
 	lowerCaseExtension := strings.ToLower(extension)
 
