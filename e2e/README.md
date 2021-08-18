@@ -1,6 +1,6 @@
 # End-2-End tests for Observability projects
 
-If you don't want to deep dive into the theory about BDD and the internals of this test framework, please read [the quickstart guide][./QUICKSTART.md], but don't forget to come back here to better understand the framework.
+If you don't want to deep dive into the theory about BDD and the internals of this test framework, please read [the quickstart guide](./QUICKSTART.md), but don't forget to come back here to better understand the framework.
 
 ## Main goals
 
