@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 
+	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/utils"
@@ -117,8 +118,8 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 
 	// we need to tag the loaded image because its tag relates to the target branch
 	return deploy.TagImage(
-		fmt.Sprintf("docker.elastic.co/beats/%s:%s", artifact, common.BeatVersionBase),
-		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, common.BeatVersion, arch),
+		fmt.Sprintf("docker.elastic.co/beats/%s:%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersionBase)),
+		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), arch),
 	)
 }
 
