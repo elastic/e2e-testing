@@ -2,6 +2,7 @@
 SUITES:
   - suite: "helm"
     platforms:
+      - "arm64"
       - "ubuntu-18.04"
     scenarios:
       - name: "APM Server"
@@ -81,6 +82,7 @@ SUITES:
         tags: "integrations && vsphere"
   - suite: "kubernetes-autodiscover"
     platforms:
+      - "arm64"
       - "ubuntu-18.04"
     scenarios:
       - name: "kubernetes autodiscover with filebeat"
