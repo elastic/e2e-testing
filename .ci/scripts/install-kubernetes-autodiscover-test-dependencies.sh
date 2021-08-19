@@ -13,6 +13,7 @@ set -euxo pipefail
 #   - KUBERNETES_VERSION - that's the Kubernetes version which will be installed and enabled.
 #
 
+GOARCH=${GOARCH:-"amd64"}
 MSG="parameter missing."
 HOME=${HOME:?$MSG}
 
@@ -27,6 +28,6 @@ GO111MODULE="on" go get sigs.k8s.io/kind@${KIND_VERSION}
 mkdir -p "${HOME}/bin"
 
 # Install kubectl
-curl -sSLo "${KUBECTL_CMD}" "https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl"
+curl -sSLo "${KUBECTL_CMD}" "https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/${GOARCH}/kubectl"
 chmod +x "${KUBECTL_CMD}"
 ${KUBECTL_CMD} version --client
