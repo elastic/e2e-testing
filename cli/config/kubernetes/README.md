@@ -3,7 +3,7 @@
 ## Requirements
 
 - docker
-- kind (>= 0.10.0)
+- kind (>= 0.11.0)
 - kubectl (>= 1.17)
 
 ## Deployment
