@@ -372,7 +372,6 @@ def generateFunctionalTestStep(Map args = [:]){
                                     unstash 'source'
                                     dir("${BASE_DIR}"){
                                         withGoEnvWindows(version: "${GO_VERSION}"){
-                                            installTools([[tool: 'unzip', version: '6.0', provider: 'choco']])
                                             echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
                                             powershell label: "Disk Information", script: "Get-PSDrive"
                                             powershell label: "Pinging Linux VM", script: "ping -n 1 ${linuxIp}"
