@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
+	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 
 	"github.com/pkg/errors"
@@ -240,6 +242,11 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
 	}
 	fts.BeatsProcess = ""
 
+	// FIXME: We need to cleanup the steps to support different operating systems
+	// for now we will force the zip installer type when the agent is running on windows
+	if runtime.GOOS == "windows" && shell.GetEnv("PROVIDER", "docker") == "remote" {
+		installerType = "zip"
+	}
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType)
 }
 
@@ -247,6 +254,12 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetOnTopOfBeat(image string, bea
 	installerType := "rpm"
 	if image == "debian" {
 		installerType = "deb"
+	}
+
+	// FIXME: We need to cleanup the steps to support different operating systems
+	// for now we will force the zip installer type when the agent is running on windows
+	if runtime.GOOS == "windows" && shell.GetEnv("PROVIDER", "docker") == "remote" {
+		installerType = "zip"
 	}
 
 	fts.BeatsProcess = beatsProcess
@@ -257,6 +270,13 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetOnTopOfBeat(image string, bea
 // supported installers: tar, rpm, deb
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, installerType string) error {
 	fts.BeatsProcess = ""
+
+	// FIXME: We need to cleanup the steps to support different operating systems
+	// for now we will force the zip installer type when the agent is running on windows
+	if runtime.GOOS == "windows" && shell.GetEnv("PROVIDER", "docker") == "remote" {
+		installerType = "zip"
+	}
+
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType)
 }
 

@@ -19,6 +19,7 @@ import (
 
 	"github.com/Jeffail/gabs/v2"
 	backoff "github.com/cenkalti/backoff/v4"
+	elasticversion "github.com/elastic/e2e-testing/internal"
 	curl "github.com/elastic/e2e-testing/internal/curl"
 	internalio "github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -49,6 +50,8 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 	if isDocker {
 		dockerString = ".docker"
 	}
+
+	artifactVersion = elasticversion.GetSnapshotVersion(artifactVersion)
 
 	lowerCaseExtension := strings.ToLower(extension)
 
@@ -146,20 +149,20 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 			return val, nil
 		}
 
-		filePath, err := DownloadFile(URL)
+		filePathFull, err := DownloadFile(URL)
 		if err != nil {
-			return filePath, err
+			return filePathFull, err
 		}
 
 		// use artifact name as file name to avoid having URL params in the name
-		sanitizedFilePath := path.Join(path.Dir(filePath), artifactName)
-		err = os.Rename(filePath, sanitizedFilePath)
+		sanitizedFilePath := filepath.Join(path.Dir(filePathFull), artifactName)
+		err = os.Rename(filePathFull, sanitizedFilePath)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"fileName":          filePath,
+				"fileName":          filePathFull,
 				"sanitizedFileName": sanitizedFilePath,
 			}).Warn("Could not sanitize downloaded file name. Keeping old name")
-			sanitizedFilePath = filePath
+			sanitizedFilePath = filePathFull
 		}
 
 		binariesCache[URL] = sanitizedFilePath
@@ -247,7 +250,7 @@ func GetElasticArtifactVersion(version string) (string, error) {
 		return val, nil
 	}
 
-	if SnapshotHasCommit(version) {
+	if elasticversion.SnapshotHasCommit(version) {
 		elasticVersionsCache[cacheKey] = version
 		return version, nil
 	}
@@ -330,13 +333,14 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 	body := ""
 
 	tmpVersion := version
-	if SnapshotHasCommit(version) {
+	hasCommit := elasticversion.SnapshotHasCommit(version)
+	if hasCommit {
 		log.WithFields(log.Fields{
 			"version": version,
 		}).Trace("Removing SNAPSHOT from version including commit")
 
 		// remove the SNAPSHOT from the VERSION as the artifacts API supports commits in the version, but without the snapshot suffix
-		tmpVersion = strings.ReplaceAll(version, "-SNAPSHOT", "")
+		tmpVersion = elasticversion.GetCommitVersion(version)
 	}
 
 	apiStatus := func() error {
@@ -393,6 +397,11 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 		"elapsedTime":  exp.GetElapsedTime(),
 		"version":      tmpVersion,
 	}).Trace("Artifact found")
+
+	if hasCommit {
+		// remove commit from the artifact as it comes like this: elastic-agent-8.0.0-abcdef-SNAPSHOT-darwin-x86_64.tar.gz
+		artifactName = elasticversion.RemoveCommitFromSnapshot(artifactName)
+	}
 
 	packagesObject := jsonParsed.Path("packages")
 	// we need to get keys with dots using Search instead of Path
@@ -517,10 +526,10 @@ func GetObjectURLFromBucket(bucket string, prefix string, object string, maxtime
 // It writes to the destination file as it downloads it, without
 // loading the entire file into memory.
 func DownloadFile(url string) (string, error) {
-	tempParentDir := path.Join(os.TempDir(), uuid.NewString())
+	tempParentDir := filepath.Join(os.TempDir(), uuid.NewString())
 	internalio.MkdirAll(tempParentDir)
 
-	tempFile, err := os.Create(path.Join(tempParentDir, path.Base(url)))
+	tempFile, err := os.Create(filepath.Join(tempParentDir, path.Base(url)))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
@@ -530,7 +539,7 @@ func DownloadFile(url string) (string, error) {
 	}
 	defer tempFile.Close()
 
-	filepath := tempFile.Name()
+	filepathFull := tempFile.Name()
 
 	exp := GetExponentialBackOff(3)
 
@@ -543,7 +552,7 @@ func DownloadFile(url string) (string, error) {
 			log.WithFields(log.Fields{
 				"elapsedTime": exp.GetElapsedTime(),
 				"error":       err,
-				"path":        filepath,
+				"path":        filepathFull,
 				"retry":       retryCount,
 				"url":         url,
 			}).Warn("Could not download the file")
@@ -556,7 +565,7 @@ func DownloadFile(url string) (string, error) {
 		log.WithFields(log.Fields{
 			"elapsedTime": exp.GetElapsedTime(),
 			"retries":     retryCount,
-			"path":        filepath,
+			"path":        filepathFull,
 			"url":         url,
 		}).Trace("File downloaded")
 
@@ -567,7 +576,7 @@ func DownloadFile(url string) (string, error) {
 
 	log.WithFields(log.Fields{
 		"url":  url,
-		"path": filepath,
+		"path": filepathFull,
 	}).Trace("Downloading file")
 
 	err = backoff.Retry(download, exp)
@@ -581,15 +590,15 @@ func DownloadFile(url string) (string, error) {
 		log.WithFields(log.Fields{
 			"error": err,
 			"url":   url,
-			"path":  filepath,
+			"path":  filepathFull,
 		}).Error("Could not write file")
 
-		return filepath, err
+		return filepathFull, err
 	}
 
 	_ = os.Chmod(tempFile.Name(), 0666)
 
-	return filepath, nil
+	return filepathFull, nil
 }
 
 func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
@@ -657,14 +666,6 @@ func Sleep(duration time.Duration) error {
 	time.Sleep(duration)
 
 	return nil
-}
-
-// SnapshotHasCommit returns true if the snapshot version contains a commit format
-func SnapshotHasCommit(s string) bool {
-	// regex = X.Y.Z-commit-SNAPSHOT
-	re := regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-\b[0-9a-f]{5,40}\b)(-SNAPSHOT)`)
-
-	return re.MatchString(s)
 }
 
 // GetDockerNamespaceEnvVar returns the Docker namespace whether we use one of the CI snapshots or

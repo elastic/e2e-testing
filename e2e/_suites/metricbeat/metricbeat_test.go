@@ -18,6 +18,7 @@ import (
 	messages "github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/e2e/steps"
+	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
@@ -77,7 +78,7 @@ func (mts *MetricbeatTestSuite) setEventModule(eventModule string) {
 // and because of the ILM is configured on metricbeat side, then we can use an asterisk for the index name:
 // each scenario outline will be namespaced, so no collitions between different test cases should appear
 func (mts *MetricbeatTestSuite) setIndexName() {
-	mVersion := strings.ReplaceAll(mts.Version, "-SNAPSHOT", "")
+	mVersion := elasticversion.GetCommitVersion(mts.Version)
 
 	var index string
 	if mts.ServiceName != "" {
