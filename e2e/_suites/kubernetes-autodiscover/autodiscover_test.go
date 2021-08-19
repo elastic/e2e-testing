@@ -27,6 +27,7 @@ import (
 	"go.elastic.co/apm"
 
 	"github.com/elastic/e2e-testing/cli/config"
+	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kubernetes"
@@ -131,7 +132,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		return nil
 	}
 
-	beatVersion := common.BeatVersion + "-amd64"
+	beatVersion := elasticversion.GetSnapshotVersion(common.BeatVersion) + "-amd64"
 
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
@@ -151,7 +152,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 
 		// tag the image with the proper docker tag, including platform
 		err = deploy.TagImage(
-			"docker.elastic.co/beats/"+podName+":"+common.BeatVersionBase,
+			"docker.elastic.co/beats/"+podName+":"+elasticversion.GetSnapshotVersion(common.BeatVersionBase),
 			"docker.elastic.co/observability-ci/"+podName+":"+beatVersion,
 		)
 		if err != nil {
