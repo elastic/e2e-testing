@@ -5,7 +5,11 @@
     description: Jenkins pipeline for the e2e-testing project
     view: E2E
     project-type: multibranch
-    days-to-keep: 21
+    logrotate:
+      daysToKeep: 30
+      numToKeep: 300
+    number-to-keep: 100
+    days-to-keep: 30
     script-path: .ci/Jenkinsfile
     scm:
       - github:
