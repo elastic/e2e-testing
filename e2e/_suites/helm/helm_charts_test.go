@@ -41,7 +41,7 @@ var helmVersion = "3.x"
 var helmChartVersion = "7.11.2"
 
 // kubernetesVersion represents the default version used for Kubernetes
-var kubernetesVersion = "1.18.2"
+var kubernetesVersion = "1.21.1"
 
 var testSuite HelmChartTestSuite
 
