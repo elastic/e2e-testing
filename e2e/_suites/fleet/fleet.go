@@ -91,7 +91,7 @@ func (fts *FleetTestSuite) afterScenario() {
 				}
 			}
 		} else if log.IsLevelEnabled(log.DebugLevel) {
-			_ = fts.deployer.Logs(agentService)
+			_ = fts.deployer.Logs(fts.currentContext, agentService)
 		}
 
 		err := fts.unenrollHostname()
@@ -606,14 +606,14 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 
 func (fts *FleetTestSuite) theHostIsRestarted() error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	err := fts.deployer.Stop(agentService)
+	err := fts.deployer.Stop(fts.currentContext, agentService)
 	if err != nil {
 		log.WithField("err", err).Error("Could not stop the service")
 	}
 
 	utils.Sleep(time.Duration(utils.TimeoutFactor) * 10 * time.Second)
 
-	err = fts.deployer.Start(agentService)
+	err = fts.deployer.Start(fts.currentContext, agentService)
 	if err != nil {
 		log.WithField("err", err).Error("Could not start the service")
 	}
