@@ -7,7 +7,7 @@
     project-type: multibranch
     logrotate:
       daysToKeep: 30
-      numToKeep: 300
+      numToKeep: 100
     number-to-keep: 100
     days-to-keep: 30
     script-path: .ci/Jenkinsfile
