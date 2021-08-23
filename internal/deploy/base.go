@@ -21,7 +21,7 @@ type Deployment interface {
 	Destroy(ctx context.Context, profile ServiceRequest) error                                                // Teardown deployment
 	ExecIn(ctx context.Context, profile ServiceRequest, service ServiceRequest, cmd []string) (string, error) // Execute arbitrary commands in service
 	Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error)                            // inspects service
-	Logs(service ServiceRequest) error                                                                        // prints logs of deployed service
+	Logs(ctx context.Context, service ServiceRequest) error                                                   // prints logs of deployed service
 	PreBootstrap(ctx context.Context) error                                                                   // run any pre-bootstrap commands
 	Remove(profile ServiceRequest, services []ServiceRequest, env map[string]string) error                    // Removes services from deployment
 	Start(service ServiceRequest) error                                                                       // Starts a service or container depending on Deployment
@@ -36,7 +36,7 @@ type ServiceOperator interface {
 	Inspect() (ServiceOperatorManifest, error)               // returns manifest for package
 	Install(ctx context.Context) error
 	InstallCerts(ctx context.Context) error
-	Logs() error
+	Logs(ctx context.Context) error
 	Postinstall(ctx context.Context) error
 	Preinstall(ctx context.Context) error
 	Start(ctx context.Context) error // will start a service
@@ -134,6 +134,9 @@ func (sr ServiceRequest) WaitingFor(w ...WaitForServiceRequest) ServiceRequest {
 func New(provider string) Deployment {
 	if strings.EqualFold(provider, "docker") {
 		return newDockerDeploy()
+	}
+	if strings.EqualFold(provider, "elastic-package") {
+		return newElasticPackage()
 	}
 	if strings.EqualFold(provider, "kubernetes") {
 		return newK8sDeploy()

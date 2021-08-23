@@ -164,9 +164,15 @@ func (c *kubernetesDeploymentManifest) Inspect(ctx context.Context, service Serv
 }
 
 // Logs print logs of service
-func (c *kubernetesDeploymentManifest) Logs(service ServiceRequest) error {
-	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
-	_, err := kubectl.Run(c.Context, "logs", "deployment/"+service.Name)
+func (c *kubernetesDeploymentManifest) Logs(ctx context.Context, service ServiceRequest) error {
+	span, _ := apm.StartSpanOptions(ctx, "Retrieving kubernetes logs", "kubernetes.manifest.logs", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("service", service)
+	defer span.End()
+
+	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
+	_, err := kubectl.Run(ctx, "logs", "deployment/"+service.Name)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,

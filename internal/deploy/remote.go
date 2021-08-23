@@ -67,7 +67,7 @@ func (c *remoteDeploymentManifest) Inspect(ctx context.Context, service ServiceR
 }
 
 // Logs print logs of service
-func (c *remoteDeploymentManifest) Logs(service ServiceRequest) error {
+func (c *remoteDeploymentManifest) Logs(ctx context.Context, service ServiceRequest) error {
 	return nil
 }
 

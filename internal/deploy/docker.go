@@ -158,9 +158,15 @@ func (c *dockerDeploymentManifest) Inspect(ctx context.Context, service ServiceR
 }
 
 // Logs print logs of service
-func (c *dockerDeploymentManifest) Logs(service ServiceRequest) error {
-	manifest, _ := c.Inspect(context.Background(), service)
-	_, err := shell.Execute(c.Context, ".", "docker", "logs", manifest.Name)
+func (c *dockerDeploymentManifest) Logs(ctx context.Context, service ServiceRequest) error {
+	span, _ := apm.StartSpanOptions(ctx, "Retrieving logs from compose deployment", "docker-compose.manifest.logs", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("service", service)
+	defer span.End()
+
+	manifest, _ := c.Inspect(ctx, service)
+	_, err := shell.Execute(ctx, ".", "docker", "logs", manifest.Name)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,

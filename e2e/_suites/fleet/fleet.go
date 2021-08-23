@@ -78,7 +78,7 @@ func (fts *FleetTestSuite) afterScenario() {
 			agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
 
 			if log.IsLevelEnabled(log.DebugLevel) {
-				err := agentInstaller.Logs()
+				err := agentInstaller.Logs(fts.currentContext)
 				if err != nil {
 					log.WithField("error", err).Warn("Could not get agent logs in the container")
 				}
