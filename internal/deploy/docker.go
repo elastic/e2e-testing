@@ -180,6 +180,11 @@ func (c *dockerDeploymentManifest) Logs(ctx context.Context, service ServiceRequ
 
 // PreBootstrap sets up environment with docker compose
 func (c *dockerDeploymentManifest) PreBootstrap(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Pre-bootstrapping compose deployment", "docker-compose.bootstrap.pre", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	// Check for a docker connection string, this could be a remote docker
 	// instance accessible via ssh.
 	if c.ConnectionString != "" {
