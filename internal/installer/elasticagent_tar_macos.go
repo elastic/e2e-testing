@@ -60,7 +60,7 @@ func (i *elasticAgentTARDarwinPackage) Exec(ctx context.Context, args []string) 
 	span.Context.SetLabel("runtime", runtime.GOOS)
 	defer span.End()
 
-	output, err := i.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, i.service, args)
+	output, err := i.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, args)
 	return output, err
 }
 
