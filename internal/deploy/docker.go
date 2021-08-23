@@ -244,14 +244,26 @@ func (c *dockerDeploymentManifest) Remove(ctx context.Context, profile ServiceRe
 }
 
 // Start a container
-func (c *dockerDeploymentManifest) Start(service ServiceRequest) error {
+func (c *dockerDeploymentManifest) Start(ctx context.Context, service ServiceRequest) error {
+	span, _ := apm.StartSpanOptions(ctx, "Starting service from compose deployment", "docker-compose.service.start", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("service", service)
+	defer span.End()
+
 	manifest, _ := c.Inspect(context.Background(), service)
-	_, err := shell.Execute(c.Context, ".", "docker", "start", manifest.Name)
+	_, err := shell.Execute(ctx, ".", "docker", "start", manifest.Name)
 	return err
 }
 
 // Stop a container
-func (c *dockerDeploymentManifest) Stop(service ServiceRequest) error {
+func (c *dockerDeploymentManifest) Stop(ctx context.Context, service ServiceRequest) error {
+	span, _ := apm.StartSpanOptions(ctx, "Stopping service from compose deployment", "docker-compose.service.stop", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("service", service)
+	defer span.End()
+
 	manifest, _ := c.Inspect(context.Background(), service)
 	_, err := shell.Execute(c.Context, ".", "docker", "stop", manifest.Name)
 	return err

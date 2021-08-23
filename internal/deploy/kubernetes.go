@@ -210,12 +210,12 @@ func (c *kubernetesDeploymentManifest) Remove(ctx context.Context, profile Servi
 }
 
 // Start a container
-func (c *kubernetesDeploymentManifest) Start(service ServiceRequest) error {
+func (c *kubernetesDeploymentManifest) Start(ctx context.Context, service ServiceRequest) error {
 	return nil
 }
 
 // Stop a container
-func (c *kubernetesDeploymentManifest) Stop(service ServiceRequest) error {
+func (c *kubernetesDeploymentManifest) Stop(ctx context.Context, service ServiceRequest) error {
 	return nil
 }
 

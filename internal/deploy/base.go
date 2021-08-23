@@ -24,8 +24,8 @@ type Deployment interface {
 	Logs(ctx context.Context, service ServiceRequest) error                                                     // prints logs of deployed service
 	PreBootstrap(ctx context.Context) error                                                                     // run any pre-bootstrap commands
 	Remove(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error // Removes services from deployment
-	Start(service ServiceRequest) error                                                                         // Starts a service or container depending on Deployment
-	Stop(service ServiceRequest) error                                                                          // Stop a service or container depending on deployment
+	Start(ctx context.Context, service ServiceRequest) error                                                    // Starts a service or container depending on Deployment
+	Stop(ctx context.Context, service ServiceRequest) error                                                     // Stop a service or container depending on deployment
 }
 
 // ServiceOperator represents the operations that can be performed by a service

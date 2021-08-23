@@ -82,11 +82,11 @@ func (c *remoteDeploymentManifest) Remove(ctx context.Context, profile ServiceRe
 }
 
 // Start a container
-func (c *remoteDeploymentManifest) Start(service ServiceRequest) error {
+func (c *remoteDeploymentManifest) Start(ctx context.Context, service ServiceRequest) error {
 	return nil
 }
 
 // Stop a container
-func (c *remoteDeploymentManifest) Stop(service ServiceRequest) error {
+func (c *remoteDeploymentManifest) Stop(ctx context.Context, service ServiceRequest) error {
 	return nil
 }
