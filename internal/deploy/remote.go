@@ -77,7 +77,7 @@ func (c *remoteDeploymentManifest) PreBootstrap(ctx context.Context) error {
 }
 
 // Remove remove services from deployment
-func (c *remoteDeploymentManifest) Remove(profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
+func (c *remoteDeploymentManifest) Remove(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
 	return nil
 }
 

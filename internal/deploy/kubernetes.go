@@ -190,7 +190,14 @@ func (c *kubernetesDeploymentManifest) PreBootstrap(ctx context.Context) error {
 }
 
 // Remove remove services from deployment
-func (c *kubernetesDeploymentManifest) Remove(profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
+func (c *kubernetesDeploymentManifest) Remove(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Removing services from kubernetes deployment", "kubernetes.services.remove", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("profile", profile)
+	span.Context.SetLabel("services", services)
+	defer span.End()
+
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, getNamespaceFromProfile(profile))
 
 	for _, service := range services {

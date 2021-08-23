@@ -224,7 +224,14 @@ func (c *dockerDeploymentManifest) PreBootstrap(ctx context.Context) error {
 }
 
 // Remove remove services from deployment
-func (c *dockerDeploymentManifest) Remove(profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
+func (c *dockerDeploymentManifest) Remove(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Removing services from compose deployment", "docker-compose.services.remove", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("profile", profile)
+	span.Context.SetLabel("services", services)
+	defer span.End()
+
 	// TODO: profile is not used because we are using the docker client, not docker-compose, to reach the service
 	for _, service := range services {
 		manifest, _ := c.Inspect(context.Background(), service)
