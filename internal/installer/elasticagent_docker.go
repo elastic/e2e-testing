@@ -93,7 +93,8 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 	})
 	defer span.End()
 
-	artifact := "elastic-agent"
+	// handle ubi8 images
+	artifact := "elastic-agent" + common.ProfileEnv["elasticAgentDockerImageSuffix"]
 	os := "linux"
 	arch := utils.GetArchitecture()
 	extension := "tar.gz"
