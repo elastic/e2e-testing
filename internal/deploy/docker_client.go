@@ -374,8 +374,15 @@ func LoadImage(imagePath string) error {
 	dockerClient := getDockerClient()
 	defer dockerClient.Close()
 	file, err := os.Open(imagePath)
+	if err != nil {
+		return err
+	}
 
 	input, err := gzip.NewReader(file)
+	if err != nil {
+		return err
+	}
+
 	imageLoadResponse, err := dockerClient.ImageLoad(context.Background(), input, false)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -385,9 +392,12 @@ func LoadImage(imagePath string) error {
 		return err
 	}
 
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(imageLoadResponse.Body)
+
 	log.WithFields(log.Fields{
 		"image":    fileNamePath,
-		"response": imageLoadResponse,
+		"response": buf.String(),
 	}).Debug("Docker image loaded successfully")
 	return nil
 }
