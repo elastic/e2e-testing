@@ -218,6 +218,11 @@ func GetArchitecture() string {
 // getGCPBucketCoordinates it calculates the bucket path in GCP
 func getGCPBucketCoordinates(fileName string, artifact string, version string) (string, string, string) {
 	bucket := "beats-ci-artifacts"
+
+	if strings.HasSuffix(artifact, "-ubi8") {
+		artifact = strings.ReplaceAll(artifact, "-ubi8", "")
+	}
+
 	prefix := fmt.Sprintf("snapshots/%s", artifact)
 	object := fileName
 

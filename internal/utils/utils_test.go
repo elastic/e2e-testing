@@ -612,6 +612,18 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 		assert.Equal(t, prefix, "commits/0123456789")
 		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-linux-x86_64.tar.gz")
 	})
+
+	t.Run("Fetching commits bucket for ubi8 Docker image", func(t *testing.T) {
+		defer os.Unsetenv("GITHUB_CHECK_SHA1")
+		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+
+		fileName := "elastic-agent-ubi8-" + testVersion + "-x86_64.tar.gz"
+
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, "elastic-agent-ubi8", "1.2.3-SNAPSHOT")
+		assert.Equal(t, bucket, "beats-ci-artifacts")
+		assert.Equal(t, prefix, "commits/0123456789")
+		assert.Equal(t, object, "elastic-agent/elastic-agent-ubi8-"+testVersion+"-x86_64.rpm")
+	})
 }
 
 func TestGetGCPBucketCoordinates_Snapshots(t *testing.T) {
