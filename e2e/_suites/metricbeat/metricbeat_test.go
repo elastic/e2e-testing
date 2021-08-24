@@ -388,6 +388,15 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		if err != nil {
 			return err
 		}
+
+		// tagging including git commit and snapshot
+		err = deploy.TagImage(
+			"docker.elastic.co/beats/metricbeat:"+elasticversion.GetSnapshotVersion(common.BeatVersionBase),
+			"docker.elastic.co/observability-ci/metricbeat:"+elasticversion.GetFullVersion(mts.Version),
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	// this is needed because, in general, the target service (apache, mysql, redis) does not have a healthcheck
