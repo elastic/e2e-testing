@@ -392,8 +392,8 @@ func LoadImage(imagePath string) error {
 	return nil
 }
 
-// TagImage tags an existing src image into a target one
-func TagImage(src string, target string) error {
+// tagImage tags an existing src image into a target one
+func tagImage(src string, target string) error {
 	dockerClient := getDockerClient()
 	defer dockerClient.Close()
 	maxTimeout := 5 * time.Second * time.Duration(utils.TimeoutFactor)
@@ -425,6 +425,17 @@ func TagImage(src string, target string) error {
 	}
 
 	return backoff.Retry(tagImageFn, exp)
+}
+
+// TagImage tags an existing src image into multiple targets
+func TagImage(src string, targets ...string) error {
+	for _, target := range targets {
+		err := tagImage(src, target)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // RemoveDevNetwork removes the developer network
