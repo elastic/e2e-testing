@@ -6,7 +6,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -129,7 +128,10 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 
 	common.ProfileEnv["elasticAgentDockerNamespace"] = utils.GetDockerNamespaceEnvVar("beats")
 
-	containerName := fmt.Sprintf("%s_%s_%d", common.FleetProfileName, common.ElasticAgentServiceName, 1)
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+
+	containerName := manifest.Name
 
 	common.ProfileEnv["elasticAgentTag"] = dockerImageTag
 
