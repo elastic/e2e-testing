@@ -572,7 +572,6 @@ func TestGetDockerNamespaceEnvVar(t *testing.T) {
 
 func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 	artifact := "elastic-agent"
-	version := testVersion
 
 	t.Run("Fetching commits bucket for RPM package", func(t *testing.T) {
 		defer os.Unsetenv("GITHUB_CHECK_SHA1")
@@ -580,7 +579,7 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 
 		fileName := "elastic-agent-" + testVersion + "-x86_64.rpm"
 
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact)
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "commits/0123456789")
 		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-x86_64.rpm")
@@ -592,7 +591,7 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 
 		fileName := "elastic-agent-" + testVersion + "-amd64.deb"
 
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact)
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "commits/0123456789")
 		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-amd64.deb")
@@ -604,7 +603,7 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 
 		fileName := "elastic-agent-" + testVersion + "-linux-x86_64.tar.gz"
 
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact)
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "commits/0123456789")
 		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-linux-x86_64.tar.gz")
@@ -616,7 +615,7 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 
 		fileName := "elastic-agent-ubi8-" + testVersion + "-x86_64.tar.gz"
 
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, "elastic-agent-ubi8", "1.2.3-SNAPSHOT")
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, "elastic-agent-ubi8")
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "commits/0123456789")
 		assert.Equal(t, object, "elastic-agent/elastic-agent-ubi8-"+testVersion+"-x86_64.tar.gz")
@@ -625,12 +624,11 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 
 func TestGetGCPBucketCoordinates_Snapshots(t *testing.T) {
 	artifact := "elastic-agent"
-	version := testVersion
 
 	t.Run("Fetching snapshots bucket for RPM package", func(t *testing.T) {
 		fileName := "elastic-agent-" + testVersion + "-x86_64.rpm"
 
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact)
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "snapshots/elastic-agent")
 		assert.Equal(t, object, "elastic-agent-"+testVersion+"-x86_64.rpm")
@@ -639,7 +637,7 @@ func TestGetGCPBucketCoordinates_Snapshots(t *testing.T) {
 	t.Run("Fetching snapshots bucket for DEB package", func(t *testing.T) {
 		fileName := "elastic-agent-" + testVersion + "-amd64.deb"
 
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact)
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "snapshots/elastic-agent")
 		assert.Equal(t, object, "elastic-agent-"+testVersion+"-amd64.deb")
@@ -648,7 +646,7 @@ func TestGetGCPBucketCoordinates_Snapshots(t *testing.T) {
 	t.Run("Fetching snapshots bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
 		fileName := "elastic-agent-" + testVersion + "-linux-x86_64.tar.gz"
 
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact, version)
+		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact)
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "snapshots/elastic-agent")
 		assert.Equal(t, object, "elastic-agent-"+testVersion+"-linux-x86_64.tar.gz")

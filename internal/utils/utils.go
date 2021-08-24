@@ -182,7 +182,7 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 
 		log.Debugf("Using CI snapshots for %s", artifact)
 
-		bucket, prefix, object := getGCPBucketCoordinates(artifactName, artifact, version)
+		bucket, prefix, object := getGCPBucketCoordinates(artifactName, artifact)
 
 		maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
@@ -216,7 +216,7 @@ func GetArchitecture() string {
 }
 
 // getGCPBucketCoordinates it calculates the bucket path in GCP
-func getGCPBucketCoordinates(fileName string, artifact string, version string) (string, string, string) {
+func getGCPBucketCoordinates(fileName string, artifact string) (string, string, string) {
 	bucket := "beats-ci-artifacts"
 
 	if strings.HasSuffix(artifact, "-ubi8") {
@@ -230,8 +230,8 @@ func getGCPBucketCoordinates(fileName string, artifact string, version string) (
 	commitSHA := shell.GetEnv("GITHUB_CHECK_SHA1", "")
 	if commitSHA != "" {
 		log.WithFields(log.Fields{
-			"commit":  commitSHA,
-			"version": version,
+			"commit": commitSHA,
+			"file":   fileName,
 		}).Debug("Using CI snapshots for a commit")
 		prefix = fmt.Sprintf("commits/%s", commitSHA)
 		object = artifact + "/" + fileName
