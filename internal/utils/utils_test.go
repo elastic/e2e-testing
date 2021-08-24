@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -372,8 +371,6 @@ func TestDownloadFile(t *testing.T) {
 	f, err := DownloadFile("https://www.elastic.co/robots.txt")
 	assert.Nil(t, err)
 	defer os.Remove(filepath.Dir(f))
-
-	assert.True(t, strings.HasSuffix(f, "robots.txt"))
 }
 
 func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
