@@ -622,7 +622,7 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 		bucket, prefix, object := getGCPBucketCoordinates(fileName, "elastic-agent-ubi8", "1.2.3-SNAPSHOT")
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "commits/0123456789")
-		assert.Equal(t, object, "elastic-agent/elastic-agent-ubi8-"+testVersion+"-x86_64.rpm")
+		assert.Equal(t, object, "elastic-agent/elastic-agent-ubi8-"+testVersion+"-x86_64.tar.gz")
 	})
 }
 
