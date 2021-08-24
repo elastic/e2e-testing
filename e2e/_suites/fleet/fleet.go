@@ -70,8 +70,9 @@ func (fts *FleetTestSuite) afterScenario() {
 	fts.currentContext = apm.ContextWithSpan(context.Background(), span)
 	defer span.End()
 
+	serviceName := common.ElasticAgentServiceName
+
 	if fts.InstallerType != "" {
-		serviceName := common.ElasticAgentServiceName
 		agentService := deploy.NewServiceRequest(serviceName)
 
 		if !fts.StandAlone {
@@ -102,18 +103,18 @@ func (fts *FleetTestSuite) afterScenario() {
 				"hostname": manifest.Hostname,
 			}).Warn("The agentIDs for the hostname could not be unenrolled")
 		}
+	}
 
-		if !common.DeveloperMode {
-			_ = fts.deployer.Remove(
-				fts.currentContext,
-				deploy.NewServiceRequest(common.FleetProfileName),
-				[]deploy.ServiceRequest{
-					deploy.NewServiceRequest(serviceName),
-				},
-				common.ProfileEnv)
-		} else {
-			log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
-		}
+	if !common.DeveloperMode {
+		_ = fts.deployer.Remove(
+			fts.currentContext,
+			deploy.NewServiceRequest(common.FleetProfileName),
+			[]deploy.ServiceRequest{
+				deploy.NewServiceRequest(serviceName),
+			},
+			common.ProfileEnv)
+	} else {
+		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
 	}
 
 	err := fts.kibanaClient.DeleteEnrollmentAPIKey(fts.currentContext, fts.CurrentTokenID)
