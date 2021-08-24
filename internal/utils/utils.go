@@ -529,7 +529,7 @@ func DownloadFile(url string) (string, error) {
 	tempParentDir := filepath.Join(os.TempDir(), uuid.NewString())
 	internalio.MkdirAll(tempParentDir)
 
-	tempFile, err := os.Create(filepath.Join(tempParentDir, path.Base(url)))
+	tempFile, err := os.Create(filepath.Join(tempParentDir, uuid.NewString()))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
