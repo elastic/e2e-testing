@@ -230,6 +230,11 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
+		if !shell.GetEnvBool("SKIP_PULL") {
+			// we will always use master to select the integrations
+			config.SyncIntegrations(true, "elastic:master")
+		}
+
 		env := map[string]string{
 			"stackPlatform": "linux/" + utils.GetArchitecture(),
 			"stackVersion":  common.StackVersion,
