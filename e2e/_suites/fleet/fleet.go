@@ -105,17 +105,7 @@ func (fts *FleetTestSuite) afterScenario() {
 		}
 	}
 
-	if !common.DeveloperMode {
-		_ = fts.deployer.Remove(
-			fts.currentContext,
-			deploy.NewServiceRequest(common.FleetProfileName),
-			[]deploy.ServiceRequest{
-				deploy.NewServiceRequest(serviceName),
-			},
-			common.ProfileEnv)
-	} else {
-		log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
-	}
+	_ = fts.deployer.Remove(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{deploy.NewServiceRequest(serviceName)}, common.ProfileEnv)
 
 	err := fts.kibanaClient.DeleteEnrollmentAPIKey(fts.currentContext, fts.CurrentTokenID)
 	if err != nil {
