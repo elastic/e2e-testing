@@ -384,7 +384,11 @@ def generateFunctionalTestStep(Map args = [:]){
                   }
                 } else {
                   withGoEnv(version: "${GO_VERSION}") {
-                    sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${platform}:${suite}:${tags}"
+                    // This step will help to send the APM traces to the
+                    // APM service defined by the Otel Jenkins plugin.
+                    withOtelEnv() {
+                      sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${platform}:${suite}:${tags}"
+                    }
                   }
                 }
               }

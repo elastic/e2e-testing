@@ -13,10 +13,21 @@ STACK_VERSION?=
 ELASTIC_APM_ENVIRONMENT?=local
 
 ifeq ($(ELASTIC_APM_ACTIVE),true)
+# If running in the CI then let's use the environment
+# variables from the withOtelEnv step.
+ifdef CI
+export APM_SECRET_TOKEN?=${ELASTIC_APM_SECRET_TOKEN}
+export APM_SERVER_URL?=${ELASTIC_APM_SERVER_URL}
+export ELASTIC_APM_SERVICE_NAME=${ELASTIC_APM_SERVICE_NAME}
+else
+# Otherwise use the jenkins-stats cluster
 JENKINS_STATS_SECRET?=secret/observability-team/ci/jenkins-stats
 export APM_SECRET_TOKEN?=$(shell vault read -field apmServerToken "$(JENKINS_STATS_SECRET)")
 export APM_SERVER_URL?=$(shell vault read -field apmServerUrl "$(JENKINS_STATS_SECRET)")
 export ELASTIC_APM_GLOBAL_LABELS?=
+export ELASTIC_APM_SERVICE_NAME="E2E Tests"
+endif
+
 endif
 
 ifneq ($(FEATURES),)
@@ -59,7 +70,7 @@ functional-test: install-godog
 	TIMEOUT_FACTOR=${TIMEOUT_FACTOR} \
 	STACK_VERSION=${STACK_VERSION} \
 	DEVELOPER_MODE=${DEVELOPER_MODE} \
-	ELASTIC_APM_SERVICE_NAME="E2E Tests" \
+	ELASTIC_APM_SERVICE_NAME=${ELASTIC_APM_SERVICE_NAME} \
 	ELASTIC_APM_CENTRAL_CONFIG="false" \
 	ELASTIC_APM_GLOBAL_LABELS=${ELASTIC_APM_GLOBAL_LABELS} \
 	ELASTIC_APM_SERVICE_VERSION="${STACK_VERSION}" \
