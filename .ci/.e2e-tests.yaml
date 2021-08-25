@@ -13,7 +13,9 @@ SUITES:
   - suite: "fleet"
     platforms:
       - labels: "arm64"
+        provider: "elastic-package"
       - labels: "ubuntu-18.04"
+        provider: "elastic-package"
     scenarios:
       - name: "Fleet"
         pullRequestFilter: " && ~debian"
@@ -22,6 +24,7 @@ SUITES:
           - labels: "ubuntu-18.04"
             provider: "elastic-package"
           - labels: "windows-2019"
+            provider: "elastic-package"
       - name: "Integrations"
         pullRequestFilter: " && ~debian"
         tags: "integrations"
@@ -34,6 +37,7 @@ SUITES:
       - name: "System Integration"
         platforms:
           - labels: "ubuntu-18.04"
+            provider: "elastic-package"
         pullRequestFilter: " && ~debian"
         tags: "system_integration"
       - name: "Stand-alone"
