@@ -128,21 +128,15 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 
 	common.ProfileEnv["elasticAgentDockerNamespace"] = utils.GetDockerNamespaceEnvVar("beats")
 
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
-
-	containerName := manifest.Name
-
 	common.ProfileEnv["elasticAgentTag"] = dockerImageTag
 
 	for k, v := range env {
 		common.ProfileEnv[k] = v
 	}
 
-	services := []deploy.ServiceRequest{
-		deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(flavour),
-	}
-	err = fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, common.ProfileEnv)
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(flavour)
+
+	err = fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{agentService}, common.ProfileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err
@@ -150,7 +144,9 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 
 	fts.Image = image
 
-	err = fts.installTestTools(containerName)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+
+	err = fts.installTestTools(manifest.Name)
 	if err != nil {
 		return err
 	}
