@@ -208,7 +208,7 @@ func (ep *EPServiceManager) Logs(ctx context.Context, service ServiceRequest) er
 	return nil
 }
 
-// PreBootstrap sets up environment with docker compose
+// PreBootstrap sets up environment with the elastic-package tool
 func (ep *EPServiceManager) PreBootstrap(ctx context.Context) error {
 	span, _ := apm.StartSpanOptions(ctx, "Pre-bootstrapping elastic-package deployment", "elastic-package.bootstrap.pre", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
