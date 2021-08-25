@@ -264,7 +264,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
         platformsValue.each { platform ->
           def platformLabels = platform.labels
           log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
-          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: "${platform}",  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}")
+          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}")
         }
       } else {
         log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed in any platform because there are no modified files")
