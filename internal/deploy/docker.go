@@ -234,7 +234,12 @@ func (c *dockerDeploymentManifest) Remove(ctx context.Context, profile ServiceRe
 
 	// TODO: profile is not used because we are using the docker client, not docker-compose, to reach the service
 	for _, service := range services {
-		manifest, _ := c.Inspect(context.Background(), service)
+		manifest, inspectErr := c.Inspect(context.Background(), service)
+		if inspectErr != nil {
+			log.Warnf("Service %s could not be deleted: %v", service.Name, inspectErr)
+			continue
+		}
+
 		_, err := shell.Execute(c.Context, ".", "docker", "rm", "-fv", manifest.Name)
 		if err != nil {
 			return err

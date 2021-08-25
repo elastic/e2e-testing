@@ -232,7 +232,12 @@ func (ep *EPServiceManager) Remove(ctx context.Context, profile ServiceRequest, 
 	}
 
 	for _, service := range services {
-		manifest, _ := ep.Inspect(context.Background(), service)
+		manifest, inspectErr := ep.Inspect(context.Background(), service)
+		if inspectErr != nil {
+			log.Warnf("Service %s could not be deleted: %v", service.Name, inspectErr)
+			continue
+		}
+
 		_, err := shell.Execute(ep.Context, ".", "docker", "rm", "-fv", manifest.Name)
 		if err != nil {
 			return err
