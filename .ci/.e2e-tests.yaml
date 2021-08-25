@@ -13,7 +13,6 @@ SUITES:
   - suite: "fleet"
     platforms:
       - labels: "arm64"
-        provider: "elastic-package"
       - labels: "ubuntu-18.04"
         provider: "elastic-package"
     scenarios:
