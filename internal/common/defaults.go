@@ -67,6 +67,7 @@ func init() {
 	}
 
 	Provider = shell.GetEnv("PROVIDER", Provider)
+	log.Infof("Provider is ", Provider)
 
 	ElasticAPMActive = shell.GetEnvBool("ELASTIC_APM_ACTIVE")
 	if ElasticAPMActive {

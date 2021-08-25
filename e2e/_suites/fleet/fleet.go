@@ -347,7 +347,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
 
 	// FIXME: We need to cleanup the steps to support different operating systems
 	// for now we will force the zip installer type when the agent is running on windows
-	if runtime.GOOS == "windows" && shell.GetEnv("PROVIDER", "docker") == "remote" {
+	if runtime.GOOS == "windows" && common.Provider == "remote" {
 		installerType = "zip"
 	}
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType)
@@ -361,7 +361,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetOnTopOfBeat(image string, bea
 
 	// FIXME: We need to cleanup the steps to support different operating systems
 	// for now we will force the zip installer type when the agent is running on windows
-	if runtime.GOOS == "windows" && shell.GetEnv("PROVIDER", "docker") == "remote" {
+	if runtime.GOOS == "windows" && common.Provider == "remote" {
 		installerType = "zip"
 	}
 
@@ -376,7 +376,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 
 	// FIXME: We need to cleanup the steps to support different operating systems
 	// for now we will force the zip installer type when the agent is running on windows
-	if runtime.GOOS == "windows" && shell.GetEnv("PROVIDER", "docker") == "remote" {
+	if runtime.GOOS == "windows" && common.Provider == "remote" {
 		installerType = "zip"
 	}
 
