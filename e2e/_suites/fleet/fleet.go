@@ -76,6 +76,8 @@ func (fts *FleetTestSuite) afterScenario() {
 		agentService := deploy.NewServiceRequest(serviceName)
 
 		if !fts.StandAlone {
+			// for the centos/debian flavour we need to retrieve the internal log files for the elastic-agent, as they are not
+			// exposed as container logs. For that reason we need to go through the installer abstraction
 			agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
 
 			if log.IsLevelEnabled(log.DebugLevel) {
@@ -92,6 +94,7 @@ func (fts *FleetTestSuite) afterScenario() {
 				}
 			}
 		} else if log.IsLevelEnabled(log.DebugLevel) {
+			// for the Docker image, we simply retrieve container logs
 			_ = fts.deployer.Logs(fts.currentContext, agentService)
 		}
 
