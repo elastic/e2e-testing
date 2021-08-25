@@ -297,6 +297,12 @@ def generateFunctionalTestStep(Map args = [:]){
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
 
   def platformLabels = platform.labels
+  def platformProvider = platform.provider
+
+  if (!platformProvider || !platformProvider?.trim()) {
+    // default provider is Docker
+    platformProvider = "docker"
+  }
 
   // We will decide whether to include the nightly tests in the execution at CI time, only.
   // On the other hand, the developers can use the TAGS environment variable locally.
@@ -337,6 +343,7 @@ def generateFunctionalTestStep(Map args = [:]){
   // Setup environment for platform
   def envContext = []
   envContext.add("GOARCH=${goArch}")
+  envContext.add("PROVIDER=${platformProvider}")
   envContext.add("ELASTIC_APM_GLOBAL_LABELS=build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
 
   return {
@@ -360,7 +367,7 @@ def generateFunctionalTestStep(Map args = [:]){
               envContext.add("KIBANA_URL=https://${linuxIp}:5601")
               envContext.add("ELASTICSEARCH_URL=https://${linuxIp}:9200")
               envContext.add("FLEET_URL=https://${linuxIp}:8220")
-              envContext.add("PROVIDER=remote")
+              envContext.add("PROVIDER=remote") // a remote provider is needed for Windows
               envContext.add("OP_LOG_LEVEL=TRACE")
               envContext.add("PATH=${path}")
             }
