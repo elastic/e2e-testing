@@ -18,7 +18,8 @@ ifeq ($(ELASTIC_APM_ACTIVE),true)
 ifdef CI
 export APM_SECRET_TOKEN?=${ELASTIC_APM_SECRET_TOKEN}
 export APM_SERVER_URL?=${ELASTIC_APM_SERVER_URL}
-export APM_SERVICE_NAME=${ELASTIC_APM_SERVICE_NAME}
+#export APM_SERVICE_NAME=${ELASTIC_APM_SERVICE_NAME}
+export APM_SERVICE_NAME="E2E Tests"
 else
 # Otherwise use the jenkins-stats cluster
 JENKINS_STATS_SECRET?=secret/observability-team/ci/jenkins-stats
