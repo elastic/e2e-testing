@@ -456,7 +456,7 @@ func extractProfileServiceConfig(op *OpConfig, box *packr.Box) error {
 // configurations/ directory is optional and only needed if docker-compose.yml needs to reference
 // any filelike object within its parent directory
 func packFiles(op *OpConfig) *packr.Box {
-	box := packr.New("Compose Files", "./compose")
+	box := packr.New("Compose Files", "compose")
 	return box
 }
 
