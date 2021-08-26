@@ -93,12 +93,13 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 	})
 	defer span.End()
 
-	artifact := "elastic-agent"
+	// handle ubi8 images
+	artifact := "elastic-agent" + common.ProfileEnv["elasticAgentDockerImageSuffix"]
 	os := "linux"
 	arch := utils.GetArchitecture()
 	extension := "tar.gz"
 
-	_, binaryPath, err := utils.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+	_, binaryPath, err := utils.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, true, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -120,6 +121,8 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 	return deploy.TagImage(
 		fmt.Sprintf("docker.elastic.co/beats/%s:%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersionBase)),
 		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), arch),
+		// tagging including git commit and snapshot
+		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, elasticversion.GetFullVersion(common.BeatVersion), arch),
 	)
 }
 

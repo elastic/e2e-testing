@@ -85,6 +85,12 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 
 	dockerImageTag := common.BeatVersion
 
+	common.ProfileEnv["elasticAgentDockerNamespace"] = utils.GetDockerNamespaceEnvVar("beats")
+	common.ProfileEnv["elasticAgentDockerImageSuffix"] = ""
+	if image != "default" {
+		common.ProfileEnv["elasticAgentDockerImageSuffix"] = "-" + image
+	}
+
 	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 
@@ -122,12 +128,6 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 	common.ProfileEnv["fleetEnrollmentToken"] = cfg.EnrollmentToken
 
 	common.ProfileEnv["fleetServerPort"] = "8221" // fixed port to avoid collitions with the stack's fleet-server
-	common.ProfileEnv["elasticAgentDockerImageSuffix"] = ""
-	if image != "default" {
-		common.ProfileEnv["elasticAgentDockerImageSuffix"] = "-" + image
-	}
-
-	common.ProfileEnv["elasticAgentDockerNamespace"] = utils.GetDockerNamespaceEnvVar("beats")
 
 	containerName := fmt.Sprintf("%s_%s_%d", common.FleetProfileName, common.ElasticAgentServiceName, 1)
 
