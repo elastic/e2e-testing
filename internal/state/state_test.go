@@ -22,10 +22,10 @@ func TestRecover(t *testing.T) {
 
 	ID := "myprofile-profile"
 	composeFiles := []string{
-		filepath.Join(workspace, "compose/services/a/1.yml"),
-		filepath.Join(workspace, "compose/services/b/2.yml"),
-		filepath.Join(workspace, "compose/services/c/3.yml"),
-		filepath.Join(workspace, "compose/services/d/4.yml"),
+		filepath.Join(workspace, "compose", "services", "a", "1.yml"),
+		filepath.Join(workspace, "compose", "services", "b", "2.yml"),
+		filepath.Join(workspace, "compose", "services", "c", "3.yml"),
+		filepath.Join(workspace, "compose", "services", "d", "4.yml"),
 	}
 	initialEnv := map[string]string{
 		"foo": "bar",
@@ -60,10 +60,10 @@ func TestUpdateCreatesStateFile(t *testing.T) {
 
 	ID := "myprofile-profile"
 	composeFiles := []string{
-		filepath.Join(workspace, "compose/services/a/1.yml"),
-		filepath.Join(workspace, "compose/services/b/2.yml"),
-		filepath.Join(workspace, "compose/services/c/3.yml"),
-		filepath.Join(workspace, "compose/services/d/4.yml"),
+		filepath.Join(workspace, "compose", "services", "a", "1.yml"),
+		filepath.Join(workspace, "compose", "services", "b", "2.yml"),
+		filepath.Join(workspace, "compose", "services", "c", "3.yml"),
+		filepath.Join(workspace, "compose", "services", "d", "4.yml"),
 	}
 	runFile := filepath.Join(workspace, ID+".run")
 	_ = io.MkdirAll(runFile)
