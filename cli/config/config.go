@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -146,7 +145,7 @@ func PutServiceVariantEnvironment(env map[string]string, service string, service
 		Env []EnvVar `yaml:"variants"`
 	}
 
-	versionsPath := path.Join(
+	versionsPath := filepath.Join(
 		OpDir(), "compose", "services", service, "_meta", "supported-versions.yml")
 
 	bytes, err := io.ReadFile(versionsPath)
@@ -188,14 +187,14 @@ func SyncIntegrations(deleteRepository bool, remote string) error {
 
 	// BeatsRepo default object representing Beats project
 	var BeatsRepo = git.ProjectBuilder.
-		WithBaseWorkspace(path.Join(workspace, "git")).
+		WithBaseWorkspace(filepath.Join(workspace, "git")).
 		WithDomain("github.com").
 		WithName("beats").
 		WithRemote(remote).
 		Build()
 
 	if deleteRepository {
-		repoDir := path.Join(workspace, "git", BeatsRepo.Name)
+		repoDir := filepath.Join(workspace, "git", BeatsRepo.Name)
 
 		log.WithFields(log.Fields{
 			"path": repoDir,
@@ -208,11 +207,11 @@ func SyncIntegrations(deleteRepository bool, remote string) error {
 
 	git.Clone(BeatsRepo)
 
-	pattern := path.Join(
+	pattern := filepath.Join(
 		BeatsRepo.GetWorkspace(), "metricbeat", "module", "*", "_meta", "supported-versions.yml")
 	copyIntegrationsComposeFiles(BeatsRepo, pattern, workspace)
 
-	xPackPattern := path.Join(
+	xPackPattern := filepath.Join(
 		BeatsRepo.GetWorkspace(), "x-pack", "metricbeat", "module", "*", "_meta", "supported-versions.yml")
 	copyIntegrationsComposeFiles(BeatsRepo, xPackPattern, workspace)
 
@@ -228,8 +227,8 @@ func checkConfigDirectory(dir string) {
 }
 
 func checkConfigDirs(workspace string) {
-	servicesPath := path.Join(workspace, "compose", "services")
-	profilesPath := path.Join(workspace, "compose", "profiles")
+	servicesPath := filepath.Join(workspace, "compose", "services")
+	profilesPath := filepath.Join(workspace, "compose", "profiles")
 
 	checkConfigDirectory(servicesPath)
 	checkConfigDirectory(profilesPath)
@@ -464,7 +463,7 @@ func packFiles(op *OpConfig) *packr.Box {
 // reads the docker-compose in the workspace, merging them with what it's
 // already boxed in the binary
 func readFilesFromFileSystem(serviceType string) {
-	basePath := path.Join(OpDir(), "compose", serviceType)
+	basePath := filepath.Join(OpDir(), "compose", serviceType)
 	files, err := io.ReadDir(basePath)
 	if err != nil {
 		log.WithFields(log.Fields{
