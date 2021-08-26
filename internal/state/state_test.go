@@ -13,6 +13,34 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestDestroy(t *testing.T) {
+	defer filet.CleanUp(t)
+
+	tmpDir := filet.TmpDir(t, "")
+
+	workspace := filepath.Join(tmpDir, ".op")
+
+	ID := "myprofile-profile"
+	composeFiles := []string{
+		filepath.Join(workspace, "compose", "services", "a", "1.yml"),
+		filepath.Join(workspace, "compose", "services", "b", "2.yml"),
+		filepath.Join(workspace, "compose", "services", "c", "3.yml"),
+		filepath.Join(workspace, "compose", "services", "d", "4.yml"),
+	}
+	initialEnv := map[string]string{
+		"foo": "bar",
+	}
+
+	_ = io.MkdirAll(workspace)
+
+	Update(ID, workspace, composeFiles, initialEnv)
+	Destroy(ID, workspace)
+
+	runFile := filepath.Join(workspace, ID+".run")
+	e, _ := io.Exists(runFile)
+	assert.False(t, e)
+}
+
 func TestRecover(t *testing.T) {
 	defer filet.CleanUp(t)
 
