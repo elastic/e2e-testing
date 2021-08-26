@@ -384,6 +384,8 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		err = deploy.TagImage(
 			"docker.elastic.co/beats/metricbeat:"+elasticversion.GetSnapshotVersion(common.BeatVersionBase),
 			"docker.elastic.co/observability-ci/metricbeat:"+mts.Version,
+			// tagging including git commit and snapshot
+			"docker.elastic.co/observability-ci/metricbeat:"+elasticversion.GetFullVersion(mts.Version),
 		)
 		if err != nil {
 			return err

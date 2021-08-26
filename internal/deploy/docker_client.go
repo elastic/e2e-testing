@@ -374,8 +374,15 @@ func LoadImage(imagePath string) error {
 	dockerClient := getDockerClient()
 	defer dockerClient.Close()
 	file, err := os.Open(imagePath)
+	if err != nil {
+		return err
+	}
 
 	input, err := gzip.NewReader(file)
+	if err != nil {
+		return err
+	}
+
 	imageLoadResponse, err := dockerClient.ImageLoad(context.Background(), input, false)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -385,15 +392,18 @@ func LoadImage(imagePath string) error {
 		return err
 	}
 
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(imageLoadResponse.Body)
+
 	log.WithFields(log.Fields{
 		"image":    fileNamePath,
-		"response": imageLoadResponse,
+		"response": buf.String(),
 	}).Debug("Docker image loaded successfully")
 	return nil
 }
 
-// TagImage tags an existing src image into a target one
-func TagImage(src string, target string) error {
+// tagImage tags an existing src image into a target one
+func tagImage(src string, target string) error {
 	dockerClient := getDockerClient()
 	defer dockerClient.Close()
 	maxTimeout := 5 * time.Second * time.Duration(utils.TimeoutFactor)
@@ -425,6 +435,17 @@ func TagImage(src string, target string) error {
 	}
 
 	return backoff.Retry(tagImageFn, exp)
+}
+
+// TagImage tags an existing src image into multiple targets
+func TagImage(src string, targets ...string) error {
+	for _, target := range targets {
+		err := tagImage(src, target)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // RemoveDevNetwork removes the developer network
