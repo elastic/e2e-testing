@@ -12,5 +12,8 @@ set -euxo pipefail
 # Install some other dependencies required for the pre-commit
 curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.34.1
 
+go get -v github.com/kisielk/errcheck/errcheck
+go get -v honnef.co/go/tools/cmd/staticcheck
+
 # Install project dependencies
 make -C cli install
