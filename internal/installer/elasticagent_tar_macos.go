@@ -132,12 +132,12 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	output, err := i.Exec(ctx, []string{"tar", "-xvf", binaryPath})
+	_, err = i.Exec(ctx, []string{"tar", "-xvf", binaryPath})
 	if err != nil {
 		return err
 	}
 
-	output, _ = i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "/elastic-agent"})
+	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "/elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
