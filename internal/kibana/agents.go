@@ -30,7 +30,7 @@ type Agent struct {
 			Family   string `json:"family"`
 			Full     string `json:"full"`
 			Platform string `json:"platform"`
-		} `json:"os"`	
+		} `json:"os"`
 		Elastic struct {
 			Agent struct {
 				Version  string `json:"version"`
@@ -200,7 +200,7 @@ func (c *Client) GetAgentEvents(ctx context.Context, applicationName string, age
 		}
 	}
 
-	return fmt.Errorf("No %s events where found for the agent in the %s policy", applicationName, packagePolicyID)
+	return fmt.Errorf("no %s events where found for the agent in the %s policy", applicationName, packagePolicyID)
 }
 
 // ListAgents returns the list of agents enrolled with Fleet.

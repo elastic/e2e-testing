@@ -192,7 +192,7 @@ func Search(ctx context.Context, indexName string, query map[string]interface{})
 		}
 
 		err := fmt.Errorf(
-			"Error getting response from Elasticsearch. Status: %s, ResponseError: %v",
+			"error getting response from Elasticsearch. Status: %s, ResponseError: %v",
 			res.Status(), e)
 
 		return result, err
@@ -348,7 +348,7 @@ func WaitForNumberOfHits(ctx context.Context, indexName string, query map[string
 
 			retryCount++
 
-			return fmt.Errorf("Not enough hits in the %s index yet. Current: %d, Desired: %d", indexName, hitsCount, desiredHits)
+			return fmt.Errorf("not enough hits in the %s index yet. Current: %d, Desired: %d", indexName, hitsCount, desiredHits)
 		}
 
 		result = hits

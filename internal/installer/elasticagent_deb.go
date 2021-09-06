@@ -85,7 +85,7 @@ func (i *elasticAgentDEBPackage) Enroll(ctx context.Context, token string) error
 	output, err := i.Exec(ctx, cmds)
 	log.Trace(output)
 	if err != nil {
-		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to install the agent with subcommand: %v", err)
 	}
 	return nil
 }
@@ -224,7 +224,7 @@ func (i *elasticAgentDEBPackage) Uninstall(ctx context.Context) error {
 
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
-		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to uninstall the agent with subcommand: %v", err)
 	}
 	return nil
 }
