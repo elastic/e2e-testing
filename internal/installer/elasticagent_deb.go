@@ -78,9 +78,7 @@ func (i *elasticAgentDEBPackage) Enroll(ctx context.Context, token string) error
 	defer span.End()
 
 	cfg, _ := kibana.NewFleetConfig(token)
-	for _, arg := range cfg.Flags() {
-		cmds = append(cmds, arg)
-	}
+	cmds = append(cmds, cfg.Flags()...)
 
 	output, err := i.Exec(ctx, cmds)
 	log.Trace(output)
