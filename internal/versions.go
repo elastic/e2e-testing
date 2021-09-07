@@ -64,8 +64,7 @@ func newElasticVersion(version string) *elasticVersion {
 
 // CheckPRVersion returns a fallback version if the version comes from a commit
 func CheckPRVersion(version string, fallbackVersion string) string {
-	commitSHA := shell.GetEnv("GITHUB_CHECK_SHA1", "")
-	if commitSHA != "" {
+	if GithubCommitSha1 != "" {
 		return fallbackVersion
 	}
 
@@ -458,13 +457,12 @@ func getGCPBucketCoordinates(fileName string, artifact string) (string, string, 
 	object := fileName
 
 	// the commit SHA will identify univocally the artifact in the GCP storage bucket
-	commitSHA := shell.GetEnv("GITHUB_CHECK_SHA1", "")
-	if commitSHA != "" {
+	if GithubCommitSha1 != "" {
 		log.WithFields(log.Fields{
-			"commit": commitSHA,
+			"commit": GithubCommitSha1,
 			"file":   fileName,
 		}).Debug("Using CI snapshots for a commit")
-		prefix = fmt.Sprintf("commits/%s", commitSHA)
+		prefix = fmt.Sprintf("commits/%s", GithubCommitSha1)
 		object = artifact + "/" + fileName
 	}
 

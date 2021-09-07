@@ -364,8 +364,8 @@ func TestCheckPRVersion(t *testing.T) {
 	})
 
 	t.Run("A Commit-based version should return base version", func(t *testing.T) {
-		defer os.Unsetenv("GITHUB_CHECK_SHA1")
-		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+		GithubCommitSha1 = "0123456789"
+		defer func() { GithubCommitSha1 = "" }()
 
 		v := CheckPRVersion(testVersion, testVersion)
 
@@ -553,8 +553,8 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 	artifact := "elastic-agent"
 
 	t.Run("Fetching commits bucket for RPM package", func(t *testing.T) {
-		defer os.Unsetenv("GITHUB_CHECK_SHA1")
-		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+		GithubCommitSha1 = "0123456789"
+		defer func() { GithubCommitSha1 = "" }()
 
 		fileName := "elastic-agent-" + testVersion + "-x86_64.rpm"
 
@@ -565,8 +565,8 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 	})
 
 	t.Run("Fetching commits bucket for DEB package", func(t *testing.T) {
-		defer os.Unsetenv("GITHUB_CHECK_SHA1")
-		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+		GithubCommitSha1 = "0123456789"
+		defer func() { GithubCommitSha1 = "" }()
 
 		fileName := "elastic-agent-" + testVersion + "-amd64.deb"
 
@@ -577,8 +577,8 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 	})
 
 	t.Run("Fetching commits bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
-		defer os.Unsetenv("GITHUB_CHECK_SHA1")
-		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+		GithubCommitSha1 = "0123456789"
+		defer func() { GithubCommitSha1 = "" }()
 
 		fileName := "elastic-agent-" + testVersion + "-linux-x86_64.tar.gz"
 
@@ -589,8 +589,8 @@ func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
 	})
 
 	t.Run("Fetching commits bucket for ubi8 Docker image", func(t *testing.T) {
-		defer os.Unsetenv("GITHUB_CHECK_SHA1")
-		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+		GithubCommitSha1 = "0123456789"
+		defer func() { GithubCommitSha1 = "" }()
 
 		fileName := "elastic-agent-ubi8-" + testVersion + "-x86_64.tar.gz"
 
