@@ -60,6 +60,7 @@ type FleetTestSuite struct {
 	RuntimeDependenciesStartDate time.Time
 	// instrumentation
 	currentContext context.Context
+	DefaultApiKey  string
 }
 
 // afterScenario destroys the state created by a scenario
@@ -159,6 +160,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
 	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
+	s.Step(`^the agent get Default Api Key"$`, fts.theAgentGetDefaultApiKey)
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
 	s.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)
@@ -501,6 +503,15 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 	return theAgentIsListedInFleetWithStatus(fts.currentContext, desiredStatus, manifest.Hostname)
+}
+
+func (fts *FleetTestSuite) theAgentGetDefaultApiKey() error {
+	defaultApiKey, _ := fts.getAgentDefaultApiKey()
+	log.WithFields(log.Fields{
+		"default_api_key": defaultApiKey,
+	}).Info("The Agent is installed with Default Api Key")
+	fts.DefaultApiKey = defaultApiKey
+	return nil
 }
 
 func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string, hostname string) error {
@@ -1237,6 +1248,16 @@ func (fts *FleetTestSuite) getAgentOSData() (string, error) {
 		return "", err
 	}
 	return agent.LocalMetadata.OS.Platform, nil
+}
+
+func (fts *FleetTestSuite) getAgentDefaultApiKey() (string, error) {
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+	agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
+	if err != nil {
+		return "", err
+	}
+	return agent.DefaultApiKey, nil
 }
 
 func metricsInputs(integration string, set string) []kibana.Input {
