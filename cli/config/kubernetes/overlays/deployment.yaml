@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: elastic-agent
-        image: centos/systemd:latest
+        image: docker.elastic.co/observability-ci/centos-systemd:latest
         command: ["/usr/sbin/init"]
         securityContext:
           allowPrivilegeEscalation: true
