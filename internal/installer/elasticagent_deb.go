@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 
+	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
@@ -141,7 +142,7 @@ func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
 		arch := utils.GetArchitecture()
 		extension := "deb"
 
-		binaryName, binaryPath, err := utils.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+		binaryName, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"artifact":  artifact,

@@ -369,7 +369,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 	if useCISnapshots || beatsLocalPath != "" {
 		arch := utils.GetArchitecture()
 
-		_, imagePath, err := utils.FetchElasticArtifact(mts.currentContext, "metricbeat", mts.Version, "linux", arch, "tar.gz", true, true)
+		_, imagePath, err := elasticversion.FetchElasticArtifact(mts.currentContext, "metricbeat", mts.Version, "linux", arch, "tar.gz", true, true)
 		if err != nil {
 			return err
 		}

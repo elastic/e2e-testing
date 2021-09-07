@@ -244,7 +244,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 
 	common.AgentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", common.AgentStaleVersion)
 	// check if stale version is an alias
-	v, err := utils.GetElasticArtifactVersion(common.AgentStaleVersion)
+	v, err := elasticversion.GetElasticArtifactVersion(common.AgentStaleVersion)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
