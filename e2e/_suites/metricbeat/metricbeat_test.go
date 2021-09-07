@@ -422,7 +422,7 @@ func (mts *MetricbeatTestSuite) runMetricbeatService() error {
 		"serviceName":           mts.ServiceName,
 	}
 
-	env["metricbeatDockerNamespace"] = utils.GetDockerNamespaceEnvVar("beats")
+	env["metricbeatDockerNamespace"] = deploy.GetDockerNamespaceEnvVar("beats")
 	env["metricbeatPlatform"] = "linux/" + arch
 
 	err := serviceManager.AddServicesToCompose(

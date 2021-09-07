@@ -672,15 +672,3 @@ func Sleep(duration time.Duration) error {
 
 	return nil
 }
-
-// GetDockerNamespaceEnvVar returns the Docker namespace whether we use one of the CI snapshots or
-// the images produced by local Beats build, or not.
-// If an error occurred reading the environment, will return the passed namespace as fallback
-func GetDockerNamespaceEnvVar(fallback string) string {
-	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
-	if useCISnapshots || beatsLocalPath != "" {
-		return "observability-ci"
-	}
-	return fallback
-}
