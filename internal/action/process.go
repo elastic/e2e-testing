@@ -6,6 +6,7 @@ package action
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -236,7 +237,118 @@ func AttachActionWaitProcessWin(deploy deploy.Deployment, service deploy.Service
 	}
 }
 
+// holds the json  output from powershell's Get-Process
+type processInfoWin struct {
+	ID        int    `json:"Id"`
+	HasExited bool   `json:"HasExited"`
+	Name      string `json:"Name"`
+}
+
 // Run executes the command
 func (a *actionWaitProcessWin) Run(ctx context.Context) (string, error) {
+	exp := utils.GetExponentialBackOff(a.opts.MaxTimeout)
+
+	mustBePresent := false
+	if a.opts.DesiredState == "started" {
+		mustBePresent = true
+	}
+	retryCount := 1
+
+	processStatus := func() error {
+		log.WithFields(log.Fields{
+			"desiredState": a.opts.DesiredState,
+			"occurrences":  a.opts.Occurrences,
+			"process":      a.opts.Process,
+		}).Trace("Checking process desired state on the container")
+
+		// Get-Process | select Name,HasExited,Id | ConvertTo-Json
+		cmds := []string{"powershell.exe", fmt.Sprintf("Get-Process %s | select Name,HasExited,Id | ConvertTo-Json", a.opts.Process)}
+		output, err := a.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, a.service, cmds)
+		if err != nil {
+			log.WithField("error", err).Error("unable to get process output")
+			retryCount++
+			return err
+		}
+		var resp struct {
+			Items []processInfoWin
+		}
+		if err = json.Unmarshal([]byte(output), &resp); err != nil {
+			retryCount++
+			return err
+		}
+
+		desiredStatePids := []int{}
+		for _, processItem := range resp.Items {
+			log.WithFields(log.Fields{
+				"desiredState":  a.opts.DesiredState,
+				"mustBePresent": mustBePresent,
+				"pid":           processItem.ID,
+				"hasExited":     processItem.HasExited,
+				"process":       a.opts.Process,
+			}).Tracef("Checking if process is in the S state")
+
+			if mustBePresent && strings.EqualFold(a.opts.Process, processItem.Name) && !processItem.HasExited {
+				desiredStatePids = append(desiredStatePids, processItem.ID)
+			} else if !mustBePresent && strings.EqualFold(a.opts.Process, processItem.Name) {
+				desiredStatePids = append(desiredStatePids, processItem.ID)
+			}
+		}
+
+		occurrencesMatched := (len(desiredStatePids) == a.opts.Occurrences)
+
+		// both true or both false
+		if mustBePresent == occurrencesMatched {
+			log.WithFields(log.Fields{
+				"desiredOccurrences": a.opts.Occurrences,
+				"desiredState":       a.opts.DesiredState,
+				"service":            a.service,
+				"mustBePresent":      mustBePresent,
+				"occurrences":        len(desiredStatePids),
+				"process":            a.opts.Process,
+			}).Infof("Process desired state checked")
+
+			return nil
+		}
+
+		if mustBePresent {
+			err = fmt.Errorf("%s process is not running in the OS with the desired number of occurrences (%d) yet", a.opts.Process, a.opts.Occurrences)
+			log.WithFields(log.Fields{
+				"desiredOccurrences": a.opts.Occurrences,
+				"desiredState":       a.opts.DesiredState,
+				"elapsedTime":        exp.GetElapsedTime(),
+				"error":              err,
+				"service":            a.service,
+				"occurrences":        len(desiredStatePids),
+				"process":            a.opts.Process,
+				"retry":              retryCount,
+			}).Warn(err.Error())
+
+			retryCount++
+
+			return err
+		}
+
+		err = fmt.Errorf("%s process is still running in the OS", a.opts.Process)
+		log.WithFields(log.Fields{
+			"desiredOccurrences": a.opts.Occurrences,
+			"elapsedTime":        exp.GetElapsedTime(),
+			"error":              err,
+			"service":            a.service,
+			"occurrences":        len(desiredStatePids),
+			"process":            a.opts.Process,
+			"state":              a.opts.DesiredState,
+			"retry":              retryCount,
+		}).Warn(err.Error())
+
+		retryCount++
+
+		return err
+	}
+
+	err := backoff.Retry(processStatus, exp)
+	if err != nil {
+		return "", err
+	}
+
 	return "", nil
 }
