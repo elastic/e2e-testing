@@ -13,7 +13,7 @@ import (
 // AssertHitsArePresent returns an error if no hits are present
 func AssertHitsArePresent(hits map[string]interface{}) error {
 	if getHitsCount(hits) == 0 {
-		return fmt.Errorf("There aren't documents in the index")
+		return fmt.Errorf("there aren't documents in the index")
 	}
 
 	return nil
@@ -23,7 +23,7 @@ func AssertHitsArePresent(hits map[string]interface{}) error {
 func AssertHitsAreNotPresent(hits map[string]interface{}) error {
 	count := getHitsCount(hits)
 	if count != 0 {
-		return fmt.Errorf("There are %d documents in the index", count)
+		return fmt.Errorf("there are %d documents in the index", count)
 	}
 
 	return nil
@@ -51,7 +51,7 @@ func AssertHitsDoNotContainErrors(hits map[string]interface{}, q Query) error {
 
 	if len(errors) > 0 {
 		return fmt.Errorf(
-			"Errors where found for %s-%s on Metricbeat's %s index: %d error/s out of %d",
+			"errors where found for %s-%s on Metricbeat's %s index: %d error/s out of %d",
 			q.EventModule, q.ServiceVersion, q.IndexName, len(errors), len(iterableHits))
 	}
 

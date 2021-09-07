@@ -21,11 +21,18 @@ repos:
 -   repo: git://github.com/dnephin/pre-commit-golang
     rev: v0.3.5
     hooks:
-    -   id: go-fmt
-    -   id: go-lint
     -   id: no-go-testing
-    -   id: golangci-lint
         args: ["--fix", "--fast", "--new"]
+
+-   repo: git://github.com/Bahjat/pre-commit-golang
+    rev: 85c26d4d1c8a086095a057bbdf8adf56af603ce4
+    hooks:
+    -   id: go-fmt-import
+    -   id: go-vet
+    -   id: gofumpt
+    -   id: go-err-check
+    -   id: go-static-check
+    -   id: golangci-lint
 
 -   repo: git@github.com:elastic/apm-pipeline-library
     rev: current
