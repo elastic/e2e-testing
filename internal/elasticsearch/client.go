@@ -90,6 +90,9 @@ func getElasticsearchClient(ctx context.Context) (*es.Client, error) {
 	remoteESHost := shell.GetEnv("ELASTICSEARCH_URL", "")
 	if remoteESHost != "" {
 		u, err := url.Parse(remoteESHost)
+		if err != nil {
+			log.Fatal("Could not parse ELASTICSEARCH_URL")
+		}
 		host, port, err := net.SplitHostPort(u.Host)
 		if err != nil {
 			log.Fatal("Could not determine host/port from ELASTICSEARCH_URL")
@@ -192,7 +195,7 @@ func Search(ctx context.Context, indexName string, query map[string]interface{})
 		}
 
 		err := fmt.Errorf(
-			"Error getting response from Elasticsearch. Status: %s, ResponseError: %v",
+			"error getting response from Elasticsearch. Status: %s, ResponseError: %v",
 			res.Status(), e)
 
 		return result, err
@@ -348,7 +351,7 @@ func WaitForNumberOfHits(ctx context.Context, indexName string, query map[string
 
 			retryCount++
 
-			return fmt.Errorf("Not enough hits in the %s index yet. Current: %d, Desired: %d", indexName, hitsCount, desiredHits)
+			return fmt.Errorf("not enough hits in the %s index yet. Current: %d, Desired: %d", indexName, hitsCount, desiredHits)
 		}
 
 		result = hits
