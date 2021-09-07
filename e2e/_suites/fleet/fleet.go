@@ -485,7 +485,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 
 	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 
-	return CheckProcessState(fts.deployer, manifest.Name, process, "stopped", 0, utils.TimeoutFactor)
+	return CheckProcessState(fts.deployer, manifest.Name, process, "stopped", 0)
 }
 
 func (fts *FleetTestSuite) setup() error {

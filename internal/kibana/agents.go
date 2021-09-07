@@ -201,7 +201,7 @@ func (c *Client) GetAgentEvents(ctx context.Context, applicationName string, age
 		}
 	}
 
-	return fmt.Errorf("No %s events where found for the agent in the %s policy", applicationName, packagePolicyID)
+	return fmt.Errorf("no %s events where found for the agent in the %s policy", applicationName, packagePolicyID)
 }
 
 // ListAgents returns the list of agents enrolled with Fleet.
