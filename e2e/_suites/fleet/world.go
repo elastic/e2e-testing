@@ -62,7 +62,7 @@ func CheckProcessState(deployer deploy.Deployment, service string, process strin
 		DesiredState: state,
 		Occurrences:  occurrences,
 		MaxTimeout:   timeout}
-	waitForProcess, err := action.Attach(imts.Fleet.currentContext, deployer, serviceRequest, "wait-for-process", actionOpts)
+	waitForProcess, err := action.Attach(imts.Fleet.currentContext, deployer, serviceRequest, action.ActionWaitForProcess, actionOpts)
 	if err != nil {
 		log.WithField("error", err).Error("Unable to attach Process check action")
 	}

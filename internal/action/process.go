@@ -172,7 +172,7 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 				"mustBePresent":      mustBePresent,
 				"occurrences":        len(desiredStatePids),
 				"process":            a.opts.Process,
-			}).Infof("Process desired state checkedz")
+			}).Infof("Process desired state checked")
 
 			return nil
 		}
