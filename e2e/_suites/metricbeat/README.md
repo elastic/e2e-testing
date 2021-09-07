@@ -33,7 +33,6 @@ This is an example of the optional configuration:
    export BEAT_VERSION="8.0.0-SNAPSHOT"
    # or
    # This environment variable will use the snapshots produced by Beats CI
-   export BEATS_USE_CI_SNAPSHOTS="true"
    export GITHUB_CHECK_SHA1="01234567890"
    ```
 

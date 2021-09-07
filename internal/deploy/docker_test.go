@@ -5,8 +5,9 @@
 package deploy
 
 import (
-	"os"
 	"testing"
+
+	elasticversion "github.com/elastic/e2e-testing/internal"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -18,8 +19,8 @@ func TestGetDockerNamespaceEnvVar(t *testing.T) {
 	})
 
 	t.Run("Returns Observability CI when environment variable is set", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
-		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "true")
+		elasticversion.GithubCommitSha1 = "0123456789"
+		defer func() { elasticversion.GithubCommitSha1 = "" }()
 
 		namespace := GetDockerNamespaceEnvVar("beats")
 		assert.True(t, namespace == "observability-ci")

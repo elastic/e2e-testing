@@ -34,6 +34,13 @@ var binariesCache = map[string]string{}
 // of the already requested one.
 var elasticVersionsCache = map[string]string{}
 
+// GithubCommitSha1 represents the value of the "GITHUB_CHECK_SHA1" environment variable
+var GithubCommitSha1 string
+
+func init() {
+	GithubCommitSha1 = shell.GetEnv("GITHUB_CHECK_SHA1", "")
+}
+
 // elasticVersion represents a version
 type elasticVersion struct {
 	Version         string // 8.0.0
@@ -317,7 +324,7 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 		return fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, artifactVersion, OS, arch, dockerString, lowerCaseExtension)
 	}
 
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	useCISnapshots := GithubCommitSha1 != ""
 	// we detected that the docker name on CI is using a different structure
 	// CI snapshots on GCP: elastic-agent-$VERSION-linux-$ARCH.docker.tar.gz
 	// Elastic's snapshots: elastic-agent-$VERSION-docker-image-linux-$ARCH.tar.gz
@@ -332,8 +339,8 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 // fetchBeatsBinary it downloads the binary and returns the location of the downloaded file
 // If the environment variable BEATS_LOCAL_PATH is set, then the artifact
 // to be used will be defined by the local snapshot produced by the local build.
-// Else, if the environment variable BEATS_USE_CI_SNAPSHOTS is set, then the artifact
-// to be downloaded will be defined by the latest snapshot produced by the Beats CI.
+// Else, if the environment variable GITHUB_CHECK_SHA1 is set, then the artifact
+// to be downloaded will be defined by the snapshot produced by the Beats CI for that commit.
 func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool) (string, error) {
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if beatsLocalPath != "" {
@@ -396,7 +403,7 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 	var downloadURL string
 	var err error
 
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	useCISnapshots := GithubCommitSha1 != ""
 	if useCISnapshots {
 		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.gcp.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),

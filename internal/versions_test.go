@@ -107,8 +107,8 @@ func TestBuildArtifactName(t *testing.T) {
 	})
 
 	t.Run("For Docker from Elastic's repository (amd64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
-		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "false")
+		GithubCommitSha1 = ""
+		defer func() { GithubCommitSha1 = "" }()
 
 		artifact = "elastic-agent"
 		arch := "amd64"
@@ -122,8 +122,8 @@ func TestBuildArtifactName(t *testing.T) {
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker from Elastic's repository (arm64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
-		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "false")
+		GithubCommitSha1 = ""
+		defer func() { GithubCommitSha1 = "" }()
 
 		artifact = "elastic-agent"
 		arch := "arm64"
@@ -138,8 +138,8 @@ func TestBuildArtifactName(t *testing.T) {
 	})
 
 	t.Run("For Docker UBI8 from Elastic's repository (amd64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
-		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "false")
+		GithubCommitSha1 = ""
+		defer func() { GithubCommitSha1 = "" }()
 
 		artifact = "elastic-agent-ubi8"
 		arch := "amd64"
@@ -153,8 +153,8 @@ func TestBuildArtifactName(t *testing.T) {
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker UBI8 from Elastic's repository (arm64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
-		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "false")
+		GithubCommitSha1 = ""
+		defer func() { GithubCommitSha1 = "" }()
 
 		artifact = "elastic-agent-ubi8"
 		arch := "arm64"
@@ -231,8 +231,8 @@ func TestBuildArtifactName(t *testing.T) {
 	})
 
 	t.Run("For Docker from GCP (amd64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
-		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "true")
+		GithubCommitSha1 = "0123456789"
+		defer func() { GithubCommitSha1 = "" }()
 
 		artifact = "elastic-agent"
 		arch := "amd64"
@@ -246,8 +246,8 @@ func TestBuildArtifactName(t *testing.T) {
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker from GCP (arm64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
-		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "true")
+		GithubCommitSha1 = "0123456789"
+		defer func() { GithubCommitSha1 = "" }()
 
 		artifact = "elastic-agent"
 		arch := "arm64"
@@ -262,8 +262,8 @@ func TestBuildArtifactName(t *testing.T) {
 	})
 
 	t.Run("For Docker UBI8 from GCP (amd64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
-		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "true")
+		GithubCommitSha1 = "0123456789"
+		defer func() { GithubCommitSha1 = "" }()
 
 		artifact = "elastic-agent-ubi8"
 		arch := "amd64"
@@ -277,8 +277,8 @@ func TestBuildArtifactName(t *testing.T) {
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker UBI8 from GCP (arm64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_USE_CI_SNAPSHOTS")
-		os.Setenv("BEATS_USE_CI_SNAPSHOTS", "true")
+		defer os.Unsetenv("GITHUB_CHECK_SHA1")
+		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
 
 		artifact = "elastic-agent-ubi8"
 		arch := "arm64"
@@ -293,8 +293,8 @@ func TestBuildArtifactName(t *testing.T) {
 	})
 
 	t.Run("For Docker for a Pull Request (amd64)", func(t *testing.T) {
-		defer os.Unsetenv("GITHUB_CHECK_SHA1")
-		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+		GithubCommitSha1 = "0123456789"
+		defer func() { GithubCommitSha1 = "" }()
 
 		artifact = "elastic-agent"
 		arch := "amd64"
@@ -308,8 +308,8 @@ func TestBuildArtifactName(t *testing.T) {
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker for a Pull Request (arm64)", func(t *testing.T) {
-		defer os.Unsetenv("GITHUB_CHECK_SHA1")
-		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+		GithubCommitSha1 = "0123456789"
+		defer func() { GithubCommitSha1 = "" }()
 
 		artifact = "elastic-agent"
 		arch := "arm64"

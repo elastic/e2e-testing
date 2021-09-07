@@ -134,7 +134,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 
 	beatVersion := elasticversion.GetSnapshotVersion(common.BeatVersion) + "-amd64"
 
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	useCISnapshots := elasticversion.GithubCommitSha1 != ""
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if useCISnapshots || beatsLocalPath != "" {
 		log.Debugf("Configuring Docker image for %s", podName)

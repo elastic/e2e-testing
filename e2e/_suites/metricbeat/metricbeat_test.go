@@ -364,7 +364,7 @@ func (mts *MetricbeatTestSuite) installedUsingConfiguration(configuration string
 
 // runMetricbeatService runs a metricbeat service entity for a service to monitor it
 func (mts *MetricbeatTestSuite) runMetricbeatService() error {
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	useCISnapshots := elasticversion.GithubCommitSha1 != ""
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if useCISnapshots || beatsLocalPath != "" {
 		arch := utils.GetArchitecture()

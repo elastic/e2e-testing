@@ -254,7 +254,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 	}
 	common.AgentStaleVersion = v
 
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	useCISnapshots := elasticversion.GithubCommitSha1 != ""
 	if useCISnapshots && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
 		common.AgentStaleVersion += "-SNAPSHOT"
 	}
