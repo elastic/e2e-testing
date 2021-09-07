@@ -304,7 +304,7 @@ func (mts *MetricbeatTestSuite) installedAndConfiguredForModule(serviceType stri
 		configFile = path.Join(config.OpDir(), "compose", "services", mts.ServiceName, "_meta", "config.yml")
 		ok, err := config.FileExists(configFile)
 		if !ok {
-			return fmt.Errorf("The configuration file for %s does not exist", mts.ServiceName)
+			return fmt.Errorf("the configuration file for %s does not exist", mts.ServiceName)
 		}
 		if err != nil {
 			return err

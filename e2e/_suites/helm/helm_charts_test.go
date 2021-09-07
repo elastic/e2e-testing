@@ -90,7 +90,7 @@ func (ts *HelmChartTestSuite) aClusterIsRunning() error {
 		log.WithField("error", err).Error("Could not check the status of the cluster.")
 	}
 	if output != ts.ClusterName {
-		return fmt.Errorf("The cluster is not running")
+		return fmt.Errorf("the cluster is not running")
 	}
 
 	log.WithFields(log.Fields{
@@ -116,7 +116,7 @@ func (ts *HelmChartTestSuite) aResourceContainsTheKey(resource string, key strin
 		return err
 	}
 	if output == "" {
-		return fmt.Errorf("There is no %s for the %s chart including %s", resource, ts.Name, key)
+		return fmt.Errorf("there is no %s for the %s chart including %s", resource, ts.Name, key)
 	}
 
 	log.WithFields(log.Fields{
@@ -135,7 +135,7 @@ func (ts *HelmChartTestSuite) aResourceManagesRBAC(resource string) error {
 		return err
 	}
 	if output == "" {
-		return fmt.Errorf("There is no %s for the %s chart", resource, ts.Name)
+		return fmt.Errorf("there is no %s for the %s chart", resource, ts.Name)
 	}
 
 	log.WithFields(log.Fields{
@@ -200,7 +200,7 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 
 			retryCount++
 
-			return fmt.Errorf("Error there are no Endpoint subsets for the %s with the selector %s", resourceType, selector)
+			return fmt.Errorf("there are no Endpoint subsets for the %s with the selector %s", resourceType, selector)
 		}
 
 		log.WithFields(log.Fields{
@@ -248,7 +248,7 @@ func (ts *HelmChartTestSuite) checkResources(resourceType, selector string, min 
 
 	items := resources["items"].([]interface{})
 	if len(items) < min {
-		return nil, fmt.Errorf("Error there are not %d %s for resource %s/%s-%s with the selector %s", min, resourceType, resourceType, ts.Name, ts.Name, selector)
+		return nil, fmt.Errorf("there are not %d %s for resource %s/%s-%s with the selector %s", min, resourceType, resourceType, ts.Name, ts.Name, selector)
 	}
 
 	log.WithFields(log.Fields{
@@ -408,7 +408,7 @@ func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
 		return err
 	}
 	if output != ts.getFullName() {
-		return fmt.Errorf("There is no DaemonSet for the %s chart. Expected: %s, Actual: %s", ts.Name, ts.getFullName(), output)
+		return fmt.Errorf("there is no DaemonSet for the %s chart. Expected: %s, Actual: %s", ts.Name, ts.getFullName(), output)
 	}
 
 	log.WithFields(log.Fields{
@@ -425,7 +425,7 @@ func (ts *HelmChartTestSuite) resourceConstraintsAreApplied(constraint string) e
 		return err
 	}
 	if output == "" {
-		return fmt.Errorf("Resource %s constraint for the %s chart is not applied. Actual: %s", constraint, ts.getFullName(), output)
+		return fmt.Errorf("resource %s constraint for the %s chart is not applied. Actual: %s", constraint, ts.getFullName(), output)
 	}
 
 	log.WithFields(log.Fields{
@@ -445,7 +445,7 @@ func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(reso
 		return err
 	}
 	if output != ts.getFullName() {
-		return fmt.Errorf("There is no %s for the %s chart. Expected: %s, Actual: %s", resource, ts.Name, ts.getFullName(), output)
+		return fmt.Errorf("there is no %s for the %s chart. Expected: %s, Actual: %s", resource, ts.Name, ts.getFullName(), output)
 	}
 
 	log.WithFields(log.Fields{
@@ -474,7 +474,7 @@ func (ts *HelmChartTestSuite) strategyCanBeUsedForResourceDuringUpdates(strategy
 		return err
 	}
 	if output != strategy {
-		return fmt.Errorf("There is no %s strategy to be used for %s on updates. Actual: %s", strategy, resource, output)
+		return fmt.Errorf("there is no %s strategy to be used for %s on updates. Actual: %s", strategy, resource, output)
 	}
 
 	log.WithFields(log.Fields{
@@ -522,7 +522,7 @@ func (ts *HelmChartTestSuite) volumeMountedWithSubpath(name string, mountPath st
 
 	index := find(names, name)
 	if index == len(names) {
-		return fmt.Errorf("The mounted volume '%s' could not be found: %v", name, names)
+		return fmt.Errorf("the mounted volume '%s' could not be found: %v", name, names)
 	}
 
 	// get mounts paths
@@ -532,7 +532,7 @@ func (ts *HelmChartTestSuite) volumeMountedWithSubpath(name string, mountPath st
 	}
 
 	if mountPath != mountPaths[index] {
-		return fmt.Errorf("The mounted volume for '%s' is not %s. Actual: %s", name, mountPath, mountPaths[index])
+		return fmt.Errorf("the mounted volume for '%s' is not %s. Actual: %s", name, mountPath, mountPaths[index])
 	}
 
 	if subPath != "" {
@@ -543,7 +543,7 @@ func (ts *HelmChartTestSuite) volumeMountedWithSubpath(name string, mountPath st
 		}
 
 		if subPath != subPaths[index] {
-			return fmt.Errorf("The subPath for '%s' is not %s. Actual: %s", name, subPath, subPaths[index])
+			return fmt.Errorf("the subPath for '%s' is not %s. Actual: %s", name, subPath, subPaths[index])
 		}
 	}
 
@@ -564,7 +564,7 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 		return err
 	}
 	if output != ts.getKubeStateMetricsName() {
-		return fmt.Errorf("There is no %s Deployment for the %s chart. Expected: %s, Actual: %s", kubeStateMetrics, ts.Name, ts.getKubeStateMetricsName(), output)
+		return fmt.Errorf("there is no %s Deployment for the %s chart. Expected: %s, Actual: %s", kubeStateMetrics, ts.Name, ts.getKubeStateMetricsName(), output)
 	}
 
 	log.WithFields(log.Fields{
