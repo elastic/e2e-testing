@@ -7,7 +7,6 @@ package action
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -18,15 +17,23 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// ProcessAction contains the necessary options to pass into process action
+type ProcessAction struct {
+	Process      string
+	DesiredState string
+	Occurrences  int
+	MaxTimeout   time.Duration
+}
+
 // actionWaitProcess implements operation for waiting on a process status
 type actionWaitProcess struct {
 	service deploy.ServiceRequest
 	deploy  deploy.Deployment
-	opts    map[string]string
+	opts    ProcessAction
 }
 
 // AttachActionWaitProcess action to woit for a process status on *nix like systems
-func AttachActionWaitProcess(deploy deploy.Deployment, service deploy.ServiceRequest, actionOpts map[string]string) deploy.ServiceOperatorAction {
+func AttachActionWaitProcess(deploy deploy.Deployment, service deploy.ServiceRequest, actionOpts ProcessAction) deploy.ServiceOperation {
 	return &actionWaitProcess{
 		service: service,
 		deploy:  deploy,
@@ -36,38 +43,36 @@ func AttachActionWaitProcess(deploy deploy.Deployment, service deploy.ServiceReq
 
 // Run executes the command
 func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
-	timeoutFactor, _ := time.ParseDuration(a.opts["maxTimeout"])
-	exp := utils.GetExponentialBackOff(timeoutFactor)
+	exp := utils.GetExponentialBackOff(a.opts.MaxTimeout)
 
 	mustBePresent := false
-	if a.opts["desiredState"] == "started" {
+	if a.opts.DesiredState == "started" {
 		mustBePresent = true
 	}
 	retryCount := 1
 
 	processStatus := func() error {
-		occurrences, _ := strconv.Atoi(a.opts["occurrences"])
 		log.WithFields(log.Fields{
-			"desiredState": a.opts["desiredState"],
-			"occurrences":  occurrences,
-			"process":      a.opts["process"],
+			"desiredState": a.opts.DesiredState,
+			"occurrences":  a.opts.Occurrences,
+			"process":      a.opts.Process,
 		}).Trace("Checking process desired state on the container")
 
 		// pgrep -d: -d, --delimiter <string>  specify output delimiter
 		//i.e. "pgrep -d , metricbeat": 483,519
-		cmds := []string{"pgrep", "-d", ",", a.opts["process"]}
+		cmds := []string{"pgrep", "-d", ",", a.opts.Process}
 		output, err := a.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, a.service, cmds)
 		if err != nil {
-			if !mustBePresent && occurrences == 0 {
+			if !mustBePresent && a.opts.Occurrences == 0 {
 				log.WithFields(log.Fields{
 					"cmds":          cmds,
-					"desiredState":  a.opts["desiredState"],
+					"desiredState":  a.opts.DesiredState,
 					"elapsedTime":   exp.GetElapsedTime(),
 					"error":         err,
 					"service":       a.service,
 					"mustBePresent": mustBePresent,
-					"occurrences":   a.opts["occurrences"],
-					"process":       a.opts["process"],
+					"occurrences":   a.opts.Occurrences,
+					"process":       a.opts.Process,
 					"retry":         retryCount,
 				}).Warn("Process is not present and number of occurences is 0")
 				return nil
@@ -75,13 +80,13 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 
 			log.WithFields(log.Fields{
 				"cmds":          cmds,
-				"desiredState":  a.opts["desiredState"],
+				"desiredState":  a.opts.DesiredState,
 				"elapsedTime":   exp.GetElapsedTime(),
 				"error":         err,
 				"service":       a.service,
 				"mustBePresent": mustBePresent,
-				"occurrences":   a.opts["occurrences"],
-				"process":       a.opts["process"],
+				"occurrences":   a.opts.Occurrences,
+				"process":       a.opts.Process,
 				"retry":         retryCount,
 			}).Warn("Could not get number of processes in the container")
 
@@ -101,10 +106,10 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 
 		log.WithFields(log.Fields{
 			"count":         len(pids),
-			"desiredState":  a.opts["desiredState"],
+			"desiredState":  a.opts.DesiredState,
 			"mustBePresent": mustBePresent,
 			"pids":          pids,
-			"process":       a.opts["process"],
+			"process":       a.opts.Process,
 		}).Tracef("Pids for process found")
 
 		desiredStatePids := []string{}
@@ -115,14 +120,14 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 			if err != nil {
 				log.WithFields(log.Fields{
 					"cmds":          cmds,
-					"desiredState":  a.opts["desiredState"],
+					"desiredState":  a.opts.DesiredState,
 					"elapsedTime":   exp.GetElapsedTime(),
 					"error":         err,
 					"service":       a.service,
 					"mustBePresent": mustBePresent,
-					"occurrences":   a.opts["occurrences"],
+					"occurrences":   a.opts.Occurrences,
 					"pid":           pid,
-					"process":       a.opts["process"],
+					"process":       a.opts.Process,
 					"retry":         retryCount,
 				}).Warn("Could not check pid status in the container")
 
@@ -132,11 +137,11 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 			}
 
 			log.WithFields(log.Fields{
-				"desiredState":  a.opts["desiredState"],
+				"desiredState":  a.opts.DesiredState,
 				"mustBePresent": mustBePresent,
 				"pid":           pid,
 				"pidState":      pidState,
-				"process":       a.opts["process"],
+				"process":       a.opts.Process,
 			}).Tracef("Checking if process is in the S state")
 
 			// if the process must be present, then check for the S state
@@ -156,32 +161,32 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 			}
 		}
 
-		occurrencesMatched := (len(desiredStatePids) == occurrences)
+		occurrencesMatched := (len(desiredStatePids) == a.opts.Occurrences)
 
 		// both true or both false
 		if mustBePresent == occurrencesMatched {
 			log.WithFields(log.Fields{
-				"desiredOccurrences": occurrences,
-				"desiredState":       a.opts["desiredState"],
+				"desiredOccurrences": a.opts.Occurrences,
+				"desiredState":       a.opts.DesiredState,
 				"service":            a.service,
 				"mustBePresent":      mustBePresent,
 				"occurrences":        len(desiredStatePids),
-				"process":            a.opts["process"],
+				"process":            a.opts.Process,
 			}).Infof("Process desired state checkedz")
 
 			return nil
 		}
 
 		if mustBePresent {
-			err = fmt.Errorf("%s process is not running in the container with the desired number of occurrences (%d) yet", a.opts["process"], occurrences)
+			err = fmt.Errorf("%s process is not running in the container with the desired number of occurrences (%d) yet", a.opts.Process, a.opts.Occurrences)
 			log.WithFields(log.Fields{
-				"desiredOccurrences": occurrences,
-				"desiredState":       a.opts["desiredState"],
+				"desiredOccurrences": a.opts.Occurrences,
+				"desiredState":       a.opts.DesiredState,
 				"elapsedTime":        exp.GetElapsedTime(),
 				"error":              err,
 				"service":            a.service,
 				"occurrences":        len(desiredStatePids),
-				"process":            a.opts["process"],
+				"process":            a.opts.Process,
 				"retry":              retryCount,
 			}).Warn(err.Error())
 
@@ -190,15 +195,15 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 			return err
 		}
 
-		err = fmt.Errorf("%s process is still running in the container", a.opts["process"])
+		err = fmt.Errorf("%s process is still running in the container", a.opts.Process)
 		log.WithFields(log.Fields{
-			"desiredOccurrences": occurrences,
+			"desiredOccurrences": a.opts.Occurrences,
 			"elapsedTime":        exp.GetElapsedTime(),
 			"error":              err,
 			"service":            a.service,
 			"occurrences":        len(desiredStatePids),
-			"process":            a.opts["process"],
-			"state":              a.opts["desiredState"],
+			"process":            a.opts.Process,
+			"state":              a.opts.DesiredState,
 			"retry":              retryCount,
 		}).Warn(err.Error())
 
@@ -219,11 +224,11 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 type actionWaitProcessWin struct {
 	service deploy.ServiceRequest
 	deploy  deploy.Deployment
-	opts    map[string]string
+	opts    ProcessAction
 }
 
 // AttachActionWaitProcessWin action to wait for process status on windows systems
-func AttachActionWaitProcessWin(deploy deploy.Deployment, service deploy.ServiceRequest, actionOpts map[string]string) deploy.ServiceOperatorAction {
+func AttachActionWaitProcessWin(deploy deploy.Deployment, service deploy.ServiceRequest, actionOpts ProcessAction) deploy.ServiceOperation {
 	return &actionWaitProcessWin{
 		service: service,
 		deploy:  deploy,

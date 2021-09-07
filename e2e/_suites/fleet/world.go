@@ -57,7 +57,11 @@ func CheckProcessState(deployer deploy.Deployment, service string, process strin
 	timeout := time.Duration(utils.TimeoutFactor) * time.Minute
 	serviceRequest := deploy.NewServiceRequest(service)
 
-	actionOpts := map[string]string{"process": process, "state": state, "occurrences": strconv.Itoa(occurrences), "maxTimeout": timeout.String()}
+	actionOpts := action.ProcessAction{
+		Process:      process,
+		DesiredState: state,
+		Occurrences:  occurrences,
+		MaxTimeout:   timeout}
 	waitForProcess, err := action.Attach(imts.Fleet.currentContext, deployer, serviceRequest, "wait-for-process", actionOpts)
 	if err != nil {
 		log.WithField("error", err).Error("Unable to attach Process check action")

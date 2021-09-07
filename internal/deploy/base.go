@@ -44,8 +44,8 @@ type ServiceOperator interface {
 	Uninstall(ctx context.Context) error
 }
 
-// ServiceOperatorAction represents an action that can be run within a ServiceOperator
-type ServiceOperatorAction interface {
+// ServiceOperation represents an action that can be run within a ServiceOperator
+type ServiceOperation interface {
 	Run(ctx context.Context) (string, error)
 }
 
