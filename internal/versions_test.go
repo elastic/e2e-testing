@@ -277,8 +277,8 @@ func TestBuildArtifactName(t *testing.T) {
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker UBI8 from GCP (arm64)", func(t *testing.T) {
-		defer os.Unsetenv("GITHUB_CHECK_SHA1")
-		os.Setenv("GITHUB_CHECK_SHA1", "0123456789")
+		GithubCommitSha1 = "0123456789"
+		defer func() { GithubCommitSha1 = "" }()
 
 		artifact = "elastic-agent-ubi8"
 		arch := "arm64"
@@ -299,7 +299,7 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "amd64"
 		extension := "tar.gz"
-		expectedFileName := versionPrefix + "-docker-image-linux-amd64.tar.gz"
+		expectedFileName := versionPrefix + "-linux-amd64.docker.tar.gz"
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -314,7 +314,7 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "arm64"
 		extension := "tar.gz"
-		expectedFileName := versionPrefix + "-docker-image-linux-arm64.tar.gz"
+		expectedFileName := versionPrefix + "-linux-arm64.docker.tar.gz"
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)

@@ -306,34 +306,38 @@ func SnapshotHasCommit(s string) bool {
 // buildArtifactName builds the artifact name from the different coordinates for the artifact
 func buildArtifactName(artifact string, artifactVersion string, OS string, arch string, extension string, isDocker bool) string {
 	dockerString := ""
-	if isDocker {
-		dockerString = ".docker"
-	}
-
-	artifactVersion = GetSnapshotVersion(artifactVersion)
 
 	lowerCaseExtension := strings.ToLower(extension)
+	artifactVersion = GetSnapshotVersion(artifactVersion)
 
-	artifactName := fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, artifactVersion, OS, arch, dockerString, lowerCaseExtension)
-	if lowerCaseExtension == "deb" || lowerCaseExtension == "rpm" {
-		artifactName = fmt.Sprintf("%s-%s-%s%s.%s", artifact, artifactVersion, arch, dockerString, lowerCaseExtension)
+	useCISnapshots := GithubCommitSha1 != ""
+
+	if isDocker {
+		// we detected that the docker name on CI is using a different structure
+		// CI snapshots on GCP: elastic-agent-$VERSION-linux-$ARCH.docker.tar.gz
+		// Elastic's snapshots: elastic-agent-$VERSION-docker-image-linux-$ARCH.tar.gz
+		dockerString = ".docker"
+		if !useCISnapshots {
+			dockerString = "-docker-image"
+		}
 	}
 
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if beatsLocalPath != "" && isDocker {
+		dockerString = ".docker"
 		return fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, artifactVersion, OS, arch, dockerString, lowerCaseExtension)
 	}
 
-	useCISnapshots := GithubCommitSha1 != ""
-	// we detected that the docker name on CI is using a different structure
-	// CI snapshots on GCP: elastic-agent-$VERSION-linux-$ARCH.docker.tar.gz
-	// Elastic's snapshots: elastic-agent-$VERSION-docker-image-linux-$ARCH.tar.gz
 	if !useCISnapshots && isDocker {
-		dockerString = "docker-image"
-		artifactName = fmt.Sprintf("%s-%s-%s-%s-%s.%s", artifact, artifactVersion, dockerString, OS, arch, lowerCaseExtension)
+		return fmt.Sprintf("%s-%s%s-%s-%s.%s", artifact, artifactVersion, dockerString, OS, arch, lowerCaseExtension)
 	}
 
-	return artifactName
+	if lowerCaseExtension == "deb" || lowerCaseExtension == "rpm" {
+		return fmt.Sprintf("%s-%s-%s%s.%s", artifact, artifactVersion, arch, dockerString, lowerCaseExtension)
+	}
+
+	return fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, artifactVersion, OS, arch, dockerString, lowerCaseExtension)
+
 }
 
 // fetchBeatsBinary it downloads the binary and returns the location of the downloaded file
