@@ -5,16 +5,13 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"path"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/elastic/e2e-testing/internal/io"
-	"gopkg.in/yaml.v2"
 
 	"github.com/Flaque/filet"
 	"github.com/sirupsen/logrus"
@@ -96,72 +93,6 @@ func TestNewConfigPopulatesConfiguration(t *testing.T) {
 
 	assert.True(t, (Op.Services != nil))
 	assert.True(t, (Op.Profiles != nil))
-}
-
-func TestSanitizeComposeFile_Multiple(t *testing.T) {
-	defer filet.CleanUp(t)
-	tmpDir := filet.TmpDir(t, "")
-
-	target := filepath.Join(tmpDir, dockerComposeMultiple)
-	src := filepath.Join(testResourcesBasePath, dockerComposeMultiple)
-
-	err := sanitizeComposeFile(src, target)
-	assert.Nil(t, err)
-
-	bytes, err := io.ReadFile(target)
-	assert.Nil(t, err)
-
-	c := composeFile{}
-	err = yaml.Unmarshal(bytes, &c)
-	assert.Nil(t, err)
-
-	assert.Equal(t, c.Version, "2.4")
-	assert.Equal(t, len(c.Services), 2)
-
-	// we know that both services have different number of ports
-	for k, srv := range c.Services {
-		switch i := srv.(type) {
-		case map[interface{}]interface{}:
-			for key, value := range i {
-				strKey := fmt.Sprintf("%v", key)
-
-				// does not contain the build context element
-				assert.NotEqual(t, strKey, "build")
-
-				// strKey == ports
-				if strKey == "ports" {
-					if k == "ceph" {
-						// ceph has 3 ports
-						assert.Equal(t, len(value.([]interface{})), 3)
-					} else if k == "ceph-api" {
-						// ceph-api has 1 port
-						assert.Equal(t, len(value.([]interface{})), 1)
-					}
-				}
-			}
-		}
-	}
-}
-
-func TestSanitizeComposeFile_Single(t *testing.T) {
-	defer filet.CleanUp(t)
-	tmpDir := filet.TmpDir(t, "")
-
-	target := filepath.Join(tmpDir, dockerComposeSingle)
-	src := filepath.Join(testResourcesBasePath, dockerComposeSingle)
-
-	err := sanitizeComposeFile(src, target)
-	assert.Nil(t, err)
-
-	bytes, err := io.ReadFile(target)
-	assert.Nil(t, err)
-
-	c := composeFile{}
-	err = yaml.Unmarshal(bytes, &c)
-	assert.Nil(t, err)
-
-	assert.Equal(t, c.Version, "2.4")
-	assert.Equal(t, len(c.Services), 1)
 }
 
 func checkLoggerWithLogLevel(t *testing.T, level string) {
