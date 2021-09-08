@@ -18,10 +18,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const testResourcesBasePath = "_testresources/"
-const dockerComposeMultiple = "docker-compose-multiple.yml"
-const dockerComposeSingle = "docker-compose-single.yml"
-
 func TestCheckConfigDirsCreatesWorkspaceAtHome(t *testing.T) {
 	defer filet.CleanUp(t)
 
