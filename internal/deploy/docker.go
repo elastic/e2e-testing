@@ -124,9 +124,8 @@ func (c *dockerDeploymentManifest) ExecIn(ctx context.Context, profile ServiceRe
 
 	inspect, _ := c.Inspect(ctx, service)
 	args := []string{"exec", "-u", "root", "-i", inspect.Name}
-	for _, cmdArg := range cmd {
-		args = append(args, cmdArg)
-	}
+	args = append(args, cmd...)
+
 	output, err := shell.Execute(ctx, ".", "docker", args...)
 	if err != nil {
 		return "", err

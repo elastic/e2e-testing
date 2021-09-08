@@ -78,14 +78,12 @@ func (i *elasticAgentRPMPackage) Enroll(ctx context.Context, token string) error
 	defer span.End()
 
 	cfg, _ := kibana.NewFleetConfig(token)
-	for _, cmd := range cfg.Flags() {
-		cmds = append(cmds, cmd)
-	}
+	cmds = append(cmds, cfg.Flags()...)
 
 	output, err := i.Exec(ctx, cmds)
 	log.Trace(output)
 	if err != nil {
-		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to install the agent with subcommand: %v", err)
 	}
 	return nil
 }
@@ -227,7 +225,7 @@ func (i *elasticAgentRPMPackage) Uninstall(ctx context.Context) error {
 	defer span.End()
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
-		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to uninstall the agent with subcommand: %v", err)
 	}
 	return nil
 }

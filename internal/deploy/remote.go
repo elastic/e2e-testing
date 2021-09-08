@@ -50,11 +50,7 @@ func (c *remoteDeploymentManifest) ExecIn(ctx context.Context, profile ServiceRe
 	span.Context.SetLabel("arguments", cmd)
 	defer span.End()
 
-	args := []string{}
-	for _, cmdArg := range cmd {
-		args = append(args, cmdArg)
-	}
-	output, err := shell.Execute(ctx, ".", args[0], args[1:]...)
+	output, err := shell.Execute(ctx, ".", cmd[0], cmd[1:]...)
 	if err != nil {
 		return "", err
 	}

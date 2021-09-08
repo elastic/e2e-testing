@@ -23,10 +23,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// opComposeBox the tool's static files where we will embed default Docker compose
-// files representing the services and the profiles
-var opComposeBox *packr.Box
-
 // Op the tool's configuration, read from tool's workspace
 var Op *OpConfig
 
@@ -405,8 +401,6 @@ func newConfig(workspace string) {
 	// add file system services and profiles
 	readFilesFromFileSystem("services")
 	readFilesFromFileSystem("profiles")
-
-	opComposeBox = box
 }
 
 // Extract packaged profiles and services for use with cli runner

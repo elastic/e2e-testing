@@ -75,13 +75,11 @@ func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string)
 	defer span.End()
 
 	cfg, _ := kibana.NewFleetConfig(token)
-	for _, arg := range cfg.Flags() {
-		cmds = append(cmds, arg)
-	}
+	cmds = append(cmds, cfg.Flags()...)
 
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
-		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to install the agent with subcommand: %v", err)
 	}
 	return nil
 }
@@ -132,12 +130,12 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	output, err := i.Exec(ctx, []string{"tar", "-xvf", binaryPath})
+	_, err = i.Exec(ctx, []string{"tar", "-xvf", binaryPath})
 	if err != nil {
 		return err
 	}
 
-	output, _ = i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "/elastic-agent"})
+	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "/elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
@@ -187,7 +185,7 @@ func (i *elasticAgentTARDarwinPackage) Uninstall(ctx context.Context) error {
 	defer span.End()
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
-		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to uninstall the agent with subcommand: %v", err)
 	}
 	return nil
 }

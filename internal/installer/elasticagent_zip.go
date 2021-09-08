@@ -72,13 +72,11 @@ func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string) error
 	defer span.End()
 
 	cfg, _ := kibana.NewFleetConfig(token)
-	for _, arg := range cfg.Flags() {
-		cmds = append(cmds, arg)
-	}
+	cmds = append(cmds, cfg.Flags()...)
 
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
-		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to install the agent with subcommand: %v", err)
 	}
 	return nil
 }
@@ -125,12 +123,12 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	output, err := i.Exec(ctx, []string{"powershell.exe", "Expand-Archive", "-LiteralPath", binaryPath, "-DestinationPath", "C:\\", "-Force"})
+	_, err = i.Exec(ctx, []string{"powershell.exe", "Expand-Archive", "-LiteralPath", binaryPath, "-DestinationPath", "C:\\", "-Force"})
 	if err != nil {
 		return err
 	}
 
-	output, _ = i.Exec(ctx, []string{"powershell.exe", "Move-Item", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "C:\\elastic-agent"})
+	output, _ := i.Exec(ctx, []string{"powershell.exe", "Move-Item", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "C:\\elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
@@ -155,7 +153,7 @@ func (i *elasticAgentZIPPackage) Uninstall(ctx context.Context) error {
 	defer span.End()
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
-		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to uninstall the agent with subcommand: %v", err)
 	}
 	return nil
 }
