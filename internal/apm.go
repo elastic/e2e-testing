@@ -40,5 +40,7 @@ func StartTransaction(name, transactionType string) *apm.Transaction {
 		TraceContext: traceContext,
 	}
 
-	return apm.DefaultTracer.StartTransactionOptions(name, transactionType, opts)
+	transaction := apm.DefaultTracer.StartTransactionOptions(name, transactionType, opts)
+	transaction.Context.SetLabel("ci", "true")
+	return transaction
 }
