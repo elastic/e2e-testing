@@ -32,6 +32,9 @@ func NewFleetConfig(token string) (*FleetConfig, error) {
 	fleetPort := 8220
 	if fleetServer != "fleet-server" {
 		u, err := url.Parse(fleetServer)
+		if err != nil {
+			log.Fatal("Could not parse FLEET_URL")
+		}
 		host, port, err := net.SplitHostPort(u.Host)
 		if err != nil {
 			log.Fatal("Could not determine fleet port from FLEET_URL")

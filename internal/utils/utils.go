@@ -513,7 +513,7 @@ func GetObjectURLFromBucket(bucket string, prefix string, object string, maxtime
 			"retries":     retryCount,
 		}).Warn("Object not found in current page. Continuing")
 
-		return fmt.Errorf("The %s object could not be found in the current page (%d) the %s bucket and %s prefix", object, currentPage, bucket, prefix)
+		return fmt.Errorf("the %s object could not be found in the current page (%d) the %s bucket and %s prefix", object, currentPage, bucket, prefix)
 	}
 
 	err := backoff.Retry(storageAPI, exp)
@@ -521,7 +521,7 @@ func GetObjectURLFromBucket(bucket string, prefix string, object string, maxtime
 		return "", err
 	}
 	if mediaLink == "" {
-		return "", fmt.Errorf("Reached the end of the pages and the %s object was not found for the %s bucket and %s prefix", object, bucket, prefix)
+		return "", fmt.Errorf("reached the end of the pages and the %s object was not found for the %s bucket and %s prefix", object, bucket, prefix)
 	}
 
 	return mediaLink, nil
@@ -644,7 +644,7 @@ func processBucketSearchPage(jsonParsed *gabs.Container, currentPage int, bucket
 		}
 	}
 
-	return "", fmt.Errorf("The %s object could not be found in the current page (%d) in the %s bucket and %s prefix", object, currentPage, bucket, prefix)
+	return "", fmt.Errorf("the %s object could not be found in the current page (%d) in the %s bucket and %s prefix", object, currentPage, bucket, prefix)
 }
 
 //nolint:unused
