@@ -269,16 +269,14 @@ func (a *actionWaitProcessWin) Run(ctx context.Context) (string, error) {
 			retryCount++
 			return err
 		}
-		var resp struct {
-			Items []processInfoWin
-		}
-		if err = json.Unmarshal([]byte(output), &resp); err != nil {
+		var processList []processInfoWin
+		if err = json.Unmarshal([]byte(output), &processList); err != nil {
 			retryCount++
 			return err
 		}
 
 		desiredStatePids := []int{}
-		for _, processItem := range resp.Items {
+		for _, processItem := range processList {
 			log.WithFields(log.Fields{
 				"desiredState":  a.opts.DesiredState,
 				"mustBePresent": mustBePresent,
