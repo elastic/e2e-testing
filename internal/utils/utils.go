@@ -688,18 +688,17 @@ func GetDockerNamespaceEnvVar(fallback string) string {
 // StartTransaction returns a new Transaction with the specified
 // name and type, with the start time set to the current time and
 // with the context if TRACEPARENT environment variable is set.
-// This is equivalent to calling utils.StartTransaction
+// This is equivalent to calling apm.DefaultTracer.StartTransaction
 // if no TRACEPARENT environment variable otherwise
-// utils.StartTransactionOptions
+// apm.DefaultTracer.StartTransactionOptions
 func StartTransaction(name, transactionType string) *apm.Transaction {
-	// the commit SHA will identify univocally the artifact in the GCP storage bucket
 	traceparent := shell.GetEnv("TRACEPARENT", "")
 	if traceparent != "" {
 		log.WithFields(log.Fields{
 			"traceparent": traceparent,
 		}).Debug("Using the given traceparent")
-		return utils.StartTransaction(name, transactionType)
+		return apm.DefaultTracer.StartTransaction(name, transactionType)
 	}
 
-	return utils.StartTransaction(name, transactionType)
+	return apm.DefaultTracer.StartTransaction(name, transactionType)
 }
