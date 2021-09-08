@@ -44,6 +44,11 @@ type ServiceOperator interface {
 	Uninstall(ctx context.Context) error
 }
 
+// ServiceOperation represents an action that can be run within a ServiceOperator
+type ServiceOperation interface {
+	Run(ctx context.Context) (string, error)
+}
+
 // ServiceOperatorManifest is state information for each service operator
 type ServiceOperatorManifest struct {
 	CommitFile string

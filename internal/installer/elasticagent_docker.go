@@ -169,7 +169,7 @@ func (i *elasticAgentDockerPackage) Uninstall(ctx context.Context) error {
 
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
-		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to uninstall the agent with subcommand: %v", err)
 	}
 	return nil
 }

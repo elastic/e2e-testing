@@ -198,8 +198,6 @@ func ExecCommandIntoContainerWithEnv(ctx context.Context, container string, user
 		Detach: detach,
 		Tty:    tty,
 	})
-	defer resp.Close()
-
 	if err != nil {
 		log.WithFields(log.Fields{
 			"container": containerName,
@@ -211,6 +209,7 @@ func ExecCommandIntoContainerWithEnv(ctx context.Context, container string, user
 		}).Error("Could not execute command in container")
 		return "", err
 	}
+	defer resp.Close()
 
 	// see https://stackoverflow.com/a/57132902
 	var execRes execResult
