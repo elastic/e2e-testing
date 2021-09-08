@@ -310,6 +310,10 @@ func InspectContainer(service ServiceRequest) (*types.ContainerJSON, error) {
 		}).Fatal("Cannot list containers")
 	}
 
+	if len(containers) == 0 {
+		return nil, fmt.Errorf("there are no containers with label 'name:%s'", service.Name)
+	}
+
 	inspect, err := dockerClient.ContainerInspect(ctx, containers[0].ID)
 	if err != nil {
 		return nil, err

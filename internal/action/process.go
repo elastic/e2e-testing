@@ -61,7 +61,7 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 		// pgrep -d: -d, --delimiter <string>  specify output delimiter
 		//i.e. "pgrep -d , metricbeat": 483,519
 		cmds := []string{"pgrep", "-d", ",", a.opts.Process}
-		output, err := a.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, a.service, cmds)
+		output, err := a.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), a.service, cmds)
 		if err != nil {
 			if !mustBePresent && a.opts.Occurrences == 0 {
 				log.WithFields(log.Fields{
@@ -116,7 +116,7 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 
 		for _, pid := range pids {
 			pidStateCmds := []string{"ps", "-q", pid, "-o", "state", "--no-headers"}
-			pidState, err := a.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, a.service, pidStateCmds)
+			pidState, err := a.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), a.service, pidStateCmds)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"cmds":          cmds,
