@@ -263,7 +263,7 @@ func (a *actionWaitProcessWin) Run(ctx context.Context) (string, error) {
 
 		// Get-Process | select Name,HasExited,Id | ConvertTo-Json
 		cmds := []string{"powershell.exe", fmt.Sprintf("Get-Process %s | select Name,HasExited,Id | ConvertTo-Json", a.opts.Process)}
-		output, err := a.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, a.service, cmds)
+		output, err := a.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), a.service, cmds)
 		if err != nil {
 			log.WithField("error", err).Error("unable to get process output")
 			retryCount++
