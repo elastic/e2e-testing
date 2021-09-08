@@ -41,6 +41,10 @@ func StartTransaction(name, transactionType string) *apm.Transaction {
 	}
 
 	transaction := apm.DefaultTracer.StartTransactionOptions(name, transactionType, opts)
-	transaction.Context.SetLabel("ci", "true")
+
+	branchName := shell.GetEnv("BRANCH_NAME", "")
+	if branchName != "" {
+		transaction.Context.SetLabel("branch", branchName)
+	}
 	return transaction
 }
