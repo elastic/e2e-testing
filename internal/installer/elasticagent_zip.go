@@ -140,6 +140,7 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 
 		output, _ := i.Exec(ctx, []string{"powershell.exe", "Move-Item", "-Force", "-Path", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "-Destination", "C:\\elastic-agent"})
 		log.WithField("output", output).Trace("Moved elastic-agent")
+		return nil
 	}
 	log.Trace("C:\\elastic-agent already exists, will not attempt to overwrite")
 	return nil

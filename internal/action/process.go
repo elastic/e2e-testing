@@ -271,9 +271,11 @@ func (a *actionWaitProcessWin) Run(ctx context.Context) (string, error) {
 		}
 		var processList []processInfoWin
 		if err = json.Unmarshal([]byte(output), &processList); err != nil {
+			log.WithField("error", err).Trace("Failed to unmarshal JSON output")
 			retryCount++
 			return err
 		}
+		log.WithField("processList", processList).Trace("Process list")
 
 		desiredStatePids := []int{}
 		for _, processItem := range processList {
