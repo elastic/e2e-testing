@@ -11,7 +11,6 @@ pipeline {
     ELASTIC_APM_ENVIRONMENT="ci"
     ELASTIC_APM_LOG_FILE="stderr"
     ELASTIC_APM_LOG_LEVEL="debug"
-    VAULT_INSTRUMENTATION_SECRET="secret/observability-team/ci/jenkins-stats"
     NIGHTLY_TAG="@nightly"
     NOTIFY_TO = credentials('notify-to')
     JOB_GCS_BUCKET = credentials('gcs-bucket')
@@ -362,28 +361,30 @@ def generateFunctionalTestStep(Map args = [:]){
               envContext.add("PATH=${path}")
             }
             withEnv(envContext) {
-              withSecretVault(secret: "${VAULT_INSTRUMENTATION_SECRET}", user_key: "apmServerToken", user_var_name: "APM_SECRET_TOKEN", pass_key: "apmServerUrl", pass_var_name: "APM_SERVER_URL") {
-                if (platform.contains("windows")) {
-                  // Boot up a windows VM to deploy Elastic Agent to be tested against
-                  // a remote deployed stack
-                  withNode(labels: platform, forceWorkspace: true) {
-                    deleteDir()
-                    unstash 'source'
-                    dir("${BASE_DIR}"){
-                      withGoEnvWindows(version: "${GO_VERSION}"){
-                        echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
-                        powershell label: "Disk Information", script: "Get-PSDrive"
-                        powershell label: "Pinging Linux VM", script: "ping -n 1 ${linuxIp}"
-                        powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${linuxIp} -Port 9200"
-                        powershell label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601"
-                        powershell label: "Check for running fleet server", script: "Test-NetConnection ${linuxIp} -Port 8220"
-                        cmd script: "go get -v github.com/cucumber/godog/cmd/godog@v0.11.0", label: "Download godog 0.11"
-                        cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platform}:${suite}:${tags}"
-                      }
+              if (platform.contains("windows")) {
+                // Boot up a windows VM to deploy Elastic Agent to be tested against
+                // a remote deployed stack
+                withNode(labels: platform, forceWorkspace: true) {
+                  deleteDir()
+                  unstash 'source'
+                  dir("${BASE_DIR}"){
+                    withGoEnvWindows(version: "${GO_VERSION}"){
+                      echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
+                      powershell label: "Disk Information", script: "Get-PSDrive"
+                      powershell label: "Pinging Linux VM", script: "ping -n 1 ${linuxIp}"
+                      powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${linuxIp} -Port 9200"
+                      powershell label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601"
+                      powershell label: "Check for running fleet server", script: "Test-NetConnection ${linuxIp} -Port 8220"
+                      cmd script: "go get -v github.com/cucumber/godog/cmd/godog@v0.11.0", label: "Download godog 0.11"
+                      cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platform}:${suite}:${tags}"
                     }
                   }
-                } else {
-                  withGoEnv(version: "${GO_VERSION}") {
+                }
+              } else {
+                withGoEnv(version: "${GO_VERSION}") {
+                  // This step will help to send the APM traces to the
+                  // APM service defined by the Otel Jenkins plugin.
+                  withOtelEnv() {
                     sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${platform}:${suite}:${tags}"
                   }
                 }
