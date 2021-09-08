@@ -18,6 +18,7 @@ import (
 	messages "github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/e2e/steps"
+	apme2e "github.com/elastic/e2e-testing/internal"
 	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"

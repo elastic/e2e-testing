@@ -22,6 +22,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	messages "github.com/cucumber/messages-go/v10"
+	apme2e "github.com/elastic/e2e-testing/internal"
 	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
 	"go.elastic.co/apm"
