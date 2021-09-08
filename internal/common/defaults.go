@@ -5,7 +5,6 @@
 package common
 
 import (
-	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -28,9 +27,6 @@ var ElasticAPMActive = false
 
 // FleetProfileName the name of the profile to run the runtime, backend services
 const FleetProfileName = "fleet"
-
-// FleetProfileServiceRequest a service request for the Fleet profile
-var FleetProfileServiceRequest = deploy.NewServiceRequest(FleetProfileName)
 
 // FleetServerAgentServiceName the name of the service for the Elastic Agent
 const FleetServerAgentServiceName = "fleet-server"

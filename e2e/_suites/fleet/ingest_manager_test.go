@@ -160,7 +160,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		if runtimeDepsProvider != "remote" {
 			// the runtime dependencies must be started only in non-remote executions
-			deployer.Bootstrap(suiteContext, common.FleetProfileServiceRequest, common.ProfileEnv, func() error {
+			deployer.Bootstrap(suiteContext, deploy.NewServiceRequest(common.FleetProfileName), common.ProfileEnv, func() error {
 				kibanaClient, err := kibana.NewClient()
 				if err != nil {
 					log.WithField("error", err).Fatal("Unable to create kibana client")
@@ -198,7 +198,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		if !common.DeveloperMode && runtimeDepsProvider != "remote" {
 			log.Debug("Destroying Fleet runtime dependencies")
 			deployer := deploy.New(common.Provider)
-			deployer.Destroy(suiteContext, common.FleetProfileServiceRequest)
+			deployer.Destroy(suiteContext, deploy.NewServiceRequest(common.FleetProfileName))
 		}
 	})
 }
