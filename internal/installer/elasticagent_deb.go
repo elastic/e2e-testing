@@ -39,7 +39,7 @@ func (i *elasticAgentDEBPackage) AddFiles(ctx context.Context, files []string) e
 	span.Context.SetLabel("files", files)
 	defer span.End()
 
-	return i.deploy.AddFiles(ctx, common.FleetProfileServiceRequest, i.service, files)
+	return i.deploy.AddFiles(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, files)
 }
 
 // Inspect returns info on package
@@ -64,7 +64,7 @@ func (i *elasticAgentDEBPackage) Exec(ctx context.Context, args []string) (strin
 	span.Context.SetLabel("arguments", args)
 	defer span.End()
 
-	output, err := i.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, i.service, args)
+	output, err := i.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, args)
 	return output, err
 }
 
@@ -109,9 +109,9 @@ func (i *elasticAgentDEBPackage) InstallCerts(ctx context.Context) error {
 }
 
 // Logs prints logs of service
-func (i *elasticAgentDEBPackage) Logs() error {
+func (i *elasticAgentDEBPackage) Logs(ctx context.Context) error {
 	// TODO we could read "/var/lib/elastic-agent/data/elastic-agent-*/logs/elastic-agent-json.log"
-	return systemCtlLog(context.Background(), "debian", i.Exec)
+	return systemCtlLog(ctx, "debian", i.Exec)
 }
 
 // Postinstall executes operations after installing a DEB package
