@@ -27,7 +27,9 @@ require (
 	github.com/testcontainers/testcontainers-go v0.11.0
 	go.elastic.co/apm v1.13.0
 	go.elastic.co/apm/module/apmelasticsearch v1.10.0
+	go.elastic.co/apm/module/apmhttp v1.10.0
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
+	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22 // indirect
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
 	golang.org/x/tools v0.1.4 // indirect

@@ -8,6 +8,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/shell"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
+	"go.elastic.co/apm/module/apmhttp"
 )
 
 // StartTransaction returns a new Transaction with the specified
@@ -18,12 +19,25 @@ import (
 // apm.DefaultTracer.StartTransactionOptions
 func StartTransaction(name, transactionType string) *apm.Transaction {
 	traceparent := shell.GetEnv("TRACEPARENT", "")
-	if traceparent != "" {
-		log.WithFields(log.Fields{
-			"traceparent": traceparent,
-		}).Info("Using the given traceparent")
+	if traceparent == "" {
 		return apm.DefaultTracer.StartTransaction(name, transactionType)
 	}
 
-	return apm.DefaultTracer.StartTransaction(name, transactionType)
+	log.WithFields(log.Fields{
+		"traceparent": traceparent,
+	}).Info("Using the given traceparent")
+
+	traceContext, err := apmhttp.ParseTraceparentHeader(traceparent)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Warn("Could not read the traceparent. Fallback to an empty context.")
+		return apm.DefaultTracer.StartTransaction(name, transactionType)
+	}
+
+	opts := apm.TransactionOptions{
+		TraceContext: traceContext,
+	}
+
+	return apm.DefaultTracer.StartTransactionOptions(name, transactionType, opts)
 }
