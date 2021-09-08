@@ -23,10 +23,6 @@ func StartTransaction(name, transactionType string) *apm.Transaction {
 		return apm.DefaultTracer.StartTransaction(name, transactionType)
 	}
 
-	log.WithFields(log.Fields{
-		"traceparent": traceparent,
-	}).Info("Using the given traceparent")
-
 	traceContext, err := apmhttp.ParseTraceparentHeader(traceparent)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -34,6 +30,11 @@ func StartTransaction(name, transactionType string) *apm.Transaction {
 		}).Warn("Could not read the traceparent. Fallback to an empty context.")
 		return apm.DefaultTracer.StartTransaction(name, transactionType)
 	}
+
+	log.WithFields(log.Fields{
+		"env.TRACEPARENT": traceparent,
+		"traceContext":    apmhttp.FormatTraceparentHeader(traceContext),
+	}).Info("Using the given traceparent")
 
 	opts := apm.TransactionOptions{
 		TraceContext: traceContext,
