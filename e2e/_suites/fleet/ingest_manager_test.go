@@ -53,7 +53,7 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Fleet scenario")
 
-		tx = utils.StartTransaction(p.GetName(), "test.scenario")
+		tx = apme2e.StartTransaction(p.GetName(), "test.scenario")
 		tx.Context.SetLabel("suite", "fleet")
 
 		// context is initialised at the step hook, we are initialising it here to prevent panics
@@ -113,7 +113,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		// instrumentation
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = utils.StartTransaction("Initialise Fleet", "test.suite")
+		suiteTx = apme2e.StartTransaction("Initialise Fleet", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("Before Fleet test suite", "test.suite.before", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
@@ -188,7 +188,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		var suiteParentSpan *apm.Span
 		var suiteContext = context.Background()
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = utils.StartTransaction("Tear Down Fleet", "test.suite")
+		suiteTx = apme2e.StartTransaction("Tear Down Fleet", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("After Fleet test suite", "test.suite.after", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)

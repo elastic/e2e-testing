@@ -25,6 +25,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	messages "github.com/cucumber/messages-go/v10"
+	apme2e "github.com/elastic/e2e-testing/internal"
 	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
 )
@@ -579,7 +580,7 @@ func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Helm scenario...")
 
-		tx = utils.StartTransaction(p.GetName(), "test.scenario")
+		tx = apme2e.StartTransaction(p.GetName(), "test.scenario")
 		tx.Context.SetLabel("suite", "helm")
 	})
 
@@ -648,7 +649,7 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 
 		// instrumentation
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = utils.StartTransaction("Initialise Helm", "test.suite")
+		suiteTx = apme2e.StartTransaction("Initialise Helm", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("Before Helm test suite", "test.suite.before", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
@@ -679,7 +680,7 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 		var suiteParentSpan *apm.Span
 		var suiteContext = context.Background()
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = utils.StartTransaction("Tear Down Helm", "test.suite")
+		suiteTx = apme2e.StartTransaction("Tear Down Helm", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("After Helm test suite", "test.suite.after", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)

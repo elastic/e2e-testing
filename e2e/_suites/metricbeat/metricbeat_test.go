@@ -154,7 +154,7 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Metricbeat scenario...")
 
-		tx = utils.StartTransaction(p.GetName(), "test.scenario")
+		tx = apme2e.StartTransaction(p.GetName(), "test.scenario")
 		tx.Context.SetLabel("suite", "metricbeat")
 	})
 
@@ -224,7 +224,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 
 		// instrumentation
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = utils.StartTransaction("Initialise Metricbeat", "test.suite")
+		suiteTx = apme2e.StartTransaction("Initialise Metricbeat", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("Before Metricbeat test suite", "test.suite.before", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
@@ -264,7 +264,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		var suiteParentSpan *apm.Span
 		var suiteContext = context.Background()
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = utils.StartTransaction("Tear Down Metricbeat", "test.suite")
+		suiteTx = apme2e.StartTransaction("Tear Down Metricbeat", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("After Metricbeat test suite", "test.suite.after", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
