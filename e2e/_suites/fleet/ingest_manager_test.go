@@ -126,11 +126,9 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			log.WithField("error", err).Fatal("Unable to run pre-bootstrap initialization")
 		}
 
-		runtimeDepsProvider := shell.GetEnv("PROVIDER", "docker")
-
 		// FIXME: This needs to go into deployer code for docker somehow. Must resolve
 		// cyclic imports since common.defaults now imports deploy module
-		if !shell.GetEnvBool("SKIP_PULL") && runtimeDepsProvider != "remote" {
+		if !shell.GetEnvBool("SKIP_PULL") && common.Provider != "remote" {
 			images := []string{
 				"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
 				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,
@@ -158,9 +156,9 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
 		}
 
-		if runtimeDepsProvider != "remote" {
+		if common.Provider != "remote" {
 			// the runtime dependencies must be started only in non-remote executions
-			deployer.Bootstrap(suiteContext, common.FleetProfileServiceRequest, common.ProfileEnv, func() error {
+			deployer.Bootstrap(suiteContext, deploy.NewServiceRequest(common.FleetProfileName), common.ProfileEnv, func() error {
 				kibanaClient, err := kibana.NewClient()
 				if err != nil {
 					log.WithField("error", err).Fatal("Unable to create kibana client")
@@ -194,11 +192,10 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		runtimeDepsProvider := shell.GetEnv("PROVIDER", "docker")
-		if !common.DeveloperMode && runtimeDepsProvider != "remote" {
+		if !common.DeveloperMode && common.Provider != "remote" {
 			log.Debug("Destroying Fleet runtime dependencies")
 			deployer := deploy.New(common.Provider)
-			deployer.Destroy(suiteContext, common.FleetProfileServiceRequest)
+			deployer.Destroy(suiteContext, deploy.NewServiceRequest(common.FleetProfileName))
 		}
 	})
 }
