@@ -579,7 +579,7 @@ func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Helm scenario...")
 
-		tx = apm.DefaultTracer.StartTransaction(p.GetName(), "test.scenario")
+		tx = utils.StartTransaction(p.GetName(), "test.scenario")
 		tx.Context.SetLabel("suite", "helm")
 	})
 
@@ -648,7 +648,7 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 
 		// instrumentation
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = apm.DefaultTracer.StartTransaction("Initialise Helm", "test.suite")
+		suiteTx = utils.StartTransaction(("Initialise Helm", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("Before Helm test suite", "test.suite.before", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
@@ -679,7 +679,7 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 		var suiteParentSpan *apm.Span
 		var suiteContext = context.Background()
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = apm.DefaultTracer.StartTransaction("Tear Down Helm", "test.suite")
+		suiteTx = utils.StartTransaction("Tear Down Helm", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("After Helm test suite", "test.suite.after", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)

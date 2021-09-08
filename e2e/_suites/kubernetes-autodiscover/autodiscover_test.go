@@ -515,7 +515,7 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 
 		// instrumentation
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = apm.DefaultTracer.StartTransaction("Initialise k8s Autodiscover", "test.suite")
+		suiteTx = utils.StartTransaction("Initialise k8s Autodiscover", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("Before k8s Autodiscover test suite", "test.suite.before", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
@@ -543,7 +543,7 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 		var suiteTx *apm.Transaction
 		var suiteParentSpan *apm.Span
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = apm.DefaultTracer.StartTransaction("Tear Down k8s Autodiscover", "test.suite")
+		suiteTx = utils.StartTransaction("Tear Down k8s Autodiscover", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("After k8s Autodiscover test suite", "test.suite.after", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
@@ -561,7 +561,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	var kubectl kubernetes.Control
 	var pods podsManager
 	ctx.BeforeScenario(func(p *messages.Pickle) {
-		tx = apm.DefaultTracer.StartTransaction(p.GetName(), "test.scenario")
+		tx = utils.StartTransaction(p.GetName(), "test.scenario")
 		tx.Context.SetLabel("suite", "k8s Autodiscover")
 
 		kubectl = cluster.Kubectl().WithNamespace(scenarioCtx, "")
