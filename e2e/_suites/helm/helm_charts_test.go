@@ -648,7 +648,7 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 
 		// instrumentation
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = utils.StartTransaction(("Initialise Helm", "test.suite")
+		suiteTx = utils.StartTransaction("Initialise Helm", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("Before Helm test suite", "test.suite.before", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
