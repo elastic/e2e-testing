@@ -5,7 +5,6 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
@@ -30,24 +29,15 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 }
 
 func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocurrences string, process string, state string) error {
-	profile := common.FleetProfileName
-
-	var containerName string
-
-	if imts.Fleet.StandAlone {
-		containerName = fmt.Sprintf("%s_%s_%d", profile, common.ElasticAgentServiceName, 1)
-	} else {
-		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		manifest, _ := imts.Fleet.deployer.Inspect(imts.Fleet.currentContext, agentService)
-		containerName = manifest.Name
-	}
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+	manifest, _ := imts.Fleet.deployer.Inspect(imts.Fleet.currentContext, agentService)
 
 	count, err := strconv.Atoi(ocurrences)
 	if err != nil {
 		return err
 	}
 
-	return CheckProcessState(imts.Fleet.deployer, containerName, process, state, count)
+	return CheckProcessState(imts.Fleet.deployer, manifest.Name, process, state, count)
 }
 
 // CheckProcessState checks if a process is in the desired state in a container
