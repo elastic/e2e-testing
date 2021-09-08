@@ -21,7 +21,7 @@ func StartTransaction(name, transactionType string) *apm.Transaction {
 	if traceparent != "" {
 		log.WithFields(log.Fields{
 			"traceparent": traceparent,
-		}).Debug("Using the given traceparent")
+		}).Info("Using the given traceparent")
 		return apm.DefaultTracer.StartTransaction(name, transactionType)
 	}
 
