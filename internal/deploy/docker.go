@@ -158,9 +158,15 @@ func (c *dockerDeploymentManifest) Inspect(ctx context.Context, service ServiceR
 }
 
 // Logs print logs of service
-func (c *dockerDeploymentManifest) Logs(service ServiceRequest) error {
-	manifest, _ := c.Inspect(context.Background(), service)
-	_, err := shell.Execute(c.Context, ".", "docker", "logs", manifest.Name)
+func (c *dockerDeploymentManifest) Logs(ctx context.Context, service ServiceRequest) error {
+	span, _ := apm.StartSpanOptions(ctx, "Retrieving logs from compose deployment", "docker-compose.manifest.logs", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("service", service)
+	defer span.End()
+
+	manifest, _ := c.Inspect(ctx, service)
+	_, err := shell.Execute(ctx, ".", "docker", "logs", manifest.Name)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -174,6 +180,11 @@ func (c *dockerDeploymentManifest) Logs(service ServiceRequest) error {
 
 // PreBootstrap sets up environment with docker compose
 func (c *dockerDeploymentManifest) PreBootstrap(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "Pre-bootstrapping compose deployment", "docker-compose.bootstrap.pre", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	// Check for a docker connection string, this could be a remote docker
 	// instance accessible via ssh.
 	if c.ConnectionString != "" {
@@ -213,10 +224,22 @@ func (c *dockerDeploymentManifest) PreBootstrap(ctx context.Context) error {
 }
 
 // Remove remove services from deployment
-func (c *dockerDeploymentManifest) Remove(profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
+func (c *dockerDeploymentManifest) Remove(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Removing services from compose deployment", "docker-compose.services.remove", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("profile", profile)
+	span.Context.SetLabel("services", services)
+	defer span.End()
+
 	// TODO: profile is not used because we are using the docker client, not docker-compose, to reach the service
 	for _, service := range services {
-		manifest, _ := c.Inspect(context.Background(), service)
+		manifest, inspectErr := c.Inspect(context.Background(), service)
+		if inspectErr != nil {
+			log.Warnf("Service %s could not be deleted: %v", service.Name, inspectErr)
+			continue
+		}
+
 		_, err := shell.Execute(c.Context, ".", "docker", "rm", "-fv", manifest.Name)
 		if err != nil {
 			return err
@@ -226,14 +249,26 @@ func (c *dockerDeploymentManifest) Remove(profile ServiceRequest, services []Ser
 }
 
 // Start a container
-func (c *dockerDeploymentManifest) Start(service ServiceRequest) error {
+func (c *dockerDeploymentManifest) Start(ctx context.Context, service ServiceRequest) error {
+	span, _ := apm.StartSpanOptions(ctx, "Starting service from compose deployment", "docker-compose.service.start", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("service", service)
+	defer span.End()
+
 	manifest, _ := c.Inspect(context.Background(), service)
-	_, err := shell.Execute(c.Context, ".", "docker", "start", manifest.Name)
+	_, err := shell.Execute(ctx, ".", "docker", "start", manifest.Name)
 	return err
 }
 
 // Stop a container
-func (c *dockerDeploymentManifest) Stop(service ServiceRequest) error {
+func (c *dockerDeploymentManifest) Stop(ctx context.Context, service ServiceRequest) error {
+	span, _ := apm.StartSpanOptions(ctx, "Stopping service from compose deployment", "docker-compose.service.stop", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("service", service)
+	defer span.End()
+
 	manifest, _ := c.Inspect(context.Background(), service)
 	_, err := shell.Execute(c.Context, ".", "docker", "stop", manifest.Name)
 	return err

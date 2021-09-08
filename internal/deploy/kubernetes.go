@@ -164,9 +164,15 @@ func (c *kubernetesDeploymentManifest) Inspect(ctx context.Context, service Serv
 }
 
 // Logs print logs of service
-func (c *kubernetesDeploymentManifest) Logs(service ServiceRequest) error {
-	kubectl = cluster.Kubectl().WithNamespace(c.Context, "default")
-	_, err := kubectl.Run(c.Context, "logs", "deployment/"+service.Name)
+func (c *kubernetesDeploymentManifest) Logs(ctx context.Context, service ServiceRequest) error {
+	span, _ := apm.StartSpanOptions(ctx, "Retrieving kubernetes logs", "kubernetes.manifest.logs", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("service", service)
+	defer span.End()
+
+	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
+	_, err := kubectl.Run(ctx, "logs", "deployment/"+service.Name)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -184,7 +190,14 @@ func (c *kubernetesDeploymentManifest) PreBootstrap(ctx context.Context) error {
 }
 
 // Remove remove services from deployment
-func (c *kubernetesDeploymentManifest) Remove(profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
+func (c *kubernetesDeploymentManifest) Remove(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Removing services from kubernetes deployment", "kubernetes.services.remove", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("profile", profile)
+	span.Context.SetLabel("services", services)
+	defer span.End()
+
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, getNamespaceFromProfile(profile))
 
 	for _, service := range services {
@@ -197,12 +210,12 @@ func (c *kubernetesDeploymentManifest) Remove(profile ServiceRequest, services [
 }
 
 // Start a container
-func (c *kubernetesDeploymentManifest) Start(service ServiceRequest) error {
+func (c *kubernetesDeploymentManifest) Start(ctx context.Context, service ServiceRequest) error {
 	return nil
 }
 
 // Stop a container
-func (c *kubernetesDeploymentManifest) Stop(service ServiceRequest) error {
+func (c *kubernetesDeploymentManifest) Stop(ctx context.Context, service ServiceRequest) error {
 	return nil
 }
 

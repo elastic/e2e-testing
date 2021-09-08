@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -140,7 +139,7 @@ func PutServiceVariantEnvironment(env map[string]string, service string, service
 		Env []EnvVar `yaml:"variants"`
 	}
 
-	versionsPath := path.Join(
+	versionsPath := filepath.Join(
 		OpDir(), "compose", "services", service, "_meta", "supported-versions.yml")
 
 	bytes, err := io.ReadFile(versionsPath)
@@ -185,8 +184,8 @@ func checkConfigDirectory(dir string) {
 }
 
 func checkConfigDirs(workspace string) {
-	servicesPath := path.Join(workspace, "compose", "services")
-	profilesPath := path.Join(workspace, "compose", "profiles")
+	servicesPath := filepath.Join(workspace, "compose", "services")
+	profilesPath := filepath.Join(workspace, "compose", "profiles")
 
 	checkConfigDirectory(servicesPath)
 	checkConfigDirectory(profilesPath)
@@ -301,14 +300,14 @@ func extractProfileServiceConfig(op *OpConfig, box *packr.Box) error {
 // configurations/ directory is optional and only needed if docker-compose.yml needs to reference
 // any filelike object within its parent directory
 func packFiles(op *OpConfig) *packr.Box {
-	box := packr.New("Compose Files", "./compose")
+	box := packr.New("Compose Files", "compose")
 	return box
 }
 
 // reads the docker-compose in the workspace, merging them with what it's
 // already boxed in the binary
 func readFilesFromFileSystem(serviceType string) {
-	basePath := path.Join(OpDir(), "compose", serviceType)
+	basePath := filepath.Join(OpDir(), "compose", serviceType)
 	files, err := io.ReadDir(basePath)
 	if err != nil {
 		log.WithFields(log.Fields{

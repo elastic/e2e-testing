@@ -259,8 +259,9 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
       def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
       if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
         platformsValue.each { platform ->
-          log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
-          parallelTasks["${platform}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: "${platform}", suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}")
+          def platformLabels = platform.labels
+          log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
+          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}")
         }
       } else {
         log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed in any platform because there are no modified files")
@@ -292,6 +293,14 @@ def generateFunctionalTestStep(Map args = [:]){
   def tags = args.get('tags')
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
 
+  def platformLabels = platform.labels
+  def platformProvider = platform.provider
+
+  if (!platformProvider || !platformProvider?.trim()) {
+    // default provider is Docker
+    platformProvider = "docker"
+  }
+
   // We will decide whether to include the nightly tests in the execution at CI time, only.
   // On the other hand, the developers can use the TAGS environment variable locally.
   // Finally, we positively know that tags are not empty, so we can use AND operator.
@@ -311,15 +320,15 @@ def generateFunctionalTestStep(Map args = [:]){
   }
 
   def goArch = "amd64"
-  def workerLabels = "${platform} && immutable"
+  def workerLabels = "${platformLabels} && immutable"
   def linuxIp = null
-  if (platform == "arm64") {
+  if (platformLabels == "arm64") {
     goArch = "arm64"
     // let's use centos8 ARM as base VM, trying to mitigate the flakiness described in https://github.com/elastic/e2e-testing/issues/1271
     workerLabels = "centos-8-aarch64"
   }
 
-  if (platform.contains("windows")) {
+  if (platformLabels.contains("windows")) {
     // For windows testing we need to make sure that the host executor is a linux machine and nest the windows withNode within that
     workerLabels = "ubuntu-18.04"
     tags += " && ~@skip:windows"
@@ -331,6 +340,7 @@ def generateFunctionalTestStep(Map args = [:]){
   // Setup environment for platform
   def envContext = []
   envContext.add("GOARCH=${goArch}")
+  envContext.add("PROVIDER=${platformProvider}")
   envContext.add("ELASTIC_APM_GLOBAL_LABELS=build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
 
   return {
@@ -341,10 +351,10 @@ def generateFunctionalTestStep(Map args = [:]){
         if(isInstalled(tool: 'docker', flag: '--version')) {
           dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
         }
-        filebeat(output: "docker_logs_${platform}_${goArch}_${suite}_${name}.log", workdir: "${env.WORKSPACE}") {
+        filebeat(output: "docker_logs_${platformLabels}_${goArch}_${suite}_${name}.log", workdir: "${env.WORKSPACE}") {
           dir("${BASE_DIR}") {
             // Doing a windows agent test, start up docker before the new environment is applied for windows
-            if (platform.contains("windows")) {
+            if (platformLabels.contains("windows")) {
               sh script: "docker-compose -f cli/config/compose/profiles/${suite}/docker-compose.yml up -d", label: "Deploying ${suite} via docker"
               linuxIp = grabWorkerIP()
               def mingwArch = is32() ? '32' : '64'
@@ -354,15 +364,15 @@ def generateFunctionalTestStep(Map args = [:]){
               envContext.add("KIBANA_URL=https://${linuxIp}:5601")
               envContext.add("ELASTICSEARCH_URL=https://${linuxIp}:9200")
               envContext.add("FLEET_URL=https://${linuxIp}:8220")
-              envContext.add("PROVIDER=remote")
+              envContext.add("PROVIDER=remote") // a remote provider is needed for Windows
               envContext.add("OP_LOG_LEVEL=TRACE")
               envContext.add("PATH=${path}")
             }
             withEnv(envContext) {
-              if (platform.contains("windows")) {
+              if (platformLabels.contains("windows")) {
                 // Boot up a windows VM to deploy Elastic Agent to be tested against
                 // a remote deployed stack
-                withNode(labels: platform, forceWorkspace: true) {
+                withNode(labels: platformLabels, forceWorkspace: true) {
                   deleteDir()
                   unstash 'source'
                   dir("${BASE_DIR}"){
@@ -374,7 +384,7 @@ def generateFunctionalTestStep(Map args = [:]){
                       powershell label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601"
                       powershell label: "Check for running fleet server", script: "Test-NetConnection ${linuxIp} -Port 8220"
                       cmd script: "go get -v github.com/cucumber/godog/cmd/godog@v0.11.0", label: "Download godog 0.11"
-                      cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platform}:${suite}:${tags}"
+                      cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
                     }
                   }
                 }
@@ -383,7 +393,7 @@ def generateFunctionalTestStep(Map args = [:]){
                   // This step will help to send the APM traces to the
                   // APM service defined by the Otel Jenkins plugin.
                   withOtelEnv() {
-                    sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${platform}:${suite}:${tags}"
+                    sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
                   }
                 }
               }

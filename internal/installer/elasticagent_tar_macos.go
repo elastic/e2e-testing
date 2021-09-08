@@ -90,10 +90,10 @@ func (i *elasticAgentTARDarwinPackage) InstallCerts(ctx context.Context) error {
 }
 
 // Logs prints logs of service
-func (i *elasticAgentTARDarwinPackage) Logs() error {
+func (i *elasticAgentTARDarwinPackage) Logs(ctx context.Context) error {
 	// TODO: we need to find a way to read MacOS logs for a service (the agent is installed under /Library/LaunchDaemons)
 	// or we could read "/Library/Elastic/Agent/data/elastic-agent-*/logs/elastic-agent-json.log*"
-	return i.deploy.Logs(i.service)
+	return i.deploy.Logs(ctx, i.service)
 }
 
 // Postinstall executes operations after installing a TAR package

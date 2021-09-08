@@ -77,8 +77,8 @@ func (i *elasticAgentDockerPackage) InstallCerts(ctx context.Context) error {
 }
 
 // Logs prints logs of service
-func (i *elasticAgentDockerPackage) Logs() error {
-	return i.deploy.Logs(i.service)
+func (i *elasticAgentDockerPackage) Logs(ctx context.Context) error {
+	return i.deploy.Logs(ctx, i.service)
 }
 
 // Postinstall executes operations after installing a package
