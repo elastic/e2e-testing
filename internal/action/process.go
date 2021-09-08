@@ -271,7 +271,12 @@ func (a *actionWaitProcessWin) Run(ctx context.Context) (string, error) {
 		}
 		var processList []processInfoWin
 		if err = json.Unmarshal([]byte(output), &processList); err != nil {
-			log.WithField("error", err).Trace("Failed to unmarshal JSON output")
+			log.WithField("error", err).Trace("Failed to unmarshal JSON output, will retry with single entry")
+
+			var processEntry processInfoWin
+			if err = json.Unmarshal([]byte(output), &processEntry); err != nil {
+				log.WithField("error", err).Fatal("Failed to unmarshal JSON output, exiting.")
+			}
 			retryCount++
 			return err
 		}
