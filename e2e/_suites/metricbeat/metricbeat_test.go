@@ -18,7 +18,6 @@ import (
 	messages "github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/e2e/steps"
-	apme2e "github.com/elastic/e2e-testing/internal"
 	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
@@ -155,7 +154,7 @@ func InitializeMetricbeatScenarios(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Metricbeat scenario...")
 
-		tx = apme2e.StartTransaction(p.GetName(), "test.scenario")
+		tx = apm.DefaultTracer.StartTransaction(p.GetName(), "test.scenario")
 		tx.Context.SetLabel("suite", "metricbeat")
 	})
 
@@ -225,7 +224,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 
 		// instrumentation
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = apme2e.StartTransaction("Initialise Metricbeat", "test.suite")
+		suiteTx = apm.DefaultTracer.StartTransaction("Initialise Metricbeat", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("Before Metricbeat test suite", "test.suite.before", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
@@ -265,7 +264,7 @@ func InitializeMetricbeatTestSuite(ctx *godog.TestSuiteContext) {
 		var suiteParentSpan *apm.Span
 		var suiteContext = context.Background()
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = apme2e.StartTransaction("Tear Down Metricbeat", "test.suite")
+		suiteTx = apm.DefaultTracer.StartTransaction("Tear Down Metricbeat", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("After Metricbeat test suite", "test.suite.after", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
