@@ -13,7 +13,7 @@ set -euxo pipefail
 #   - SUITE - that's the suite to be tested. Default '' which means all of them.
 #   - TAGS - that's the tags to be tested. Default '' which means all of them.
 #   - STACK_VERSION - that's the version of the stack to be tested. Default is stored in '.stack-version'.
-#   - BEAT_VERSION - that's the version of the metricbeat to be tested. Default is stored in '.stack-version'.
+#   - BEAT_VERSION - that's the version of the Beat to be tested. Default is stored in '.stack-version'.
 #
 
 BASE_VERSION="$(cat $(pwd)/.stack-version)"
