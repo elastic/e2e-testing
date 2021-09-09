@@ -15,11 +15,7 @@ This repository contains:
         - Stand-Alone mode
         - Fleet mode
         - and more!
-    - [Metricbeat Integrations](./e2e/_suites/metricbeat)
-        - Apache
-        - MySQL
-        - Redis
-        - vSphere
+
 1. A [collection of utilities and helpers used in tests](../internal).
 
 > If you want to start writing E2E tests, please jump to our quickstart guide [here](./e2e/QUICKSTART.md).
