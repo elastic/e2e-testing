@@ -91,16 +91,9 @@ It will generate the website under the `./docs` directory (which is ignored in G
 ## Regression testing
 We have built the project and the CI job in a manner that it is possible to override different parameters about projects versions, so that we can set i.e. the version of the Elastic Stack to be used, or the version of the Elastic Agent. There also exist maintenance branches where we set the specific versions used for the tests:
 
-<<<<<<< HEAD
-- **7.9.x**: will use `7.9.x` alias for the Elastic Stack, the Agent and Metricbeat
-- **7.10.x**: will use `7.10.x` alias for the Elastic Stack, the Agent and Metricbeat
-- **7.x**: will use `7.x` alias for the Elastic Stack, the Agent and Metricbeat
-- **master**: will use `8.0.0-SNAPSHOT` for the Elastic Stack, the Agent and Metricbeat, representing the current development version of the different products under test.
-=======
 - **7.13.x**: (for example): will use `7.13.x` alias for the Elastic Stack (including Fleet Server), Agent and Endpoint / Beats
 - **7.x**: will use `7.x` alias for the all noted components, always being on the cusp of development, ahead of / newer than the .x release that came before it
 - **master**: will use `8.0.0-SNAPSHOT` for the Elastic Stack and the Agent, representing the current development version of the different products under test.
->>>>>>> c672e7f (chore: remove more metricbeat suite instances (#1567))
 
 With that in mind, the project supports setting these versions in environment variables, overriding the pre-branch default ones.
 
