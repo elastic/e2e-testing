@@ -158,7 +158,7 @@ func (i *elasticAgentZIPPackage) Stop(ctx context.Context) error {
 
 // Uninstall uninstalls a EXE package
 func (i *elasticAgentZIPPackage) Uninstall(ctx context.Context) error {
-	cmds := []string{"C:\\elastic-agent\\elastic-agent.exe", "uninstall", "-f"}
+	cmds := []string{"C:\\Program Files\\Elastic\\Agent\\elastic-agent.exe", "uninstall", "-f"}
 	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.zip.uninstall", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
