@@ -227,6 +227,112 @@ func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredSt
 	return nil
 }
 
+<<<<<<< HEAD
+=======
+func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, version, installerType string) error {
+	agentVersionBackup := fts.Version
+	defer func() { fts.Version = agentVersionBackup }()
+
+	common.AgentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", common.AgentStaleVersion)
+	// check if stale version is an alias
+	v, err := elasticversion.GetElasticArtifactVersion(common.AgentStaleVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": common.AgentStaleVersion,
+		}).Error("Failed to get stale version")
+		return err
+	}
+	common.AgentStaleVersion = v
+
+	useCISnapshots := elasticversion.GithubCommitSha1 != ""
+	if useCISnapshots && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
+		common.AgentStaleVersion += "-SNAPSHOT"
+	}
+
+	switch version {
+	case "stale":
+		version = common.AgentStaleVersion
+	case "latest":
+		version = common.BeatVersion
+	default:
+		version = common.AgentStaleVersion
+	}
+
+	fts.Version = version
+
+	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
+}
+
+func (fts *FleetTestSuite) installCerts() error {
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+	agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
+
+	err := agentInstaller.InstallCerts(fts.currentContext)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"agentVersion":      common.BeatVersion,
+			"agentStaleVersion": common.AgentStaleVersion,
+			"error":             err,
+			"installer":         agentInstaller,
+			"version":           fts.Version,
+		}).Error("Could not install the certificates")
+		return err
+	}
+
+	return nil
+}
+
+func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
+	switch desiredVersion {
+	case "stale":
+		desiredVersion = common.AgentStaleVersion
+	case "latest":
+		desiredVersion = common.BeatVersion
+	default:
+		desiredVersion = common.BeatVersion
+	}
+
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+	return fts.kibanaClient.UpgradeAgent(fts.currentContext, manifest.Hostname, desiredVersion)
+}
+
+func (fts *FleetTestSuite) agentInVersion(version string) error {
+	switch version {
+	case "stale":
+		version = common.AgentStaleVersion
+	case "latest":
+		version = elasticversion.GetSnapshotVersion(common.BeatVersion)
+	}
+
+	agentInVersionFn := func() error {
+		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+		manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+		agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
+		if err != nil {
+			return err
+		}
+
+		retrievedVersion := agent.LocalMetadata.Elastic.Agent.Version
+		if isSnapshot := agent.LocalMetadata.Elastic.Agent.Snapshot; isSnapshot {
+			retrievedVersion += "-SNAPSHOT"
+		}
+
+		if retrievedVersion != version {
+			return fmt.Errorf("version mismatch required '%s' retrieved '%s'", version, retrievedVersion)
+		}
+
+		return nil
+	}
+
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	exp := utils.GetExponentialBackOff(maxTimeout)
+
+	return backoff.Retry(agentInVersionFn, exp)
+}
+
+>>>>>>> 6bc58b9 (chore: simplify env when consuming Beats CI artifacts (#1543))
 // this step infers the installer type from the underlying OS image
 // supported images: centos and debian
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
@@ -421,14 +527,14 @@ func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string
 			}
 
 			retryCount++
-			return fmt.Errorf("The agent is not present in Fleet in the '%s' status, but it should", desiredStatus)
+			return fmt.Errorf("the agent is not present in Fleet in the '%s' status, but it should", desiredStatus)
 		}
 
 		agentStatus, err := kibanaClient.GetAgentStatusByHostname(ctx, hostname)
 		isAgentInStatus := strings.EqualFold(agentStatus, desiredStatus)
 		if err != nil || !isAgentInStatus {
 			if err == nil {
-				err = fmt.Errorf("The Agent is not in the %s status yet", desiredStatus)
+				err = fmt.Errorf("the Agent is not in the %s status yet", desiredStatus)
 			}
 
 			log.WithFields(log.Fields{
@@ -486,7 +592,7 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 		"content":    content,
 	}).Debug("Agent working dir content")
 
-	return fmt.Errorf("The file system directory is not empty")
+	return fmt.Errorf("the file system directory is not empty")
 }
 
 func (fts *FleetTestSuite) theHostIsRestarted() error {
@@ -531,7 +637,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 
 		count := len(dataStreams.Children())
 		if count == 0 {
-			err = fmt.Errorf("There are no datastreams yet")
+			err = fmt.Errorf("there are no datastreams yet")
 
 			log.WithFields(log.Fields{
 				"retry":       retryCount,
@@ -559,7 +665,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	}
 
 	if dataStreamsCount == 0 {
-		err = fmt.Errorf("There are no datastreams. We expected to have more than one")
+		err = fmt.Errorf("there are no datastreams. We expected to have more than one")
 		log.Error(err.Error())
 		return err
 	}
@@ -776,7 +882,7 @@ func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error 
 			}).Warn("The policy response is not listed as 'success' in the Administration view in the Security App yet")
 			retryCount++
 
-			return fmt.Errorf("The policy response is not listed as 'success' in the Administration view in the Security App yet")
+			return fmt.Errorf("the policy response is not listed as 'success' in the Administration view in the Security App yet")
 		}
 
 		log.WithFields(log.Fields{
@@ -925,7 +1031,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken)
 
 	if err == nil {
-		err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
+		err = fmt.Errorf("the agent was enrolled although the token was previously revoked")
 
 		log.WithFields(log.Fields{
 			"tokenID": fts.CurrentTokenID,
