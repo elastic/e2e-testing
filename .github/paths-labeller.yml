@@ -9,7 +9,7 @@
     - "cli/**/*.*"
   - "helm":
     - "e2e/_suites/helm/**/*.*"
-  - "Team: Ingest Management":
+  - "Team: Agent":
     - "e2e/_suites/fleet/**/*.*"
   - "licenses":
     - "notice/**/*.*"
@@ -17,5 +17,3 @@
     - "**/go.sum"
     - "**/LICENSE.txt"
     - "**/NOTICE.txt"
-  - "metricbeat":
-    - "e2e/_suites/metricbeat/**/*.*"
