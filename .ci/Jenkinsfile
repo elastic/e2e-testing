@@ -342,7 +342,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def envContext = []
   envContext.add("GOARCH=${goArch}")
   envContext.add("PROVIDER=${platformProvider}")
-  envContext.add("ELASTIC_APM_GLOBAL_LABELS=build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
+  envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
 
   return {
     withNode(labels: "${workerLabels}", sleepMax: 20, forceWorkspace: true){

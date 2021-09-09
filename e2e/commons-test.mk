@@ -18,12 +18,16 @@ ifeq ($(ELASTIC_APM_ACTIVE),true)
 ifdef CI
 export APM_SECRET_TOKEN?=${ELASTIC_APM_SECRET_TOKEN}
 export APM_SERVER_URL?=${ELASTIC_APM_SERVER_URL}
+export TRACEPARENT?=${TRACEPARENT}
+export BRANCH_NAME?=${BRANCH_NAME}
 else
 # Otherwise use the jenkins-stats cluster
 JENKINS_STATS_SECRET?=secret/observability-team/ci/jenkins-stats
 export APM_SECRET_TOKEN?=$(shell vault read -field apmServerToken "$(JENKINS_STATS_SECRET)")
 export APM_SERVER_URL?=$(shell vault read -field apmServerUrl "$(JENKINS_STATS_SECRET)")
 export ELASTIC_APM_GLOBAL_LABELS?=
+export TRACEPARENT?=
+export BRANCH_NAME?=
 endif
 
 endif
@@ -75,4 +79,6 @@ functional-test: install-godog
 	ELASTIC_APM_ENVIRONMENT="${ELASTIC_APM_ENVIRONMENT}" \
 	ELASTIC_APM_SECRET_TOKEN="${APM_SECRET_TOKEN}" \
 	ELASTIC_APM_SERVER_URL="${APM_SERVER_URL}" \
+	BRANCH_NAME="${BRANCH_NAME}" \
+	TRACEPARENT="${TRACEPARENT}" \
 	go test -timeout 60m -v --godog.format=${FORMAT} ${FEATURES_VALUE} ${TAGS_FLAG}${TAGS_VALUE}
