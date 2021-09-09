@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/installer"
@@ -84,13 +85,13 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 
 	dockerImageTag := common.BeatVersion
 
-	common.ProfileEnv["elasticAgentDockerNamespace"] = utils.GetDockerNamespaceEnvVar("beats")
+	common.ProfileEnv["elasticAgentDockerNamespace"] = deploy.GetDockerNamespaceEnvVar("beats")
 	common.ProfileEnv["elasticAgentDockerImageSuffix"] = ""
 	if image != "default" {
 		common.ProfileEnv["elasticAgentDockerImageSuffix"] = "-" + image
 	}
 
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	useCISnapshots := elasticversion.GithubCommitSha1 != ""
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 
 	if useCISnapshots || beatsLocalPath != "" {

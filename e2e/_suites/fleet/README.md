@@ -84,6 +84,7 @@ This is an example of the optional configuration:
    # There should be a Docker image for the runtime dependencies (kibana)
    export KIBANA_VERSION=pr12345
    # (Fleet mode) This environment variable will use a fixed version of the Elastic agent binary, obtained from
+<<<<<<< HEAD
    # https://artifacts-api.elastic.co/v1/search/7.x-SNAPSHOT/elastic-agent
    export ELASTIC_AGENT_DOWNLOAD_URL="https://snapshots.elastic.co/7.12.0-069dfaa4/downloads/beats/elastic-agent/elastic-agent-7.12.0-SNAPSHOT-linux-x86_64.tar.gz"
    # (Fleet mode) This environment variable will use the snapshots produced by Beats CI. If the above variable
@@ -91,6 +92,12 @@ This is an example of the optional configuration:
    export BEATS_USE_CI_SNAPSHOTS="true"
    # (Stand-Alone mode) This environment variable will use the its value as the Docker tag produced by Beats CI (Please look up Google Cloud Storage CI bucket).
    export BEAT_VERSION="78a762c76080aafa34c52386341b590dac24e2df"
+=======
+   # https://artifacts-api.elastic.co/v1/search/8.0.0-SNAPSHOT/elastic-agent
+   export ELASTIC_AGENT_DOWNLOAD_URL="https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz"
+   # This environment variable will use the its value as the Docker tag produced by Beats CI (Please look up Google Cloud Storage CI bucket).
+   export GITHUB_CHECK_SHA1="78a762c76080aafa34c52386341b590dac24e2df"
+>>>>>>> 6bc58b9 (chore: simplify env when consuming Beats CI artifacts (#1543))
    ```
 
 3. Define the proper Docker images to be used in tests (Optional).
