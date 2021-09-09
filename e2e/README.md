@@ -61,7 +61,7 @@ The services provided by the test suites in this framework will be started in th
 ### Runtime dependencies
 In many cases, we want to store the metrics in Elasticsearch, so at some point we must start up an Elasticsearch instance. Besides that, we want to query the Elasticsearch to perform assertions on the metrics, such as there are no errors, or the field `f.foo` takes the value `bar`. For that reason we need an Elasticsearch instance in a well-known location. We are going to group this Elasticsearch instance, and any other runtime dependencies, under the concept of a `profile`, which is a represented by a `docker-compose.yml` file under the `cli/config/compose/profiles/` and the name of the test suite.
 
-As an example, the Metricbeat test suite will need just an Elasticsearch instance; the Fleet test suite will need an Elasticsearch instance, Kibana and Fleet Server.
+As an example, the Fleet test suite will need an Elasticsearch instance, Kibana and Fleet Server.
 
 #### Configuration files
 If the profile needs certain configuration files, we recommend locating them under a `configurations` folder in the profile directory. As an example, see `kibana.config.yml` in the `fleet` profile.
@@ -94,7 +94,7 @@ We have built the project and the CI job in a manner that it is possible to over
 - **7.13.x**: (for example): will use `7.13.x` alias for the Elastic Stack (including Fleet Server), Agent and Endpoint / Beats
 - **7.14.x**: (for example): will use `7.14.x` alias for the Elastic Stack (including Fleet Server), Agent and Endpoint / Beats
 - **7.x**: will use `7.x` alias for the all noted components, always being on the cusp of development, ahead of / newer than the .x release that came before it
-- **master**: will use `8.0.0-SNAPSHOT` for the Elastic Stack, the Agent and Metricbeat, representing the current development version of the different products under test.
+- **master**: will use `8.0.0-SNAPSHOT` for the Elastic Stack and the Agent, representing the current development version of the different products under test.
 
 With that in mind, the project supports setting these versions in environment variables, overriding the pre-branch default ones.
 
@@ -116,12 +116,9 @@ We are going to enumerate the variables that will affect the product versions us
 - `KUBERNETES_VERSION`. Set this environment variable to the proper version of Kubernetes to be used in the current execution. Default: See https://github.com/elastic/e2e-testing/blob/0446248bae1ff604219735998841a21a7576bfdd/.ci/Jenkinsfile#L46
 
 #### Kubernetes autodiscover charts
-- `BEAT_VERSION`. Set this environment variable to the proper version of the Metricbeat to be used in the current execution. Default: See https://github.com/elastic/e2e-testing/blob/70b1d3ddaf39567aeb4c322054b93ad7ce53e825/.ci/Jenkinsfile#L44
+- `BEAT_VERSION`. Set this environment variable to the proper version of the Beat to be used in the current execution. Default: See https://github.com/elastic/e2e-testing/blob/70b1d3ddaf39567aeb4c322054b93ad7ce53e825/.ci/Jenkinsfile#L44
 - `KIND_VERSION`. Set this environment variable to the proper version of Kind (Kubernetes in Docker) to be used in the current execution. Default: See https://github.com/elastic/e2e-testing/blob/0446248bae1ff604219735998841a21a7576bfdd/.ci/Jenkinsfile#L45
 - `KUBERNETES_VERSION`. Set this environment variable to the proper version of Kubernetes to be used in the current execution. Default: See https://github.com/elastic/e2e-testing/blob/0446248bae1ff604219735998841a21a7576bfdd/.ci/Jenkinsfile#L46
-
-#### Metricbeat
-- `BEAT_VERSION`. Set this environment variable to the proper version of the Metricbeat to be used in the current execution. Default: See https://github.com/elastic/e2e-testing/blob/70b1d3ddaf39567aeb4c322054b93ad7ce53e825/.ci/Jenkinsfile#L44
 
 ### Environment variables affecting the build
 The following environment variables affect how the tests are run in both the CI and a local machine.
@@ -136,7 +133,6 @@ The following environment variables affect how the tests are run in both the CI 
 - `KIBANA_VERSION`. Set this environment variable to the proper version of the Kibana instance to be used in the current execution, which should be used for the Docker tag of the kibana instance. It will refer to an image related to a Kibana PR, under the Observability-CI namespace. Default is empty 
 - `STACK_VERSION`. Set this environment variable to the proper version of the Elasticsearch to be used in the current execution. The default value depens on the branch you are targeting your work.
     - **master (Fleet):** https://github.com/elastic/e2e-testing/blob/0446248bae1ff604219735998841a21a7576bfdd/e2e/_suites/fleet/ingest-manager_test.go#L39
-    - **master (Integrations):** https://github.com/elastic/e2e-testing/blob/0446248bae1ff604219735998841a21a7576bfdd/e2e/_suites/metricbeat/metricbeat_test.go#L30
 - `TIMEOUT_FACTOR`: Set this environment variable to an integer number, which represents the factor to be used while waiting for resources within the tests. I.e. waiting for Kibana needs around 30 seconds. Instead of hardcoding 30 seconds, or 3 minutes, in the code, we use a backoff strategy to wait until an amount of time, specific per situation, multiplying it by the timeout factor. With that in mind, we are able to set a higher factor on CI without changing the code, and the developer is able to locally set specific conditions when running the tests on slower machines. Default: `3`.
 
 - `FEATURES`: Set this environment variable to an existing feature file, or a glob expression (`fleet_*.feature`), that will be passed to the test runner to filter the execution, selecting those feature files matching that expression. If empty, all feature files in the `features/` directory will be used. It can be used in combination with `TAGS`.
@@ -197,8 +193,8 @@ To do so:
 1. Login as a user
 1. Select the base branch for the test code: master (for 8.0.0-SNAPSHOT), 7.x, or any other maintenance branch.
 1. In the left menu, click on `Buid with Parameters`.
-1. In the input parameters form, set the stack version (for Fleet or Metricbeat) using the specific variables for the test suite.
-1. (Optional) Set the product version (Fleet, Helm charts or Metricbeat) using the specific variables for the test suite if you want to consume a different artifact.
+1. In the input parameters form, set the stack version (for Fleet) using the specific variables for the test suite.
+1. (Optional) Set the product version (Fleet or Helm charts) using the specific variables for the test suite if you want to consume a different artifact.
 1. Click the `Build` button at the bottom of the parameters form.
 
 Here you have a video reproducing the same steps:
@@ -215,8 +211,8 @@ To do so:
 1. Login as a user
 1. Select the base branch for the test code: 7.10.x, 7.11.x, 7.x or master.
 1. In the left menu, click on `Buid with Parameters`.
-1. In the input parameters form, keep the Beat version (for Fleet and Metricbeat) as is, to use each branch's default version.
-1. In the input parameters form, keep the stack version (for Fleet and Metricbeat) as is, to use each branch's default version.
+1. In the input parameters form, keep the Beat version (for Fleet) as is, to use each branch's default version.
+1. In the input parameters form, keep the stack version (for Fleet) as is, to use each branch's default version.
 1. In the input parameters form, set the `GITHUB_CHECK_NAME` to `E2E Tests`. This value will appear as the label for the Github check for the E2E tests.
 1. In the input parameters form, set the `GITHUB_CHECK_REPO` to `beats`.
 1. In the input parameters form, check the `BEATS_USE_CI_SNAPSHOTS` checkbox. This value will instrument the test framework to download the binaries from the CI bucket on Google Cloud Platform Storage.
