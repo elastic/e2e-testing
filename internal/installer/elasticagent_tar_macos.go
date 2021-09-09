@@ -84,11 +84,6 @@ func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string)
 	return nil
 }
 
-// InstallCerts installs the certificates for a TAR package, using the right OS package manager
-func (i *elasticAgentTARDarwinPackage) InstallCerts(ctx context.Context) error {
-	return nil
-}
-
 // Logs prints logs of service
 func (i *elasticAgentTARDarwinPackage) Logs(ctx context.Context) error {
 	// TODO: we need to find a way to read MacOS logs for a service (the agent is installed under /Library/LaunchDaemons)

@@ -261,30 +261,3 @@ func (c *Client) UnEnrollAgent(ctx context.Context, hostname string) error {
 	}
 	return nil
 }
-
-// UpgradeAgent upgrades an agent from to version
-func (c *Client) UpgradeAgent(ctx context.Context, hostname string, version string) error {
-	span, _ := apm.StartSpanOptions(ctx, "Upgrading Elastic Agent by hostname", "fleet.agent.upgrade-by-hostname", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	defer span.End()
-
-	agentID, err := c.GetAgentIDByHostname(ctx, hostname)
-	if err != nil {
-		return err
-	}
-
-	reqBody := `{"version":"` + version + `", "force": true}`
-	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/agents/%s/upgrade", FleetAPI, agentID), []byte(reqBody))
-	if statusCode != 200 {
-		log.WithFields(log.Fields{
-			"body":       respBody,
-			"error":      err,
-			"statusCode": statusCode,
-		}).Error("Could not upgrade agent")
-
-		return err
-	}
-	return nil
-
-}

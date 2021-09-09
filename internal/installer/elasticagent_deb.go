@@ -88,26 +88,6 @@ func (i *elasticAgentDEBPackage) Enroll(ctx context.Context, token string) error
 	return nil
 }
 
-// InstallCerts installs the certificates for a DEB package, using the right OS package manager
-func (i *elasticAgentDEBPackage) InstallCerts(ctx context.Context) error {
-	span, _ := apm.StartSpanOptions(ctx, "Installing certificates for the Elastic Agent", "elastic-agent.debian.install-certs", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	defer span.End()
-
-	cmds := [][]string{
-		{"apt-get", "update"},
-		{"apt", "install", "ca-certificates", "-y"},
-		{"update-ca-certificates", "-f"},
-	}
-	for _, cmd := range cmds {
-		if _, err := i.Exec(ctx, cmd); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // Logs prints logs of service
 func (i *elasticAgentDEBPackage) Logs(ctx context.Context) error {
 	// TODO we could read "/var/lib/elastic-agent/data/elastic-agent-*/logs/elastic-agent-json.log"

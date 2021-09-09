@@ -71,11 +71,6 @@ func (i *elasticAgentDockerPackage) Enroll(ctx context.Context, token string) er
 	return nil
 }
 
-// InstallCerts installs the certificates for a package, using the right OS package manager
-func (i *elasticAgentDockerPackage) InstallCerts(ctx context.Context) error {
-	return nil
-}
-
 // Logs prints logs of service
 func (i *elasticAgentDockerPackage) Logs(ctx context.Context) error {
 	return i.deploy.Logs(ctx, i.service)

@@ -87,11 +87,6 @@ func (i *elasticAgentTARPackage) Enroll(ctx context.Context, token string) error
 	return nil
 }
 
-// InstallCerts installs the certificates for a TAR package, using the right OS package manager
-func (i *elasticAgentTARPackage) InstallCerts(ctx context.Context) error {
-	return nil
-}
-
 // Logs prints logs of service
 func (i *elasticAgentTARPackage) Logs(ctx context.Context) error {
 	// TODO: we could read "/opt/Elastic/Agent/data/elastic-agent-*/logs/elastic-agent-json.log*"
