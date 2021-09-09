@@ -35,7 +35,6 @@ type ServiceOperator interface {
 	Exec(ctx context.Context, args []string) (string, error) // exec arbitrary commands in service environment
 	Inspect() (ServiceOperatorManifest, error)               // returns manifest for package
 	Install(ctx context.Context) error
-	InstallCerts(ctx context.Context) error
 	Logs(ctx context.Context) error
 	Postinstall(ctx context.Context) error
 	Preinstall(ctx context.Context) error

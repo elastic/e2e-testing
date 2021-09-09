@@ -81,11 +81,6 @@ func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string) error
 	return nil
 }
 
-// InstallCerts installs the certificates for a ZIP package, using the right OS package manager
-func (i *elasticAgentZIPPackage) InstallCerts(ctx context.Context) error {
-	return nil
-}
-
 // Logs prints logs of service
 func (i *elasticAgentZIPPackage) Logs(ctx context.Context) error {
 	// TODO: we need to find a way to read Winidows logs for the service
