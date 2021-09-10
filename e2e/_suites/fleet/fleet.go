@@ -421,14 +421,14 @@ func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string
 			}
 
 			retryCount++
-			return fmt.Errorf("The agent is not present in Fleet in the '%s' status, but it should", desiredStatus)
+			return fmt.Errorf("the agent is not present in Fleet in the '%s' status, but it should", desiredStatus)
 		}
 
 		agentStatus, err := kibanaClient.GetAgentStatusByHostname(ctx, hostname)
 		isAgentInStatus := strings.EqualFold(agentStatus, desiredStatus)
 		if err != nil || !isAgentInStatus {
 			if err == nil {
-				err = fmt.Errorf("The Agent is not in the %s status yet", desiredStatus)
+				err = fmt.Errorf("the Agent is not in the %s status yet", desiredStatus)
 			}
 
 			log.WithFields(log.Fields{
@@ -486,7 +486,7 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 		"content":    content,
 	}).Debug("Agent working dir content")
 
-	return fmt.Errorf("The file system directory is not empty")
+	return fmt.Errorf("the file system directory is not empty")
 }
 
 func (fts *FleetTestSuite) theHostIsRestarted() error {
@@ -531,7 +531,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 
 		count := len(dataStreams.Children())
 		if count == 0 {
-			err = fmt.Errorf("There are no datastreams yet")
+			err = fmt.Errorf("there are no datastreams yet")
 
 			log.WithFields(log.Fields{
 				"retry":       retryCount,
@@ -559,7 +559,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	}
 
 	if dataStreamsCount == 0 {
-		err = fmt.Errorf("There are no datastreams. We expected to have more than one")
+		err = fmt.Errorf("there are no datastreams. We expected to have more than one")
 		log.Error(err.Error())
 		return err
 	}
@@ -776,7 +776,7 @@ func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error 
 			}).Warn("The policy response is not listed as 'success' in the Administration view in the Security App yet")
 			retryCount++
 
-			return fmt.Errorf("The policy response is not listed as 'success' in the Administration view in the Security App yet")
+			return fmt.Errorf("the policy response is not listed as 'success' in the Administration view in the Security App yet")
 		}
 
 		log.WithFields(log.Fields{
@@ -925,7 +925,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken)
 
 	if err == nil {
-		err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
+		err = fmt.Errorf("the agent was enrolled although the token was previously revoked")
 
 		log.WithFields(log.Fields{
 			"tokenID": fts.CurrentTokenID,

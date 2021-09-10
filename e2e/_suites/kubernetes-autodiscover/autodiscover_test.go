@@ -76,7 +76,7 @@ func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, optio
 			return false
 		},
 		"beats_namespace": func() string {
-			return utils.GetDockerNamespaceEnvVar("beats")
+			return deploy.GetDockerNamespaceEnvVar("beats")
 		},
 		"beats_version": func() string {
 			return beatVersions[podName]
@@ -135,12 +135,12 @@ func (m *podsManager) configureDockerImage(podName string) error {
 
 	beatVersion := elasticversion.GetSnapshotVersion(common.BeatVersion) + "-amd64"
 
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	useCISnapshots := elasticversion.GithubCommitSha1 != ""
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if useCISnapshots || beatsLocalPath != "" {
 		log.Debugf("Configuring Docker image for %s", podName)
 
-		_, imagePath, err := utils.FetchElasticArtifact(m.ctx, podName, common.BeatVersion, "linux", "amd64", "tar.gz", true, true)
+		_, imagePath, err := elasticversion.FetchElasticArtifact(m.ctx, podName, common.BeatVersion, "linux", "amd64", "tar.gz", true, true)
 		if err != nil {
 			return err
 		}

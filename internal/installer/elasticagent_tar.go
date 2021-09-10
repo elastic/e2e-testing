@@ -113,7 +113,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 	}
 	extension := "tar.gz"
 
-	_, binaryPath, err := utils.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+	_, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
