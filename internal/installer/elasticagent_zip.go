@@ -12,7 +12,6 @@ import (
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
-	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -58,7 +57,7 @@ func (i *elasticAgentZIPPackage) Exec(ctx context.Context, args []string) (strin
 	span.Context.SetLabel("arguments", args)
 	defer span.End()
 
-	output, err := i.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, i.service, args)
+	output, err := i.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, args)
 	return output, err
 }
 
@@ -72,13 +71,11 @@ func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string) error
 	defer span.End()
 
 	cfg, _ := kibana.NewFleetConfig(token)
-	for _, arg := range cfg.Flags() {
-		cmds = append(cmds, arg)
-	}
+	cmds = append(cmds, cfg.Flags()...)
 
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
-		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to install the agent with subcommand: %v", err)
 	}
 	return nil
 }
@@ -89,10 +86,10 @@ func (i *elasticAgentZIPPackage) InstallCerts(ctx context.Context) error {
 }
 
 // Logs prints logs of service
-func (i *elasticAgentZIPPackage) Logs() error {
+func (i *elasticAgentZIPPackage) Logs(ctx context.Context) error {
 	// TODO: we need to find a way to read Winidows logs for the service
 	// or we could read "C:\Program Files\Elastic\Agent\data\elastic-agent-*\logs\elastic-agent-json.log*"
-	return i.deploy.Logs(i.service)
+	return i.deploy.Logs(ctx, i.service)
 }
 
 // Postinstall executes operations after installing a ZIP package
@@ -112,7 +109,7 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 	arch := "x86_64"
 	extension := "zip"
 
-	_, binaryPath, err := utils.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+	_, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -125,12 +122,12 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	output, err := i.Exec(ctx, []string{"powershell.exe", "Expand-Archive", "-LiteralPath", binaryPath, "-DestinationPath", "C:\\", "-Force"})
+	_, err = i.Exec(ctx, []string{"powershell.exe", "Expand-Archive", "-LiteralPath", binaryPath, "-DestinationPath", "C:\\", "-Force"})
 	if err != nil {
 		return err
 	}
 
-	output, _ = i.Exec(ctx, []string{"powershell.exe", "Move-Item", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "C:\\elastic-agent"})
+	output, _ := i.Exec(ctx, []string{"powershell.exe", "Move-Item", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "C:\\elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
@@ -155,7 +152,7 @@ func (i *elasticAgentZIPPackage) Uninstall(ctx context.Context) error {
 	defer span.End()
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
-		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to uninstall the agent with subcommand: %v", err)
 	}
 	return nil
 }

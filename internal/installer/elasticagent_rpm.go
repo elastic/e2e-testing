@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 
+	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
@@ -39,7 +40,7 @@ func (i *elasticAgentRPMPackage) AddFiles(ctx context.Context, files []string) e
 	span.Context.SetLabel("files", files)
 	defer span.End()
 
-	return i.deploy.AddFiles(ctx, common.FleetProfileServiceRequest, i.service, files)
+	return i.deploy.AddFiles(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, files)
 }
 
 // Inspect returns info on package
@@ -64,7 +65,7 @@ func (i *elasticAgentRPMPackage) Exec(ctx context.Context, args []string) (strin
 	span.Context.SetLabel("arguments", args)
 	defer span.End()
 
-	output, err := i.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, i.service, args)
+	output, err := i.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, args)
 	return output, err
 }
 
@@ -78,14 +79,12 @@ func (i *elasticAgentRPMPackage) Enroll(ctx context.Context, token string) error
 	defer span.End()
 
 	cfg, _ := kibana.NewFleetConfig(token)
-	for _, cmd := range cfg.Flags() {
-		cmds = append(cmds, cmd)
-	}
+	cmds = append(cmds, cfg.Flags()...)
 
 	output, err := i.Exec(ctx, cmds)
 	log.Trace(output)
 	if err != nil {
-		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to install the agent with subcommand: %v", err)
 	}
 	return nil
 }
@@ -112,9 +111,9 @@ func (i *elasticAgentRPMPackage) InstallCerts(ctx context.Context) error {
 }
 
 // Logs prints logs of service
-func (i *elasticAgentRPMPackage) Logs() error {
+func (i *elasticAgentRPMPackage) Logs(ctx context.Context) error {
 	// TODO we could read "/var/lib/elastic-agent/data/elastic-agent-*/logs/elastic-agent-json.log"
-	return systemCtlLog(context.Background(), "rpm", i.Exec)
+	return systemCtlLog(ctx, "rpm", i.Exec)
 }
 
 // Postinstall executes operations after installing a RPM package
@@ -147,7 +146,7 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 		}
 		extension := "rpm"
 
-		binaryName, binaryPath, err := utils.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+		binaryName, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"artifact":  artifact,
@@ -227,7 +226,7 @@ func (i *elasticAgentRPMPackage) Uninstall(ctx context.Context) error {
 	defer span.End()
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
-		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to uninstall the agent with subcommand: %v", err)
 	}
 	return nil
 }

@@ -60,7 +60,7 @@ func (i *elasticAgentTARDarwinPackage) Exec(ctx context.Context, args []string) 
 	span.Context.SetLabel("runtime", runtime.GOOS)
 	defer span.End()
 
-	output, err := i.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, i.service, args)
+	output, err := i.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, args)
 	return output, err
 }
 
@@ -75,13 +75,11 @@ func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string)
 	defer span.End()
 
 	cfg, _ := kibana.NewFleetConfig(token)
-	for _, arg := range cfg.Flags() {
-		cmds = append(cmds, arg)
-	}
+	cmds = append(cmds, cfg.Flags()...)
 
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
-		return fmt.Errorf("Failed to install the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to install the agent with subcommand: %v", err)
 	}
 	return nil
 }
@@ -92,10 +90,10 @@ func (i *elasticAgentTARDarwinPackage) InstallCerts(ctx context.Context) error {
 }
 
 // Logs prints logs of service
-func (i *elasticAgentTARDarwinPackage) Logs() error {
+func (i *elasticAgentTARDarwinPackage) Logs(ctx context.Context) error {
 	// TODO: we need to find a way to read MacOS logs for a service (the agent is installed under /Library/LaunchDaemons)
 	// or we could read "/Library/Elastic/Agent/data/elastic-agent-*/logs/elastic-agent-json.log*"
-	return i.deploy.Logs(i.service)
+	return i.deploy.Logs(ctx, i.service)
 }
 
 // Postinstall executes operations after installing a TAR package
@@ -119,7 +117,7 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 	}
 	extension := "tar.gz"
 
-	_, binaryPath, err := utils.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+	_, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -132,12 +130,12 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	output, err := i.Exec(ctx, []string{"tar", "-xvf", binaryPath})
+	_, err = i.Exec(ctx, []string{"tar", "-xvf", binaryPath})
 	if err != nil {
 		return err
 	}
 
-	output, _ = i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "/elastic-agent"})
+	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "/elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
@@ -187,7 +185,7 @@ func (i *elasticAgentTARDarwinPackage) Uninstall(ctx context.Context) error {
 	defer span.End()
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
-		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to uninstall the agent with subcommand: %v", err)
 	}
 	return nil
 }

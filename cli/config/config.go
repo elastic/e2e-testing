@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -21,10 +20,6 @@ import (
 
 	"gopkg.in/yaml.v2"
 )
-
-// opComposeBox the tool's static files where we will embed default Docker compose
-// files representing the services and the profiles
-var opComposeBox *packr.Box
 
 // Op the tool's configuration, read from tool's workspace
 var Op *OpConfig
@@ -144,7 +139,7 @@ func PutServiceVariantEnvironment(env map[string]string, service string, service
 		Env []EnvVar `yaml:"variants"`
 	}
 
-	versionsPath := path.Join(
+	versionsPath := filepath.Join(
 		OpDir(), "compose", "services", service, "_meta", "supported-versions.yml")
 
 	bytes, err := io.ReadFile(versionsPath)
@@ -189,8 +184,8 @@ func checkConfigDirectory(dir string) {
 }
 
 func checkConfigDirs(workspace string) {
-	servicesPath := path.Join(workspace, "compose", "services")
-	profilesPath := path.Join(workspace, "compose", "profiles")
+	servicesPath := filepath.Join(workspace, "compose", "services")
+	profilesPath := filepath.Join(workspace, "compose", "profiles")
 
 	checkConfigDirectory(servicesPath)
 	checkConfigDirectory(profilesPath)
@@ -256,8 +251,6 @@ func newConfig(workspace string) {
 	// add file system services and profiles
 	readFilesFromFileSystem("services")
 	readFilesFromFileSystem("profiles")
-
-	opComposeBox = box
 }
 
 // Extract packaged profiles and services for use with cli runner
@@ -307,14 +300,14 @@ func extractProfileServiceConfig(op *OpConfig, box *packr.Box) error {
 // configurations/ directory is optional and only needed if docker-compose.yml needs to reference
 // any filelike object within its parent directory
 func packFiles(op *OpConfig) *packr.Box {
-	box := packr.New("Compose Files", "./compose")
+	box := packr.New("Compose Files", "compose")
 	return box
 }
 
 // reads the docker-compose in the workspace, merging them with what it's
 // already boxed in the binary
 func readFilesFromFileSystem(serviceType string) {
-	basePath := path.Join(OpDir(), "compose", serviceType)
+	basePath := filepath.Join(OpDir(), "compose", serviceType)
 	files, err := io.ReadDir(basePath)
 	if err != nil {
 		log.WithFields(log.Fields{

@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 
+	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/utils"
@@ -37,7 +38,7 @@ func (i *elasticAgentDockerPackage) AddFiles(ctx context.Context, files []string
 	span.Context.SetLabel("files", files)
 	defer span.End()
 
-	return i.deploy.AddFiles(ctx, common.FleetProfileServiceRequest, i.service, files)
+	return i.deploy.AddFiles(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, files)
 }
 
 // Inspect returns info on package
@@ -61,7 +62,7 @@ func (i *elasticAgentDockerPackage) Exec(ctx context.Context, args []string) (st
 	span.Context.SetLabel("arguments", args)
 	defer span.End()
 
-	output, err := i.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, i.service, args)
+	output, err := i.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, args)
 	return output, err
 }
 
@@ -76,8 +77,8 @@ func (i *elasticAgentDockerPackage) InstallCerts(ctx context.Context) error {
 }
 
 // Logs prints logs of service
-func (i *elasticAgentDockerPackage) Logs() error {
-	return i.deploy.Logs(i.service)
+func (i *elasticAgentDockerPackage) Logs(ctx context.Context) error {
+	return i.deploy.Logs(ctx, i.service)
 }
 
 // Postinstall executes operations after installing a package
@@ -92,12 +93,13 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 	})
 	defer span.End()
 
-	artifact := "elastic-agent"
+	// handle ubi8 images
+	artifact := "elastic-agent" + common.ProfileEnv["elasticAgentDockerImageSuffix"]
 	os := "linux"
 	arch := utils.GetArchitecture()
 	extension := "tar.gz"
 
-	_, binaryPath, err := utils.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+	_, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, true, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -117,8 +119,10 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 
 	// we need to tag the loaded image because its tag relates to the target branch
 	return deploy.TagImage(
-		fmt.Sprintf("docker.elastic.co/beats/%s:%s", artifact, common.BeatVersionBase),
-		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, common.BeatVersion, arch),
+		fmt.Sprintf("docker.elastic.co/beats/%s:%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersionBase)),
+		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), arch),
+		// tagging including git commit and snapshot
+		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, elasticversion.GetFullVersion(common.BeatVersion), arch),
 	)
 }
 
@@ -165,7 +169,7 @@ func (i *elasticAgentDockerPackage) Uninstall(ctx context.Context) error {
 
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
-		return fmt.Errorf("Failed to uninstall the agent with subcommand: %v", err)
+		return fmt.Errorf("failed to uninstall the agent with subcommand: %v", err)
 	}
 	return nil
 }
