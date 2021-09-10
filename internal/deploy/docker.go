@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/shell"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
@@ -271,4 +272,16 @@ func (c *dockerDeploymentManifest) Stop(ctx context.Context, service ServiceRequ
 	manifest, _ := c.Inspect(context.Background(), service)
 	_, err := shell.Execute(c.Context, ".", "docker", "stop", manifest.Name)
 	return err
+}
+
+// GetDockerNamespaceEnvVar returns the Docker namespace whether we use one of the CI snapshots or
+// the images produced by local Beats build, or not.
+// If an error occurred reading the environment, will return the passed namespace as fallback
+func GetDockerNamespaceEnvVar(fallback string) string {
+	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
+	useCISnapshots := elasticversion.GithubCommitSha1 != ""
+	if useCISnapshots || beatsLocalPath != "" {
+		return "observability-ci"
+	}
+	return fallback
 }
