@@ -262,7 +262,7 @@ func (a *actionWaitProcessWin) Run(ctx context.Context) (string, error) {
 		}).Trace("Checking process desired state on the container")
 
 		// Get-Process | select Name,HasExited,Id | ConvertTo-Json
-		cmds := []string{"powershell.exe", fmt.Sprintf("Get-Process %s | select Name,HasExited,Id | ConvertTo-Json -AsArray", a.opts.Process)}
+		cmds := []string{"powershell.exe", fmt.Sprintf("Get-Process %s | select Name,HasExited,Id | ConvertTo-Json", a.opts.Process)}
 		output, err := a.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), a.service, cmds)
 		if err != nil {
 			log.WithField("error", err).Error("unable to get process output")
@@ -271,6 +271,11 @@ func (a *actionWaitProcessWin) Run(ctx context.Context) (string, error) {
 		}
 		var processList []processInfoWin
 		if err = json.Unmarshal([]byte(output), &processList); err != nil {
+			log.WithField("error", err).Trace("Failed to unmarshal JSON output, will retry with single entry")
+			var processEntry processInfoWin
+			if err = json.Unmarshal([]byte(output), &processEntry); err != nil {
+				log.WithField("error", err).Fatal("Failed to unmarshal JSON output, exiting.")
+			}
 			retryCount++
 			return err
 		}
