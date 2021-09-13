@@ -160,7 +160,8 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
 	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
-	s.Step(`^the agent get Default Api Key"$`, fts.theAgentGetDefaultApiKey)
+	s.Step(`^the agent get Default Api Key$`, fts.theAgentGetDefaultApiKey)
+	s.Step(`^verify that Default Api Key is "([^"]*)"$`, fts.verifyDefaultApiKey)
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
 	s.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)
@@ -511,6 +512,26 @@ func (fts *FleetTestSuite) theAgentGetDefaultApiKey() error {
 		"default_api_key": defaultApiKey,
 	}).Info("The Agent is installed with Default Api Key")
 	fts.DefaultApiKey = defaultApiKey
+	return nil
+}
+func (fts *FleetTestSuite) verifyDefaultApiKey(status string) error {
+	newDefaultApiKey, _ := fts.getAgentDefaultApiKey()
+	if status == "different" {
+		if newDefaultApiKey != fts.DefaultApiKey {
+			log.WithFields(log.Fields{
+				"new_default_api_key": newDefaultApiKey,
+				"old_default_api_key": fts.DefaultApiKey,
+			}).Info("Integration added and Default Api Key is " + status)
+		}
+	}
+	if status == "identical" {
+		if newDefaultApiKey == fts.DefaultApiKey {
+			log.WithFields(log.Fields{
+				"new_default_api_key": newDefaultApiKey,
+				"old_default_api_key": fts.DefaultApiKey,
+			}).Info("Integration updated and Default Api Key is " + status)
+		}
+	}
 	return nil
 }
 
@@ -1260,9 +1281,9 @@ func (fts *FleetTestSuite) getAgentDefaultApiKey() (string, error) {
 	return agent.DefaultApiKey, nil
 }
 
-func metricsInputs(integration string, set string) []kibana.Input {
-	metricsFile := filepath.Join(testResourcesDir, "/metrics.json")
-	data := readJSONFile(metricsFile, integration, set)
+func metricsInputs(integration string, set string, file string, metrics string) []kibana.Input {
+	metricsFile := filepath.Join(testResourcesDir, file)
+	data := readJSONFile(metricsFile, integration, set, metrics)
 	return []kibana.Input{
 		{
 			Type:    integration,
@@ -1274,7 +1295,7 @@ func metricsInputs(integration string, set string) []kibana.Input {
 	return []kibana.Input{}
 }
 
-func readJSONFile(file string, integration string, set string) []interface{} {
+func readJSONFile(file string, integration string, set string, metrics string) []interface{} {
 	jsonFile, err := os.Open(file)
 	if err != nil {
 		fmt.Println(err)
@@ -1297,9 +1318,9 @@ func readJSONFile(file string, integration string, set string) []interface{} {
 		if item.Path("type").Data().(string) == integration {
 			for idx, stream := range item.S("streams").Children() {
 				dataSet, _ := stream.Path("data_stream.dataset").Data().(string)
-				if dataSet == "system."+set {
+				if dataSet == metrics+"."+set {
 					jsonParsed.SetP(
-						integration+"-system."+set+"-"+uuid.New().String(),
+						integration+"-"+metrics+"."+set+"-"+uuid.New().String(),
 						fmt.Sprintf("inputs.%d.streams.%d.id", i, idx),
 					)
 					jsonParsed.SetP(
@@ -1317,6 +1338,8 @@ func readJSONFile(file string, integration string, set string) []interface{} {
 
 func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set string) error {
 	var condition = false
+	var metrics = "system"
+	var file = "/metrics.json"
 	if name != "system/metrics" {
 		condition = true
 	}
@@ -1326,16 +1349,21 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 	if name != "log" {
 		condition = true
 	}
+	if name == "linux/metrics" {
+		condition = true
+		file = "/linux_metrics.json"
+		metrics = "linux"
+	}
 
 	if condition != true {
 		log.WithFields(log.Fields{
 			"name": name,
-		}).Warn("We only support system system/metrics, log and logfile policy to be updated")
+		}).Warn("We only support system system/metrics, log, logfile and linux/metrics policy to be updated")
 		return godog.ErrPending
 	}
 	os, _ := fts.getAgentOSData()
 
-	packageDS, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, "system", fts.Policy)
+	packageDS, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
 
 	if err != nil {
 		return err
@@ -1344,12 +1372,12 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 
 	log.WithFields(log.Fields{
 		"type":    name,
-		"dataset": "system." + set,
-	}).Info("Getting information about Policy package type " + name + " name with dataset system." + set)
+		"dataset": metrics + "." + set,
+	}).Info("Getting information about Policy package type " + name + " name with dataset " + metrics + "." + set)
 
 	for _, item := range packageDS.Inputs {
 		if item.Type == name {
-			packageDS.Inputs = metricsInputs(name, set)
+			packageDS.Inputs = metricsInputs(name, set, file, metrics)
 		}
 	}
 	log.WithFields(log.Fields{
