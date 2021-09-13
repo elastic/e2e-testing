@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
@@ -74,8 +73,6 @@ func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string) error
 
 	cfg, _ := kibana.NewFleetConfig(token)
 	cmds = append(cmds, cfg.Flags()...)
-
-	utils.Sleep(time.Duration(utils.TimeoutFactor) * 10 * time.Second)
 
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
