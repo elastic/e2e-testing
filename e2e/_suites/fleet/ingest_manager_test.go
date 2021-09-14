@@ -15,6 +15,7 @@ import (
 	"github.com/cucumber/godog/colors"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
+	apme2e "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
@@ -53,7 +54,7 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Fleet scenario")
 
-		tx = apm.DefaultTracer.StartTransaction(p.GetName(), "test.scenario")
+		tx = apme2e.StartTransaction(p.GetName(), "test.scenario")
 		tx.Context.SetLabel("suite", "fleet")
 
 		// context is initialised at the step hook, we are initialising it here to prevent panics
@@ -113,7 +114,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		// instrumentation
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = apm.DefaultTracer.StartTransaction("Initialise Fleet", "test.suite")
+		suiteTx = apme2e.StartTransaction("Initialise Fleet", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("Before Fleet test suite", "test.suite.before", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
@@ -126,11 +127,9 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			log.WithField("error", err).Fatal("Unable to run pre-bootstrap initialization")
 		}
 
-		runtimeDepsProvider := shell.GetEnv("PROVIDER", "docker")
-
 		// FIXME: This needs to go into deployer code for docker somehow. Must resolve
 		// cyclic imports since common.defaults now imports deploy module
-		if !shell.GetEnvBool("SKIP_PULL") && runtimeDepsProvider != "remote" {
+		if !shell.GetEnvBool("SKIP_PULL") && common.Provider != "remote" {
 			images := []string{
 				"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
 				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,
@@ -158,9 +157,9 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
 		}
 
-		if runtimeDepsProvider != "remote" {
+		if common.Provider != "remote" {
 			// the runtime dependencies must be started only in non-remote executions
-			deployer.Bootstrap(suiteContext, common.FleetProfileServiceRequest, common.ProfileEnv, func() error {
+			deployer.Bootstrap(suiteContext, deploy.NewServiceRequest(common.FleetProfileName), common.ProfileEnv, func() error {
 				kibanaClient, err := kibana.NewClient()
 				if err != nil {
 					log.WithField("error", err).Fatal("Unable to create kibana client")
@@ -188,17 +187,16 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		var suiteParentSpan *apm.Span
 		var suiteContext = context.Background()
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = apm.DefaultTracer.StartTransaction("Tear Down Fleet", "test.suite")
+		suiteTx = apme2e.StartTransaction("Tear Down Fleet", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("After Fleet test suite", "test.suite.after", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		runtimeDepsProvider := shell.GetEnv("PROVIDER", "docker")
-		if !common.DeveloperMode && runtimeDepsProvider != "remote" {
+		if !common.DeveloperMode && common.Provider != "remote" {
 			log.Debug("Destroying Fleet runtime dependencies")
 			deployer := deploy.New(common.Provider)
-			deployer.Destroy(suiteContext, common.FleetProfileServiceRequest)
+			deployer.Destroy(suiteContext, deploy.NewServiceRequest(common.FleetProfileName))
 		}
 	})
 }

@@ -39,7 +39,7 @@ func (i *elasticAgentTARPackage) AddFiles(ctx context.Context, files []string) e
 	span.Context.SetLabel("files", files)
 	defer span.End()
 
-	return i.deploy.AddFiles(ctx, common.FleetProfileServiceRequest, i.service, files)
+	return i.deploy.AddFiles(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, files)
 }
 
 // Inspect returns info on package
@@ -64,7 +64,7 @@ func (i *elasticAgentTARPackage) Exec(ctx context.Context, args []string) (strin
 	span.Context.SetLabel("arguments", args)
 	defer span.End()
 
-	output, err := i.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, i.service, args)
+	output, err := i.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, args)
 	return output, err
 }
 
@@ -93,9 +93,9 @@ func (i *elasticAgentTARPackage) InstallCerts(ctx context.Context) error {
 }
 
 // Logs prints logs of service
-func (i *elasticAgentTARPackage) Logs() error {
+func (i *elasticAgentTARPackage) Logs(ctx context.Context) error {
 	// TODO: we could read "/opt/Elastic/Agent/data/elastic-agent-*/logs/elastic-agent-json.log*"
-	return systemCtlLog(context.Background(), "tar", i.Exec)
+	return systemCtlLog(ctx, "tar", i.Exec)
 }
 
 // Postinstall executes operations after installing a TAR package
@@ -118,7 +118,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 	}
 	extension := "tar.gz"
 
-	_, binaryPath, err := utils.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+	_, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,

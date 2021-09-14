@@ -38,7 +38,7 @@ func (i *elasticAgentDockerPackage) AddFiles(ctx context.Context, files []string
 	span.Context.SetLabel("files", files)
 	defer span.End()
 
-	return i.deploy.AddFiles(ctx, common.FleetProfileServiceRequest, i.service, files)
+	return i.deploy.AddFiles(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, files)
 }
 
 // Inspect returns info on package
@@ -62,7 +62,7 @@ func (i *elasticAgentDockerPackage) Exec(ctx context.Context, args []string) (st
 	span.Context.SetLabel("arguments", args)
 	defer span.End()
 
-	output, err := i.deploy.ExecIn(ctx, common.FleetProfileServiceRequest, i.service, args)
+	output, err := i.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, args)
 	return output, err
 }
 
@@ -77,8 +77,8 @@ func (i *elasticAgentDockerPackage) InstallCerts(ctx context.Context) error {
 }
 
 // Logs prints logs of service
-func (i *elasticAgentDockerPackage) Logs() error {
-	return i.deploy.Logs(i.service)
+func (i *elasticAgentDockerPackage) Logs(ctx context.Context) error {
+	return i.deploy.Logs(ctx, i.service)
 }
 
 // Postinstall executes operations after installing a package
@@ -99,7 +99,7 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 	arch := utils.GetArchitecture()
 	extension := "tar.gz"
 
-	_, binaryPath, err := utils.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, true, true)
+	_, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, true, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,

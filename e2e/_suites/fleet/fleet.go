@@ -71,15 +71,18 @@ func (fts *FleetTestSuite) afterScenario() {
 	fts.currentContext = apm.ContextWithSpan(context.Background(), span)
 	defer span.End()
 
+	serviceName := common.ElasticAgentServiceName
+
 	if fts.InstallerType != "" {
-		serviceName := common.ElasticAgentServiceName
 		agentService := deploy.NewServiceRequest(serviceName)
 
 		if !fts.StandAlone {
+			// for the centos/debian flavour we need to retrieve the internal log files for the elastic-agent, as they are not
+			// exposed as container logs. For that reason we need to go through the installer abstraction
 			agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
 
 			if log.IsLevelEnabled(log.DebugLevel) {
-				err := agentInstaller.Logs()
+				err := agentInstaller.Logs(fts.currentContext)
 				if err != nil {
 					log.WithField("error", err).Warn("Could not get agent logs in the container")
 				}
@@ -92,7 +95,8 @@ func (fts *FleetTestSuite) afterScenario() {
 				}
 			}
 		} else if log.IsLevelEnabled(log.DebugLevel) {
-			_ = fts.deployer.Logs(agentService)
+			// for the Docker image, we simply retrieve container logs
+			_ = fts.deployer.Logs(fts.currentContext, agentService)
 		}
 
 		err := fts.unenrollHostname()
@@ -103,18 +107,9 @@ func (fts *FleetTestSuite) afterScenario() {
 				"hostname": manifest.Hostname,
 			}).Warn("The agentIDs for the hostname could not be unenrolled")
 		}
-
-		if !common.DeveloperMode {
-			_ = fts.deployer.Remove(
-				common.FleetProfileServiceRequest,
-				[]deploy.ServiceRequest{
-					deploy.NewServiceRequest(serviceName),
-				},
-				common.ProfileEnv)
-		} else {
-			log.WithField("service", serviceName).Info("Because we are running in development mode, the service won't be stopped")
-		}
 	}
+
+	_ = fts.deployer.Remove(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{deploy.NewServiceRequest(serviceName)}, common.ProfileEnv)
 
 	err := fts.kibanaClient.DeleteEnrollmentAPIKey(fts.currentContext, fts.CurrentTokenID)
 	if err != nil {
@@ -247,7 +242,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 
 	common.AgentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", common.AgentStaleVersion)
 	// check if stale version is an alias
-	v, err := utils.GetElasticArtifactVersion(common.AgentStaleVersion)
+	v, err := elasticversion.GetElasticArtifactVersion(common.AgentStaleVersion)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -257,7 +252,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 	}
 	common.AgentStaleVersion = v
 
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	useCISnapshots := elasticversion.GithubCommitSha1 != ""
 	if useCISnapshots && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
 		common.AgentStaleVersion += "-SNAPSHOT"
 	}
@@ -355,7 +350,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
 
 	// FIXME: We need to cleanup the steps to support different operating systems
 	// for now we will force the zip installer type when the agent is running on windows
-	if runtime.GOOS == "windows" && shell.GetEnv("PROVIDER", "docker") == "remote" {
+	if runtime.GOOS == "windows" && common.Provider == "remote" {
 		installerType = "zip"
 	}
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType)
@@ -369,7 +364,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetOnTopOfBeat(image string, bea
 
 	// FIXME: We need to cleanup the steps to support different operating systems
 	// for now we will force the zip installer type when the agent is running on windows
-	if runtime.GOOS == "windows" && shell.GetEnv("PROVIDER", "docker") == "remote" {
+	if runtime.GOOS == "windows" && common.Provider == "remote" {
 		installerType = "zip"
 	}
 
@@ -384,7 +379,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 
 	// FIXME: We need to cleanup the steps to support different operating systems
 	// for now we will force the zip installer type when the agent is running on windows
-	if runtime.GOOS == "windows" && shell.GetEnv("PROVIDER", "docker") == "remote" {
+	if runtime.GOOS == "windows" && common.Provider == "remote" {
 		installerType = "zip"
 	}
 
@@ -419,7 +414,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 		agentService,
 	}
 
-	err = fts.deployer.Add(fts.currentContext, common.FleetProfileServiceRequest, services, common.ProfileEnv)
+	err = fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, common.ProfileEnv)
 	if err != nil {
 		return err
 	}
@@ -567,14 +562,14 @@ func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string
 			}
 
 			retryCount++
-			return fmt.Errorf("The agent is not present in Fleet in the '%s' status, but it should", desiredStatus)
+			return fmt.Errorf("the agent is not present in Fleet in the '%s' status, but it should", desiredStatus)
 		}
 
 		agentStatus, err := kibanaClient.GetAgentStatusByHostname(ctx, hostname)
 		isAgentInStatus := strings.EqualFold(agentStatus, desiredStatus)
 		if err != nil || !isAgentInStatus {
 			if err == nil {
-				err = fmt.Errorf("The Agent is not in the %s status yet", desiredStatus)
+				err = fmt.Errorf("the Agent is not in the %s status yet", desiredStatus)
 			}
 
 			log.WithFields(log.Fields{
@@ -632,19 +627,19 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 		"content":    content,
 	}).Debug("Agent working dir content")
 
-	return fmt.Errorf("The file system directory is not empty")
+	return fmt.Errorf("the file system directory is not empty")
 }
 
 func (fts *FleetTestSuite) theHostIsRestarted() error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	err := fts.deployer.Stop(agentService)
+	err := fts.deployer.Stop(fts.currentContext, agentService)
 	if err != nil {
 		log.WithField("err", err).Error("Could not stop the service")
 	}
 
 	utils.Sleep(time.Duration(utils.TimeoutFactor) * 10 * time.Second)
 
-	err = fts.deployer.Start(agentService)
+	err = fts.deployer.Start(fts.currentContext, agentService)
 	if err != nil {
 		log.WithField("err", err).Error("Could not start the service")
 	}
@@ -677,7 +672,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 
 		count := len(dataStreams.Children())
 		if count == 0 {
-			err = fmt.Errorf("There are no datastreams yet")
+			err = fmt.Errorf("there are no datastreams yet")
 
 			log.WithFields(log.Fields{
 				"retry":       retryCount,
@@ -705,7 +700,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	}
 
 	if dataStreamsCount == 0 {
-		err = fmt.Errorf("There are no datastreams. We expected to have more than one")
+		err = fmt.Errorf("there are no datastreams. We expected to have more than one")
 		log.Error(err.Error())
 		return err
 	}
@@ -922,7 +917,7 @@ func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error 
 			}).Warn("The policy response is not listed as 'success' in the Administration view in the Security App yet")
 			retryCount++
 
-			return fmt.Errorf("The policy response is not listed as 'success' in the Administration view in the Security App yet")
+			return fmt.Errorf("the policy response is not listed as 'success' in the Administration view in the Security App yet")
 		}
 
 		log.WithFields(log.Fields{
@@ -1062,7 +1057,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 		agentService,
 	}
 
-	err := fts.deployer.Add(fts.currentContext, common.FleetProfileServiceRequest, services, common.ProfileEnv)
+	err := fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, common.ProfileEnv)
 	if err != nil {
 		return err
 	}
@@ -1071,7 +1066,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken)
 
 	if err == nil {
-		err = fmt.Errorf("The agent was enrolled although the token was previously revoked")
+		err = fmt.Errorf("the agent was enrolled although the token was previously revoked")
 
 		log.WithFields(log.Fields{
 			"tokenID": fts.CurrentTokenID,

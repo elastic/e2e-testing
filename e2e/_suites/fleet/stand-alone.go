@@ -6,11 +6,11 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/installer"
@@ -49,7 +49,7 @@ func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 
 func (fts *FleetTestSuite) theDockerContainerIsStopped(serviceName string) error {
 	agentService := deploy.NewServiceRequest(serviceName)
-	err := fts.deployer.Stop(agentService)
+	err := fts.deployer.Stop(fts.currentContext, agentService)
 	if err != nil {
 		return err
 	}
@@ -85,13 +85,13 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 
 	dockerImageTag := common.BeatVersion
 
-	common.ProfileEnv["elasticAgentDockerNamespace"] = utils.GetDockerNamespaceEnvVar("beats")
+	common.ProfileEnv["elasticAgentDockerNamespace"] = deploy.GetDockerNamespaceEnvVar("beats")
 	common.ProfileEnv["elasticAgentDockerImageSuffix"] = ""
 	if image != "default" {
 		common.ProfileEnv["elasticAgentDockerImageSuffix"] = "-" + image
 	}
 
-	useCISnapshots := shell.GetEnvBool("BEATS_USE_CI_SNAPSHOTS")
+	useCISnapshots := elasticversion.GithubCommitSha1 != ""
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 
 	if useCISnapshots || beatsLocalPath != "" {
@@ -129,18 +129,15 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 
 	common.ProfileEnv["fleetServerPort"] = "8221" // fixed port to avoid collitions with the stack's fleet-server
 
-	containerName := fmt.Sprintf("%s_%s_%d", common.FleetProfileName, common.ElasticAgentServiceName, 1)
-
 	common.ProfileEnv["elasticAgentTag"] = dockerImageTag
 
 	for k, v := range env {
 		common.ProfileEnv[k] = v
 	}
 
-	services := []deploy.ServiceRequest{
-		deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(flavour),
-	}
-	err = fts.deployer.Add(fts.currentContext, common.FleetProfileServiceRequest, services, common.ProfileEnv)
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(flavour)
+
+	err = fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{agentService}, common.ProfileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err
@@ -148,7 +145,9 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 
 	fts.Image = image
 
-	err = fts.installTestTools(containerName)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+
+	err = fts.installTestTools(manifest.Name)
 	if err != nil {
 		return err
 	}

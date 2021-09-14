@@ -63,7 +63,7 @@ func (c *remoteDeploymentManifest) Inspect(ctx context.Context, service ServiceR
 }
 
 // Logs print logs of service
-func (c *remoteDeploymentManifest) Logs(service ServiceRequest) error {
+func (c *remoteDeploymentManifest) Logs(ctx context.Context, service ServiceRequest) error {
 	return nil
 }
 
@@ -73,16 +73,16 @@ func (c *remoteDeploymentManifest) PreBootstrap(ctx context.Context) error {
 }
 
 // Remove remove services from deployment
-func (c *remoteDeploymentManifest) Remove(profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
+func (c *remoteDeploymentManifest) Remove(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
 	return nil
 }
 
 // Start a container
-func (c *remoteDeploymentManifest) Start(service ServiceRequest) error {
+func (c *remoteDeploymentManifest) Start(ctx context.Context, service ServiceRequest) error {
 	return nil
 }
 
 // Stop a container
-func (c *remoteDeploymentManifest) Stop(service ServiceRequest) error {
+func (c *remoteDeploymentManifest) Stop(ctx context.Context, service ServiceRequest) error {
 	return nil
 }
