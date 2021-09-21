@@ -222,12 +222,6 @@ func configureLogger() {
 	}
 }
 
-type service interface{}
-type composeFile struct {
-	Version  string             `yaml:"version"`
-	Services map[string]service `yaml:"services"`
-}
-
 // newConfig returns a new configuration
 func newConfig(workspace string) {
 	if Op != nil {
