@@ -6,7 +6,7 @@ require (
 	github.com/Flaque/filet v0.0.0-20201012163910-45f684403088
 	github.com/Jeffail/gabs/v2 v2.6.0
 	github.com/cenkalti/backoff/v4 v4.1.0
-	github.com/cucumber/godog v0.11.0 // indirect
+	github.com/cucumber/godog v0.11.0
 	github.com/cucumber/messages-go/v10 v10.0.3 // indirect
 	github.com/docker/cli v20.10.7+incompatible
 	github.com/docker/docker v20.10.6+incompatible
@@ -30,11 +30,8 @@ require (
 	go.elastic.co/apm/module/apmelasticsearch v1.10.0
 	go.elastic.co/apm/module/apmhttp v1.10.0
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
-	golang.org/x/mod v0.5.0 // indirect
-	golang.org/x/sys v0.0.0-20210921065528-437939a70204 // indirect
-	golang.org/x/term v0.0.0-20210916214954-140adaaadfaf // indirect
-	golang.org/x/tools v0.1.6 // indirect
+	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.4.0
-	gotest.tools/gotestsum v1.7.0 // indirect
+	gotest.tools/gotestsum v1.7.0
 )
