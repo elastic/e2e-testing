@@ -11,4 +11,6 @@ package tools
 import (
 	// Register elastic-package for pinning version
 	_ "github.com/elastic/elastic-package"
+	// Register gotestsum for pinning version
+	_ "gotest.tools/gotestsum"
 )
