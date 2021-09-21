@@ -10,6 +10,7 @@ require (
 	github.com/cucumber/messages-go/v10 v10.0.3
 	github.com/docker/cli v20.10.7+incompatible
 	github.com/docker/docker v20.10.6+incompatible
+	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/elastic/elastic-package v0.16.0
 	github.com/elastic/go-elasticsearch/v8 v8.0.0-20210317102009-a9d74cec0186
 	github.com/gobuffalo/packr/v2 v2.8.1
