@@ -6,6 +6,7 @@ require (
 	github.com/Flaque/filet v0.0.0-20201012163910-45f684403088
 	github.com/Jeffail/gabs/v2 v2.6.0
 	github.com/cenkalti/backoff/v4 v4.1.0
+	github.com/cucumber/godog v0.11.0 // indirect
 	github.com/docker/cli v20.10.7+incompatible
 	github.com/docker/docker v20.10.6+incompatible
 	github.com/elastic/elastic-package v0.16.0

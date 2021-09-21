@@ -60,6 +60,7 @@ func (c *remoteDeploymentManifest) ExecIn(ctx context.Context, profile ServiceRe
 
 // Inspect inspects a service
 func (c *remoteDeploymentManifest) Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
+	// TODO: convert to a platform agnostic command structure
 	hostname, _ := shell.Execute(ctx, ".", "powershell.exe", "hostname")
 	return &ServiceManifest{
 		Hostname:   strings.TrimSpace(hostname),
