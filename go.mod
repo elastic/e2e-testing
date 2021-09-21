@@ -9,11 +9,15 @@ require (
 	github.com/cucumber/godog v0.11.0 // indirect
 	github.com/docker/cli v20.10.7+incompatible
 	github.com/docker/docker v20.10.6+incompatible
+	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/elastic/elastic-package v0.16.0
 	github.com/elastic/go-elasticsearch/v8 v8.0.0-20210317102009-a9d74cec0186
+	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gobuffalo/packr/v2 v2.8.1
 	github.com/google/uuid v1.2.0
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0
+	github.com/mattn/go-colorable v0.1.9 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
@@ -24,7 +28,11 @@ require (
 	go.elastic.co/apm/module/apmelasticsearch v1.10.0
 	go.elastic.co/apm/module/apmhttp v1.10.0
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
-	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
+	golang.org/x/mod v0.5.0 // indirect
+	golang.org/x/sys v0.0.0-20210921065528-437939a70204 // indirect
+	golang.org/x/term v0.0.0-20210916214954-140adaaadfaf // indirect
+	golang.org/x/tools v0.1.6 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.4.0
+	gotest.tools/gotestsum v1.7.0 // indirect
 )
