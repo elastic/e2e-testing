@@ -9,6 +9,8 @@ package tools
 // Add dependencies on tools.
 // https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module
 import (
+	// Register godog for pinning version
+	_ "github.com/cucumber/godog/cmd/godog"
 	// Register elastic-package for pinning version
 	_ "github.com/elastic/elastic-package"
 	// Register gotestsum for pinning version

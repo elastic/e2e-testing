@@ -99,7 +99,7 @@ This is an example of the optional configuration:
 4. Install dependencies.
 
    - Install Go, using the language version defined in the `.go-version` file at the root directory. We recommend using [GVM](https://github.com/andrewkroh/gvm), same as done in the CI, which will allow you to install multiple versions of Go, setting the Go environment in consequence: `eval "$(gvm 1.15.9)"`
-   - Install godog (from project's root directory): `make -C e2e install-godog`
+   - Godog and other test-related binaries will be installed in their supported versions when the project is first built, thanks to Go modules and Go build system.
 
 5. Run the tests.
 
