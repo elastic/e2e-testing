@@ -60,13 +60,8 @@ GOARCH?=amd64
 install:
 	go get -v -t ./...
 
-.PHONY: install-godog
-install-godog: export GO111MODULE := on
-install-godog:
-	GOARCH=${GOARCH} go get -v github.com/cucumber/godog/cmd/godog@v0.11.0
-
 .PHONY: functional-test
-functional-test: install-godog
+functional-test:
 	OP_LOG_LEVEL=${LOG_LEVEL} \
 	OP_LOG_INCLUDE_TIMESTAMP=${LOG_INCLUDE_TIMESTAMP} \
 	TIMEOUT_FACTOR=${TIMEOUT_FACTOR} \
