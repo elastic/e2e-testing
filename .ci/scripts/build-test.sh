@@ -12,6 +12,4 @@ set -euxo pipefail
 # Prepare junit build context
 mkdir -p $(pwd)/outputs
 
-go get -v -u gotest.tools/gotestsum
-
 make unit-test

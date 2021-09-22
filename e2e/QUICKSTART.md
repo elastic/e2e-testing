@@ -9,7 +9,7 @@ Let's walk through two quick examples to see how to start working with the e2e-t
 
 ### Step 1 - Install test depedencies
 
-Install the godog binary in the supported version - `make -C e2e install-godog`
+Godog and other test-related binaries will be installed in their supported versions when the project is first built, thanks to Go modules and Go build system.
 
 ### Step 2 - Create a new test suite
 
