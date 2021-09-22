@@ -121,7 +121,8 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 	output, err := i.Exec(ctx, []string{"powershell.exe", "Test-Path", "C:\\elastic-agent"})
 	log.WithFields(log.Fields{
 		"output": output,
-		"error":  err
+		"error":  err,
+
 	}).Trace("Checking for existence of elastic-agent installation directory")
 
 	if strings.EqualFold(strings.TrimSpace(output), "false") {
@@ -134,7 +135,9 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 		log.WithField("output", output).Trace("Moved elastic-agent")
 		return nil
 	}
+
 	log.Trace("C:\\elastic-agent already exists, will not attempt to overwrite")
+
 	return nil
 }
 
