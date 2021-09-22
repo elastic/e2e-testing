@@ -3,7 +3,6 @@ Feature: Fleet Mode Agent
   Scenarios for the Agent in Fleet mode connecting to Fleet application.
 
 @install
-@skip:windows
 Scenario Outline: Deploying the <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the "elastic-agent" process is in the "started" state on the host
