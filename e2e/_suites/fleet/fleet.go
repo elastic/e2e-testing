@@ -1152,7 +1152,7 @@ func (fts *FleetTestSuite) checkDataStream() error {
 
 	indexName := "metrics-linux.memory-default"
 
-	_, err := elasticsearch.WaitForNumberOfHits(context.Background(), indexName, query, 1, time.Minute)
+	_, err := elasticsearch.WaitForNumberOfHits(context.Background(), indexName, query, 1, 3*time.Minute)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
