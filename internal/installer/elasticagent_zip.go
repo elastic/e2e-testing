@@ -7,6 +7,7 @@ package installer
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
@@ -117,12 +118,24 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	_, err = i.Exec(ctx, []string{"powershell.exe", "Expand-Archive", "-LiteralPath", binaryPath, "-DestinationPath", "C:\\", "-Force"})
-	if err != nil {
-		return err
+	output, err := i.Exec(ctx, []string{"powershell.exe", "Test-Path", "C:\\elastic-agent"})
+	log.WithFields(log.Fields{
+		"output": output,
+		"error":  err,
+	}).Trace("Checking for existence of elastic-agent installation directory")
+
+	if strings.EqualFold(strings.TrimSpace(output), "false") {
+		_, err = i.Exec(ctx, []string{"powershell.exe", "Expand-Archive", "-LiteralPath", binaryPath, "-DestinationPath", "C:\\", "-Force"})
+		if err != nil {
+			return err
+		}
+
+		output, _ := i.Exec(ctx, []string{"powershell.exe", "Move-Item", "-Force", "-Path", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "-Destination", "C:\\elastic-agent"})
+		log.WithField("output", output).Trace("Moved elastic-agent")
+		return nil
 	}
 
-	output, _ := i.Exec(ctx, []string{"powershell.exe", "Move-Item", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "C:\\elastic-agent"})
+	output, _ = i.Exec(ctx, []string{"powershell.exe", "Move-Item", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "C:\\elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
