@@ -6,6 +6,7 @@ package deploy
 
 import (
 	"context"
+	"strings"
 
 	"github.com/elastic/e2e-testing/internal/shell"
 	"go.elastic.co/apm"
@@ -59,7 +60,14 @@ func (c *remoteDeploymentManifest) ExecIn(ctx context.Context, profile ServiceRe
 
 // Inspect inspects a service
 func (c *remoteDeploymentManifest) Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
-	return &ServiceManifest{}, nil
+	// TODO: convert to a platform agnostic command structure
+	hostname, _ := shell.Execute(ctx, ".", "powershell.exe", "hostname")
+	return &ServiceManifest{
+		Hostname:   strings.TrimSpace(hostname),
+		Connection: service.Name,
+		Alias:      service.Name,
+		Platform:   "windows",
+	}, nil
 }
 
 // Logs print logs of service
