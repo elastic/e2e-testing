@@ -139,7 +139,7 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 		log.WithField("output", output).Trace("Moved elastic-agent")
 		return nil
 	}
-<
+
 	log.Trace("C:\\elastic-agent already exists, will not attempt to overwrite")
 	return nil
 }
