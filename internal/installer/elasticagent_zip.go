@@ -126,7 +126,8 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 	output, err := i.Exec(ctx, []string{"powershell.exe", "Test-Path", "C:\\elastic-agent"})
 	log.WithFields(log.Fields{
 		"output": output,
-		"error":  err}).Trace("Checking for existence of elastic-agent installation directory")
+		"error":  err
+	}).Trace("Checking for existence of elastic-agent installation directory")
 
 	if strings.EqualFold(strings.TrimSpace(output), "false") {
 		_, err = i.Exec(ctx, []string{"powershell.exe", "Expand-Archive", "-LiteralPath", binaryPath, "-DestinationPath", "C:\\", "-Force"})
