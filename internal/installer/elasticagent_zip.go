@@ -140,8 +140,7 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 		return nil
 	}
 
-	output, _ = i.Exec(ctx, []string{"powershell.exe", "Move-Item", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "C:\\elastic-agent"})
-	log.WithField("output", output).Trace("Moved elastic-agent")
+	log.Trace("C:\\elastic-agent already exists, will not attempt to overwrite")
 	return nil
 }
 
@@ -157,7 +156,7 @@ func (i *elasticAgentZIPPackage) Stop(ctx context.Context) error {
 
 // Uninstall uninstalls a EXE package
 func (i *elasticAgentZIPPackage) Uninstall(ctx context.Context) error {
-	cmds := []string{"C:\\elastic-agent\\elastic-agent.exe", "uninstall", "-f"}
+	cmds := []string{"C:\\Program Files\\Elastic\\Agent\\elastic-agent.exe", "uninstall", "-f"}
 	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.zip.uninstall", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
