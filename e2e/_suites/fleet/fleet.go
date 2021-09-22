@@ -72,43 +72,45 @@ func (fts *FleetTestSuite) afterScenario() {
 
 	serviceName := common.ElasticAgentServiceName
 
-	if fts.InstallerType != "" {
-		agentService := deploy.NewServiceRequest(serviceName)
+	if !common.DeveloperMode {
+		if fts.InstallerType != "" {
+			agentService := deploy.NewServiceRequest(serviceName)
 
-		if !fts.StandAlone {
-			// for the centos/debian flavour we need to retrieve the internal log files for the elastic-agent, as they are not
-			// exposed as container logs. For that reason we need to go through the installer abstraction
-			agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
+			if !fts.StandAlone {
+				// for the centos/debian flavour we need to retrieve the internal log files for the elastic-agent, as they are not
+				// exposed as container logs. For that reason we need to go through the installer abstraction
+				agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
 
-			if log.IsLevelEnabled(log.DebugLevel) {
-				err := agentInstaller.Logs(fts.currentContext)
-				if err != nil {
-					log.WithField("error", err).Warn("Could not get agent logs in the container")
+				if log.IsLevelEnabled(log.DebugLevel) {
+					err := agentInstaller.Logs(fts.currentContext)
+					if err != nil {
+						log.WithField("error", err).Warn("Could not get agent logs in the container")
+					}
 				}
-			}
-			// only call it when the elastic-agent is present
-			if !fts.ElasticAgentStopped {
-				err := agentInstaller.Uninstall(fts.currentContext)
-				if err != nil {
-					log.Warnf("Could not uninstall the agent after the scenario: %v", err)
+				// only call it when the elastic-agent is present
+				if !fts.ElasticAgentStopped {
+					err := agentInstaller.Uninstall(fts.currentContext)
+					if err != nil {
+						log.Warnf("Could not uninstall the agent after the scenario: %v", err)
+					}
 				}
+			} else if log.IsLevelEnabled(log.DebugLevel) {
+				// for the Docker image, we simply retrieve container logs
+				_ = fts.deployer.Logs(fts.currentContext, agentService)
 			}
-		} else if log.IsLevelEnabled(log.DebugLevel) {
-			// for the Docker image, we simply retrieve container logs
-			_ = fts.deployer.Logs(fts.currentContext, agentService)
+
+			err := fts.unenrollHostname()
+			if err != nil {
+				manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+				log.WithFields(log.Fields{
+					"err":      err,
+					"hostname": manifest.Hostname,
+				}).Warn("The agentIDs for the hostname could not be unenrolled")
+			}
 		}
 
-		err := fts.unenrollHostname()
-		if err != nil {
-			manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
-			log.WithFields(log.Fields{
-				"err":      err,
-				"hostname": manifest.Hostname,
-			}).Warn("The agentIDs for the hostname could not be unenrolled")
-		}
+		_ = fts.deployer.Remove(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{deploy.NewServiceRequest(serviceName)}, common.ProfileEnv)
 	}
-
-	_ = fts.deployer.Remove(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{deploy.NewServiceRequest(serviceName)}, common.ProfileEnv)
 
 	err := fts.kibanaClient.DeleteEnrollmentAPIKey(fts.currentContext, fts.CurrentTokenID)
 	if err != nil {
@@ -1152,7 +1154,7 @@ func (fts *FleetTestSuite) checkDataStream() error {
 
 	indexName := "metrics-linux.memory-default"
 
-	_, err := elasticsearch.WaitForNumberOfHits(context.Background(), indexName, query, 1, time.Minute)
+	_, err := elasticsearch.WaitForNumberOfHits(context.Background(), indexName, query, 1, 3*time.Minute)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
