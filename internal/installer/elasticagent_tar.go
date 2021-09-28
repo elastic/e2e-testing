@@ -131,9 +131,19 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	_, err = i.Exec(ctx, []string{"tar", "-xvf", binaryPath})
-	if err != nil {
-		return err
+	// TODO: This installer assumes there is a container to add files into, however,
+	// remote providers do not need to do this. This needs to be addressed in our upcoming
+	// step redefinitions to support running remote elastic-agent tests cleaner.
+	if common.Provider == "remote" {
+		_, err = i.Exec(ctx, []string{"tar", "-xvf", binaryPath, "-C", "/"})
+		if err != nil {
+			return err
+		}
+	} else {
+		err = i.AddFiles(context.Background(), []string{binaryPath})
+		if err != nil {
+			return err
+		}
 	}
 
 	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "/elastic-agent"})
