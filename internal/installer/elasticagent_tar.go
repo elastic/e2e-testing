@@ -131,7 +131,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	err = i.AddFiles(context.Background(), []string{binaryPath})
+	_, err = i.Exec(ctx, []string{"tar", "-xvf", binaryPath})
 	if err != nil {
 		return err
 	}
