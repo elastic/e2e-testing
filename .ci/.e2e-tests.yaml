@@ -12,7 +12,6 @@ SUITES:
         tags: "metricbeat"
   - suite: "fleet"
     platforms:
-      - labels: "arm64"
       - labels: "ubuntu-18.04 && immutable"
         provider: "elastic-package"
     scenarios:

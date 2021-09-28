@@ -358,10 +358,6 @@ def generateFunctionalTestStep(Map args = [:]){
       deleteDir()
       unstash 'source'
       try {
-        if(isInstalled(tool: 'docker', flag: '--version')) {
-          dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
-        }
-        filebeat(output: "docker_logs_${platformLabels}_${goArch}_${suite}_${name}.log", workdir: "${env.WORKSPACE}") {
           dir("${BASE_DIR}") {
             if (platformLabels.contains("windows")) {
               def mingwArch = is32() ? '32' : '64'
@@ -384,15 +380,19 @@ def generateFunctionalTestStep(Map args = [:]){
                   cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
                 }
               } else {
-                withGoEnv(version: "${GO_VERSION}") {
-                  // This step will help to send the APM traces to the
-                  // APM service defined by the Otel Jenkins plugin.
-                  withOtelEnv() {
-                    sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
+                if(isInstalled(tool: 'docker', flag: '--version')) {
+                  dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
+                }
+                filebeat(output: "docker_logs_${platformLabels}_${goArch}_${suite}_${name}.log", workdir: "${env.WORKSPACE}") {
+                  withGoEnv(version: "${GO_VERSION}") {
+                    // This step will help to send the APM traces to the
+                    // APM service defined by the Otel Jenkins plugin.
+                    withOtelEnv() {
+                      sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
+                    }
                   }
                 }
-              }
-            }
+             }
           }
         }
       } finally {
