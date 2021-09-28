@@ -3,7 +3,7 @@
 @Library('apm@current') _
 
 pipeline {
-  agent { label 'ubuntu-18.04 && immutable && docker' }
+  agent { label 'ubuntu-20.04 && immutable && docker' }
   environment {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
@@ -245,6 +245,13 @@ pipeline {
 def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     def suite = item.suite
     def platforms = item.platforms
+    def linuxIp = null
+
+    // Start stack with fleet server enabled for the fleet suite of tests
+    if (suite == "fleet") {
+        sh script: "docker-compose -f cli/config/compose/profiles/${suite}/docker-compose.yml up -d", label: "Deploying ${suite} via docker"
+        linuxIp = grabWorkerIP()
+    }
 
     item.scenarios.each { scenario ->
       def name = scenario.name
@@ -261,7 +268,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
         platformsValue.each { platform ->
           def platformLabels = platform.labels
           log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
-          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}")
+                parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}", linuxIp: linuxIp)
         }
       } else {
         log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed in any platform because there are no modified files")
@@ -292,6 +299,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def suite = args.get('suite')
   def tags = args.get('tags')
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
+  def linuxIp = args.get('linuxIp') ? args.get('linuxIp') : null
 
   def platformLabels = platform.labels
   def platformProvider = platform.provider
@@ -320,17 +328,11 @@ def generateFunctionalTestStep(Map args = [:]){
   }
 
   def goArch = "amd64"
-  def workerLabels = "${platformLabels} && immutable"
-  def linuxIp = null
-  if (platformLabels == "arm64") {
+  if (platformLabels.contains("arm64") || platformLabels.contains("aarch64")) {
     goArch = "arm64"
-    // let's use centos8 ARM as base VM, trying to mitigate the flakiness described in https://github.com/elastic/e2e-testing/issues/1271
-    workerLabels = "centos-8-aarch64"
   }
 
   if (platformLabels.contains("windows")) {
-    // For windows testing we need to make sure that the host executor is a linux machine and nest the windows withNode within that
-    workerLabels = "ubuntu-18.04"
     tags += " && ~@skip:windows"
   }
 
@@ -342,9 +344,17 @@ def generateFunctionalTestStep(Map args = [:]){
   envContext.add("GOARCH=${goArch}")
   envContext.add("PROVIDER=${platformProvider}")
   envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
+  envContext.add("OP_LOG_LEVEL=TRACE")
+  envContext.add("LOG_LEVEL=TRACE")
+
+    if (platformProvider == "remote" && linuxIp) {
+        envContext.add("KIBANA_URL=https://${linuxIp}:5601")
+        envContext.add("ELASTICSEARCH_URL=https://${linuxIp}:9200")
+        envContext.add("FLEET_URL=https://${linuxIp}:8220")
+    }
 
   return {
-    withNode(labels: "${workerLabels}", sleepMax: 20, forceWorkspace: true){
+    withNode(labels: "${platformLabels}", sleepMax: 20, forceWorkspace: true){
       deleteDir()
       unstash 'source'
       try {
@@ -353,39 +363,25 @@ def generateFunctionalTestStep(Map args = [:]){
         }
         filebeat(output: "docker_logs_${platformLabels}_${goArch}_${suite}_${name}.log", workdir: "${env.WORKSPACE}") {
           dir("${BASE_DIR}") {
-            // Doing a windows agent test, start up docker before the new environment is applied for windows
             if (platformLabels.contains("windows")) {
-              sh script: "docker-compose -f cli/config/compose/profiles/${suite}/docker-compose.yml up -d", label: "Deploying ${suite} via docker"
-              linuxIp = grabWorkerIP()
               def mingwArch = is32() ? '32' : '64'
               def chocoPath = 'C:\\ProgramData\\chocolatey\\bin'
               def chocoPython3Path = 'C:\\Python38;C:\\Python38\\Scripts'
               path = "${env.WORKSPACE}\\bin;${chocoPath};${chocoPython3Path};C:\\tools\\mingw${mingwArch}\\bin;C:\\windows\\system32;C:\\windows\\system32\\WindowsPowerShell\\v1.0\\"
-              envContext.add("KIBANA_URL=https://${linuxIp}:5601")
-              envContext.add("ELASTICSEARCH_URL=https://${linuxIp}:9200")
-              envContext.add("FLEET_URL=https://${linuxIp}:8220")
-              envContext.add("PROVIDER=remote") // a remote provider is needed for Windows
-              envContext.add("OP_LOG_LEVEL=TRACE")
               envContext.add("PATH=${path}")
-            }
-            withEnv(envContext) {
+              echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
+              powershell label: "Disk Information", script: "Get-PSDrive"
+              powershell label: "Pinging Linux VM", script: "ping -n 1 ${linuxIp}"
+              powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${linuxIp} -Port 9200"
+              powershell label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601"
+              powershell label: "Check for running fleet server", script: "Test-NetConnection ${linuxIp} -Port 8220"
+           }
+           withEnv(envContext) {
               if (platformLabels.contains("windows")) {
                 // Boot up a windows VM to deploy Elastic Agent to be tested against
                 // a remote deployed stack
-                withNode(labels: platformLabels, forceWorkspace: true) {
-                  deleteDir()
-                  unstash 'source'
-                  dir("${BASE_DIR}"){
-                    withGoEnvWindows(version: "${GO_VERSION}"){
-                      echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
-                      powershell label: "Disk Information", script: "Get-PSDrive"
-                      powershell label: "Pinging Linux VM", script: "ping -n 1 ${linuxIp}"
-                      powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${linuxIp} -Port 9200"
-                      powershell label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601"
-                      powershell label: "Check for running fleet server", script: "Test-NetConnection ${linuxIp} -Port 8220"
-                      cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
-                    }
-                  }
+                withGoEnvWindows(version: "${GO_VERSION}"){
+                  cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
                 }
               } else {
                 withGoEnv(version: "${GO_VERSION}") {
@@ -402,7 +398,7 @@ def generateFunctionalTestStep(Map args = [:]){
       } finally {
         junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
         archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
-        tearDown(labels: workerLabels)
+        tearDown(labels: platformLabels)
       }
     }
   }

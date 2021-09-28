@@ -6,6 +6,7 @@ package deploy
 
 import (
 	"context"
+	"runtime"
 	"strings"
 
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -60,13 +61,18 @@ func (c *remoteDeploymentManifest) ExecIn(ctx context.Context, profile ServiceRe
 
 // Inspect inspects a service
 func (c *remoteDeploymentManifest) Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
+	var hostname string
 	// TODO: convert to a platform agnostic command structure
-	hostname, _ := shell.Execute(ctx, ".", "powershell.exe", "hostname")
+	if runtime.GOOS == "windows" {
+		hostname, _ = shell.Execute(ctx, ".", "powershell.exe", "hostname")
+	} else {
+		hostname, _ = shell.Execute(ctx, ".", "cat", "/etc/hostname")
+	}
 	return &ServiceManifest{
 		Hostname:   strings.TrimSpace(hostname),
 		Connection: service.Name,
 		Alias:      service.Name,
-		Platform:   "windows",
+		Platform:   runtime.GOOS,
 	}, nil
 }
 
