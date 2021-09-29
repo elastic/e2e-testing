@@ -27,8 +27,6 @@ SUITES:
             provider: "remote"
           - labels: "centos-8-aarch64"
             provider: "remote"
-          - labels: "ubuntu-1804-aarch64"
-            provider: "remote"
       - name: "Integrations"
         pullRequestFilter: " && ~debian"
         tags: "integrations"
