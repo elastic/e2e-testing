@@ -387,6 +387,10 @@ def generateFunctionalTestStep(Map args = [:]){
                       dir("e2e/_suites/${suite}") {
                         cmd script: "go test -timeout 60m -v --godog.format=\"junit:..\\..\\..\\outputs\\TEST-windows-${suite}.xml\" --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
                       }
+                      def testReports = findFiles(glob: 'outputs')
+                      testReports.each { file ->
+                        log(level: 'INFO', text: "jUnit test report: '${file}'")
+                      }
                     }
                   }
                 }
