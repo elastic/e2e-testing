@@ -384,7 +384,7 @@ def generateFunctionalTestStep(Map args = [:]){
                       powershell label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601"
                       powershell label: "Check for running fleet server", script: "Test-NetConnection ${linuxIp} -Port 8220"
                       dir("${BASE_DIR}\\outputs") {
-                        cmd script: "cd ..\\e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.format=\"junit:${BASE_DIR}/outputs/TEST-windows-${suite}.xml\" --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
+                        cmd script: "cd ..\\e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.format=\"junit:outputs\\TEST-windows-${suite}.xml\" --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
                       }
                     }
                   }
