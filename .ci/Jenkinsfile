@@ -386,7 +386,7 @@ def generateFunctionalTestStep(Map args = [:]){
                       cmd script: "mkdir outputs"
                       try {
                         dir("e2e/_suites/${suite}") {
-                          cmd script: "go test -timeout 60m -v --godog.format=junit:..\\..\\..\\outputs\\TEST-windows-${suite}.xml --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
+                          cmd script: "go test -timeout 60m -v --godog.format=\"junit:..\\..\\..\\outputs\\TEST-windows-${suite}.xml\" --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
                         }
                       } finally {
                         junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
