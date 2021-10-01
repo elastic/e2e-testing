@@ -151,6 +151,7 @@ def getDockerTagFromPayload() {
 
   if (!prID.isInteger()) {
     // in the case we are triggering the job for a branch (i.e master, 7.x) we directly use branch name as Docker tag
+    setEnvVar("BASE_REF", prID)
     return prID
   }
 
@@ -158,6 +159,9 @@ def getDockerTagFromPayload() {
 
   def pullRequest = githubApiCall(token: token, url: "https://api.github.com/repos/${env.ELASTIC_REPO}/pulls/${prID}")
   def baseRef = pullRequest?.base?.ref
+
+  setEnvVar("BASE_REF", baseRef)
+
   def headSha = pullRequest?.head?.sha
 
   // we are going to use the 'pr12345' tag as default
@@ -198,7 +202,7 @@ def runE2ETests(String suite) {
   log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for "+getBranch()+" using '${dockerTag}' as Docker tag")
 
   // Kibana's maintenance branches follow the 7.11, 7.12 schema.
-  def branchName = "${baseRef}"
+  def branchName = "${BASE_REF}"
   if (branchName != "master") {
     branchName += ".x"
   }
