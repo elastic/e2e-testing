@@ -64,11 +64,12 @@ pipeline {
         HOME = "${env.WORKSPACE}/${BASE_DIR}"
       }
       stages {
-        stage('Check permissions') {
+        stage('Prepare workspace') {
           steps {
             checkPermissions()
             setEnvVar('E2E_BASE_BRANCH', getE2EBaseBranch())
             sh(label:'Prepare Agent Drop path', script: 'mkdir -p ${AGENT_DROP_PATH}')
+            sh(label: 'Install tools', script: 'apt-get update && apt-get install zip -y')
           }
         }
         stage('Build Elastic Agent dependencies') {
