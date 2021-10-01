@@ -97,9 +97,7 @@ pipeline {
           steps {
             deleteDir()
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
-            dir("${BASE_DIR}") {
-              pushMultiPlatformManifest()
-            }
+            pushMultiPlatformManifest()
           }
         }
         stage('Run E2E Tests') {
@@ -177,13 +175,15 @@ def getID(){
 def pushMultiPlatformManifest() {
   def dockerTag = "${env.DOCKER_TAG}"
 
-  def url = 'https://raw.githubusercontent.com/elastic/e2e-testing/master/.ci/scripts/push-multiplatform-manifest.sh'
-  retryWithSleep(retries: 3, seconds: 5, backoff: true) {
-    sh(label: 'Download script', script: "wget -q -O push-multiplatform-manifest.sh ${url}")
-    sh(label: 'Grant permissions to script', script: "chmod +x push-multiplatform-manifest.sh")
-  }
+  dir("${BASE_DIR}") {
+    def url = 'https://raw.githubusercontent.com/elastic/e2e-testing/master/.ci/scripts/push-multiplatform-manifest.sh'
+    retryWithSleep(retries: 3, seconds: 5, backoff: true) {
+      sh(label: 'Download script', script: "wget -q -O push-multiplatform-manifest.sh ${url}")
+      sh(label: 'Grant permissions to script', script: "chmod +x push-multiplatform-manifest.sh")
+    }
 
-  sh(label: 'Push multiplatform manifest', script: "push-multiplatform-manifest.sh kibana ${dockerTag}")
+    sh(label: 'Push multiplatform manifest', script: "./push-multiplatform-manifest.sh kibana ${dockerTag}")
+  }
 }
 
 def runE2ETests(String suite) {
