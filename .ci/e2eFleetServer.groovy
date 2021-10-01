@@ -151,6 +151,8 @@ def getE2EBaseBranch() {
   def prID = getID()
 
   if (!prID.isInteger()) {
+    // we are building a branch on Fleet Server
+    setEnvVar('BASE_REF', prID)
     // in the case we are triggering the job for a branch (i.e master, 7.x) we directly use branch name as Docker tag
     return getMaintenanceBranch(prID)
   }
@@ -159,6 +161,7 @@ def getE2EBaseBranch() {
 
   def pullRequest = githubApiCall(token: token, url: "https://api.github.com/repos/${env.ELASTIC_REPO}/pulls/${prID}")
   def baseRef = pullRequest?.base?.ref
+  setEnvVar('BASE_REF', baseRef)
   //def headSha = pullRequest?.head?.sha
 
   return getMaintenanceBranch(baseRef)
@@ -174,7 +177,6 @@ def getID(){
 
 def getMaintenanceBranch(String branch){
   if (branch == 'master' || branch == 'main') {
-    setEnvVar('BASE_REF', branch)
     return branch
   }
 
@@ -183,7 +185,6 @@ def getMaintenanceBranch(String branch){
     branch += '.x'
   }
 
-  setEnvVar('BASE_REF', branch)
   return branch
 }
 
