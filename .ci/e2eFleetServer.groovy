@@ -77,7 +77,7 @@ pipeline {
             stage('Build Fleet Server') {
               options { skipDefaultCheckout() }
               steps {
-                gitCheckout(basedir: BASE_DIR, branch: 'master', repo: "git@github.com:${env.ELASTIC_REPO}.git", credentialsId: env.JOB_GIT_CREDENTIALS)
+                gitCheckout(basedir: BASE_DIR, branch: getFleetServerBranch(), repo: "git@github.com:${env.ELASTIC_REPO}.git", credentialsId: env.JOB_GIT_CREDENTIALS)
                 dir("${BASE_DIR}") {
                   withGoEnv(){
                     sh(label: 'Build Fleet Server', script: "make release")
@@ -185,4 +185,14 @@ def getMaintenanceBranch(String branch){
 
   setEnvVar('BASE_REF', branch)
   return branch
+}
+
+def getFleetServerBranch(){
+  def fleetServerBranch = getID()
+
+  if (!fleetServerBranch.isInteger()) {
+    return fleetServerBranch
+  }
+
+  return 'PR/'+fleetServerBranch
 }
