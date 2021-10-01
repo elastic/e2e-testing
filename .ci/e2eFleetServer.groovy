@@ -89,7 +89,7 @@ pipeline {
             stage('Build Elastic Agent Dependencies') {
               options { skipDefaultCheckout() }
               steps {
-                gitCheckout(basedir: BEATS_BASE_DIR, branch: 'master', repo: "git@github.com:${env.BEATS_ELASTIC_REPO}.git", credentialsId: env.JOB_GIT_CREDENTIALS)
+                gitCheckout(basedir: BEATS_BASE_DIR, branch: "${BASE_REF}", repo: "git@github.com:${env.BEATS_ELASTIC_REPO}.git", credentialsId: env.JOB_GIT_CREDENTIALS)
                 dir("${BEATS_BASE_DIR}/x-pack/elastic-agent") {
                   withGoEnv(){
                     sh(label: 'Build Fleet Server', script: 'DEV=true SNAPSHOT=true PLATFORMS="+all linux/amd64" mage package')
@@ -174,13 +174,15 @@ def getID(){
 
 def getMaintenanceBranch(String branch){
   if (branch == 'master' || branch == 'main') {
+    setEnvVar('BASE_REF', branch)
     return branch
   }
 
   if (!branch.endsWith('.x')) {
     // use maintenance branches mode (i.e. 7.16 translates to 7.16.x)
-    return branch + '.x'
+    branch += '.x'
   }
 
+  setEnvVar('BASE_REF', branch)
   return branch
 }
