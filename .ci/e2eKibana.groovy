@@ -96,7 +96,6 @@ pipeline {
           }
           steps {
             deleteDir()
-            gitCheckout(basedir: BASE_DIR, branch: 'master', githubNotifyFirstTimeContributor: true, repo: 'git@github.com:elastic/e2e-testing.git', credentialsId: env.JOB_GIT_CREDENTIALS)
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
             dir("${BASE_DIR}") {
               pushMultiPlatformManifest()
@@ -178,7 +177,13 @@ def getID(){
 def pushMultiPlatformManifest() {
   def dockerTag = "${env.DOCKER_TAG}"
 
-  sh(label: 'Push multiplatform manifest', script: ".ci/scripts/push-multiplatform-manifest.sh kibana ${dockerTag}")
+  def url = 'https://raw.githubusercontent.com/elastic/e2e-testing/master/.ci/scripts/push-multiplatform-manifest.sh'
+  retryWithSleep(retries: 3, seconds: 5, backoff: true) {
+    sh(label: 'Download script', script: "wget -q -O push-multiplatform-manifest.sh ${url}")
+    sh(label: 'Grant permissions to script', script: "chmod +x push-multiplatform-manifest.sh")
+  }
+
+  sh(label: 'Push multiplatform manifest', script: "push-multiplatform-manifest.sh kibana ${dockerTag}")
 }
 
 def runE2ETests(String suite) {
