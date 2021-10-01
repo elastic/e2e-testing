@@ -77,7 +77,7 @@ pipeline {
             stage('Build Fleet Server') {
               options { skipDefaultCheckout() }
               steps {
-                gitCheckout(basedir: BASE_DIR, branch: 'master', githubNotifyFirstTimeContributor: true, repo: "git@github.com:${env.ELASTIC_REPO}.git", credentialsId: env.JOB_GIT_CREDENTIALS)
+                gitCheckout(basedir: BASE_DIR, branch: getFleetServerBranch(), repo: "git@github.com:${env.ELASTIC_REPO}.git", credentialsId: env.JOB_GIT_CREDENTIALS)
                 dir("${BASE_DIR}") {
                   withGoEnv(){
                     sh(label: 'Build Fleet Server', script: "make release")
@@ -89,7 +89,7 @@ pipeline {
             stage('Build Elastic Agent Dependencies') {
               options { skipDefaultCheckout() }
               steps {
-                gitCheckout(basedir: BEATS_BASE_DIR, branch: 'master', githubNotifyFirstTimeContributor: true, repo: "git@github.com:${env.BEATS_ELASTIC_REPO}.git", credentialsId: env.JOB_GIT_CREDENTIALS)
+                gitCheckout(basedir: BEATS_BASE_DIR, branch: "${BASE_REF}", repo: "git@github.com:${env.BEATS_ELASTIC_REPO}.git", credentialsId: env.JOB_GIT_CREDENTIALS)
                 dir("${BEATS_BASE_DIR}/x-pack/elastic-agent") {
                   withGoEnv(){
                     sh(label: 'Build Fleet Server', script: 'DEV=true SNAPSHOT=true PLATFORMS="+all linux/amd64" mage package')
@@ -117,7 +117,7 @@ pipeline {
         stage('Run E2E Tests') {
           options { skipDefaultCheckout() }
           steps {
-            gitCheckout(basedir: E2E_BASE_DIR, branch: "${env.E2E_BASE_BRANCH}", githubNotifyFirstTimeContributor: true, repo: 'git@github.com:elastic/e2e-testing.git', credentialsId: env.JOB_GIT_CREDENTIALS)
+            gitCheckout(basedir: E2E_BASE_DIR, branch: "${env.E2E_BASE_BRANCH}", repo: 'git@github.com:elastic/e2e-testing.git', credentialsId: env.JOB_GIT_CREDENTIALS)
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
             dir("${E2E_BASE_DIR}") {
               withGoEnv(){
@@ -151,6 +151,8 @@ def getE2EBaseBranch() {
   def prID = getID()
 
   if (!prID.isInteger()) {
+    // we are building a branch on Fleet Server
+    setEnvVar('BASE_REF', prID)
     // in the case we are triggering the job for a branch (i.e master, 7.x) we directly use branch name as Docker tag
     return getMaintenanceBranch(prID)
   }
@@ -159,6 +161,7 @@ def getE2EBaseBranch() {
 
   def pullRequest = githubApiCall(token: token, url: "https://api.github.com/repos/${env.ELASTIC_REPO}/pulls/${prID}")
   def baseRef = pullRequest?.base?.ref
+  setEnvVar('BASE_REF', baseRef)
   //def headSha = pullRequest?.head?.sha
 
   return getMaintenanceBranch(baseRef)
@@ -179,8 +182,18 @@ def getMaintenanceBranch(String branch){
 
   if (!branch.endsWith('.x')) {
     // use maintenance branches mode (i.e. 7.16 translates to 7.16.x)
-    return branch + '.x'
+    branch += '.x'
   }
 
   return branch
+}
+
+def getFleetServerBranch(){
+  def fleetServerBranch = getID()
+
+  if (!fleetServerBranch.isInteger()) {
+    return fleetServerBranch
+  }
+
+  return 'PR/'+fleetServerBranch
 }
