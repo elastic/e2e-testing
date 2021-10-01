@@ -32,7 +32,6 @@ import (
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kubernetes"
-	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 )
 
@@ -136,8 +135,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 	beatVersion := elasticversion.GetSnapshotVersion(common.BeatVersion) + "-amd64"
 
 	useCISnapshots := elasticversion.GithubCommitSha1 != ""
-	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
-	if useCISnapshots || beatsLocalPath != "" {
+	if useCISnapshots || elasticversion.BeatsLocalPath != "" {
 		log.Debugf("Configuring Docker image for %s", podName)
 
 		_, imagePath, err := elasticversion.FetchElasticArtifact(m.ctx, podName, common.BeatVersion, "linux", "amd64", "tar.gz", true, true)
