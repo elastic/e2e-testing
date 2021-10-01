@@ -92,7 +92,7 @@ pipeline {
                 gitCheckout(basedir: BEATS_BASE_DIR, branch: "${BASE_REF}", repo: "git@github.com:${env.BEATS_ELASTIC_REPO}.git", credentialsId: env.JOB_GIT_CREDENTIALS)
                 dir("${BEATS_BASE_DIR}/x-pack/elastic-agent") {
                   withGoEnv(){
-                    sh(label: 'Build Fleet Server', script: 'DEV=true SNAPSHOT=true PLATFORMS="+all linux/amd64" mage package')
+                    sh(label: 'Build Fleet Server', script: 'DEV=true SNAPSHOT=true PLATFORMS="+all linux/amd64" go run github.com/magefile/mage package')
                   }
                 }
                 dir("${BEATS_BASE_DIR}/x-pack") {
@@ -109,7 +109,7 @@ pipeline {
           steps {
             dir("${BEATS_BASE_DIR}/x-pack/elastic-agent") {
               withGoEnv(){
-                sh(label: 'Build Fleet Server', script: "AGENT_DROP_PATH='${env.AGENT_DROP_PATH}' DEV=true SNAPSHOT=true PLATFORMS='+all linux/amd64' mage package")
+                sh(label: 'Build Fleet Server', script: "AGENT_DROP_PATH='${env.AGENT_DROP_PATH}' DEV=true SNAPSHOT=true PLATFORMS='+all linux/amd64' go run github.com/magefile/mage package")
               }
             }
           }
