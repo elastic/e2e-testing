@@ -195,7 +195,7 @@ def pushMultiPlatformManifest() {
 def runE2ETests(String suite) {
   def dockerTag = "${env.DOCKER_TAG}"
 
-  log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for PR-${prID} using '${dockerTag}' as Docker tag")
+  log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for "+getBranch()+" using '${dockerTag}' as Docker tag")
 
   // Kibana's maintenance branches follow the 7.11, 7.12 schema.
   def branchName = "${baseRef}"
