@@ -71,7 +71,7 @@ pipeline {
             sh(label:'Prepare Agent Drop path', script: 'mkdir -p ${AGENT_DROP_PATH}')
           }
         }
-        stage('Process GitHub Event') {
+        stage('Build Elastic Agent dependencies') {
           options { skipDefaultCheckout() }
           parallel {
             stage('Build Fleet Server') {

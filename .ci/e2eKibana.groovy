@@ -63,7 +63,7 @@ pipeline {
             setEnvVar('DOCKER_TAG', getDockerTagFromPayload())
           }
         }
-        stage('Process GitHub Event') {
+        stage('Build Linux Images') {
           options { skipDefaultCheckout() }
           parallel {
             stage('AMD build') {
