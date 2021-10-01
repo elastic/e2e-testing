@@ -153,18 +153,19 @@ def getE2EBaseBranch() {
   // we need a second API request, as the issue_comment API does not retrieve data about the pull request
   // See https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#issue_comment
   def prID = getID()
+
+  if (!prID.isInteger()) {
+    // in the case we are triggering the job for a branch (i.e master, 7.x) we directly use branch name as Docker tag
+    return getMaintenanceBranch(prID)
+  }
+
   def token = githubAppToken(secret: "${env.GITHUB_APP_SECRET}")
 
   def pullRequest = githubApiCall(token: token, url: "https://api.github.com/repos/${env.ELASTIC_REPO}/pulls/${prID}")
   def baseRef = pullRequest?.base?.ref
   //def headSha = pullRequest?.head?.sha
 
-  if (!baseRef.endsWith('.x')) {
-    // use maintenance branches mode (i.e. 7.16 translates to 7.16.x)
-    return baseRef + '.x'
-  }
-
-  return baseRef
+  return getMaintenanceBranch(baseRef)
 }
 
 def getID(){
@@ -173,4 +174,17 @@ def getID(){
   }
   
   return "${params.fleet_server_pr}"
+}
+
+def getMaintenanceBranch(String branch){
+  if (branch == 'master' || branch == 'main') {
+    return branch
+  }
+
+  if (!branch.endsWith('.x')) {
+    // use maintenance branches mode (i.e. 7.16 translates to 7.16.x)
+    return branch + '.x'
+  }
+
+  return branch
 }
