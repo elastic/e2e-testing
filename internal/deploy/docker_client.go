@@ -10,6 +10,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -523,15 +525,30 @@ func PullImages(ctx context.Context, images []string) error {
 
 	platform := "linux/" + utils.GetArchitecture()
 
+	authConfig := types.AuthConfig{
+		Username: os.Getenv("DOCKER_USER"),
+		Password: os.Getenv("DOCKER_PASSWORD"),
+	}
+
 	log.WithFields(log.Fields{
 		"images":   images,
 		"platform": platform,
 	}).Info("Pulling Docker images...")
-	options := types.ImagePullOptions{
-		Platform: platform,
-	}
 
 	for _, image := range images {
+		options := types.ImagePullOptions{
+			Platform: platform,
+		}
+
+		if strings.Contains(image, "observability-ci") {
+			encodedJSON, err := json.Marshal(authConfig)
+			if err != nil {
+				return err
+			}
+
+			options.RegistryAuth = base64.URLEncoding.EncodeToString(encodedJSON)
+		}
+
 		r, err := c.ImagePull(ctx, image, options)
 		if err != nil {
 			return err
