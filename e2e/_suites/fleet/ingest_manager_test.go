@@ -144,7 +144,10 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 				images = append(images, "docker.elastic.co/kibana/kibana:"+common.KibanaVersion)
 			}
 
-			deploy.PullImages(suiteContext, images)
+			err := deploy.PullImages(suiteContext, images)
+			if err != nil {
+				log.WithError(err).Warn("An error ocurred while warming-up the Docker images. Will continue")
+			}
 		}
 
 		common.ProfileEnv = map[string]string{
