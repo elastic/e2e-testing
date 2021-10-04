@@ -514,7 +514,7 @@ func getDockerClient() *client.Client {
 }
 
 // PullImages pulls images
-func PullImages(ctx context.Context, images []string) error {
+func PullImages(ctx context.Context, images []string) {
 	span, _ := apm.StartSpanOptions(ctx, "Pulling images using Docker client", "docker.images.pull", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -523,7 +523,7 @@ func PullImages(ctx context.Context, images []string) error {
 	c := getDockerClient()
 	defer c.Close()
 
-	platform := "linux/" + utils.GetArchitecture()
+	platform := "linux/arm64"
 
 	authConfig := types.AuthConfig{
 		Username: os.Getenv("DOCKER_USER"),
@@ -541,23 +541,34 @@ func PullImages(ctx context.Context, images []string) error {
 		}
 
 		if strings.Contains(image, "observability-ci") && !strings.EqualFold(authConfig.Username, "") {
+			log.Infof("Pulling %s using an Authenticated request", image)
+
 			encodedJSON, err := json.Marshal(authConfig)
 			if err != nil {
-				return err
+				log.WithFields(log.Fields{
+					"error": err,
+					"image": image,
+				}).Warn("An error ocurred while creating the authetnticated request. Continuing")
+				continue
 			}
-
-			log.Infof("Pulling %s using an Authenticated request", image)
 			options.RegistryAuth = base64.URLEncoding.EncodeToString(encodedJSON)
 		}
 
 		r, err := c.ImagePull(ctx, image, options)
 		if err != nil {
-			return err
+			log.WithFields(log.Fields{
+				"error": err,
+				"image": image,
+			}).Warn("An error ocurred while warming-up the Docker image. Continuing")
+			continue
 		}
 		_, err = io.Copy(os.Stdout, r)
 		if err != nil {
-			return err
+			log.WithFields(log.Fields{
+				"error": err,
+				"image": image,
+			}).Warn("An error ocurred while warming-up the Docker image. Continuing")
+			continue
 		}
 	}
-	return nil
 }
