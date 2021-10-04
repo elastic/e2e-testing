@@ -37,11 +37,12 @@ Examples: Debian
 | os     |
 | debian |
 
-# @upgrade-agent
+@upgrade-agent
 @nightly
 @skip:windows
 Scenario Outline: Upgrading the installed <os> agent
   Given a "<os>" agent "stale" is deployed to Fleet with "tar" installer
+    And agent is in version "stale"
     And certs are installed
     And the "elastic-agent" process is "restarted" on the host
   When agent is upgraded to version "latest"

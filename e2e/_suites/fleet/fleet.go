@@ -265,6 +265,13 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 
 	fts.Version = version
 
+	log.WithFields(log.Fields{
+		"agentVersion":      common.BeatVersion,
+		"agentStaleVersion": common.AgentStaleVersion,
+		"installer":         installerType,
+		"version":           fts.Version,
+	}).Info("Installing Agent version: " + fts.Version)
+
 	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
 }
 
@@ -326,6 +333,10 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 		if retrievedVersion != version {
 			return fmt.Errorf("version mismatch required '%s' retrieved '%s'", version, retrievedVersion)
 		}
+		log.WithFields(log.Fields{
+			"version":          version,
+			"retrievedVersion": retrievedVersion,
+		}).Info("Retrieved version not not match")
 
 		return nil
 	}
@@ -385,9 +396,10 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(image string, installerType string) error {
 	log.WithFields(log.Fields{
-		"image":     image,
-		"installer": installerType,
-	}).Trace("Deploying an agent to Fleet with base image using an already bootstrapped Fleet Server")
+		"image":        image,
+		"installer":    installerType,
+		"BeatsProcess": fts.BeatsProcess,
+	}).Info("Deploying an agent to Fleet with base image using an already bootstrapped Fleet Server")
 
 	deployedAgentsCount++
 
@@ -417,6 +429,15 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	}
 
 	agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, installerType)
+	log.WithFields(log.Fields{
+		"deployer":       fts.deployer,
+		"installer":      installerType,
+		"services":       services,
+		"agentService":   agentService,
+		"currentContext": fts.currentContext,
+		"agentInstaller": agentInstaller,
+	}).Info("installer.Attach")
+
 	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken)
 	if err != nil {
 		return err
