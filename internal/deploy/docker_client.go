@@ -540,12 +540,13 @@ func PullImages(ctx context.Context, images []string) error {
 			Platform: platform,
 		}
 
-		if strings.Contains(image, "observability-ci") {
+		if strings.Contains(image, "observability-ci") && !strings.EqualFold(authConfig.Username, "") {
 			encodedJSON, err := json.Marshal(authConfig)
 			if err != nil {
 				return err
 			}
 
+			log.Infof("Pulling %s using an Authenticated request", image)
 			options.RegistryAuth = base64.URLEncoding.EncodeToString(encodedJSON)
 		}
 
