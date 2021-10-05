@@ -137,5 +137,5 @@ func InitVersions() {
 		"BeatVersion":     BeatVersion,
 		"StackVersion":    StackVersion,
 		"KibanaVersion":   KibanaVersion,
-	}).Trace("Initial artifact versions defined")
+	}).Info("Initial artifact versions defined")
 }
