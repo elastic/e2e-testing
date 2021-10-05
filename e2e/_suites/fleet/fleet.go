@@ -331,12 +331,12 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 		}
 
 		if retrievedVersion != version {
+			log.WithFields(log.Fields{
+				"version":          version,
+				"retrievedVersion": retrievedVersion,
+			}).Info("Retrieved version " + retrievedVersion + " do not match with required " + version)
 			return fmt.Errorf("version mismatch required '%s' retrieved '%s'", version, retrievedVersion)
 		}
-		log.WithFields(log.Fields{
-			"version":          version,
-			"retrievedVersion": retrievedVersion,
-		}).Info("Retrieved version not not match")
 
 		return nil
 	}
