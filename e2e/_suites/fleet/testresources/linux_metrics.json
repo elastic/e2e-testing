@@ -1,7 +1,8 @@
 {
   "inputs": [{
     "policy_template": "system",
-    "streams": [{
+    "streams": [
+      {
       "data_stream": {
         "type": "metrics",
         "dataset": "linux.entropy"
