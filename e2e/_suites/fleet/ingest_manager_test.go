@@ -134,14 +134,16 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 				"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
 				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,
 				"docker.elastic.co/elasticsearch/elasticsearch:" + common.StackVersion,
-				"docker.elastic.co/kibana/kibana:" + common.KibanaVersion,
 				"docker.elastic.co/observability-ci/elastic-agent:" + common.BeatVersion,
 				"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.BeatVersion,
 				"docker.elastic.co/observability-ci/elasticsearch:" + common.StackVersion,
-				"docker.elastic.co/observability-ci/elasticsearch-ubi8:" + common.StackVersion,
 				"docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion,
-				"docker.elastic.co/observability-ci/kibana-ubi8:" + common.KibanaVersion,
 			}
+
+			if !strings.HasPrefix(common.KibanaVersion, "pr") {
+				images = append(images, "docker.elastic.co/kibana/kibana:"+common.KibanaVersion)
+			}
+
 			deploy.PullImages(suiteContext, images)
 		}
 
