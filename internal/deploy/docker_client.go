@@ -523,7 +523,7 @@ func PullImages(ctx context.Context, images []string) {
 	c := getDockerClient()
 	defer c.Close()
 
-	platform := "linux/arm64"
+	platform := "linux/" + utils.GetArchitecture()
 
 	authConfig := types.AuthConfig{
 		Username: os.Getenv("DOCKER_USER"),
