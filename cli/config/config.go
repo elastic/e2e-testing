@@ -61,11 +61,6 @@ func AvailableProfiles() map[string]Profile {
 	return Op.Profiles
 }
 
-// FileExists checks if a configuration file exists
-func FileExists(configFile string) (bool, error) {
-	return io.Exists(configFile)
-}
-
 // GetServiceConfig configuration of a service
 func GetServiceConfig(service string) (Service, bool) {
 	return Op.GetServiceConfig(service)
