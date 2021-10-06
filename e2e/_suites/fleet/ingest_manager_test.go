@@ -153,6 +153,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			"stackVersion":  common.StackVersion,
 		}
 
+		common.ProfileEnv["kibanaProfile"] = "default"
 		common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
 		if strings.HasPrefix(common.KibanaVersion, "pr") || utils.IsCommit(common.KibanaVersion) {
 			// because it comes from a PR
@@ -160,18 +161,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		}
 
 		if common.Provider != "remote" {
-			// the runtime dependencies must be started only in non-remote executions
-			deployer.Bootstrap(suiteContext, deploy.NewServiceRequest(common.FleetProfileName), common.ProfileEnv, func() error {
-				kibanaClient, err := kibana.NewClient()
-				if err != nil {
-					log.WithField("error", err).Fatal("Unable to create kibana client")
-				}
-				err = kibanaClient.WaitForFleet(suiteContext)
-				if err != nil {
-					log.WithField("error", err).Fatal("Fleet could not be initialized")
-				}
-				return nil
-			})
+			bootstrapFleet(suiteContext, common.ProfileEnv)
 		}
 
 		imts.Fleet.Version = common.BeatVersionBase
