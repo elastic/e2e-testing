@@ -75,8 +75,6 @@ func (ep *EPServiceManager) Add(ctx context.Context, profile ServiceRequest, ser
 }
 
 func checkElasticPackageProfile(ctx context.Context, kibanaProfile string) error {
-	createElasticPackageProfile := (kibanaProfile != "default")
-
 	// check compose profile
 	kibanaProfileFile := filepath.Join(config.OpDir(), "compose", "profiles", "fleet", kibanaProfile, "kibana.config.yml")
 	found, err := io.Exists(kibanaProfileFile)
@@ -92,20 +90,27 @@ func checkElasticPackageProfile(ctx context.Context, kibanaProfile string) error
 	span.Context.SetLabel("args", args)
 	span.Context.SetLabel("kibanaProfile", kibanaProfile)
 
-	if createElasticPackageProfile {
+	home, err := homedir.Dir()
+	if err != nil {
+		return err
+	}
+
+	elasticPackageProfile := filepath.Join(home, ".elastic-package", "profiles", kibanaProfile)
+	found, err = io.Exists(elasticPackageProfile)
+	if err != nil {
+		return err
+	}
+
+	if !found {
 		_, err = shell.Execute(ctx, ".", "go", args...)
 		if err != nil {
 			return err
 		}
 	} else {
-		log.Trace("Not creating a new Elastic Package profile for default. Kibana config will be overriden")
+		log.Trace("Not creating a new Elastic Package profile for " + kibanaProfile + ". Kibana config will be overriden")
 	}
 
-	home, err := homedir.Dir()
-	if err != nil {
-		return err
-	}
-	elasticPackageProfileFile := filepath.Join(home, ".elastic-package", "profiles", kibanaProfile, "stack", "kibana.config.yml")
+	elasticPackageProfileFile := filepath.Join(elasticPackageProfile, "stack", "kibana.config.yml")
 
 	// copy compose's kibana's config to elastic-package's config
 	err = io.CopyFile(kibanaProfileFile, elasticPackageProfileFile, 10000)
