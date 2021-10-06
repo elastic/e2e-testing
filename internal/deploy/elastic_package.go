@@ -75,10 +75,7 @@ func (ep *EPServiceManager) Add(ctx context.Context, profile ServiceRequest, ser
 }
 
 func checkElasticPackageProfile(ctx context.Context, kibanaProfile string) error {
-	if kibanaProfile == "default" {
-		log.Trace("Not creating a new Elastic Package profile for default")
-		return nil
-	}
+	createElasticPackageProfile := (kibanaProfile != "default")
 
 	// check compose profile
 	kibanaProfileFile := filepath.Join(config.OpDir(), "compose", "profiles", "fleet", kibanaProfile, "kibana.config.yml")
@@ -95,10 +92,13 @@ func checkElasticPackageProfile(ctx context.Context, kibanaProfile string) error
 	span.Context.SetLabel("args", args)
 	span.Context.SetLabel("kibanaProfile", kibanaProfile)
 
-	// create elastic-package's profile
-	_, err = shell.Execute(ctx, ".", "go", args...)
-	if err != nil {
-		return err
+	if createElasticPackageProfile {
+		_, err = shell.Execute(ctx, ".", "go", args...)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Trace("Not creating a new Elastic Package profile for default. Kibana config will be overriden")
 	}
 
 	home, err := homedir.Dir()
