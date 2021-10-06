@@ -484,7 +484,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 
 // bootstrapFleet this method creates the runtime dependencies for the Fleet test suite, being of special
 // interest kibana profile passed as part of the environment variables to bootstrap the dependencies.
-func bootstrapFleet(ctx context.Context, env map[string]string) {
+func bootstrapFleet(ctx context.Context, env map[string]string) error {
 	deployer := deploy.New(common.Provider)
 
 	if profile, ok := env["kibanaProfile"]; ok {
@@ -492,7 +492,7 @@ func bootstrapFleet(ctx context.Context, env map[string]string) {
 	}
 
 	// the runtime dependencies must be started only in non-remote executions
-	deployer.Bootstrap(ctx, deploy.NewServiceRequest(common.FleetProfileName), env, func() error {
+	return deployer.Bootstrap(ctx, deploy.NewServiceRequest(common.FleetProfileName), env, func() error {
 		kibanaClient, err := kibana.NewClient()
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -523,9 +523,7 @@ func (fts *FleetTestSuite) kibanaUsesProfile(profile string) error {
 
 	env["kibanaProfile"] = profile
 
-	bootstrapFleet(context.Background(), env)
-
-	return nil
+	return bootstrapFleet(context.Background(), env)
 }
 
 func (fts *FleetTestSuite) setup() error {

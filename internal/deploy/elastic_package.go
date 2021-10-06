@@ -10,9 +10,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/google/uuid"
+	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/testcontainers/testcontainers-go"
 	tc "github.com/testcontainers/testcontainers-go"
@@ -71,13 +74,73 @@ func (ep *EPServiceManager) Add(ctx context.Context, profile ServiceRequest, ser
 	return nil
 }
 
+func checkElasticPackageProfile(ctx context.Context, kibanaProfile string) error {
+	if kibanaProfile == "default" {
+		log.Trace("Not creating a new Elastic Package profile for default")
+		return nil
+	}
+
+	// check compose profile
+	kibanaProfileFile := filepath.Join(config.OpDir(), "compose", "profiles", "fleet", kibanaProfile, "kibana.config.yml")
+	found, err := io.Exists(kibanaProfileFile)
+	if !found || err != nil {
+		return err
+	}
+
+	args := append(elasticPackageBaseCommand, "profiles", "create", kibanaProfile, "--from", "default")
+
+	span, _ := apm.StartSpanOptions(ctx, "Copying Elastic Package profile", "elastic-package.profile.create", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("args", args)
+	span.Context.SetLabel("kibanaProfile", kibanaProfile)
+
+	// create elastic-package's profile
+	_, err = shell.Execute(ctx, ".", "go", args...)
+	if err != nil {
+		return err
+	}
+
+	home, err := homedir.Dir()
+	if err != nil {
+		return err
+	}
+	elasticPackageProfileFile := filepath.Join(home, ".elastic-package", "profiles", kibanaProfile, "stack", "kibana.config.yml")
+
+	// copy compose's kibana's config to elastic-package's config
+	err = io.CopyFile(kibanaProfileFile, elasticPackageProfileFile, 10000)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Fatal("Impossible to copy file")
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"src":    kibanaProfileFile,
+		"target": elasticPackageProfileFile,
+	}).Debug("Kibana profile copied")
+
+	return err
+}
+
 // Bootstrap sets up environment with docker compose
 func (ep *EPServiceManager) Bootstrap(ctx context.Context, profile ServiceRequest, env map[string]string, waitCB func() error) error {
 	services := "elasticsearch,fleet-server,kibana,package-registry"
 
 	version := common.StackVersion
 
-	args := append(elasticPackageBaseCommand, "stack", "up", "--daemon", "--verbose", "--version", version, "--services", services)
+	elasticPackageProfile := "default"
+	if kibanaProfile, ok := env["kibanaProfile"]; ok {
+		elasticPackageProfile = kibanaProfile
+	}
+
+	err := checkElasticPackageProfile(ctx, elasticPackageProfile)
+	if err != nil {
+		return err
+	}
+
+	args := append(elasticPackageBaseCommand, "stack", "up", "--daemon", "--verbose", "--version", version, "--services", services, "-p", elasticPackageProfile)
 
 	span, _ := apm.StartSpanOptions(ctx, "Bootstrapping Elastic Package deployment", "elastic-package.manifest.bootstrap", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -92,7 +155,7 @@ func (ep *EPServiceManager) Bootstrap(ctx context.Context, profile ServiceReques
 		return fmt.Errorf("profile %s not supported in elastic-package provisioner. Services: %v", profile.Name, services)
 	}
 
-	_, err := shell.Execute(ctx, ".", "go", args...)
+	_, err = shell.Execute(ctx, ".", "go", args...)
 	return err
 }
 

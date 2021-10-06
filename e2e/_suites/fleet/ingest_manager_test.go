@@ -161,7 +161,10 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		}
 
 		if common.Provider != "remote" {
-			bootstrapFleet(suiteContext, common.ProfileEnv)
+			err := bootstrapFleet(suiteContext, common.ProfileEnv)
+			if err != nil {
+				log.WithError(err).Fatal("Could not bootstrap Fleet runtime dependencies")
+			}
 		}
 
 		imts.Fleet.Version = common.BeatVersionBase
