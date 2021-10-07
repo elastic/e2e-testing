@@ -278,9 +278,8 @@ func (c *dockerDeploymentManifest) Stop(ctx context.Context, service ServiceRequ
 // the images produced by local Beats build, or not.
 // If an error occurred reading the environment, will return the passed namespace as fallback
 func GetDockerNamespaceEnvVar(fallback string) string {
-	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	useCISnapshots := elasticversion.GithubCommitSha1 != ""
-	if useCISnapshots || beatsLocalPath != "" {
+	if useCISnapshots || elasticversion.BeatsLocalPath != "" {
 		return "observability-ci"
 	}
 	return fallback
