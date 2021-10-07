@@ -7,6 +7,7 @@ require (
 	github.com/Jeffail/gabs/v2 v2.6.0
 	github.com/cenkalti/backoff/v4 v4.1.0
 	github.com/cucumber/godog v0.11.0
+	github.com/cucumber/messages-go/v10 v10.0.3 // indirect
 	github.com/docker/cli v20.10.7+incompatible
 	github.com/docker/docker v20.10.6+incompatible
 	github.com/elastic/elastic-package v0.16.0
