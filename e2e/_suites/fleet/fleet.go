@@ -156,7 +156,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
 	s.Step(`^the agent get Default Api Key$`, fts.theAgentGetDefaultApiKey)
-	s.Step(`^verify that Default Api Key is "([^"]*)"$`, fts.verifyDefaultApiKey)
+	s.Step(`^the default API key has "([^"]*)"$`, fts.verifyDefaultApiKey)
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
 	s.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)
@@ -424,6 +424,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	if err != nil {
 		return err
 	}
+	//fts.theAgentGetDefaultApiKey()
 	return err
 }
 
@@ -517,6 +518,12 @@ func (fts *FleetTestSuite) verifyDefaultApiKey(status string) error {
 				"new_default_api_key": newDefaultApiKey,
 				"old_default_api_key": fts.DefaultApiKey,
 			}).Info("Integration added and Default Api Key is " + status)
+		} else {
+			log.WithFields(log.Fields{
+				"new_default_api_key": newDefaultApiKey,
+				"old_default_api_key": fts.DefaultApiKey,
+			}).Error("Integration added and Default Api Key do not change")
+			return errors.New("Integration added and Default Api Key do not change")
 		}
 	}
 	if status == "do not change" {
@@ -524,7 +531,13 @@ func (fts *FleetTestSuite) verifyDefaultApiKey(status string) error {
 			log.WithFields(log.Fields{
 				"new_default_api_key": newDefaultApiKey,
 				"old_default_api_key": fts.DefaultApiKey,
-			}).Info("Integration updated and Default Api Key is " + status)
+			}).Info("Integration updated and Default Api Key " + status)
+		} else {
+			log.WithFields(log.Fields{
+				"new_default_api_key": newDefaultApiKey,
+				"old_default_api_key": fts.DefaultApiKey,
+			}).Error("Integration updated and Default Api Key is changed")
+			return errors.New("Integration updated and Default Api Key is changed")
 		}
 	}
 	return nil
@@ -1335,19 +1348,12 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 	var condition = false
 	var metrics = "system"
 	var file = "/metrics.json"
-	if name != "system/metrics" {
-		condition = true
-	}
-	if name != "logfile" {
-		condition = true
-	}
-	if name != "log" {
-		condition = true
-	}
 	if name == "linux/metrics" {
 		condition = true
 		file = "/linux_metrics.json"
 		metrics = "linux"
+	} else if name == "system/metrics" || name == "logfile" || name == "log" {
+		condition = true
 	}
 
 	if condition != true {
@@ -1387,11 +1393,11 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 	fts.PolicyUpdatedAt = updatedAt
 
 	log.WithFields(log.Fields{
-		"dataset": "system." + set,
+		"dataset": metrics + "." + set,
 		"enabled": "true",
 		"type":    "metrics",
 		"os":      os,
-	}).Info("Policy Updated with package name system." + set)
+	}).Info("Policy Updated with package name " + metrics + "." + set)
 
 	return nil
 }

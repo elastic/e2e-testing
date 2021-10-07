@@ -17,18 +17,6 @@
       "enabled": false
     },
       {
-        "compiled_stream": {
-          "condition": "${host.platform} == 'linux'",
-          "period": "10s",
-          "metricsets": [
-            "network_summary"
-          ],
-          "processors": [{
-            "drop_fields": {
-              "fields": "event.module"
-            }
-          }]
-        },
         "data_stream": {
           "type": "metrics",
           "dataset": "linux.network_summary"
@@ -40,21 +28,9 @@
           }
         },
         "id": "system/metrics-linux.network_summary-f0b065e3-1b62-416c-8998-93ea58fb98a1",
-        "enabled": true
+        "enabled": false
       },
       {
-        "compiled_stream": {
-          "condition": "${host.platform} == 'linux'",
-          "period": "10s",
-          "metricsets": [
-            "raid"
-          ],
-          "processors": [{
-            "drop_fields": {
-              "fields": "event.module"
-            }
-          }]
-        },
         "data_stream": {
           "type": "metrics",
           "dataset": "linux.raid"
@@ -72,19 +48,6 @@
         "enabled": true
       },
       {
-        "compiled_stream": {
-          "condition": "${host.platform} == 'linux'",
-          "period": "10s",
-          "service.state_filter": "active",
-          "metricsets": [
-            "service"
-          ],
-          "processors": [{
-            "drop_fields": {
-              "fields": "event.module"
-            }
-          }]
-        },
         "data_stream": {
           "type": "metrics",
           "dataset": "linux.service"
@@ -106,21 +69,9 @@
           }
         },
         "id": "system/metrics-linux.service-f0b065e3-1b62-416c-8998-93ea58fb98a1",
-        "enabled": true
+        "enabled": false
       },
       {
-        "compiled_stream": {
-          "condition": "${host.platform} == 'linux'",
-          "period": "10s",
-          "metricsets": [
-            "socket"
-          ],
-          "processors": [{
-            "drop_fields": {
-              "fields": "event.module"
-            }
-          }]
-        },
         "data_stream": {
           "type": "metrics",
           "dataset": "linux.socket"
@@ -145,18 +96,6 @@
         "enabled": true
       },
       {
-        "compiled_stream": {
-          "condition": "${host.platform} == 'linux'",
-          "period": "10s",
-          "metricsets": [
-            "users"
-          ],
-          "processors": [{
-            "drop_fields": {
-              "fields": "event.module"
-            }
-          }]
-        },
         "data_stream": {
           "type": "metrics",
           "dataset": "linux.users"
@@ -179,12 +118,54 @@
     "type": "system/metrics",
     "enabled": true
   },
-    {
-      "policy_template": "system",
-      "streams": [{
+  {
+    "policy_template": "system",
+    "streams": [{
+      "data_stream": {
+        "type": "metrics",
+        "dataset": "linux.conntrack"
+      },
+      "vars": {
+        "period": {
+          "type": "text",
+          "value": "10s"
+        }
+      },
+      "id": "linux/metrics-linux.conntrack-f0b065e3-1b62-416c-8998-93ea58fb98a1",
+      "enabled": true
+      },
+      {
+      "data_stream": {
+        "type": "metrics",
+        "dataset": "linux.iostat"
+      },
+      "vars": {
+        "period": {
+          "type": "text",
+          "value": "10s"
+        }
+      },
+      "id": "linux/metrics-linux.iostat-f0b065e3-1b62-416c-8998-93ea58fb98a1",
+      "enabled": true
+      },
+      {
+       "data_stream": {
+         "type": "metrics",
+         "dataset": "linux.ksm"
+       },
+        "vars": {
+          "period": {
+            "type": "text",
+            "value": "10s"
+          }
+        },
+        "id": "linux/metrics-linux.ksm-f0b065e3-1b62-416c-8998-93ea58fb98a1",
+        "enabled": false
+        },
+        {
         "data_stream": {
           "type": "metrics",
-          "dataset": "linux.conntrack"
+          "dataset": "linux.memory"
         },
         "vars": {
           "period": {
@@ -192,78 +173,22 @@
             "value": "10s"
           }
         },
-        "id": "linux/metrics-linux.conntrack-f0b065e3-1b62-416c-8998-93ea58fb98a1",
-        "enabled": false
-      },
-        {
-          "compiled_stream": {
-            "condition": "${host.platform} == 'linux'",
-            "period": "10s",
-            "metricsets": [
-              "iostat"
-            ]
-          },
-          "data_stream": {
-            "type": "metrics",
-            "dataset": "linux.iostat"
-          },
-          "vars": {
-            "period": {
-              "type": "text",
-              "value": "10s"
-            }
-          },
-          "id": "linux/metrics-linux.iostat-f0b065e3-1b62-416c-8998-93ea58fb98a1",
-          "enabled": true
+        "id": "linux/metrics-linux.memory-f0b065e3-1b62-416c-8998-93ea58fb98a1",
+        "enabled": true
         },
         {
-          "data_stream": {
-            "type": "metrics",
-            "dataset": "linux.ksm"
-          },
-          "vars": {
-            "period": {
-              "type": "text",
-              "value": "10s"
-            }
-          },
-          "id": "linux/metrics-linux.ksm-f0b065e3-1b62-416c-8998-93ea58fb98a1",
-          "enabled": false
+        "data_stream": {
+          "type": "metrics",
+          "dataset": "linux.pageinfo"
         },
-        {
-          "compiled_stream": {
-            "condition": "${host.platform} == 'linux'",
-            "period": "10s",
-            "metricsets": [
-              "memory"
-            ]
-          },
-          "data_stream": {
-            "type": "metrics",
-            "dataset": "linux.memory"
-          },
-          "vars": {
-            "period": {
-              "type": "text",
-              "value": "10s"
-            }
-          },
-          "id": "linux/metrics-linux.memory-f0b065e3-1b62-416c-8998-93ea58fb98a1",
-          "enabled": true
+        "vars": {
+          "period": {
+            "type": "text",
+            "value": "10s"
+          }
         },
-        {
-          "data_stream": {
-            "type": "metrics",
-            "dataset": "linux.pageinfo"
-          },
-          "vars": {
-            "period": {
-              "type": "text",
-              "value": "10s"
-            }
-          },
-          "id": "linux/metrics-linux.pageinfo-f0b065e3-1b62-416c-8998-93ea58fb98a1",
-          "enabled": false
+        "id": "linux/metrics-linux.pageinfo-f0b065e3-1b62-416c-8998-93ea58fb98a1",
+        "enabled": true
         }
       ],
       "type": "linux/metrics",

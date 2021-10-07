@@ -9,7 +9,26 @@ Scenario Outline: Adding the Linux Integration to an Agent ...
     And the agent get Default Api Key
   When the "Linux" integration is "added" in the policy
     And a Linux data stream exists with some data
-  Then verify that Default Api Key is "changed"
+  Then the default API key has "changed"
+
+@centos
+Examples: Centos
+  | os     |
+  | centos |
+
+  @debian
+Examples: Debian
+| os     |
+| debian |
+
+@updating-integration-do-not-change-permission
+Scenario Outline: Updating the Linux Integration to an Agent ...
+  Given a "<os>" agent is deployed to Fleet with "tar" installer
+    And the agent is listed in Fleet as "online"
+    And the agent get Default Api Key
+#    And the "Linux" integration is "added" in the policy
+  When the policy is updated to have "system/metrics" set to "core"
+  Then the default API key has "do not change"
 
 @centos
 Examples: Centos
@@ -20,17 +39,3 @@ Examples: Centos
 Examples: Debian
 | os     |
 | debian |
-
-@updating-integration-do-not-change-permission
-Scenario Outline: Updating the Linux Integration to an Agent ...
-  Given a "<os>" agent is deployed to Fleet with "tar" installer
-    And the agent is listed in Fleet as "online"
-    And the "Linux" integration is "added" in the policy
-  When the agent get Default Api Key
-    And the policy is updated to have "linux/metrics" set to "pageinfo"
-  Then verify that Default Api Key is "do not change"
-
-@centos
-Examples: Centos
-| os     |
-| centos |
