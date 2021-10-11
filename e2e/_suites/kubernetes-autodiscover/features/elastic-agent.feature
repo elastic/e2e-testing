@@ -22,6 +22,11 @@ Scenario: Logs collection from short-living cronjobs
    When "60s" have passed
    Then "elastic-agent" collects events with "kubernetes.container.name:cronjob-container"
 
+Scenario: Logs collection from failing pod
+  Given "elastic-agent" is running with "logs generic failing"
+   When "a failing pod" is deployed
+   Then "elastic-agent" collects events with "kubernetes.pod.name:a-failing-pod"
+
 Scenario: Metrics collection configured from targeted Redis Pod
   Given "elastic-agent" is running with "redis info"
    When "redis" is running
