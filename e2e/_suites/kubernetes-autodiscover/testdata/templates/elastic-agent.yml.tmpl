@@ -8,12 +8,20 @@ data:
   writer.sh: |-
     #!/bin/sh
     sleep 10;
-    index=$(curl --user elastic:changeme http://elasticsearch:9200/_cat/indices/.ds-logs-generic-default*?format=json | jq .[0].'index' | tr -d '"');
     while true;
     do
+{{ if option "logs generic" }}
+        index=$(curl --user elastic:changeme http://elasticsearch:9200/_cat/indices/.ds-logs-generic-default*?format=json | jq .[0].'index' | tr -d '"');
         curl --user elastic:changeme \
-        http://elasticsearch:9200/$index/_search?format=json \
+        http://elasticsearch:9200/${index}/_search?format=json \
         | jq -r .'hits'.'hits'[].'_source' >> /tmp/beats-events
+{{ end }}
+{{ if option "redis info" }}
+        index=$(curl --user elastic:changeme http://elasticsearch:9200/_cat/indices/.ds-metrics-redis.info-default*?format=json | jq .[0].'index' | tr -d '"');
+        curl --user elastic:changeme \
+        http://elasticsearch:9200/${index}/_search?format=json \
+        | jq -r .'hits'.'hits'[].'_source' >> /tmp/beats-events
+{{ end }}
         sleep 10;
     done
 ---
