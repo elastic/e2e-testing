@@ -160,7 +160,7 @@ func (ep *EPServiceManager) Bootstrap(ctx context.Context, profile ServiceReques
 		return fmt.Errorf("profile %s not supported in elastic-package provisioner. Services: %v", profile.Name, services)
 	}
 
-	_, err = shell.Execute(ctx, ".", "go", args...)
+	_, err = shell.ExecuteWithEnv(ctx, ".", "go", env, args...)
 	return err
 }
 

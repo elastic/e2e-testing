@@ -158,6 +158,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		if strings.HasPrefix(common.KibanaVersion, "pr") || utils.IsCommit(common.KibanaVersion) {
 			// because it comes from a PR
 			common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
+			common.ProfileEnv["KIBANA_IMAGE_REF_CUSTOM"] = "docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion
 		}
 
 		if common.Provider != "remote" {
