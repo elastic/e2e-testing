@@ -269,7 +269,7 @@ def deployStack(){
     ]) {
         withTerraForm(){
             sh(label: 'Deploy Stack', script: 'terraform -chdir ".ci/terraform/stack" apply -auto-approve')
-            endpointAddress = sh(label: 'Get Cloud endpoint', script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform console", returnStdout: true)?.trim()
+            endpointAddress = sh(label: 'Get Cloud endpoint', script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform -chdir .ci/terraform/stack console", returnStdout: true)?.trim()
             if(endpointAddress) {
                 endpointMap = [elasticsearchUrl: endpointAddress.replace("\\.apm", ""),
                                kibanaUrl: endpointAddress.replace("\\.apm", ""),
@@ -283,8 +283,6 @@ def deployStack(){
 def teardownStack(){
     def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
     def authObj = props?.data
-    def endpointMap = [:]
-    def endpointAddress = null
     withEnvMask(vars: [
         [var: "EC_API_KEY", password: "${authObj.apiKey}"]
     ]) {
@@ -423,10 +421,9 @@ def generateFunctionalTestStep(Map args = [:]){
               envContext.add("PATH=${path}")
               echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
               powershell label: "Disk Information", script: "Get-PSDrive"
-              powershell label: "Pinging Linux VM", script: "ping -n 1 ${linuxIp}"
-              powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${linuxIp} -Port 9200"
-              powershell label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601"
-              powershell label: "Check for running fleet server", script: "Test-NetConnection ${linuxIp} -Port 8220"
+              powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${endpointMap.elasticsearchUrl}"
+              powershell label: "Check for running kibana", script: "Test-NetConnection ${endpointMap.kibanaUrl}"
+              powershell label: "Check for running fleet server", script: "Test-NetConnection ${endpointMap.fleetUrl}"
            }
            withEnv(envContext) {
               if (platformLabels.contains("windows")) {
