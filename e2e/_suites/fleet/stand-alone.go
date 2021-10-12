@@ -15,7 +15,6 @@ import (
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
-	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
@@ -92,9 +91,8 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 	}
 
 	useCISnapshots := elasticversion.GithubCommitSha1 != ""
-	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 
-	if useCISnapshots || beatsLocalPath != "" {
+	if useCISnapshots || elasticversion.BeatsLocalPath != "" {
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries

@@ -24,6 +24,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// BeatsLocalPath is the path to a local copy of the Beats git repository
+// It can be overriden by BEATS_LOCAL_PATH env var. Using the empty string as a default.
+var BeatsLocalPath = ""
+
 // to avoid downloading the same artifacts, we are adding this map to cache the URL of the downloaded binaries, using as key
 // the URL of the artifact. If another installer is trying to download the same URL, it will return the location of the
 // already downloaded artifact.
@@ -39,6 +43,11 @@ var GithubCommitSha1 string
 
 func init() {
 	GithubCommitSha1 = shell.GetEnv("GITHUB_CHECK_SHA1", "")
+
+	BeatsLocalPath = shell.GetEnv("BEATS_LOCAL_PATH", BeatsLocalPath)
+	if BeatsLocalPath != "" {
+		log.Infof(`Beats local path will be used for artifacts. Please make sure all binaries are properly built in their "build/distributions" folder: %s`, BeatsLocalPath)
+	}
 }
 
 // elasticVersion represents a version
@@ -321,8 +330,7 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 		}
 	}
 
-	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
-	if beatsLocalPath != "" && isDocker {
+	if BeatsLocalPath != "" && isDocker {
 		dockerString = ".docker"
 		return fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, artifactVersion, OS, arch, dockerString, lowerCaseExtension)
 	}
@@ -345,16 +353,15 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 // Else, if the environment variable GITHUB_CHECK_SHA1 is set, then the artifact
 // to be downloaded will be defined by the snapshot produced by the Beats CI for that commit.
 func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool) (string, error) {
-	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
-	if beatsLocalPath != "" {
+	if BeatsLocalPath != "" {
 		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.local.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
 		defer span.End()
 
-		distributions := path.Join(beatsLocalPath, artifact, "build", "distributions")
+		distributions := path.Join(BeatsLocalPath, artifact, "build", "distributions")
 		if xpack {
-			distributions = path.Join(beatsLocalPath, "x-pack", artifact, "build", "distributions")
+			distributions = path.Join(BeatsLocalPath, "x-pack", artifact, "build", "distributions")
 		}
 
 		log.Debugf("Using local snapshots for the %s: %s", artifact, distributions)
