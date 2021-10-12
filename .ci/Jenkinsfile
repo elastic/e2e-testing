@@ -268,8 +268,8 @@ def deployStack(){
         [var: "EC_API_KEY", password: "${authObj.apiKey}"]
     ]) {
         withTerraform(){
-            sh(label: 'Deploy Stack', script: 'terraform -chdir ".ci/terraform/stack" apply -auto-approve')
-            endpointAddress = sh(label: 'Get Cloud endpoint', script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform -chdir .ci/terraform/stack console", returnStdout: true)?.trim()
+            sh(label: 'Deploy Stack', script: 'terraform -chdir=.ci/terraform/stack apply -auto-approve')
+            endpointAddress = sh(label: 'Get Cloud endpoint', script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
             if(endpointAddress) {
                 endpointMap = [elasticsearchUrl: endpointAddress.replace("\\.apm", ""),
                                kibanaUrl: endpointAddress.replace("\\.apm", ""),
