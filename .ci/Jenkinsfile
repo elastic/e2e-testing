@@ -17,6 +17,7 @@ pipeline {
     JOB_GIT_CREDENTIALS = "2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken"
     DOCKER_ELASTIC_SECRET = 'secret/observability-team/ci/docker-registry/prod'
     DOCKER_REGISTRY = 'docker.elastic.co'
+    ELASTIC_CLOUD_SECRET = 'secret/observability-team/ci/elastic-cloud/observability-team'
   }
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -237,15 +238,66 @@ pipeline {
   }
   post {
     cleanup {
+      teardownStack()
       doNotifyBuildResult(params.notifyOnGreenBuilds)
     }
   }
 }
 
+def withTerraform(Closure body){
+  def binDir = "${HOME}/bin"
+  withEnv([
+    "PATH=${PATH}:${binDir}"
+    ]){
+      sh(label:'Install Terraform', script: """
+        mkdir -p ${binDir}
+        cd ${binDir}
+        curl -sSL -o terraform.zip https://releases.hashicorp.com/terraform/0.15.3/terraform_0.15.3_linux_amd64.zip
+        unzip terraform.zip
+      """)
+      body()
+  }
+}
+
+def deployStack(){
+    def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
+    def authObj = props?.data
+    def endpointMap = [:]
+    def endpointAddress = null
+    withEnvMask(vars: [
+        [var: "EC_API_KEY", password: "${authObj.apiKey}"]
+    ]) {
+        withTerraForm(){
+            sh(label: 'Deploy Stack', script: 'terraform -chdir ".ci/terraform/stack" apply -auto-approve')
+            endpointAddress = sh(label: 'Get Cloud endpoint', script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform console", returnStdout: true)?.trim()
+            if(endpointAddress) {
+                endpointMap = [elasticsearchUrl: endpointAddress.replace("\\.apm", ""),
+                               kibanaUrl: endpointAddress.replace("\\.apm", ""),
+                               fleetUrl: endpointAddress.replace("\\.apm", "\\.fleet")]
+            }
+        }
+    }
+    return endpointMap
+}
+
+def teardownStack(){
+    def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
+    def authObj = props?.data
+    def endpointMap = [:]
+    def endpointAddress = null
+    withEnvMask(vars: [
+        [var: "EC_API_KEY", password: "${authObj.apiKey}"]
+    ]) {
+        withTerraForm(){
+            sh(label: 'Teardown Stack', script: 'terraform -chdir ".ci/terraform/stack" destroy -auto-approve')
+        }
+    }
+}
+
 def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     def suite = item.suite
     def platforms = item.platforms
-    def linuxIp = null
+    def endpointMap = [:]
 
     // Start stack with fleet server enabled for the fleet suite of tests
     if (suite == "fleet") {
@@ -253,8 +305,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
         }
         filebeat(output: "docker_logs_${suite}.log", workdir: "${env.WORKSPACE}") {
-            sh script: "docker-compose -f cli/config/compose/profiles/${suite}/docker-compose.yml up -d", label: "Deploying ${suite} via docker"
-            linuxIp = grabWorkerIP()
+            endpointMap = deployStack()
         }
     }
 
@@ -273,7 +324,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
         platformsValue.each { platform ->
           def platformLabels = platform.labels
           log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
-                parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}", linuxIp: linuxIp)
+                parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}", endpointMap: endpointMap)
         }
       } else {
         log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed in any platform because there are no modified files")
@@ -304,7 +355,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def suite = args.get('suite')
   def tags = args.get('tags')
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
-  def linuxIp = args.get('linuxIp') ? args.get('linuxIp') : null
+  def endpointMap = args.get('endpointMap') ? args.get('endpointMap') : [:]
 
   def platformLabels = platform.labels
   def platformProvider = platform.provider
@@ -352,11 +403,11 @@ def generateFunctionalTestStep(Map args = [:]){
   envContext.add("OP_LOG_LEVEL=TRACE")
   envContext.add("LOG_LEVEL=TRACE")
 
-    if (platformProvider == "remote" && linuxIp) {
-        envContext.add("KIBANA_URL=https://${linuxIp}:5601")
-        envContext.add("ELASTICSEARCH_URL=https://${linuxIp}:9200")
-        envContext.add("FLEET_URL=https://${linuxIp}:8220")
-    }
+  if (platformProvider == "remote" && endpointMap) {
+      envContext.add("KIBANA_URL=${endpointMap.kibanaUrl}")
+      envContext.add("ELASTICSEARCH_URL=${endpointMap.elasticsearchUrl}")
+      envContext.add("FLEET_URL=${endpointMap.fleetUrl}")
+  }
 
   return {
     withNode(labels: "${platformLabels}", sleepMax: 20, forceWorkspace: true){
