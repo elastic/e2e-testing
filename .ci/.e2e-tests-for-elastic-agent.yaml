@@ -1,0 +1,41 @@
+---
+SUITES:
+  - suite: "fleet"
+    platforms:
+      - labels: "arm64"
+      - labels: "ubuntu-18.04"
+        provider: "elastic-package"
+    scenarios:
+      - name: "Fleet"
+        pullRequestFilter: " && ~debian"
+        tags: "fleet_mode_agent"
+        platforms:
+          - labels: "ubuntu-18.04"
+            provider: "elastic-package"
+      - name: "Integrations"
+        pullRequestFilter: " && ~debian"
+        tags: "integrations"
+      - name: "APM Integration"
+        pullRequestFilter: " && ~debian"
+        tags: "apm_server"
+      - name: "Linux Integration"
+        pullRequestFilter: " && ~debian"
+        tags: "linux_integration"
+      - name: "System Integration"
+        platforms:
+          - labels: "ubuntu-18.04"
+            provider: "elastic-package"
+        pullRequestFilter: " && ~debian"
+        tags: "system_integration"
+      - name: "Stand-alone"
+        platforms:
+          - labels: "ubuntu-18.04"
+            provider: "elastic-package"
+        pullRequestFilter: " && ~ubi8"
+        tags: "stand_alone_agent"
+      - name: "Backend Processes"
+        pullRequestFilter: " && ~debian"
+        tags: "backend_processes"
+      - name: "Beats Background Processes"
+        pullRequestFilter: " && ~debian"
+        tags: "running_on_beats"
