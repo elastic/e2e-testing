@@ -17,7 +17,7 @@ pipeline {
     JOB_GIT_CREDENTIALS = "2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken"
     DOCKER_ELASTIC_SECRET = 'secret/observability-team/ci/docker-registry/prod'
     DOCKER_REGISTRY = 'docker.elastic.co'
-    ELASTIC_CLOUD_SECRET = 'secret/observability-team/ci/elastic-cloud/observability-team'
+    ELASTIC_CLOUD_SECRET = 'secret/observability-team/ci/elastic-cloud/observability-team-user'
   }
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -265,7 +265,7 @@ def deployStack(){
     def endpointMap = [:]
     def endpointAddress = null
     withEnvMask(vars: [
-        [var: "EC_API_KEY", password: "${authObj.apiKey}"]
+        [var: "EC_API_KEY", password: authObj.apiKey]
     ]) {
         withTerraform(){
             sh(label: 'Init Stack', script: 'terraform -chdir=.ci/terraform/stack init')
