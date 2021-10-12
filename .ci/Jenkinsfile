@@ -302,9 +302,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
         if(isInstalled(tool: 'docker', flag: '--version')) {
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
         }
-        filebeat(output: "docker_logs_${suite}.log", workdir: "${env.WORKSPACE}") {
-            endpointMap = deployStack()
-        }
+        endpointMap = deployStack()
     }
 
     item.scenarios.each { scenario ->
