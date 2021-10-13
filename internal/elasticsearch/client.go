@@ -118,7 +118,7 @@ func getElasticsearchClientFromHostPort(ctx context.Context, host string, port i
 	cfg := es.Config{
 		Addresses: []string{fmt.Sprintf("%s://%s:%d", scheme, host, port)},
 		Username:  "elastic",
-		Password:  shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"),
+		Password:  utils.RemoveQuotes(shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme")),
 	}
 
 	// avoid using common properties to avoid cyclical references
