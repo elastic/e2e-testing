@@ -234,7 +234,7 @@ func WaitForElasticsearchFromHostPort(ctx context.Context, host string, port int
 	retryCount := 1
 
 	clusterStatus := func() error {
-		esClient, err := getElasticsearchClientFromHostPort(context.Background(), host, port)
+		esClient, err := getElasticsearchClient(context.Background())
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
