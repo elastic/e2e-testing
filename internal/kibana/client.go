@@ -12,7 +12,6 @@ import (
 	"net/url"
 
 	"github.com/elastic/e2e-testing/internal/shell"
-	"github.com/elastic/e2e-testing/internal/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
@@ -29,7 +28,7 @@ type Client struct {
 func NewClient() (*Client, error) {
 	host := getBaseURL()
 	username := "elastic"
-	password := utils.RemoveQuotes(shell.GetEnv("KIBANA_PASSWORD", "changeme"))
+	password := shell.GetEnv("KIBANA_PASSWORD", "changeme")
 
 	return &Client{
 		host:     host,
