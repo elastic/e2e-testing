@@ -526,7 +526,7 @@ func (fts *FleetTestSuite) verifyDefaultApiKey(status string) error {
 			return errors.New("Integration added and Default Api Key do not change")
 		}
 	}
-	if status == "do not change" {
+	if status == "not change" {
 		if newDefaultApiKey == fts.DefaultApiKey {
 			log.WithFields(log.Fields{
 				"new_default_api_key": newDefaultApiKey,

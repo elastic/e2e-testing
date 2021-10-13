@@ -28,7 +28,7 @@ Scenario Outline: Updating the Linux Integration to an Agent ...
     And the agent get Default Api Key
 #    And the "Linux" integration is "added" in the policy
   When the policy is updated to have "system/metrics" set to "core"
-  Then the default API key has "do not change"
+  Then the default API key has "not change"
 
 @centos
 Examples: Centos
