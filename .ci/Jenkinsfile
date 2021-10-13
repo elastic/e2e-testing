@@ -251,22 +251,18 @@ pipeline {
 }
 
 def withTerraform(Closure body){
-    if(isInstalled(tool: 'terraform', flag: 'version')){
-        body()
-    } else {
-        def binDir = "${HOME}/bin"
-        withEnv([
-            "PATH=${PATH}:${binDir}"
-        ]){
-            sh(label:'Install Terraform', script: """
-        mkdir -p ${binDir}
-        cd ${binDir}
-        curl -sSL -o terraform.zip https://releases.hashicorp.com/terraform/0.15.3/terraform_0.15.3_linux_amd64.zip
-        unzip terraform.zip
-      """)
-            body()
-        }
-    }
+  def binDir = "${HOME}/bin"
+  withEnv([
+    "PATH=${PATH}:${binDir}"
+  ]){
+    sh(label:'Install Terraform', script: """
+      mkdir -p ${binDir} || true
+      cd ${binDir}
+      curl -sSL -o terraform.zip https://releases.hashicorp.com/terraform/0.15.3/terraform_0.15.3_linux_amd64.zip || true
+      unzip terraform.zip || true
+    """)
+    body()
+  }
 }
 
 def deployStack(){
