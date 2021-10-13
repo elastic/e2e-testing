@@ -288,7 +288,7 @@ def teardownStack(){
         [var: "EC_API_KEY", password: "${authObj.apiKey}"]
     ]) {
         withTerraForm(){
-            sh(label: 'Teardown Stack', script: 'terraform -chdir ".ci/terraform/stack" destroy -auto-approve')
+            sh(label: 'Teardown Stack', script: 'terraform -chdir=.ci/terraform/stack destroy -auto-approve')
         }
     }
 }
@@ -304,6 +304,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
         }
         endpointMap = deployStack()
+        log(level: 'INFO', text: "Endpoint addresses: (Kibana: ${endpointMap.kibanaUrl}) (ES: ${endpointMap.elasticsearchUrl}) (Fleet: ${endpointMap.fleetUrl})")
     }
 
     item.scenarios.each { scenario ->
@@ -321,7 +322,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
         platformsValue.each { platform ->
           def platformLabels = platform.labels
           log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
-                parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}", endpointMap: endpointMap)
+          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}", endpointMap: endpointMap)
         }
       } else {
         log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed in any platform because there are no modified files")

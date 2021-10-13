@@ -12,7 +12,7 @@ provider "ec" {
 }
 
 resource "ec_deployment" "end-to-end" {
-  name                   = "terraform-demo"
+  name                   = "end-to-end"
   region                 = "gcp-us-central1"
   version                = "7.15.1"
   deployment_template_id = "gcp-io-optimized-v2"
