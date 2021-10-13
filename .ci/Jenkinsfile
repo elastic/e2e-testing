@@ -276,15 +276,14 @@ def deployStack(){
         withTerraform(){
             sh(label: 'Init Stack', script: 'terraform -chdir=.ci/terraform/stack init')
             sh(label: 'Deploy Stack', script: 'terraform -chdir=.ci/terraform/stack apply -auto-approve')
-            endpointAddress = sh(label: 'Get Cloud endpoint', script: "echo ec_deployment.end-to-end.elasticsearch[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
-            fleetAddress = sh(label: 'Get Cloud endpoint', script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
+            elasticsearchAddress = sh(label: 'Get ES endpoint', script: "echo ec_deployment.end-to-end.elasticsearch[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
+            kibanaAddress = sh(label: 'Get Kibana endpoint', script: "echo ec_deployment.end-to-end.kibana[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
+            fleetAddress = sh(label: 'Get Fleet endpoint', script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
             endpointPassword = sh(label: 'Get password', script: "terraform -chdir=.ci/terraform/stack show -json | jq -r .values.root_module.resources[0].values.elasticsearch_password", returnStdout: true)?.trim()
-            if(endpointAddress) {
-                endpointMap = [elasticsearchUrl: endpointAddress,
-                               kibanaUrl: endpointAddress,
-                               fleetUrl: fleetAddress.replace(".apm", ".fleet"),
-                               elasticsearchPassword: endpointPassword]
-            }
+            endpointMap = [elasticsearchUrl: elasticsearchAddress,
+                           kibanaUrl: kibanaAddress,
+                           fleetUrl: fleetAddress.replace(".apm", ".fleet"),
+                           elasticsearchPassword: endpointPassword]
         }
     }
     return endpointMap
