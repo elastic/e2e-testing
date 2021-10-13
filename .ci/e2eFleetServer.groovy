@@ -69,7 +69,6 @@ pipeline {
             checkPermissions()
             setEnvVar('E2E_BASE_BRANCH', getE2EBaseBranch())
             sh(label:'Prepare Agent Drop path', script: 'mkdir -p ${AGENT_DROP_PATH}')
-            sh(label: 'Install tools', script: 'apt-get update && apt-get install zip -y')
           }
         }
         stage('Build Elastic Agent dependencies') {
@@ -81,7 +80,7 @@ pipeline {
                 gitCheckout(basedir: BASE_DIR, branch: getFleetServerBranch(), repo: "git@github.com:${env.ELASTIC_REPO}.git", credentialsId: env.JOB_GIT_CREDENTIALS)
                 dir("${BASE_DIR}") {
                   withGoEnv(){
-                    sh(label: 'Build Fleet Server', script: "make release")
+                    sh(label: 'Build Fleet Server', script: "make docker-release")
                     sh(label: 'Copy binaries to Agent Drop path', script: 'cp build/distributions/* ${AGENT_DROP_PATH}')
                   }
                 }
