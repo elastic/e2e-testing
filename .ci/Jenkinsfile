@@ -299,7 +299,7 @@ def deployCentos(){
         unstash 'source'
         withTerraform(){
             sh(label: 'Init Stack', script: 'terraform -chdir=.ci/terraform/centos init')
-            sh(label: 'Deploy Stack', script: 'terraform -chdir=.ci/terraform/centos apply -auto-approve')
+            sh(label: 'Deploy Stack', script: 'terraform -chdir=.ci/terraform/centos apply -auto-approve -var privatekeypath=".ci/terraform/e2essh" -var publickeypath=".ci/terraform/e2essh.pub"')
             ipAddress = sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/centos output -raw ip", returnStdout: true)?.trim()
         }
     }
