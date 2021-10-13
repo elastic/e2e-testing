@@ -91,7 +91,7 @@ func getElasticsearchClient(ctx context.Context) (*es.Client, error) {
 	if remoteESHost != "" {
 		u, err := url.Parse(remoteESHost)
 		if err != nil {
-			log.Fatal("Could not parse ELASTICSEARCH_URL")
+			log.WithField("error", err).Fatal("Could not parse ELASTICSEARCH_URL")
 		}
 		host, port, err := net.SplitHostPort(u.Host)
 		if err != nil {

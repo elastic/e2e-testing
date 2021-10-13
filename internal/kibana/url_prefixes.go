@@ -31,7 +31,11 @@ func getBaseURL() string {
 	if remoteKibanaHost != "" {
 		u, err := url.Parse(remoteKibanaHost)
 		if err != nil {
-			log.Fatal("Could not parse KIBANA_URL")
+			log.WithFields(log.Fields{
+				"url":   remoteKibanaHost,
+				"error": err,
+			}).Trace("Could not parse KIBANA_URL, will attempt with original.")
+			return remoteKibanaHost
 		}
 		host, port, err := net.SplitHostPort(u.Host)
 		if err != nil {
