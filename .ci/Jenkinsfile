@@ -17,6 +17,7 @@ pipeline {
     JOB_GIT_CREDENTIALS = "2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken"
     DOCKER_ELASTIC_SECRET = 'secret/observability-team/ci/docker-registry/prod'
     DOCKER_REGISTRY = 'docker.elastic.co'
+    TEST_MATRIX_FILE = "${params.testMatrixFile}"
   }
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -36,6 +37,7 @@ pipeline {
     booleanParam(name: "SKIP_SCENARIOS", defaultValue: true, description: "If it's needed to skip those scenarios marked as @skip. Default true")
     booleanParam(name: "NIGHTLY_SCENARIOS", defaultValue: false, description: "If it's needed to include the scenarios marked as @nightly in the test execution. Default false")
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
+    string(name: 'testMatrixFile', defaultValue: '.ci/.e2e-tests.yaml', description: 'The file with the test suite and scenarios to be tested.')
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
     booleanParam(name: "forceSkipPresubmit", defaultValue: false, description: "If it's needed to execute the pre-submit tests: unit and precommit.")
     booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify to Slack with green builds.")
@@ -191,7 +193,7 @@ pipeline {
               dir("${BASE_DIR}") {
                 script {
                   def suitesParam = params.runTestsSuites
-                  def existingSuites = readYaml(file: '.ci/.e2e-tests.yaml')
+                  def existingSuites = readYaml(file: "${TEST_MATRIX_FILE}")
                   def parallelTasks = [:]
 
                   if (suitesParam == "") {
