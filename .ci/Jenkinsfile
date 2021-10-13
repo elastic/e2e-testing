@@ -273,10 +273,12 @@ def deployStack(){
             sh(label: 'Init Stack', script: 'terraform -chdir=.ci/terraform/stack init')
             sh(label: 'Deploy Stack', script: 'terraform -chdir=.ci/terraform/stack apply -auto-approve')
             endpointAddress = sh(label: 'Get Cloud endpoint', script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
+            endpointPassword = sh(label: 'Get password', script: "echo ec_deployment.end-to-end.elasticsearch_password | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
             if(endpointAddress) {
                 endpointMap = [elasticsearchUrl: endpointAddress.replace(".apm", ""),
                                kibanaUrl: endpointAddress.replace(".apm", ""),
-                               fleetUrl: endpointAddress.replace(".apm", ".fleet")]
+                               fleetUrl: endpointAddress.replace(".apm", ".fleet"),
+                               elasticsearchPassword: endpointPassword]
             }
         }
     }
@@ -407,6 +409,8 @@ def generateFunctionalTestStep(Map args = [:]){
       envContext.add("KIBANA_URL=${endpointMap.kibanaUrl}")
       envContext.add("ELASTICSEARCH_URL=${endpointMap.elasticsearchUrl}")
       envContext.add("FLEET_URL=${endpointMap.fleetUrl}")
+      endContext.add("KIBANA_PASSWORD=${endpointMap.elasticsearchPassword}")
+      endContext.add("ELASTICSEARCH_PASSWORD=${endpointMap.elasticsearchPassword}")
   }
 
   return {
