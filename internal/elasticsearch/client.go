@@ -286,7 +286,7 @@ func WaitForIndices() (string, error) {
 	catIndices := func() error {
 		r := curl.HTTPRequest{
 			URL:               "http://localhost:9200/_cat/indices?v",
-			BasicAuthPassword: "changeme",
+			BasicAuthPassword: shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"),
 			BasicAuthUser:     "elastic",
 		}
 

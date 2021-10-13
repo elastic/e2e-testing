@@ -50,7 +50,7 @@ func NewFleetConfig(token string) (*FleetConfig, error) {
 
 	cfg := &FleetConfig{
 		EnrollmentToken:          token,
-		ElasticsearchCredentials: "elastic:changeme",
+		ElasticsearchCredentials: fmt.Sprintf("elastic:%s", shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme")),
 		ElasticsearchPort:        9200,
 		ElasticsearchURI:         "elasticsearch",
 		KibanaPort:               5601,

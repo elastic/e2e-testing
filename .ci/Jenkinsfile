@@ -416,6 +416,7 @@ def generateFunctionalTestStep(Map args = [:]){
       envContext.add("FLEET_URL=${endpointMap.fleetUrl}")
       envContext.add("KIBANA_PASSWORD=${endpointMap.elasticsearchPassword}")
       envContext.add("ELASTICSEARCH_PASSWORD=${endpointMap.elasticsearchPassword}")
+      envContext.add("SKIP_PULL=1")
   }
 
   return {
