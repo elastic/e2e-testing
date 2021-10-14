@@ -314,15 +314,12 @@ def scpR(String address, String source, String destination, String label){
   sh script: "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r -i ${env.WORKSPACE}/e2essh ${source} ci@${address}:${destination}", label: label
 }
 
-def prepareNode(name, env){
-  envToString = env.join("\n")
-  writeFile file:"${env.WORKSPACE}/env.txt", text: envToString
+def prepareNode(name){
   deployNodeAddress = deployNode(name)
   retryWithSleep(retries: 10, seconds: 5, backoff: true){
     execSSH(deployNodeAddress, "mkdir -p /home/ci/e2e-testing", "Creating e2e-testing directory on ${deployNodeAddress}")
     scpR(deployNodeAddress, "${env.WORKSPACE}/*", "/home/ci/e2e-testing", "Copying files to ${deployNodeAddress}")
     execSSH(deployNodeAddress, "sudo cp /home/ci/e2e-testing/env.txt /etc/environment", "Copying environment variables to ${deployNodeAddress}")
-    execSSH(deployNodeAddress, "sudo cat /etc/environment", "Copying environment variables to ${deployNodeAddress}")
   }
   return deployNodeAddress
 }
@@ -476,7 +473,7 @@ def generateFunctionalTestStep(Map args = [:]){
           //     powershell label: "Check for running kibana", script: "Test-NetConnection ${endpointMap.kibanaUrl}"
           //     powershell label: "Check for running fleet server", script: "Test-NetConnection ${endpointMap.fleetUrl}"
           // }
-          deployNodeAddress = prepareNode("centos", envContext)
+          deployNodeAddress = prepareNode("centos")
           execSSH(deployNodeAddress, "bash -c 'cd e2e-testing/_suites/${suite} && sudo -e go test -timeout 60m -v --godog.tags=\"${tags}\"'", "Executing end-to-end tests")
           // withEnv(envContext) {
           //     if (platformLabels.contains("windows")) {
