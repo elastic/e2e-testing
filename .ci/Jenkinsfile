@@ -301,7 +301,7 @@ def deployCentos(){
             sh(label: 'Init Stack', script: 'terraform -chdir=.ci/terraform/centos init')
             withVaultToken(){
                 withGCPEnv(credentialsId: 'beats-ci-gcs-plugin-file-credentials'){
-                    sh(label: 'Deploy Stack', script: "terraform -chdir=.ci/terraform/centos apply -auto-approve -var privatekeypath=\"${BASE_DIR}/e2essh\" -var publickeypath=\"${BASE_DIR}/e2essh\" ")
+                    sh(label: 'Deploy Stack', script: "terraform -chdir=.ci/terraform/centos apply -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh\" ")
                     ipAddress = sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/centos output -raw ip", returnStdout: true)?.trim()
                 }
             }
@@ -319,7 +319,7 @@ def teardownStack(){
     ]) {
         withTerraForm(){
             sh(label: 'Teardown Stack', script: 'terraform -chdir=.ci/terraform/stack destroy -auto-approve')
-            sh(label: 'Teardown Centos', script: 'terraform -chdir=.ci/terraform/centos destroy -auto-approve')
+            sh(label: 'Teardown Centos', script: 'terraform -chdir=.ci/terraform/centos destroy -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh\"')
         }
     }
 }
@@ -332,7 +332,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     // Start stack with fleet server enabled for the fleet suite of tests
     if (suite == "fleet") {
         endpointMap = deployStack()
-        sh(label: 'Generate SSH keypair', script: "ssh-keygen -b 4096 -t rsa -f ${BASE_DIR}/e2essh -q -N \"\" ")
+        sh(label: 'Generate SSH keypair', script: "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/e2essh -q -N \"\" ")
     } else {
         if(isInstalled(tool: 'docker', flag: '--version')) {
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
@@ -462,7 +462,7 @@ def generateFunctionalTestStep(Map args = [:]){
                     // }
                     deployNodeAddress = deployCentos()
                     retryWithSleep(retries: 10, seconds: 5, backoff: true){
-                        sh script: "ssh -i .ci/terraform/e2essh ci@${deployNodeAddress} -- cd e2e-testing/_suites/${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
+                        sh script: "ssh -i ${env.WORKSPACE}/e2essh ci@${deployNodeAddress} -- cd e2e-testing/_suites/${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
                     }
                     // withEnv(envContext) {
                     //     if (platformLabels.contains("windows")) {
