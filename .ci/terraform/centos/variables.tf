@@ -10,5 +10,5 @@ variable "publickeypath" {
 
 variable "user" {
   type = string
-  default = "ci"
+  default = "root"
 }

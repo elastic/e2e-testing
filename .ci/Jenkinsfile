@@ -459,10 +459,10 @@ def generateFunctionalTestStep(Map args = [:]){
           // }
           deployNodeAddress = deployNode("centos")
           retryWithSleep(retries: 10, seconds: 5, backoff: true){
-            sh script: "ssh -i ${env.WORKSPACE}/e2essh ci@${deployNodeAddress} -- mkdir -p e2e-testing || true"
-            sh script: "scp -r -i ${env.WORKSPACE}/e2essh ${env.WORKSPACE}/* ci@${deployNodeAddress}:e2e-testing"
-            sh script: "ssh -i ${env.WORKSPACE}/e2essh ci@${deployNodeAddress} -- cd e2e-testing/_suites/${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
+            execSSH(deployNodeAddress, "mkdir -p /e2e-testing || true", "Creating e2e-testing directory on ${deployNodeAddress}")
+            scpR(deployNodeAddress, "${env.WORKSPACE}/*", "/e2e-testing", "Copying files to ${deployNodeAddress}")
           }
+          execSSH(deployNodeAddress, "cd /e2e-testing/_suites/${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", "Executing end-to-end tests")
           // withEnv(envContext) {
           //     if (platformLabels.contains("windows")) {
           //         // Boot up a windows VM to deploy Elastic Agent to be tested against
@@ -490,6 +490,14 @@ def generateFunctionalTestStep(Map args = [:]){
       }
     }
   }
+}
+
+def execSSH(String address, String cmd, String label){
+  sh script: "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh root@${address} -- ${cmd}", label: label
+}
+
+def scpR(String address, String source, String destination, String label){
+  sh script: "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r -i ${env.WORKSPACE}/e2essh ${source} root@${address}:${destination}", label: label
 }
 
 def grabWorkerIP(){
