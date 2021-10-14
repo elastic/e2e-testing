@@ -298,7 +298,7 @@ def deployNode(String name){
       withVaultToken(){
         withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
           sh(label: 'Generate creds file', script: "vault read -field credentials ${GCP_PROVISIONER_SECRET} > ${env.WORKSPACE}/gce-creds.json")
-          sh(label: 'Deploy Stack', script: "GOOGLE_APPLICATION_CREDENTIALS=${env.WORKSPACE}/gce-creds.json terraform -chdir=.ci/terraform/${name} apply -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh\" ")
+          sh(label: 'Deploy Stack', script: "GOOGLE_APPLICATION_CREDENTIALS=${env.WORKSPACE}/gce-creds.json terraform -chdir=.ci/terraform/${name} apply -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh.pub\" ")
           ipAddress = sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/${name} output -raw ip", returnStdout: true)?.trim()
         }
       }
