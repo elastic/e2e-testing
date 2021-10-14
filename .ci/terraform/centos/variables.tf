@@ -63,3 +63,11 @@ variable "base_dir" {
 variable "elastic_apm_global_labels" {
   type = string
 }
+
+variable "tags"{
+  type = string
+}
+
+variable "suite"{
+  type = string
+}

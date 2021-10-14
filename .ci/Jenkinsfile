@@ -451,6 +451,8 @@ def generateFunctionalTestStep(Map args = [:]){
     envContext.add("KIBANA_PASSWORD=${endpointMap.elasticsearchPassword}")
     envContext.add("ELASTICSEARCH_PASSWORD=${endpointMap.elasticsearchPassword}")
     envContext.add("SKIP_PULL=1")
+    envContext.add("TAGS=${tags}")
+    envContext.add("SUITE=${suite}")
   }
 
   return {
@@ -472,7 +474,6 @@ def generateFunctionalTestStep(Map args = [:]){
           //     powershell label: "Check for running fleet server", script: "Test-NetConnection ${endpointMap.fleetUrl}"
           // }
           deployNodeAddress = deployNode("centos", envContext)
-          execSSH(deployNodeAddress, "cd e2e-testing/_suites/${suite} && sudo -E go test -timeout 60m -v --godog.tags=\"${tags}\"", "Executing end-to-end tests")
           // withEnv(envContext) {
           //     if (platformLabels.contains("windows")) {
           //         // Boot up a windows VM to deploy Elastic Agent to be tested against

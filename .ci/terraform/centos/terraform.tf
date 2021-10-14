@@ -46,7 +46,7 @@ resource "google_compute_instance" "default" {
   }
 
  provisioner "local-exec" {
-   command = "rsync -avz --exclude='.git/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${var.privatekeypath}/e2essh\" ${var.base_dir}/* ci@${google_compute_instance.default.network_interface.0.access_config.0.nat_ip}:/home/${var.user}/e2e-testing/"
+   command = "rsync -avz --exclude='.git/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${var.privatekeypath}\" ${var.base_dir}/* ci@${google_compute_instance.default.network_interface.0.access_config.0.nat_ip}:/home/${var.user}/e2e-testing/"
   }
 
  provisioner "remote-exec" {
@@ -69,6 +69,19 @@ resource "google_compute_instance" "default" {
       "echo \"export ELASTICSEARCH_PASSWORD=${var.elasticsearch_password}\" | sudo tee -a /etc/profile",
       "echo \"export FLEET_URL=${var.fleet_url}\" | sudo tee -a /etc/profile",
       "echo \"export SKIP_PULL=${var.skip_pull}\" | sudo tee -a /etc/profile",
+    ]
+ }
+ provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      user        = "${var.user}"
+      private_key = "${file(var.privatekeypath)}"
+      host = google_compute_instance.default.network_interface.0.access_config.0.nat_ip
+      agent = "false"
+    }
+
+   inline = [
+     "cd e2e-testing/_suites/${var.suite} && sudo -E go test -timeout 60m -v --godog.tags=\"${var.tags}\""
     ]
   }
 }
