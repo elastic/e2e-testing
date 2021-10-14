@@ -1,6 +1,6 @@
 #!/usr/bin/env groovy
 
-@Library('apm@current') _
+@Library('apm@feature/support-secret-for-withGCPEnv') _
 
 pipeline {
   agent { label 'ubuntu-20.04 && immutable && docker' }
@@ -18,6 +18,7 @@ pipeline {
     DOCKER_ELASTIC_SECRET = 'secret/observability-team/ci/docker-registry/prod'
     DOCKER_REGISTRY = 'docker.elastic.co'
     ELASTIC_CLOUD_SECRET = 'secret/observability-team/ci/elastic-cloud/observability-team-user'
+    GCP_PROVISIONER_SECRET = 'secret/observability-team/ci/service-account/jenkins-gce-provisioner'
     TEST_MATRIX_FILE = "${params.testMatrixFile}"
   }
   options {
@@ -266,62 +267,60 @@ def withTerraform(Closure body){
 }
 
 def deployStack(){
-    def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
-    def authObj = props?.data
-    def endpointMap = [:]
-    withEnvMask(vars: [
-        [var: "EC_API_KEY", password: authObj.apiKey]
-    ]) {
-        withTerraform(){
-            sh(label: 'Init Stack', script: 'terraform -chdir=.ci/terraform/stack init')
-            sh(label: 'Deploy Stack', script: 'terraform -chdir=.ci/terraform/stack apply -auto-approve')
-            elasticsearchAddress = sh(label: 'Get ES endpoint', script: "echo ec_deployment.end-to-end.elasticsearch[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
-            kibanaAddress = sh(label: 'Get Kibana endpoint', script: "echo ec_deployment.end-to-end.kibana[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
-            fleetAddress = sh(label: 'Get Fleet endpoint', script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
-            endpointPassword = sh(label: 'Get password', script: "terraform -chdir=.ci/terraform/stack show -json | jq -r .values.root_module.resources[0].values.elasticsearch_password", returnStdout: true)?.trim()
-            endpointMap = [elasticsearchUrl: elasticsearchAddress,
-                           kibanaUrl: kibanaAddress,
-                           fleetUrl: fleetAddress.replace(".apm", ".fleet"),
-                           elasticsearchPassword: endpointPassword]
-        }
+  def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
+  def authObj = props?.data
+  def endpointMap = [:]
+  withEnvMask(vars: [
+    [var: "EC_API_KEY", password: authObj.apiKey]
+  ]) {
+    withTerraform(){
+      sh(label: 'Init Stack', script: 'terraform -chdir=.ci/terraform/stack init')
+      sh(label: 'Deploy Stack', script: 'terraform -chdir=.ci/terraform/stack apply -auto-approve')
+      elasticsearchAddress = sh(label: 'Get ES endpoint', script: "echo ec_deployment.end-to-end.elasticsearch[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
+      kibanaAddress = sh(label: 'Get Kibana endpoint', script: "echo ec_deployment.end-to-end.kibana[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
+      fleetAddress = sh(label: 'Get Fleet endpoint', script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
+      endpointPassword = sh(label: 'Get password', script: "terraform -chdir=.ci/terraform/stack show -json | jq -r .values.root_module.resources[0].values.elasticsearch_password", returnStdout: true)?.trim()
+      endpointMap = [elasticsearchUrl: elasticsearchAddress,
+                     kibanaUrl: kibanaAddress,
+                     fleetUrl: fleetAddress.replace(".apm", ".fleet"),
+                     elasticsearchPassword: endpointPassword]
     }
-    return endpointMap
+  }
+  return endpointMap
 }
 
 def deployCentos(){
-    def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
-    def authObj = props?.data
-    def endpointMap = [:]
-    def ipAddress = null
-    withEnvMask(vars: [
-        [var: "EC_API_KEY", password: authObj.apiKey]
-    ]) {
-        unstash 'source'
-        withTerraform(){
-            sh(label: 'Init Stack', script: 'terraform -chdir=.ci/terraform/centos init')
-            withVaultToken(){
-                withGCPEnv(credentialsId: 'beats-ci-gcs-plugin-file-credentials'){
-                    sh(label: 'Deploy Stack', script: "terraform -chdir=.ci/terraform/centos apply -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh\" ")
-                    ipAddress = sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/centos output -raw ip", returnStdout: true)?.trim()
-                }
-            }
-        }
+  def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
+  def authObj = props?.data
+  def endpointMap = [:]
+  def ipAddress = null
+  withEnvMask(vars: [
+    [var: "EC_API_KEY", password: authObj.apiKey]
+  ]) {
+    unstash 'source'
+    withTerraform(){
+      sh(label: 'Init Stack', script: 'terraform -chdir=.ci/terraform/centos init')
+      withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
+        sh(label: 'Deploy Stack', script: "terraform -chdir=.ci/terraform/centos apply -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh\" ")
+        ipAddress = sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/centos output -raw ip", returnStdout: true)?.trim()
+      }
     }
-    return ipAddress
+  }
+  return ipAddress
 }
 
 
 def teardownStack(){
-    def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
-    def authObj = props?.data
-    withEnvMask(vars: [
-        [var: "EC_API_KEY", password: "${authObj.apiKey}"]
-    ]) {
-        withTerraForm(){
-            sh(label: 'Teardown Stack', script: 'terraform -chdir=.ci/terraform/stack destroy -auto-approve')
-            sh(label: 'Teardown Centos', script: 'terraform -chdir=.ci/terraform/centos destroy -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh\"')
-        }
+  def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
+  def authObj = props?.data
+  withEnvMask(vars: [
+    [var: "EC_API_KEY", password: "${authObj.apiKey}"]
+  ]) {
+    withTerraForm(){
+      sh(label: 'Teardown Stack', script: 'terraform -chdir=.ci/terraform/stack destroy -auto-approve')
+      sh(label: 'Teardown Centos', script: 'terraform -chdir=.ci/terraform/centos destroy -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh\"')
     }
+  }
 }
 
 def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
