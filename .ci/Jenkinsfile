@@ -439,7 +439,6 @@ def generateFunctionalTestStep(Map args = [:]){
   // Setup environment for platform
   def envContext = []
   envContext.add("GOARCH=${goArch}")
-  envContext.add("PROVIDER=${platformProvider}")
   envContext.add("PROVIDER_TYPE=${platformProvider}")
   envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
   envContext.add("OP_LOG_LEVEL=TRACE")

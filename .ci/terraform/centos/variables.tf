@@ -33,6 +33,11 @@ variable "log_level" {
   default = "TRACE"
 }
 
+variable "op_log_level" {
+  type = string
+  default = "TRACE"
+}
+
 variable "kibana_url" {
   type = string
 }
@@ -53,5 +58,8 @@ variable "skip_pull" {
   default = "1"
 }
 variable "base_dir" {
+  type = string
+}
+variable "elastic_apm_global_labels" {
   type = string
 }
