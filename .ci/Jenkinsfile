@@ -259,7 +259,7 @@ def withTerraform(Closure body){
     sh(label:'Install Terraform', script: """
       mkdir -p ${binDir} || true
       cd ${binDir}
-      curl -sSL -o terraform.zip https://releases.hashicorp.com/terraform/0.15.3/terraform_0.15.3_linux_amd64.zip || true
+      curl -sSL -o terraform.zip https://releases.hashicorp.com/terraform/1.0.9/terraform_1.0.9_linux_amd64.zip || true
       unzip terraform.zip || true
     """)
     body()
