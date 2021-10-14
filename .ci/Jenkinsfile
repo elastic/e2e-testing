@@ -298,7 +298,7 @@ def deployNode(String name){
       withVaultToken(){
         withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
           sh(label: 'Generate creds file', script: "vault read -field credentials ${GCP_PROVISIONER_SECRET} > ${env.WORKSPACE}/gce-creds.json")
-          sh(label: 'Deploy Stack', script: "GOOGLE_APPLICATION_CREDENTIALS=${env.WORKSPACE}/gce-creds.json terraform -chdir=.ci/terraform/${name} apply -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh.pub\" ")
+          sh(label: "Provision ${name}", script: "GOOGLE_APPLICATION_CREDENTIALS=${env.WORKSPACE}/gce-creds.json terraform -chdir=.ci/terraform/${name} apply -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh.pub\" ")
           ipAddress = sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/${name} output -raw ip", returnStdout: true)?.trim()
         }
       }
@@ -459,10 +459,10 @@ def generateFunctionalTestStep(Map args = [:]){
           // }
           deployNodeAddress = deployNode("centos")
           retryWithSleep(retries: 10, seconds: 5, backoff: true){
-            execSSH(deployNodeAddress, "mkdir -p /e2e-testing || true", "Creating e2e-testing directory on ${deployNodeAddress}")
-            scpR(deployNodeAddress, "${env.WORKSPACE}/*", "/e2e-testing", "Copying files to ${deployNodeAddress}")
+            execSSH(deployNodeAddress, "mkdir -p /home/ci/e2e-testing || true", "Creating e2e-testing directory on ${deployNodeAddress}")
+            scpR(deployNodeAddress, "${env.WORKSPACE}/*", "/home/ci/e2e-testing", "Copying files to ${deployNodeAddress}")
           }
-          execSSH(deployNodeAddress, "cd /e2e-testing/_suites/${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", "Executing end-to-end tests")
+          execSSH(deployNodeAddress, "cd /e2e-testing/_suites/${suite} && sudo -e go test -timeout 60m -v --godog.tags=\"${tags}\"", "Executing end-to-end tests")
           // withEnv(envContext) {
           //     if (platformLabels.contains("windows")) {
           //         // Boot up a windows VM to deploy Elastic Agent to be tested against
@@ -485,7 +485,6 @@ def generateFunctionalTestStep(Map args = [:]){
       } finally {
         junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
         archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
-        teardownStack()
         tearDown(labels: platformLabels)
       }
     }
@@ -493,11 +492,11 @@ def generateFunctionalTestStep(Map args = [:]){
 }
 
 def execSSH(String address, String cmd, String label){
-  sh script: "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh root@${address} -- ${cmd}", label: label
+  sh script: "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ci@${address} -- ${cmd}", label: label
 }
 
 def scpR(String address, String source, String destination, String label){
-  sh script: "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r -i ${env.WORKSPACE}/e2essh ${source} root@${address}:${destination}", label: label
+  sh script: "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r -i ${env.WORKSPACE}/e2essh ${source} ci@${address}:${destination}", label: label
 }
 
 def grabWorkerIP(){
