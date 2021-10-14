@@ -295,10 +295,12 @@ def deployCentos(){
     unstash 'source'
     withTerraform(){
       sh(label: 'Init Stack', script: 'terraform -chdir=.ci/terraform/centos init')
-      withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
-        sh(label: 'Generate creds file', script: "vault read -field credentials ${GCP_PROVISIONER_SECRET} > creds.json")
-        sh(label: 'Deploy Stack', script: "GOOGLE_APPLICATION_CREDENTIALS=creds.json terraform -chdir=.ci/terraform/centos apply -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh\" ")
-        ipAddress = sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/centos output -raw ip", returnStdout: true)?.trim()
+      withVaultToken(){
+        withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
+          sh(label: 'Generate creds file', script: "vault read -field credentials ${GCP_PROVISIONER_SECRET} > creds.json")
+          sh(label: 'Deploy Stack', script: "GOOGLE_APPLICATION_CREDENTIALS=creds.json terraform -chdir=.ci/terraform/centos apply -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh\" ")
+          ipAddress = sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/centos output -raw ip", returnStdout: true)?.trim()
+        }
       }
     }
   }
