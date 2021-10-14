@@ -311,7 +311,7 @@ def execSSH(String address, String cmd, String label){
 }
 
 def pushFiles(String address, String source, String destination, String label){
-  sh script: "rsync -avz --exclude='.git/' -e ssh \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh\" ${source} ci@${address}:${destination}", label: label
+  sh script: "rsync -avz --exclude='.git/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh\" ${source} ci@${address}:${destination}", label: label
 }
 
 def prepareNode(name){
@@ -331,7 +331,7 @@ def teardownStack(){
   ]) {
     withTerraForm(){
       sh(label: 'Teardown Stack', script: 'terraform -chdir=.ci/terraform/stack destroy -auto-approve')
-      sh(label: 'Teardown Centos', script: 'terraform -chdir=.ci/terraform/centos destroy -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh\"')
+      sh(label: 'Teardown Centos', script: 'terraform -chdir=.ci/terraform/centos destroy -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh.pub\"')
     }
   }
 }
