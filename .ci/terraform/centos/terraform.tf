@@ -26,22 +26,4 @@ resource "google_compute_instance" "default" {
     access_config {
     }
   }
-
- provisioner "remote-exec" {
-    connection {
-      type        = "ssh"
-      user        = "${var.user}"
-      private_key = "${file(var.privatekeypath)}"
-      host = google_compute_instance.default.network_interface.0.access_config.0.nat_ip
-      agent = "false"
-    }
-
-    inline = [
-      "mkdir -p /home/ci/e2e-testing",
-    ]
-  }
-
- provisioner "local-exec" {
-    command = "scp -r -i ${var.privatekeypath} ../../../* ci@${google_compute_instance.default.network_interface.0.access_config.0.nat_ip}:e2e-testing"
-  }
 }
