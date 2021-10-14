@@ -1345,23 +1345,22 @@ func readJSONFile(file string, integration string, set string, metrics string) [
 }
 
 func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set string) error {
-	var condition = false
-	var metrics = "system"
-	var file = "/metrics.json"
-	if name == "linux/metrics" {
-		condition = true
-		file = "/linux_metrics.json"
-		metrics = "linux"
-	} else if name == "system/metrics" || name == "logfile" || name == "log" {
-		condition = true
-	}
-
-	if condition != true {
+	if name != "linux/metrics" && name != "system/metrics" && name != "logfile" && name != "log" {
 		log.WithFields(log.Fields{
 			"name": name,
 		}).Warn("We only support system system/metrics, log, logfile and linux/metrics policy to be updated")
 		return godog.ErrPending
 	}
+	var metrics = ""
+	var file = ""
+	if name == "linux/metrics" {
+		file = "/linux_metrics.json"
+		metrics = "linux"
+	} else if name == "system/metrics" || name == "logfile" || name == "log" {
+		file = "/metrics.json"
+		metrics = "system"
+	}
+
 	os, _ := fts.getAgentOSData()
 
 	packageDS, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
