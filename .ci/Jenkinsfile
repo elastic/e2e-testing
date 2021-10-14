@@ -284,11 +284,20 @@ def deployStack(){
   return endpointMap
 }
 
-def deployNode(String name){
+def deployNode(String name, envContext){
   def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
   def authObj = props?.data
   def endpointMap = [:]
   def ipAddress = null
+  def cliOpts = []
+  for (env in envContext){
+    (k, v) = env.split("=")
+    cliOps.add("-var ${k.toLowerCase()}=${v}")
+  }
+  cliOps.add("-var privatekeypath=\"${env.WORKSPACE}/e2essh\"")
+  cliOps.add("-var publickeypath=\"${env.WORKSPACE}/e2essh.pub\"")
+  cliOps.add("-var workspace=\"${env.WORKSPACE}\"")
+  cliOps.add("-var base_dir=\"${BASE_DIR}\"")
   withEnvMask(vars: [
     [var: "EC_API_KEY", password: authObj.apiKey]
   ]) {
@@ -297,7 +306,7 @@ def deployNode(String name){
       sh(label: 'Init Stack', script: "terraform -chdir=.ci/terraform/${name} init")
       withVaultToken(){
         sh(label: 'Generate creds file', script: "vault read -field credentials ${GCP_PROVISIONER_SECRET} > ${env.WORKSPACE}/gce-creds.json")
-        sh(label: "Provision ${name}", script: "GOOGLE_APPLICATION_CREDENTIALS=${env.WORKSPACE}/gce-creds.json terraform -chdir=.ci/terraform/${name} apply -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh.pub\" -var workspace=\"${env.WORKSPACE}\" ")
+        sh(label: "Provision ${name}", script: "GOOGLE_APPLICATION_CREDENTIALS=${env.WORKSPACE}/gce-creds.json terraform -chdir=.ci/terraform/${name} apply -auto-approve ${cliOps.join(' ')}")
         ipAddress = sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/${name} output -raw ip", returnStdout: true)?.trim()
       }
     }
@@ -305,15 +314,15 @@ def deployNode(String name){
   return ipAddress
 }
 def execSSH(String address, String cmd, String label){
-  sh script: "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ci@${address} -- ${cmd}", label: label
+  sh script: "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ci@${address} -- bash -c '${cmd}'", label: label
 }
 
 def pushFiles(String address, String source, String destination, String label){
   sh script: "rsync -avz --exclude='.git/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh\" ${source} ci@${address}:${destination}", label: label
 }
 
-def prepareNode(name){
-  deployNodeAddress = deployNode(name)
+def prepareNode(name, env){
+  deployNodeAddress = deployNode(name, env)
   return deployNodeAddress
 }
 
@@ -435,6 +444,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def envContext = []
   envContext.add("GOARCH=${goArch}")
   envContext.add("PROVIDER=${platformProvider}")
+  envContext.add("PROVIDER_TYPE=${platformProvider}")
   envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
   envContext.add("OP_LOG_LEVEL=TRACE")
   envContext.add("LOG_LEVEL=TRACE")
@@ -466,12 +476,8 @@ def generateFunctionalTestStep(Map args = [:]){
           //     powershell label: "Check for running kibana", script: "Test-NetConnection ${endpointMap.kibanaUrl}"
           //     powershell label: "Check for running fleet server", script: "Test-NetConnection ${endpointMap.fleetUrl}"
           // }
-          deployNodeAddress = prepareNode("centos")
-          for (env in envContext){
-            def (key, val) = env.split("=")
-            execSSH(deployNodeAddress, "echo ${key}=${val} | sudo -n tee -a /etc/profile", "Adding env ${key} to environment")
-          }
-          execSSH(deployNodeAddress, "bash -c 'cd e2e-testing/_suites/${suite} && sudo -E go test -timeout 60m -v --godog.tags=\"${tags}\"'", "Executing end-to-end tests")
+          deployNodeAddress = deployNode("centos", envContext)
+          execSSH(deployNodeAddress, "cd e2e-testing/_suites/${suite} && sudo -E go test -timeout 60m -v --godog.tags=\"${tags}\"", "Executing end-to-end tests")
           // withEnv(envContext) {
           //     if (platformLabels.contains("windows")) {
           //         // Boot up a windows VM to deploy Elastic Agent to be tested against
