@@ -298,6 +298,7 @@ def deployNode(String name, envContext){
   cliOps.add("-var publickeypath=\"${env.WORKSPACE}/e2essh.pub\"")
   cliOps.add("-var workspace=\"${env.WORKSPACE}\"")
   cliOps.add("-var base_dir=\"${BASE_DIR}\"")
+  cliOpsStr = cliOps.join(" ")
   withEnvMask(vars: [
     [var: "EC_API_KEY", password: authObj.apiKey]
   ]) {
@@ -306,7 +307,7 @@ def deployNode(String name, envContext){
       sh(label: 'Init Stack', script: "terraform -chdir=.ci/terraform/${name} init")
       withVaultToken(){
         sh(label: 'Generate creds file', script: "vault read -field credentials ${GCP_PROVISIONER_SECRET} > ${env.WORKSPACE}/gce-creds.json")
-        sh(label: "Provision ${name}", script: "GOOGLE_APPLICATION_CREDENTIALS=${env.WORKSPACE}/gce-creds.json terraform -chdir=.ci/terraform/${name} apply -auto-approve ${cliOps.join(' ')}")
+        sh(label: "Provision ${name}", script: "GOOGLE_APPLICATION_CREDENTIALS=${env.WORKSPACE}/gce-creds.json terraform -chdir=.ci/terraform/${name} apply -auto-approve ${cliOpsStr}")
         ipAddress = sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/${name} output -raw ip", returnStdout: true)?.trim()
       }
     }
