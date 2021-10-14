@@ -12,3 +12,8 @@ variable "user" {
   type = string
   default = "ci"
 }
+
+variable "workspace" {
+  type = string
+  default = "/tmp"
+}

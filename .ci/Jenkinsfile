@@ -296,11 +296,9 @@ def deployNode(String name){
     withTerraform(){
       sh(label: 'Init Stack', script: "terraform -chdir=.ci/terraform/${name} init")
       withVaultToken(){
-        withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
-          sh(label: 'Generate creds file', script: "vault read -field credentials ${GCP_PROVISIONER_SECRET} > ${env.WORKSPACE}/gce-creds.json")
-          sh(label: "Provision ${name}", script: "GOOGLE_APPLICATION_CREDENTIALS=${env.WORKSPACE}/gce-creds.json terraform -chdir=.ci/terraform/${name} apply -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh.pub\" ")
-          ipAddress = sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/${name} output -raw ip", returnStdout: true)?.trim()
-        }
+        sh(label: 'Generate creds file', script: "vault read -field credentials ${GCP_PROVISIONER_SECRET} > ${env.WORKSPACE}/gce-creds.json")
+        sh(label: "Provision ${name}", script: "GOOGLE_APPLICATION_CREDENTIALS=${env.WORKSPACE}/gce-creds.json terraform -chdir=.ci/terraform/${name} apply -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh.pub\" -var workspace=\"${env.WORKSPACE}\" ")
+        ipAddress = sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/${name} output -raw ip", returnStdout: true)?.trim()
       }
     }
   }
@@ -316,10 +314,6 @@ def pushFiles(String address, String source, String destination, String label){
 
 def prepareNode(name){
   deployNodeAddress = deployNode(name)
-  retryWithSleep(retries: 10, seconds: 5, backoff: true){
-    execSSH(deployNodeAddress, "mkdir -p /home/ci/e2e-testing", "Creating e2e-testing directory on ${deployNodeAddress}")
-    pushFiles(deployNodeAddress, "${env.WORKSPACE}/*", "/home/ci/e2e-testing", "Copying files to ${deployNodeAddress}")
-  }
   return deployNodeAddress
 }
 
@@ -473,7 +467,11 @@ def generateFunctionalTestStep(Map args = [:]){
           //     powershell label: "Check for running fleet server", script: "Test-NetConnection ${endpointMap.fleetUrl}"
           // }
           deployNodeAddress = prepareNode("centos")
-          execSSH(deployNodeAddress, "bash -c 'cd e2e-testing/_suites/${suite} && sudo -e go test -timeout 60m -v --godog.tags=\"${tags}\"'", "Executing end-to-end tests")
+          for (env in envContext){
+            def (key, val) = env.split("=")
+            execSSH(deployNodeAddress, "echo ${key}=${val} | sudo tee -a /etc/profile", "Adding env ${key} to environment")
+          }
+          execSSH(deployNodeAddress, "bash -c 'cd e2e-testing/_suites/${suite} && sudo -E go test -timeout 60m -v --godog.tags=\"${tags}\"'", "Executing end-to-end tests")
           // withEnv(envContext) {
           //     if (platformLabels.contains("windows")) {
           //         // Boot up a windows VM to deploy Elastic Agent to be tested against
