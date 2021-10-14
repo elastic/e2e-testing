@@ -469,7 +469,7 @@ def generateFunctionalTestStep(Map args = [:]){
           deployNodeAddress = prepareNode("centos")
           for (env in envContext){
             def (key, val) = env.split("=")
-            execSSH(deployNodeAddress, "echo ${key}=${val} | sudo tee -a /etc/profile", "Adding env ${key} to environment")
+            execSSH(deployNodeAddress, "echo ${key}=${val} | sudo -n tee -a /etc/profile", "Adding env ${key} to environment")
           }
           execSSH(deployNodeAddress, "bash -c 'cd e2e-testing/_suites/${suite} && sudo -E go test -timeout 60m -v --godog.tags=\"${tags}\"'", "Executing end-to-end tests")
           // withEnv(envContext) {
