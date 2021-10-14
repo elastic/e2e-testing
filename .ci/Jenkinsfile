@@ -216,11 +216,6 @@ pipeline {
               }
             }
           }
-          post {
-            always {
-                teardownStack()
-            }
-          }
         }
         // stage('Release') {
         //   options { skipDefaultCheckout() }
@@ -301,7 +296,8 @@ def deployCentos(){
     withTerraform(){
       sh(label: 'Init Stack', script: 'terraform -chdir=.ci/terraform/centos init')
       withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
-        sh(label: 'Deploy Stack', script: "terraform -chdir=.ci/terraform/centos apply -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh\" ")
+        sh(label: 'Generate creds file', script: "vault read -field credentials ${GCP_PROVISIONER_SECRET} > creds.json")
+        sh(label: 'Deploy Stack', script: "GOOGLE_APPLICATION_CREDENTIALS=creds.json terraform -chdir=.ci/terraform/centos apply -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh\" ")
         ipAddress = sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/centos output -raw ip", returnStdout: true)?.trim()
       }
     }
@@ -433,62 +429,63 @@ def generateFunctionalTestStep(Map args = [:]){
   envContext.add("LOG_LEVEL=TRACE")
 
   if (platformProvider == "remote" && endpointMap) {
-      envContext.add("KIBANA_URL=${endpointMap.kibanaUrl}")
-      envContext.add("ELASTICSEARCH_URL=${endpointMap.elasticsearchUrl}")
-      envContext.add("FLEET_URL=${endpointMap.fleetUrl}")
-      envContext.add("KIBANA_PASSWORD=${endpointMap.elasticsearchPassword}")
-      envContext.add("ELASTICSEARCH_PASSWORD=${endpointMap.elasticsearchPassword}")
-      envContext.add("SKIP_PULL=1")
+    envContext.add("KIBANA_URL=${endpointMap.kibanaUrl}")
+    envContext.add("ELASTICSEARCH_URL=${endpointMap.elasticsearchUrl}")
+    envContext.add("FLEET_URL=${endpointMap.fleetUrl}")
+    envContext.add("KIBANA_PASSWORD=${endpointMap.elasticsearchPassword}")
+    envContext.add("ELASTICSEARCH_PASSWORD=${endpointMap.elasticsearchPassword}")
+    envContext.add("SKIP_PULL=1")
   }
 
-    return {
-        withEnv(envContext){
-            deleteDir()
-            unstash 'source'
-            try {
-                dir("${BASE_DIR}") {
-                    // if (platformLabels.contains("windows")) {
-                    //     def mingwArch = is32() ? '32' : '64'
-                    //     def chocoPath = 'C:\\ProgramData\\chocolatey\\bin'
-                    //     def chocoPython3Path = 'C:\\Python38;C:\\Python38\\Scripts'
-                    //     path = "${env.WORKSPACE}\\bin;${chocoPath};${chocoPython3Path};C:\\tools\\mingw${mingwArch}\\bin;C:\\windows\\system32;C:\\windows\\system32\\WindowsPowerShell\\v1.0\\"
-                    //     envContext.add("PATH=${path}")
-                    //     echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
-                    //     powershell label: "Disk Information", script: "Get-PSDrive"
-                    //     powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${endpointMap.elasticsearchUrl}"
-                    //     powershell label: "Check for running kibana", script: "Test-NetConnection ${endpointMap.kibanaUrl}"
-                    //     powershell label: "Check for running fleet server", script: "Test-NetConnection ${endpointMap.fleetUrl}"
-                    // }
-                    deployNodeAddress = deployCentos()
-                    retryWithSleep(retries: 10, seconds: 5, backoff: true){
-                        sh script: "ssh -i ${env.WORKSPACE}/e2essh ci@${deployNodeAddress} -- cd e2e-testing/_suites/${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
-                    }
-                    // withEnv(envContext) {
-                    //     if (platformLabels.contains("windows")) {
-                    //         // Boot up a windows VM to deploy Elastic Agent to be tested against
-                    //         // a remote deployed stack
-                    //         withGoEnvWindows(version: "${GO_VERSION}"){
-                    //             cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
-                    //         }
-                    //     } else {
-                    //         deployNodeAddress = deployCentos()
-                    //         withGoEnv(version: "${GO_VERSION}") {
-                    //             // This step will help to send the APM traces to the
-                    //             // APM service defined by the Otel Jenkins plugin.
-                    //             withOtelEnv() {
-                    //                 sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
-                    //             }
-                    //         }
-                    //     }
-                    // }
-                }
-            } finally {
-                junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-                archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
-                tearDown(labels: platformLabels)
-            }
+  return {
+    withEnv(envContext){
+      deleteDir()
+      unstash 'source'
+      try {
+        dir("${BASE_DIR}") {
+          // if (platformLabels.contains("windows")) {
+          //     def mingwArch = is32() ? '32' : '64'
+          //     def chocoPath = 'C:\\ProgramData\\chocolatey\\bin'
+          //     def chocoPython3Path = 'C:\\Python38;C:\\Python38\\Scripts'
+          //     path = "${env.WORKSPACE}\\bin;${chocoPath};${chocoPython3Path};C:\\tools\\mingw${mingwArch}\\bin;C:\\windows\\system32;C:\\windows\\system32\\WindowsPowerShell\\v1.0\\"
+          //     envContext.add("PATH=${path}")
+          //     echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
+          //     powershell label: "Disk Information", script: "Get-PSDrive"
+          //     powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${endpointMap.elasticsearchUrl}"
+          //     powershell label: "Check for running kibana", script: "Test-NetConnection ${endpointMap.kibanaUrl}"
+          //     powershell label: "Check for running fleet server", script: "Test-NetConnection ${endpointMap.fleetUrl}"
+          // }
+          deployNodeAddress = deployCentos()
+          retryWithSleep(retries: 10, seconds: 5, backoff: true){
+            sh script: "ssh -i ${env.WORKSPACE}/e2essh ci@${deployNodeAddress} -- cd e2e-testing/_suites/${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
+          }
+          // withEnv(envContext) {
+          //     if (platformLabels.contains("windows")) {
+          //         // Boot up a windows VM to deploy Elastic Agent to be tested against
+          //         // a remote deployed stack
+          //         withGoEnvWindows(version: "${GO_VERSION}"){
+          //             cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
+          //         }
+          //     } else {
+          //         deployNodeAddress = deployCentos()
+          //         withGoEnv(version: "${GO_VERSION}") {
+          //             // This step will help to send the APM traces to the
+          //             // APM service defined by the Otel Jenkins plugin.
+          //             withOtelEnv() {
+          //                 sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
+          //             }
+          //         }
+          //     }
+          // }
         }
+      } finally {
+        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+        teardownStack()
+        tearDown(labels: platformLabels)
+      }
     }
+  }
 }
 
 def grabWorkerIP(){
