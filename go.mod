@@ -7,10 +7,9 @@ require (
 	github.com/Jeffail/gabs/v2 v2.6.0
 	github.com/cenkalti/backoff/v4 v4.1.0
 	github.com/cucumber/godog v0.11.0
-	github.com/cucumber/messages-go/v10 v10.0.3 // indirect
+	github.com/cucumber/messages-go/v10 v10.0.3
 	github.com/docker/cli v20.10.7+incompatible
 	github.com/docker/docker v20.10.6+incompatible
-	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/elastic/elastic-package v0.16.0
 	github.com/elastic/go-elasticsearch/v8 v8.0.0-20210317102009-a9d74cec0186
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
@@ -23,7 +22,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/testcontainers/testcontainers-go v0.11.0
 	go.elastic.co/apm v1.13.0
@@ -31,7 +30,6 @@ require (
 	go.elastic.co/apm/module/apmhttp v1.10.0
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
-	golang.org/x/tools v0.1.5 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/gotestsum v1.7.0
