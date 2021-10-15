@@ -45,7 +45,7 @@ resource "google_compute_instance" "default" {
   }
 
  provisioner "local-exec" {
-   command = "cd ${var.workspace}/${var.base_dir} && rsync -avz --exclude='.git/' --include='.ci/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${var.privatekeypath}\" * ci@${google_compute_instance.default.network_interface.0.access_config.0.nat_ip}:/home/${var.user}/e2e-testing"
+   command = "cd ${var.workspace}/${var.base_dir} && rsync -avz --exclude='.git/' --include='.ci/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${var.privatekeypath}\" ./ ci@${google_compute_instance.default.network_interface.0.access_config.0.nat_ip}:/home/${var.user}/e2e-testing"
   }
 
  provisioner "remote-exec" {
@@ -69,7 +69,6 @@ resource "google_compute_instance" "default" {
       "echo \"export ELASTICSEARCH_PASSWORD=${var.elasticsearch_password}\" | sudo tee -a /etc/profile",
       "echo \"export FLEET_URL=${var.fleet_url}\" | sudo tee -a /etc/profile",
       "echo \"export SKIP_PULL=${var.skip_pull}\" | sudo tee -a /etc/profile",
-      "ls -lR /home/${var.user}/"
     ]
  }
 }
