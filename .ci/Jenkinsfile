@@ -536,13 +536,12 @@ def generateFunctionalFleetTestStep(Map args = [:]){
 
   return {
     withEnv(envContext){
-      deleteDir()
-      unstash 'source'
       try {
         nodeAddress = deployNode("centos", envContext)
-        execSSH address: nodeAddress,
-          cmd: "cd /home/ci/e2e-testing/e2e/_suites/${opts.suite} && sudo -E /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"",
-          label: "Run functional tests for ${opts.platformLabels}:${opts.suite}:${opts.tags}"
+        log(level: 'INFO', text: "Executing test on ${opts.name}: ${nodeAddress}")
+        // execSSH address: nodeAddress,
+        //   cmd: "cd /home/ci/e2e-testing/e2e/_suites/${opts.suite} && sudo -E /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"",
+        //   label: "Run functional tests for ${opts.platformLabels}:${opts.suite}:${opts.tags}"
       } finally {
         // junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
         // archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
