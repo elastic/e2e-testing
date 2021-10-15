@@ -2,6 +2,9 @@
 Feature: Fleet Mode Agent
   Scenarios for the Agent in Fleet mode connecting to Fleet application.
 
+Background: Setting up kibana instance with the default profile
+  Given kibana uses "default" profile
+
 @install
 Scenario Outline: Deploying the <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
