@@ -284,11 +284,15 @@ def deployStack(){
   return endpointMap
 }
 
-def deployNode(String name, envContext){
-  def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
-  def authObj = props?.data
-  def endpointMap = [:]
-  def ipAddress = null
+def execSSH(String address, String cmd, String label){
+  sh script: "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ci@${address} -- bash -c '${cmd}'", label: label
+}
+
+def pushFiles(String address, String source, String destination, String label){
+  sh script: "rsync -avz --exclude='.git/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh\" ${source} ci@${address}:${destination}", label: label
+}
+
+def envToCliArgs(envContext){
   def cliOpts = []
   for (env in envContext){
     (k, v) = env.split("=")
@@ -299,6 +303,15 @@ def deployNode(String name, envContext){
   cliOpts.add("-var workspace=\"${env.WORKSPACE}\"")
   cliOpts.add("-var base_dir=\"${BASE_DIR}\"")
   cliOptsStr = cliOpts.join(" ")
+  return cliOptsStr
+}
+
+def deployNode(String name, envContext){
+  def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
+  def authObj = props?.data
+  def endpointMap = [:]
+  def ipAddress = null
+  def cliOptsStr = envToCliArgs(envContext)
   withEnvMask(vars: [
     [var: "EC_API_KEY", password: authObj.apiKey]
   ]) {
@@ -314,23 +327,17 @@ def deployNode(String name, envContext){
   }
   return ipAddress
 }
-def execSSH(String address, String cmd, String label){
-  sh script: "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ci@${address} -- bash -c '${cmd}'", label: label
-}
 
-def pushFiles(String address, String source, String destination, String label){
-  sh script: "rsync -avz --exclude='.git/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh\" ${source} ci@${address}:${destination}", label: label
-}
-
-def teardownStack(){
+def teardownStack(envContext){
   def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
   def authObj = props?.data
+  def cliOptsStr = envToCliArgs(envContext)
   withEnvMask(vars: [
     [var: "EC_API_KEY", password: "${authObj.apiKey}"]
   ]) {
     withTerraForm(){
       sh(label: 'Teardown Stack', script: 'terraform -chdir=.ci/terraform/stack destroy -auto-approve')
-      sh(label: 'Teardown Centos', script: 'terraform -chdir=.ci/terraform/centos destroy -auto-approve -var privatekeypath=\"${env.WORKSPACE}/e2essh\" -var publickeypath=\"${env.WORKSPACE}/e2essh.pub\"')
+      sh(label: 'Teardown Centos', script: "terraform -chdir=.ci/terraform/centos destroy -auto-approve ${cliOptsStr}")
     }
   }
 }
@@ -473,7 +480,8 @@ def generateFunctionalTestStep(Map args = [:]){
           //     powershell label: "Check for running kibana", script: "Test-NetConnection ${endpointMap.kibanaUrl}"
           //     powershell label: "Check for running fleet server", script: "Test-NetConnection ${endpointMap.fleetUrl}"
           // }
-          deployNodeAddress = deployNode("centos", envContext)
+          nodeAddress = deployNode("centos", envContext)
+          execSSH(nodeAddress, "cd /home/ci/e2e-testing/_suites/${suite} && sudo -E go test -timeout 60m -v --godog.tags=\"${tags}\"")
           // withEnv(envContext) {
           //     if (platformLabels.contains("windows")) {
           //         // Boot up a windows VM to deploy Elastic Agent to be tested against
