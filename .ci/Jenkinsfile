@@ -297,7 +297,7 @@ def deployStack(){
       elasticsearchAddress = sh(label: 'Get ES endpoint', script: "echo ec_deployment.end-to-end.elasticsearch[0].https_endpoint | terraform -chdir=${workDir} console", returnStdout: true)?.trim()
       kibanaAddress = sh(label: 'Get Kibana endpoint', script: "echo ec_deployment.end-to-end.kibana[0].https_endpoint | terraform -chdir=${workDir} console", returnStdout: true)?.trim()
       fleetAddress = sh(label: 'Get Fleet endpoint', script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform -chdir=${workDir} console", returnStdout: true)?.trim()
-      endpointPassword = sh(label: 'Get password', script: "terraform -chdir=${workDir} -json | jq -r .values.root_module.resources[0].values.elasticsearch_password", returnStdout: true)?.trim()
+      endpointPassword = sh(label: 'Get password', script: "terraform -chdir=${workDir} show -json | jq -r .values.root_module.resources[0].values.elasticsearch_password", returnStdout: true)?.trim()
       endpointMap = [elasticsearchUrl: elasticsearchAddress,
                      kibanaUrl: kibanaAddress,
                      fleetUrl: fleetAddress.replace(".apm", ".fleet"),
