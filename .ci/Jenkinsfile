@@ -467,40 +467,38 @@ def generateFunctionalTestStep(Map args = [:]){
       deleteDir()
       unstash 'source'
       try {
-        dir("${BASE_DIR}") {
-          // if (platformLabels.contains("windows")) {
-          //     def mingwArch = is32() ? '32' : '64'
-          //     def chocoPath = 'C:\\ProgramData\\chocolatey\\bin'
-          //     def chocoPython3Path = 'C:\\Python38;C:\\Python38\\Scripts'
-          //     path = "${env.WORKSPACE}\\bin;${chocoPath};${chocoPython3Path};C:\\tools\\mingw${mingwArch}\\bin;C:\\windows\\system32;C:\\windows\\system32\\WindowsPowerShell\\v1.0\\"
-          //     envContext.add("PATH=${path}")
-          //     echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
-          //     powershell label: "Disk Information", script: "Get-PSDrive"
-          //     powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${endpointMap.elasticsearchUrl}"
-          //     powershell label: "Check for running kibana", script: "Test-NetConnection ${endpointMap.kibanaUrl}"
-          //     powershell label: "Check for running fleet server", script: "Test-NetConnection ${endpointMap.fleetUrl}"
-          // }
-          nodeAddress = deployNode("centos", envContext)
-          execSSH(nodeAddress, "cd /home/ci/e2e-testing/_suites/${suite} && sudo -E go test -timeout 60m -v --godog.tags=\"${tags}\"")
-          // withEnv(envContext) {
-          //     if (platformLabels.contains("windows")) {
-          //         // Boot up a windows VM to deploy Elastic Agent to be tested against
-          //         // a remote deployed stack
-          //         withGoEnvWindows(version: "${GO_VERSION}"){
-          //             cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
-          //         }
-          //     } else {
-          //         deployNodeAddress = deployCentos()
-          //         withGoEnv(version: "${GO_VERSION}") {
-          //             // This step will help to send the APM traces to the
-          //             // APM service defined by the Otel Jenkins plugin.
-          //             withOtelEnv() {
-          //                 sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
-          //             }
-          //         }
-          //     }
-          // }
-        }
+        // if (platformLabels.contains("windows")) {
+        //     def mingwArch = is32() ? '32' : '64'
+        //     def chocoPath = 'C:\\ProgramData\\chocolatey\\bin'
+        //     def chocoPython3Path = 'C:\\Python38;C:\\Python38\\Scripts'
+        //     path = "${env.WORKSPACE}\\bin;${chocoPath};${chocoPython3Path};C:\\tools\\mingw${mingwArch}\\bin;C:\\windows\\system32;C:\\windows\\system32\\WindowsPowerShell\\v1.0\\"
+        //     envContext.add("PATH=${path}")
+        //     echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
+        //     powershell label: "Disk Information", script: "Get-PSDrive"
+        //     powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${endpointMap.elasticsearchUrl}"
+        //     powershell label: "Check for running kibana", script: "Test-NetConnection ${endpointMap.kibanaUrl}"
+        //     powershell label: "Check for running fleet server", script: "Test-NetConnection ${endpointMap.fleetUrl}"
+        // }
+        nodeAddress = deployNode("centos", envContext)
+        execSSH(nodeAddress, "cd /home/ci/e2e-testing/e2e/_suites/${suite} && sudo -E /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${tags}\"")
+        // withEnv(envContext) {
+        //     if (platformLabels.contains("windows")) {
+        //         // Boot up a windows VM to deploy Elastic Agent to be tested against
+        //         // a remote deployed stack
+        //         withGoEnvWindows(version: "${GO_VERSION}"){
+        //             cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
+        //         }
+        //     } else {
+        //         deployNodeAddress = deployCentos()
+        //         withGoEnv(version: "${GO_VERSION}") {
+        //             // This step will help to send the APM traces to the
+        //             // APM service defined by the Otel Jenkins plugin.
+        //             withOtelEnv() {
+        //                 sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
+        //             }
+        //         }
+        //     }
+        // }
       } finally {
         junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
         archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
