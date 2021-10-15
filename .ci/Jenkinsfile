@@ -248,7 +248,7 @@ pipeline {
 }
 
 def sshexec(address, cmd){
-  sh "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ci@${address} -- bash -c '${cmd}'"
+  sh "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ci@${address} -- '${cmd}'"
 }
 
 def envToCliArgs(envContext){
@@ -598,12 +598,12 @@ def generateFunctionalFleetTestStep(Map args = [:]){
         nodeAddress = deployNode("centos", envContext)
         log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags} on centos: ${nodeAddress}")
         sshexec(nodeAddress,
-                "sudo -E 'cd /home/ci/e2e-testing/e2e/_suites/${opts.suite} && /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"'")
+                "sudo -E -i PWD=/home/ci/e2e-testing/e2e/_suites/${opts.suite} /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"")
         log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags} on centos: ${nodeAddress}")
       } finally {
         teardownStack(envContext)
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/TEST-*.xml")
+        archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/TEST-*.xml"
       }
     }
   }
