@@ -343,11 +343,10 @@ def teardownStack(envContext){
   def authObj = props?.data
   def cliOptsStr = envToCliArgs(envContext)
   def workDir = ".ci/terraform/"
-  log(level: 'INFO', text: "Destroying test environment")
   withEnvMask(vars: [
     [var: "EC_API_KEY", password: "${authObj.apiKey}"]
   ]) {
-    withTerraForm(){
+    withTerraform(){
       log(level: 'INFO', text: "Destroying stack")
       sh "terraform -chdir=${workDir}/stack destroy -auto-approve"
       withVaultToken(){
@@ -599,7 +598,7 @@ def generateFunctionalFleetTestStep(Map args = [:]){
         nodeAddress = deployNode("centos", envContext)
         log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags} on centos: ${nodeAddress}")
         sshexec(nodeAddress,
-                "sudo -E cd /home/ci/e2e-testing/e2e/_suites/${opts.suite} && /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"")
+                "sudo -E 'cd /home/ci/e2e-testing/e2e/_suites/${opts.suite} && /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"'")
         log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags} on centos: ${nodeAddress}")
       } finally {
         teardownStack(envContext)
