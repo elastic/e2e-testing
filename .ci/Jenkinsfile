@@ -247,12 +247,8 @@ pipeline {
   }
 }
 
-def execSSH(String address, String cmd, String label){
-  sh script: "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ci@${address} -- bash -c '${cmd}'", label: label
-}
-
-def pushFiles(String address, String source, String destination, String label){
-  sh script: "rsync -avz --exclude='.git/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh\" ${source} ci@${address}:${destination}", label: label
+def sshexec(address, cmd){
+  sh "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ci@${address} -- bash -c '${cmd}'"
 }
 
 def envToCliArgs(envContext){
@@ -336,14 +332,12 @@ def teardownStack(envContext){
   def authObj = props?.data
   def cliOptsStr = envToCliArgs(envContext)
   def workDir = ".ci/terraform/"
-  dir("${BASE_DIR}"){
-    withEnvMask(vars: [
-      [var: "EC_API_KEY", password: "${authObj.apiKey}"]
-    ]) {
-      withTerraForm(){
-        sh "terraform -chdir=${workDir}/stack destroy -auto-approve"
-        sh "terraform -chdir=${workDir}/centos destroy -auto-approve ${cliOptsStr}"
-      }
+  withEnvMask(vars: [
+    [var: "EC_API_KEY", password: "${authObj.apiKey}"]
+  ]) {
+    withTerraForm(){
+      sh "terraform -chdir=${workDir}/stack destroy -auto-approve"
+      sh "terraform -chdir=${workDir}/centos destroy -auto-approve ${cliOptsStr}"
     }
   }
 }
@@ -390,6 +384,9 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   }
 }
 
+/*
+ * Sends out notification of the build result to Slack
+ */
 def doNotifyBuildResult(boolean slackNotify) {
   githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
 
@@ -405,6 +402,35 @@ def doNotifyBuildResult(boolean slackNotify) {
 
   def header = "*Test Suite*: " + testsSuites
   notifyBuildResult(analyzeFlakey: true, jobName: getFlakyJobName(withBranch: "${env.JOB_BASE_NAME}"), prComment: true, slackHeader: header, slackChannel: "${channels}", slackComment: true, slackNotify: slackNotify)
+}
+
+/**
+ * Tear down the setup for the static workers.
+ */
+def tearDown(Map args = [:]){
+  catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+    dir("${BASE_DIR}"){
+      sh(label: 'Remove the entire module cache', script: 'go clean -modcache', returnStatus: true)
+    }
+    if (isStaticWorker(labels: args.labels)) {
+      dir("${WORKSPACE}") {
+        deleteDir()
+      }
+    }
+  }
+}
+
+/**
+ Notify the GitHub check of the parent stream
+ **/
+def githubCheckNotify(String status) {
+  if (params.GITHUB_CHECK_NAME?.trim() && params.GITHUB_CHECK_REPO?.trim() && params.GITHUB_CHECK_SHA1?.trim()) {
+    githubNotify context: "${params.GITHUB_CHECK_NAME}",
+      description: "${params.GITHUB_CHECK_NAME} ${status.toLowerCase()}",
+      status: "${status}",
+      targetUrl: "${env.RUN_DISPLAY_URL}",
+      sha: params.GITHUB_CHECK_SHA1, account: 'elastic', repo: params.GITHUB_CHECK_REPO, credentialsId: env.JOB_GIT_CREDENTIALS
+  }
 }
 
 /*
@@ -537,44 +563,15 @@ def generateFunctionalFleetTestStep(Map args = [:]){
     withEnv(envContext){
       try {
         nodeAddress = deployNode("centos", envContext)
-        log(level: 'INFO', text: "Executing test on ${opts.name}: ${nodeAddress}")
-        // execSSH address: nodeAddress,
-        //   cmd: "cd /home/ci/e2e-testing/e2e/_suites/${opts.suite} && sudo -E /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"",
-        //   label: "Run functional tests for ${opts.platformLabels}:${opts.suite}:${opts.tags}"
+        log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags} on ${opts.name}: ${nodeAddress}")
+        sshexec(nodeAddress,
+                "cd /home/ci/e2e-testing/e2e/_suites/${opts.suite} && sudo -E /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"")
+        log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags} on ${opts.name}: ${nodeAddress}")
       } finally {
-        // junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
         // archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
         teardownStack(envContext)
       }
     }
-  }
-}
-
-/**
- * Tear down the setup for the static workers.
- */
-def tearDown(Map args = [:]){
-  catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-    dir("${BASE_DIR}"){
-      sh(label: 'Remove the entire module cache', script: 'go clean -modcache', returnStatus: true)
-    }
-    if (isStaticWorker(labels: args.labels)) {
-      dir("${WORKSPACE}") {
-        deleteDir()
-      }
-    }
-  }
-}
-
-/**
- Notify the GitHub check of the parent stream
- **/
-def githubCheckNotify(String status) {
-  if (params.GITHUB_CHECK_NAME?.trim() && params.GITHUB_CHECK_REPO?.trim() && params.GITHUB_CHECK_SHA1?.trim()) {
-    githubNotify context: "${params.GITHUB_CHECK_NAME}",
-      description: "${params.GITHUB_CHECK_NAME} ${status.toLowerCase()}",
-      status: "${status}",
-      targetUrl: "${env.RUN_DISPLAY_URL}",
-      sha: params.GITHUB_CHECK_SHA1, account: 'elastic', repo: params.GITHUB_CHECK_REPO, credentialsId: env.JOB_GIT_CREDENTIALS
   }
 }
