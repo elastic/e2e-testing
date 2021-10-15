@@ -405,6 +405,9 @@ def doNotifyBuildResult(boolean slackNotify) {
   notifyBuildResult(analyzeFlakey: true, jobName: getFlakyJobName(withBranch: "${env.JOB_BASE_NAME}"), prComment: true, slackHeader: header, slackChannel: "${channels}", slackComment: true, slackNotify: slackNotify)
 }
 
+/*
+ * Parses arguments to be utilized in the functional test steps
+ */
 def processFunctionalTestConfig(Map args = [:]){
   def name = args.get('name')
   def platform = args.get('platform')
@@ -464,6 +467,9 @@ def processFunctionalTestConfig(Map args = [:]){
           endpointMap: endpointMap]
 }
 
+/*
+ * Generates the functional step for all other Suites
+ */
 def generateFunctionalTestStep(Map args = [:]){
   opts = processFunctionalTestConfig(args)
 
@@ -500,6 +506,9 @@ def generateFunctionalTestStep(Map args = [:]){
   }
 }
 
+/*
+ * Generates the functional step for testing Fleet via Terraform
+ */
 def generateFunctionalFleetTestStep(Map args = [:]){
   opts = processFunctionalTestConfig(args)
 
@@ -528,11 +537,13 @@ def generateFunctionalFleetTestStep(Map args = [:]){
       unstash 'source'
       try {
         nodeAddress = deployNode("centos", envContext)
-        execSSH(nodeAddress, "cd /home/ci/e2e-testing/e2e/_suites/${opts.suite} && sudo -E /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"")
+        execSSH(address: nodeAddress,
+                cmd: "cd /home/ci/e2e-testing/e2e/_suites/${opts.suite} && sudo -E /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"",
+                label: "Run functional tests for ${opts.platformLabels}:${opts.suite}:${opts.tags}")
       } finally {
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
-        teardownStack()
+        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/${BASE_DIR}/outputs/TEST-*.xml")
+        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/${BASE_DIR}/outputs/TEST-*.xml"
+        teardownStack(envContext)
       }
     }
   }

@@ -40,7 +40,6 @@ resource "google_compute_instance" "default" {
       "sudo yum -y install rsync wget gcc",
       "wget https://dl.google.com/go/go1.16.3.linux-amd64.tar.gz",
       "sudo tar -C /usr/local -xf go1.16.3.linux-amd64.tar.gz",
-      "echo \"export PATH=$PATH:/usr/local/go/bin\" | sudo tee -a /etc/profile",
       "mkdir -p /home/${var.user}/e2e-testing",
     ]
   }
@@ -54,7 +53,7 @@ resource "google_compute_instance" "default" {
   }
 
  provisioner "local-exec" {
-   command = "cd ${var.workspace}/${var.base_dir} && rsync -avz --exclude='.git/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${var.privatekeypath}\" * ci@${google_compute_instance.default.network_interface.0.access_config.0.nat_ip}:/home/${var.user}/e2e-testing"
+   command = "cd ${var.workspace}/${var.base_dir}/${var.base_dir} && rsync -avz --exclude='.git/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${var.privatekeypath}\" * ci@${google_compute_instance.default.network_interface.0.access_config.0.nat_ip}:/home/${var.user}/e2e-testing"
   }
 
  provisioner "remote-exec" {
@@ -67,6 +66,7 @@ resource "google_compute_instance" "default" {
     }
 
     inline = [
+      "echo \"export PATH=$PATH:/usr/local/go/bin\" | sudo tee -a /etc/profile",
       "echo \"export GOARCH=${var.goarch}\" | sudo tee -a /etc/profile",
       "echo \"export PROVIDER=${var.provider_type}\" | sudo tee -a /etc/profile",
       "echo \"export LOG_LEVEL=${var.log_level}\" | sudo tee -a /etc/profile",
