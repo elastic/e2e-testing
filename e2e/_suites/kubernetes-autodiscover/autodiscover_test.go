@@ -115,7 +115,7 @@ func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, optio
 }
 
 func (m *podsManager) configureDockerImage(podName string) error {
-	if podName != "filebeat" && podName != "heartbeat" && podName != "metricbeat" && podName != "elastic-agent"{
+	if podName != "filebeat" && podName != "heartbeat" && podName != "metricbeat" && podName != "elastic-agent" {
 		log.Debugf("Not processing custom binaries for pod: %s. Only [filebeat, heartbeat, metricbeat, elastic-agent] will be processed", podName)
 		return nil
 	}
