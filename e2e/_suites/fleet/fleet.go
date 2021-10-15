@@ -425,7 +425,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	if err != nil {
 		return err
 	}
-	//fts.theAgentGetDefaultApiKey()
 	return err
 }
 
@@ -555,6 +554,7 @@ func (fts *FleetTestSuite) theAgentGetDefaultApiKey() error {
 	fts.DefaultApiKey = defaultApiKey
 	return nil
 }
+
 func (fts *FleetTestSuite) verifyDefaultApiKey(status string) error {
 	newDefaultApiKey, _ := fts.getAgentDefaultApiKey()
 	if status == "changed" {
@@ -643,7 +643,6 @@ func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string
 
 			return err
 		}
-
 		log.WithFields(log.Fields{
 			"isAgentInStatus": isAgentInStatus,
 			"elapsedTime":     exp.GetElapsedTime(),
