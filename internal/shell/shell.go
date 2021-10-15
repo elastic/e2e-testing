@@ -73,12 +73,13 @@ func ExecuteWithStdin(ctx context.Context, workspace string, stdin io.Reader, co
 	cmd.Dir = workspace
 
 	if len(env) > 0 {
-		envArray := make([]string, len(env))
+		environment := os.Environ()
+
 		for k, v := range env {
-			envArray = append(envArray, fmt.Sprintf("%s=%s", k, v))
+			environment = append(environment, fmt.Sprintf("%s=%s", k, v))
 		}
 
-		cmd.Env = envArray
+		cmd.Env = environment
 	}
 
 	var out bytes.Buffer
