@@ -90,7 +90,7 @@ resource "google_compute_instance" "default" {
     }
 
    inline = [
-     "cd /home/ci/e2e-testing/_suites/${var.suite} && sudo -E go test -timeout 60m -v --godog.tags=\"${var.tags}\""
+     "cd /home/ci/e2e-testing/e2e/_suites/${var.suite} && sudo -E go test -timeout 60m -v --godog.tags=\"${var.tags}\""
     ]
   }
 }
