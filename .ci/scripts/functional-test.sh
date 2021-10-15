@@ -23,6 +23,7 @@ TAGS=${2:-''}
 STACK_VERSION=${3:-"${BASE_VERSION}"}
 BEAT_VERSION=${4:-"${BASE_VERSION}"}
 GOARCH=${GOARCH:-"amd64"}
+PATH=$PATH:/usr/local/go/bin
 
 ## Install the required dependencies for the given SUITE
 .ci/scripts/install-test-dependencies.sh "${SUITE}"

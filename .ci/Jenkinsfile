@@ -254,6 +254,20 @@ def pushFiles(String address, String source, String destination, String label){
   sh script: "rsync -avz --exclude='.git/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh\" ${source} ci@${address}:${destination}", label: label
 }
 
+def envToCliArgs(envContext){
+  def cliOpts = []
+  for (env in envContext){
+    (k, v) = env.split("=")
+    cliOpts.add("-var ${k.toLowerCase()}=\"${v}\"")
+  }
+  cliOpts.add("-var privatekeypath=\"${env.WORKSPACE}/e2essh\"")
+  cliOpts.add("-var publickeypath=\"${env.WORKSPACE}/e2essh.pub\"")
+  cliOpts.add("-var workspace=\"${env.WORKSPACE}\"")
+  cliOpts.add("-var base_dir=\"${env.BASE_DIR}\"")
+  cliOptsStr = cliOpts.join(" ")
+  return cliOptsStr
+}
+
 def withTerraform(Closure body){
   def binDir = "${HOME}/bin"
   withEnv([
@@ -279,7 +293,7 @@ def deployStack(){
   ]) {
     withTerraform(){
       sh "terraform -chdir=${workDir} init"
-      sh "terraform -chdir=${workDir} -auto-approve"
+      sh "terraform -chdir=${workDir} apply -auto-approve"
       elasticsearchAddress = sh(label: 'Get ES endpoint', script: "echo ec_deployment.end-to-end.elasticsearch[0].https_endpoint | terraform -chdir=${workDir} console", returnStdout: true)?.trim()
       kibanaAddress = sh(label: 'Get Kibana endpoint', script: "echo ec_deployment.end-to-end.kibana[0].https_endpoint | terraform -chdir=${workDir} console", returnStdout: true)?.trim()
       fleetAddress = sh(label: 'Get Fleet endpoint', script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform -chdir=${workDir} console", returnStdout: true)?.trim()
@@ -291,20 +305,6 @@ def deployStack(){
     }
   }
   return endpointMap
-}
-
-def envToCliArgs(envContext){
-  def cliOpts = []
-  for (env in envContext){
-    (k, v) = env.split("=")
-    cliOpts.add("-var ${k.toLowerCase()}=\"${v}\"")
-  }
-  cliOpts.add("-var privatekeypath=\"${env.WORKSPACE}/e2essh\"")
-  cliOpts.add("-var publickeypath=\"${env.WORKSPACE}/e2essh.pub\"")
-  cliOpts.add("-var workspace=\"${env.WORKSPACE}\"")
-  cliOpts.add("-var base_dir=\"${env.BASE_DIR}\"")
-  cliOptsStr = cliOpts.join(" ")
-  return cliOptsStr
 }
 
 def deployNode(String name, envContext){
