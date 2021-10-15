@@ -148,6 +148,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
+	s.Step(`^kibana uses "([^"]*)" profile$`, fts.kibanaUsesProfile)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
@@ -483,6 +484,50 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 
 	return CheckProcessState(fts.deployer, manifest.Name, process, "stopped", 0)
+}
+
+// bootstrapFleet this method creates the runtime dependencies for the Fleet test suite, being of special
+// interest kibana profile passed as part of the environment variables to bootstrap the dependencies.
+func bootstrapFleet(ctx context.Context, env map[string]string) error {
+	deployer := deploy.New(common.Provider)
+
+	if profile, ok := env["kibanaProfile"]; ok {
+		log.Infof("Running kibana with %s profile", profile)
+	}
+
+	// the runtime dependencies must be started only in non-remote executions
+	return deployer.Bootstrap(ctx, deploy.NewServiceRequest(common.FleetProfileName), env, func() error {
+		kibanaClient, err := kibana.NewClient()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"env":   env,
+			}).Fatal("Unable to create kibana client")
+		}
+		err = kibanaClient.WaitForFleet(ctx)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"env":   env,
+			}).Fatal("Fleet could not be initialized")
+		}
+		return nil
+	})
+}
+
+// kibanaUsesProfile this step should be ideally called as a Background or a Given clause, so that it
+// is executed before any other in the test scenario. It will configure the Kibana profile to be used
+// in the scenario, changing the configuration file to be used.
+func (fts *FleetTestSuite) kibanaUsesProfile(profile string) error {
+	// copy the current profile environment, overriding the kibana profile with the one passed in the step
+	env := map[string]string{}
+	for k, v := range common.ProfileEnv {
+		env[k] = v
+	}
+
+	env["kibanaProfile"] = profile
+
+	return bootstrapFleet(context.Background(), env)
 }
 
 func (fts *FleetTestSuite) setup() error {

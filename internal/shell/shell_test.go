@@ -5,7 +5,10 @@
 package shell
 
 import (
+	"context"
+	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,4 +66,17 @@ func TestGetEnvBool(t *testing.T) {
 			assert.False(t, val)
 		}
 	}
+}
+
+func TestExecuteWithStdin_doesNotLoseEnv(t *testing.T) {
+	os.Setenv("FOO", "foo")
+	defer os.Unsetenv("FOO")
+
+	newEnv := map[string]string{
+		"BAR": "bar",
+	}
+
+	output, err := ExecuteWithEnv(context.Background(), ".", "env", newEnv)
+	assert.Nil(t, err)
+	assert.True(t, strings.Contains(output, "FOO=foo"), fmt.Sprintf("Environment is %s", output))
 }
