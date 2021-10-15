@@ -17,7 +17,7 @@ Scenario: Logs collection from a pod with an init container
 # This scenario explicitly waits for 60 seconds before doing checks
 # to be sure that at least one job has been executed.
 Scenario: Logs collection from short-living cronjobs
-  Given "elastic-agent" is running with "logs generic"
+  Given "elastic-agent" is running with "logs generic cronjob"
     And "a short-living cronjob" is deployed
    When "60s" have passed
    Then "elastic-agent" collects events with "kubernetes.container.name:cronjob-container"
