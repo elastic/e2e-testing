@@ -314,16 +314,17 @@ def deployNode(String name, envContext){
   def ipAddress = null
   def cliOptsStr = envToCliArgs(envContext)
   def workDir = ".ci/terraform/${name}"
-  withEnvMask(vars: [
-    [var: "EC_API_KEY", password: authObj.apiKey]
-  ]) {
-    withTerraform(){
-      withVaultToken(){
-        withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
-          // sh(label: 'Generate creds file', script: "vault read -field credentials ${GCP_PROVISIONER_SECRET} > ${env.WORKSPACE}/gce-creds.json")
-          sh "terraform -chdir=${workDir} init"
-          sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
-          return sh(label: 'Get Node address', script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
+  dir("${BASE_DIR}"){
+    withEnvMask(vars: [
+      [var: "EC_API_KEY", password: authObj.apiKey]
+    ]) {
+      withTerraform(){
+        withVaultToken(){
+          withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
+            sh "terraform -chdir=${workDir} init"
+            sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
+            return sh(label: 'Get Node address', script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
+          }
         }
       }
     }
@@ -334,7 +335,7 @@ def teardownStack(envContext){
   def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
   def authObj = props?.data
   def cliOptsStr = envToCliArgs(envContext)
-  def workDir = "${env.WORKSPACE}/${env.BASE_DIR}/.ci/terraform/"
+  def workDir = ".ci/terraform/"
   withEnvMask(vars: [
     [var: "EC_API_KEY", password: "${authObj.apiKey}"]
   ]) {
