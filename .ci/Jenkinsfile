@@ -317,17 +317,16 @@ def deployNode(String name, envContext){
   ]) {
     unstash 'source'
     withTerraform(){
-      sh(label: 'Init Stack', script: "terraform -chdir=.ci/terraform/${name} init")
       withVaultToken(){
         withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
         // sh(label: 'Generate creds file', script: "vault read -field credentials ${GCP_PROVISIONER_SECRET} > ${env.WORKSPACE}/gce-creds.json")
-        sh "terraform -chdir=.ci/terraform/${name} apply -auto-approve ${cliOptsStr}"
-        ipAddress = sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/${name} output -raw ip", returnStdout: true)?.trim()
+          sh "terraform -chdir=.ci/terraform/${name} init"
+          sh "terraform -chdir=.ci/terraform/${name} apply -auto-approve ${cliOptsStr}"
+          return sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/${name} output -raw ip", returnStdout: true)?.trim()
         }
       }
     }
   }
-  return ipAddress
 }
 
 def teardownStack(envContext){
