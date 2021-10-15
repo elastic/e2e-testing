@@ -315,7 +315,6 @@ def deployNode(String name, envContext){
   withEnvMask(vars: [
     [var: "EC_API_KEY", password: authObj.apiKey]
   ]) {
-    unstash 'source'
     withTerraform(){
       withVaultToken(){
         withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
