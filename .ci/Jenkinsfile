@@ -598,7 +598,7 @@ def generateFunctionalFleetTestStep(Map args = [:]){
         nodeAddress = deployNode("centos", envContext)
         log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags} on centos: ${nodeAddress}")
         sshexec(nodeAddress,
-                "sudo -E -i PWD=/home/ci/e2e-testing/e2e/_suites/${opts.suite} /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"")
+                "sudo -i PWD=/home/ci/e2e-testing/e2e/_suites/${opts.suite} /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"")
         log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags} on centos: ${nodeAddress}")
       } finally {
         teardownStack(envContext)
