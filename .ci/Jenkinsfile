@@ -438,7 +438,7 @@ def processFunctionalTestConfig(Map args = [:]){
   }
 
   def goArch = "amd64"
-  def platformLabels = "${platformLabels} && immutable"
+  platformLabels = "${platformLabels} && immutable"
   if (platformLabels.contains("arm64") || platformLabels.contains("aarch64")) {
     goArch = "arm64"
     // let's use centos8 ARM as base VM, trying to mitigate the flakiness described in https://github.com/elastic/e2e-testing/issues/1271
