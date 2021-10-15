@@ -19,6 +19,7 @@ pipeline {
     DOCKER_REGISTRY = 'docker.elastic.co'
     ELASTIC_CLOUD_SECRET = 'secret/observability-team/ci/elastic-cloud/observability-team-user'
     GCP_PROVISIONER_SECRET = 'secret/observability-team/ci/service-account/jenkins-gce-provisioner'
+    AWS_PROVISIONER_SECRET = 'secret/observability-team/ci/elastic-observability-aws-account-auth'
     TEST_MATRIX_FILE = "${params.testMatrixFile}"
   }
   options {
@@ -314,17 +315,15 @@ def deployNode(String name, envContext){
   def ipAddress = null
   def cliOptsStr = envToCliArgs(envContext)
   def workDir = ".ci/terraform/${name}"
-  dir("${BASE_DIR}"){
-    withEnvMask(vars: [
-      [var: "EC_API_KEY", password: authObj.apiKey]
-    ]) {
-      withTerraform(){
-        withVaultToken(){
-          withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
-            sh "terraform -chdir=${workDir} init"
-            sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
-            nodeAddress = sh(label: 'Get Node address', script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
-          }
+  withEnvMask(vars: [
+    [var: "EC_API_KEY", password: authObj.apiKey]
+  ]) {
+    withTerraform(){
+      withVaultToken(){
+        withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
+          sh "terraform -chdir=${workDir} init"
+          sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
+          nodeAddress = sh(label: 'Get Node address', script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
         }
       }
     }
