@@ -45,14 +45,6 @@ resource "google_compute_instance" "default" {
   }
 
  provisioner "local-exec" {
-   command = "ls -R ${var.workspace}"
-  }
-
- provisioner "local-exec" {
-   command = "ls -R ${var.workspace}/${var.base_dir}"
-  }
-
- provisioner "local-exec" {
    command = "cd ${var.workspace}/${var.base_dir}/${var.base_dir} && rsync -avz --exclude='.git/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${var.privatekeypath}\" * ci@${google_compute_instance.default.network_interface.0.access_config.0.nat_ip}:/home/${var.user}/e2e-testing"
   }
 

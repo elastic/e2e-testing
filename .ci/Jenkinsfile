@@ -323,12 +323,13 @@ def deployNode(String name, envContext){
           withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
             sh "terraform -chdir=${workDir} init"
             sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
-            return sh(label: 'Get Node address', script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
+            nodeAddress = sh(label: 'Get Node address', script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
           }
         }
       }
     }
   }
+  return nodeAddress
 }
 
 def teardownStack(envContext){
@@ -336,12 +337,14 @@ def teardownStack(envContext){
   def authObj = props?.data
   def cliOptsStr = envToCliArgs(envContext)
   def workDir = ".ci/terraform/"
-  withEnvMask(vars: [
-    [var: "EC_API_KEY", password: "${authObj.apiKey}"]
-  ]) {
-    withTerraForm(){
-      sh "terraform -chdir=${workDir}/stack destroy -auto-approve"
-      sh "terraform -chdir=${workDir}/centos destroy -auto-approve ${cliOptsStr}"
+  dir("${BASE_DIR}"){
+    withEnvMask(vars: [
+      [var: "EC_API_KEY", password: "${authObj.apiKey}"]
+    ]) {
+      withTerraForm(){
+        sh "terraform -chdir=${workDir}/stack destroy -auto-approve"
+        sh "terraform -chdir=${workDir}/centos destroy -auto-approve ${cliOptsStr}"
+      }
     }
   }
 }
@@ -486,7 +489,7 @@ def generateFunctionalTestStep(Map args = [:]){
       try {
         withDockerEnv(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}") {
           filebeat(output: "docker_logs_${opts.platformLabels}_${opts.goArch}_${opts.suite}_${opts.name}.log", workdir: "${env.WORKSPACE}") {
-              withEnv(envContext) {
+            withEnv(envContext) {
               withGoEnv(version: "${GO_VERSION}") {
                 // This step will help to send the APM traces to the
                 // APM service defined by the Otel Jenkins plugin.
@@ -537,34 +540,21 @@ def generateFunctionalFleetTestStep(Map args = [:]){
       unstash 'source'
       try {
         nodeAddress = deployNode("centos", envContext)
-        execSSH(address: nodeAddress,
-                cmd: "cd /home/ci/e2e-testing/e2e/_suites/${opts.suite} && sudo -E /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"",
-                label: "Run functional tests for ${opts.platformLabels}:${opts.suite}:${opts.tags}")
+        execSSH address: nodeAddress,
+          cmd: "cd /home/ci/e2e-testing/e2e/_suites/${opts.suite} && sudo -E /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"",
+          label: "Run functional tests for ${opts.platformLabels}:${opts.suite}:${opts.tags}"
       } finally {
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/${BASE_DIR}/outputs/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/${BASE_DIR}/outputs/TEST-*.xml"
+        // junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+        // archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
         teardownStack(envContext)
       }
     }
   }
 }
 
-def grabWorkerIP(){
-  def linuxIp = ''
-  retryWithSleep(retries: 3, seconds: 5, backoff: true){
-    linuxIp = sh(label: 'Get IP', script: '''hostname -I | awk '{print $1}' ''', returnStdout: true)?.trim()
-    log(level: 'INFO', text: "Worker IP '${linuxIp}'")
-    if(!linuxIp?.trim()){
-      error('Unable to get the Linux worker IP')
-    }
-  }
-  return linuxIp
-}
-
-
 /**
-* Tear down the setup for the static workers.
-*/
+ * Tear down the setup for the static workers.
+ */
 def tearDown(Map args = [:]){
   catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
     dir("${BASE_DIR}"){
@@ -580,13 +570,13 @@ def tearDown(Map args = [:]){
 
 /**
  Notify the GitHub check of the parent stream
-**/
+ **/
 def githubCheckNotify(String status) {
   if (params.GITHUB_CHECK_NAME?.trim() && params.GITHUB_CHECK_REPO?.trim() && params.GITHUB_CHECK_SHA1?.trim()) {
     githubNotify context: "${params.GITHUB_CHECK_NAME}",
-                 description: "${params.GITHUB_CHECK_NAME} ${status.toLowerCase()}",
-                 status: "${status}",
-                 targetUrl: "${env.RUN_DISPLAY_URL}",
-                 sha: params.GITHUB_CHECK_SHA1, account: 'elastic', repo: params.GITHUB_CHECK_REPO, credentialsId: env.JOB_GIT_CREDENTIALS
+      description: "${params.GITHUB_CHECK_NAME} ${status.toLowerCase()}",
+      status: "${status}",
+      targetUrl: "${env.RUN_DISPLAY_URL}",
+      sha: params.GITHUB_CHECK_SHA1, account: 'elastic', repo: params.GITHUB_CHECK_REPO, credentialsId: env.JOB_GIT_CREDENTIALS
   }
 }
