@@ -153,25 +153,19 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			"stackVersion":  common.StackVersion,
 		}
 
+		common.ProfileEnv["kibanaProfile"] = "default"
 		common.ProfileEnv["kibanaDockerNamespace"] = "kibana"
 		if strings.HasPrefix(common.KibanaVersion, "pr") || utils.IsCommit(common.KibanaVersion) {
 			// because it comes from a PR
 			common.ProfileEnv["kibanaDockerNamespace"] = "observability-ci"
+			common.ProfileEnv["KIBANA_IMAGE_REF_CUSTOM"] = "docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion
 		}
 
 		if common.Provider != "remote" {
-			// the runtime dependencies must be started only in non-remote executions
-			deployer.Bootstrap(suiteContext, deploy.NewServiceRequest(common.FleetProfileName), common.ProfileEnv, func() error {
-				kibanaClient, err := kibana.NewClient()
-				if err != nil {
-					log.WithField("error", err).Fatal("Unable to create kibana client")
-				}
-				err = kibanaClient.WaitForFleet(suiteContext)
-				if err != nil {
-					log.WithField("error", err).Fatal("Fleet could not be initialized")
-				}
-				return nil
-			})
+			err := bootstrapFleet(suiteContext, common.ProfileEnv)
+			if err != nil {
+				log.WithError(err).Fatal("Could not bootstrap Fleet runtime dependencies")
+			}
 		}
 
 		imts.Fleet.Version = common.BeatVersionBase
