@@ -313,14 +313,14 @@ def deployNode(String name, envContext){
   def endpointMap = [:]
   def ipAddress = null
   def cliOptsStr = envToCliArgs(envContext)
-  def workDir = "${env.WORKSPACE}/${env.BASE_DIR}/.ci/terraform/${name}"
+  def workDir = ".ci/terraform/${name}"
   withEnvMask(vars: [
     [var: "EC_API_KEY", password: authObj.apiKey]
   ]) {
     withTerraform(){
       withVaultToken(){
         withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
-        // sh(label: 'Generate creds file', script: "vault read -field credentials ${GCP_PROVISIONER_SECRET} > ${env.WORKSPACE}/gce-creds.json")
+          // sh(label: 'Generate creds file', script: "vault read -field credentials ${GCP_PROVISIONER_SECRET} > ${env.WORKSPACE}/gce-creds.json")
           sh "terraform -chdir=${workDir} init"
           sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
           return sh(label: 'Get Node address', script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
