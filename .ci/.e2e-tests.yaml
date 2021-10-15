@@ -33,6 +33,9 @@ SUITES:
       - name: "Linux Integration"
         pullRequestFilter: " && ~debian"
         tags: "linux_integration"
+      - name: "Policies"
+        pullRequestFilter: " && ~debian"
+        tags: "policies"
       - name: "System Integration"
         platforms:
           - labels: "ubuntu-18.04"
