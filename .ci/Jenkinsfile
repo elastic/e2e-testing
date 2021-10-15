@@ -246,6 +246,14 @@ pipeline {
   }
 }
 
+def execSSH(String address, String cmd, String label){
+  sh script: "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ci@${address} -- bash -c '${cmd}'", label: label
+}
+
+def pushFiles(String address, String source, String destination, String label){
+  sh script: "rsync -avz --exclude='.git/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh\" ${source} ci@${address}:${destination}", label: label
+}
+
 def withTerraform(Closure body){
   def binDir = "${HOME}/bin"
   withEnv([
@@ -265,16 +273,17 @@ def deployStack(){
   def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
   def authObj = props?.data
   def endpointMap = [:]
+  def workDir = "${env.WORKSPACE}/${env.BASE_DIR}/.ci/terraform/stack"
   withEnvMask(vars: [
     [var: "EC_API_KEY", password: authObj.apiKey]
   ]) {
     withTerraform(){
-      sh(label: 'Init Stack', script: 'terraform -chdir=.ci/terraform/stack init')
-      sh(label: 'Deploy Stack', script: 'terraform -chdir=.ci/terraform/stack apply -auto-approve')
-      elasticsearchAddress = sh(label: 'Get ES endpoint', script: "echo ec_deployment.end-to-end.elasticsearch[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
-      kibanaAddress = sh(label: 'Get Kibana endpoint', script: "echo ec_deployment.end-to-end.kibana[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
-      fleetAddress = sh(label: 'Get Fleet endpoint', script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform -chdir=.ci/terraform/stack console", returnStdout: true)?.trim()
-      endpointPassword = sh(label: 'Get password', script: "terraform -chdir=.ci/terraform/stack show -json | jq -r .values.root_module.resources[0].values.elasticsearch_password", returnStdout: true)?.trim()
+      sh "terraform -chdir=${workDir} init"
+      sh "terraform -chdir=${workDir} -auto-approve"
+      elasticsearchAddress = sh(label: 'Get ES endpoint', script: "echo ec_deployment.end-to-end.elasticsearch[0].https_endpoint | terraform -chdir=${workDir} console", returnStdout: true)?.trim()
+      kibanaAddress = sh(label: 'Get Kibana endpoint', script: "echo ec_deployment.end-to-end.kibana[0].https_endpoint | terraform -chdir=${workDir} console", returnStdout: true)?.trim()
+      fleetAddress = sh(label: 'Get Fleet endpoint', script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform -chdir=${workDir} console", returnStdout: true)?.trim()
+      endpointPassword = sh(label: 'Get password', script: "terraform -chdir=${workDir} -json | jq -r .values.root_module.resources[0].values.elasticsearch_password", returnStdout: true)?.trim()
       endpointMap = [elasticsearchUrl: elasticsearchAddress,
                      kibanaUrl: kibanaAddress,
                      fleetUrl: fleetAddress.replace(".apm", ".fleet"),
@@ -282,14 +291,6 @@ def deployStack(){
     }
   }
   return endpointMap
-}
-
-def execSSH(String address, String cmd, String label){
-  sh script: "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ci@${address} -- bash -c '${cmd}'", label: label
-}
-
-def pushFiles(String address, String source, String destination, String label){
-  sh script: "rsync -avz --exclude='.git/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh\" ${source} ci@${address}:${destination}", label: label
 }
 
 def envToCliArgs(envContext){
@@ -312,6 +313,7 @@ def deployNode(String name, envContext){
   def endpointMap = [:]
   def ipAddress = null
   def cliOptsStr = envToCliArgs(envContext)
+  def workDir = "${env.WORKSPACE}/${env.BASE_DIR}/.ci/terraform/${name}"
   withEnvMask(vars: [
     [var: "EC_API_KEY", password: authObj.apiKey]
   ]) {
@@ -319,9 +321,9 @@ def deployNode(String name, envContext){
       withVaultToken(){
         withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
         // sh(label: 'Generate creds file', script: "vault read -field credentials ${GCP_PROVISIONER_SECRET} > ${env.WORKSPACE}/gce-creds.json")
-          sh "terraform -chdir=.ci/terraform/${name} init"
-          sh "terraform -chdir=.ci/terraform/${name} apply -auto-approve ${cliOptsStr}"
-          return sh(label: 'Get Node address', script: "terraform -chdir=.ci/terraform/${name} output -raw ip", returnStdout: true)?.trim()
+          sh "terraform -chdir=${workDir} init"
+          sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
+          return sh(label: 'Get Node address', script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
         }
       }
     }
@@ -332,12 +334,13 @@ def teardownStack(envContext){
   def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
   def authObj = props?.data
   def cliOptsStr = envToCliArgs(envContext)
+  def workDir = "${env.WORKSPACE}/${env.BASE_DIR}/.ci/terraform/"
   withEnvMask(vars: [
     [var: "EC_API_KEY", password: "${authObj.apiKey}"]
   ]) {
     withTerraForm(){
-      sh(label: 'Teardown Stack', script: 'terraform -chdir=.ci/terraform/stack destroy -auto-approve')
-      sh(label: 'Teardown Centos', script: "terraform -chdir=.ci/terraform/centos destroy -auto-approve ${cliOptsStr}")
+      sh "terraform -chdir=${workDir}/stack destroy -auto-approve"
+      sh "terraform -chdir=${workDir}/centos destroy -auto-approve ${cliOptsStr}"
     }
   }
 }
