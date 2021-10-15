@@ -598,12 +598,12 @@ def generateFunctionalFleetTestStep(Map args = [:]){
         nodeAddress = deployNode("centos", envContext)
         log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags} on centos: ${nodeAddress}")
         sshexec(nodeAddress,
-                "sudo -i PWD=/home/ci/e2e-testing/e2e/_suites/${opts.suite} /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"")
+                """sudo -E bash /home/ci/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
         log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags} on centos: ${nodeAddress}")
       } finally {
         teardownStack(envContext)
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/TEST-*.xml"
+        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
       }
     }
   }
