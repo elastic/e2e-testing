@@ -548,7 +548,9 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		cluster.Cleanup(suiteContext)
+		if !common.DeveloperMode {
+			cluster.Cleanup(suiteContext)
+		}
 		cancel()
 	})
 }
