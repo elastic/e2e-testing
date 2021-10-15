@@ -285,7 +285,7 @@ def deployStack(){
 }
 
 def execSSH(String address, String cmd, String label){
-  sh script: "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ci@${address} -- bash -c '${cmd}'", label: label
+  sh script: "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ci@${address} -- bash -c '${cmd}'", label: label
 }
 
 def pushFiles(String address, String source, String destination, String label){
