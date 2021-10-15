@@ -115,8 +115,8 @@ func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, optio
 }
 
 func (m *podsManager) configureDockerImage(podName string) error {
-	if podName != "filebeat" && podName != "heartbeat" && podName != "metricbeat" {
-		log.Debugf("Not processing custom binaries for pod: %s. Only [filebeat, heartbeat, metricbeat] will be processed", podName)
+	if podName != "filebeat" && podName != "heartbeat" && podName != "metricbeat" && podName != "elastic-agent" {
+		log.Debugf("Not processing custom binaries for pod: %s. Only [filebeat, heartbeat, metricbeat, elastic-agent] will be processed", podName)
 		return nil
 	}
 
@@ -548,7 +548,9 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		cluster.Cleanup(suiteContext)
+		if !common.DeveloperMode {
+			cluster.Cleanup(suiteContext)
+		}
 		cancel()
 	})
 }
