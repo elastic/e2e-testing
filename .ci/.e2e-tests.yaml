@@ -33,6 +33,9 @@ SUITES:
       - name: "Linux Integration"
         pullRequestFilter: " && ~debian"
         tags: "linux_integration"
+      - name: "Policies"
+        pullRequestFilter: " && ~debian"
+        tags: "policies"
       - name: "System Integration"
         platforms:
           - labels: "ubuntu-18.04"
@@ -55,6 +58,8 @@ SUITES:
     platforms:
       - labels: "ubuntu-18.04"
     scenarios:
+      - name: "kubernetes autodiscover with elastic-agent"
+        tags: "kubernetes-autodiscover && elastic-agent"
       - name: "kubernetes autodiscover with filebeat"
         tags: "kubernetes-autodiscover && filebeat"
       - name: "kubernetes autodiscover with heartbeat"
