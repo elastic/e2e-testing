@@ -287,7 +287,7 @@ def deployStack(){
   def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
   def authObj = props?.data
   def endpointMap = [:]
-  def workDir = "${env.WORKSPACE}/${env.BASE_DIR}/.ci/terraform/stack"
+  def workDir = ".ci/terraform/stack"
   withEnvMask(vars: [
     [var: "EC_API_KEY", password: authObj.apiKey]
   ]) {
@@ -360,27 +360,31 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
         }
     }
 
-    item.scenarios.each { scenario ->
-      def name = scenario.name
-      def platformsValue = platforms
-      def scenarioPlatforms = scenario.platforms
-      if (scenarioPlatforms?.size() > 0) {
-        // scenario platforms take precedence over suite platforms, overriding them
-        platformsValue = scenarioPlatforms
-      }
-      def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
-      def tags = scenario.tags
-      def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
-      if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
-        platformsValue.each { platform ->
-          def platformLabels = platform.labels
-          log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
+  item.scenarios.each { scenario ->
+    def name = scenario.name
+    def platformsValue = platforms
+    def scenarioPlatforms = scenario.platforms
+    if (scenarioPlatforms?.size() > 0) {
+      // scenario platforms take precedence over suite platforms, overriding them
+      platformsValue = scenarioPlatforms
+    }
+    def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
+    def tags = scenario.tags
+    def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
+    if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
+      platformsValue.each { platform ->
+        def platformLabels = platform.labels
+        log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
+        if(suite == "fleet"){
+          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalFleetTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}", endpointMap: endpointMap)
+        } else {
           parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}", endpointMap: endpointMap)
         }
-      } else {
-        log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed in any platform because there are no modified files")
       }
+    } else {
+      log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed in any platform because there are no modified files")
     }
+  }
 }
 
 def doNotifyBuildResult(boolean slackNotify) {
@@ -400,14 +404,13 @@ def doNotifyBuildResult(boolean slackNotify) {
   notifyBuildResult(analyzeFlakey: true, jobName: getFlakyJobName(withBranch: "${env.JOB_BASE_NAME}"), prComment: true, slackHeader: header, slackChannel: "${channels}", slackComment: true, slackNotify: slackNotify)
 }
 
-def generateFunctionalTestStep(Map args = [:]){
+def processFunctionalTestConfig(Map args = [:]){
   def name = args.get('name')
   def platform = args.get('platform')
   def suite = args.get('suite')
   def tags = args.get('tags')
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
   def endpointMap = args.get('endpointMap') ? args.get('endpointMap') : [:]
-
   def platformLabels = platform.labels
   def platformProvider = platform.provider
 
@@ -435,8 +438,11 @@ def generateFunctionalTestStep(Map args = [:]){
   }
 
   def goArch = "amd64"
+  def platformLabels = "${platformLabels} && immutable"
   if (platformLabels.contains("arm64") || platformLabels.contains("aarch64")) {
     goArch = "arm64"
+    // let's use centos8 ARM as base VM, trying to mitigate the flakiness described in https://github.com/elastic/e2e-testing/issues/1271
+    platformLabels = "centos-8-aarch64"
   }
 
   if (platformLabels.contains("windows")) {
@@ -446,23 +452,73 @@ def generateFunctionalTestStep(Map args = [:]){
   // Skip scenarios per platform
   tags += " && ~@skip:${goArch}"
 
+  return [goArch: goArch,
+          name: name,
+          platform: platform,
+          suite: suite,
+          tags: tags,
+          platformLabels: platformLabels,
+          platformProvider: platformProvider,
+          pullRequestFilter: pullRequestFilter,
+          endpointMap: endpointMap]
+}
+
+def generateFunctionalTestStep(Map args = [:]){
+  opts = processFunctionalTestConfig(args)
+
   // Setup environment for platform
   def envContext = []
-  envContext.add("GOARCH=${goArch}")
-  envContext.add("PROVIDER_TYPE=${platformProvider}")
-  envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
+  envContext.add("GOARCH=${opts.goArch}")
+  envContext.add("PROVIDER=${opts.platformProvider}")
+  envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${opts.goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
+
+  return {
+    withNode(labels: "${opts.platformLabels}", sleepMax: 20, forceWorkspace: true){
+      deleteDir()
+      unstash 'source'
+      try {
+        withDockerEnv(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}") {
+          filebeat(output: "docker_logs_${opts.platformLabels}_${opts.goArch}_${opts.suite}_${opts.name}.log", workdir: "${env.WORKSPACE}") {
+              withEnv(envContext) {
+              withGoEnv(version: "${GO_VERSION}") {
+                // This step will help to send the APM traces to the
+                // APM service defined by the Otel Jenkins plugin.
+                withOtelEnv() {
+                  sh script: """.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${opts.platformLabels}:${opts.suite}:${opts.tags}"
+                }
+              }
+            }
+          }
+        }
+      } finally {
+        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+        tearDown(labels: opts.platformLabels)
+      }
+    }
+  }
+}
+
+def generateFunctionalFleetTestStep(Map args = [:]){
+  opts = processFunctionalTestConfig(args)
+
+  // Setup environment for platform
+  def envContext = []
+  envContext.add("GOARCH=${opts.goArch}")
+  envContext.add("PROVIDER_TYPE=${opts.platformProvider}")
+  envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${opts.goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
   envContext.add("OP_LOG_LEVEL=TRACE")
   envContext.add("LOG_LEVEL=TRACE")
 
-  if (platformProvider == "remote" && endpointMap) {
-    envContext.add("KIBANA_URL=${endpointMap.kibanaUrl}")
-    envContext.add("ELASTICSEARCH_URL=${endpointMap.elasticsearchUrl}")
-    envContext.add("FLEET_URL=${endpointMap.fleetUrl}")
-    envContext.add("KIBANA_PASSWORD=${endpointMap.elasticsearchPassword}")
-    envContext.add("ELASTICSEARCH_PASSWORD=${endpointMap.elasticsearchPassword}")
+  if (opts.platformProvider == "remote" && opts.endpointMap) {
+    envContext.add("KIBANA_URL=${opts.endpointMap.kibanaUrl}")
+    envContext.add("ELASTICSEARCH_URL=${opts.endpointMap.elasticsearchUrl}")
+    envContext.add("FLEET_URL=${opts.endpointMap.fleetUrl}")
+    envContext.add("KIBANA_PASSWORD=${opts.endpointMap.elasticsearchPassword}")
+    envContext.add("ELASTICSEARCH_PASSWORD=${opts.endpointMap.elasticsearchPassword}")
     envContext.add("SKIP_PULL=1")
-    envContext.add("TAGS=${tags}")
-    envContext.add("SUITE=${suite}")
+    envContext.add("TAGS=${opts.tags}")
+    envContext.add("SUITE=${opts.suite}")
   }
 
   return {
@@ -470,42 +526,12 @@ def generateFunctionalTestStep(Map args = [:]){
       deleteDir()
       unstash 'source'
       try {
-        // if (platformLabels.contains("windows")) {
-        //     def mingwArch = is32() ? '32' : '64'
-        //     def chocoPath = 'C:\\ProgramData\\chocolatey\\bin'
-        //     def chocoPython3Path = 'C:\\Python38;C:\\Python38\\Scripts'
-        //     path = "${env.WORKSPACE}\\bin;${chocoPath};${chocoPython3Path};C:\\tools\\mingw${mingwArch}\\bin;C:\\windows\\system32;C:\\windows\\system32\\WindowsPowerShell\\v1.0\\"
-        //     envContext.add("PATH=${path}")
-        //     echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
-        //     powershell label: "Disk Information", script: "Get-PSDrive"
-        //     powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${endpointMap.elasticsearchUrl}"
-        //     powershell label: "Check for running kibana", script: "Test-NetConnection ${endpointMap.kibanaUrl}"
-        //     powershell label: "Check for running fleet server", script: "Test-NetConnection ${endpointMap.fleetUrl}"
-        // }
         nodeAddress = deployNode("centos", envContext)
-        execSSH(nodeAddress, "cd /home/ci/e2e-testing/e2e/_suites/${suite} && sudo -E /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${tags}\"")
-        // withEnv(envContext) {
-        //     if (platformLabels.contains("windows")) {
-        //         // Boot up a windows VM to deploy Elastic Agent to be tested against
-        //         // a remote deployed stack
-        //         withGoEnvWindows(version: "${GO_VERSION}"){
-        //             cmd script: "cd e2e\\_suites\\${suite} && go test -timeout 60m -v --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
-        //         }
-        //     } else {
-        //         deployNodeAddress = deployCentos()
-        //         withGoEnv(version: "${GO_VERSION}") {
-        //             // This step will help to send the APM traces to the
-        //             // APM service defined by the Otel Jenkins plugin.
-        //             withOtelEnv() {
-        //                 sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
-        //             }
-        //         }
-        //     }
-        // }
+        execSSH(nodeAddress, "cd /home/ci/e2e-testing/e2e/_suites/${opts.suite} && sudo -E /usr/local/go/bin/go test -timeout 60m -v --godog.tags=\"${opts.tags}\"")
       } finally {
         junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
         archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
-        tearDown(labels: platformLabels)
+        teardownStack()
       }
     }
   }
