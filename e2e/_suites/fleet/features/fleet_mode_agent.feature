@@ -6,6 +6,7 @@ Background: Setting up kibana instance with the default profile
   Given kibana uses "default" profile
 
 @install
+@skip:windows
 Scenario Outline: Deploying the <os> agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the "elastic-agent" process is in the "started" state on the host
