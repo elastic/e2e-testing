@@ -91,7 +91,7 @@ pipeline {
               steps {
                 gitCheckout(basedir: BEATS_BASE_DIR, branch: "${BASE_REF}", repo: "git@github.com:${env.BEATS_ELASTIC_REPO}.git", credentialsId: env.JOB_GIT_CREDENTIALS)
                 dir("${BEATS_BASE_DIR}/x-pack/elastic-agent") {
-                  withGoEnv(){
+                  withGoEnv(pkgs: ["github.com/magefile/mage"]){
                     sh(label: 'Build Fleet Server', script: 'DEV=true SNAPSHOT=true PLATFORMS="+all linux/amd64" go run github.com/magefile/mage package')
                   }
                 }
