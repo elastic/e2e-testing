@@ -383,7 +383,8 @@ func buildElasticAgentRequest(srv ServiceRequest, env map[string]string) tc.Cont
 		Env:        env,
 		Image:      img,
 		Labels: map[string]string{
-			"name": srv.Name, //label is important to handle Inspect
+			"name":                       srv.Name, //label is important to handle Inspect,
+			"com.docker.compose.project": "elastic-package-stack",
 		},
 		Name:       fmt.Sprintf("%s_%s_%s_%d", elasticPackagePrefix, imageNamespace, uuid.New().String(), srv.Scale),
 		Privileged: privileged,
