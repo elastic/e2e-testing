@@ -29,6 +29,11 @@ popd  > /dev/null
 
 pushd "${SCRIPT_PATH}/../.."
 
+if [ -f "$(pwd)/.env" ]
+then
+    source "$(pwd)/.env"
+fi
+
 BASE_VERSION="$(cat .stack-version)"
 
 SUITE=${1:-''}
@@ -40,11 +45,11 @@ PATH=$PATH:/usr/local/go/bin
 
 "${SCRIPT_PATH}/install-test-dependencies.sh" "${SUITE}"
 
-rm -rf outputs || true
-mkdir -p outputs
+rm -rf "$(pwd)/outputs" || true
+mkdir -p "$(pwd)/outputs"
 
-REPORT="outputs/TEST-${GOARCH}-${SUITE}"
+REPORT="$(pwd)/outputs/TEST-${GOARCH}-${SUITE}"
 
-TAGS="${TAGS}" FORMAT=junit:${REPORT}.xml GOARCH=${GOARCH} STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} make --no-print-directory -C e2e/_suites/${SUITE} functional-test
+TAGS="${TAGS}" FORMAT=junit:${REPORT}.xml GOARCH=${GOARCH} STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} make --no-print-directory -C "$(pwd)/e2e/_suites/${SUITE}" functional-test
 
 popd
