@@ -57,18 +57,19 @@ resource "google_compute_instance" "default" {
       agent = "false"
     }
 
-    inline = [
+   inline = [
+     "touch /home/${var.user}/e2e-testing/.env || true",
       "echo \"export PATH=$PATH:/usr/local/go/bin\" | tee -a /home/ci/e2e-testing/.env",
-      "echo \"export GOARCH=${var.goarch}\" | tee -a /home/.ci/e2e-testing/.env",
-      "echo \"export PROVIDER=${var.provider_type}\" | tee -a /home/.ci/e2e-testing/.env",
-      "echo \"export LOG_LEVEL=${var.log_level}\" | tee -a /home/.ci/e2e-testing/.env",
-      "echo \"export OP_LOG_LEVEL=${var.log_level}\" | tee -a /home/.ci/e2e-testing/.env",
-      "echo \"export KIBANA_URL=${var.kibana_url}\" | tee -a /home/.ci/e2e-testing/.env",
-      "echo \"export KIBANA_PASSWORD=${var.kibana_password}\" | tee -a /home/.ci/e2e-testing/.env",
-      "echo \"export ELASTICSEARCH_URL=${var.elasticsearch_url}\" | tee -a /home/.ci/e2e-testing/.env",
-      "echo \"export ELASTICSEARCH_PASSWORD=${var.elasticsearch_password}\" | tee -a /home/.ci/e2e-testing/.env",
-      "echo \"export FLEET_URL=${var.fleet_url}\" | tee -a /home/.ci/e2e-testing/.env",
-      "echo \"export SKIP_PULL=${var.skip_pull}\" | tee -a /home/.ci/e2e-testing/.env",
+      "echo \"export GOARCH=${var.goarch}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export PROVIDER=${var.provider_type}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export LOG_LEVEL=${var.log_level}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export OP_LOG_LEVEL=${var.log_level}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export KIBANA_URL=${var.kibana_url}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export KIBANA_PASSWORD=${var.kibana_password}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export ELASTICSEARCH_URL=${var.elasticsearch_url}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export ELASTICSEARCH_PASSWORD=${var.elasticsearch_password}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export FLEET_URL=${var.fleet_url}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export SKIP_PULL=${var.skip_pull}\" | tee -a /home/${var.user}/e2e-testing/.env",
     ]
  }
 }
