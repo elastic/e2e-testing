@@ -21,7 +21,7 @@ pipeline {
     GITHUB_CHECK_E2E_TESTS_NAME = 'E2E Tests'
     JOB_GIT_CREDENTIALS = "2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken"
     PIPELINE_LOG_LEVEL = "INFO"
-    AGENT_DROP_PATH = "/tmp/agent-drop-path"
+    ELASTIC_AGENT_DROP_PATH = "/tmp/agent-drop-path"
   }
   options {
     timeout(time: 3, unit: 'HOURS')
@@ -68,7 +68,7 @@ pipeline {
           steps {
             checkPermissions()
             setEnvVar('E2E_BASE_BRANCH', getE2EBaseBranch())
-            sh(label:'Prepare Agent Drop path', script: 'mkdir -p ${AGENT_DROP_PATH}')
+            sh(label:'Prepare Agent Drop path', script: "mkdir -p ${ELASTIC_AGENT_DROP_PATH}")
           }
         }
         stage('Build Elastic Agent dependencies') {
@@ -81,7 +81,7 @@ pipeline {
                 dir("${BASE_DIR}") {
                   withGoEnv(){
                     sh(label: 'Build Fleet Server', script: "make docker-release")
-                    sh(label: 'Copy binaries to Agent Drop path', script: 'cp build/distributions/* ${AGENT_DROP_PATH}')
+                    sh(label: 'Copy binaries to Agent Drop path', script: 'cp build/distributions/* ${ELASTIC_AGENT_DROP_PATH}')
                   }
                 }
               }
@@ -96,9 +96,9 @@ pipeline {
                   }
                 }
                 dir("${BEATS_BASE_DIR}/x-pack") {
-                  sh(label:'Copy Filebeat binaries to Agent Drop path', script: 'cp filebeat/build/distributions/* ${AGENT_DROP_PATH}')
-                  sh(label:'Copy Heartbeat binaries to Agent Drop path', script: 'cp metricbeat/build/distributions/* ${AGENT_DROP_PATH}')
-                  sh(label:'Copy Metricbeat binaries to Agent Drop path', script: 'cp heartbeat/build/distributions/* ${AGENT_DROP_PATH}')
+                  sh(label:'Copy Filebeat binaries to Agent Drop path', script: 'cp filebeat/build/distributions/* ${ELASTIC_AGENT_DROP_PATH}')
+                  sh(label:'Copy Heartbeat binaries to Agent Drop path', script: 'cp metricbeat/build/distributions/* ${ELASTIC_AGENT_DROP_PATH}')
+                  sh(label:'Copy Metricbeat binaries to Agent Drop path', script: 'cp heartbeat/build/distributions/* ${ELASTIC_AGENT_DROP_PATH}')
                 }
               }
             }
@@ -109,7 +109,7 @@ pipeline {
           steps {
             dir("${BEATS_BASE_DIR}/x-pack/elastic-agent") {
               withGoEnv(){
-                sh(label: 'Build Fleet Server', script: "AGENT_DROP_PATH='${env.AGENT_DROP_PATH}' DEV=true SNAPSHOT=true PLATFORMS='+all linux/amd64' go run github.com/magefile/mage package")
+                sh(label: 'Build Fleet Server', script: "AGENT_DROP_PATH='${env.ELASTIC_AGENT_DROP_PATH}' DEV=true SNAPSHOT=true PLATFORMS='+all linux/amd64' go run github.com/magefile/mage package")
               }
             }
           }
