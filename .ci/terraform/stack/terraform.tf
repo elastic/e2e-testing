@@ -19,7 +19,7 @@ resource "random_id" "instance_id" {
 resource "ec_deployment" "end-to-end" {
   name                   = "end-to-end-${random_id.instance_id.hex}"
   region                 = "gcp-us-central1"
-  version                = "7.15.1"
+  version                = "8.0.0-SNAPSHOT"
   deployment_template_id = "gcp-io-optimized-v2"
 
   elasticsearch {}
