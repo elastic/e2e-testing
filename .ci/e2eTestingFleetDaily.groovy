@@ -40,18 +40,12 @@ pipeline {
   stages {
     stage('Run Tests') {
       steps {
-        build(job: "e2e-tests/e2e-testing-mbp/${env.JOB_BASE_NAME}",
-          parameters: [
-            booleanParam(name: 'forceSkipGitChecks', value: true),
-            booleanParam(name: 'forceSkipPresubmit', value: true),
-            booleanParam(name: 'notifyOnGreenBuilds', value: true),
-            booleanParam(name: 'NIGHTLY_SCENARIOS', value: true),
-            string(name: 'runTestsSuites', value: 'fleet'),
-            string(name: 'SLACK_CHANNEL', value: "elastic-agent"),
-          ],
-          propagate: true,
-          wait: true
-        )
+        runE2e(notifyOnGreenBuilds: true,
+               extraParameters: [
+                 booleanParam(name: 'NIGHTLY_SCENARIOS', value: true),
+                 string(name: 'runTestsSuites', value: 'fleet'),
+                 string(name: 'SLACK_CHANNEL', value: "elastic-agent")
+               ])
       }
     }
   }

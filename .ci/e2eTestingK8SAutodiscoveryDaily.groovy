@@ -40,16 +40,11 @@ pipeline {
   stages {
     stage('Run Tests') {
       steps {
-        build(job: "e2e-tests/e2e-testing-mbp/${env.JOB_BASE_NAME}",
-          parameters: [
-            booleanParam(name: 'forceSkipGitChecks', value: true),
-            booleanParam(name: 'forceSkipPresubmit', value: true),
-            string(name: 'runTestsSuites', value: 'kubernetes-autodiscover'),
-            string(name: 'SLACK_CHANNEL', value: "integrations"),
-          ],
-          propagate: true,
-          wait: true
-        )
+        runE2e(extraParameters: [
+                 booleanParam(name: 'NIGHTLY_SCENARIOS', value: true),
+                 string(name: 'runTestsSuites', value: 'kubernetes-autodiscover'),
+                 string(name: 'SLACK_CHANNEL', value: "integrations")
+               ])
       }
     }
   }

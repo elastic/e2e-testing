@@ -178,7 +178,7 @@ def getID(){
   if(env.GT_PR){
     return "${env.GT_PR}"
   }
-  
+
   return "${params.kibana_pr}"
 }
 
@@ -208,22 +208,13 @@ def runE2ETests(String suite) {
   }
   def e2eTestsPipeline = "e2e-tests/e2e-testing-mbp/${branchName}"
 
-  def parameters = [
-    booleanParam(name: 'forceSkipGitChecks', value: true),
-    booleanParam(name: 'forceSkipPresubmit', value: true),
-    booleanParam(name: 'notifyOnGreenBuilds', value: false),
-    booleanParam(name: 'BEATS_USE_CI_SNAPSHOTS', value: true),
-    string(name: 'runTestsSuites', value: suite),
-    string(name: 'GITHUB_CHECK_NAME', value: env.GITHUB_CHECK_E2E_TESTS_NAME),
-    string(name: 'GITHUB_CHECK_REPO', value: env.REPO),
-    string(name: 'KIBANA_VERSION', value: dockerTag),
-  ]
-
-  build(job: "${e2eTestsPipeline}",
-    parameters: parameters,
-    propagate: true,
-    wait: true
-  )
+  runE2e(notifyOnGreenBuilds: false,
+         gitHubCheckName: env.GITHUB_CHECK_E2E_TESTS_NAME,
+         runTestsSuites = suite,
+         extraParameters: [
+           booleanParam(name: 'BEATS_USE_CI_SNAPSHOTS', value: true),
+           string(name: 'KIBANA_VERSION', value: "dockerTag")
+        ])
 
 /*
   // commented out to avoid sending Github statuses to Kibana PRs
