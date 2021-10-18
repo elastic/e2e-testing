@@ -10,7 +10,11 @@
     scm:
       - github:
           branch-discovery: no-pr
+<<<<<<< HEAD
           head-filter-regex: '(master|PR-.*|v\d\.d\.d|7\.x|7\.14\.x|7\.13\.x)'
+=======
+          head-filter-regex: '(master|PR-.*|v\d\.d\.d|7\.x|7\.15|7\.14)'
+>>>>>>> 2e3da8e (chore: use same branching schema than beats (#1669))
           discover-pr-forks-strategy: merge-current
           discover-pr-forks-trust: permission
           discover-pr-origin: merge-current
