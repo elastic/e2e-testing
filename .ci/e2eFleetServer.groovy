@@ -154,7 +154,7 @@ def getE2EBaseBranch() {
     // we are building a branch on Fleet Server
     setEnvVar('BASE_REF', prID)
     // in the case we are triggering the job for a branch (i.e master, 7.x) we directly use branch name as Docker tag
-    return getMaintenanceBranch(prID)
+    return prID
   }
 
   def token = githubAppToken(secret: "${env.GITHUB_APP_SECRET}")
@@ -164,7 +164,7 @@ def getE2EBaseBranch() {
   setEnvVar('BASE_REF', baseRef)
   //def headSha = pullRequest?.head?.sha
 
-  return getMaintenanceBranch(baseRef)
+  return baseRef
 }
 
 def getID(){
@@ -173,19 +173,6 @@ def getID(){
   }
   
   return "${params.fleet_server_pr}"
-}
-
-def getMaintenanceBranch(String branch){
-  if (branch == 'master' || branch == 'main') {
-    return branch
-  }
-
-  if (!branch.endsWith('.x')) {
-    // use maintenance branches mode (i.e. 7.16 translates to 7.16.x)
-    branch += '.x'
-  }
-
-  return branch
 }
 
 def getFleetServerBranch(){
