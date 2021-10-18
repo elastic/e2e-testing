@@ -122,7 +122,7 @@ pipeline {
             dir("${E2E_BASE_DIR}") {
               withGoEnv(){
                 withEnv(["BEATS_LOCAL_PATH='${env.BEATS_BASE_DIR}"]) {
-                  sh(label: 'Run E2E Tests', script: './.ci/scripts/fleet-tests.sh ')
+                  sh(label: 'Run E2E Tests', script: './.ci/scripts/fleet-test.sh ')
                 }
               }
             }
