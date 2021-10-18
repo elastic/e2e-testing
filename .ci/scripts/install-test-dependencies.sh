@@ -15,7 +15,7 @@ set -euxo pipefail
 SUITE=${1:?SUITE is not set}
 
 # execute specific test dependencies if it exists
-if [ -f .ci/scripts/install-${SUITE}-test-dependencies.sh ]
+if [ -f "$(pwd).ci/scripts/install-${SUITE}-test-dependencies.sh" ]
 then
     ## Install the required dependencies with some retry
     CI_UTILS=/usr/local/bin/bash_standard_lib.sh
