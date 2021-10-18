@@ -23,9 +23,11 @@ if ([ -h "${SCRIPT_PATH}" ]); then
   while([ -h "${SCRIPT_PATH}" ]); do cd `dirname "$SCRIPT_PATH"`;
   SCRIPT_PATH=`readlink "${SCRIPT_PATH}"`; done
 fi
-cd `dirname ${SCRIPT_PATH}/..` > /dev/null
+cd `dirname ${SCRIPT_PATH}` > /dev/null
 SCRIPT_PATH=`pwd`;
 popd  > /dev/null
+
+pushd "${SCRIPT_PATH}/../.."
 
 BASE_VERSION="$(cat .stack-version)"
 
@@ -44,3 +46,5 @@ mkdir -p outputs
 REPORT="outputs/TEST-${GOARCH}-${SUITE}"
 
 TAGS="${TAGS}" FORMAT=junit:${REPORT}.xml GOARCH=${GOARCH} STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} make --no-print-directory -C e2e/_suites/${SUITE} functional-test
+
+popd
