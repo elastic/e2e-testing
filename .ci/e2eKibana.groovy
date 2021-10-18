@@ -203,9 +203,6 @@ def runE2ETests(String suite) {
 
   // Kibana's maintenance branches follow the 7.11, 7.12 schema.
   def branchName = "${BASE_REF}"
-  if (branchName != "master") {
-    branchName += ".x"
-  }
   def e2eTestsPipeline = "e2e-tests/e2e-testing-mbp/${branchName}"
 
   def parameters = [
