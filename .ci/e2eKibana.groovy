@@ -107,10 +107,14 @@ def runE2ETests(String suite) {
   log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for PR-${prID} using '${dockerTag}' as Docker tag")
 
   // Kibana's maintenance branches follow the 7.11, 7.12 schema.
+<<<<<<< HEAD
   def branchName = "${baseRef}"
   if (branchName != "master") {
     branchName += ".x"
   }
+=======
+  def branchName = "${BASE_REF}"
+>>>>>>> 2e3da8e (chore: use same branching schema than beats (#1669))
   def e2eTestsPipeline = "e2e-tests/e2e-testing-mbp/${branchName}"
 
   def parameters = [

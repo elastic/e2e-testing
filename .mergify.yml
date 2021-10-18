@@ -35,7 +35,11 @@ pull_request_rules:
         assignees:
           - "{{ author }}"
         branches:
+<<<<<<< HEAD
           - "7.14.x"
+=======
+          - "7.15"
+>>>>>>> 2e3da8e (chore: use same branching schema than beats (#1669))
         title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
   - name: backport patches to 7.13 branch
     conditions:
@@ -47,7 +51,11 @@ pull_request_rules:
         assignees:
           - "{{ author }}"
         branches:
+<<<<<<< HEAD
           - "7.13.x"
+=======
+          - "7.14"
+>>>>>>> 2e3da8e (chore: use same branching schema than beats (#1669))
         title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
   - name: delete head branch after merge
     conditions:

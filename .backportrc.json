@@ -8,8 +8,13 @@
     "prTitle": "{commitMessages} backport for {targetBranch}",
     "targetBranchChoices": [
         { "name": "7.x", "checked": true },
+<<<<<<< HEAD
         { "name": "7.14.x", "checked": true },
         { "name": "7.13.x", "checked": true }
+=======
+        { "name": "7.15", "checked": true },
+        { "name": "7.14", "checked": true }
+>>>>>>> 2e3da8e (chore: use same branching schema than beats (#1669))
     ],
     "targetPRLabels": ["backport"],
     "upstream": "elastic/e2e-testing"
