@@ -543,7 +543,15 @@ func (fts *FleetTestSuite) setup() error {
 func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
-	return theAgentIsListedInFleetWithStatus(fts.currentContext, desiredStatus, manifest.Hostname)
+	err := theAgentIsListedInFleetWithStatus(fts.currentContext, desiredStatus, manifest.Hostname)
+	if err != nil {
+		return err
+	}
+	if desiredStatus == "online" {
+		//get Agent Default Key
+		fts.theAgentGetDefaultApiKey()
+	}
+	return err
 }
 
 func (fts *FleetTestSuite) theAgentGetDefaultApiKey() error {
