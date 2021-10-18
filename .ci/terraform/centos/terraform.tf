@@ -37,7 +37,7 @@ resource "google_compute_instance" "default" {
     }
 
     inline = [
-      "sudo yum -y install rsync wget gcc",
+      "sudo yum -y install rsync wget gcc make",
       "wget https://dl.google.com/go/go1.16.3.linux-amd64.tar.gz",
       "sudo tar -C /usr/local -xf go1.16.3.linux-amd64.tar.gz",
       "mkdir -p /home/${var.user}/e2e-testing",
