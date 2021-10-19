@@ -206,19 +206,12 @@ def runE2ETests(String suite) {
   if (branchName != "master") {
     branchName += ".x"
   }
-  def e2eTestsPipeline = "e2e-tests/e2e-testing-mbp/${branchName}"
 
-  runE2e(notifyOnGreenBuilds: false,
+  runE2E(fullJobName: "e2e-tests/e2e-testing-mbp/${branchName}",
          gitHubCheckName: env.GITHUB_CHECK_E2E_TESTS_NAME,
-         runTestsSuites = suite,
-         extraParameters: [
-           booleanParam(name: 'BEATS_USE_CI_SNAPSHOTS', value: true),
-           string(name: 'KIBANA_VERSION', value: "dockerTag")
-        ])
-
-/*
-  // commented out to avoid sending Github statuses to Kibana PRs
-  def notifyContext = "${env.pr_head_sha}"
-  githubNotify(context: "${notifyContext}", description: "${notifyContext} ...", status: 'PENDING', targetUrl: "${env.JENKINS_URL}search/?q=${e2eTestsPipeline.replaceAll('/','+')}")
-*/
+         runTestsSuites: suite,
+         notifyOnGreenBuilds: false,
+         disableGitHubCheck: true,
+         kibanaVersion: 'dockerTag',
+         beatsUseCiSnapshots: true)
 }

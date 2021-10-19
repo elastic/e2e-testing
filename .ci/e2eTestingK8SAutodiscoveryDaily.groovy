@@ -40,11 +40,7 @@ pipeline {
   stages {
     stage('Run Tests') {
       steps {
-        runE2e(extraParameters: [
-                 booleanParam(name: 'NIGHTLY_SCENARIOS', value: true),
-                 string(name: 'runTestsSuites', value: 'kubernetes-autodiscover'),
-                 string(name: 'SLACK_CHANNEL', value: "integrations")
-               ])
+        runE2E(nightly_scenarios: true, runTestsSuites: 'kubernetes-autodiscover', slackChannel: 'integrations')
       }
     }
   }

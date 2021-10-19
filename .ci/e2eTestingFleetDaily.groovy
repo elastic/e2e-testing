@@ -40,12 +40,7 @@ pipeline {
   stages {
     stage('Run Tests') {
       steps {
-        runE2e(notifyOnGreenBuilds: true,
-               extraParameters: [
-                 booleanParam(name: 'NIGHTLY_SCENARIOS', value: true),
-                 string(name: 'runTestsSuites', value: 'fleet'),
-                 string(name: 'SLACK_CHANNEL', value: "elastic-agent")
-               ])
+        runE2E(nightly_scenarios: true, runTestsSuites: 'fleet', slackChannel: 'elastic-agent', notifyOnGreenBuilds: true)
       }
     }
   }

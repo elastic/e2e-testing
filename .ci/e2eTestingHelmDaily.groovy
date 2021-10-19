@@ -40,11 +40,7 @@ pipeline {
   stages {
     stage('Run Tests') {
       steps {
-        runE2e(extraParameters: [
-                 booleanParam(name: 'NIGHTLY_SCENARIOS', value: true),
-                 string(name: 'runTestsSuites', value: 'helm'),
-                 string(name: 'SLACK_CHANNEL', value: "infra-release-notify,integrations")
-               ])
+        runE2E(nightly_scenarios: true, runTestsSuites: 'helm', slackChannel: 'infra-release-notify,integrations')
       }
     }
   }
