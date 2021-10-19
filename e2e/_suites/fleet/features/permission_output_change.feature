@@ -25,7 +25,7 @@ Scenario Outline: Updating the Linux Integration to an Agent ...
   Given a "<os>" agent is deployed to Fleet with "tar" installer
     And the agent is listed in Fleet as "online"
   When the policy is updated to have "system/metrics" set to "core"
-  Then the default API key has "not change"
+  Then the default API key has "not changed"
 
 @centos
 Examples: Centos
