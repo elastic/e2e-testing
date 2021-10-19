@@ -6,7 +6,6 @@ Scenarios for Permission Change
 Scenario Outline: Adding the Linux Integration to an Agent ...
   Given a "<os>" agent is deployed to Fleet with "tar" installer
     And the agent is listed in Fleet as "online"
-    And the agent get Default Api Key
   When the "Linux" integration is "added" in the policy
     And a Linux data stream exists with some data
   Then the default API key has "changed"
@@ -25,7 +24,6 @@ Examples: Debian
 Scenario Outline: Updating the Linux Integration to an Agent ...
   Given a "<os>" agent is deployed to Fleet with "tar" installer
     And the agent is listed in Fleet as "online"
-    And the agent get Default Api Key
   When the policy is updated to have "system/metrics" set to "core"
   Then the default API key has "not change"
 

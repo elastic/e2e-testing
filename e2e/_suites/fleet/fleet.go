@@ -549,10 +549,7 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 	}
 	if desiredStatus == "online" {
 		//get Agent Default Key
-		err := fts.theAgentGetDefaultApiKey()
-		if err != nil {
-			return err
-		}
+		fts.theAgentGetDefaultApiKey()
 	}
 	return err
 }
