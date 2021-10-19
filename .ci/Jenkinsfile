@@ -312,11 +312,23 @@ def deployStack(){
   return endpointMap
 }
 
+
+/*
+ * Placeholder deployment until we are able to work out specifying snapshots in staging cloud.
+ * This will deploy a docker stack on a separate gcp instance and be exposed to the internet
+ * for testing across cloud environments.
+ */
 def deployStackDocker(){
   def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
   def authObj = props?.data
   def endpointMap = [:]
   def workDir = ".ci/terraform/stack-docker"
+  def cliOpts = []
+  cliOpts.add("-var privatekeypath=\"${env.WORKSPACE}/e2essh\"")
+  cliOpts.add("-var publickeypath=\"${env.WORKSPACE}/e2essh.pub\"")
+  cliOpts.add("-var workspace=\"${env.WORKSPACE}\"")
+  cliOpts.add("-var base_dir=\"${env.BASE_DIR}\"")
+  cliOptsStr = cliOpts.join(" ")
   withEnvMask(vars: [
     [var: "EC_API_KEY", password: authObj.apiKey]
   ]) {
@@ -324,7 +336,7 @@ def deployStackDocker(){
       withVaultToken(){
         withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
           sh "terraform -chdir=${workDir} init"
-          sh "terraform -chdir=${workDir} apply -auto-approve"
+          sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
           nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
         }
       }
@@ -392,8 +404,8 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
 
     // Start stack with fleet server enabled for the fleet suite of tests
     if (suite == "fleet") {
-        endpointMap = deployStackDocker()
         sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/e2essh -q -N \"\" "
+        endpointMap = deployStackDocker()
     } else {
         if(isInstalled(tool: 'docker', flag: '--version')) {
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
