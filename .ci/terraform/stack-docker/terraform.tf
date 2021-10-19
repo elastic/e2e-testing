@@ -40,8 +40,11 @@ resource "google_compute_instance" "default" {
       "sudo yum -y remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine || true",
       "sudo yum -y install yum-utils",
       "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo",
-      "sudo yum -y install docker-ce docker-ce-cli containerd.io rsync wget gcc make",
+      "sudo yum -y install docker-ce docker-ce-cli containerd.io rsync wget gcc make curl",
       "sudo systemctl start docker",
+      "sudo curl -L \"https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)\" -o /usr/local/bin/docker-compose",
+      "sudo chmod +x /usr/local/bin/docker-compose",
+      "sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose",
       "mkdir -p /home/${var.user}/e2e-testing",
     ]
   }
