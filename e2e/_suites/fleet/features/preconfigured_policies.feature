@@ -1,4 +1,4 @@
-@policies
+@preconfigured_policies
 Feature: Preconfigured Policies
   Scenarios for Preconfigured Policies
 
