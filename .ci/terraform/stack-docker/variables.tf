@@ -18,6 +18,6 @@ variable "workspace" {
   default = "/tmp"
 }
 
-variable "basedir" {
+variable "base_dir" {
   type = string
 }
