@@ -6,8 +6,8 @@ Scenarios for Permission Change
 Scenario Outline: Adding the Linux Integration to an Agent ...
   Given a "<os>" agent is deployed to Fleet with "tar" installer
     And the agent is listed in Fleet as "online"
-  When the "Linux" integration is "added" in the policy
-    And a Linux data stream exists with some data
+    And the "Linux" integration is "added" in the policy
+  When a Linux data stream exists with some data
   Then the default API key has "changed"
 
 @centos

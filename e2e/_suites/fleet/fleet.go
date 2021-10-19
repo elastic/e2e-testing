@@ -156,7 +156,6 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
 	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
-	s.Step(`^the agent get Default Api Key$`, fts.theAgentGetDefaultApiKey)
 	s.Step(`^the default API key has "([^"]*)"$`, fts.verifyDefaultApiKey)
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
@@ -549,7 +548,10 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 	}
 	if desiredStatus == "online" {
 		//get Agent Default Key
-		fts.theAgentGetDefaultApiKey()
+		err := fts.theAgentGetDefaultApiKey()
+		if err != nil {
+			return err
+		}
 	}
 	return err
 }
