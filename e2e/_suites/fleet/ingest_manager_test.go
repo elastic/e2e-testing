@@ -166,6 +166,11 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			if err != nil {
 				log.WithError(err).Fatal("Could not bootstrap Fleet runtime dependencies")
 			}
+		} else {
+			err := imts.Fleet.kibanaClient.WaitForFleet(suiteContext)
+			if err != nil {
+				log.WithError(err).Fatal("Could not determine Fleet's readiness.")
+			}
 		}
 
 		imts.Fleet.Version = common.BeatVersionBase
