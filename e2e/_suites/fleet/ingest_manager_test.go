@@ -171,7 +171,6 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 			if err != nil {
 				log.WithError(err).Fatal("Could not determine Fleet's readiness.")
 			}
-			utils.Sleep(time.Duration(utils.TimeoutFactor) * 20 * time.Second)
 		}
 
 		imts.Fleet.Version = common.BeatVersionBase

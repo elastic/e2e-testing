@@ -26,7 +26,7 @@ resource "google_compute_firewall" "default" {
 
 resource "google_compute_instance" "default" {
   name = "e2e-${random_id.instance_id.hex}"
-  machine_type = "e2-standard-4"
+  machine_type = "e2-standard-8"
   zone = "us-central1-c"
   tags = ["http-server", "https-server", "fleet"]
   boot_disk {
