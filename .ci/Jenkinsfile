@@ -324,7 +324,7 @@ def deployStackDocker(){
       withVaultToken(){
         withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
           sh "terraform -chdir=${workDir} init"
-          sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
+          sh "terraform -chdir=${workDir} apply -auto-approve"
           nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
         }
       }
