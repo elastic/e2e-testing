@@ -42,6 +42,7 @@ var deployedAgentsCount = 0
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
 	// integrations
+	KibanaProfile       string
 	StandAlone          bool
 	CurrentToken        string // current enrollment token
 	CurrentTokenID      string // current enrollment tokenID
@@ -65,6 +66,9 @@ type FleetTestSuite struct {
 // afterScenario destroys the state created by a scenario
 func (fts *FleetTestSuite) afterScenario() {
 	defer func() { deployedAgentsCount = 0 }()
+
+	// Reset Kibana Profile to default
+	fts.KibanaProfile = ""
 
 	span := tx.StartSpan("Clean up", "test.scenario.clean", nil)
 	fts.currentContext = apm.ContextWithSpan(context.Background(), span)
@@ -108,7 +112,8 @@ func (fts *FleetTestSuite) afterScenario() {
 		}
 	}
 
-	_ = fts.deployer.Remove(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{deploy.NewServiceRequest(serviceName)}, common.ProfileEnv)
+	env := fts.getProfileEnv()
+	_ = fts.deployer.Remove(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{deploy.NewServiceRequest(serviceName)}, env)
 
 	err := fts.kibanaClient.DeleteEnrollmentAPIKey(fts.currentContext, fts.CurrentTokenID)
 	if err != nil {
@@ -352,8 +357,8 @@ func (fts *FleetTestSuite) agentRunPolicy(policyName string) error {
 		var policy *kibana.Policy
 		for _, p := range policies {
 			if policyName == p.Name {
-				log.Info("FOUND POLICY")
 				policy = &p
+				break
 			}
 		}
 
@@ -455,8 +460,8 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	services := []deploy.ServiceRequest{
 		agentService,
 	}
-
-	err = fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, common.ProfileEnv)
+	env := fts.getProfileEnv()
+	err = fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, env)
 	if err != nil {
 		return err
 	}
@@ -568,16 +573,28 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 // is executed before any other in the test scenario. It will configure the Kibana profile to be used
 // in the scenario, changing the configuration file to be used.
 func (fts *FleetTestSuite) kibanaUsesProfile(profile string) error {
-	// copy the current profile environment, overriding the kibana profile with the one passed in the step
+	fts.KibanaProfile = profile
+
+	env := fts.getProfileEnv()
+
+	return bootstrapFleet(context.Background(), env)
+}
+
+func (fts *FleetTestSuite) getProfileEnv() map[string]string {
+
 	env := map[string]string{}
+
 	for k, v := range common.ProfileEnv {
 		env[k] = v
 	}
 
-	env["kibanaProfile"] = profile
+	if fts.KibanaProfile != "" {
+		env["kibanaProfile"] = fts.KibanaProfile
+	}
 
-	return bootstrapFleet(context.Background(), env)
+	return env
 }
+
 func (fts *FleetTestSuite) agentUsesPolicy(policyName string) error {
 	agentUsesPolicyFn := func() error {
 		policies, err := fts.kibanaClient.ListPolicies(fts.currentContext)
@@ -589,6 +606,7 @@ func (fts *FleetTestSuite) agentUsesPolicy(policyName string) error {
 			if policyName == p.Name {
 
 				fts.Policy = p
+				break
 			}
 		}
 
@@ -1147,8 +1165,8 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	services := []deploy.ServiceRequest{
 		agentService,
 	}
-
-	err := fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, common.ProfileEnv)
+	env := fts.getProfileEnv()
+	err := fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, env)
 	if err != nil {
 		return err
 	}
