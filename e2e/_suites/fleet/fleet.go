@@ -60,7 +60,7 @@ type FleetTestSuite struct {
 	RuntimeDependenciesStartDate time.Time
 	// instrumentation
 	currentContext context.Context
-	DefaultApiKey  string
+	DefaultAPIKey  string
 }
 
 // afterScenario destroys the state created by a scenario
@@ -156,7 +156,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
 	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
-	s.Step(`^the default API key has "([^"]*)"$`, fts.verifyDefaultApiKey)
+	s.Step(`^the default API key has "([^"]*)"$`, fts.verifyDefaultAPIKey)
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
 	s.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)
@@ -548,7 +548,7 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 	}
 	if desiredStatus == "online" {
 		//get Agent Default Key
-		err := fts.theAgentGetDefaultApiKey()
+		err := fts.theAgentGetDefaultAPIKey()
 		if err != nil {
 			return err
 		}
@@ -556,41 +556,41 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 	return err
 }
 
-func (fts *FleetTestSuite) theAgentGetDefaultApiKey() error {
-	defaultApiKey, _ := fts.getAgentDefaultApiKey()
+func (fts *FleetTestSuite) theAgentGetDefaultAPIKey() error {
+	defaultAPIKey, _ := fts.getAgentDefaultAPIKey()
 	log.WithFields(log.Fields{
-		"default_api_key": defaultApiKey,
+		"default_api_key": defaultAPIKey,
 	}).Info("The Agent is installed with Default Api Key")
-	fts.DefaultApiKey = defaultApiKey
+	fts.DefaultAPIKey = defaultAPIKey
 	return nil
 }
 
-func (fts *FleetTestSuite) verifyDefaultApiKey(status string) error {
-	newDefaultApiKey, _ := fts.getAgentDefaultApiKey()
+func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
+	newDefaultAPIKey, _ := fts.getAgentDefaultAPIKey()
 	if status == "changed" {
-		if newDefaultApiKey != fts.DefaultApiKey {
+		if newDefaultAPIKey != fts.DefaultAPIKey {
 			log.WithFields(log.Fields{
-				"new_default_api_key": newDefaultApiKey,
-				"old_default_api_key": fts.DefaultApiKey,
+				"new_default_api_key": newDefaultAPIKey,
+				"old_default_api_key": fts.DefaultAPIKey,
 			}).Info("Integration added and Default Api Key is " + status)
 		} else {
 			log.WithFields(log.Fields{
-				"new_default_api_key": newDefaultApiKey,
-				"old_default_api_key": fts.DefaultApiKey,
+				"new_default_api_key": newDefaultAPIKey,
+				"old_default_api_key": fts.DefaultAPIKey,
 			}).Error("Integration added and Default Api Key do not change")
 			return errors.New("Integration added and Default Api Key do not change")
 		}
 	}
 	if status == "not changed" {
-		if newDefaultApiKey == fts.DefaultApiKey {
+		if newDefaultAPIKey == fts.DefaultAPIKey {
 			log.WithFields(log.Fields{
-				"new_default_api_key": newDefaultApiKey,
-				"old_default_api_key": fts.DefaultApiKey,
+				"new_default_api_key": newDefaultAPIKey,
+				"old_default_api_key": fts.DefaultAPIKey,
 			}).Info("Integration updated and Default Api Key " + status)
 		} else {
 			log.WithFields(log.Fields{
-				"new_default_api_key": newDefaultApiKey,
-				"old_default_api_key": fts.DefaultApiKey,
+				"new_default_api_key": newDefaultAPIKey,
+				"old_default_api_key": fts.DefaultAPIKey,
 			}).Error("Integration updated and Default Api Key is changed")
 			return errors.New("Integration updated and Default Api Key is changed")
 		}
@@ -1333,7 +1333,7 @@ func (fts *FleetTestSuite) getAgentOSData() (string, error) {
 	return agent.LocalMetadata.OS.Platform, nil
 }
 
-func (fts *FleetTestSuite) getAgentDefaultApiKey() (string, error) {
+func (fts *FleetTestSuite) getAgentDefaultAPIKey() (string, error) {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 	agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
