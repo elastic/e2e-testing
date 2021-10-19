@@ -202,12 +202,7 @@ def runE2ETests(String suite) {
   log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for "+getBranch()+" using '${dockerTag}' as Docker tag")
 
   // Kibana's maintenance branches follow the 7.11, 7.12 schema.
-  def branchName = "${BASE_REF}"
-  if (branchName != "master") {
-    branchName += ".x"
-  }
-
-  runE2E(jobName: "${branchName}",
+  runE2E(jobName: "${BASE_REF}",
          disableGitHubCheck: true,
          gitHubCheckName: env.GITHUB_CHECK_E2E_TESTS_NAME,
          gitHubCheckRepo: env.REPO,
