@@ -17,7 +17,7 @@ SUITES:
     scenarios:
       - name: "Fleet"
         pullRequestFilter: " && ~debian"
-        tags: "fleet_mode_agent && @install"
+        tags: "fleet_mode_agent"
         platforms:
           - labels: "centos-8"
             provider: "remote"
