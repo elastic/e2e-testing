@@ -7,11 +7,28 @@ resource "random_id" "instance_id" {
   byte_length = 8
 }
 
+resource "google_compute_firewall" "default" {
+ name    = "fleet"
+ network = "default"
+
+ allow {
+   protocol = "icmp"
+ }
+
+ allow {
+   protocol = "tcp"
+   ports    = ["8220"]
+ }
+
+ source_ranges = ["0.0.0.0/0"]
+ target_tags = ["fleet"]
+}
+
 resource "google_compute_instance" "default" {
   name = "e2e-${random_id.instance_id.hex}"
   machine_type = "e2-standard-4"
   zone = "us-central1-c"
-  tags = ["http-server", "https-server"]
+  tags = ["http-server", "https-server", "fleet"]
   boot_disk {
     initialize_params {
       image = "centos-cloud/centos-8"
