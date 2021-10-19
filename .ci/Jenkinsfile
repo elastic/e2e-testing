@@ -312,6 +312,32 @@ def deployStack(){
   return endpointMap
 }
 
+def deployStackDocker(){
+  def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
+  def authObj = props?.data
+  def endpointMap = [:]
+  def workDir = ".ci/terraform/stack-docker"
+  withEnvMask(vars: [
+    [var: "EC_API_KEY", password: authObj.apiKey]
+  ]) {
+    withTerraform(){
+      withVaultToken(){
+        withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
+          sh "terraform -chdir=${workDir} init"
+          sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
+          nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
+        }
+      }
+    }
+  }
+  endpointMap = [elasticsearchUrl: "http://${nodeAddress}:9200",
+                 kibanaUrl: "http://${nodeAddress}:5601",
+                 fleetUrl: "http://${nodeAddress}:8220",
+                 elasticsearchPassword: "changeme"]
+
+  return nodeAddress
+}
+
 def deployNode(String name, envContext){
   def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
   def authObj = props?.data
@@ -366,7 +392,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
 
     // Start stack with fleet server enabled for the fleet suite of tests
     if (suite == "fleet") {
-        endpointMap = deployStack()
+        endpointMap = deployStackDocker()
         sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/e2essh -q -N \"\" "
     } else {
         if(isInstalled(tool: 'docker', flag: '--version')) {
