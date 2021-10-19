@@ -207,11 +207,13 @@ def runE2ETests(String suite) {
     branchName += ".x"
   }
 
-  runE2E(fullJobName: "e2e-tests/e2e-testing-mbp/${branchName}",
-         gitHubCheckName: env.GITHUB_CHECK_E2E_TESTS_NAME,
-         runTestsSuites: suite,
-         notifyOnGreenBuilds: false,
+  runE2E(jobName: "${branchName}",
          disableGitHubCheck: true,
+         gitHubCheckName: env.GITHUB_CHECK_E2E_TESTS_NAME,
+         gitHubCheckRepo: env.REPO,
          kibanaVersion: 'dockerTag',
-         beatsUseCiSnapshots: true)
+         notifyOnGreenBuilds: false,
+         runTestsSuites: suite,
+         propagate: true,
+         wait: true)
 }

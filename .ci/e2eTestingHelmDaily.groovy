@@ -40,7 +40,11 @@ pipeline {
   stages {
     stage('Run Tests') {
       steps {
-        runE2E(nightlyScenarios: true, runTestsSuites: 'helm', slackChannel: 'infra-release-notify,integrations')
+        runE2E(jobName: "${env.JOB_BASE_NAME}",
+               runTestsSuites: 'helm',
+               slackChannel: 'infra-release-notify,integrations',
+               propagate: true,
+               wait: true)
       }
     }
   }
