@@ -386,11 +386,12 @@ def teardownStack(envContext){
   ]) {
     withTerraform(){
       log(level: 'INFO', text: "Destroying stack")
-      sh "terraform -chdir=${workDir}/stack destroy -auto-approve"
+      sh "terraform -chdir=${workDir}/stack destroy -auto-approve || true"
       withVaultToken(){
         withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
           log(level: 'INFO', text: "Destroying centos machine")
-          sh "terraform -chdir=${workDir}/centos destroy -auto-approve ${cliOptsStr}"
+          sh "terraform -chdir=${workDir}/centos destroy -auto-approve ${cliOptsStr} || true"
+          sh "terraform -chdir=${workDir}/stack-docker destroy -auto-approve ${cliOptsStr} || true"
         }
       }
     }

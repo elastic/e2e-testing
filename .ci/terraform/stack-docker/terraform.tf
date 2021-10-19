@@ -11,6 +11,7 @@ resource "google_compute_instance" "default" {
   name = "e2e-${random_id.instance_id.hex}"
   machine_type = "e2-standard-4"
   zone = "us-central1-c"
+  tags = ["http-server", "https-server"]
   boot_disk {
     initialize_params {
       image = "centos-cloud/centos-8"
