@@ -148,6 +148,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^kibana uses "([^"]*)" profile$`, fts.kibanaUsesProfile)
+	s.Step(`^agent uses "([^"]*)" policy$`, fts.agentUsesPolicy)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
@@ -165,6 +166,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
 	s.Step(`^certs are installed$`, fts.installCerts)
 	s.Step(`^a Linux data stream exists with some data$`, fts.checkDataStream)
+	s.Step(`^the agent run the "([^"]*)" policy$`, fts.agentRunPolicy)
 
 	// endpoint steps
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)
@@ -337,6 +339,47 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	return backoff.Retry(agentInVersionFn, exp)
 }
 
+func (fts *FleetTestSuite) agentRunPolicy(policyName string) error {
+	agentRunPolicyFn := func() error {
+		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+		manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+
+		policies, err := fts.kibanaClient.ListPolicies(fts.currentContext)
+		if err != nil {
+			return err
+		}
+
+		var policy *kibana.Policy
+		for _, p := range policies {
+			if policyName == p.Name {
+				log.Info("FOUND POLICY")
+				policy = &p
+			}
+		}
+
+		if policy == nil {
+			return fmt.Errorf("Policy not found '%s'", policyName)
+		}
+
+		agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
+		if err != nil {
+			return err
+		}
+
+		if agent.PolicyID != policy.ID {
+			log.Errorf("FOUND %s %s", agent.PolicyID, policy.ID)
+			return fmt.Errorf("Agent not running the correct policy (running '%s' instead of '%s')", agent.PolicyID, policy.ID)
+		}
+
+		return nil
+	}
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	exp := utils.GetExponentialBackOff(maxTimeout)
+
+	return backoff.Retry(agentRunPolicyFn, exp)
+
+}
+
 // this step infers the installer type from the underlying OS image
 // supported images: centos and debian
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
@@ -397,6 +440,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 
 	// Grab a new enrollment key for new agent
 	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.currentContext, fts.Policy)
+
 	if err != nil {
 		return err
 	}
@@ -500,6 +544,15 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 				"env":   env,
 			}).Fatal("Unable to create kibana client")
 		}
+
+		err = kibanaClient.RecreateFleet(ctx)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"env":   env,
+			}).Fatal("Fleet could not be recreated")
+		}
+
 		err = kibanaClient.WaitForFleet(ctx)
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -524,6 +577,31 @@ func (fts *FleetTestSuite) kibanaUsesProfile(profile string) error {
 	env["kibanaProfile"] = profile
 
 	return bootstrapFleet(context.Background(), env)
+}
+func (fts *FleetTestSuite) agentUsesPolicy(policyName string) error {
+	agentUsesPolicyFn := func() error {
+		policies, err := fts.kibanaClient.ListPolicies(fts.currentContext)
+		if err != nil {
+			return err
+		}
+
+		for _, p := range policies {
+			if policyName == p.Name {
+
+				fts.Policy = p
+			}
+		}
+
+		if fts.Policy.Name != policyName {
+			return fmt.Errorf("Policy not found '%s'", policyName)
+		}
+
+		return nil
+	}
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	exp := utils.GetExponentialBackOff(maxTimeout)
+
+	return backoff.Retry(agentUsesPolicyFn, exp)
 }
 
 func (fts *FleetTestSuite) setup() error {
