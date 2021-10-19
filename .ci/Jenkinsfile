@@ -347,7 +347,7 @@ def deployStackDocker(){
                  fleetUrl: "http://${nodeAddress}:8220",
                  elasticsearchPassword: "changeme"]
 
-  return nodeAddress
+  return endpointMap
 }
 
 def deployNode(String name, envContext){
