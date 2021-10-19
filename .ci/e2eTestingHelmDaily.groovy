@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-@Library('apm@current') _
+@Library('apm@feature/build-e2e-step') _
 
 pipeline {
   agent none
