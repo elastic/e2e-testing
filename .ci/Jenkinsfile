@@ -217,6 +217,26 @@ pipeline {
               }
             }
           }
+          post {
+            always {
+              dir("${BASE_DIR}") {
+                script {
+                  def existingSuites = readYaml(file: "${TEST_MATRIX_FILE}")
+                  existingSuites['SUITES'].each { item ->
+                    if (item.suite.toLowerCase() == "fleet"){
+                      item.scenarios.each { scenario ->
+                        if (item.name.toLowerCase() == "fleet"){
+                          scenario.platforms.each { platform ->
+                            teardownStack(scenario.name, platform, item.suite, scenario.tags, platform.labels)
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
         // stage('Release') {
         //   options { skipDefaultCheckout() }
@@ -251,7 +271,7 @@ def sshexec(address, cmd){
   sh "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ci@${address} -- '${cmd}'"
 }
 
-def envToCliArgs(envContext){
+def envToCliArgs(Map envContext = [:]){
   def cliOpts = []
   for (env in envContext){
     (k, v) = env.split("=")
@@ -267,6 +287,10 @@ def envToCliArgs(envContext){
 
 def withTerraform(Closure body){
   def binDir = "${HOME}/bin"
+  def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
+  def authObj = props?.data
+  def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
+  def awsAuthObj = awsProps?.data
   withEnv([
     "PATH=${PATH}:${binDir}"
   ]){
@@ -276,38 +300,42 @@ def withTerraform(Closure body){
       curl -sSL -o terraform.zip https://releases.hashicorp.com/terraform/1.0.9/terraform_1.0.9_linux_amd64.zip || true
       unzip terraform.zip || true
     """)
-    body()
+    withVaultToken(){
+      sh "vault read -field credentials ${GCP_PROVISIONER_SECRET} > ${env.WORKSPACE}/gcp-creds.json"
+      withEnvMask(vars: [
+        [var: "EC_API_KEY", password: authObj.apiKey],
+        [var: "GOOGLE_APPLICATION_CREDENTIALS", password: "${env.WORKSPACE}/gcp-creds.json"],
+        [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
+        [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
+      ]) {
+        body()
+      }
+    }
   }
 }
 
 def deployStack(){
-  def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
-  def authObj = props?.data
   def endpointMap = [:]
   def workDir = ".ci/terraform/stack"
-  withEnvMask(vars: [
-    [var: "EC_API_KEY", password: authObj.apiKey]
-  ]) {
-    withTerraform(){
-      sh "terraform -chdir=${workDir} init"
-      sh "terraform -chdir=${workDir} apply -auto-approve"
-      elasticsearchAddress = sh(label: 'Get ES endpoint',
-                                script: "echo ec_deployment.end-to-end.elasticsearch[0].https_endpoint | terraform -chdir=${workDir} console",
-                                returnStdout: true)?.trim()
-      kibanaAddress = sh(label: 'Get Kibana endpoint',
-                         script: "echo ec_deployment.end-to-end.kibana[0].https_endpoint | terraform -chdir=${workDir} console",
-                         returnStdout: true)?.trim()
-      fleetAddress = sh(label: 'Get Fleet endpoint',
-                        script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform -chdir=${workDir} console",
-                        returnStdout: true)?.trim()
-      endpointPassword = sh(label: 'Get password',
-                            script: "terraform -chdir=${workDir} show -json | jq -r .values.root_module.resources[0].values.elasticsearch_password",
-                            returnStdout: true)?.trim()
-      endpointMap = [elasticsearchUrl: elasticsearchAddress,
-                     kibanaUrl: kibanaAddress,
-                     fleetUrl: fleetAddress.replace(".apm", ".fleet"),
-                     elasticsearchPassword: endpointPassword]
-    }
+  withTerraform(){
+    sh "terraform -chdir=${workDir} init"
+    sh "terraform -chdir=${workDir} apply -auto-approve"
+    elasticsearchAddress = sh(label: 'Get ES endpoint',
+                              script: "echo ec_deployment.end-to-end.elasticsearch[0].https_endpoint | terraform -chdir=${workDir} console",
+                              returnStdout: true)?.trim()
+    kibanaAddress = sh(label: 'Get Kibana endpoint',
+                       script: "echo ec_deployment.end-to-end.kibana[0].https_endpoint | terraform -chdir=${workDir} console",
+                       returnStdout: true)?.trim()
+    fleetAddress = sh(label: 'Get Fleet endpoint',
+                      script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform -chdir=${workDir} console",
+                      returnStdout: true)?.trim()
+    endpointPassword = sh(label: 'Get password',
+                          script: "terraform -chdir=${workDir} show -json | jq -r .values.root_module.resources[0].values.elasticsearch_password",
+                          returnStdout: true)?.trim()
+    endpointMap = [elasticsearchUrl: elasticsearchAddress,
+                   kibanaUrl: kibanaAddress,
+                   fleetUrl: fleetAddress.replace(".apm", ".fleet"),
+                   elasticsearchPassword: endpointPassword]
   }
   return endpointMap
 }
@@ -319,28 +347,13 @@ def deployStack(){
  * for testing across cloud environments.
  */
 def deployStackDocker(){
-  def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
-  def authObj = props?.data
   def endpointMap = [:]
   def workDir = ".ci/terraform/stack-docker"
-  def cliOpts = []
-  cliOpts.add("-var privatekeypath=\"${env.WORKSPACE}/e2essh\"")
-  cliOpts.add("-var publickeypath=\"${env.WORKSPACE}/e2essh.pub\"")
-  cliOpts.add("-var workspace=\"${env.WORKSPACE}\"")
-  cliOpts.add("-var base_dir=\"${env.BASE_DIR}\"")
-  cliOptsStr = cliOpts.join(" ")
-  withEnvMask(vars: [
-    [var: "EC_API_KEY", password: authObj.apiKey]
-  ]) {
-    withTerraform(){
-      withVaultToken(){
-        withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
-          sh "terraform -chdir=${workDir} init"
-          sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
-          nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
-        }
-      }
-    }
+  def cliOptsStr = envToCliArgs()
+  withTerraform(){
+    sh "terraform -chdir=${workDir} init"
+    sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
+    nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
   }
   endpointMap = [elasticsearchUrl: "http://${nodeAddress}:9200",
                  kibanaUrl: "http://${nodeAddress}:5601",
@@ -351,38 +364,12 @@ def deployStackDocker(){
 }
 
 def deployNode(String name, opts){
-  def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
-  def authObj = props?.data
-
-  if (opts.platformProvider == "remote" && opts.endpointMap) {
-    opts.envContext.add("KIBANA_URL=${opts.endpointMap.kibanaUrl}")
-    opts.envContext.add("ELASTICSEARCH_URL=${opts.endpointMap.elasticsearchUrl}")
-    opts.envContext.add("FLEET_URL=${opts.endpointMap.fleetUrl}")
-    opts.envContext.add("KIBANA_PASSWORD=${opts.endpointMap.elasticsearchPassword}")
-    opts.envContext.add("ELASTICSEARCH_PASSWORD=${opts.endpointMap.elasticsearchPassword}")
-    opts.envContext.add("SKIP_PULL=1")
-    opts.envContext.add("TAGS=${opts.tags}")
-    opts.envContext.add("SUITE=${opts.suite}")
-  }
-
   def cliOptsStr = envToCliArgs(opts.envContext)
   def workDir = ".ci/terraform/${name}"
-  def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
-  def awsAuthObj = awsProps?.data
   withTerraform(){
-    withVaultToken(){
-      sh "vault read -field credentials ${GCP_PROVISIONER_SECRET} > ${env.WORKSPACE}/gcp-creds.json"
-      withEnvMask(vars: [
-        [var: "EC_API_KEY", password: authObj.apiKey],
-        [var: "GOOGLE_APPLICATION_CREDENTIALS", password: "${env.WORKSPACE}/gcp-creds.json"],
-        [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
-        [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
-      ]) {
-        sh "terraform -chdir=${workDir} init"
-        sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
-        nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
-      }
-    }
+    sh "terraform -chdir=${workDir} init"
+    sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
+    nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
   }
   return nodeAddress
 }
@@ -390,32 +377,22 @@ def deployNode(String name, opts){
 /*
  * Iterate through known terraform configurations and attempt to bring down any deployed resources
  */
-def teardownStack(envContext){
-  def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
-  def authObj = props?.data
-  // def cliOptsStr = envToCliArgs(envContext)
-  def workDir = ".ci/terraform/"
-  def cliOpts = []
-  cliOpts.add("-var privatekeypath=\"${env.WORKSPACE}/e2essh\"")
-  cliOpts.add("-var publickeypath=\"${env.WORKSPACE}/e2essh.pub\"")
-  cliOpts.add("-var workspace=\"${env.WORKSPACE}\"")
-  cliOpts.add("-var base_dir=\"${env.BASE_DIR}\"")
-  cliOptsStr = cliOpts.join(" ")
-
-  withEnvMask(vars: [
-    [var: "EC_API_KEY", password: "${authObj.apiKey}"]
-  ]) {
-    withTerraform(){
-      // log(level: 'INFO', text: "Destroying stack")
-      // sh "terraform -chdir=${workDir}/stack destroy -auto-approve || true"
-      withVaultToken(){
-        withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
-          log(level: 'INFO', text: "Destroying centos machine")
-          sh "terraform -chdir=${workDir}/centos destroy -auto-approve ${cliOptsStr}"
-          sh "terraform -chdir=${workDir}/stack-docker destroy -auto-approve ${cliOptsStr}"
-        }
-      }
-    }
+def teardownStack(name, platform, suite, tags, label){
+  def opts = processFunctionalTestConfig(name: name,
+                                         platform: platform,
+                                         suite: suite,
+                                         tags: tags,
+                                         pullRequestFilter: scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : '',
+                                         endpointMap: [elasticsearchUrl: "http://localhost:9200",
+                                                       kibanaUrl: "http://localhost:5601",
+                                                       fleetUrl: "http://localhost:8220",
+                                                       elasticsearchPassword: "changeme"])
+  def cliOptsStr = envToCliArgs(opts.envContext)
+  def workDir = ".ci/terraform/${label}"
+  withTerraform(){
+    // sh "terraform -chdir=${workDir}/stack destroy -auto-approve || true"
+    log(level: 'INFO', text: "Destroying ${label} machine")
+    sh "terraform -chdir=${workDir} destroy -auto-approve ${cliOptsStr}"
   }
 }
 
@@ -584,6 +561,18 @@ def processFunctionalTestConfig(Map args = [:]){
   envContext.add("PROVIDER_TYPE=${platformProvider}")
   envContext.add("OP_LOG_LEVEL=TRACE")
   envContext.add("LOG_LEVEL=TRACE")
+
+  if (platformProvider == "remote" && endpointMap) {
+    envContext.add("KIBANA_URL=${endpointMap.kibanaUrl}")
+    envContext.add("ELASTICSEARCH_URL=${endpointMap.elasticsearchUrl}")
+    envContext.add("FLEET_URL=${endpointMap.fleetUrl}")
+    envContext.add("KIBANA_PASSWORD=${endpointMap.elasticsearchPassword}")
+    envContext.add("ELASTICSEARCH_PASSWORD=${endpointMap.elasticsearchPassword}")
+    envContext.add("SKIP_PULL=1")
+    envContext.add("TAGS=${tags}")
+    envContext.add("SUITE=${suite}")
+  }
+
 
   return [goArch: goArch,
           name: name,
