@@ -9,14 +9,15 @@ Scenario Outline: Enrolling an agent in a preconfigured policy
   When the "elastic-agent" process is in the "started" state on the host
   Then the agent is listed in Fleet as "online"
   And the agent is enrolled into "Test preconfigured policy" policy
-  
+
+# Seems to be flaky https://github.com/elastic/e2e-testing/issues/1516
+# @centos
+# Examples: Centos
+# | os     |
+# | centos |
 
 @debian
 Examples: Debian
 | os     |
 | debian |
 
-@centos
-Examples: Centos
-| os     |
-| centos |
