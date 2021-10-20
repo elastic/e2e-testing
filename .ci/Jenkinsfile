@@ -350,11 +350,25 @@ def deployStackDocker(){
   return endpointMap
 }
 
-def deployNode(String name, envContext){
+def deployNode(String name, opts){
   def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
   def authObj = props?.data
   def endpointMap = [:]
   def ipAddress = null
+
+  if (opts.platformProvider == "remote" && opts.endpointMap) {
+    opts.envContext.add("KIBANA_URL=${opts.endpointMap.kibanaUrl}")
+    opts.envContext.add("ELASTICSEARCH_URL=${opts.endpointMap.elasticsearchUrl}")
+    opts.envContext.add("FLEET_URL=${opts.endpointMap.fleetUrl}")
+    opts.envContext.add("KIBANA_PASSWORD=${opts.endpointMap.elasticsearchPassword}")
+    opts.envContext.add("ELASTICSEARCH_PASSWORD=${opts.endpointMap.elasticsearchPassword}")
+    opts.envContext.add("SKIP_PULL=1")
+    opts.envContext.add("TAGS=${opts.tags}")
+    opts.envContext.add("SUITE=${opts.suite}")
+  }
+
+
+
   def cliOptsStr = envToCliArgs(envContext)
   def workDir = ".ci/terraform/${name}"
   def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
@@ -439,20 +453,18 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
       platformsValue.each { platform ->
         def platformLabels = platform.labels
         log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
+        opts = [name: "${name}",
+                platform: platform,
+                suite: "${suite}",
+                tags: "${tags}",
+                pullRequestFilter: "${pullRequestFilter}",
+                endpointMap: endpointMap]
+        opts = processFunctionalTestConfig(args)
         if(suite == "fleet"){
-          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalFleetTestStep(name: "${name}",
-                                                                                                platform: platform,
-                                                                                                suite: "${suite}",
-                                                                                                tags: "${tags}",
-                                                                                                pullRequestFilter: "${pullRequestFilter}",
-                                                                                                endpointMap: endpointMap)
+          nodeAddress = deployNode(platformLabels, opts)
+          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalFleetTestStep(opts, nodeAddress)
         } else {
-          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}",
-                                                                                           platform: platform,
-                                                                                           suite: "${suite}",
-                                                                                           tags: "${tags}",
-                                                                                           pullRequestFilter: "${pullRequestFilter}",
-                                                                                           endpointMap: endpointMap)
+          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(opts)
         }
       }
     } else {
@@ -528,6 +540,8 @@ def processFunctionalTestConfig(Map args = [:]){
   def endpointMap = args.get('endpointMap') ? args.get('endpointMap') : [:]
   def platformLabels = platform.labels
   def platformProvider = platform.provider
+  // Setup environment for platform
+  def envContext = []
 
   if (!platformProvider || !platformProvider?.trim()) {
     // default provider is Docker
@@ -567,6 +581,12 @@ def processFunctionalTestConfig(Map args = [:]){
   // Skip scenarios per platform
   tags += " && ~@skip:${goArch}"
 
+  // Build environment map
+  envContext.add("GOARCH=${goArch}")
+  envContext.add("PROVIDER_TYPE=${platformProvider}")
+  envContext.add("OP_LOG_LEVEL=TRACE")
+  envContext.add("LOG_LEVEL=TRACE")
+
   return [goArch: goArch,
           name: name,
           platform: platform,
@@ -575,7 +595,8 @@ def processFunctionalTestConfig(Map args = [:]){
           platformLabels: platformLabels,
           platformProvider: platformProvider,
           pullRequestFilter: pullRequestFilter,
-          endpointMap: endpointMap]
+          endpointMap: endpointMap,
+          envContext: envContext]
 }
 
 /*
@@ -585,10 +606,8 @@ def generateFunctionalTestStep(Map args = [:]){
   opts = processFunctionalTestConfig(args)
 
   // Setup environment for platform
-  def envContext = []
-  envContext.add("GOARCH=${opts.goArch}")
-  envContext.add("PROVIDER=${opts.platformProvider}")
-  envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${opts.goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
+  opts.envContext.add("PROVIDER=${opts.platformProvider}")
+  opts.envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${opts.goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
 
   return {
     withNode(labels: "${opts.platformLabels}", sleepMax: 20, forceWorkspace: true){
@@ -597,7 +616,7 @@ def generateFunctionalTestStep(Map args = [:]){
       try {
         withDockerEnv(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}") {
           filebeat(output: "docker_logs_${opts.platformLabels}_${opts.goArch}_${opts.suite}_${opts.name}.log", workdir: "${env.WORKSPACE}") {
-            withEnv(envContext) {
+            withEnv(opts.envContext) {
               withGoEnv(version: "${GO_VERSION}") {
                 // This step will help to send the APM traces to the
                 // APM service defined by the Otel Jenkins plugin.
@@ -620,43 +639,18 @@ def generateFunctionalTestStep(Map args = [:]){
 /*
  * Generates the functional step for testing Fleet via Terraform
  */
-def generateFunctionalFleetTestStep(Map args = [:]){
+def generateFunctionalFleetTestStep(Map args = [:], nodeAddress){
   opts = processFunctionalTestConfig(args)
 
-  nodeToDeploy = "centos"
-  if (opts.platformLabels.contains("debian")){
-    nodeToDeploy = "debian"
-  }
-
-  // Setup environment for platform
-  def envContext = []
-  envContext.add("GOARCH=${opts.goArch}")
-  envContext.add("PROVIDER_TYPE=${opts.platformProvider}")
-  envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${opts.goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
-  envContext.add("OP_LOG_LEVEL=TRACE")
-  envContext.add("LOG_LEVEL=TRACE")
-
-  if (opts.platformProvider == "remote" && opts.endpointMap) {
-    envContext.add("KIBANA_URL=${opts.endpointMap.kibanaUrl}")
-    envContext.add("ELASTICSEARCH_URL=${opts.endpointMap.elasticsearchUrl}")
-    envContext.add("FLEET_URL=${opts.endpointMap.fleetUrl}")
-    envContext.add("KIBANA_PASSWORD=${opts.endpointMap.elasticsearchPassword}")
-    envContext.add("ELASTICSEARCH_PASSWORD=${opts.endpointMap.elasticsearchPassword}")
-    envContext.add("SKIP_PULL=1")
-    envContext.add("TAGS=${opts.tags}")
-    envContext.add("SUITE=${opts.suite}")
-  }
-
   return {
-    withEnv(envContext){
+    withEnv(opts.envContext){
       try {
-        nodeAddress = deployNode(nodeToDeploy, envContext)
-        log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags} on ${nodeToDeploy}: ${nodeAddress}")
+        log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeAddress}")
         sshexec(nodeAddress,
                 """sudo -E bash /home/ci/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
-        log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags} on ${nodeToDeploy}: ${nodeAddress}")
+        log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeAddress}")
       } finally {
-        // teardownStack(envContext)
+        // teardownStack(opts.envContext)
         junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
         archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
       }
