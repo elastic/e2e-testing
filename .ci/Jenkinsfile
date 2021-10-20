@@ -449,7 +449,6 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
     if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
       platformsValue.each { platform ->
-        def platformLabels = platform.labels
         log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
         args = [name: "${name}",
                 platform: platform,
@@ -457,12 +456,12 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
                 tags: "${tags}",
                 pullRequestFilter: "${pullRequestFilter}",
                 endpointMap: endpointMap]
-        opts = processFunctionalTestConfig(args)
+        opts = processFunctionalTestConfig(*:args)
         if(suite == "fleet"){
-          nodeAddress = deployNode(platformLabels, opts)
-          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalFleetTestStep(opts, nodeAddress)
+          nodeAddress = deployNode(opts.platformLabels, opts)
+          parallelTasks["${opts.platformLabels}_${opts.suite}_${opts.tags}"] = generateFunctionalFleetTestStep(opts, nodeAddress)
         } else {
-          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(opts)
+          parallelTasks["${opts.platformLabels}_${opts.suite}_${opts.tags}"] = generateFunctionalTestStep(opts)
         }
       }
     } else {
@@ -541,6 +540,8 @@ def processFunctionalTestConfig(Map args = [:]){
   // Setup environment for platform
   def envContext = []
 
+  log(level: 'INFO', text: "Building environment map for ${platformLabels}:${suite}:${tags}")
+
   if (!platformProvider || !platformProvider?.trim()) {
     // default provider is Docker
     platformProvider = "docker"
@@ -600,9 +601,7 @@ def processFunctionalTestConfig(Map args = [:]){
 /*
  * Generates the functional step for all other Suites
  */
-def generateFunctionalTestStep(Map args = [:]){
-  opts = processFunctionalTestConfig(args)
-
+def generateFunctionalTestStep(opts){
   // Setup environment for platform
   opts.envContext.add("PROVIDER=${opts.platformProvider}")
   opts.envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${opts.goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
@@ -637,21 +636,16 @@ def generateFunctionalTestStep(Map args = [:]){
 /*
  * Generates the functional step for testing Fleet via Terraform
  */
-def generateFunctionalFleetTestStep(Map args = [:], nodeAddress){
-  opts = processFunctionalTestConfig(args)
-
+def generateFunctionalFleetTestStep(opts, nodeAddress){
   return {
-    withEnv(opts.envContext){
-      try {
-        log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeAddress}")
-        sshexec(nodeAddress,
-                """sudo -E bash /home/ci/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
-        log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeAddress}")
-      } finally {
-        // teardownStack(opts.envContext)
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
-      }
+    try {
+      log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeAddress}")
+      sshexec(nodeAddress,
+              """sudo -E bash /home/ci/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
+      log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeAddress}")
+    } finally {
+      junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+      archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
     }
   }
 }
