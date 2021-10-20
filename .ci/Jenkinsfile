@@ -363,7 +363,7 @@ def deployNode(String name, envContext){
     withVaultToken(){
       sh "vault read -field credentials ${GCP_PROVISIONER_SECRET} > ${env.WORKSPACE}/gcp-creds.json"
       withEnvMask(vars: [
-        [var: "EC_API_KEY", password: authObj.apiKey]
+        [var: "EC_API_KEY", password: authObj.apiKey],
         [var: "GOOGLE_APPLICATION_CREDENTIALS", password: "${env.WORKSPACE}/gcp-creds.json"],
         [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
         [var: "AWS_SECRET_ACCESS_KEY", password: authObj.secret_key]
