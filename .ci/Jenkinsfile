@@ -367,8 +367,6 @@ def deployNode(String name, opts){
     opts.envContext.add("SUITE=${opts.suite}")
   }
 
-
-
   def cliOptsStr = envToCliArgs(envContext)
   def workDir = ".ci/terraform/${name}"
   def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
@@ -453,7 +451,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
       platformsValue.each { platform ->
         def platformLabels = platform.labels
         log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
-        opts = [name: "${name}",
+        args = [name: "${name}",
                 platform: platform,
                 suite: "${suite}",
                 tags: "${tags}",
