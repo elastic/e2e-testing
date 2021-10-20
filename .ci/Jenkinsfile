@@ -450,13 +450,12 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
       platformsValue.each { platform ->
         log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
-        args = [name: "${name}",
-                platform: platform,
-                suite: "${suite}",
-                tags: "${tags}",
-                pullRequestFilter: "${pullRequestFilter}",
-                endpointMap: endpointMap]
-        opts = processFunctionalTestConfig(*:args)
+        opts = processFunctionalTestConfig(name: "${name}",
+                                           platform: platform,
+                                           suite: "${suite}",
+                                           tags: "${tags}",
+                                           pullRequestFilter: "${pullRequestFilter}",
+                                           endpointMap: endpointMap)
         if(suite == "fleet"){
           nodeAddress = deployNode(opts.platformLabels, opts)
           parallelTasks["${opts.platformLabels}_${opts.suite}_${opts.tags}"] = generateFunctionalFleetTestStep(opts, nodeAddress)
