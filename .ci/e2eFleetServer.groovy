@@ -121,7 +121,7 @@ pipeline {
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
             dir("${E2E_BASE_DIR}") {
               withGoEnv(){
-                withEnv(["BEATS_LOCAL_PATH='${env.BEATS_BASE_DIR}'"]) {
+                withEnv(["BEATS_LOCAL_PATH=${env.BEATS_BASE_DIR}"]) {
                   sh(label: 'Run E2E Tests', script: './.ci/scripts/fleet-test.sh ')
                 }
               }
