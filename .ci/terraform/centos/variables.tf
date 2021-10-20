@@ -60,9 +60,6 @@ variable "skip_pull" {
 variable "base_dir" {
   type = string
 }
-variable "elastic_apm_global_labels" {
-  type = string
-}
 
 variable "tags"{
   type = string
