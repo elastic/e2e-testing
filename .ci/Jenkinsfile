@@ -353,8 +353,6 @@ def deployStackDocker(){
 def deployNode(String name, opts){
   def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
   def authObj = props?.data
-  def endpointMap = [:]
-  def ipAddress = null
 
   if (opts.platformProvider == "remote" && opts.endpointMap) {
     opts.envContext.add("KIBANA_URL=${opts.endpointMap.kibanaUrl}")
@@ -367,7 +365,7 @@ def deployNode(String name, opts){
     opts.envContext.add("SUITE=${opts.suite}")
   }
 
-  def cliOptsStr = envToCliArgs(envContext)
+  def cliOptsStr = envToCliArgs(opts.envContext)
   def workDir = ".ci/terraform/${name}"
   def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
   def awsAuthObj = awsProps?.data
