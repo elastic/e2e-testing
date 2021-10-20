@@ -127,6 +127,12 @@ pipeline {
               }
             }
           }
+          post {
+            always {
+              junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${E2E_BASE_DIR}/outputs/TEST-*.xml")
+              archiveArtifacts allowEmptyArchive: true, artifacts: "${E2E_BASE_DIR}/outputs/TEST-*.xml"
+            }
+          }
         }
       }
     }
