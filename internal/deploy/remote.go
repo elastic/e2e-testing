@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"go.elastic.co/apm"
 )
@@ -66,7 +67,12 @@ func (c *remoteDeploymentManifest) Inspect(ctx context.Context, service ServiceR
 	if runtime.GOOS == "windows" {
 		hostname, _ = shell.Execute(ctx, ".", "powershell.exe", "hostname")
 	} else {
-		hostname, _ = shell.Execute(ctx, ".", "cat", "/etc/hostname")
+		hasHostname, _ := io.Exists("/etc/hostname")
+		if hasHostname {
+			hostname, _ = shell.Execute(ctx, ".", "cat", "/etc/hostname")
+		} else {
+			hostname, _ = shell.Execute(ctx, ".", "hostname")
+		}
 	}
 	return &ServiceManifest{
 		Hostname:   strings.TrimSpace(hostname),
