@@ -7,31 +7,13 @@ resource "random_id" "instance_id" {
   byte_length = 8
 }
 
-resource "google_compute_firewall" "default" {
- name    = "fleet-${random_id.instance_id.hex}"
- network = "default"
-
- allow {
-   protocol = "icmp"
- }
-
- allow {
-   protocol = "tcp"
-   ports    = ["8220"]
- }
-
- source_ranges = ["0.0.0.0/0"]
- target_tags = ["fleet"]
-}
-
 resource "google_compute_instance" "default" {
   name = "e2e-${random_id.instance_id.hex}"
-  machine_type = "e2-standard-8"
+  machine_type = "e2-standard-4"
   zone = "us-central1-c"
-  tags = ["http-server", "https-server", "fleet"]
   boot_disk {
     initialize_params {
-      image = "centos-cloud/centos-8"
+      image = "debian-cloud/debian-9"
     }
   }
 
@@ -55,14 +37,10 @@ resource "google_compute_instance" "default" {
     }
 
     inline = [
-      "sudo yum -y remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine || true",
-      "sudo yum -y install yum-utils",
-      "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo",
-      "sudo yum -y install docker-ce docker-ce-cli containerd.io rsync wget gcc make curl",
-      "sudo systemctl start docker",
-      "sudo curl -L \"https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)\" -o /usr/local/bin/docker-compose",
-      "sudo chmod +x /usr/local/bin/docker-compose",
-      "sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose",
+      "sudo apt-get update",
+      "sudo apt-get -qyf install rsync wget gcc make",
+      "wget https://dl.google.com/go/go1.16.3.linux-amd64.tar.gz",
+      "sudo tar -C /usr/local -xf go1.16.3.linux-amd64.tar.gz",
       "mkdir -p /home/${var.user}/e2e-testing",
     ]
   }
@@ -81,7 +59,18 @@ resource "google_compute_instance" "default" {
     }
 
    inline = [
-     "sudo docker-compose -f /home/${var.user}/e2e-testing/cli/config/compose/profiles/fleet/docker-compose.yml up -d",
+     "touch /home/${var.user}/e2e-testing/.env || true",
+      "echo \"export PATH=$PATH:/usr/local/go/bin\" | tee -a /home/ci/e2e-testing/.env",
+      "echo \"export GOARCH=${var.goarch}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export PROVIDER=${var.provider_type}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export LOG_LEVEL=${var.log_level}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export OP_LOG_LEVEL=${var.log_level}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export KIBANA_URL=${var.kibana_url}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export KIBANA_PASSWORD=${var.kibana_password}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export ELASTICSEARCH_URL=${var.elasticsearch_url}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export ELASTICSEARCH_PASSWORD=${var.elasticsearch_password}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export FLEET_URL=${var.fleet_url}\" | tee -a /home/${var.user}/e2e-testing/.env",
+      "echo \"export SKIP_PULL=${var.skip_pull}\" | tee -a /home/${var.user}/e2e-testing/.env",
     ]
  }
 }

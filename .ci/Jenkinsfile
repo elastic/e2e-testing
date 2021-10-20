@@ -619,6 +619,11 @@ def generateFunctionalTestStep(Map args = [:]){
 def generateFunctionalFleetTestStep(Map args = [:]){
   opts = processFunctionalTestConfig(args)
 
+  nodeToDeploy = "centos"
+  if (opts.platformLabels.contains("debian")){
+    nodeToDeploy = "debian"
+  }
+
   // Setup environment for platform
   def envContext = []
   envContext.add("GOARCH=${opts.goArch}")
@@ -641,11 +646,11 @@ def generateFunctionalFleetTestStep(Map args = [:]){
   return {
     withEnv(envContext){
       try {
-        nodeAddress = deployNode("debian", envContext)
-        log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags} on debian: ${nodeAddress}")
+        nodeAddress = deployNode(nodeToDeploy, envContext)
+        log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags} on ${nodeToDeploy}: ${nodeAddress}")
         sshexec(nodeAddress,
                 """sudo -E bash /home/ci/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
-        log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags} on debian: ${nodeAddress}")
+        log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags} on ${nodeToDeploy}: ${nodeAddress}")
       } finally {
         // teardownStack(envContext)
         junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
