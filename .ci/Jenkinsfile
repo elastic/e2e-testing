@@ -449,13 +449,13 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
     if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
       platformsValue.each { platform ->
-        log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
         opts = processFunctionalTestConfig(name: "${name}",
                                            platform: platform,
                                            suite: "${suite}",
                                            tags: "${tags}",
                                            pullRequestFilter: "${pullRequestFilter}",
                                            endpointMap: endpointMap)
+        log(level: 'INFO', text: "Adding ${opts.platformLabels}:${opts.suite}:${opts.tags} test suite to the build execution")
         if(suite == "fleet"){
           nodeAddress = deployNode(opts.platformLabels, opts)
           parallelTasks["${opts.platformLabels}_${opts.suite}_${opts.tags}"] = generateFunctionalFleetTestStep(opts, nodeAddress)
