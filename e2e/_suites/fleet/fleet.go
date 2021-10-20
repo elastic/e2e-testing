@@ -65,10 +65,11 @@ type FleetTestSuite struct {
 
 // afterScenario destroys the state created by a scenario
 func (fts *FleetTestSuite) afterScenario() {
-	defer func() { deployedAgentsCount = 0 }()
-
-	// Reset Kibana Profile to default
-	fts.KibanaProfile = ""
+	defer func() {
+		// Reset Kibana Profile to default
+		fts.KibanaProfile = ""
+		deployedAgentsCount = 0
+	}()
 
 	span := tx.StartSpan("Clean up", "test.scenario.clean", nil)
 	fts.currentContext = apm.ContextWithSpan(context.Background(), span)
@@ -153,7 +154,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^kibana uses "([^"]*)" profile$`, fts.kibanaUsesProfile)
-	s.Step(`^agent uses "([^"]*)" policy$`, fts.agentUsesPolicy)
+	s.Step(`^agent uses enrollment token from "([^"]*)" policy$`, fts.agentUsesPolicy)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
@@ -171,7 +172,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
 	s.Step(`^certs are installed$`, fts.installCerts)
 	s.Step(`^a Linux data stream exists with some data$`, fts.checkDataStream)
-	s.Step(`^the agent run the "([^"]*)" policy$`, fts.agentRunPolicy)
+	s.Step(`^the agent is enrolled into "([^"]*)" policy$`, fts.agentRunPolicy)
 
 	// endpoint steps
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)
