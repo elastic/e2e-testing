@@ -223,11 +223,11 @@ pipeline {
                 script {
                   def existingSuites = readYaml(file: "${TEST_MATRIX_FILE}")
                   existingSuites['SUITES'].each { item ->
-                    if (item.suite.toLowerCase() == "fleet"){
+                    if (item.suite?.toLowerCase() == "fleet"){
                       item.scenarios.each { scenario ->
                         if (item.name.toLowerCase() == "fleet"){
                           scenario.platforms.each { platform ->
-                            teardownStack(scenario.name, platform, item.suite, scenario.tags, platform.labels)
+                            teardownStack(scenario, platform, item.suite, scenario.tags, platform.labels)
                           }
                         }
                       }
@@ -285,6 +285,96 @@ def envToCliArgs(Map envContext = [:]){
   return cliOptsStr
 }
 
+/*
+ * Parses arguments to be utilized in the functional test steps
+ */
+def processFunctionalTestConfig(Map args = [:]){
+  def name = args.get('name')
+  def platform = args.get('platform')
+  def suite = args.get('suite')
+  def tags = args.get('tags')
+  def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
+  def endpointMap = args.get('endpointMap') ? args.get('endpointMap') : [:]
+  def platformLabels = platform.labels
+  def platformProvider = platform.provider
+  // Setup environment for platform
+  def envContext = []
+
+  log(level: 'INFO', text: "Building environment map for ${platformLabels}:${suite}:${tags}")
+
+  if (!platformProvider || !platformProvider?.trim()) {
+    // default provider is Docker
+    platformProvider = "docker"
+  }
+
+  // We will decide whether to include the nightly tests in the execution at CI time, only.
+  // On the other hand, the developers can use the TAGS environment variable locally.
+  // Finally, we positively know that tags are not empty, so we can use AND operator.
+  def excludeNightlyTag = " && ~${NIGHTLY_TAG}"
+  if ("${NIGHTLY_SCENARIOS}" == "true") {
+    excludeNightlyTag = ""
+  }
+  tags += excludeNightlyTag
+
+  if (isPR() || isUpstreamTrigger(filter: 'PR-')) {
+    // when the "Run_As_Master_Branch" param is disabled, we will honour the PR filters, which
+    // basically exclude some less frequent platforms or operative systems. If the user enabled
+    // this param, the pipeline will remove the filters from the test runner.
+    if (!params.Run_As_Master_Branch) {
+      tags += pullRequestFilter
+    }
+  }
+
+  def goArch = "amd64"
+  if(suite != "fleet"){
+    platformLabels = "${platformLabels} && immutable"
+    if (platformLabels.contains("arm64") || platformLabels.contains("aarch64")) {
+      goArch = "arm64"
+      // let's use centos8 ARM as base VM, trying to mitigate the flakiness described in https://github.com/elastic/e2e-testing/issues/1271
+      platformLabels = "centos-8-aarch64"
+    }
+  }
+
+  if (platformLabels.contains("windows")) {
+    tags += " && ~@skip:windows"
+  }
+
+  // Skip scenarios per platform
+  tags += " && ~@skip:${goArch}"
+
+  // Build environment map
+  envContext.add("GOARCH=${goArch}")
+  envContext.add("PROVIDER_TYPE=${platformProvider}")
+  envContext.add("OP_LOG_LEVEL=TRACE")
+  envContext.add("LOG_LEVEL=TRACE")
+
+  if (platformProvider == "remote" && endpointMap) {
+    envContext.add("KIBANA_URL=${endpointMap.kibanaUrl}")
+    envContext.add("ELASTICSEARCH_URL=${endpointMap.elasticsearchUrl}")
+    envContext.add("FLEET_URL=${endpointMap.fleetUrl}")
+    envContext.add("KIBANA_PASSWORD=${endpointMap.elasticsearchPassword}")
+    envContext.add("ELASTICSEARCH_PASSWORD=${endpointMap.elasticsearchPassword}")
+    envContext.add("SKIP_PULL=1")
+    envContext.add("TAGS=${tags}")
+    envContext.add("SUITE=${suite}")
+  }
+
+
+  return [goArch: goArch,
+          name: name,
+          platform: platform,
+          suite: suite,
+          tags: tags,
+          platformLabels: platformLabels,
+          platformProvider: platformProvider,
+          pullRequestFilter: pullRequestFilter,
+          endpointMap: endpointMap,
+          envContext: envContext]
+}
+
+/*
+ * Allows provisioning of machines via terraform
+ */
 def withTerraform(Closure body){
   def binDir = "${HOME}/bin"
   def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
@@ -364,8 +454,9 @@ def deployStackDocker(){
 }
 
 def deployNode(String name, opts){
-  def cliOptsStr = envToCliArgs(opts.envContext)
   def workDir = ".ci/terraform/${name}"
+  def cliOptsStr = envToCliArgs(opts.envContext)
+  def nodeAddress = null
   withTerraform(){
     sh "terraform -chdir=${workDir} init"
     sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
@@ -377,8 +468,8 @@ def deployNode(String name, opts){
 /*
  * Iterate through known terraform configurations and attempt to bring down any deployed resources
  */
-def teardownStack(name, platform, suite, tags, label){
-  def opts = processFunctionalTestConfig(name: name,
+def teardownStack(scenario, platform, suite, tags, label){
+  def opts = processFunctionalTestConfig(name: scenario.name,
                                          platform: platform,
                                          suite: suite,
                                          tags: tags,
@@ -497,93 +588,6 @@ def githubCheckNotify(String status) {
       targetUrl: "${env.RUN_DISPLAY_URL}",
       sha: params.GITHUB_CHECK_SHA1, account: 'elastic', repo: params.GITHUB_CHECK_REPO, credentialsId: env.JOB_GIT_CREDENTIALS
   }
-}
-
-/*
- * Parses arguments to be utilized in the functional test steps
- */
-def processFunctionalTestConfig(Map args = [:]){
-  def name = args.get('name')
-  def platform = args.get('platform')
-  def suite = args.get('suite')
-  def tags = args.get('tags')
-  def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
-  def endpointMap = args.get('endpointMap') ? args.get('endpointMap') : [:]
-  def platformLabels = platform.labels
-  def platformProvider = platform.provider
-  // Setup environment for platform
-  def envContext = []
-
-  log(level: 'INFO', text: "Building environment map for ${platformLabels}:${suite}:${tags}")
-
-  if (!platformProvider || !platformProvider?.trim()) {
-    // default provider is Docker
-    platformProvider = "docker"
-  }
-
-  // We will decide whether to include the nightly tests in the execution at CI time, only.
-  // On the other hand, the developers can use the TAGS environment variable locally.
-  // Finally, we positively know that tags are not empty, so we can use AND operator.
-  def excludeNightlyTag = " && ~${NIGHTLY_TAG}"
-  if ("${NIGHTLY_SCENARIOS}" == "true") {
-    excludeNightlyTag = ""
-  }
-  tags += excludeNightlyTag
-
-  if (isPR() || isUpstreamTrigger(filter: 'PR-')) {
-    // when the "Run_As_Master_Branch" param is disabled, we will honour the PR filters, which
-    // basically exclude some less frequent platforms or operative systems. If the user enabled
-    // this param, the pipeline will remove the filters from the test runner.
-    if (!params.Run_As_Master_Branch) {
-      tags += pullRequestFilter
-    }
-  }
-
-  def goArch = "amd64"
-  if(suite != "fleet"){
-    platformLabels = "${platformLabels} && immutable"
-    if (platformLabels.contains("arm64") || platformLabels.contains("aarch64")) {
-      goArch = "arm64"
-      // let's use centos8 ARM as base VM, trying to mitigate the flakiness described in https://github.com/elastic/e2e-testing/issues/1271
-      platformLabels = "centos-8-aarch64"
-    }
-  }
-
-  if (platformLabels.contains("windows")) {
-    tags += " && ~@skip:windows"
-  }
-
-  // Skip scenarios per platform
-  tags += " && ~@skip:${goArch}"
-
-  // Build environment map
-  envContext.add("GOARCH=${goArch}")
-  envContext.add("PROVIDER_TYPE=${platformProvider}")
-  envContext.add("OP_LOG_LEVEL=TRACE")
-  envContext.add("LOG_LEVEL=TRACE")
-
-  if (platformProvider == "remote" && endpointMap) {
-    envContext.add("KIBANA_URL=${endpointMap.kibanaUrl}")
-    envContext.add("ELASTICSEARCH_URL=${endpointMap.elasticsearchUrl}")
-    envContext.add("FLEET_URL=${endpointMap.fleetUrl}")
-    envContext.add("KIBANA_PASSWORD=${endpointMap.elasticsearchPassword}")
-    envContext.add("ELASTICSEARCH_PASSWORD=${endpointMap.elasticsearchPassword}")
-    envContext.add("SKIP_PULL=1")
-    envContext.add("TAGS=${tags}")
-    envContext.add("SUITE=${suite}")
-  }
-
-
-  return [goArch: goArch,
-          name: name,
-          platform: platform,
-          suite: suite,
-          tags: tags,
-          platformLabels: platformLabels,
-          platformProvider: platformProvider,
-          pullRequestFilter: pullRequestFilter,
-          endpointMap: endpointMap,
-          envContext: envContext]
 }
 
 /*
