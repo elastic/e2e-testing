@@ -7,9 +7,15 @@
     "multipleCommits": true,
     "prTitle": "{commitMessages} backport for {targetBranch}",
     "targetBranchChoices": [
+<<<<<<< HEAD
         { "name": "7.x", "checked": true },
         { "name": "7.14.x", "checked": true },
         { "name": "7.13.x", "checked": true }
+=======
+        { "name": "7.16", "checked": true },
+        { "name": "7.15", "checked": true },
+        { "name": "7.14", "checked": true }
+>>>>>>> 87be925 ([beats] remove 7.x branch from automation (#1688))
     ],
     "targetPRLabels": ["backport"],
     "upstream": "elastic/e2e-testing"

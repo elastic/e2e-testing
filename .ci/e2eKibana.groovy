@@ -91,6 +91,16 @@ def runE2ETests(String suite) {
   // we need a second API request, as the issue_comment API does not retrieve data about the pull request
   // See https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#issue_comment
   def prID = getID()
+<<<<<<< HEAD
+=======
+
+  if (!prID.isInteger()) {
+    // in the case we are triggering the job for a branch (i.e master, 7.16) we directly use branch name as Docker tag
+    setEnvVar("BASE_REF", prID)
+    return prID
+  }
+
+>>>>>>> 87be925 ([beats] remove 7.x branch from automation (#1688))
   def token = githubAppToken(secret: "${env.GITHUB_APP_SECRET}")
 
   def pullRequest = githubApiCall(token: token, url: "https://api.github.com/repos/${env.ELASTIC_REPO}/pulls/${prID}")
