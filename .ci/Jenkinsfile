@@ -452,8 +452,8 @@ def deployStackDocker(){
   return endpointMap
 }
 
-def deployNode(String name, opts){
-  def workDir = ".ci/terraform/${name}"
+def deployNode(opts, Closure body){
+  def workDir = ".ci/terraform/${opts.platformLabels}"
   def cliOptsStr = envToCliArgs(opts.envContext)
   def nodeAddress = null
   def nodeUser = "ci"
@@ -462,8 +462,8 @@ def deployNode(String name, opts){
     sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
     nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
     nodeUser = sh(script: "terraform -chdir=${workDir} output -raw username", returnStdout: true)?.trim()
+    body()
   }
-  return [nodeAddress: nodeAddress, nodeUser: nodeUser]
 }
 
 /*
@@ -634,16 +634,16 @@ def generateFunctionalFleetTestStep(opts){
     withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true){
       deleteDir()
       unstash 'source'
-      withVaultToken(){
-        nodeMeta = deployNode(opts.platformLabels, opts)
+      deployNode(opts){
         try {
           log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeAddress}")
-          sshexec(nodeMeta.nodeAddress, nodeMeta.nodeUser,
-                  """sudo -E bash /home/${nodeMeta.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
-          log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeMeta.nodeAddress}")
+          sshexec(nodeAddress, nodeUser,
+                  """sudo -E bash /home/${nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
+          log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeAddress}")
         } finally {
           junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
           archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+          tearDown(labels: opts.platformLabels)
         }
       }
     }
