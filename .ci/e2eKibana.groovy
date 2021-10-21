@@ -178,7 +178,7 @@ def getID(){
   if(env.GT_PR){
     return "${env.GT_PR}"
   }
-  
+
   return "${params.kibana_pr}"
 }
 
@@ -202,29 +202,13 @@ def runE2ETests(String suite) {
   log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for "+getBranch()+" using '${dockerTag}' as Docker tag")
 
   // Kibana's maintenance branches follow the 7.11, 7.12 schema.
-  def branchName = "${BASE_REF}"
-  def e2eTestsPipeline = "e2e-tests/e2e-testing-mbp/${branchName}"
-
-  def parameters = [
-    booleanParam(name: 'forceSkipGitChecks', value: true),
-    booleanParam(name: 'forceSkipPresubmit', value: true),
-    booleanParam(name: 'notifyOnGreenBuilds', value: false),
-    booleanParam(name: 'BEATS_USE_CI_SNAPSHOTS', value: true),
-    string(name: 'runTestsSuites', value: suite),
-    string(name: 'GITHUB_CHECK_NAME', value: env.GITHUB_CHECK_E2E_TESTS_NAME),
-    string(name: 'GITHUB_CHECK_REPO', value: env.REPO),
-    string(name: 'KIBANA_VERSION', value: dockerTag),
-  ]
-
-  build(job: "${e2eTestsPipeline}",
-    parameters: parameters,
-    propagate: true,
-    wait: true
-  )
-
-/*
-  // commented out to avoid sending Github statuses to Kibana PRs
-  def notifyContext = "${env.pr_head_sha}"
-  githubNotify(context: "${notifyContext}", description: "${notifyContext} ...", status: 'PENDING', targetUrl: "${env.JENKINS_URL}search/?q=${e2eTestsPipeline.replaceAll('/','+')}")
-*/
+  runE2E(jobName: "${BASE_REF}",
+         disableGitHubCheck: true,
+         gitHubCheckName: env.GITHUB_CHECK_E2E_TESTS_NAME,
+         gitHubCheckRepo: env.REPO,
+         kibanaVersion: dockerTag,
+         notifyOnGreenBuilds: false,
+         runTestsSuites: suite,
+         propagate: true,
+         wait: true)
 }
