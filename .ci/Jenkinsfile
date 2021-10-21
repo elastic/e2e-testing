@@ -454,11 +454,11 @@ def deployStackDocker(){
 }
 
 def runOnNode(opts, Closure body){
-  def workDir = ".ci/terraform/${opts.platformLabels}"
-  def cliOptsStr = envToCliArgs(opts.envContext)
-  def nodeAddress = null
-  def nodeUser = "ci"
   withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true){
+    def workDir = ".ci/terraform/${opts.platformLabels}"
+    def cliOptsStr = envToCliArgs(opts.envContext)
+    def nodeAddress = null
+    def nodeUser = "ci"
     deleteDir()
     unstash 'source'
     dir("${BASE_DIR}"){
