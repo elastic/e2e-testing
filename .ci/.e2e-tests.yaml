@@ -16,13 +16,12 @@ SUITES:
         provider: "elastic-package"
     scenarios:
       - name: "Fleet"
-        pullRequestFilter: " && ~debian"
-        tags: "fleet_mode_agent && install"
+        tags: "fleet_mode_agent && backend_processes"
         platforms:
-          # - labels: "debian"
-          #   provider: "remote"
-          # - labels: "ubuntu-arm64"
-          #   provider: "remote"
+          - labels: "debian"
+            provider: "remote"
+          - labels: "ubuntu-arm64"
+            provider: "remote"
           - labels: "centos"
             provider: "remote"
           # - labels: "windows-2019"
