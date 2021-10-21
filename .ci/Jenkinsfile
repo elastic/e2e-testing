@@ -525,8 +525,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
                                            endpointMap: endpointMap)
         log(level: 'INFO', text: "Adding ${opts.platformLabels}:${opts.suite}:${opts.tags} test suite to the build execution")
         if(suite == "fleet"){
-          nodeMeta = deployNode(opts.platformLabels, opts)
-          parallelTasks["${opts.platformLabels}_${opts.suite}"] = generateFunctionalFleetTestStep(opts, nodeMeta.nodeAddress, nodeMeta.nodeUser)
+          parallelTasks["${opts.platformLabels}_${opts.suite}"] = generateFunctionalFleetTestStep(opts)
         } else {
           parallelTasks["${opts.platformLabels}_${opts.suite}_${opts.tags}"] = generateFunctionalTestStep(opts)
         }
@@ -630,16 +629,21 @@ def generateFunctionalTestStep(opts){
 /*
  * Generates the functional step for testing Fleet via Terraform
  */
-def generateFunctionalFleetTestStep(opts, nodeAddress, nodeUser){
+def generateFunctionalFleetTestStep(opts){
   return {
-    try {
-      log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeAddress}")
-      sshexec(nodeAddress, nodeUser,
-              """sudo -E bash /home/ci/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
-      log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeAddress}")
-    } finally {
-      junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-      archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+    withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true){
+      deleteDir()
+      unstash 'source'
+      nodeMeta = deployNode(opts.platformLabels, opts)
+      try {
+        log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeAddress}")
+        sshexec(nodeMeta.nodeAddress, nodeMeta.nodeUser,
+                """sudo -E bash /home/${nodeMeta.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
+        log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeMeta.nodeAddress}")
+      } finally {
+        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+      }
     }
   }
 }
