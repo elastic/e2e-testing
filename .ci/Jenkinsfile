@@ -641,7 +641,7 @@ def generateFunctionalFleetTestStep(opts){
   return {
     try {
       nodeDeployResult = deployNode(opts)
-      log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}: ${nodeAddress}")
+      log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}: ${nodeDeployResult.nodeAddress}")
       sshexec(nodeDeployResult.nodeAddress, nodeDeployResult.nodeUser,
               """sudo -E bash /home/${nodeDeployResult.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
       log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}: ${nodeDeployResult.nodeAddress}")
