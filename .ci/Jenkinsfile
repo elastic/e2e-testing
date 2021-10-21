@@ -632,7 +632,6 @@ def generateFunctionalTestStep(opts){
 def generateFunctionalFleetTestStep(opts){
   return {
     withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true){
-      deleteDir()
       unstash 'source'
       nodeMeta = deployNode(opts.platformLabels, opts)
       try {
