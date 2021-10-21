@@ -81,6 +81,8 @@ resource "google_compute_instance" "default" {
     }
 
    inline = [
+     "sed -i '' -e 's,http://elasticsearch,http://${google_compute_instance.default.network_interface.0.access_config.0.nat_ip},g' /home/${var.user}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml",
+     "sed -i '' -e 's,http://fleet-server,http://${google_compute_instance.default.network_interface.0.access_config.0.nat_ip},g' /home/${var.user}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml",
      "sudo docker-compose -f /home/${var.user}/e2e-testing/cli/config/compose/profiles/fleet/docker-compose.yml up -d",
     ]
  }
