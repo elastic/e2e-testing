@@ -19,7 +19,9 @@ SUITES:
         pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent && install"
         platforms:
-          - labels: "debian"
+          # - labels: "debian"
+          #   provider: "remote"
+          - labels: "ubuntu-arm64"
             provider: "remote"
           - labels: "centos"
             provider: "remote"
