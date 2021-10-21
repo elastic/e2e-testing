@@ -454,22 +454,20 @@ def deployStackDocker(){
 }
 
 def deployNode(opts){
-  withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true){
-    def workDir = ".ci/terraform/${opts.platformLabels}"
-    def cliOptsStr = envToCliArgs(opts.envContext)
-    def nodeAddress = null
-    def nodeUser = "ci"
-    deleteDir()
-    unstash 'source'
-    dir("${BASE_DIR}"){
-      withTerraform(){
-        sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/e2essh -q -N \"\" "
-        sh "terraform -chdir=${workDir} init"
-        sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
-        nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
-        nodeUser = sh(script: "terraform -chdir=${workDir} output -raw username", returnStdout: true)?.trim()
-        return [nodeAddress: nodeAddress, nodeUser: nodeUser, sshPrivateKey: "${env.WORKSPACE}/e2essh", sshPublicKey: "${env.WORKSPACE}/e2essh.pub"]
-      }
+  def workDir = ".ci/terraform/${opts.platformLabels}"
+  def cliOptsStr = envToCliArgs(opts.envContext)
+  def nodeAddress = null
+  def nodeUser = "ci"
+  deleteDir()
+  unstash 'source'
+  dir("${BASE_DIR}"){
+    withTerraform(){
+      sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/e2essh -q -N \"\" "
+      sh "terraform -chdir=${workDir} init"
+      sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
+      nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
+      nodeUser = sh(script: "terraform -chdir=${workDir} output -raw username", returnStdout: true)?.trim()
+      return [nodeAddress: nodeAddress, nodeUser: nodeUser, sshPrivateKey: "${env.WORKSPACE}/e2essh", sshPublicKey: "${env.WORKSPACE}/e2essh.pub"]
     }
   }
 }
@@ -639,18 +637,20 @@ def generateFunctionalTestStep(opts){
  */
 def generateFunctionalFleetTestStep(opts){
   return {
-    try {
-      nodeDeployResult = deployNode(opts)
-      log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}: ${nodeDeployResult.nodeAddress}")
-      sshexec(nodeDeployResult.nodeAddress,
-              nodeDeployResult.nodeUser,
-              nodeDeployResult.sshPublicKey,
-              nodeDeployResult.sshPrivateKey,
-              """sudo -E bash /home/${nodeDeployResult.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
-      log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}: ${nodeDeployResult.nodeAddress}")
-    } finally {
-      junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-      archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+    withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true){
+      try {
+        nodeDeployResult = deployNode(opts)
+        log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}: ${nodeDeployResult.nodeAddress}")
+        sshexec(nodeDeployResult.nodeAddress,
+                nodeDeployResult.nodeUser,
+                nodeDeployResult.sshPublicKey,
+                nodeDeployResult.sshPrivateKey,
+                """sudo -E bash /home/${nodeDeployResult.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
+        log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}: ${nodeDeployResult.nodeAddress}")
+      } finally {
+        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+      }
     }
   }
 }
