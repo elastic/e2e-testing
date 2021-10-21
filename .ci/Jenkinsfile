@@ -390,14 +390,14 @@ def withTerraform(Closure body){
       unzip terraform.zip || true
     """)
     withVaultToken(){
-      sh "vault read -field credentials ${GCP_PROVISIONER_SECRET} > ${env.WORKSPACE}/gcp-creds.json"
-      withEnvMask(vars: [
-        [var: "EC_API_KEY", password: authObj.apiKey],
-        [var: "GOOGLE_APPLICATION_CREDENTIALS", password: "${env.WORKSPACE}/gcp-creds.json"],
-        [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
-        [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
-      ]) {
-        body()
+      withGCPEnv(credentialsId: "${GCP_PROVISIONER_SECRET}"){
+        withEnvMask(vars: [
+          [var: "EC_API_KEY", password: authObj.apiKey],
+          [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
+          [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
+        ]) {
+          body()
+        }
       }
     }
   }
@@ -643,7 +643,6 @@ def generateFunctionalFleetTestStep(opts){
         } finally {
           junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
           archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
-          tearDown(labels: opts.platformLabels)
         }
       }
     }
