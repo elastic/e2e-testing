@@ -84,7 +84,7 @@ resource "aws_instance" "default" {
   }
 
  provisioner "local-exec" {
-   command = "cd ${var.workspace}/${var.base_dir} && rsync -avz --exclude='.git/' --include='.ci/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${var.privatekeypath}\" ./ ci@${aws_instance.default.public_ip}:/home/${var.user}/e2e-testing"
+   command = "cd ${var.workspace}/${var.base_dir} && rsync -avz --exclude='.git/' --include='.ci/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${var.privatekeypath}\" ./ ${var.user}@${aws_instance.default.public_ip}:/home/${var.user}/e2e-testing"
   }
 
  provisioner "remote-exec" {
@@ -98,7 +98,7 @@ resource "aws_instance" "default" {
 
    inline = [
      "touch /home/${var.user}/e2e-testing/.env || true",
-      "echo \"export PATH=$PATH:/usr/local/go/bin\" | tee -a /home/ci/e2e-testing/.env",
+      "echo \"export PATH=$PATH:/usr/local/go/bin\" | tee -a /home/${var.user}/e2e-testing/.env",
       "echo \"export GOARCH=${var.goarch}\" | tee -a /home/${var.user}/e2e-testing/.env",
       "echo \"export PROVIDER=${var.provider_type}\" | tee -a /home/${var.user}/e2e-testing/.env",
       "echo \"export LOG_LEVEL=${var.log_level}\" | tee -a /home/${var.user}/e2e-testing/.env",
