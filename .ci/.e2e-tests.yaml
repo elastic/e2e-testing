@@ -21,8 +21,8 @@ SUITES:
         platforms:
           # - labels: "debian"
           #   provider: "remote"
-          - labels: "ubuntu-arm64"
-            provider: "remote"
+          # - labels: "ubuntu-arm64"
+          #   provider: "remote"
           - labels: "centos"
             provider: "remote"
           # - labels: "windows-2019"
