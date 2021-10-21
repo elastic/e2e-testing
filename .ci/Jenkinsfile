@@ -410,8 +410,7 @@ def generateFunctionalTestStep(Map args = [:]){
         }
       } finally {
         junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/${suite}"
+        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml,${BASE_DIR}/outputs/${suite}"
         tearDown(labels: workerLabels)
       }
     }
