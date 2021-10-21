@@ -16,6 +16,7 @@ SUITES:
         provider: "elastic-package"
     scenarios:
       - name: "Fleet"
+        pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent && backend_processes"
         platforms:
           - labels: "debian"

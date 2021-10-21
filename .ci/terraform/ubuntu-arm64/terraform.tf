@@ -77,8 +77,8 @@ resource "aws_instance" "default" {
     inline = [
       "sudo apt-get update",
       "sudo apt-get -qyf install rsync wget build-essential",
-      "wget https://dl.google.com/go/go1.16.3.linux-amd64.tar.gz",
-      "sudo tar -C /usr/local -xf go1.16.3.linux-amd64.tar.gz",
+      "wget https://dl.google.com/go/go1.16.3.linux-arm64.tar.gz",
+      "sudo tar -C /usr/local -xf go1.16.3.linux-arm64.tar.gz",
       "mkdir -p /home/${var.user}/e2e-testing",
     ]
   }
