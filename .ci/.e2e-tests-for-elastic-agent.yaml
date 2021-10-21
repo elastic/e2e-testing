@@ -42,3 +42,6 @@ SUITES:
       - name: "Beats Background Processes"
         pullRequestFilter: " && ~debian"
         tags: "running_on_beats"
+      - name: "Preconfigured Policies"
+        pullRequestFilter: " && ~debian"
+        tags: "preconfigured_policies"
