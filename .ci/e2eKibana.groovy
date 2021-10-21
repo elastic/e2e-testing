@@ -150,7 +150,7 @@ def getDockerTagFromPayload() {
   def prID = getID()
 
   if (!prID.isInteger()) {
-    // in the case we are triggering the job for a branch (i.e master, 7.x) we directly use branch name as Docker tag
+    // in the case we are triggering the job for a branch (i.e master, 7.16) we directly use branch name as Docker tag
     setEnvVar("BASE_REF", prID)
     return prID
   }
