@@ -10,11 +10,7 @@
     scm:
       - github:
           branch-discovery: no-pr
-<<<<<<< HEAD
-          head-filter-regex: '(master|PR-.*|v\d\.d\.d|7\.x|7\.14\.x|7\.13\.x)'
-=======
           head-filter-regex: '(master|PR-.*|v\d\.d\.d|7\.16|7\.15|7\.14)'
->>>>>>> 87be925 ([beats] remove 7.x branch from automation (#1688))
           discover-pr-forks-strategy: merge-current
           discover-pr-forks-trust: permission
           discover-pr-origin: merge-current
