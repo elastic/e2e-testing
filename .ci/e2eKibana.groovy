@@ -83,7 +83,7 @@ def getID(){
   if(env.GT_PR){
     return "${env.GT_PR}"
   }
-  
+
   return "${params.kibana_pr}"
 }
 
