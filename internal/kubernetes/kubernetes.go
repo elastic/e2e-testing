@@ -106,7 +106,7 @@ func (c Control) RunWithStdin(ctx context.Context, stdin io.Reader, runArgs ...s
 		args = append(args, "--namespace", c.Namespace)
 	}
 	args = append(args, runArgs...)
-	return shell.ExecuteWithStdin(ctx, ".", stdin, "kubectl", args...)
+	return shell.ExecuteWithStdin(ctx, ".", stdin, "kubectl", map[string]string{}, args...)
 }
 
 // Cluster kind structure definition
@@ -120,6 +120,11 @@ type Cluster struct {
 // Kubectl executable reference to kubectl with applied kubeconfig
 func (c Cluster) Kubectl() Control {
 	return Control{}.WithConfig(c.kubeconfig)
+}
+
+// Name returns cluster name
+func (c Cluster) Name() string {
+	return c.kindName
 }
 
 func (c Cluster) isAvailable(ctx context.Context) error {

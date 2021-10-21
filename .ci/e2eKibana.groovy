@@ -63,7 +63,7 @@ pipeline {
             setEnvVar('DOCKER_TAG', getDockerTagFromPayload())
           }
         }
-        stage('Process GitHub Event') {
+        stage('Build Linux Images') {
           options { skipDefaultCheckout() }
           parallel {
             stage('AMD build') {
@@ -96,11 +96,8 @@ pipeline {
           }
           steps {
             deleteDir()
-            gitCheckout(basedir: BASE_DIR, branch: 'master', githubNotifyFirstTimeContributor: true, repo: 'git@github.com:elastic/e2e-testing.git', credentialsId: env.JOB_GIT_CREDENTIALS)
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
-            dir("${BASE_DIR}") {
-              pushMultiPlatformManifest()
-            }
+            pushMultiPlatformManifest()
           }
         }
         stage('Run E2E Tests') {
@@ -151,10 +148,20 @@ def getDockerTagFromPayload() {
   // we need a second API request, as the issue_comment API does not retrieve data about the pull request
   // See https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#issue_comment
   def prID = getID()
+
+  if (!prID.isInteger()) {
+    // in the case we are triggering the job for a branch (i.e master, 7.16) we directly use branch name as Docker tag
+    setEnvVar("BASE_REF", prID)
+    return prID
+  }
+
   def token = githubAppToken(secret: "${env.GITHUB_APP_SECRET}")
 
   def pullRequest = githubApiCall(token: token, url: "https://api.github.com/repos/${env.ELASTIC_REPO}/pulls/${prID}")
   def baseRef = pullRequest?.base?.ref
+
+  setEnvVar("BASE_REF", baseRef)
+
   def headSha = pullRequest?.head?.sha
 
   // we are going to use the 'pr12345' tag as default
@@ -171,48 +178,37 @@ def getID(){
   if(env.GT_PR){
     return "${env.GT_PR}"
   }
-  
+
   return "${params.kibana_pr}"
 }
 
 def pushMultiPlatformManifest() {
   def dockerTag = "${env.DOCKER_TAG}"
 
-  sh(label: 'Push multiplatform manifest', script: ".ci/scripts/push-multiplatform-manifest.sh kibana ${dockerTag}")
+  dir("${BASE_DIR}") {
+    def url = 'https://raw.githubusercontent.com/elastic/e2e-testing/master/.ci/scripts/push-multiplatform-manifest.sh'
+    retryWithSleep(retries: 3, seconds: 5, backoff: true) {
+      sh(label: 'Download script', script: "wget -q -O push-multiplatform-manifest.sh ${url}")
+      sh(label: 'Grant permissions to script', script: "chmod +x push-multiplatform-manifest.sh")
+    }
+
+    sh(label: 'Push multiplatform manifest', script: "./push-multiplatform-manifest.sh kibana ${dockerTag}")
+  }
 }
 
 def runE2ETests(String suite) {
   def dockerTag = "${env.DOCKER_TAG}"
 
-  log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for PR-${prID} using '${dockerTag}' as Docker tag")
+  log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for "+getBranch()+" using '${dockerTag}' as Docker tag")
 
   // Kibana's maintenance branches follow the 7.11, 7.12 schema.
-  def branchName = "${baseRef}"
-  if (branchName != "master") {
-    branchName += ".x"
-  }
-  def e2eTestsPipeline = "e2e-tests/e2e-testing-mbp/${branchName}"
-
-  def parameters = [
-    booleanParam(name: 'forceSkipGitChecks', value: true),
-    booleanParam(name: 'forceSkipPresubmit', value: true),
-    booleanParam(name: 'notifyOnGreenBuilds', value: false),
-    booleanParam(name: 'BEATS_USE_CI_SNAPSHOTS', value: true),
-    string(name: 'runTestsSuites', value: suite),
-    string(name: 'GITHUB_CHECK_NAME', value: env.GITHUB_CHECK_E2E_TESTS_NAME),
-    string(name: 'GITHUB_CHECK_REPO', value: env.REPO),
-    string(name: 'KIBANA_VERSION', value: dockerTag),
-  ]
-
-  build(job: "${e2eTestsPipeline}",
-    parameters: parameters,
-    propagate: true,
-    wait: true
-  )
-
-/*
-  // commented out to avoid sending Github statuses to Kibana PRs
-  def notifyContext = "${env.pr_head_sha}"
-  githubNotify(context: "${notifyContext}", description: "${notifyContext} ...", status: 'PENDING', targetUrl: "${env.JENKINS_URL}search/?q=${e2eTestsPipeline.replaceAll('/','+')}")
-*/
+  runE2E(jobName: "${BASE_REF}",
+         disableGitHubCheck: true,
+         gitHubCheckName: env.GITHUB_CHECK_E2E_TESTS_NAME,
+         gitHubCheckRepo: env.REPO,
+         kibanaVersion: dockerTag,
+         notifyOnGreenBuilds: false,
+         runTestsSuites: suite,
+         propagate: true,
+         wait: true)
 }

@@ -199,8 +199,8 @@ func TestBuildArtifactName(t *testing.T) {
 	})
 
 	t.Run("For Docker from local repository (amd64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", "/tmp")
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = "/tmp"
 
 		artifact = "elastic-agent"
 		arch := "amd64"
@@ -214,8 +214,8 @@ func TestBuildArtifactName(t *testing.T) {
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker from local repository (arm64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", "/tmp")
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = "/tmp"
 
 		artifact = "elastic-agent"
 		arch := "arm64"
@@ -230,8 +230,8 @@ func TestBuildArtifactName(t *testing.T) {
 	})
 
 	t.Run("For Docker UBI8 from local repository (amd64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", "/tmp")
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = "/tmp"
 
 		artifact = "elastic-agent-ubi8"
 		arch := "amd64"
@@ -245,8 +245,8 @@ func TestBuildArtifactName(t *testing.T) {
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker UBI8 from local repository (arm64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", "/tmp")
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = "/tmp"
 
 		artifact = "elastic-agent-ubi8"
 		arch := "arm64"
@@ -382,16 +382,16 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Fetching non-existent binary from local Beats dir throws an error", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		_, err := fetchBeatsBinary(ctx, "foo_fileName", artifact, version, utils.TimeoutFactor, true)
 		assert.NotNil(t, err)
 	})
 
 	t.Run("Fetching RPM binary (amd64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-x86_64.rpm"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
@@ -401,8 +401,8 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 	t.Run("Fetching RPM binary (arm64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-aarch64.rpm"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
@@ -413,8 +413,8 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 	})
 
 	t.Run("Fetching DEB binary (amd64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-amd64.deb"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
@@ -424,8 +424,8 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 	t.Run("Fetching DEB binary (arm64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-arm64.deb"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
@@ -436,8 +436,8 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 	})
 
 	t.Run("Fetching TAR binary (amd64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-linux-amd64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
@@ -447,8 +447,8 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 	t.Run("Fetching TAR binary (x86_64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-linux-x86_64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
@@ -458,8 +458,8 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 	t.Run("Fetching TAR binary (arm64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-linux-arm64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
@@ -470,8 +470,8 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 	})
 
 	t.Run("Fetching Docker binary (amd64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-linux-amd64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
@@ -481,8 +481,8 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 	t.Run("Fetching Docker binary (arm64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-linux-arm64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
@@ -493,8 +493,8 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 	})
 
 	t.Run("Fetching ubi8 Docker binary (amd64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := ubi8VersionPrefix + "-linux-amd64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
@@ -504,8 +504,8 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 	t.Run("Fetching ubi8 Docker binary (arm64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := ubi8VersionPrefix + "-linux-arm64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
@@ -725,10 +725,8 @@ func TestProcessBucketSearchPage_SnapshotsNotFound(t *testing.T) {
 func TestRemoveCommitFromSnapshot(t *testing.T) {
 	assert.Equal(t, "elastic-agent-8.0.0-SNAPSHOT-darwin-x86_64.tar.gz", RemoveCommitFromSnapshot("elastic-agent-8.0.0-abcdef-SNAPSHOT-darwin-x86_64.tar.gz"))
 	assert.Equal(t, "8.0.0-SNAPSHOT", RemoveCommitFromSnapshot("8.0.0-a12345-SNAPSHOT"))
-	assert.Equal(t, "7.x-SNAPSHOT", RemoveCommitFromSnapshot("7.x-a12345-SNAPSHOT"))
 	assert.Equal(t, "7.14.x-SNAPSHOT", RemoveCommitFromSnapshot("7.14.x-a12345-SNAPSHOT"))
 	assert.Equal(t, "8.0.0-SNAPSHOT", RemoveCommitFromSnapshot("8.0.0-SNAPSHOT"))
-	assert.Equal(t, "7.x-SNAPSHOT", RemoveCommitFromSnapshot("7.x-SNAPSHOT"))
 	assert.Equal(t, "7.14.x-SNAPSHOT", RemoveCommitFromSnapshot("7.14.x-SNAPSHOT"))
 }
 
@@ -738,7 +736,7 @@ func TestSnapshotHasCommit(t *testing.T) {
 	})
 
 	t.Run("Returns false with commits in snapshots", func(t *testing.T) {
-		assert.False(t, SnapshotHasCommit("7.x-SNAPSHOT"))
+		assert.False(t, SnapshotHasCommit("7.14.x-SNAPSHOT"))
 		assert.False(t, SnapshotHasCommit("8.0.0-SNAPSHOT"))
 	})
 }

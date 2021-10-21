@@ -42,6 +42,7 @@ var deployedAgentsCount = 0
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
 	// integrations
+	KibanaProfile       string
 	StandAlone          bool
 	CurrentToken        string // current enrollment token
 	CurrentTokenID      string // current enrollment tokenID
@@ -60,11 +61,16 @@ type FleetTestSuite struct {
 	RuntimeDependenciesStartDate time.Time
 	// instrumentation
 	currentContext context.Context
+	DefaultAPIKey  string
 }
 
 // afterScenario destroys the state created by a scenario
 func (fts *FleetTestSuite) afterScenario() {
-	defer func() { deployedAgentsCount = 0 }()
+	defer func() {
+		// Reset Kibana Profile to default
+		fts.KibanaProfile = ""
+		deployedAgentsCount = 0
+	}()
 
 	span := tx.StartSpan("Clean up", "test.scenario.clean", nil)
 	fts.currentContext = apm.ContextWithSpan(context.Background(), span)
@@ -108,7 +114,8 @@ func (fts *FleetTestSuite) afterScenario() {
 		}
 	}
 
-	_ = fts.deployer.Remove(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{deploy.NewServiceRequest(serviceName)}, common.ProfileEnv)
+	env := fts.getProfileEnv()
+	_ = fts.deployer.Remove(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{deploy.NewServiceRequest(serviceName)}, env)
 
 	err := fts.kibanaClient.DeleteEnrollmentAPIKey(fts.currentContext, fts.CurrentTokenID)
 	if err != nil {
@@ -147,6 +154,8 @@ func (fts *FleetTestSuite) beforeScenario() {
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
+	s.Step(`^kibana uses "([^"]*)" profile$`, fts.kibanaUsesProfile)
+	s.Step(`^agent uses enrollment token from "([^"]*)" policy$`, fts.agentUsesPolicy)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
@@ -154,6 +163,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
 	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
+	s.Step(`^the default API key has "([^"]*)"$`, fts.verifyDefaultAPIKey)
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
 	s.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)
@@ -164,6 +174,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
 	s.Step(`^certs are installed$`, fts.installCerts)
 	s.Step(`^a Linux data stream exists with some data$`, fts.checkDataStream)
+	s.Step(`^the agent is enrolled into "([^"]*)" policy$`, fts.agentRunPolicy)
 
 	// endpoint steps
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)
@@ -336,6 +347,47 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	return backoff.Retry(agentInVersionFn, exp)
 }
 
+func (fts *FleetTestSuite) agentRunPolicy(policyName string) error {
+	agentRunPolicyFn := func() error {
+		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+		manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+
+		policies, err := fts.kibanaClient.ListPolicies(fts.currentContext)
+		if err != nil {
+			return err
+		}
+
+		var policy *kibana.Policy
+		for _, p := range policies {
+			if policyName == p.Name {
+				policy = &p
+				break
+			}
+		}
+
+		if policy == nil {
+			return fmt.Errorf("Policy not found '%s'", policyName)
+		}
+
+		agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
+		if err != nil {
+			return err
+		}
+
+		if agent.PolicyID != policy.ID {
+			log.Errorf("FOUND %s %s", agent.PolicyID, policy.ID)
+			return fmt.Errorf("Agent not running the correct policy (running '%s' instead of '%s')", agent.PolicyID, policy.ID)
+		}
+
+		return nil
+	}
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	exp := utils.GetExponentialBackOff(maxTimeout)
+
+	return backoff.Retry(agentRunPolicyFn, exp)
+
+}
+
 // this step infers the installer type from the underlying OS image
 // supported images: centos and debian
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
@@ -396,6 +448,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 
 	// Grab a new enrollment key for new agent
 	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.currentContext, fts.Policy)
+
 	if err != nil {
 		return err
 	}
@@ -410,8 +463,8 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	services := []deploy.ServiceRequest{
 		agentService,
 	}
-
-	err = fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, common.ProfileEnv)
+	env := fts.getProfileEnv()
+	err = fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, env)
 	if err != nil {
 		return err
 	}
@@ -481,6 +534,97 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 	return CheckProcessState(fts.deployer, manifest.Name, process, "stopped", 0)
 }
 
+// bootstrapFleet this method creates the runtime dependencies for the Fleet test suite, being of special
+// interest kibana profile passed as part of the environment variables to bootstrap the dependencies.
+func bootstrapFleet(ctx context.Context, env map[string]string) error {
+	deployer := deploy.New(common.Provider)
+
+	if profile, ok := env["kibanaProfile"]; ok {
+		log.Infof("Running kibana with %s profile", profile)
+	}
+
+	// the runtime dependencies must be started only in non-remote executions
+	return deployer.Bootstrap(ctx, deploy.NewServiceRequest(common.FleetProfileName), env, func() error {
+		kibanaClient, err := kibana.NewClient()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"env":   env,
+			}).Fatal("Unable to create kibana client")
+		}
+
+		err = kibanaClient.RecreateFleet(ctx)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"env":   env,
+			}).Fatal("Fleet could not be recreated")
+		}
+
+		err = kibanaClient.WaitForFleet(ctx)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"env":   env,
+			}).Fatal("Fleet could not be initialized")
+		}
+		return nil
+	})
+}
+
+// kibanaUsesProfile this step should be ideally called as a Background or a Given clause, so that it
+// is executed before any other in the test scenario. It will configure the Kibana profile to be used
+// in the scenario, changing the configuration file to be used.
+func (fts *FleetTestSuite) kibanaUsesProfile(profile string) error {
+	fts.KibanaProfile = profile
+
+	env := fts.getProfileEnv()
+
+	return bootstrapFleet(context.Background(), env)
+}
+
+func (fts *FleetTestSuite) getProfileEnv() map[string]string {
+
+	env := map[string]string{}
+
+	for k, v := range common.ProfileEnv {
+		env[k] = v
+	}
+
+	if fts.KibanaProfile != "" {
+		env["kibanaProfile"] = fts.KibanaProfile
+	}
+
+	return env
+}
+
+func (fts *FleetTestSuite) agentUsesPolicy(policyName string) error {
+	agentUsesPolicyFn := func() error {
+		policies, err := fts.kibanaClient.ListPolicies(fts.currentContext)
+		if err != nil {
+			return err
+		}
+
+		for _, p := range policies {
+			if policyName == p.Name {
+
+				fts.Policy = p
+				break
+			}
+		}
+
+		if fts.Policy.Name != policyName {
+			return fmt.Errorf("Policy not found '%s'", policyName)
+		}
+
+		return nil
+	}
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	exp := utils.GetExponentialBackOff(maxTimeout)
+
+	return backoff.Retry(agentUsesPolicyFn, exp)
+}
+
 func (fts *FleetTestSuite) setup() error {
 	log.Trace("Creating Fleet setup")
 
@@ -495,7 +639,60 @@ func (fts *FleetTestSuite) setup() error {
 func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
-	return theAgentIsListedInFleetWithStatus(fts.currentContext, desiredStatus, manifest.Hostname)
+	err := theAgentIsListedInFleetWithStatus(fts.currentContext, desiredStatus, manifest.Hostname)
+	if err != nil {
+		return err
+	}
+	if desiredStatus == "online" {
+		//get Agent Default Key
+		err := fts.theAgentGetDefaultAPIKey()
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+func (fts *FleetTestSuite) theAgentGetDefaultAPIKey() error {
+	defaultAPIKey, _ := fts.getAgentDefaultAPIKey()
+	log.WithFields(log.Fields{
+		"default_api_key": defaultAPIKey,
+	}).Info("The Agent is installed with Default Api Key")
+	fts.DefaultAPIKey = defaultAPIKey
+	return nil
+}
+
+func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
+	newDefaultAPIKey, _ := fts.getAgentDefaultAPIKey()
+	if status == "changed" {
+		if newDefaultAPIKey != fts.DefaultAPIKey {
+			log.WithFields(log.Fields{
+				"new_default_api_key": newDefaultAPIKey,
+				"old_default_api_key": fts.DefaultAPIKey,
+			}).Info("Integration added and Default Api Key is " + status)
+		} else {
+			log.WithFields(log.Fields{
+				"new_default_api_key": newDefaultAPIKey,
+				"old_default_api_key": fts.DefaultAPIKey,
+			}).Error("Integration added and Default Api Key do not change")
+			return errors.New("Integration added and Default Api Key do not change")
+		}
+	}
+	if status == "not changed" {
+		if newDefaultAPIKey == fts.DefaultAPIKey {
+			log.WithFields(log.Fields{
+				"new_default_api_key": newDefaultAPIKey,
+				"old_default_api_key": fts.DefaultAPIKey,
+			}).Info("Integration updated and Default Api Key " + status)
+		} else {
+			log.WithFields(log.Fields{
+				"new_default_api_key": newDefaultAPIKey,
+				"old_default_api_key": fts.DefaultAPIKey,
+			}).Error("Integration updated and Default Api Key is changed")
+			return errors.New("Integration updated and Default Api Key is changed")
+		}
+	}
+	return nil
 }
 
 func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string, hostname string) error {
@@ -553,7 +750,6 @@ func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string
 
 			return err
 		}
-
 		log.WithFields(log.Fields{
 			"isAgentInStatus": isAgentInStatus,
 			"elapsedTime":     exp.GetElapsedTime(),
@@ -1024,8 +1220,8 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	services := []deploy.ServiceRequest{
 		agentService,
 	}
-
-	err := fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, common.ProfileEnv)
+	env := fts.getProfileEnv()
+	err := fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, env)
 	if err != nil {
 		return err
 	}
@@ -1152,7 +1348,7 @@ func (fts *FleetTestSuite) checkDataStream() error {
 
 	indexName := "metrics-linux.memory-default"
 
-	_, err := elasticsearch.WaitForNumberOfHits(context.Background(), indexName, query, 1, time.Minute)
+	_, err := elasticsearch.WaitForNumberOfHits(context.Background(), indexName, query, 1, 3*time.Minute)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
@@ -1234,9 +1430,19 @@ func (fts *FleetTestSuite) getAgentOSData() (string, error) {
 	return agent.LocalMetadata.OS.Platform, nil
 }
 
-func metricsInputs(integration string, set string) []kibana.Input {
-	metricsFile := filepath.Join(testResourcesDir, "/metrics.json")
-	data := readJSONFile(metricsFile, integration, set)
+func (fts *FleetTestSuite) getAgentDefaultAPIKey() (string, error) {
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+	agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
+	if err != nil {
+		return "", err
+	}
+	return agent.DefaultApiKey, nil
+}
+
+func metricsInputs(integration string, set string, file string, metrics string) []kibana.Input {
+	metricsFile := filepath.Join(testResourcesDir, file)
+	data := readJSONFile(metricsFile, integration, set, metrics)
 	return []kibana.Input{
 		{
 			Type:    integration,
@@ -1248,7 +1454,7 @@ func metricsInputs(integration string, set string) []kibana.Input {
 	return []kibana.Input{}
 }
 
-func readJSONFile(file string, integration string, set string) []interface{} {
+func readJSONFile(file string, integration string, set string, metrics string) []interface{} {
 	jsonFile, err := os.Open(file)
 	if err != nil {
 		fmt.Println(err)
@@ -1271,9 +1477,9 @@ func readJSONFile(file string, integration string, set string) []interface{} {
 		if item.Path("type").Data().(string) == integration {
 			for idx, stream := range item.S("streams").Children() {
 				dataSet, _ := stream.Path("data_stream.dataset").Data().(string)
-				if dataSet == "system."+set {
+				if dataSet == metrics+"."+set {
 					jsonParsed.SetP(
-						integration+"-system."+set+"-"+uuid.New().String(),
+						integration+"-"+metrics+"."+set+"-"+uuid.New().String(),
 						fmt.Sprintf("inputs.%d.streams.%d.id", i, idx),
 					)
 					jsonParsed.SetP(
@@ -1290,26 +1496,25 @@ func readJSONFile(file string, integration string, set string) []interface{} {
 }
 
 func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set string) error {
-	var condition = false
-	if name != "system/metrics" {
-		condition = true
-	}
-	if name != "logfile" {
-		condition = true
-	}
-	if name != "log" {
-		condition = true
-	}
-
-	if condition != true {
+	if name != "linux/metrics" && name != "system/metrics" && name != "logfile" && name != "log" {
 		log.WithFields(log.Fields{
 			"name": name,
-		}).Warn("We only support system system/metrics, log and logfile policy to be updated")
+		}).Warn("We only support system system/metrics, log, logfile and linux/metrics policy to be updated")
 		return godog.ErrPending
 	}
+	var metrics = ""
+	var file = ""
+	if name == "linux/metrics" {
+		file = "/linux_metrics.json"
+		metrics = "linux"
+	} else if name == "system/metrics" || name == "logfile" || name == "log" {
+		file = "/metrics.json"
+		metrics = "system"
+	}
+
 	os, _ := fts.getAgentOSData()
 
-	packageDS, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, "system", fts.Policy)
+	packageDS, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
 
 	if err != nil {
 		return err
@@ -1318,12 +1523,12 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 
 	log.WithFields(log.Fields{
 		"type":    name,
-		"dataset": "system." + set,
-	}).Info("Getting information about Policy package type " + name + " name with dataset system." + set)
+		"dataset": metrics + "." + set,
+	}).Info("Getting information about Policy package type " + name + " name with dataset " + metrics + "." + set)
 
 	for _, item := range packageDS.Inputs {
 		if item.Type == name {
-			packageDS.Inputs = metricsInputs(name, set)
+			packageDS.Inputs = metricsInputs(name, set, file, metrics)
 		}
 	}
 	log.WithFields(log.Fields{
@@ -1338,11 +1543,11 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 	fts.PolicyUpdatedAt = updatedAt
 
 	log.WithFields(log.Fields{
-		"dataset": "system." + set,
+		"dataset": metrics + "." + set,
 		"enabled": "true",
 		"type":    "metrics",
 		"os":      os,
-	}).Info("Policy Updated with package name system." + set)
+	}).Info("Policy Updated with package name " + metrics + "." + set)
 
 	return nil
 }

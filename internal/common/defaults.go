@@ -36,7 +36,7 @@ const FleetServerAgentServiceName = "fleet-server"
 var AgentStaleVersion = "7.15-SNAPSHOT"
 
 // BeatVersionBase is the base version of the Beat to use
-var BeatVersionBase = "8.0.0-c0c740b6-SNAPSHOT"
+var BeatVersionBase = "8.0.0-0da7fd6d-SNAPSHOT"
 
 // BeatVersion is the version of the Beat to use
 // It can be overriden by BEAT_VERSION env var
@@ -141,5 +141,5 @@ func InitVersions() {
 		"BeatVersion":     BeatVersion,
 		"StackVersion":    StackVersion,
 		"KibanaVersion":   KibanaVersion,
-	}).Trace("Initial artifact versions defined")
+	}).Info("Initial artifact versions defined")
 }

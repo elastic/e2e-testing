@@ -12,6 +12,8 @@ spec:
     - /bin/sh
     - -c
     - echo Hi from an init container
+    - sleep 10
+    - echo Hi from an init container
 {{ end }}
   containers:
   - name: container-in-pod

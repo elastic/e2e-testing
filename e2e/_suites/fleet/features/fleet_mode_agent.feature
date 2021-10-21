@@ -2,6 +2,9 @@
 Feature: Fleet Mode Agent
   Scenarios for the Agent in Fleet mode connecting to Fleet application.
 
+Background: Setting up kibana instance with the default profile
+  Given kibana uses "default" profile
+
 @install
 @skip:windows
 Scenario Outline: Deploying the <os> agent

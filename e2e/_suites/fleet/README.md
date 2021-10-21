@@ -99,7 +99,7 @@ This is an example of the optional configuration:
 4. Install dependencies.
 
    - Install Go, using the language version defined in the `.go-version` file at the root directory. We recommend using [GVM](https://github.com/andrewkroh/gvm), same as done in the CI, which will allow you to install multiple versions of Go, setting the Go environment in consequence: `eval "$(gvm 1.15.9)"`
-   - Install godog (from project's root directory): `make -C e2e install-godog`
+   - Godog and other test-related binaries will be installed in their supported versions when the project is first built, thanks to Go modules and Go build system.
 
 5. Run the tests.
 
@@ -120,6 +120,26 @@ This is an example of the optional configuration:
    cd e2e/_suites/fleet
    OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@fleet_mode_agent'
    ```
+
+### Running Kibana with different configuration file
+In the case you need to run Kibana with a different set of properties, it's possible to do so simply using the `kibana uses "my-custom-profile" profile` step. This step, if executed at the very beginning of an scenario, or as a `Background` step for all scenarios, will execute the _Bootstrap_ code with the configuration located at `my-custom-profile`. As a reminder, `Bootstrap` will reevaluate the state of the runtime dependencies, recreating those that changed.
+
+In order to achieve that you have to:
+
+1. create a `kibana.config.yml` at `$E2E_ROOT_DIR/cli/config/compose/profiles/fleet/my-custom-profile/` file with your own properties. _You need to commit this file to the repository_.
+2. add the `kibana uses "my-custom-profile" profile` step in any of the following cases:
+   a. for an entire test suite adding a `Background` step like this:
+```gherkin
+Background: Setting up kibana instance with my custom profile
+  Given kibana uses "my-custom-profile" profile
+```
+
+   b. for a single test scenario adding a `Given` clause at the beginning. In this case, make sure you set the `default` profile as a `Background` so that it restores the Kibana state at the beginning of the next scenario.
+```gherkin
+Background: Setting up kibana instance with default profile
+  Given kibana uses "default" profile
+```
+3. Run the tests! Kibana will be recreated with the profile configuration in those scenarios using the new step.
 
 ### Need help?
 
