@@ -550,9 +550,6 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-<<<<<<< HEAD
-		cluster.Cleanup(suiteContext)
-=======
 		// store cluster logs: see https://kind.sigs.k8s.io/docs/user/quick-start/#exporting-cluster-logs
 		clusterName := cluster.Name()
 		logsPath, _ := filepath.Abs(filepath.Join("..", "..", "..", "outputs", "kubernetes-autodiscover", clusterName))
@@ -572,7 +569,6 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 		if !common.DeveloperMode {
 			cluster.Cleanup(suiteContext)
 		}
->>>>>>> 2aa95bb (feat: export Kind cluster logs (#1690))
 		cancel()
 	})
 }
