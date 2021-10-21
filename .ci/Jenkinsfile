@@ -267,8 +267,8 @@ pipeline {
   }
 }
 
-def sshexec(address, username, cmd){
-  sh "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ${username}@${address} -- '${cmd}'"
+def sshexec(address, username, sshpublickey, sshprivatekey, cmd){
+  sh "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${sshprivatekey} ${username}@${address} -- '${cmd}'"
 }
 
 def envToCliArgs(envContext){
@@ -468,7 +468,7 @@ def deployNode(opts){
         sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
         nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
         nodeUser = sh(script: "terraform -chdir=${workDir} output -raw username", returnStdout: true)?.trim()
-        return [nodeAddress: nodeAddress, nodeUser: nodeUser]
+        return [nodeAddress: nodeAddress, nodeUser: nodeUser, sshPrivateKey: "${env.WORKSPACE}/e2essh", sshPublicKey: "${env.WORKSPACE}/e2essh.pub"]
       }
     }
   }
@@ -642,7 +642,10 @@ def generateFunctionalFleetTestStep(opts){
     try {
       nodeDeployResult = deployNode(opts)
       log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}: ${nodeDeployResult.nodeAddress}")
-      sshexec(nodeDeployResult.nodeAddress, nodeDeployResult.nodeUser,
+      sshexec(nodeDeployResult.nodeAddress,
+              nodeDeployResult.nodeUser,
+              nodeDeployResult.sshPublicKey,
+              nodeDeployResult.sshPrivateKey,
               """sudo -E bash /home/${nodeDeployResult.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
       log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}: ${nodeDeployResult.nodeAddress}")
     } finally {
