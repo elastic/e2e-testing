@@ -171,7 +171,7 @@ def getID(){
   if(env.GT_PR){
     return "${env.GT_PR}"
   }
-  
+
   return "${params.kibana_pr}"
 }
 
@@ -187,6 +187,7 @@ def runE2ETests(String suite) {
   log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for PR-${prID} using '${dockerTag}' as Docker tag")
 
   // Kibana's maintenance branches follow the 7.11, 7.12 schema.
+<<<<<<< HEAD
   def branchName = "${baseRef}"
   if (branchName != "master") {
     branchName += ".x"
@@ -215,4 +216,15 @@ def runE2ETests(String suite) {
   def notifyContext = "${env.pr_head_sha}"
   githubNotify(context: "${notifyContext}", description: "${notifyContext} ...", status: 'PENDING', targetUrl: "${env.JENKINS_URL}search/?q=${e2eTestsPipeline.replaceAll('/','+')}")
 */
+=======
+  runE2E(jobName: "${BASE_REF}",
+         disableGitHubCheck: true,
+         gitHubCheckName: env.GITHUB_CHECK_E2E_TESTS_NAME,
+         gitHubCheckRepo: env.REPO,
+         kibanaVersion: dockerTag,
+         notifyOnGreenBuilds: false,
+         runTestsSuites: suite,
+         propagate: true,
+         wait: true)
+>>>>>>> ba51b1c (CI: refactor e2e build (#1672))
 }
