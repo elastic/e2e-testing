@@ -206,7 +206,7 @@ def runE2ETests(String suite) {
          disableGitHubCheck: true,
          gitHubCheckName: env.GITHUB_CHECK_E2E_TESTS_NAME,
          gitHubCheckRepo: env.REPO,
-         kibanaVersion: 'dockerTag',
+         kibanaVersion: dockerTag,
          notifyOnGreenBuilds: false,
          runTestsSuites: suite,
          propagate: true,
