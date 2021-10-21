@@ -159,7 +159,7 @@ def getE2EBaseBranch() {
   if (!prID.isInteger()) {
     // we are building a branch on Fleet Server
     setEnvVar('BASE_REF', prID)
-    // in the case we are triggering the job for a branch (i.e master, 7.x) we directly use branch name as Docker tag
+    // in the case we are triggering the job for a branch (i.e master, 7.16 we directly use branch name as Docker tag
     return prID
   }
 
@@ -177,7 +177,7 @@ def getID(){
   if(env.GT_PR){
     return "${env.GT_PR}"
   }
-  
+
   return "${params.fleet_server_pr}"
 }
 
