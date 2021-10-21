@@ -558,11 +558,12 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 				"cluster": clusterName,
 				"path":    logsPath,
 			}).Warn("Failed to export Kind cluster logs")
+		} else {
+			log.WithFields(log.Fields{
+				"cluster": clusterName,
+				"path":    logsPath,
+			}).Info("Kind cluster logs exported")
 		}
-		log.WithFields(log.Fields{
-			"cluster": clusterName,
-			"path":    logsPath,
-		}).Info("Kind cluster logs exported")
 
 		if !common.DeveloperMode {
 			cluster.Cleanup(suiteContext)
