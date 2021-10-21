@@ -390,7 +390,7 @@ def withTerraform(Closure body){
       unzip terraform.zip || true
     """)
     withVaultToken(){
-      withGCPEnv(credentialsId: "${GCP_PROVISIONER_SECRET}"){
+      withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
         withEnvMask(vars: [
           [var: "EC_API_KEY", password: authObj.apiKey],
           [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
