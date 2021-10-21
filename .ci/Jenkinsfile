@@ -632,16 +632,19 @@ def generateFunctionalTestStep(opts){
 def generateFunctionalFleetTestStep(opts){
   return {
     withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true){
+      deleteDir()
       unstash 'source'
-      nodeMeta = deployNode(opts.platformLabels, opts)
-      try {
-        log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeAddress}")
-        sshexec(nodeMeta.nodeAddress, nodeMeta.nodeUser,
-                """sudo -E bash /home/${nodeMeta.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
-        log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeMeta.nodeAddress}")
-      } finally {
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+      withVaultToken(){
+        nodeMeta = deployNode(opts.platformLabels, opts)
+        try {
+          log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeAddress}")
+          sshexec(nodeMeta.nodeAddress, nodeMeta.nodeUser,
+                  """sudo -E bash /home/${nodeMeta.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
+          log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${opts.tags}: ${nodeMeta.nodeAddress}")
+        } finally {
+          junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+          archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+        }
       }
     }
   }
