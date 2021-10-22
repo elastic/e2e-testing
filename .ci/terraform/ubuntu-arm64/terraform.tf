@@ -51,7 +51,7 @@ data "aws_ami" "ubuntu" {
 }
 
 resource "aws_key_pair" "e2essh" {
-  key_name = "e2e"
+  key_name = "e2e-${random_id.instance_id.hex}"
   public_key = "${file(var.publickeypath)}"
 }
 
@@ -59,7 +59,7 @@ resource "aws_instance" "default" {
   ami = data.aws_ami.ubuntu.id
   instance_type = "a1.large"
   associate_public_ip_address = true
-  key_name = "${aws_key_pair.e2essh.key_name}-${random_id.instance_id.hex}"
+  key_name = aws_key_pair.e2essh.key_name
   vpc_security_group_ids = [aws_security_group.instance.id]
   tags = {
     Name = "e2e-${random_id.instance_id.hex}"
