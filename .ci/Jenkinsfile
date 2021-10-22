@@ -550,7 +550,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
                                            platform: platform,
                                            suite: "${suite}",
                                            tags: "${tags}",
-                                           features: "${features}",
+                                           features: features,
                                            pullRequestFilter: "${pullRequestFilter}",
                                            endpointMap: endpointMap)
         log(level: 'INFO', text: "Adding ${opts.platformLabels}:${opts.suite} test suite to the build execution")
@@ -673,7 +673,7 @@ def generateFunctionalFleetTestStep(opts){
                   nodeDeployResult.sshPrivateKey,
                   """sudo -E bash /home/${nodeDeployResult.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
           sh "mkdir -p ${BASE_DIR}/outputs || true"
-          sh "scp -r -i ${nodeDeployResult.sshPublicKey} ${nodeDeployResult.nodeUser}@${nodeDeployresult.nodeAddress}:e2e-testing/outputs/* ${BASE_DIR}/outputs/."
+          sh "scp -r -i ${nodeDeployResult.sshPublicKey} ${nodeDeployResult.nodeUser}@${nodeDeployResult.nodeAddress}:/home/${nodeDeployResult.nodeUser}/e2e-testing/outputs/* ${BASE_DIR}/outputs/."
           log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
         }
       } finally {
