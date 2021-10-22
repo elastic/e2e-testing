@@ -448,9 +448,9 @@ def deployStackDocker(){
 
   def nodeAddress = "127.0.0.1"
   withTerraform(){
-    // sh "terraform -chdir=${workDir} init"
-    // sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
-    // nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
+    sh "terraform -chdir=${workDir} init"
+    sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
+    nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
     endpointMap = [elasticsearchUrl: "http://${nodeAddress}:9200",
                    kibanaUrl: "http://${nodeAddress}:5601",
                    fleetUrl: "http://${nodeAddress}:8220",
@@ -494,26 +494,12 @@ def deployNode(opts){
 /*
  * Iterate through known terraform configurations and attempt to bring down any deployed resources
  */
-def teardownStack(scenario, platform, suite, tags, label){
-  def opts = processFunctionalTestConfig(name: scenario.name,
-                                         platform: platform,
-                                         suite: suite,
-                                         tags: tags,
-                                         pullRequestFilter: scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : '',
-                                         endpointMap: [elasticsearchUrl: "http://localhost:9200",
-                                                       kibanaUrl: "http://localhost:5601",
-                                                       fleetUrl: "http://localhost:8220",
-                                                       elasticsearchPassword: "changeme"])
-  opts.envContext.add("privatekeypath=\"${env.WORKSPACE}/e2essh\"")
-  opts.envContext.add("publickeypath=\"${env.WORKSPACE}/e2essh.pub\"")
-  opts.envContext.add("workspace=\"${env.WORKSPACE}\"")
-  opts.envContext.add("base_dir=\"${env.BASE_DIR}\"")
-
+def teardownNode(opts){
   def cliOptsStr = envToCliArgs(opts.envContext)
-  def workDir = ".ci/terraform/${label}"
+  def workDir = ".ci/terraform/${opts.platformLabels}"
   withTerraform(){
     // sh "terraform -chdir=${workDir}/stack destroy -auto-approve || true"
-    log(level: 'INFO', text: "Destroying ${label} machine")
+    log(level: 'INFO', text: "Destroying ${opts.platformLabels} machine")
     sh "terraform -chdir=${workDir} init"
     sh "terraform -chdir=${workDir} destroy -auto-approve ${cliOptsStr}"
   }
@@ -664,22 +650,23 @@ def generateFunctionalFleetTestStep(opts){
   return {
     withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true, forceWorker: true){
       sh "mkdir -p ${BASE_DIR}/outputs || true"
-      try {
-        nodeDeployResult = deployNode(opts)
-        opts.features.each { feature ->
-          log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
-          tags = "${feature} ${opts.tags}"
+      nodeDeployResult = deployNode(opts)
+      opts.features.each { feature ->
+        log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
+        try {
+          tags = "${feature}${opts.tags}"
           sshexec(nodeDeployResult.nodeAddress,
                   nodeDeployResult.nodeUser,
                   nodeDeployResult.sshPublicKey,
                   nodeDeployResult.sshPrivateKey,
                   """sudo -E bash /home/${nodeDeployResult.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
           log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
+        } finally {
+          sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${nodeDeployResult.sshPrivateKey} ${nodeDeployResult.nodeUser}@${nodeDeployResult.nodeAddress}:/home/${nodeDeployResult.nodeUser}/e2e-testing/outputs/* ${BASE_DIR}/outputs/. || true"
+          teardownNode(opts)
+          junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+          archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
         }
-        sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${nodeDeployResult.sshPublicKey} ${nodeDeployResult.nodeUser}@${nodeDeployResult.nodeAddress}:/home/${nodeDeployResult.nodeUser}/e2e-testing/outputs/* ${BASE_DIR}/outputs/. || true"
-      } finally {
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
       }
     }
   }
