@@ -278,10 +278,6 @@ def envToCliArgs(envContext){
     (k, v) = env.split("=")
     cliOpts.add("-var ${k.toLowerCase()}=\"${v}\"")
   }
-  cliOpts.add("-var privatekeypath=\"${env.WORKSPACE}/e2essh\"")
-  cliOpts.add("-var publickeypath=\"${env.WORKSPACE}/e2essh.pub\"")
-  cliOpts.add("-var workspace=\"${env.WORKSPACE}\"")
-  cliOpts.add("-var base_dir=\"${env.BASE_DIR}\"")
   cliOptsStr = cliOpts.join(" ")
   return cliOptsStr
 }
@@ -439,7 +435,13 @@ def deployStack(){
 def deployStackDocker(){
   def endpointMap = [:]
   def workDir = ".ci/terraform/stack-docker"
-  def cliOptsStr = envToCliArgs([])
+  def cliOptsStr = envToCliArgs([
+    "privatekeypath=\"${env.WORKSPACE}/e2essh\"",
+    "publickeypath=\"${env.WORKSPACE}/e2essh.pub\"",
+    "workspace=\"${env.WORKSPACE}\"",
+    "base_dir=\"${env.BASE_DIR}\"",
+  ])
+
   def nodeAddress = "127.0.0.1"
   withTerraform(){
     sh "terraform -chdir=${workDir} init"
@@ -456,11 +458,18 @@ def deployStackDocker(){
 
 def deployNode(opts){
   def workDir = ".ci/terraform/${opts.platformLabels}"
-  def cliOptsStr = envToCliArgs(opts.envContext)
   def nodeAddress = null
   def nodeUser = "ci"
   def uuid = UUID.randomUUID().toString()
-  def sshKeyPath = "${env.WORKSPACE}/e2essh-${uuid}"
+  def sshKeyPath = "${BASE_DIR}/e2essh-${uuid}"
+
+  opts.envContext.add("privatekeypath=\"${sshKeyPath}\"")
+  opts.envContext.add("publickeypath=\"${sshKeyPath}.pub\"")
+  opts.envContext.add("workspace=\"${env.WORKSPACE}\"")
+  opts.envContext.add("base_dir=\"${BASE_DIR}\"")
+
+  def cliOptsStr = envToCliArgs(opts.envContext)
+
   deleteDir()
   unstash 'source'
   dir("${BASE_DIR}"){
@@ -488,6 +497,11 @@ def teardownStack(scenario, platform, suite, tags, label){
                                                        kibanaUrl: "http://localhost:5601",
                                                        fleetUrl: "http://localhost:8220",
                                                        elasticsearchPassword: "changeme"])
+  opts.envContext.add("privatekeypath=\"${env.WORKSPACE}/e2essh\"")
+  opts.envContext.add("publickeypath=\"${env.WORKSPACE}/e2essh.pub\"")
+  opts.envContext.add("workspace=\"${env.WORKSPACE}\"")
+  opts.envContext.add("base_dir=\"${env.BASE_DIR}\"")
+
   def cliOptsStr = envToCliArgs(opts.envContext)
   def workDir = ".ci/terraform/${label}"
   withTerraform(){
