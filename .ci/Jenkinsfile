@@ -228,7 +228,7 @@ pipeline {
                         if (scenario.name?.toLowerCase() == "fleet"){
                           scenario.platforms.each { platform ->
                             log(level: 'INFO', text: "Tearing down ${platform.labels}")
-                            // teardownStack(scenario, platform, item.suite, scenario.tags, platform.labels)
+                            teardownStack(scenario, platform, item.suite, scenario.tags, platform.labels)
                           }
                         }
                       }
@@ -290,7 +290,7 @@ def processFunctionalTestConfig(Map args = [:]){
   def platform = args.get('platform')
   def suite = args.get('suite')
   def features = args.get('features') ? args.get('features') : []
-  def tags = args.get('tags') ? args.get('tags') : ''
+  def tags = args.get('tags')
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
   def endpointMap = args.get('endpointMap') ? args.get('endpointMap') : [:]
   def platformLabels = platform.labels
@@ -312,7 +312,11 @@ def processFunctionalTestConfig(Map args = [:]){
   if ("${NIGHTLY_SCENARIOS}" == "true") {
     excludeNightlyTag = ""
   }
-  tags += excludeNightlyTag
+  if(tags.trim()){
+    tags += excludeNightlyTag
+  } else {
+    tags = "~${NIGHTLY_TAG}"
+  }
 
   if (isPR() || isUpstreamTrigger(filter: 'PR-')) {
     // when the "Run_As_Master_Branch" param is disabled, we will honour the PR filters, which
@@ -673,7 +677,7 @@ def generateFunctionalFleetTestStep(opts){
                   nodeDeployResult.sshPrivateKey,
                   """sudo -E bash /home/${nodeDeployResult.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
           sh "mkdir -p ${BASE_DIR}/outputs || true"
-          sh "scp -r -i ${nodeDeployResult.sshPublicKey} ${nodeDeployResult.nodeUser}@${nodeDeployResult.nodeAddress}:/home/${nodeDeployResult.nodeUser}/e2e-testing/outputs/* ${BASE_DIR}/outputs/."
+          sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${nodeDeployResult.sshPublicKey} ${nodeDeployResult.nodeUser}@${nodeDeployResult.nodeAddress}:/home/${nodeDeployResult.nodeUser}/e2e-testing/outputs/* ${BASE_DIR}/outputs/. || true"
           log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
         }
       } finally {
