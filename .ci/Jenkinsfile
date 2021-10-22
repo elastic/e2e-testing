@@ -290,7 +290,7 @@ def processFunctionalTestConfig(Map args = [:]){
   def platform = args.get('platform')
   def suite = args.get('suite')
   def features = args.get('features') ? args.get('features') : []
-  def tags = args.get('tags')
+  def tags = args.get('tags') ? args.get('tags') : ''
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
   def endpointMap = args.get('endpointMap') ? args.get('endpointMap') : [:]
   def platformLabels = platform.labels
@@ -308,15 +308,15 @@ def processFunctionalTestConfig(Map args = [:]){
   // We will decide whether to include the nightly tests in the execution at CI time, only.
   // On the other hand, the developers can use the TAGS environment variable locally.
   // Finally, we positively know that tags are not empty, so we can use AND operator.
-  def excludeNightlyTag = " && ~${NIGHTLY_TAG}"
-  if ("${NIGHTLY_SCENARIOS}" == "true") {
-    excludeNightlyTag = ""
-  }
-  if(tags.trim()){
-    tags += excludeNightlyTag
-  } else {
-    tags = "~${NIGHTLY_TAG}"
-  }
+  // def excludeNightlyTag = " && ~${NIGHTLY_TAG}"
+  // if ("${NIGHTLY_SCENARIOS}" == "true") {
+  //   excludeNightlyTag = ""
+  // }
+  // if(tags.trim()){
+  //   tags += excludeNightlyTag
+  // } else {
+  //   tags = "~${NIGHTLY_TAG}"
+  // }
 
   if (isPR() || isUpstreamTrigger(filter: 'PR-')) {
     // when the "Run_As_Master_Branch" param is disabled, we will honour the PR filters, which
@@ -527,14 +527,14 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     def endpointMap = [:]
 
     // Start stack with fleet server enabled for the fleet suite of tests
-    if (suite == "fleet") {
-        sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/e2essh -q -N \"\" "
-        endpointMap = deployStackDocker()
-    } else {
-        if(isInstalled(tool: 'docker', flag: '--version')) {
-            dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
-        }
-    }
+    // if (suite == "fleet") {
+    //     sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/e2essh -q -N \"\" "
+    //     endpointMap = deployStackDocker()
+    // } else {
+    //     if(isInstalled(tool: 'docker', flag: '--version')) {
+    //         dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
+    //     }
+    // }
 
   item.scenarios.each { scenario ->
     def name = scenario.name
@@ -545,7 +545,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
       platformsValue = scenarioPlatforms
     }
     def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
-    def tags = scenario.tags
+    def tags = scenario.containsKey('tags') ? scenario.tags : ''
     def features = scenario.features
     def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
     if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
