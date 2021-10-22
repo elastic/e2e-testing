@@ -289,7 +289,8 @@ def processFunctionalTestConfig(Map args = [:]){
   def name = args.get('name')
   def platform = args.get('platform')
   def suite = args.get('suite')
-  def tags = args.get('tags')
+  def features = args.get('features') ? args.get('features') : []
+  def tags = args.get('tags') ? args.get('tags') : ''
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
   def endpointMap = args.get('endpointMap') ? args.get('endpointMap') : [:]
   def platformLabels = platform.labels
@@ -361,6 +362,7 @@ def processFunctionalTestConfig(Map args = [:]){
           platform: platform,
           suite: suite,
           tags: tags,
+          features: features,
           platformLabels: platformLabels,
           platformProvider: platformProvider,
           pullRequestFilter: pullRequestFilter,
@@ -540,6 +542,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     }
     def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
     def tags = scenario.tags
+    def features = scenario.features
     def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
     if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
       platformsValue.each { platform ->
@@ -547,9 +550,10 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
                                            platform: platform,
                                            suite: "${suite}",
                                            tags: "${tags}",
+                                           features: "${features}",
                                            pullRequestFilter: "${pullRequestFilter}",
                                            endpointMap: endpointMap)
-        log(level: 'INFO', text: "Adding ${opts.platformLabels}:${opts.suite}:${opts.tags} test suite to the build execution")
+        log(level: 'INFO', text: "Adding ${opts.platformLabels}:${opts.suite} test suite to the build execution")
         if(suite == "fleet"){
           parallelTasks["${opts.platformLabels}_${opts.suite}"] = generateFunctionalFleetTestStep(opts)
         } else {
@@ -657,16 +661,21 @@ def generateFunctionalTestStep(opts){
  */
 def generateFunctionalFleetTestStep(opts){
   return {
-    withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true){
+    withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true, forceWorker: true){
       try {
         nodeDeployResult = deployNode(opts)
-        log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}: ${nodeDeployResult.nodeAddress}")
-        sshexec(nodeDeployResult.nodeAddress,
-                nodeDeployResult.nodeUser,
-                nodeDeployResult.sshPublicKey,
-                nodeDeployResult.sshPrivateKey,
-                """sudo -E bash /home/${nodeDeployResult.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
-        log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}: ${nodeDeployResult.nodeAddress}")
+        opts.features.each { feature ->
+          log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
+          tags = "${feature} && ${opts.tags}"
+          sshexec(nodeDeployResult.nodeAddress,
+                  nodeDeployResult.nodeUser,
+                  nodeDeployResult.sshPublicKey,
+                  nodeDeployResult.sshPrivateKey,
+                  """sudo -E bash /home/${nodeDeployResult.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
+          sh "mkdir -p ${BASE_DIR}/outputs || true"
+          sh "scp -r -i ${nodeDeployResult.sshPublicKey} ${nodeDeployResult.nodeUser}@${nodeDeployresult.nodeAddress}:e2e-testing/outputs/* ${BASE_DIR}/outputs/."
+          log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
+        }
       } finally {
         junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
         archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"

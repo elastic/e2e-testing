@@ -17,7 +17,12 @@ SUITES:
     scenarios:
       - name: "Fleet"
         pullRequestFilter: " && ~debian"
-        tags: "@fleet_mode_agent && @backend_processes"
+        features:
+          - 'fleet_mode_agent'
+          - 'backend_processes'
+          - 'integrations'
+          - 'apm_server'
+          - 'system_integration'
         platforms:
           - labels: "debian"
             provider: "remote"
