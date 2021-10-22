@@ -308,15 +308,11 @@ def processFunctionalTestConfig(Map args = [:]){
   // We will decide whether to include the nightly tests in the execution at CI time, only.
   // On the other hand, the developers can use the TAGS environment variable locally.
   // Finally, we positively know that tags are not empty, so we can use AND operator.
-  // def excludeNightlyTag = " && ~${NIGHTLY_TAG}"
-  // if ("${NIGHTLY_SCENARIOS}" == "true") {
-  //   excludeNightlyTag = ""
-  // }
-  // if(tags.trim()){
-  //   tags += excludeNightlyTag
-  // } else {
-  //   tags = "~${NIGHTLY_TAG}"
-  // }
+  def excludeNightlyTag = " && ~${NIGHTLY_TAG}"
+  if ("${NIGHTLY_SCENARIOS}" == "true") {
+    excludeNightlyTag = ""
+  }
+  tags += excludeNightlyTag
 
   if (isPR() || isUpstreamTrigger(filter: 'PR-')) {
     // when the "Run_As_Master_Branch" param is disabled, we will honour the PR filters, which
@@ -341,7 +337,7 @@ def processFunctionalTestConfig(Map args = [:]){
   }
 
   // Skip scenarios per platform
-  tags += " && ~@skip:${goArch}"
+  tags = " && ~@skip:${goArch}"
 
   // Build environment map
   envContext.add("GOARCH=${goArch}")
@@ -439,6 +435,8 @@ def deployStack(){
  * for testing across cloud environments.
  */
 def deployStackDocker(){
+  sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/e2essh -q -N \"\" "
+
   def endpointMap = [:]
   def workDir = ".ci/terraform/stack-docker"
   def cliOptsStr = envToCliArgs([
@@ -528,7 +526,6 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
 
     // Start stack with fleet server enabled for the fleet suite of tests
     if (suite == "fleet") {
-        sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/e2essh -q -N \"\" "
         endpointMap = deployStackDocker()
     } else {
         if(isInstalled(tool: 'docker', flag: '--version')) {
@@ -666,20 +663,20 @@ def generateFunctionalTestStep(opts){
 def generateFunctionalFleetTestStep(opts){
   return {
     withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true, forceWorker: true){
+      sh "mkdir -p ${BASE_DIR}/outputs || true"
       try {
         nodeDeployResult = deployNode(opts)
         opts.features.each { feature ->
           log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
-          tags = "${feature} && ${opts.tags}"
+          tags = "${feature} ${opts.tags}"
           sshexec(nodeDeployResult.nodeAddress,
                   nodeDeployResult.nodeUser,
                   nodeDeployResult.sshPublicKey,
                   nodeDeployResult.sshPrivateKey,
                   """sudo -E bash /home/${nodeDeployResult.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
-          sh "mkdir -p ${BASE_DIR}/outputs || true"
-          sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${nodeDeployResult.sshPublicKey} ${nodeDeployResult.nodeUser}@${nodeDeployResult.nodeAddress}:/home/${nodeDeployResult.nodeUser}/e2e-testing/outputs/* ${BASE_DIR}/outputs/. || true"
           log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
         }
+        sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${nodeDeployResult.sshPublicKey} ${nodeDeployResult.nodeUser}@${nodeDeployResult.nodeAddress}:/home/${nodeDeployResult.nodeUser}/e2e-testing/outputs/* ${BASE_DIR}/outputs/. || true"
       } finally {
         junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
         archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
