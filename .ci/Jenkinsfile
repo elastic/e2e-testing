@@ -461,7 +461,9 @@ def deployNode(opts){
   def nodeAddress = null
   def nodeUser = "ci"
   def uuid = UUID.randomUUID().toString()
-  def sshKeyPath = "${BASE_DIR}/e2essh-${uuid}"
+  def sshKeyDir = "${env.WORKSPACE}/${uuid}"
+  def sshKeyFname = "e2essh-${uuid}"
+  def sshKeyPath = "${sshKeyDir}/${sshKeyFname}"
 
   opts.envContext.add("privatekeypath=\"${sshKeyPath}\"")
   opts.envContext.add("publickeypath=\"${sshKeyPath}.pub\"")
@@ -474,7 +476,8 @@ def deployNode(opts){
   unstash 'source'
   dir("${BASE_DIR}"){
     withTerraform(){
-      sh "ssh-keygen -b 4096 -t rsa -f ${sshKeyPath} -q -N \"\" "
+      sh "mkdir -p ${sshKeyDir} || true"
+      sh "ssh-keygen -b 4096 -t rsa -f ${sshKeyPath} -q -N \"\" || true"
       sh "terraform -chdir=${workDir} init"
       sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
       nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
