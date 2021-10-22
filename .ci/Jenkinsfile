@@ -221,19 +221,7 @@ pipeline {
             always {
               dir("${BASE_DIR}") {
                 script {
-                  def existingSuites = readYaml(file: "${TEST_MATRIX_FILE}")
-                  existingSuites['SUITES'].each { item ->
-                    if (item.suite?.toLowerCase() == "fleet"){
-                      item.scenarios.each { scenario ->
-                        if (scenario.name?.toLowerCase() == "fleet"){
-                          scenario.platforms.each { platform ->
-                            log(level: 'INFO', text: "Tearing down ${platform.labels}")
-                            teardownStack(scenario, platform, item.suite, scenario.tags, platform.labels)
-                          }
-                        }
-                      }
-                    }
-                  }
+                  teardownStackDocker()
                 }
               }
             }
@@ -460,6 +448,24 @@ def deployStackDocker(){
   }
 }
 
+/*
+ * Teardown docker stack
+ */
+def teardownStackDocker(){
+  def workDir = ".ci/terraform/stack-docker"
+  def cliOptsStr = envToCliArgs([
+    "privatekeypath=\"${env.WORKSPACE}/e2essh\"",
+    "publickeypath=\"${env.WORKSPACE}/e2essh.pub\"",
+    "workspace=\"${env.WORKSPACE}\"",
+    "base_dir=\"${env.BASE_DIR}\"",
+  ])
+
+  withTerraform(){
+    sh "terraform -chdir=${workDir} init"
+    sh "terraform -chdir=${workDir} destroy -auto-approve ${cliOptsStr}"
+  }
+}
+
 def deployNode(opts){
   def workDir = ".ci/terraform/${opts.platformLabels}"
   def nodeAddress = null
@@ -497,11 +503,13 @@ def deployNode(opts){
 def teardownNode(opts){
   def cliOptsStr = envToCliArgs(opts.envContext)
   def workDir = ".ci/terraform/${opts.platformLabels}"
-  withTerraform(){
-    // sh "terraform -chdir=${workDir}/stack destroy -auto-approve || true"
-    log(level: 'INFO', text: "Destroying ${opts.platformLabels} machine")
-    sh "terraform -chdir=${workDir} init"
-    sh "terraform -chdir=${workDir} destroy -auto-approve ${cliOptsStr}"
+  dir("${BASE_DIR}"){
+    withTerraform(){
+      // sh "terraform -chdir=${workDir}/stack destroy -auto-approve || true"
+      log(level: 'INFO', text: "Destroying ${opts.platformLabels} machine")
+      sh "terraform -chdir=${workDir} init"
+      sh "terraform -chdir=${workDir} destroy -auto-approve ${cliOptsStr}"
+    }
   }
 }
 
@@ -651,9 +659,9 @@ def generateFunctionalFleetTestStep(opts){
     withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true, forceWorker: true){
       sh "mkdir -p ${BASE_DIR}/outputs || true"
       nodeDeployResult = deployNode(opts)
+      try {
       opts.features.each { feature ->
         log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
-        try {
           tags = "${feature}${opts.tags}"
           sshexec(nodeDeployResult.nodeAddress,
                   nodeDeployResult.nodeUser,
@@ -661,12 +669,12 @@ def generateFunctionalFleetTestStep(opts){
                   nodeDeployResult.sshPrivateKey,
                   """sudo -E bash /home/${nodeDeployResult.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
           log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
-        } finally {
-          sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${nodeDeployResult.sshPrivateKey} ${nodeDeployResult.nodeUser}@${nodeDeployResult.nodeAddress}:/home/${nodeDeployResult.nodeUser}/e2e-testing/outputs/* ${BASE_DIR}/outputs/. || true"
-          teardownNode(opts)
-          junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-          archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
         }
+      } finally {
+        sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${nodeDeployResult.sshPrivateKey} ${nodeDeployResult.nodeUser}@${nodeDeployResult.nodeAddress}:/home/${nodeDeployResult.nodeUser}/e2e-testing/outputs/* ${BASE_DIR}/outputs/. || true"
+        teardownNode(opts)
+        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
       }
     }
   }
