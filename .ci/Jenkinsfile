@@ -481,19 +481,15 @@ def deployNode(opts, uuid){
 
   def cliOptsStr = envToCliArgs(opts.envContext)
 
-  // deleteDir()
-  // unstash 'source'
-  dir("${BASE_DIR}"){
-    withTerraform(){
-      sh "mkdir -p ${sshKeyDir} || true"
-      sh "ssh-keygen -b 4096 -t rsa -f ${sshKeyPath} -q -N \"\" || true"
-      sh "terraform workspace new ${opts.platformLabels}-${uuid}"
-      sh "terraform -chdir=${workDir} init"
-      sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
-      nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
-      nodeUser = sh(script: "terraform -chdir=${workDir} output -raw username", returnStdout: true)?.trim()
-      return [nodeAddress: nodeAddress, nodeUser: nodeUser, sshPrivateKey: "${sshKeyPath}", sshPublicKey: "${sshKeyPath}.pub"]
-    }
+  withTerraform(){
+    sh "mkdir -p ${sshKeyDir} || true"
+    sh "ssh-keygen -b 4096 -t rsa -f ${sshKeyPath} -q -N \"\" || true"
+    sh "terraform workspace new ${opts.platformLabels}-${uuid}"
+    sh "terraform -chdir=${workDir} init"
+    sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
+    nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
+    nodeUser = sh(script: "terraform -chdir=${workDir} output -raw username", returnStdout: true)?.trim()
+    return [nodeAddress: nodeAddress, nodeUser: nodeUser, sshPrivateKey: "${sshKeyPath}", sshPublicKey: "${sshKeyPath}.pub"]
   }
 }
 
@@ -503,14 +499,12 @@ def deployNode(opts, uuid){
 def teardownNode(opts, uuid){
   def cliOptsStr = envToCliArgs(opts.envContext)
   def workDir = ".ci/terraform/${opts.platformLabels}"
-  dir("${BASE_DIR}"){
-    withTerraform(){
-      // sh "terraform -chdir=${workDir}/stack destroy -auto-approve || true"
-      log(level: 'INFO', text: "Destroying ${opts.platformLabels} machine")
-      sh "terraform workspace new ${opts.platformLabels}-${uuid}"
-      sh "terraform -chdir=${workDir} init"
-      sh "terraform -chdir=${workDir} destroy -auto-approve ${cliOptsStr}"
-    }
+  withTerraform(){
+    // sh "terraform -chdir=${workDir}/stack destroy -auto-approve || true"
+    log(level: 'INFO', text: "Destroying ${opts.platformLabels} machine")
+    sh "terraform workspace select ${opts.platformLabels}-${uuid}"
+    sh "terraform -chdir=${workDir} init"
+    sh "terraform -chdir=${workDir} destroy -auto-approve ${cliOptsStr}"
   }
 }
 
