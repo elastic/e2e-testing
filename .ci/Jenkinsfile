@@ -488,6 +488,7 @@ def deployNode(opts){
     withTerraform(){
       sh "mkdir -p ${sshKeyDir} || true"
       sh "ssh-keygen -b 4096 -t rsa -f ${sshKeyPath} -q -N \"\" || true"
+      sh "terraform workspace new ${opts.platformLabels}"
       sh "terraform -chdir=${workDir} init"
       sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
       nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
@@ -507,6 +508,7 @@ def teardownNode(opts){
     withTerraform(){
       // sh "terraform -chdir=${workDir}/stack destroy -auto-approve || true"
       log(level: 'INFO', text: "Destroying ${opts.platformLabels} machine")
+      sh "terraform workspace new ${opts.platformLabels}-teardown"
       sh "terraform -chdir=${workDir} init"
       sh "terraform -chdir=${workDir} destroy -auto-approve ${cliOptsStr}"
     }
@@ -658,7 +660,7 @@ def generateFunctionalTestStep(opts){
  */
 def generateFunctionalFleetTestStep(opts, feature){
   return {
-    withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true, forceWorker: true){
+    // withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true, forceWorker: true){
       nodeDeployResult = deployNode(opts)
       try {
         log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
@@ -676,6 +678,6 @@ def generateFunctionalFleetTestStep(opts, feature){
         junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
         archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
       }
-    }
+    // }
   }
 }
