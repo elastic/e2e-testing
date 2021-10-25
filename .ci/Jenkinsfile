@@ -383,7 +383,7 @@ def runTF(profile, args){
           [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
           [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
         ]) {
-          return sh(script: """docker run -i -t -v ${env.WORKSPACE}/${env.BASE_DIR}:/e2e-testing -w /e2e-testing/.ci/terraform/${profile}
+          return sh(script: """docker run -v ${env.WORKSPACE}/${env.BASE_DIR}:/e2e-testing -w /e2e-testing/.ci/terraform/${profile}
                 --env GOOGLE_APPLICATION_CREDENTIALS=${env.GOOGLE_APPLICATION_CREDENTIALS}
                 --env AWS_ACCESS_KEY_ID=${env.AWS_ACCESS_KEY_ID}
                 --env AWS_SECRET_ACCESS_KEY=${env.AWS_SECRET_ACCESS_KEY}
