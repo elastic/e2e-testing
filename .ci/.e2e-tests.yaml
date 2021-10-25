@@ -18,18 +18,18 @@ SUITES:
       - name: "Fleet"
         pullRequestFilter: " && ~debian"
         features:
-          - 'fleet_mode_agent'
           - 'backend_processes'
+          - 'fleet_mode_agent'
           - 'integrations'
           - 'apm_server'
           - 'system_integration'
         platforms:
           - labels: "debian"
             provider: "remote"
-          # - labels: "ubuntu-arm64"
-          #   provider: "remote"
-          # - labels: "centos"
-          #   provider: "remote"
+          - labels: "ubuntu-arm64"
+            provider: "remote"
+          - labels: "centos"
+            provider: "remote"
           # - labels: "windows-2019"
           #   provider: "remote"
           # - labels: "centos-8-aarch64"
