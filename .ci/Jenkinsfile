@@ -429,7 +429,7 @@ def deployStack(){
  * for testing across cloud environments.
  */
 def deployStackDocker(){
-  sh "ssh-keygen -b 4096 -t rsa -f ${env.BASE_DIR}/e2essh -q -N \"\" "
+  sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/e2essh -q -N \"\" "
 
   def endpointMap = [:]
   def cliOptsStr = envToCliArgs([
@@ -534,7 +534,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     }
     def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
     def tags = scenario.containsKey('tags') ? scenario.tags : ''
-    def features = scenario.features
+    def features = scenario.containsKey('features') ? scenario.features : []
     def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
     if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
       platformsValue.each { platform ->
