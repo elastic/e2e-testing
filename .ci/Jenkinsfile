@@ -473,18 +473,19 @@ def deployNode(opts, uuid){
   def sshKeyDir = "${env.WORKSPACE}/${uuid}"
   def sshKeyFname = "e2essh-${uuid}"
   def sshKeyPath = "${sshKeyDir}/${sshKeyFname}"
+  def envMap = opts.envContext.clone()
 
-  opts.envContext.add("privatekeypath=\"${sshKeyPath}\"")
-  opts.envContext.add("publickeypath=\"${sshKeyPath}.pub\"")
-  opts.envContext.add("workspace=\"${env.WORKSPACE}\"")
-  opts.envContext.add("base_dir=\"${BASE_DIR}\"")
+  envMap.add("privatekeypath=\"${sshKeyPath}\"")
+  envMap.add("publickeypath=\"${sshKeyPath}.pub\"")
+  envMap.add("workspace=\"${env.WORKSPACE}\"")
+  envMap.add("base_dir=\"${BASE_DIR}\"")
 
-  def cliOptsStr = envToCliArgs(opts.envContext)
+  def cliOptsStr = envToCliArgs(envMap)
 
   withTerraform(){
     sh "mkdir -p ${sshKeyDir} || true"
     sh "ssh-keygen -b 4096 -t rsa -f ${sshKeyPath} -q -N \"\" || true"
-    sh "terraform workspace new ${opts.platformLabels}-${uuid}"
+    sh "terraform workspace new ${opts.platformLabels}-${uuid} || terraform workspace select ${opts.platformLabels}-${uuid}"
     sh "terraform -chdir=${workDir} init"
     sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
     nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
@@ -497,7 +498,17 @@ def deployNode(opts, uuid){
  * Iterate through known terraform configurations and attempt to bring down any deployed resources
  */
 def teardownNode(opts, uuid){
-  def cliOptsStr = envToCliArgs(opts.envContext)
+  def sshKeyDir = "${env.WORKSPACE}/${uuid}"
+  def sshKeyFname = "e2essh-${uuid}"
+  def sshKeyPath = "${sshKeyDir}/${sshKeyFname}"
+  def envMap = opts.envContext.clone()
+
+  envMap.add("privatekeypath=\"${sshKeyPath}\"")
+  envMap.add("publickeypath=\"${sshKeyPath}.pub\"")
+  envMap.add("workspace=\"${env.WORKSPACE}\"")
+  envMap.add("base_dir=\"${BASE_DIR}\"")
+
+  def cliOptsStr = envToCliArgs(envMap)
   def workDir = ".ci/terraform/${opts.platformLabels}"
   withTerraform(){
     // sh "terraform -chdir=${workDir}/stack destroy -auto-approve || true"
