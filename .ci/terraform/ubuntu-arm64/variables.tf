@@ -1,11 +1,11 @@
 variable "privatekeypath" {
     type = string
-    default= ".ci/terraform/e2essh"
+    default= "/ssh/e2essh"
 }
 
 variable "publickeypath" {
     type = string
-    default= ".ci/terraform/e2essh.pub"
+    default= "/ssh/e2essh.pub"
 }
 
 variable "user" {
@@ -15,7 +15,7 @@ variable "user" {
 
 variable "workspace" {
   type = string
-  default = "/tmp"
+  default = "/e2e-testing"
 }
 
 variable "goarch" {
@@ -56,9 +56,6 @@ variable "fleet_url" {
 variable "skip_pull" {
   type = string
   default = "1"
-}
-variable "base_dir" {
-  type = string
 }
 
 variable "tags"{

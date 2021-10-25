@@ -84,7 +84,7 @@ resource "aws_instance" "default" {
   }
 
  provisioner "local-exec" {
-   command = "cd ${var.workspace}/${var.base_dir} && rsync -avz --exclude='.git/' --include='.ci/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${var.privatekeypath}\" ./ ${var.user}@${aws_instance.default.public_ip}:/home/${var.user}/e2e-testing"
+   command = "cd ${var.workspace} && rsync -avz --exclude='.git/' --include='.ci/' -e \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${var.privatekeypath}\" ./ ${var.user}@${aws_instance.default.public_ip}:/home/${var.user}/e2e-testing"
   }
 
  provisioner "remote-exec" {
