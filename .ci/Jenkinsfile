@@ -466,11 +466,10 @@ def teardownStackDocker(){
   }
 }
 
-def deployNode(opts){
+def deployNode(opts, uuid){
   def workDir = ".ci/terraform/${opts.platformLabels}"
   def nodeAddress = null
   def nodeUser = "ci"
-  def uuid = UUID.randomUUID().toString()
   def sshKeyDir = "${env.WORKSPACE}/${uuid}"
   def sshKeyFname = "e2essh-${uuid}"
   def sshKeyPath = "${sshKeyDir}/${sshKeyFname}"
@@ -482,13 +481,13 @@ def deployNode(opts){
 
   def cliOptsStr = envToCliArgs(opts.envContext)
 
-  deleteDir()
-  unstash 'source'
+  // deleteDir()
+  // unstash 'source'
   dir("${BASE_DIR}"){
     withTerraform(){
       sh "mkdir -p ${sshKeyDir} || true"
       sh "ssh-keygen -b 4096 -t rsa -f ${sshKeyPath} -q -N \"\" || true"
-      sh "terraform workspace new ${opts.platformLabels}"
+      sh "terraform workspace new ${opts.platformLabels}-${uuid}"
       sh "terraform -chdir=${workDir} init"
       sh "terraform -chdir=${workDir} apply -auto-approve ${cliOptsStr}"
       nodeAddress = sh(script: "terraform -chdir=${workDir} output -raw ip", returnStdout: true)?.trim()
@@ -501,14 +500,14 @@ def deployNode(opts){
 /*
  * Iterate through known terraform configurations and attempt to bring down any deployed resources
  */
-def teardownNode(opts){
+def teardownNode(opts, uuid){
   def cliOptsStr = envToCliArgs(opts.envContext)
   def workDir = ".ci/terraform/${opts.platformLabels}"
   dir("${BASE_DIR}"){
     withTerraform(){
       // sh "terraform -chdir=${workDir}/stack destroy -auto-approve || true"
       log(level: 'INFO', text: "Destroying ${opts.platformLabels} machine")
-      sh "terraform workspace new ${opts.platformLabels}-teardown"
+      sh "terraform workspace new ${opts.platformLabels}-${uuid}"
       sh "terraform -chdir=${workDir} init"
       sh "terraform -chdir=${workDir} destroy -auto-approve ${cliOptsStr}"
     }
@@ -661,23 +660,24 @@ def generateFunctionalTestStep(opts){
 def generateFunctionalFleetTestStep(opts, feature){
   return {
     // withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true, forceWorker: true){
-      nodeDeployResult = deployNode(opts)
-      try {
-        log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
-        tags = "${feature}${opts.tags}"
-        sshexec(nodeDeployResult.nodeAddress,
-                nodeDeployResult.nodeUser,
-                nodeDeployResult.sshPublicKey,
-                nodeDeployResult.sshPrivateKey,
-                """sudo -E bash /home/${nodeDeployResult.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
-        log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
-      } finally {
-        sh "mkdir -p ${BASE_DIR}/outputs || true"
-        sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${nodeDeployResult.sshPrivateKey} ${nodeDeployResult.nodeUser}@${nodeDeployResult.nodeAddress}:/home/${nodeDeployResult.nodeUser}/e2e-testing/outputs/* ${BASE_DIR}/outputs/. || true"
-        teardownNode(opts)
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
-      }
+    uuid = UUID.randomUUID().toString().split("-")[0]
+    nodeDeployResult = deployNode(opts, uuid)
+    try {
+      log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
+      tags = "${feature}${opts.tags}"
+      sshexec(nodeDeployResult.nodeAddress,
+              nodeDeployResult.nodeUser,
+              nodeDeployResult.sshPublicKey,
+              nodeDeployResult.sshPrivateKey,
+              """sudo -E bash /home/${nodeDeployResult.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
+      log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
+    } finally {
+      sh "mkdir -p ${BASE_DIR}/outputs || true"
+      sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${nodeDeployResult.sshPrivateKey} ${nodeDeployResult.nodeUser}@${nodeDeployResult.nodeAddress}:/home/${nodeDeployResult.nodeUser}/e2e-testing/outputs/* ${BASE_DIR}/outputs/. || true"
+      teardownNode(opts, uuid)
+      junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+      archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+    }
     // }
   }
 }
