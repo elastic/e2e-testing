@@ -381,6 +381,7 @@ def pipenv(args){
             virtualenv -q --python=python3 .venv
             source ".venv/bin/activate"
             pip -q install pipenv
+            pipenv install
             set -x
             pipenv run ${args}
           """,
