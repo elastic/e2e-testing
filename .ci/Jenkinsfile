@@ -2,6 +2,8 @@
 
 @Library('apm@current') _
 
+def runId = UUID.randomUUID().toString().split("-")[0]
+
 pipeline {
   agent { label 'ubuntu-20.04 && immutable && docker' }
   environment {
@@ -251,8 +253,6 @@ pipeline {
     }
   }
 }
-
-def runId = UUID.randomUUID().toString().split("-")[0]
 
 def sshexec(connection, cmd){
   sh "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ${connection} -- '${cmd}'"
