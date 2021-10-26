@@ -72,7 +72,7 @@ pull_request_rules:
           - backport-skip
   - name: notify the backport policy
     conditions:
-      - -label~=^backport
+      - -label~=(^backport|^v7.*)
       - base=master
     actions:
       comment:
