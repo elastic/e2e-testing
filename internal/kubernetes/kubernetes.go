@@ -122,6 +122,11 @@ func (c Cluster) Kubectl() Control {
 	return Control{}.WithConfig(c.kubeconfig)
 }
 
+// Name returns cluster name
+func (c Cluster) Name() string {
+	return c.kindName
+}
+
 func (c Cluster) isAvailable(ctx context.Context) error {
 	out, err := c.Kubectl().Run(ctx, "api-versions")
 	if err != nil {

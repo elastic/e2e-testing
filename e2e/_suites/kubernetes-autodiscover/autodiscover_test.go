@@ -550,6 +550,22 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
+		// store cluster logs: see https://kind.sigs.k8s.io/docs/user/quick-start/#exporting-cluster-logs
+		clusterName := cluster.Name()
+		logsPath, _ := filepath.Abs(filepath.Join("..", "..", "..", "outputs", "kubernetes-autodiscover", clusterName))
+		_, err := shell.Execute(suiteContext, ".", "kind", "export", "logs", "--name", clusterName, logsPath)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"cluster": clusterName,
+				"path":    logsPath,
+			}).Warn("Failed to export Kind cluster logs")
+		} else {
+			log.WithFields(log.Fields{
+				"cluster": clusterName,
+				"path":    logsPath,
+			}).Info("Kind cluster logs exported")
+		}
+
 		if !common.DeveloperMode {
 			cluster.Cleanup(suiteContext)
 		}
