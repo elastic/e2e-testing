@@ -217,6 +217,11 @@ pipeline {
               }
             }
           }
+          post {
+            always {
+              ansible("-t destroy")
+            }
+          }
         }
         // stage('Release') {
         //   options { skipDefaultCheckout() }
@@ -246,6 +251,8 @@ pipeline {
     }
   }
 }
+
+def runId = UUID.randomUUID().toString().split("-")[0]
 
 def sshexec(connection, cmd){
   sh "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ${connection} -- '${cmd}'"
@@ -306,14 +313,7 @@ def pyrun(args){
 }
 
 def ansible(args){
-    pyrun("ansible-playbook .ci/ansible/playbook.yml --extra-vars \"workspace=${env.WORKSPACE}/${env.BASE_DIR} sshPublicKey=${env.WORKSPACE}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${args}")
-}
-/*
- * Deploy the test environment
- */
-def deployTestInfra(){
-  sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/e2essh -q -N \"\" "
-  ansible("-t deploy")
+    pyrun("ansible-playbook .ci/ansible/playbook.yml --extra-vars \"workspace=${env.WORKSPACE}/${env.BASE_DIR} runId=${runId} sshPublicKey='${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub'\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${args}")
 }
 
 
@@ -322,7 +322,9 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   def platforms = item.platforms
 
   if(suite == "fleet"){
-    deployTestInfra()
+    // Deploy the test infrastructure to fleet related tests
+    sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/${env.BASE_DIR}/e2essh -q -N \"\" "
+    ansible("-t deploy")
   }
 
   item.scenarios.each { scenario ->
@@ -388,7 +390,6 @@ def doNotifyBuildResult(boolean slackNotify) {
 def tearDown(Map args = [:]){
   catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
     dir("${BASE_DIR}"){
-      ansible("-t destroy")
       sh(label: 'Remove the entire module cache', script: 'go clean -modcache', returnStatus: true)
     }
     if (isStaticWorker(labels: args.labels)) {

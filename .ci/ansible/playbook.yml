@@ -11,6 +11,13 @@
       region: "us-central1"
       ansible_user: ubuntu
   tasks:
+  - name: "Create AWS keypair"
+    ec2_key:
+      name: "e2essh-{{runId}}"
+      key_material: "{{ lookup('file', sshPublicKey) }}"
+      region: us-east-2
+      state: present
+
   - name: Setup Stack Instance
     include_role:
       name: provision

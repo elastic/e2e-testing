@@ -1,24 +1,17 @@
 ---
-- name: "Create keypair"
-  ec2_key:
-    name: e2essh
-    key_material: "{{ lookup('file', sshPublicKey) }}"
-    region: us-east-2
-    state: present
-
 - name: "Create aws instances"
   ec2:
     wait: yes
-    key_name: e2essh
+    key_name: "e2essh-{{runId}}"
     region: us-east-2
     group: e2e
     image: 'ami-0629230e074c580f2'
     instance_type: t3.xlarge
     instance_tags:
-      Name: e2e-amd64
+      Name: "e2e-amd64-{{runId}}"
     exact_count: 11
     count_tag:
-      Name: e2e-amd64
+      Name: "e2e-amd64-{{runId}}"
   register: ec2
 
 - name: Wait for SSH to come up
