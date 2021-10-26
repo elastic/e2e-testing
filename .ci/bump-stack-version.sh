@@ -55,7 +55,7 @@ find . -name 'deployment.yaml' -print0 |
 
 echo "Commit changes"
 if [ "$CREATE_BRANCH" = "true" ]; then
-	git checkout -b "update-stack-version-$(date "+%Y%m%d%H%M%S")"
+	git checkout -b "update-stack-version-${VERSION}-$(date "+%Y%m%d%H%M%S")"
 else
 	echo "Branch creation disabled."
 fi
