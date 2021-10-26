@@ -298,9 +298,10 @@ def pyrun(args){
             fi
             virtualenv -q --python=python3 .venv
             source ".venv/bin/activate"
-            pip -q install requests google-auth boto boto3 ansible
+            pip -q install pipenv
+            pipenv install
             set -x
-            ${args}
+            pipenv run ${args}
           """,
           )
         }
@@ -310,7 +311,7 @@ def pyrun(args){
 }
 
 def ansible(args){
-    pyrun("ansible-playbook .ci/ansible/playbook.yml --extra-vars \"workspace=${env.WORKSPACE}/${env.BASE_DIR} runId=${env.RUN_ID.split('-')[0]} sshPublicKey='${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub'\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${args}")
+     pyrun("ansible-playbook .ci/ansible/playbook.yml --extra-vars \"workspace=${env.WORKSPACE}/${env.BASE_DIR} runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${args}")
 }
 
 
