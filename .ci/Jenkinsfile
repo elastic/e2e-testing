@@ -306,7 +306,7 @@ def pyrun(args){
 }
 
 def ansible(args){
-    pyenv("ansible-playbook .ci/ansible/playbook.yml --extra-vars \"workspace=${env.WORKSPACE}/${env.BASE_DIR} sshPublicKey=${env.WORKSPACE}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${args}")
+    pyrun("ansible-playbook .ci/ansible/playbook.yml --extra-vars \"workspace=${env.WORKSPACE}/${env.BASE_DIR} sshPublicKey=${env.WORKSPACE}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${args}")
 }
 /*
  * Deploy the test environment
