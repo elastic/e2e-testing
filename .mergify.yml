@@ -37,18 +37,6 @@ pull_request_rules:
         branches:
           - "7.15"
         title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
-  - name: backport patches to 7.14 branch
-    conditions:
-      - merged
-      - base=master
-      - label=v7.14.0
-    actions:
-      backport:
-        assignees:
-          - "{{ author }}"
-        branches:
-          - "7.14"
-        title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
   - name: delete head branch after merge
     conditions:
       - merged
