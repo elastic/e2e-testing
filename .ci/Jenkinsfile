@@ -261,97 +261,11 @@ def envToCliArgs(envContext){
   return cliOptsStr
 }
 
-/*
- * Parses arguments to be utilized in the functional test steps
- */
-def processFunctionalTestConfig(Map args = [:]){
-  def name = args.get('name')
-  def platform = args.get('platform')
-  def suite = args.get('suite')
-  def features = args.get('features') ? args.get('features') : []
-  def tags = args.get('tags') ? args.get('tags') : ''
-  def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
-  def platformLabels = platform.labels
-  def platformProvider = platform.provider
-  // Setup environment for platform
-  def envContext = []
-
-  log(level: 'INFO', text: "Building environment map for ${platformLabels}:${suite}:${tags}")
-
-  if (!platformProvider || !platformProvider?.trim()) {
-    // default provider is Docker
-    platformProvider = "docker"
-  }
-
-  // We will decide whether to include the nightly tests in the execution at CI time, only.
-  // On the other hand, the developers can use the TAGS environment variable locally.
-  // Finally, we positively know that tags are not empty, so we can use AND operator.
-  def excludeNightlyTag = " && ~${NIGHTLY_TAG}"
-  if ("${NIGHTLY_SCENARIOS}" == "true") {
-    excludeNightlyTag = ""
-  }
-  tags += excludeNightlyTag
-
-  if (isPR() || isUpstreamTrigger(filter: 'PR-')) {
-    // when the "Run_As_Master_Branch" param is disabled, we will honour the PR filters, which
-    // basically exclude some less frequent platforms or operative systems. If the user enabled
-    // this param, the pipeline will remove the filters from the test runner.
-    if (!params.Run_As_Master_Branch) {
-      tags += pullRequestFilter
-    }
-  }
-
-  if(suite != "fleet"){
-    platformLabels = "${platformLabels} && immutable"
-  }
-
-  def goArch = "amd64"
-  if (platformLabels.contains("arm64") || platformLabels.contains("aarch64")) {
-      goArch = "arm64"
-  }
-
-  if (platformLabels.contains("windows")) {
-    tags += " && ~@skip:windows"
-  }
-
-  // Skip scenarios per platform
-  tags = " && ~@skip:${goArch}"
-
-  // Build environment map
-  envContext.add("GOARCH=${goArch}")
-  envContext.add("PROVIDER_TYPE=${platformProvider}")
-  envContext.add("OP_LOG_LEVEL=TRACE")
-  envContext.add("LOG_LEVEL=TRACE")
-
-  if (platformProvider == "remote" && endpointMap) {
-    envContext.add("KIBANA_URL=${endpointMap.kibanaUrl}")
-    envContext.add("ELASTICSEARCH_URL=${endpointMap.elasticsearchUrl}")
-    envContext.add("FLEET_URL=${endpointMap.fleetUrl}")
-    envContext.add("KIBANA_PASSWORD=${endpointMap.elasticsearchPassword}")
-    envContext.add("ELASTICSEARCH_PASSWORD=${endpointMap.elasticsearchPassword}")
-    envContext.add("SKIP_PULL=1")
-    envContext.add("TAGS=${tags}")
-    envContext.add("SUITE=${suite}")
-  }
-
-
-  return [goArch: goArch,
-          name: name,
-          platform: platform,
-          suite: suite,
-          tags: tags,
-          features: features,
-          platformLabels: platformLabels,
-          platformProvider: platformProvider,
-          pullRequestFilter: pullRequestFilter,
-          endpointMap: endpointMap,
-          envContext: envContext]
-}
 
 /*
- * Runs pipenv
+ * Runs python in venv
  */
-def pipenv(args){
+def pyrun(args){
   def binDir = "${HOME}/bin"
   def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
   def authObj = props?.data
@@ -380,10 +294,9 @@ def pipenv(args){
             fi
             virtualenv -q --python=python3 .venv
             source ".venv/bin/activate"
-            pip -q install pipenv
-            pipenv install
+            pip -q install requests google-auth boto boto3 ansible
             set -x
-            pipenv run ${args}
+            ${args}
           """,
           )
         }
@@ -393,7 +306,7 @@ def pipenv(args){
 }
 
 def ansible(args){
-    pipenv("ansible-playbook .ci/ansible/playbook.yml --extra-vars \"workspace=${env.WORKSPACE}/${env.BASE_DIR} sshPublicKey=${env.WORKSPACE}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${args}")
+    pyenv("ansible-playbook .ci/ansible/playbook.yml --extra-vars \"workspace=${env.WORKSPACE}/${env.BASE_DIR} sshPublicKey=${env.WORKSPACE}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${args}")
 }
 /*
  * Deploy the test environment

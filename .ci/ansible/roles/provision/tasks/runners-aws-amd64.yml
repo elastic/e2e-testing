@@ -6,19 +6,19 @@
     region: us-east-2
     state: present
 
-- name: "Create aws instance instances"
+- name: "Create aws instances"
   ec2:
     wait: yes
     key_name: e2essh
     region: us-east-2
     group: e2e
-    image: 'ami-03b47d2d727e13114'
-    instance_type: a1.large
+    image: 'ami-0629230e074c580f2'
+    instance_type: t3.xlarge
     instance_tags:
-      Name: e2e
+      Name: e2e-amd64
     exact_count: 11
     count_tag:
-      Name: e2e
+      Name: e2e-amd64
   register: ec2
 
 - name: Wait for SSH to come up
@@ -39,7 +39,7 @@
     state: present
     line: "- ubuntu@{{addr.public_ip}}"
     insertafter: EOF
-    dest: "{{workspace}}/arm64-sshhosts"
+    dest: "{{workspace}}/amd64-sshhosts"
     create: yes
   loop: "{{ ec2.instances }}"
   loop_control:

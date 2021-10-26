@@ -5,16 +5,38 @@
     name: e2essh
     state: absent
 
-- name: "Delete instance {{ item }}"
+- name: "Delete arm64 instances"
   ec2:
     key_name: e2essh
     region: us-east-2
     group: e2e
     image: 'ami-03b47d2d727e13114'
-    instance_type: a1.large
     instance_tags:
-      Name: e2e
+      Name: e2e-arm64
     exact_count: 0
     count_tag:
-      Name: e2e
-  register: ec2
+      Name: e2e-arm64
+
+- name: "Delete amd64 instances"
+  ec2:
+    key_name: e2essh
+    region: us-east-2
+    group: e2e
+    image: 'ami-0629230e074c580f2'
+    instance_tags:
+      Name: e2e-amd64
+    exact_count: 0
+    count_tag:
+      Name: e2e-amd64
+
+- name: "Delete elastic stack"
+  ec2:
+    key_name: e2essh
+    region: us-east-2
+    group: e2e
+    image: 'ami-0629230e074c580f2'
+    instance_tags:
+      Name: e2e-stack
+    exact_count: 0
+    count_tag:
+      Name: e2e-stack

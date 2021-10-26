@@ -1,73 +1,37 @@
 ---
-- name: create a disk
-  gcp_compute_disk:
-      name: 'disk-instance'
-      size_gb: 50
-      source_image: 'projects/centos-cloud/global/images/family/centos-8'
-      zone: "{{ zone }}"
-      project: "{{ gcp_project }}"
-      auth_kind: "{{ gcp_cred_kind }}"
-      service_account_file: "{{ gcp_cred_file }}"
-      scopes:
-        - https://www.googleapis.com/auth/compute
-      state: present
-  register: disk
-- name: create a address
-  gcp_compute_address:
-      name: 'address-instance'
-      region: "{{ region }}"
-      project: "{{ gcp_project }}"
-      auth_kind: "{{ gcp_cred_kind }}"
-      service_account_file: "{{ gcp_cred_file }}"
-      scopes:
-        - https://www.googleapis.com/auth/compute
-      state: present
-  register: address
-
-- name: Create firewall rule to allow port 80,22,443,5601,8220,9200
-  gcp_compute_firewall:
-    name: e2e-firewall
-    allowed:
-    - ip_protocol: tcp
-      ports: ['80','22', '443', '5601', '8220', '9200']
-    target_tags:
-      - e2e
-    source_ranges: ['0.0.0.0/0']
-    project: "{{ gcp_project }}"
-    auth_kind: "{{ gcp_cred_kind }}"
-    service_account_file: "{{ gcp_cred_file }}"
+- name: "Create keypair"
+  ec2_key:
+    name: e2essh
+    key_material: "{{ lookup('file', sshPublicKey) }}"
+    region: us-east-2
     state: present
-  register: firewall
 
-- name: create a instance
-  gcp_compute_instance:
-      state: present
-      name: e2e-stack
-      machine_type: e2-standard-8
-      disks:
-        - auto_delete: true
-          boot: true
-          source: "{{ disk }}"
-      network_interfaces:
-          - network: null # use default
-            access_configs:
-              - name: 'External NAT'
-                nat_ip: "{{ address }}"
-                type: 'ONE_TO_ONE_NAT'
-      metadata:
-        ssh-keys: "ci:{{ lookup('file', sshPublicKey) }}"
-      zone: "{{ zone }}"
-      project: "{{ gcp_project }}"
-      auth_kind: "{{ gcp_cred_kind }}"
-      service_account_file: "{{ gcp_cred_file }}"
-      tags:
-        items:
-          - e2e
-          - http-server
-          - https-server
-      scopes:
-        - https://www.googleapis.com/auth/compute
-  register: instance
+- name: "Create elastic stack"
+  ec2:
+    wait: yes
+    key_name: e2essh
+    region: us-east-2
+    group: e2e
+    image: 'ami-0629230e074c580f2'
+    instance_type: t3.2xlarge
+    instance_tags:
+      Name: e2e-stack
+    exact_count: 1
+    count_tag:
+      Name: e2e-stack
+  register: ec2
+
+- name: Wait for SSH to come up
+  wait_for: host={{ ec2ssh.public_ip }} port=22 delay=10 timeout=60
+  loop: "{{ ec2.instances }}"
+  loop_control:
+    loop_var: ec2ssh
+
+- name: Add host to groupname
+  add_host: hostname={{ ec2host.public_ip }} groupname=stack_instances
+  loop: "{{ ec2.instances }}"
+  loop_control:
+    loop_var: ec2host
 
 - name: Create environment file
   become: no
@@ -76,15 +40,91 @@
     dest: "{{workspace}}/.env"
     content: |
       export PROVIDER=remote
-      export KIBANA_URL=http://{{address.address}}:5601
-      export ELASTICSEARCH_URL=http://{{address.address}}:9200
-      export FLEET_URL=http://{{address.address}}:8220
+      export KIBANA_URL=http://{{ec2.instances[0].public_ip}}:5601
+      export ELASTICSEARCH_URL=http://{{ec2.instances[0].public_ip}}:9200
+      export FLEET_URL=http://{{ec2.instances[0].public_ip}}:8220
       export ELASTICSEARCH_PASSWORD=changeme
       export KIBANA_PASSWORD=changeme
       export SKIP_PULL=1
 
-- name: Wait for SSH to come up
-  wait_for: host={{ address.address }} port=22 delay=10 timeout=60
+# - name: Add AWS host to address list
+#   become: no
+#   lineinfile:
+#     state: present
+#     line: "- ubuntu@{{addr.public_ip}}"
+#     insertafter: EOF
+#     dest: "{{workspace}}/arm64-sshhosts"
+#     create: yes
+#   loop: "{{ ec2.instances }}"
+#   loop_control:
+#     loop_var: addr
 
-- name: Add host to groupname
-  add_host: hostname={{ address.address }} groupname=stack_instances
+# - name: create a disk
+#   gcp_compute_disk:
+#       name: 'disk-instance'
+#       size_gb: 50
+#       source_image: 'projects/centos-cloud/global/images/family/centos-8'
+#       zone: "{{ zone }}"
+#       project: "{{ gcp_project }}"
+#       auth_kind: "{{ gcp_cred_kind }}"
+#       service_account_file: "{{ gcp_cred_file }}"
+#       scopes:
+#         - https://www.googleapis.com/auth/compute
+#       state: present
+#   register: disk
+# - name: create a address
+#   gcp_compute_address:
+#       name: 'address-instance'
+#       region: "{{ region }}"
+#       project: "{{ gcp_project }}"
+#       auth_kind: "{{ gcp_cred_kind }}"
+#       service_account_file: "{{ gcp_cred_file }}"
+#       scopes:
+#         - https://www.googleapis.com/auth/compute
+#       state: present
+#   register: address
+
+# - name: Create firewall rule to allow port 80,22,443,5601,8220,9200
+#   gcp_compute_firewall:
+#     name: e2e-firewall
+#     allowed:
+#     - ip_protocol: tcp
+#       ports: ['80','22', '443', '5601', '8220', '9200']
+#     target_tags:
+#       - e2e
+#     source_ranges: ['0.0.0.0/0']
+#     project: "{{ gcp_project }}"
+#     auth_kind: "{{ gcp_cred_kind }}"
+#     service_account_file: "{{ gcp_cred_file }}"
+#     state: present
+#   register: firewall
+
+# - name: create a instance
+#   gcp_compute_instance:
+#       state: present
+#       name: e2e-stack
+#       machine_type: e2-standard-8
+#       disks:
+#         - auto_delete: true
+#           boot: true
+#           source: "{{ disk }}"
+#       network_interfaces:
+#           - network: null # use default
+#             access_configs:
+#               - name: 'External NAT'
+#                 nat_ip: "{{ address }}"
+#                 type: 'ONE_TO_ONE_NAT'
+#       metadata:
+#         ssh-keys: "ci:{{ lookup('file', sshPublicKey) }}"
+#       zone: "{{ zone }}"
+#       project: "{{ gcp_project }}"
+#       auth_kind: "{{ gcp_cred_kind }}"
+#       service_account_file: "{{ gcp_cred_file }}"
+#       tags:
+#         items:
+#           - e2e
+#           - http-server
+#           - https-server
+#       scopes:
+#         - https://www.googleapis.com/auth/compute
+#   register: instance
