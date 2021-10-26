@@ -49,7 +49,6 @@ func TestIsCommit(t *testing.T) {
 
 	t.Run("Returns false with non-commits", func(t *testing.T) {
 		assert.False(t, IsCommit("master"))
-		assert.False(t, IsCommit("7.x"))
 		assert.False(t, IsCommit("7.12.x"))
 		assert.False(t, IsCommit("7.11.x"))
 		assert.False(t, IsCommit("pr12345"))
