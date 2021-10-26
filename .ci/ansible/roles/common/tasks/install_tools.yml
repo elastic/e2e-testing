@@ -1,0 +1,23 @@
+---
+- name: Install dependencies
+  ansible.builtin.package:
+    name:
+      - rsync
+      - wget
+      - gcc
+      - make
+    state: latest
+
+- name: Install GO (x86_64)
+  shell: |
+    wget https://dl.google.com/go/go{{go_version}}.linux-amd64.tar.gz
+    sudo tar -C /usr/local -xf go{{go_version}}.linux-amd64.tar.gz
+    sudo ln -s /usr/local/go/bin/go /usr/bin/go || true
+  when: ansible_architecture == "x86_64"
+
+- name: Install GO (arm64)
+  shell: |
+    wget https://dl.google.com/go/go{{go_version}}.linux-arm64.tar.gz
+    sudo tar -C /usr/local -xf go{{go_version}}.linux-arm64.tar.gz
+    sudo ln -s /usr/local/go/bin/go /usr/bin/go || true
+  when: ansible_architecture == "aarch64"

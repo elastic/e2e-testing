@@ -7,6 +7,7 @@ resource "random_id" "instance_id" {
   byte_length = 8
 }
 
+
 resource "google_compute_firewall" "default" {
  name    = "fleet-${random_id.instance_id.hex}"
  network = "default"

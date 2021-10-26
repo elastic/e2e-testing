@@ -19,22 +19,22 @@ Examples: Debian
 | os     |
 | debian |
 
-@enroll
-Scenario Outline: Deploying the <os> agent with enroll and then run on rpm and deb
-  Given a "<os>" agent is deployed to Fleet
-  When the "elastic-agent" process is in the "started" state on the host
-  Then there are "2" instances of the "filebeat" process in the "started" state
-    And there are "2" instances of the "metricbeat" process in the "started" state
+# @enroll
+# Scenario Outline: Deploying the <os> agent with enroll and then run on rpm and deb
+#   Given a "<os>" agent is deployed to Fleet
+#   When the "elastic-agent" process is in the "started" state on the host
+#   Then there are "2" instances of the "filebeat" process in the "started" state
+#     And there are "2" instances of the "metricbeat" process in the "started" state
 
-@centos
-Examples: Centos
-| os     |
-| centos |
+# @centos
+# Examples: Centos
+# | os     |
+# | centos |
 
-@debian
-Examples: Debian
-| os     |
-| debian |
+# @debian
+# Examples: Debian
+# | os     |
+# | debian |
 
 @stop-agent
 Scenario Outline: Stopping the <os> agent stops backend processes

@@ -256,8 +256,8 @@ pipeline {
   }
 }
 
-def sshexec(address, username, sshpublickey, sshprivatekey, cmd){
-  sh "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${sshprivatekey} ${username}@${address} -- '${cmd}'"
+def sshexec(connection, cmd){
+  sh "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ${connection} -- '${cmd}'"
 }
 
 def envToCliArgs(envContext){
@@ -280,7 +280,6 @@ def processFunctionalTestConfig(Map args = [:]){
   def features = args.get('features') ? args.get('features') : []
   def tags = args.get('tags') ? args.get('tags') : ''
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
-  def endpointMap = args.get('endpointMap') ? args.get('endpointMap') : [:]
   def platformLabels = platform.labels
   def platformProvider = platform.provider
   // Setup environment for platform
@@ -359,9 +358,9 @@ def processFunctionalTestConfig(Map args = [:]){
 }
 
 /*
- * Allows provisioning of machines via terraform
+ * Runs pipenv
  */
-def runTF(profile, args){
+def pipenv(args){
   def binDir = "${HOME}/bin"
   def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
   def authObj = props?.data
@@ -383,114 +382,39 @@ def runTF(profile, args){
           [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
           [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
         ]) {
-          return sh(script: """docker run
-                -v "${env.GOOGLE_APPLICATION_CREDENTIALS}":/gcp/creds.json:ro
-                -v "${env.WORKSPACE}/e2essh":/ssh/e2essh:ro
-                -v "${env.WORKSPACE}/e2essh.pub":/ssh/e2essh.pub:ro
-                -v "${env.WORKSPACE}/${env.BASE_DIR}":/e2e-testing
-                -w /e2e-testing/.ci/terraform/${profile}
-                --env GOOGLE_APPLICATION_CREDENTIALS=/gcp/creds.json
-                --env AWS_ACCESS_KEY_ID=${env.AWS_ACCESS_KEY_ID}
-                --env AWS_SECRET_ACCESS_KEY=${env.AWS_SECRET_ACCESS_KEY}
-                hashicorp/terraform:latest ${args}
-             """.replaceAll('\\s+', ' '), returnStdout: true)?.trim()
+          sh(script: """#!/bin/bash +x
+            if [ -z "\$(command -v python3)" ] \
+              || [ -z "\$(command -v virtualenv)" ]; then
+              exit 0
+            fi
+            virtualenv -q --python=python3 .venv
+            source ".venv/bin/activate"
+            pip -q install pipenv
+            set -x
+            pipenv run ${args}
+          """,
+          )
         }
       }
     }
   }
 }
 
-def deployStack(){
-  def endpointMap = [:]
-  def workDir = ".ci/terraform/stack"
-  runTF("stack", "init")
-  runTF("stack", "apply -auto-approve")
-  elasticsearchAddress = sh(label: 'Get ES endpoint',
-                            script: "echo ec_deployment.end-to-end.elasticsearch[0].https_endpoint | terraform -chdir=${workDir} console",
-                            returnStdout: true)?.trim()
-  kibanaAddress = sh(label: 'Get Kibana endpoint',
-                     script: "echo ec_deployment.end-to-end.kibana[0].https_endpoint | terraform -chdir=${workDir} console",
-                     returnStdout: true)?.trim()
-  fleetAddress = sh(label: 'Get Fleet endpoint',
-                    script: "echo ec_deployment.end-to-end.apm[0].https_endpoint | terraform -chdir=${workDir} console",
-                    returnStdout: true)?.trim()
-  endpointPassword = sh(label: 'Get password',
-                        script: "terraform -chdir=${workDir} show -json | jq -r .values.root_module.resources[0].values.elasticsearch_password",
-                        returnStdout: true)?.trim()
-  endpointMap = [elasticsearchUrl: elasticsearchAddress,
-                 kibanaUrl: kibanaAddress,
-                 fleetUrl: fleetAddress.replace(".apm", ".fleet"),
-                 elasticsearchPassword: endpointPassword]
-  return endpointMap
+def ansible(args){
+    pipenv("ansible-playbook .ci/ansible/playbook.yml --extra-vars \"workspace=${env.WORKSPACE}/${env.BASE_DIR} sshPublicKey=${env.WORKSPACE}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${args}")
 }
-
-
 /*
- * Placeholder deployment until we are able to work out specifying snapshots in staging cloud.
- * This will deploy a docker stack on a separate gcp instance and be exposed to the internet
- * for testing across cloud environments.
+ * Deploy the test environment
  */
-def deployStackDocker(){
+def deployTestInfra(){
   sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/e2essh -q -N \"\" "
-
-  def endpointMap = [:]
-  def cliOptsStr = envToCliArgs([])
-  def nodeAddress = "127.0.0.1"
-  runTF("stack-docker", "init")
-  runTF("stack-docker", "apply -auto-approve ${cliOptsStr}")
-  nodeAddress = runTF("stack-docker", "output -raw ip")
-  endpointMap = [elasticsearchUrl: "http://${nodeAddress}:9200",
-                 kibanaUrl: "http://${nodeAddress}:5601",
-                 fleetUrl: "http://${nodeAddress}:8220",
-                 elasticsearchPassword: "changeme"]
-
-  return endpointMap
+  ansible("-t deploy")
 }
 
-/*
- * Teardown docker stack
- */
-def teardownStackDocker(){
-  def cliOptsStr = envToCliArgs([])
-
-  runTF("stack-docker", "init")
-  runTF("stack-docker", "destroy -auto-approve ${cliOptsStr}")
-}
-
-def deployNode(opts, uuid){
-  def nodeAddress = null
-  def nodeUser = "ci"
-  def cliOptsStr = envToCliArgs(opts.envContext)
-
-  runTF(opts.platformLabels, "init")
-  runTF(opts.platformLabels, "apply -auto-approve ${cliOptsStr}")
-  nodeAddress = runTF(opts.platformLabels, "output -raw ip")
-  nodeUser = runTF(opts.platformLabels, "output -raw username")
-  return [nodeAddress: nodeAddress, nodeUser: nodeUser, sshPrivateKey: "${sshKeyPath}", sshPublicKey: "${sshKeyPath}.pub"]
-}
-
-/*
- * Iterate through known terraform configurations and attempt to bring down any deployed resources
- */
-def teardownNode(opts, uuid){
-  def cliOptsStr = envToCliArgs(opts.envContext)
-  log(level: 'INFO', text: "Destroying ${opts.platformLabels} machine")
-  runTF(opts.platformLabels, "init")
-  runTF(opts.platformLabels, "destroy -auto-approve ${cliOptsStr}")
-}
 
 def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   def suite = item.suite
   def platforms = item.platforms
-  def endpointMap = [:]
-
-  // Start stack with fleet server enabled for the fleet suite of tests
-  if (suite == "fleet") {
-    endpointMap = deployStackDocker()
-  }
-  if(isInstalled(tool: 'docker', flag: '--version')) {
-    dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
-  }
 
   item.scenarios.each { scenario ->
     def name = scenario.name
@@ -501,25 +425,20 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
       platformsValue = scenarioPlatforms
     }
     def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
-    def tags = scenario.containsKey('tags') ? scenario.tags : ''
-    def features = scenario.containsKey('features') ? scenario.features : []
+    def tags = scenario.tags
     def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
     if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
       platformsValue.each { platform ->
-        opts = processFunctionalTestConfig(name: "${name}",
-                                           platform: platform,
-                                           suite: "${suite}",
-                                           tags: "${tags}",
-                                           features: features,
-                                           pullRequestFilter: "${pullRequestFilter}",
-                                           endpointMap: endpointMap)
-        log(level: 'INFO', text: "Adding ${opts.platformLabels}:${opts.suite} test suite to the build execution")
+        def platformLabels = platform.labels
         if(suite == "fleet"){
-          opts.features.each { feature ->
-            parallelTasks["${opts.platformLabels}_${opts.suite}_${feature}"] = generateFunctionalFleetTestStep(opts, feature)
+          def testRunners = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${platformLabels}-sshhosts")
+          testRunners.each { testRunner ->
+            log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
+            parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}", testRunner: testRunner)
           }
         } else {
-          parallelTasks["${opts.platformLabels}_${opts.suite}_${opts.tags}"] = generateFunctionalTestStep(opts)
+          log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
+          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}")
         }
       }
     } else {
@@ -560,6 +479,7 @@ def doNotifyBuildResult(boolean slackNotify) {
 def tearDown(Map args = [:]){
   catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
     dir("${BASE_DIR}"){
+      ansible("-t destroy")
       sh(label: 'Remove the entire module cache', script: 'go clean -modcache', returnStatus: true)
     }
     if (isStaticWorker(labels: args.labels)) {
@@ -583,65 +503,151 @@ def githubCheckNotify(String status) {
   }
 }
 
-/*
- * Generates the functional step for all other Suites
- */
-def generateFunctionalTestStep(opts){
-  // Setup environment for platform
-  opts.envContext.add("PROVIDER=${opts.platformProvider}")
-  opts.envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${opts.goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
+def generateFunctionalTestStep(Map args = [:]){
+  def name = args.get('name')
+  def platform = args.get('platform')
+  def suite = args.get('suite')
+  def tags = args.get('tags')
+  def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
+  def testRunner = args.get('testRunner')?.trim() ? args.get('testRunner') : null
 
-  return {
-    withNode(labels: "${opts.platformLabels}", sleepMax: 20, forceWorkspace: true){
-      deleteDir()
-      unstash 'source'
+  def platformLabels = platform.labels
+  def platformProvider = platform.provider
+
+  if (!platformProvider || !platformProvider?.trim()) {
+    // default provider is Docker
+    platformProvider = "docker"
+  }
+
+  // We will decide whether to include the nightly tests in the execution at CI time, only.
+  // On the other hand, the developers can use the TAGS environment variable locally.
+  // Finally, we positively know that tags are not empty, so we can use AND operator.
+  def excludeNightlyTag = " && ~${NIGHTLY_TAG}"
+  if ("${NIGHTLY_SCENARIOS}" == "true") {
+    excludeNightlyTag = ""
+  }
+  tags += excludeNightlyTag
+
+  if (isPR() || isUpstreamTrigger(filter: 'PR-')) {
+    // when the "Run_As_Master_Branch" param is disabled, we will honour the PR filters, which
+    // basically exclude some less frequent platforms or operative systems. If the user enabled
+    // this param, the pipeline will remove the filters from the test runner.
+    if (!params.Run_As_Master_Branch) {
+      tags += pullRequestFilter
+    }
+  }
+
+  def goArch = "amd64"
+  def workerLabels = "${platformLabels} && immutable"
+  def linuxIp = null
+  if (platformLabels == "arm64") {
+    goArch = "arm64"
+    // let's use centos8 ARM as base VM, trying to mitigate the flakiness described in https://github.com/elastic/e2e-testing/issues/1271
+    workerLabels = "centos-8-aarch64"
+  }
+
+  if (platformLabels.contains("windows")) {
+    // For windows testing we need to make sure that the host executor is a linux machine and nest the windows withNode within that
+    workerLabels = "ubuntu-20.04"
+    tags += " && ~@skip:windows"
+  }
+
+  // Skip scenarios per platform
+  tags += " && ~@skip:${goArch}"
+
+  // Setup environment for platform
+  def envContext = []
+  envContext.add("GOARCH=${goArch}")
+  envContext.add("PROVIDER=${platformProvider}")
+  envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
+
+  if (testRunner){
+    return {
       try {
-        withDockerEnv(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}") {
-          filebeat(output: "docker_logs_${opts.platformLabels}_${opts.goArch}_${opts.suite}_${opts.name}.log", workdir: "${env.WORKSPACE}") {
-            withEnv(opts.envContext) {
-              withGoEnv(version: "${GO_VERSION}") {
-                // This step will help to send the APM traces to the
-                // APM service defined by the Otel Jenkins plugin.
-                withOtelEnv() {
-                  sh script: """.ci/scripts/functional-test.sh "${opts.suite}" "${opts.tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${opts.platformLabels}:${opts.suite}:${opts.tags}"
-                }
-              }
+        dir("${BASE_DIR}") {
+          withEnv(envContext) {
+            // This step will help to send the APM traces to the
+            // APM service defined by the Otel Jenkins plugin.
+            withOtelEnv() {
+              sshexec(testRunner, """bash e2e-testing/.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
             }
           }
         }
       } finally {
         junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
-        tearDown(labels: opts.platformLabels)
+        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml,${BASE_DIR}/outputs/${suite}"
       }
     }
-  }
-}
-
-/*
- * Generates the functional step for testing Fleet via Terraform
- */
-def generateFunctionalFleetTestStep(opts, feature){
-  return {
-    // withNode(labels: "ubuntu-20.04 && immutable && docker", sleepMax: 20, forceWorkspace: true, forceWorker: true){
-    uuid = UUID.randomUUID().toString().split("-")[0]
-    nodeDeployResult = deployNode(opts, uuid)
-    try {
-      log(level: 'INFO', text: "Starting ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
-      tags = "${feature}${opts.tags}"
-      sshexec(nodeDeployResult.nodeAddress,
-              nodeDeployResult.nodeUser,
-              nodeDeployResult.sshPublicKey,
-              nodeDeployResult.sshPrivateKey,
-              """sudo -E bash /home/${nodeDeployResult.nodeUser}/e2e-testing/.ci/scripts/functional-test.sh "${opts.suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
-      log(level: 'INFO', text: "Finished ${opts.platformLabels}:${opts.suite}:${feature} ${nodeDeployResult.nodeAddress}")
-    } finally {
-      sh "mkdir -p ${BASE_DIR}/outputs || true"
-      sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${nodeDeployResult.sshPrivateKey} ${nodeDeployResult.nodeUser}@${nodeDeployResult.nodeAddress}:/home/${nodeDeployResult.nodeUser}/e2e-testing/outputs/* ${BASE_DIR}/outputs/. || true"
-      teardownNode(opts, uuid)
-      junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-      archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml"
+  } else {
+    return {
+      withNode(labels: "${workerLabels}", sleepMax: 20, forceWorkspace: true){
+        deleteDir()
+        unstash 'source'
+        try {
+          withDockerEnv(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}") {
+            filebeat(output: "docker_logs_${platformLabels}_${goArch}_${suite}_${name}.log", workdir: "${env.WORKSPACE}") {
+              dir("${BASE_DIR}") {
+                // Doing a windows agent test, start up docker before the new environment is applied for windows
+                if (platformLabels.contains("windows")) {
+                  sh script: "docker-compose -f cli/config/compose/profiles/${suite}/docker-compose.yml up -d", label: "Deploying ${suite} via docker"
+                  linuxIp = grabWorkerIP()
+                  def mingwArch = is32() ? '32' : '64'
+                  def chocoPath = 'C:\\ProgramData\\chocolatey\\bin'
+                  def chocoPython3Path = 'C:\\Python38;C:\\Python38\\Scripts'
+                  path = "${env.WORKSPACE}\\bin;${chocoPath};${chocoPython3Path};C:\\tools\\mingw${mingwArch}\\bin;C:\\windows\\system32;C:\\windows\\system32\\WindowsPowerShell\\v1.0\\"
+                  envContext.add("KIBANA_URL=https://${linuxIp}:5601")
+                  envContext.add("ELASTICSEARCH_URL=https://${linuxIp}:9200")
+                  envContext.add("FLEET_URL=https://${linuxIp}:8220")
+                  envContext.add("PROVIDER=remote") // a remote provider is needed for Windows
+                  envContext.add("OP_LOG_LEVEL=TRACE")
+                  envContext.add("PATH=${path}")
+                }
+                withEnv(envContext) {
+                  if (platformLabels.contains("windows")) {
+                    // Boot up a windows VM to deploy Elastic Agent to be tested against
+                    // a remote deployed stack
+                    withNode(labels: platformLabels, forceWorkspace: true) {
+                      deleteDir()
+                      unstash 'source'
+                      dir("${BASE_DIR}"){
+                        withGoEnvWindows(version: "${GO_VERSION}"){
+                          echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
+                          powershell label: "Disk Information", script: "Get-PSDrive"
+                          powershell label: "Pinging Linux VM", script: "ping -n 1 ${linuxIp}"
+                          powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${linuxIp} -Port 9200"
+                          powershell label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601"
+                          powershell label: "Check for running fleet server", script: "Test-NetConnection ${linuxIp} -Port 8220"
+                          cmd script: "mkdir outputs"
+                          try {
+                            dir("e2e/_suites/${suite}") {
+                              cmd script: "go test -timeout 60m -v --godog.format=\"junit:..\\..\\..\\outputs\\TEST-windows-${suite}.xml\" --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
+                            }
+                          } finally {
+                            junit(allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/TEST-*.xml")
+                            archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/TEST-*.xml"
+                          }
+                        }
+                      }
+                    }
+                  } else {
+                    withGoEnv(version: "${GO_VERSION}") {
+                      // This step will help to send the APM traces to the
+                      // APM service defined by the Otel Jenkins plugin.
+                      withOtelEnv() {
+                        sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } finally {
+          junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
+          archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml,${BASE_DIR}/outputs/${suite}"
+          tearDown(labels: workerLabels)
+        }
+      }
     }
-    // }
   }
 }

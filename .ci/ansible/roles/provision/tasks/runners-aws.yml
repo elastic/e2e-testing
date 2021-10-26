@@ -1,0 +1,46 @@
+---
+- name: "Create keypair"
+  ec2_key:
+    name: e2essh
+    key_material: "{{ lookup('file', sshPublicKey) }}"
+    region: us-east-2
+    state: present
+
+- name: "Create aws instance instances"
+  ec2:
+    wait: yes
+    key_name: e2essh
+    region: us-east-2
+    group: e2e
+    image: 'ami-03b47d2d727e13114'
+    instance_type: a1.large
+    instance_tags:
+      Name: e2e
+    exact_count: 11
+    count_tag:
+      Name: e2e
+  register: ec2
+
+- name: Wait for SSH to come up
+  wait_for: host={{ ec2ssh.public_ip }} port=22 delay=10 timeout=60
+  loop: "{{ ec2.instances }}"
+  loop_control:
+    loop_var: ec2ssh
+
+- name: Add host to groupname
+  add_host: hostname={{ ec2host.public_ip }} groupname=aws_runner_instances
+  loop: "{{ ec2.instances }}"
+  loop_control:
+    loop_var: ec2host
+
+- name: Add AWS host to address list
+  become: no
+  lineinfile:
+    state: present
+    line: "- ubuntu@{{addr.public_ip}}"
+    insertafter: EOF
+    dest: "{{workspace}}/arm64-sshhosts"
+    create: yes
+  loop: "{{ ec2.instances }}"
+  loop_control:
+    loop_var: addr

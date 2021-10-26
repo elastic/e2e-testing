@@ -1,0 +1,20 @@
+---
+- name: Create source code dir
+  ansible.builtin.file:
+    path: /home/ci/e2e-testing
+    state: directory
+    mode: '0755'
+    owner: ci
+    group: ci
+
+- name: Copy source code
+  become: no
+  local_action: ansible.builtin.command rsync --exclude='.git' -e 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' -aW {{ workspace }} {{ ansible_user }}@{{ inventory_hostname }}:e2e-testing
+
+- name: Create outputs dir
+  ansible.builtin.file:
+    path: /home/ci/e2e-testing/outputs
+    state: directory
+    mode: '0755'
+    owner: ci
+    group: ci
