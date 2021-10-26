@@ -2,8 +2,6 @@
 
 @Library('apm@current') _
 
-def runId = UUID.randomUUID().toString().split("-")[0]
-
 pipeline {
   agent { label 'ubuntu-20.04 && immutable && docker' }
   environment {
@@ -23,6 +21,7 @@ pipeline {
     GCP_PROVISIONER_SECRET = 'secret/observability-team/ci/service-account/jenkins-gce-provisioner'
     AWS_PROVISIONER_SECRET = 'secret/observability-team/ci/elastic-observability-aws-account-auth'
     TEST_MATRIX_FILE = "${params.testMatrixFile}"
+    RUN_ID = UUID.randomUUID().toString()
   }
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -219,11 +218,6 @@ pipeline {
               }
             }
           }
-          post {
-            always {
-              ansible("-t destroy")
-            }
-          }
         }
         // stage('Release') {
         //   options { skipDefaultCheckout() }
@@ -250,6 +244,9 @@ pipeline {
   post {
     cleanup {
       doNotifyBuildResult(params.notifyOnGreenBuilds)
+    }
+    always {
+      ansible("-t destroy")
     }
   }
 }
@@ -313,7 +310,7 @@ def pyrun(args){
 }
 
 def ansible(args){
-    pyrun("ansible-playbook .ci/ansible/playbook.yml --extra-vars \"workspace=${env.WORKSPACE}/${env.BASE_DIR} runId=${runId} sshPublicKey='${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub'\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${args}")
+    pyrun("ansible-playbook .ci/ansible/playbook.yml --extra-vars \"workspace=${env.WORKSPACE}/${env.BASE_DIR} runId=${env.RUN_ID.split('-')[0]} sshPublicKey='${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub'\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${args}")
 }
 
 
