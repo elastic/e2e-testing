@@ -60,10 +60,10 @@
   vars:
     ansible_user: ubuntu
   tasks:
-  - name: Setup sudo
-    include_role:
-      name: common
-      tasks_from: setup_sudo.yml
+  # - name: Setup sudo
+  #   include_role:
+  #     name: common
+  #     tasks_from: setup_sudo.yml
 
   - name: Setup docker
     shell: |
