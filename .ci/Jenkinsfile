@@ -244,8 +244,6 @@ pipeline {
   post {
     cleanup {
       doNotifyBuildResult(params.notifyOnGreenBuilds)
-    }
-    always {
       ansible("-t destroy")
     }
   }
