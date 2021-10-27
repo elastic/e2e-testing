@@ -12,6 +12,10 @@
     exact_count: 1
     count_tag:
       Name: "e2e-stack-{{runId}}"
+    volumes:
+      - device_name: /dev/xvda
+        volume_type: gp2
+        volume_size: 50
   register: ec2
 
 - name: Wait for SSH to come up

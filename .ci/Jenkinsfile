@@ -218,6 +218,11 @@ pipeline {
               }
             }
           }
+          post {
+            cleanup {
+              ansible('-t destroy')
+            }
+          }
         }
         // stage('Release') {
         //   options { skipDefaultCheckout() }
@@ -244,7 +249,6 @@ pipeline {
   post {
     cleanup {
       doNotifyBuildResult(params.notifyOnGreenBuilds)
-      ansible("-t destroy")
     }
   }
 }
