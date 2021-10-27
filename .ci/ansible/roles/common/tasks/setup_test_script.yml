@@ -8,7 +8,23 @@
     dest: "/home/{{ansible_user}}/e2e-testing/.ci/scripts/functional-test.sh"
     content: |
        #!/usr/bin/env bash
+
+       ## Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+       ## or more contributor license agreements. Licensed under the Elastic License;
+       ## you may not use this file except in compliance with the Elastic License.
+
        set -euxo pipefail
+       #
+       # Run the functional tests using the functional-test make goal and parse the
+       # output to JUnit format.
+       #
+       # Parameters:
+       #   - SUITE - that's the suite to be tested. Default '' which means all of them.
+       #   - TAGS - that's the tags to be tested. Default '' which means all of them.
+       #   - STACK_VERSION - that's the version of the stack to be tested. Default is stored in '.stack-version'.
+       #   - BEAT_VERSION - that's the version of the Beat to be tested. Default is stored in '.stack-version'.
+       #
+
        BASE_DIR="/home/{{ansible_user}}/e2e-testing"
        source "${BASE_DIR}/.env"
 
@@ -16,6 +32,4 @@
 
        REPORT="${BASE_DIR}/outputs/TEST-$(uname -m)-${SUITE}"
 
-       FORMAT=junit:${REPORT}.xml make --no-print-directory -C "${BASE_DIR}/e2e/_suites/${SUITE}" functional-test
-
-       cd "${BASE_DIR}/e2e/_suites/${SUITE}" && go test -timeout 60m -v --godog.format=${FORMAT} --godog.tags="${TAGS}"
+       TAGS="${1}" FORMAT=junit:${REPORT}.xml STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} make --no-print-directory -C "${BASE_DIR}/e2e/_suites/${SUITE}" functional-test

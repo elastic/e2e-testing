@@ -446,8 +446,6 @@ def generateFunctionalTestStep(Map args = [:]){
   // Skip scenarios per platform
   tags += " && ~@skip:${goArch}"
 
-  tags = tags.replaceAll('\\s+', ' ')
-
   // Setup environment for platform
   def envContext = []
   envContext.add("PROVIDER=${platformProvider}")
@@ -463,10 +461,9 @@ def generateFunctionalTestStep(Map args = [:]){
             withOtelEnv() {
               // TODO: Handle these exports in ansible and copy to remote host
               sshexec(testRunner, """echo SUITE=${suite} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
-              sshexec(testRunner, """echo TAGS='${tags}' >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
               sshexec(testRunner, """echo STACK_VERSION=${STACK_VERSION} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
               sshexec(testRunner, """echo BEAT_VERSION=${BEAT_VERSION} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
-              sshexec(testRunner, """sudo bash /home/${testRunner.split('@')[0]}/e2e-testing/.ci/scripts/functional-test.sh""")
+              sshexec(testRunner, """sudo bash /home/${testRunner.split('@')[0]}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
             }
           }
         }
