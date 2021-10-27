@@ -257,6 +257,10 @@ def sshexec(connection, cmd){
   sh "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/${env.BASE_DIR}/e2essh ${connection} -- '${cmd}'"
 }
 
+def scpr(connection, remote_src, local_dst){
+  sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/${env.BASE_DIR}/e2essh ${connection}:${remote_src} ${local_dst}"
+}
+
 def envToCliArgs(envContext){
   def cliOpts = []
   for (env in envContext){
@@ -484,8 +488,10 @@ def generateFunctionalTestStep(Map args = [:]){
           }
         }
       } finally {
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml,${BASE_DIR}/outputs/${suite}"
+        sh "mkdir -p ${env.WORKSPACE}/${BASE_DIR}/outputs"
+        scpr(testRunner, "e2e-testing/outputs/*", "${env.WORKSPACE}/${BASE_DIR}/outputs/.")
+        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${env.WORKSPACE}/${BASE_DIR}/outputs/TEST-*.xml")
+        archiveArtifacts allowEmptyArchive: true, artifacts: "${env.WORKSPACE}/${BASE_DIR}/outputs/TEST-*.xml,${env.WORKSPACE}/${BASE_DIR}/outputs/${suite}"
       }
     }
   } else {

@@ -35,16 +35,15 @@
        TAGS=${2:-''}
        STACK_VERSION=${3:-"${BASE_VERSION}"}
        BEAT_VERSION=${4:-"${BASE_VERSION}"}
-       GOARCH={{ lookup('env', 'GOARCH') or 'amd64' }}
        PATH=$PATH:/usr/local/go/bin
 
        "${BASE_DIR}/.ci/scripts/install-test-dependencies.sh" "${SUITE}"
 
-       REPORT="${BASE_DIR}/outputs/TEST-${GOARCH}-${SUITE}"
+       REPORT="${BASE_DIR}/outputs/TEST-$(uname -m)-${SUITE}"
        ELASTIC_APM_GLOBAL_LABELS="{{ lookup('env', 'ELASTIC_APM_GLOBAL_LABELS') or '' }}"
        ELASTIC_APM_SECRET_TOKEN="{{ lookup('env', 'ELASTIC_APM_SECRET_TOKEN') or '' }}"
        ELASTIC_APM_SERVER_URL="{{ lookup('env', 'ELASTIC_APM_SERVER_URL') or '' }}"
        OTEL_EXPORTER_OTLP_ENDPOINT="{{ lookup('env', 'OTEL_EXPORTER_OTLP_ENDPOINT') or '' }}"
        OTEL_EXPORTER_OTLP_HEADERS="{{ lookup('env', 'OTEL_EXPORTER_OTLP_HEADERS') or '' }}"
 
-       TAGS="${TAGS}" FORMAT=junit:${REPORT}.xml GOARCH=${GOARCH} STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} make --no-print-directory -C "${BASE_DIR}/e2e/_suites/${SUITE}" functional-test
+       TAGS="${TAGS}" FORMAT=junit:${REPORT}.xml STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} make --no-print-directory -C "${BASE_DIR}/e2e/_suites/${SUITE}" functional-test
