@@ -254,7 +254,7 @@ pipeline {
 }
 
 def sshexec(connection, cmd){
-  sh "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/e2essh ${connection} -- '${cmd}'"
+  sh "ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/${env.BASE_DIR}/e2essh ${connection} -- '${cmd}'"
 }
 
 def envToCliArgs(envContext){
