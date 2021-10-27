@@ -1,11 +1,11 @@
 ---
-- name: Create source code dir
-  ansible.builtin.file:
-    path: "/home/{{ansible_user}}/e2e-testing"
-    state: directory
-    mode: '0755'
-    owner: "{{ansible_user}}"
-    group: "{{ansible_user}}"
+# - name: Create source code dir
+#   ansible.builtin.file:
+#     path: "/home/{{ansible_user}}/e2e-testing"
+#     state: directory
+#     mode: '0755'
+#     owner: "{{ansible_user}}"
+#     group: "{{ansible_user}}"
 
 - name: Copy source code
   become: no
