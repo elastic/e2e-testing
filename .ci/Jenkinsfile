@@ -261,17 +261,6 @@ def scpr(connection, remote_src, local_dst){
   sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/${env.BASE_DIR}/e2essh ${connection}:${remote_src} ${local_dst}"
 }
 
-def envToCliArgs(envContext){
-  def cliOpts = []
-  for (env in envContext){
-    (k, v) = env.split("=")
-    cliOpts.add("-var ${k.toLowerCase()}=\"${v}\"")
-  }
-  cliOptsStr = cliOpts.join(" ")
-  return cliOptsStr
-}
-
-
 /*
  * Runs python in venv
  */
@@ -476,11 +465,7 @@ def generateFunctionalTestStep(Map args = [:]){
             // This step will help to send the APM traces to the
             // APM service defined by the Otel Jenkins plugin.
             withOtelEnv() {
-              sshexec(testRunner, """echo OTEL_EXPORTER_OTLP_ENDPOINT=${env.OTEL_EXPORTER_OTLP_ENDPOINT} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
-              sshexec(testRunner, """echo OTEL_EXPORTER_OTLP_HEADERS=${env.OTEL_EXPORTER_OTLP_HEADERS} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
-              sshexec(testRunner, """echo ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
-              sshexec(testRunner, """echo ELASTIC_APM_SECRET_TOKEN=${env.ELASTIC_APM_SECRET_TOKEN} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
-              sshexec(testRunner, """echo ELASTIC_APM_SERVER_URL=${env.ELASTIC_APM_SERVER_URL} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
+              // TODO: Handle these exports in ansible and copy to remote host
               sshexec(testRunner, """echo SUITE=${suite} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
               sshexec(testRunner, """echo TAGS=\"${tags}\" >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
               sshexec(testRunner, """echo STACK_VERSION=${STACK_VERSION} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
