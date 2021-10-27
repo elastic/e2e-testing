@@ -33,14 +33,8 @@ SUITES:
           - labels: "amd64"
       - name: "APM Integration"
         tags: "apm_server"
-        platforms:
-          - labels: "arm64"
-          - labels: "amd64"
       - name: "Linux Integration"
         tags: "linux_integration"
-        platforms:
-          - labels: "arm64"
-          - labels: "amd64"
       - name: "Permissions Output change"
         pullRequestFilter: " && ~debian"
         tags: "permission_change"

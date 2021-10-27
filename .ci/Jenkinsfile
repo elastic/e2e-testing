@@ -476,7 +476,16 @@ def generateFunctionalTestStep(Map args = [:]){
             // This step will help to send the APM traces to the
             // APM service defined by the Otel Jenkins plugin.
             withOtelEnv() {
-              sshexec(testRunner, """sudo bash /home/${testRunner.split('@')[0]}/e2e-testing/.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
+              sshexec(testRunner, """echo OTEL_EXPORTER_OTLP_ENDPOINT=${env.OTEL_EXPORTER_OTLP_ENDPOINT} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
+              sshexec(testRunner, """echo OTEL_EXPORTER_OTLP_HEADERS=${env.OTEL_EXPORTER_OTLP_HEADERS} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
+              sshexec(testRunner, """echo ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
+              sshexec(testRunner, """echo ELASTIC_APM_SECRET_TOKEN=${env.ELASTIC_APM_SECRET_TOKEN} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
+              sshexec(testRunner, """echo ELASTIC_APM_SERVER_URL=${env.ELASTIC_APM_SERVER_URL} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
+              sshexec(testRunner, """echo SUITE=${suite} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
+              sshexec(testRunner, """echo TAGS=${tags} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
+              sshexec(testRunner, """echo STACK_VERSION=${STACK_VERSION} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
+              sshexec(testRunner, """echo BEAT_VERSION=${BEAT_VERSION} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
+              sshexec(testRunner, """sudo bash /home/${testRunner.split('@')[0]}/e2e-testing/.ci/scripts/functional-test.sh""")
             }
           }
         }

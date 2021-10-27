@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v4"
@@ -27,14 +28,12 @@ var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // GetArchitecture retrieves if the underlying system platform is arm64 or amd64
 func GetArchitecture() string {
-	arch := "amd64"
-
-	envArch := os.Getenv("GOARCH")
-	if envArch == "arm64" {
-		arch = "arm64"
+	arch, present := os.LookupEnv("GOARCH")
+	if !present {
+		arch = runtime.GOARCH
 	}
 
-	log.Debugf("Go's architecture is %s (%s)", arch, envArch)
+	log.Debugf("Go's architecture is (%s)", arch)
 	return arch
 }
 
