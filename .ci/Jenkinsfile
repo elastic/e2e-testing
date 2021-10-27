@@ -483,7 +483,7 @@ def generateFunctionalTestStep(Map args = [:]){
             // This step will help to send the APM traces to the
             // APM service defined by the Otel Jenkins plugin.
             withOtelEnv() {
-              sshexec(testRunner, """bash e2e-testing/.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
+              sshexec(testRunner, """sudo bash /home/${testRunner.split('@')[0]}/e2e-testing/.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """)
             }
           }
         }
