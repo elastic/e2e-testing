@@ -1,15 +1,7 @@
 ---
-# - name: Create source code dir
-#   ansible.builtin.file:
-#     path: "/home/{{ansible_user}}/e2e-testing"
-#     state: directory
-#     mode: '0755'
-#     owner: "{{ansible_user}}"
-#     group: "{{ansible_user}}"
-
 - name: Copy source code
   become: no
-  local_action: ansible.builtin.command rsync --exclude='.git' -e 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{workspace}}/e2essh' -aW {{ workspace }} {{ ansible_user }}@{{ inventory_hostname }}:e2e-testing
+  local_action: ansible.builtin.command rsync --exclude='.git' -e 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{workspace}}/e2essh' -aW {{ workspace }} {{ ansible_user }}@{{ inventory_hostname }}:.
 
 - name: Create outputs dir
   ansible.builtin.file:

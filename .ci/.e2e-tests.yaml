@@ -14,8 +14,8 @@ SUITES:
     platforms:
       - labels: "arm64"
       - labels: "amd64"
-      - labels: "ubuntu-18.04"
-        provider: "elastic-package"
+      # - labels: "ubuntu-18.04"
+      #   provider: "elastic-package"
     scenarios:
       - name: "Fleet"
         pullRequestFilter: " && ~debian"
