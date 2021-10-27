@@ -333,7 +333,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     ansible("-t deploy")
   }
 
-  item.scenarios.each { scenario ->
+  item.scenarios.eachWithIndex { scenario, scenarioIdx ->
     def name = scenario.name
     def platformsValue = platforms
     def scenarioPlatforms = scenario.platforms
@@ -345,12 +345,12 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     def tags = scenario.tags
     def regexps = [ "^e2e/_suites/${suite}/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
     if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
-      platformsValue.eachWithIndex { platform, index ->
+      platformsValue.each { platform ->
         def platformLabels = platform.labels
-        if(suite == "fleet"){
+        if(suite == "fleet" && platformLabels == "arm64" || platformLabels == "amd64"){
           def testRunners = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${platformLabels}-sshhosts")
           log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
-          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}", testRunner: testRunners[index])
+          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}", testRunner: testRunners[scenarioIdx])
         } else {
           log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
           parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}")
@@ -488,10 +488,10 @@ def generateFunctionalTestStep(Map args = [:]){
           }
         }
       } finally {
-        sh "mkdir -p ${env.WORKSPACE}/${BASE_DIR}/outputs"
-        scpr(testRunner, "e2e-testing/outputs/*", "${env.WORKSPACE}/${BASE_DIR}/outputs/.")
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${env.WORKSPACE}/${BASE_DIR}/outputs/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${env.WORKSPACE}/${BASE_DIR}/outputs/TEST-*.xml,${env.WORKSPACE}/${BASE_DIR}/outputs/${suite}"
+        sh "mkdir -p outputs"
+        scpr(testRunner, "e2e-testing/outputs/*", "outputs/.")
+        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/TEST-*.xml")
+        archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/TEST-*.xml,outputs/${suite}"
       }
     }
   } else {
