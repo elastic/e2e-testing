@@ -1,4 +1,11 @@
 ---
+- name: "Create AWS keypair"
+  ec2_key:
+    name: "e2essh-{{runId}}"
+    key_material: "{{ lookup('file', sshPublicKey) }}"
+    region: us-east-2
+    state: present
+
 - name: "Create elastic stack"
   ec2:
     wait: yes
@@ -37,6 +44,7 @@
     module: copy
     dest: "{{workspace}}/.env"
     content: |
+      export OP_LOG_LEVEL=DEBUG
       export PROVIDER=remote
       export KIBANA_URL=http://{{ec2.instances[0].public_ip}}:5601
       export ELASTICSEARCH_URL=http://{{ec2.instances[0].public_ip}}:9200

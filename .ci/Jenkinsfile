@@ -452,6 +452,8 @@ def generateFunctionalTestStep(Map args = [:]){
   // Skip scenarios per platform
   tags += " && ~@skip:${goArch}"
 
+  tags = tags.replaceAll('\\s+', ' ')
+
   // Setup environment for platform
   def envContext = []
   envContext.add("PROVIDER=${platformProvider}")

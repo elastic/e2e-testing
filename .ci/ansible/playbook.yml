@@ -1,55 +1,54 @@
 - name: Create test environment
   hosts: localhost
   gather_facts: no
-  tags:
-    - deploy
   vars:
-      gcp_project: elastic-observability
-      gcp_cred_kind: serviceaccount
-      gcp_cred_file: "{{ lookup('env', 'GOOGLE_APPLICATION_CREDENTIALS') or 'creds.json' }}"
-      zone: "us-central1-c"
-      region: "us-central1"
       ansible_user: ubuntu
   tasks:
-  - name: "Create AWS keypair"
-    ec2_key:
-      name: "e2essh-{{runId}}"
-      key_material: "{{ lookup('file', sshPublicKey) }}"
-      region: us-east-2
-      state: present
-
   - name: Setup Stack Instance
     include_role:
       name: provision
       tasks_from: stack.yml
+      apply:
+        tags:
+          - deploy
+    tags:
+      - always
 
   - name: Setup Test Runners (AWS:amd64)
     include_role:
       name: provision
       tasks_from: runners-aws-amd64.yml
+      apply:
+        tags:
+          - deploy
+    tags:
+      - always
 
   - name: Setup Test Runners (AWS:arm64)
     include_role:
       name: provision
       tasks_from: runners-aws-arm64.yml
+      apply:
+        tags:
+          - deploy
+    tags:
+      - always
 
 - name: Teardown environment
   hosts: localhost
   gather_facts: no
-  tags:
-    - destroy
   vars:
-      gcp_project: elastic-observability
-      gcp_cred_kind: serviceaccount
-      gcp_cred_file: "{{ lookup('env', 'GOOGLE_APPLICATION_CREDENTIALS') or 'creds.json' }}"
-      zone: "us-central1-c"
-      region: "us-central1"
       ansible_user: ubuntu
   tasks:
   - name: Teardown Test Runners (AWS)
     include_role:
       name: provision
       tasks_from: teardown-runners-aws.yml
+      apply:
+        tags:
+          - destroy
+    tags:
+      - always
 
 - name: Manage stack instance
   hosts: stack_instances
@@ -60,11 +59,6 @@
   vars:
     ansible_user: ubuntu
   tasks:
-  # - name: Setup sudo
-  #   include_role:
-  #     name: common
-  #     tasks_from: setup_sudo.yml
-
   - name: Setup docker
     shell: |
       sudo apt-get -qyf remove docker docker-engine docker.io containerd runc
@@ -77,54 +71,31 @@
       sudo curl -L https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
       sudo chmod +x /usr/local/bin/docker-compose
       sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+    tags:
+      - deploy
 
   - name: Setup source code
     include_role:
       name: common
       tasks_from: copy_test_files.yml
+      apply:
+        tags:
+          - deploy
+    tags:
+      - always
 
   - name: Start stack
     shell: |
      sed -i '' -e 's,http://elasticsearch,http://{{inventory_hostname}},g' /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml
      sed -i '' -e 's,http://fleet-server,http://{{inventory_hostname}},g' /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml
      sudo docker-compose -f /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/docker-compose.yml up -d
-
-# - name: Manage (GCE) runner instances
-#   hosts: runner_instances
-#   connection: ssh
-#   become: True
-#   tags:
-#     - deploy
-#   vars:
-#     ansible_user: ci
-#     go_version: 1.16.3
-#   tasks:
-#   - name: Setup sudo
-#     include_role:
-#       name: common
-#       tasks_from: setup_sudo.yml
-
-#   - name: Install tools
-#     include_role:
-#       name: common
-#       tasks_from: install_tools.yml
-
-#   - name: Setup source code
-#     include_role:
-#       name: common
-#       tasks_from: copy_test_files.yml
-
-#   - name: Setup test script
-#     include_role:
-#       name: common
-#       tasks_from: setup_test_script.yml
+    tags:
+      - deploy
 
 - name: Manage (AWS) runner instances
   hosts: aws_runner_instances
   connection: ssh
   become: True
-  tags:
-    - deploy
   vars:
     ansible_user: ubuntu
     go_version: 1.16.3
@@ -133,19 +104,37 @@
     include_role:
       name: common
       tasks_from: setup_sudo.yml
+      apply:
+        tags:
+          - deploy
+    tags:
+      - always
   - name: Install tools
     include_role:
       name: common
       tasks_from: install_tools.yml
-
+      apply:
+        tags:
+          - deploy
+    tags:
+      - always
   - name: Setup source code
     vars:
       ansible_user: ubuntu
     include_role:
       name: common
       tasks_from: copy_test_files.yml
-
+      apply:
+        tags:
+          - deploy
+    tags:
+      - always
   - name: Setup test script
     include_role:
       name: common
       tasks_from: setup_test_script.yml
+      apply:
+        tags:
+          - deploy
+    tags:
+      - always
