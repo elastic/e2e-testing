@@ -275,12 +275,6 @@ def pyrun(args){
     "ANSIBLE_HOST_KEY_CHECKING=False",
     "PIPENV_VERBOSITY=-1"
   ]){
-    // sh(label:'Install Terraform', script: """
-    //   mkdir -p ${binDir} || true
-    //   cd ${binDir}
-    //   curl -sSL -o terraform.zip https://releases.hashicorp.com/terraform/1.0.9/terraform_1.0.9_linux_amd64.zip || true
-    //   unzip terraform.zip || true
-    // """)
     withVaultToken(){
       withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
         withEnvMask(vars: [
@@ -469,7 +463,7 @@ def generateFunctionalTestStep(Map args = [:]){
             withOtelEnv() {
               // TODO: Handle these exports in ansible and copy to remote host
               sshexec(testRunner, """echo SUITE=${suite} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
-              sshexec(testRunner, """echo TAGS=\"${tags}\" >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
+              sshexec(testRunner, """echo TAGS='${tags}' >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
               sshexec(testRunner, """echo STACK_VERSION=${STACK_VERSION} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
               sshexec(testRunner, """echo BEAT_VERSION=${BEAT_VERSION} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
               sshexec(testRunner, """sudo bash /home/${testRunner.split('@')[0]}/e2e-testing/.ci/scripts/functional-test.sh""")

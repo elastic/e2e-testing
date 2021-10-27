@@ -17,3 +17,5 @@
        REPORT="${BASE_DIR}/outputs/TEST-$(uname -m)-${SUITE}"
 
        FORMAT=junit:${REPORT}.xml make --no-print-directory -C "${BASE_DIR}/e2e/_suites/${SUITE}" functional-test
+
+       cd "${BASE_DIR}/e2e/_suites/${SUITE}" && go test -timeout 60m -v --godog.format=${FORMAT} --godog.tags="${TAGS}"
