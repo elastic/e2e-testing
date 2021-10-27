@@ -276,7 +276,8 @@ def pyrun(args){
   def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
   def awsAuthObj = awsProps?.data
   withEnv([
-    "PATH=${PATH}:${binDir}"
+    "PATH=${PATH}:${binDir}",
+    "ANSIBLE_HOST_KEY_CHECKING=False"
   ]){
     // sh(label:'Install Terraform', script: """
     //   mkdir -p ${binDir} || true
@@ -311,7 +312,7 @@ def pyrun(args){
 }
 
 def ansible(args){
-     pyrun("ansible-playbook .ci/ansible/playbook.yml --extra-vars \"workspace=${env.WORKSPACE}/${env.BASE_DIR} runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${args}")
+     pyrun("ansible-playbook -vvvv --private-key=\"${env.WORKSPACE}/${env.BASE_DIR}/e2essh\" --extra-vars=\"workspace=${env.WORKSPACE}/${env.BASE_DIR} runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' .ci/ansible/playbook.yml ${args}")
 }
 
 
