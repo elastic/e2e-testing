@@ -460,18 +460,11 @@ def generateFunctionalTestStep(Map args = [:]){
     workerLabels = "centos-8-aarch64"
   }
 
-  if (platformLabels.contains("windows")) {
-    // For windows testing we need to make sure that the host executor is a linux machine and nest the windows withNode within that
-    workerLabels = "ubuntu-20.04"
-    tags += " && ~@skip:windows"
-  }
-
   // Skip scenarios per platform
   tags += " && ~@skip:${goArch}"
 
   // Setup environment for platform
   def envContext = []
-  envContext.add("GOARCH=${goArch}")
   envContext.add("PROVIDER=${platformProvider}")
   envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
 
@@ -490,8 +483,8 @@ def generateFunctionalTestStep(Map args = [:]){
       } finally {
         sh "mkdir -p outputs"
         scpr(testRunner, "e2e-testing/outputs/*", "outputs/.")
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/TEST-*.xml,outputs/${suite}"
+        junit allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/*.xml"
+        archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/*.xml"
       }
     }
   } else {

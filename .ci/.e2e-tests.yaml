@@ -17,25 +17,26 @@ SUITES:
         provider: "elastic-package"
     scenarios:
       - name: "Fleet"
-        pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent"
         platforms:
           - labels: "arm64"
           - labels: "amd64"
+      - name: "Backend Processes"
+        tags: "backend_processes"
+        platforms:
+          - labels: "arm64"
+          - labels: "amd64"
       - name: "Integrations"
-        pullRequestFilter: " && ~debian"
         tags: "integrations"
         platforms:
           - labels: "arm64"
           - labels: "amd64"
       - name: "APM Integration"
-        pullRequestFilter: " && ~debian"
         tags: "apm_server"
         platforms:
           - labels: "arm64"
           - labels: "amd64"
       - name: "Linux Integration"
-        pullRequestFilter: " && ~debian"
         tags: "linux_integration"
         platforms:
           - labels: "arm64"
@@ -43,42 +44,24 @@ SUITES:
       - name: "Permissions Output change"
         pullRequestFilter: " && ~debian"
         tags: "permission_change"
-        platforms:
-          - labels: "arm64"
-          - labels: "amd64"
       - name: "Policies"
         pullRequestFilter: " && ~debian"
         tags: "policies"
-        platforms:
-          - labels: "arm64"
-          - labels: "amd64"
       - name: "System Integration"
         pullRequestFilter: " && ~debian"
         tags: "system_integration"
-        platforms:
-          - labels: "arm64"
-          - labels: "amd64"
       - name: "Stand-alone"
         pullRequestFilter: " && ~ubi8"
         tags: "stand_alone_agent"
         platforms:
           - labels: "ubuntu-18.04"
             provider: "elastic-package"
-      - name: "Backend Processes"
-        pullRequestFilter: " && ~debian"
-        tags: "backend_processes"
-        platforms:
-          - labels: "arm64"
-          - labels: "amd64"
       - name: "Beats Background Processes"
         pullRequestFilter: " && ~debian"
         tags: "running_on_beats"
       - name: "Preconfigured Policies"
         pullRequestFilter: " && ~debian"
         tags: "preconfigured_policies"
-        platforms:
-          - labels: "arm64"
-          - labels: "amd64"
   - suite: "kubernetes-autodiscover"
     platforms:
       - labels: "ubuntu-18.04"

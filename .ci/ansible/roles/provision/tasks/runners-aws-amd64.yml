@@ -9,7 +9,7 @@
     instance_type: t3.xlarge
     instance_tags:
       Name: "e2e-amd64-{{runId}}"
-    exact_count: 11
+    exact_count: 5
     count_tag:
       Name: "e2e-amd64-{{runId}}"
   register: ec2
