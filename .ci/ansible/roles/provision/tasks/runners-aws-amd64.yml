@@ -9,9 +9,14 @@
     instance_type: t3.xlarge
     instance_tags:
       Name: "e2e-amd64-{{runId}}"
-    exact_count: 5
+    exact_count: 2
     count_tag:
       Name: "e2e-amd64-{{runId}}"
+    volumes:
+      - device_name: /dev/sda1
+        volume_type: gp2
+        volume_size: 50
+        delete_on_termination: yes
   register: ec2
 
 - name: Wait for SSH to come up
