@@ -11,10 +11,6 @@
     - "STACK_VERSION={{ lookup('env', 'STACK_VERSION') or '8.0.0-SNAPSHOT' }}"
     - "BEAT_VERSION={{ lookup('env', 'BEAT_VERSION') or '8.0.0-SNAPSHOT' }}"
     - "ELASTIC_APM_GLOBAL_LABELS={{ lookup('env', 'ELASTIC_APM_GLOBAL_LABELS') }}"
-    # - "ELASTIC_APM_SECRET_TOKEN={{ lookup('env', 'ELASTIC_APM_SECRET_TOKEN') }}"
-    # - "ELASTIC_APM_SERVER_URL={{ lookup('env', 'ELASTIC_APM_SERVER_URL') }}"
-    # - "OTEL_EXPORTER_OTLP_ENDPOINT={{ lookup('env', 'OTEL_EXPORTER_OTLP_ENDPOINT') }}"
-    # - "OTEL_EXPORTER_OTLP_HEADERS={{ lookup('env', 'OTEL_EXPORTER_OTLP_HEADERS') }}"
 
 - name: Create test script file
   become: no
@@ -31,22 +27,27 @@
        ## you may not use this file except in compliance with the Elastic License.
 
        set -euxo pipefail
-       #
-       # Run the functional tests using the functional-test make goal and parse the
-       # output to JUnit format.
-       #
-       # Parameters:
-       #   - SUITE - that's the suite to be tested. Default '' which means all of them.
-       #   - TAGS - that's the tags to be tested. Default '' which means all of them.
-       #   - STACK_VERSION - that's the version of the stack to be tested. Default is stored in '.stack-version'.
-       #   - BEAT_VERSION - that's the version of the Beat to be tested. Default is stored in '.stack-version'.
-       #
 
        BASE_DIR="/home/{{ansible_user}}/e2e-testing"
        source "${BASE_DIR}/.env"
 
        "${BASE_DIR}/.ci/scripts/install-test-dependencies.sh" "${SUITE}"
 
-       REPORT="${BASE_DIR}/outputs/TEST-$(uname -m)-${SUITE}-{{runId}}-$(date \"+%Y-%m-%d-%H:%M:%S\")"
+       SEED=$(date +%Y-%m-%d-%H:%M:%S)
+       REPORT="${BASE_DIR}/outputs/TEST-$(uname -m)-${SUITE}-{{runId}}-${SEED}"
+       ELASTIC_APM_SECRET_TOKEN={{ lookup('env', 'ELASTIC_APM_SECRET_TOKEN') }}
+       ELASTIC_APM_SERVER_URL={{ lookup('env', 'ELASTIC_APM_SERVER_URL') }}
+       OTEL_EXPORTER_OTLP_ENDPOINT={{ lookup('env', 'OTEL_EXPORTER_OTLP_ENDPOINT') }}
+       OTEL_EXPORTER_OTLP_HEADERS={{ lookup('env', 'OTEL_EXPORTER_OTLP_HEADERS') }}
 
-       TAGS="${1}" FORMAT=junit:${REPORT}.xml STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} make --no-print-directory -C "${BASE_DIR}/e2e/_suites/${SUITE}" functional-test
+       ELASTIC_APM_SECRET_TOKEN=
+
+       TAGS="${1}" \
+         FORMAT=junit:${REPORT}.xml \
+         STACK_VERSION=${STACK_VERSION} \
+         BEAT_VERSION=${BEAT_VERSION} \
+         # ELASTIC_APM_SECRET_TOKEN=${ELASTIC_APM_SECRET_TOKEN} \
+         # ELASTIC_APM_SERVER_URL=${ELASTIC_APM_SERVER_URL} \
+         # OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT} \
+         # OTEL_EXPORTER_OTLP_HEADERS=${OTEL_EXPORTER_OTLP_HEADERS} \
+         make --no-print-directory -C "${BASE_DIR}/e2e/_suites/${SUITE}" functional-test
