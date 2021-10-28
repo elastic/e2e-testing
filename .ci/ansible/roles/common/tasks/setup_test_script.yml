@@ -35,10 +35,6 @@
 
        SEED=$(date +%Y-%m-%d-%H:%M:%S)
        REPORT="${BASE_DIR}/outputs/TEST-$(uname -m)-${SUITE}-{{runId}}-${SEED}"
-       ELASTIC_APM_SECRET_TOKEN={{ lookup('env', 'ELASTIC_APM_SECRET_TOKEN') }}
-       ELASTIC_APM_SERVER_URL={{ lookup('env', 'ELASTIC_APM_SERVER_URL') }}
-       OTEL_EXPORTER_OTLP_ENDPOINT={{ lookup('env', 'OTEL_EXPORTER_OTLP_ENDPOINT') }}
-       OTEL_EXPORTER_OTLP_HEADERS={{ lookup('env', 'OTEL_EXPORTER_OTLP_HEADERS') }}
 
        ELASTIC_APM_SECRET_TOKEN=
 
@@ -46,8 +42,4 @@
          FORMAT=junit:${REPORT}.xml \
          STACK_VERSION=${STACK_VERSION} \
          BEAT_VERSION=${BEAT_VERSION} \
-         # ELASTIC_APM_SECRET_TOKEN=${ELASTIC_APM_SECRET_TOKEN} \
-         # ELASTIC_APM_SERVER_URL=${ELASTIC_APM_SERVER_URL} \
-         # OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT} \
-         # OTEL_EXPORTER_OTLP_HEADERS=${OTEL_EXPORTER_OTLP_HEADERS} \
          make --no-print-directory -C "${BASE_DIR}/e2e/_suites/${SUITE}" functional-test
