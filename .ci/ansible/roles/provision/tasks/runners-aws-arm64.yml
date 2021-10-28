@@ -42,3 +42,15 @@
   loop: "{{ ec2.instances }}"
   loop_control:
     loop_var: addr
+
+- name: Add AWS host to hosts file
+  become: no
+  lineinfile:
+    state: present
+    line: "{{addr.public_ip}}"
+    insertafter: EOF
+    dest: "{{workspace}}/hosts"
+    create: yes
+  loop: "{{ ec2.instances }}"
+  loop_control:
+    loop_var: addr

@@ -6,7 +6,7 @@
     region: us-east-2
     group: e2e
     image: 'ami-0629230e074c580f2'
-    instance_type: t3.xlarge
+    instance_type: c5.2xlarge
     instance_tags:
       Name: "e2e-amd64-{{runId}}"
     exact_count: 2
@@ -38,6 +38,18 @@
     line: "- ubuntu@{{addr.public_ip}}"
     insertafter: EOF
     dest: "{{workspace}}/amd64-sshhosts"
+    create: yes
+  loop: "{{ ec2.instances }}"
+  loop_control:
+    loop_var: addr
+
+- name: Add AWS host to hosts file
+  become: no
+  lineinfile:
+    state: present
+    line: "{{addr.public_ip}}"
+    insertafter: EOF
+    dest: "{{workspace}}/hosts"
     create: yes
   loop: "{{ ec2.instances }}"
   loop_control:

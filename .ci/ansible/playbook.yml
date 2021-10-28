@@ -135,6 +135,6 @@
       tasks_from: setup_test_script.yml
       apply:
         tags:
-          - deploy
+          - setup
     tags:
       - always

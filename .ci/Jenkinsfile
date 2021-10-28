@@ -449,6 +449,7 @@ def generateFunctionalTestStep(Map args = [:]){
   // Setup environment for platform
   def envContext = []
   envContext.add("PROVIDER=${platformProvider}")
+  envContext.add("SUITE=${suite}")
   envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
 
   if (testRunner){
@@ -459,10 +460,7 @@ def generateFunctionalTestStep(Map args = [:]){
             // This step will help to send the APM traces to the
             // APM service defined by the Otel Jenkins plugin.
             withOtelEnv() {
-              // TODO: Handle these exports in ansible and copy to remote host
-              sshexec(testRunner, """echo SUITE=${suite} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
-              sshexec(testRunner, """echo STACK_VERSION=${STACK_VERSION} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
-              sshexec(testRunner, """echo BEAT_VERSION=${BEAT_VERSION} >> /home/${testRunner.split('@')[0]}/e2e-testing/.env """)
+              ansible("-i ${env.WORKSPACE}/${BASE_DIR}/hosts -t setup")
               sshexec(testRunner, """sudo bash /home/${testRunner.split('@')[0]}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
             }
           }
