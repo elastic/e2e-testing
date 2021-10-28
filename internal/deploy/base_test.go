@@ -15,40 +15,28 @@ func Test_New(t *testing.T) {
 	t.Run("New Docker Provider", func(t *testing.T) {
 		provider := New("docker")
 
-		s, ok := provider.(Deployment)
-		assert.True(t, ok, "Provider is not a Deployment")
-
-		s, ok = s.(*dockerDeploymentManifest)
+		_, ok := provider.(*dockerDeploymentManifest)
 		assert.True(t, ok, "Provider is not Docker")
 	})
 
 	t.Run("New Elastic Package Provider", func(t *testing.T) {
 		provider := New("elastic-package")
 
-		s, ok := provider.(Deployment)
-		assert.True(t, ok, "Provider is not a Deployment")
-
-		s, ok = s.(*EPServiceManager)
+		_, ok := provider.(*EPServiceManager)
 		assert.True(t, ok, "Provider is not Elastic Package")
 	})
 
 	t.Run("New K8S Provider", func(t *testing.T) {
 		provider := New("kubernetes")
 
-		s, ok := provider.(Deployment)
-		assert.True(t, ok, "Provider is not a Deployment")
-
-		s, ok = s.(*kubernetesDeploymentManifest)
+		_, ok := provider.(*kubernetesDeploymentManifest)
 		assert.True(t, ok, "Provider is not Kubernetes")
 	})
 
 	t.Run("New Remote Provider", func(t *testing.T) {
 		provider := New("remote")
 
-		s, ok := provider.(Deployment)
-		assert.True(t, ok, "Provider is not a Deployment")
-
-		s, ok = s.(*remoteDeploymentManifest)
+		_, ok := provider.(*remoteDeploymentManifest)
 		assert.True(t, ok, "Provider is not Remote")
 	})
 
