@@ -120,6 +120,15 @@
           - deploy
     tags:
       - always
+
+- name: Configure (AWS) Runners
+  hosts: all
+  connection: ssh
+  become: True
+  vars:
+    ansible_user: ubuntu
+    go_version: 1.16.3
+  tasks:
   - name: Setup test script
     include_role:
       name: common
