@@ -265,35 +265,29 @@ def scpr(connection, remote_src, local_dst){
  * Runs python in venv
  */
 def pyrun(args){
-  def binDir = "${HOME}/bin"
   def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
   def authObj = props?.data
   def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
   def awsAuthObj = awsProps?.data
   withEnv([
-    "PATH=${PATH}:${binDir}",
     "ANSIBLE_HOST_KEY_CHECKING=False",
-    "PIPENV_VERBOSITY=-1"
   ]){
     withVaultToken(){
-      withGCPEnv(secret: "${GCP_PROVISIONER_SECRET}"){
-        withEnvMask(vars: [
-          [var: "EC_API_KEY", password: authObj.apiKey],
-          [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
-          [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
-        ]) {
-          sh(script: """\
-            #!/bin/bash
+      withEnvMask(vars: [
+        [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
+        [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
+      ]) {
+        sh(script: """#!/bin/bash
             set -eux
-            if ! test -d .venv; then
-                python3 -m venv .venv
-                .venv/bin/pip -q install ansible requests google-auth boto3 boto
+            if ! test -d ${env.WORKSPACE}/${env.BASE_DIR}/.venv; then
+                python3 -m venv ${env.WORKSPACE}/${env.BASE_DIR}/.venv
+                 ${env.WORKSPACE}/${env.BASE_DIR}/.venv/bin/pip3 -q install wheel
+                 ${env.WORKSPACE}/${env.BASE_DIR}/.venv/bin/pip3 -q install ansible requests google-auth boto3 boto
             fi
-            .venv/bin/${args}
-          """.stripIndent(),
-             label: "Executing pyrun"
-          )
-        }
+            ${env.WORKSPACE}/${env.BASE_DIR}/.venv/bin/${args}
+          """,
+           label: "Executing pyrun"
+        )
       }
     }
   }
