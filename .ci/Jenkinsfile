@@ -279,12 +279,12 @@ def pyrun(args){
       ]) {
         sh(script: """#!/bin/bash
             set -eux
-            if ! test -d ${env.WORKSPACE}/${env.BASE_DIR}/.venv; then
-                python3 -m venv ${env.WORKSPACE}/${env.BASE_DIR}/.venv
-                 ${env.WORKSPACE}/${env.BASE_DIR}/.venv/bin/pip3 -q install wheel
-                 ${env.WORKSPACE}/${env.BASE_DIR}/.venv/bin/pip3 -q install ansible requests google-auth boto3 boto
+            if ! test -d ${env.WORKSPACE}/.venv; then
+                python3 -m venv ${env.WORKSPACE}/.venv
+                 ${env.WORKSPACE}/.venv/bin/pip3 -q install wheel
+                 ${env.WORKSPACE}/.venv/bin/pip3 -q install ansible requests google-auth boto3 boto
             fi
-            ${env.WORKSPACE}/${env.BASE_DIR}/.venv/bin/${args}
+            ${env.WORKSPACE}/.venv/bin/${args}
           """,
            label: "Executing pyrun"
         )
@@ -294,7 +294,7 @@ def pyrun(args){
 }
 
 def ansible(args){
-     pyrun("ansible-playbook -v --private-key=\"${env.WORKSPACE}/${env.BASE_DIR}/e2essh\" --extra-vars=\"workspace=${env.WORKSPACE}/${env.BASE_DIR} runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' .ci/ansible/playbook.yml ${args}")
+     pyrun("ansible-playbook -v --private-key=\"${env.WORKSPACE}/${env.BASE_DIR}/e2essh\" --extra-vars=\"workspace=${env.WORKSPACE}/${env.BASE_DIR} runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${env.WORKSPACE}/${env.BASE_DIR}/.ci/ansible/playbook.yml ${args}")
 }
 
 
@@ -458,7 +458,7 @@ def generateFunctionalTestStep(Map args = [:]){
           }
         }
       } finally {
-        sh "mkdir -p outputs"
+        sh "mkdir -p outputs || true"
         scpr(testRunner, "e2e-testing/outputs/*", "outputs/.")
         junit allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/*.xml"
         archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/*.xml"
