@@ -14,15 +14,10 @@ SUITES:
     platforms:
       - labels: "arm64"
       - labels: "ubuntu-18.04"
-        provider: "elastic-package"
+        provider: "docker"
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode_agent"
-        platforms:
-          - labels: "arm64"
-          - labels: "amd64"
-      - name: "Backend Processes"
-        tags: "backend_processes"
         platforms:
           - labels: "arm64"
           - labels: "amd64"
@@ -42,6 +37,9 @@ SUITES:
         pullRequestFilter: " && ~debian"
         tags: "policies"
       - name: "System Integration"
+        platforms:
+          - labels: "ubuntu-18.04"
+            provider: "docker"
         pullRequestFilter: " && ~debian"
         tags: "system_integration"
       - name: "Stand-alone"
@@ -49,7 +47,17 @@ SUITES:
         tags: "stand_alone_agent"
         platforms:
           - labels: "ubuntu-18.04"
-            provider: "elastic-package"
+            provider: "docker"
+        pullRequestFilter: " && ~ubi8"
+        tags: "stand_alone_agent"
+      - name: "Backend Processes"
+        tags: "backend_processes"
+        platforms:
+          - labels: "arm64"
+          - labels: "amd64"
+      - name: "Backend Processes"
+        pullRequestFilter: " && ~debian"
+        tags: "backend_processes"
       - name: "Beats Background Processes"
         pullRequestFilter: " && ~debian"
         tags: "running_on_beats"
