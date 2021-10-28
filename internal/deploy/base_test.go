@@ -11,6 +11,54 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func Test_New(t *testing.T) {
+	t.Run("New Docker Provider", func(t *testing.T) {
+		provider := New("docker")
+
+		s, ok := provider.(Deployment)
+		assert.True(t, ok, "Provider is not a Deployment")
+
+		s, ok = s.(*dockerDeploymentManifest)
+		assert.True(t, ok, "Provider is not Docker")
+	})
+
+	t.Run("New Elastic Package Provider", func(t *testing.T) {
+		provider := New("elastic-package")
+
+		s, ok := provider.(Deployment)
+		assert.True(t, ok, "Provider is not a Deployment")
+
+		s, ok = s.(*EPServiceManager)
+		assert.True(t, ok, "Provider is not Elastic Package")
+	})
+
+	t.Run("New K8S Provider", func(t *testing.T) {
+		provider := New("kubernetes")
+
+		s, ok := provider.(Deployment)
+		assert.True(t, ok, "Provider is not a Deployment")
+
+		s, ok = s.(*kubernetesDeploymentManifest)
+		assert.True(t, ok, "Provider is not Kubernetes")
+	})
+
+	t.Run("New Remote Provider", func(t *testing.T) {
+		provider := New("remote")
+
+		s, ok := provider.(Deployment)
+		assert.True(t, ok, "Provider is not a Deployment")
+
+		s, ok = s.(*remoteDeploymentManifest)
+		assert.True(t, ok, "Provider is not Remote")
+	})
+
+	t.Run("New Not Found Provider", func(t *testing.T) {
+		provider := New("asdf")
+
+		assert.Nil(t, provider, "Provider is not Nil")
+	})
+}
+
 func Test_ServiceRequest_GetName(t *testing.T) {
 	t.Run("ServiceRequest without flavour", func(t *testing.T) {
 		srv := NewServiceRequest("foo")
