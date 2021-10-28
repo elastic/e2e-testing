@@ -282,13 +282,16 @@ def pyrun(args){
           [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
           [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
         ]) {
-          sh(script: """#!/bin/bash
+          sh(script: """\
+            #!/bin/bash
             set -eux
-            python3 -m venv .venv
-            .venv/bin/pip -q install pipenv
-            .venv/bin/pipenv install
-            .venv/bin/pipenv run ${args}
-          """,
+            if ! test -d .venv; then
+                python3 -m venv .venv
+                .venv/bin/pip -q install ansible requests google-auth boto3 boto
+            fi
+            .venv/bin/${args}
+          """.stripIndent(),
+             label: "Executing pyrun"
           )
         }
       }
