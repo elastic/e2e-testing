@@ -100,15 +100,6 @@
     ansible_user: ubuntu
     go_version: 1.16.3
   tasks:
-  - name: Setup sudo
-    include_role:
-      name: common
-      tasks_from: setup_sudo.yml
-      apply:
-        tags:
-          - deploy
-    tags:
-      - always
   - name: Install tools
     include_role:
       name: common

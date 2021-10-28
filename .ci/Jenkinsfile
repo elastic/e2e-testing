@@ -282,17 +282,12 @@ def pyrun(args){
           [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
           [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
         ]) {
-          sh(script: """#!/bin/bash +x
-            if [ -z "\$(command -v python3)" ] \
-              || [ -z "\$(command -v virtualenv)" ]; then
-              exit 0
-            fi
-            virtualenv -q --python=python3 .venv
-            source ".venv/bin/activate"
-            pip -q install pipenv
-            pipenv install
-            set -x
-            pipenv run ${args}
+          sh(script: """#!/bin/bash
+            set -eux
+            python3 -m venv .venv
+            .venv/bin/pip -q install pipenv
+            .venv/bin/pipenv install
+            .venv/bin/pipenv run ${args}
           """,
           )
         }
