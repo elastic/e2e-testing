@@ -1,0 +1,42 @@
+---
+- name: "Delete AWS keypair"
+  ec2_key:
+    region: us-east-2
+    name: "e2essh-{{runId}}"
+    state: absent
+
+- name: "Delete arm64 instances"
+  ec2:
+    key_name: "e2essh-{{runId}}"
+    region: us-east-2
+    group: e2e
+    image: 'ami-03b47d2d727e13114'
+    instance_tags:
+      Name: "e2e-arm64-{{runId}}"
+    exact_count: 0
+    count_tag:
+      Name: "e2e-arm64-{{runId}}"
+
+- name: "Delete amd64 instances"
+  ec2:
+    key_name: "e2essh-{{runId}}"
+    region: us-east-2
+    group: e2e
+    image: 'ami-0629230e074c580f2'
+    instance_tags:
+      Name: "e2e-amd64-{{runId}}"
+    exact_count: 0
+    count_tag:
+      Name: e2e-amd64
+
+- name: "Delete elastic stack"
+  ec2:
+    key_name: "e2essh-{{runId}}"
+    region: us-east-2
+    group: e2e
+    image: 'ami-0629230e074c580f2'
+    instance_tags:
+      Name: "e2e-stack-{{runId}}"
+    exact_count: 0
+    count_tag:
+      Name: "e2e-stack-{{runId}}"

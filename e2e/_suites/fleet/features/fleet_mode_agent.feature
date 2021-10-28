@@ -23,23 +23,23 @@ Examples: Debian
 | os     |
 | debian |
 
-@enroll
-@skip:windows
-Scenario Outline: Deploying the <os> agent with enroll and then run on rpm and deb
-  Given a "<os>" agent is deployed to Fleet
-  When the "elastic-agent" process is in the "started" state on the host
-  Then the agent is listed in Fleet as "online"
-    And system package dashboards are listed in Fleet
+# @enroll
+# @skip:windows
+# Scenario Outline: Deploying the <os> agent with enroll and then run on rpm and deb
+#   Given a "<os>" agent is deployed to Fleet
+#   When the "elastic-agent" process is in the "started" state on the host
+#   Then the agent is listed in Fleet as "online"
+#     And system package dashboards are listed in Fleet
 
-@centos
-Examples: Centos
-| os     |
-| centos |
+# @centos
+# Examples: Centos
+# | os     |
+# | centos |
 
-@debian
-Examples: Debian
-| os     |
-| debian |
+# @debian
+# Examples: Debian
+# | os     |
+# | debian |
 
 # @upgrade-agent
 @nightly

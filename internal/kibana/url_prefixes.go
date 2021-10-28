@@ -10,6 +10,7 @@ import (
 	"net/url"
 
 	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -29,15 +30,20 @@ func getBaseURL() string {
 	// If a custom KIBANA URL is passed, use that instead
 	remoteKibanaHost := shell.GetEnv("KIBANA_URL", "")
 	if remoteKibanaHost != "" {
+		remoteKibanaHost = utils.RemoveQuotes(remoteKibanaHost)
 		u, err := url.Parse(remoteKibanaHost)
 		if err != nil {
-			log.Fatal("Could not parse KIBANA_URL")
+			log.WithFields(log.Fields{
+				"url":   remoteKibanaHost,
+				"error": err,
+			}).Trace("Could not parse KIBANA_URL, will attempt with original.")
+			return remoteKibanaHost
 		}
 		host, port, err := net.SplitHostPort(u.Host)
 		if err != nil {
 			log.Fatal("Could not determine host/port from KIBANA_URL")
 		}
-		endpoint := fmt.Sprintf("http://%s:%s", host, port)
+		endpoint := fmt.Sprintf("%s://%s:%s", u.Scheme, host, port)
 		return endpoint
 	}
 

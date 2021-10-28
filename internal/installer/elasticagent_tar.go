@@ -11,6 +11,7 @@ import (
 	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
+	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -46,7 +47,7 @@ func (i *elasticAgentTARPackage) AddFiles(ctx context.Context, files []string) e
 func (i *elasticAgentTARPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
 	return deploy.ServiceOperatorManifest{
 		WorkDir:    "/opt/Elastic/Agent",
-		CommitFile: "/elastic-agent/.elastic-agent.active.commit",
+		CommitFile: "elastic-agent/.elastic-agent.active.commit",
 	}, nil
 }
 
@@ -70,7 +71,7 @@ func (i *elasticAgentTARPackage) Exec(ctx context.Context, args []string) (strin
 
 // Enroll will enroll the agent into fleet
 func (i *elasticAgentTARPackage) Enroll(ctx context.Context, token string) error {
-	cmds := []string{"/elastic-agent/elastic-agent", "install"}
+	cmds := []string{"./elastic-agent/elastic-agent", "install"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.tar.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -118,6 +119,11 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 	}
 	extension := "tar.gz"
 
+	found, err := io.Exists("elastic-agent")
+	if found && err == nil {
+		log.Trace("Install directory already exists, will not overwrite")
+		return nil
+	}
 	_, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -131,12 +137,12 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	err = i.AddFiles(context.Background(), []string{binaryPath})
+	_, err = i.Exec(ctx, []string{"tar", "-xvf", binaryPath})
 	if err != nil {
 		return err
 	}
 
-	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "/elastic-agent"})
+	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }

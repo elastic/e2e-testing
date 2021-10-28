@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,16 +25,19 @@ type FleetConfig struct {
 	KibanaURI                string
 	FleetServerPort          int
 	FleetServerURI           string
+	FleetServerScheme        string
 }
 
 // NewFleetConfig builds a new configuration for the fleet agent, defaulting fleet-server host, ES credentials, URI and port.
 func NewFleetConfig(token string) (*FleetConfig, error) {
 	fleetServer := shell.GetEnv("FLEET_URL", "fleet-server")
 	fleetPort := 8220
+	fleetServerScheme := "http"
 	if fleetServer != "fleet-server" {
+		fleetServer = utils.RemoveQuotes(fleetServer)
 		u, err := url.Parse(fleetServer)
 		if err != nil {
-			log.Fatal("Could not parse FLEET_URL")
+			log.WithField("error", err).Fatal("Could not parse FLEET_URL")
 		}
 		host, port, err := net.SplitHostPort(u.Host)
 		if err != nil {
@@ -41,17 +45,19 @@ func NewFleetConfig(token string) (*FleetConfig, error) {
 		}
 		fleetPort, _ = strconv.Atoi(port)
 		fleetServer = host
+		fleetServerScheme = u.Scheme
 	}
 
 	cfg := &FleetConfig{
 		EnrollmentToken:          token,
-		ElasticsearchCredentials: "elastic:changeme",
+		ElasticsearchCredentials: fmt.Sprintf("elastic:%s", shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme")),
 		ElasticsearchPort:        9200,
 		ElasticsearchURI:         "elasticsearch",
 		KibanaPort:               5601,
 		KibanaURI:                "kibana",
 		FleetServerPort:          fleetPort,
 		FleetServerURI:           fleetServer,
+		FleetServerScheme:        fleetServerScheme,
 	}
 
 	log.WithFields(log.Fields{
@@ -75,5 +81,5 @@ func (cfg FleetConfig) Flags() []string {
 
 // FleetServerURL returns the fleet-server URL in the config
 func (cfg FleetConfig) FleetServerURL() string {
-	return fmt.Sprintf("http://%s:%d", cfg.FleetServerURI, cfg.FleetServerPort)
+	return fmt.Sprintf("%s://%s:%d", cfg.FleetServerScheme, cfg.FleetServerURI, cfg.FleetServerPort)
 }

@@ -1,0 +1,30 @@
+---
+- name: Update cache
+  shell: |
+    sudo apt-get update
+
+- name: Install dependencies
+  ansible.builtin.package:
+    name:
+      - rsync
+      - wget
+      - build-essential
+    state: latest
+    use: apt
+  register: package_install_res
+  retries: 5
+  until: package_install_res is success
+
+- name: Install GO (x86_64)
+  shell: |
+    wget https://dl.google.com/go/go{{go_version}}.linux-amd64.tar.gz
+    sudo tar -C /usr/local -xf go{{go_version}}.linux-amd64.tar.gz
+    sudo ln -s /usr/local/go/bin/go /usr/bin/go || true
+  when: ansible_architecture == "x86_64"
+
+- name: Install GO (arm64)
+  shell: |
+    wget https://dl.google.com/go/go{{go_version}}.linux-arm64.tar.gz
+    sudo tar -C /usr/local -xf go{{go_version}}.linux-arm64.tar.gz
+    sudo ln -s /usr/local/go/bin/go /usr/bin/go || true
+  when: ansible_architecture == "aarch64"

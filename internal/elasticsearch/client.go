@@ -89,18 +89,20 @@ func DeleteIndex(ctx context.Context, index string) error {
 func getElasticsearchClient(ctx context.Context) (*es.Client, error) {
 	remoteESHost := shell.GetEnv("ELASTICSEARCH_URL", "")
 	if remoteESHost != "" {
+		remoteESHost = utils.RemoveQuotes(remoteESHost)
 		u, err := url.Parse(remoteESHost)
 		if err != nil {
-			log.Fatal("Could not parse ELASTICSEARCH_URL")
+			log.WithField("error", err).Fatal("Could not parse ELASTICSEARCH_URL")
 		}
 		host, port, err := net.SplitHostPort(u.Host)
 		if err != nil {
 			log.Fatal("Could not determine host/port from ELASTICSEARCH_URL")
 		}
 		remoteESHostPort, _ := strconv.Atoi(port)
-		return getElasticsearchClientFromHostPort(ctx, host, remoteESHostPort)
+		remoteESServerScheme := u.Scheme
+		return getElasticsearchClientFromHostPort(ctx, host, remoteESHostPort, remoteESServerScheme)
 	}
-	return getElasticsearchClientFromHostPort(ctx, "localhost", 9200)
+	return getElasticsearchClientFromHostPort(ctx, "localhost", 9200, "http")
 }
 
 // getElasticsearchClientFromHostPort returns a client connected to a running elasticseach, defined
@@ -108,15 +110,15 @@ func getElasticsearchClient(ctx context.Context) (*es.Client, error) {
 // and from them, get the one related to the Elasticsearch port (9200). As it is bound to a
 // random port at localhost, we will build the URL with the bound port at localhost.
 //nolint:unused
-func getElasticsearchClientFromHostPort(ctx context.Context, host string, port int) (*es.Client, error) {
+func getElasticsearchClientFromHostPort(ctx context.Context, host string, port int, scheme string) (*es.Client, error) {
 	if host == "" {
 		host = "localhost"
 	}
 
 	cfg := es.Config{
-		Addresses: []string{fmt.Sprintf("http://%s:%d", host, port)},
+		Addresses: []string{fmt.Sprintf("%s://%s:%d", scheme, host, port)},
 		Username:  "elastic",
-		Password:  "changeme",
+		Password:  shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"),
 	}
 
 	// avoid using common properties to avoid cyclical references
@@ -232,7 +234,7 @@ func WaitForElasticsearchFromHostPort(ctx context.Context, host string, port int
 	retryCount := 1
 
 	clusterStatus := func() error {
-		esClient, err := getElasticsearchClientFromHostPort(context.Background(), host, port)
+		esClient, err := getElasticsearchClient(context.Background())
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
@@ -284,7 +286,7 @@ func WaitForIndices() (string, error) {
 	catIndices := func() error {
 		r := curl.HTTPRequest{
 			URL:               "http://localhost:9200/_cat/indices?v",
-			BasicAuthPassword: "changeme",
+			BasicAuthPassword: shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"),
 			BasicAuthUser:     "elastic",
 		}
 
