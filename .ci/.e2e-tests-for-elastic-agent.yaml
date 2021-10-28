@@ -4,14 +4,14 @@ SUITES:
     platforms:
       - labels: "arm64"
       - labels: "ubuntu-18.04"
-        provider: "elastic-package"
+        provider: "docker"
     scenarios:
       - name: "Fleet"
         pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent"
         platforms:
           - labels: "ubuntu-18.04"
-            provider: "elastic-package"
+            provider: "docker"
       - name: "Integrations"
         pullRequestFilter: " && ~debian"
         tags: "integrations"
@@ -27,13 +27,13 @@ SUITES:
       - name: "System Integration"
         platforms:
           - labels: "ubuntu-18.04"
-            provider: "elastic-package"
+            provider: "docker"
         pullRequestFilter: " && ~debian"
         tags: "system_integration"
       - name: "Stand-alone"
         platforms:
           - labels: "ubuntu-18.04"
-            provider: "elastic-package"
+            provider: "docker"
         pullRequestFilter: " && ~ubi8"
         tags: "stand_alone_agent"
       - name: "Backend Processes"
