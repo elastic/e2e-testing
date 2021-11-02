@@ -10,7 +10,7 @@ elasticsearch.password: changeme
 xpack.monitoring.ui.container.elasticsearch.enabled: true
 
 xpack.fleet.enabled: true
-xpack.fleet.registryUrl: https://epr-staging.elastic.co
+xpack.fleet.registryUrl: "https://epr-staging.elastic.co"
 xpack.fleet.agents.enabled: true
 xpack.fleet.agents.elasticsearch.host: http://elasticsearch:9200
 xpack.fleet.agents.fleet_server.hosts:
