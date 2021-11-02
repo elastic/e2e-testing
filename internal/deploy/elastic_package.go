@@ -131,7 +131,7 @@ func checkElasticPackageProfile(ctx context.Context, kibanaProfile string) error
 
 // Bootstrap sets up environment with docker compose
 func (ep *EPServiceManager) Bootstrap(ctx context.Context, profile ServiceRequest, env map[string]string, waitCB func() error) error {
-	services := "elasticsearch,fleet-server,kibana,package-registry"
+	services := "elasticsearch,fleet-server,kibana"
 
 	version := common.StackVersion
 
