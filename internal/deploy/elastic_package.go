@@ -76,7 +76,8 @@ func (ep *EPServiceManager) Add(ctx context.Context, profile ServiceRequest, ser
 
 func checkElasticPackageProfile(ctx context.Context, kibanaProfile string) error {
 	// check compose profile
-	kibanaProfileFile := filepath.Join(config.OpDir(), "compose", "profiles", "fleet", kibanaProfile, "kibana.config.yml")
+	// The kibana config file is only valid in 8.0.0, for other maintenance branches it's kibana.config.default.yml
+	kibanaProfileFile := filepath.Join(config.OpDir(), "compose", "profiles", "fleet", kibanaProfile, "kibana.config.default.yml")
 	found, err := io.Exists(kibanaProfileFile)
 	if !found || err != nil {
 		return err
