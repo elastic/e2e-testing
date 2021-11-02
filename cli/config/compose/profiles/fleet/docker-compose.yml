@@ -54,3 +54,11 @@ services:
       - "KIBANA_FLEET_HOST=http://kibana:5601"
       - "FLEET_SERVER_HOST=0.0.0.0"
       - "FLEET_SERVER_PORT=8220"
+  package-registry:
+    image: docker.elastic.co/package-registry/distribution:staging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      retries: 300
+      interval: 1s
+    volumes:
+      - ./${kibanaProfile:-default}/package-registry.config.yml:/package-registry/config.yml
