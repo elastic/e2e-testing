@@ -245,7 +245,8 @@ func (c *Client) ListAgents(ctx context.Context) ([]Agent, error) {
 }
 
 // UnEnrollAgent unenrolls agent from fleet
-func (c *Client) UnEnrollAgent(ctx context.Context, hostname string) error {
+func (c *Client) UnEnrollAgent(ctx context.Context, hostname string, revoke bool) error {
+	var reqBody = `{}`
 	span, _ := apm.StartSpanOptions(ctx, "UnEnrolling Elastic Agent by hostname", "fleet.agent.un-enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -256,7 +257,12 @@ func (c *Client) UnEnrollAgent(ctx context.Context, hostname string) error {
 		return err
 	}
 
-	reqBody := `{"revoke": true}`
+	if revoke == true {
+		reqBody = `{"revoke": true}`
+	}
+	log.WithFields(log.Fields{
+		"body": reqBody,
+	}).Info("This is the body")
 	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/agents/%s/unenroll", FleetAPI, agentID), []byte(reqBody))
 	if statusCode != 200 {
 		return fmt.Errorf("could not unenroll agent; API status code = %d, response body = %s", statusCode, respBody)

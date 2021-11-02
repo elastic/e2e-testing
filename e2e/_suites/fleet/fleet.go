@@ -104,7 +104,7 @@ func (fts *FleetTestSuite) afterScenario() {
 			_ = fts.deployer.Logs(fts.currentContext, agentService)
 		}
 
-		err := fts.unenrollHostname()
+		err := fts.unenrollHostname(true)
 		if err != nil {
 			manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 			log.WithFields(log.Fields{
@@ -167,6 +167,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
 	s.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)
+	s.Step(`^the agent is un-enrolled without revoke$`, fts.theAgentIsUnenrolledWithoutRevoke)
 	s.Step(`^the agent is re-enrolled on the host$`, fts.theAgentIsReenrolledOnTheHost)
 	s.Step(`^the enrollment token is revoked$`, fts.theEnrollmentTokenIsRevoked)
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
@@ -873,7 +874,11 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 }
 
 func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
-	return fts.unenrollHostname()
+	return fts.unenrollHostname(true)
+}
+
+func (fts *FleetTestSuite) theAgentIsUnenrolledWithoutRevoke() error {
+	return fts.unenrollHostname(false)
 }
 
 func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
@@ -1253,7 +1258,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 }
 
 // unenrollHostname deletes the statuses for an existing agent, filtering by hostname
-func (fts *FleetTestSuite) unenrollHostname() error {
+func (fts *FleetTestSuite) unenrollHostname(revoke bool) error {
 	span, _ := apm.StartSpanOptions(fts.currentContext, "Unenrolling hostname", "elastic-agent.hostname.unenroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(fts.currentContext).TraceContext(),
 	})
@@ -1274,7 +1279,7 @@ func (fts *FleetTestSuite) unenrollHostname() error {
 				"hostname": manifest.Hostname,
 			}).Debug("Un-enrolling agent in Fleet")
 
-			err := fts.kibanaClient.UnEnrollAgent(fts.currentContext, agent.LocalMetadata.Host.HostName)
+			err := fts.kibanaClient.UnEnrollAgent(fts.currentContext, agent.LocalMetadata.Host.HostName, revoke)
 			if err != nil {
 				return err
 			}
