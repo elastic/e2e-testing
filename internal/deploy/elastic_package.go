@@ -111,7 +111,7 @@ func checkElasticPackageProfile(ctx context.Context, kibanaProfile string) error
 	}
 
 	// The kibana config file is only valid in 8.0.0, for other maintenance branches it's kibana.config.default.yml
-	elasticPackageProfileFile := filepath.Join(elasticPackageProfile, "stack", "kibana.config.8x.yml")
+	elasticPackageProfileFile := filepath.Join(elasticPackageProfile, "stack", "kibana.config.default.yml")
 
 	// copy compose's kibana's config to elastic-package's config
 	err = io.CopyFile(kibanaProfileFile, elasticPackageProfileFile, 10000)
