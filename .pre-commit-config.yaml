@@ -27,7 +27,7 @@ repos:
     -   id: golangci-lint
         args: ["--fix", "--fast", "--new"]
 
--   repo: git@github.com:elastic/apm-pipeline-library
+-   repo: https://github.com/elastic/apm-pipeline-library
     rev: current
     hooks:
     -   id: check-bash-syntax
