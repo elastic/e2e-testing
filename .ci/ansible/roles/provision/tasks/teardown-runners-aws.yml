@@ -1,10 +1,4 @@
 ---
-- name: "Delete AWS keypair"
-  ec2_key:
-    region: us-east-2
-    name: "e2essh-{{runId}}"
-    state: absent
-
 - name: "Delete arm64 instances"
   ec2:
     key_name: "e2essh-{{runId}}"
@@ -40,3 +34,9 @@
     exact_count: 0
     count_tag:
       Name: "e2e-stack-{{runId}}"
+
+- name: "Delete AWS keypair"
+  ec2_key:
+    region: us-east-2
+    name: "e2essh-{{runId}}"
+    state: absent

@@ -44,8 +44,8 @@
     module: copy
     dest: "{{workspace}}/.env"
     content: |
-      export OP_LOG_LEVEL=DEBUG
-      export LOG_LEVEL=DEBUG
+      export OP_LOG_LEVEL=TRACE
+      export LOG_LEVEL=TRACE
       export PROVIDER=remote
       export KIBANA_URL=http://{{ec2.instances[0].public_ip}}:5601
       export ELASTICSEARCH_URL=http://{{ec2.instances[0].public_ip}}:9200
