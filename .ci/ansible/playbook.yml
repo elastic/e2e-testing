@@ -10,7 +10,7 @@
       tasks_from: stack.yml
       apply:
         tags:
-          - deploy
+          - provision-stack
     tags:
       - always
 
@@ -20,7 +20,7 @@
       tasks_from: runners-aws-amd64.yml
       apply:
         tags:
-          - deploy
+          - provision-stack
     tags:
       - always
 
@@ -30,7 +30,7 @@
       tasks_from: runners-aws-arm64.yml
       apply:
         tags:
-          - deploy
+          - provision-stack
     tags:
       - always
 
@@ -55,7 +55,7 @@
   connection: ssh
   become: True
   tags:
-    - deploy
+    - provision-stack
   vars:
     ansible_user: ubuntu
   tasks:
@@ -72,7 +72,7 @@
       sudo chmod +x /usr/local/bin/docker-compose
       sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
     tags:
-      - deploy
+      - provision-stack
 
   - name: Setup source code
     include_role:
@@ -80,7 +80,7 @@
       tasks_from: copy_test_files.yml
       apply:
         tags:
-          - deploy
+          - provision-stack
     tags:
       - always
 
@@ -91,7 +91,7 @@
      sed -i '' -e 's,http://package-registry:8080,https://epr-staging.elastic.co,g' /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml
      sudo docker-compose -f /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/docker-compose.yml up -d
     tags:
-      - deploy
+      - provision-stack
 
 - name: Manage (AWS) runner instances
   hosts: aws_runner_instances
@@ -107,7 +107,7 @@
       tasks_from: install_tools.yml
       apply:
         tags:
-          - deploy
+          - provision-stack
     tags:
       - always
   - name: Setup source code
@@ -118,7 +118,7 @@
       tasks_from: copy_test_files.yml
       apply:
         tags:
-          - deploy
+          - provision-stack
     tags:
       - always
 

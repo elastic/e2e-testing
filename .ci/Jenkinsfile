@@ -305,7 +305,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   if(suite == "fleet"){
     // Deploy the test infrastructure to fleet related tests
     sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/${env.BASE_DIR}/e2essh -q -N \"\" "
-    ansible("-t deploy")
+    ansible("-t provision-stack")
   }
 
   item.scenarios.eachWithIndex { scenario, scenarioIdx ->
