@@ -76,8 +76,7 @@ func (ep *EPServiceManager) Add(ctx context.Context, profile ServiceRequest, ser
 
 func checkElasticPackageProfile(ctx context.Context, kibanaProfile string) error {
 	// check compose profile
-	// The kibana config file is only valid in 8.0.0, for other maintenance branches it's kibana.config.default.yml
-	kibanaProfileFile := filepath.Join(config.OpDir(), "compose", "profiles", "fleet", kibanaProfile, "kibana.config.8x.yml")
+	kibanaProfileFile := filepath.Join(config.OpDir(), "compose", "profiles", "fleet", kibanaProfile, "kibana.config.yml")
 	found, err := io.Exists(kibanaProfileFile)
 	if !found || err != nil {
 		return err
@@ -111,7 +110,8 @@ func checkElasticPackageProfile(ctx context.Context, kibanaProfile string) error
 		log.Trace("Not creating a new Elastic Package profile for " + kibanaProfile + ". Kibana config will be overriden")
 	}
 
-	elasticPackageProfileFile := filepath.Join(elasticPackageProfile, "stack", "kibana.config.yml")
+	// The kibana config file is only valid in 8.0.0, for other maintenance branches it's kibana.config.default.yml
+	elasticPackageProfileFile := filepath.Join(elasticPackageProfile, "stack", "kibana.config.8x.yml")
 
 	// copy compose's kibana's config to elastic-package's config
 	err = io.CopyFile(kibanaProfileFile, elasticPackageProfileFile, 10000)
