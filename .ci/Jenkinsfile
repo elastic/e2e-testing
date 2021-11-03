@@ -322,7 +322,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
       platformsValue.each { platform ->
         def platformLabels = platform.labels
-        if(suite == "fleet" && platformLabels == "arm64" || platformLabels == "amd64"){
+        if(suite == "fleet" && (platformLabels == "arm64" || platformLabels == "amd64")){
           def testRunners = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${platformLabels}-sshhosts")
           log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
           parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}", testRunner: testRunners[scenarioIdx])
