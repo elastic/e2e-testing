@@ -264,7 +264,7 @@ def scpr(connection, remote_src, local_dst){
 /*
  * Runs python in venv
  */
-def pyrun(args){
+def pyrun(command){
   def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
   def authObj = props?.data
   def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
