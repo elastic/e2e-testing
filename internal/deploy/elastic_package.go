@@ -76,12 +76,7 @@ func (ep *EPServiceManager) Add(ctx context.Context, profile ServiceRequest, ser
 
 func checkElasticPackageProfile(ctx context.Context, kibanaProfile string) error {
 	// check compose profile
-<<<<<<< HEAD
-	// The kibana config file is only valid in 8.0.0, for other maintenance branches it's kibana.config.default.yml
-	kibanaProfileFile := filepath.Join(config.OpDir(), "compose", "profiles", "fleet", kibanaProfile, "kibana.config.default.yml")
-=======
 	kibanaProfileFile := filepath.Join(config.OpDir(), "compose", "profiles", "fleet", kibanaProfile, "kibana.config.yml")
->>>>>>> 293ba96 (fix: properly copy files from compose to elastic-package (#1764))
 	found, err := io.Exists(kibanaProfileFile)
 	if !found || err != nil {
 		return err
@@ -116,7 +111,7 @@ func checkElasticPackageProfile(ctx context.Context, kibanaProfile string) error
 	}
 
 	// The kibana config file is only valid in 8.0.0, for other maintenance branches it's kibana.config.default.yml
-	elasticPackageProfileFile := filepath.Join(elasticPackageProfile, "stack", "kibana.config.8x.yml")
+	elasticPackageProfileFile := filepath.Join(elasticPackageProfile, "stack", "kibana.config.default.yml")
 
 	// copy compose's kibana's config to elastic-package's config
 	err = io.CopyFile(kibanaProfileFile, elasticPackageProfileFile, 10000)
