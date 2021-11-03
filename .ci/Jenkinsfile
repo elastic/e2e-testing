@@ -284,7 +284,7 @@ def pyrun(command){
                  ${env.WORKSPACE}/.venv/bin/pip3 -q install wheel
                  ${env.WORKSPACE}/.venv/bin/pip3 -q install ansible requests google-auth boto3 boto
             fi
-            ${env.WORKSPACE}/.venv/bin/${args}
+            ${env.WORKSPACE}/.venv/bin/${command}
           """,
            label: "Executing pyrun"
         )
