@@ -110,7 +110,8 @@ func checkElasticPackageProfile(ctx context.Context, kibanaProfile string) error
 		log.Trace("Not creating a new Elastic Package profile for " + kibanaProfile + ". Kibana config will be overriden")
 	}
 
-	elasticPackageProfileFile := filepath.Join(elasticPackageProfile, "stack", "kibana.config.yml")
+	// The kibana config file is only valid in 8.0.0, for other maintenance branches it's kibana.config.default.yml
+	elasticPackageProfileFile := filepath.Join(elasticPackageProfile, "stack", "kibana.config.8x.yml")
 
 	// copy compose's kibana's config to elastic-package's config
 	err = io.CopyFile(kibanaProfileFile, elasticPackageProfileFile, 10000)
