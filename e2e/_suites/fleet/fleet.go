@@ -450,7 +450,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	fts.CurrentToken = enrollmentKey.APIKey
 	fts.CurrentTokenID = enrollmentKey.ID
 
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(image).WithScale(deployedAgentsCount)
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithScale(deployedAgentsCount)
 	if fts.BeatsProcess != "" {
 		agentService = agentService.WithBackgroundProcess(fts.BeatsProcess)
 	}
@@ -1211,7 +1211,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	// increase the number of agents
 	deployedAgentsCount++
 
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(fts.Image).WithScale(deployedAgentsCount)
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithScale(deployedAgentsCount)
 	services := []deploy.ServiceRequest{
 		agentService,
 	}
