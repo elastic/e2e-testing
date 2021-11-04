@@ -2,7 +2,7 @@
 SUITES:
   - suite: "helm"
     platforms:
-      - labels: "ubuntu-18.04"
+      - labels: "ubuntu-20.04"
     scenarios:
       - name: "APM Server"
         tags: "apm-server"
@@ -31,8 +31,8 @@ SUITES:
         pullRequestFilter: " && ~debian"
         tags: "apm_server"
         platforms:
-          - labels: "arm64"
-          - labels: "amd64"
+          - labels: "ubuntu-20.04"
+            provider: "elastic-package"
       - name: "Linux Integration"
         pullRequestFilter: " && ~debian"
         tags: "linux_integration"
@@ -61,7 +61,7 @@ SUITES:
         pullRequestFilter: " && ~ubi8"
         tags: "stand_alone_agent"
         platforms:
-          - labels: "ubuntu-18.04"
+          - labels: "ubuntu-20.04"
             provider: "elastic-package"
       - name: "Backend Processes"
         tags: "backend_processes"
@@ -79,7 +79,7 @@ SUITES:
           - labels: "amd64"
   - suite: "kubernetes-autodiscover"
     platforms:
-      - labels: "ubuntu-18.04"
+      - labels: "ubuntu-20.04"
     scenarios:
       - name: "kubernetes autodiscover with elastic-agent"
         tags: "kubernetes-autodiscover && elastic-agent"

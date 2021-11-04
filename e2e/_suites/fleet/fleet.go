@@ -157,9 +157,9 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^kibana uses "([^"]*)" profile$`, fts.kibanaUsesProfile)
 	s.Step(`^agent uses enrollment token from "([^"]*)" policy$`, fts.agentUsesPolicy)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
-	s.Step(`^a "([^"]*)" agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
+	s.Step(`^an agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
 	s.Step(`^an agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
-	s.Step(`^a "([^"]*)" agent "([^"]*)" is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
+	s.Step(`^an agent "([^"]*)" is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
 	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
 	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
@@ -244,7 +244,7 @@ func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredSt
 	return nil
 }
 
-func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, version, installerType string) error {
+func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(version, installerType string) error {
 	agentVersionBackup := fts.Version
 	defer func() { fts.Version = agentVersionBackup }()
 
@@ -276,7 +276,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 
 	fts.Version = version
 
-	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
+	return fts.anAgentIsDeployedToFleetWithInstaller(installerType)
 }
 
 func (fts *FleetTestSuite) installCerts() error {
@@ -402,14 +402,11 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
 	if runtime.GOOS == "windows" && common.Provider == "remote" {
 		installerType = "zip"
 	}
-	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType)
+	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType)
 }
 
-func (fts *FleetTestSuite) anAgentIsDeployedToFleetOnTopOfBeat(image string, beatsProcess string) error {
-	installerType := "rpm"
-	if image == "debian" {
-		installerType = "deb"
-	}
+func (fts *FleetTestSuite) anAgentIsDeployedToFleetOnTopOfBeat(beatsProcess string) error {
+	installerType := "tar"
 
 	// FIXME: We need to cleanup the steps to support different operating systems
 	// for now we will force the zip installer type when the agent is running on windows
@@ -419,11 +416,11 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetOnTopOfBeat(image string, bea
 
 	fts.BeatsProcess = beatsProcess
 
-	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType)
+	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType)
 }
 
 // supported installers: tar, rpm, deb
-func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, installerType string) error {
+func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(installerType string) error {
 	fts.BeatsProcess = ""
 
 	// FIXME: We need to cleanup the steps to support different operating systems
@@ -432,18 +429,16 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 		installerType = "zip"
 	}
 
-	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType)
+	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType)
 }
 
-func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(image string, installerType string) error {
+func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType string) error {
 	log.WithFields(log.Fields{
-		"image":     image,
 		"installer": installerType,
 	}).Trace("Deploying an agent to Fleet with base image using an already bootstrapped Fleet Server")
 
 	deployedAgentsCount++
 
-	fts.Image = image
 	fts.InstallerType = installerType
 
 	// Grab a new enrollment key for new agent
@@ -1038,8 +1033,8 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(stat
 	return nil
 }
 
-func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller(integration string, image string, installerType string) error {
-	err := fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
+func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller(integration string, installerType string) error {
+	err := fts.anAgentIsDeployedToFleetWithInstaller(installerType)
 	if err != nil {
 		return err
 	}
