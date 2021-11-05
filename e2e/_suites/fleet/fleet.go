@@ -11,6 +11,9 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
+
+	//"strconv"
 	"strings"
 	"time"
 
@@ -62,6 +65,7 @@ type FleetTestSuite struct {
 	// instrumentation
 	currentContext context.Context
 	DefaultAPIKey  string
+	AgentId        string
 }
 
 // afterScenario destroys the state created by a scenario
@@ -170,6 +174,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the agent is un-enrolled without revoke$`, fts.theAgentIsUnenrolledWithoutRevoke)
 	s.Step(`^the agent is re-enrolled on the host$`, fts.theAgentIsReenrolledOnTheHost)
 	s.Step(`^the enrollment token is revoked$`, fts.theEnrollmentTokenIsRevoked)
+	s.Step(`^the agent Api key invalidated "(([^"]*))"$`, fts.theAgentApiKeyIsInvalidated)
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
@@ -714,7 +719,6 @@ func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string
 			retryCount++
 			return err
 		}
-
 		if agentID == "" {
 			// the agent is not listed in Fleet
 			if desiredStatus == "offline" || desiredStatus == "inactive" {
@@ -1279,6 +1283,7 @@ func (fts *FleetTestSuite) unenrollHostname(revoke bool) error {
 				"hostname": manifest.Hostname,
 			}).Debug("Un-enrolling agent in Fleet")
 
+			fts.AgentId = agent.ID
 			err := fts.kibanaClient.UnEnrollAgent(fts.currentContext, agent.LocalMetadata.Host.HostName, revoke)
 			if err != nil {
 				return err
@@ -1601,6 +1606,41 @@ func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) er
 	err := backoff.Retry(waitForDataStreams, exp)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (fts *FleetTestSuite) theAgentApiKeyIsInvalidated(invalidated string) error {
+	invalidatedBool, _ := strconv.ParseBool(invalidated)
+	body, err := elasticsearch.GetSecurityApiKey()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"Error": err,
+		}).Error("Could not return Security Api Keys")
+		return err
+	}
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": body,
+		}).Error("Could not parse response into JSON")
+		return err
+	}
+
+	for _, item := range body.Children() {
+		if item.Path("name").Data().(string) == fts.AgentId {
+			if item.Path("invalidated").Data().(bool) == invalidatedBool {
+				log.WithFields(log.Fields{
+					"agentId": fts.AgentId,
+				}).Info("The agent Api key invalidated: ", item.Path("invalidated").Data().(bool))
+			} else {
+				log.WithFields(log.Fields{
+					"agentId": fts.AgentId,
+				}).Error("The agent Api key invalidated: ", item.Path("invalidated").Data().(bool))
+				return errors.New("The agent Api key invalidated is should be: " + invalidated)
+			}
+		}
 	}
 
 	return nil

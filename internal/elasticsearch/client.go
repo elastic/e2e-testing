@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Jeffail/gabs/v2"
 	"net"
 	"net/http"
 	"net/url"
@@ -368,4 +369,50 @@ func WaitForNumberOfHits(ctx context.Context, indexName string, query map[string
 
 	err := backoff.Retry(numberOfHits, exp)
 	return result, err
+}
+
+// GetSecurityApiKey waits for the elasticsearch SecurityApiKey to return the list of Api Keys.
+func GetSecurityApiKey() (*gabs.Container, error) {
+	//exp := utils.GetExponentialBackOff(60 * time.Second)
+
+	//retryCount := 1
+	//body := ""
+
+	//SecurityApiKeys := func()  error{
+	r := curl.HTTPRequest{
+		URL:               "http://localhost:9200/_security/api_key?",
+		BasicAuthPassword: "changeme",
+		BasicAuthUser:     "elastic",
+	}
+
+	response, err := curl.Get(r)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":          err,
+			"statusEndpoint": r.URL,
+		}).Warn("The Elasticsearch Cat Indices API is not available yet")
+
+		return nil, err
+	}
+
+	log.WithFields(log.Fields{
+		"statusEndpoint": r.URL,
+	}).Trace("The Elasticsearch Console SecurityApiKey API is available")
+
+	jsonParsed, err := gabs.ParseJSON([]byte(response))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": jsonParsed,
+		}).Error("Could not parse response into JSON")
+		return jsonParsed, err
+	}
+	data := jsonParsed.Path("api_keys")
+	//body = data
+	//return nil
+	//}
+
+	//err := backoff.Retry(SecurityApiKeys, exp)
+	return data, err
+
 }

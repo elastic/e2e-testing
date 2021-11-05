@@ -78,6 +78,7 @@ func (c *Client) GetAgentIDByHostname(ctx context.Context, hostname string) (str
 		"agentId":  agent.ID,
 		"hostname": hostname,
 	}).Trace("Agent Id found")
+
 	return agent.ID, nil
 }
 

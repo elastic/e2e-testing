@@ -73,12 +73,13 @@ Examples: Debian
 | os     |
 | debian |
 
-@unenroll
+@un-enroll
 @skip:windows
 Scenario Outline: Un-enrolling the <os> agent deactivates the agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the agent is un-enrolled
   Then the agent is listed in Fleet as "inactive"
+     And the agent Api key invalidated "false"
 
 @centos
 Examples: Centos
@@ -96,6 +97,7 @@ Scenario Outline: Un-enrolling without revoke the <os> deactivates the agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the agent is un-enrolled without revoke
   Then the agent is listed in Fleet as "inactive"
+     And the agent Api key invalidated "true"
 
 @centos
 Examples: Centos
