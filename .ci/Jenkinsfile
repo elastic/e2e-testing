@@ -324,8 +324,8 @@ def generateFunctionalTestStep(Map args = [:]){
   def goArch = "amd64"
   def workerLabels = "${platformLabels} && immutable"
   def linuxIp = null
-  if (platformLabels == "arm64") {
-    goArch = "arm64"
+  if (platformLabels == "aarch64") {
+    goArch = "aarch64"
     // let's use centos8 ARM as base VM, trying to mitigate the flakiness described in https://github.com/elastic/e2e-testing/issues/1271
     workerLabels = "centos-8-aarch64"
   }

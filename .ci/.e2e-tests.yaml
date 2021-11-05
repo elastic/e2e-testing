@@ -12,7 +12,7 @@ SUITES:
         tags: "metricbeat"
   - suite: "fleet"
     platforms:
-      - labels: "arm64"
+      - labels: "aarch64"
       - labels: "ubuntu-18.04"
         provider: "elastic-package"
     scenarios:
