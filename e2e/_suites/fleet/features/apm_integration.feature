@@ -15,7 +15,7 @@ Examples: default
   | default |
 
 @ubi8
-@skip:arm64
+@skip:aarch64
 Examples: Ubi8
 | image   |
 | ubi8    |
