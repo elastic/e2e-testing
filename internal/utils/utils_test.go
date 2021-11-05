@@ -38,6 +38,14 @@ func TestGetArchitecture(t *testing.T) {
 
 		assert.Equal(t, "arm64", GetArchitecture())
 	})
+
+	t.Run("Retrieving aarch64 architecture", func(t *testing.T) {
+		fallbackArch := os.Getenv("GOARCH")
+		os.Setenv("GOARCH", "aarch64")
+		defer os.Setenv("GOARCH", fallbackArch)
+
+		assert.Equal(t, "aarch64", GetArchitecture())
+	})
 }
 
 func TestIsCommit(t *testing.T) {

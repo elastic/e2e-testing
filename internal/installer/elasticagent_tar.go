@@ -114,7 +114,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 	os := "linux"
 	arch := "x86_64"
 	if utils.GetArchitecture() == "arm64" {
-		arch = "arm64"
+		arch = "aarch64"
 	}
 	extension := "tar.gz"
 

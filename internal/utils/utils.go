@@ -30,8 +30,8 @@ func GetArchitecture() string {
 	arch := "amd64"
 
 	envArch := os.Getenv("GOARCH")
-	if envArch == "arm64" {
-		arch = "arm64"
+	if envArch == "arm64" || envArch == "aarch64" {
+		arch = envArch
 	}
 
 	log.Debugf("Go's architecture is %s (%s)", arch, envArch)
