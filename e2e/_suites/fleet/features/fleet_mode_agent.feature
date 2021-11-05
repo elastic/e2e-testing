@@ -73,9 +73,9 @@ Examples: Debian
 | os     |
 | debian |
 
-@un-enroll
+@un-enroll-with-revoke
 @skip:windows
-Scenario Outline: Un-enrolling the <os> agent deactivates the agent
+Scenario Outline: Un-enrolling with revoke the <os> agent deactivates the agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the agent is un-enrolled
   Then the agent is listed in Fleet as "inactive"
@@ -91,7 +91,7 @@ Examples: Debian
 | os     |
 | debian |
 
-@un-enroll-without-revoke
+@un-enroll
 @skip:windows
 Scenario Outline: Un-enrolling without revoke the <os> deactivates the agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
