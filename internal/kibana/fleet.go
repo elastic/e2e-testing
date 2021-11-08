@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -48,13 +49,16 @@ func NewFleetConfig(token string) (*FleetConfig, error) {
 		fleetServerScheme = u.Scheme
 	}
 
+	esEndpoint := elasticsearch.GetElasticSearchEndpoint()
+	kbEndpoint := GetKibanaEndpoint()
+
 	cfg := &FleetConfig{
 		EnrollmentToken:          token,
 		ElasticsearchCredentials: fmt.Sprintf("elastic:%s", shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme")),
-		ElasticsearchPort:        9200,
-		ElasticsearchURI:         "elasticsearch",
-		KibanaPort:               5601,
-		KibanaURI:                "kibana",
+		ElasticsearchPort:        esEndpoint.Port,
+		ElasticsearchURI:         esEndpoint.Host,
+		KibanaPort:               kbEndpoint.Port,
+		KibanaURI:                kbEndpoint.Host,
 		FleetServerPort:          fleetPort,
 		FleetServerURI:           fleetServer,
 		FleetServerScheme:        fleetServerScheme,

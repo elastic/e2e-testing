@@ -460,6 +460,7 @@ def generateFunctionalTestStep(Map args = [:]){
       } finally {
         sh "mkdir -p outputs || true"
         scpr(testRunner, "e2e-testing/outputs/*", "outputs/.")
+        sh "ls -l outputs/"
         junit allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/*.xml"
         archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/*.xml"
       }

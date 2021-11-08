@@ -81,12 +81,15 @@ func DeleteIndex(ctx context.Context, index string) error {
 	return nil
 }
 
-// getElasticsearchClient returns a client connected to the running elasticseach, defined
-// at configuration level. Then we will inspect the running container to get its port bindings
-// and from them, get the one related to the Elasticsearch port (9200). As it is bound to a
-// random port at localhost, we will build the URL with the bound port at localhost.
-//nolint:unused
-func getElasticsearchClient(ctx context.Context) (*es.Client, error) {
+// Endpoint - Elastic search endpoint information
+type Endpoint struct {
+	Scheme string
+	Host   string
+	Port   int
+}
+
+// GetElasticSearchEndpoint - Query environment for correct endpoint information
+func GetElasticSearchEndpoint() *Endpoint {
 	remoteESHost := shell.GetEnv("ELASTICSEARCH_URL", "")
 	if remoteESHost != "" {
 		remoteESHost = utils.RemoveQuotes(remoteESHost)
@@ -99,10 +102,27 @@ func getElasticsearchClient(ctx context.Context) (*es.Client, error) {
 			log.Fatal("Could not determine host/port from ELASTICSEARCH_URL")
 		}
 		remoteESHostPort, _ := strconv.Atoi(port)
-		remoteESServerScheme := u.Scheme
-		return getElasticsearchClientFromHostPort(ctx, host, remoteESHostPort, remoteESServerScheme)
+		return &Endpoint{
+			Scheme: u.Scheme,
+			Host:   host,
+			Port:   remoteESHostPort,
+		}
 	}
-	return getElasticsearchClientFromHostPort(ctx, "localhost", 9200, "http")
+	return &Endpoint{
+		Scheme: "http",
+		Host:   "localhost",
+		Port:   9200,
+	}
+}
+
+// getElasticsearchClient returns a client connected to the running elasticseach, defined
+// at configuration level. Then we will inspect the running container to get its port bindings
+// and from them, get the one related to the Elasticsearch port (9200). As it is bound to a
+// random port at localhost, we will build the URL with the bound port at localhost.
+//nolint:unused
+func getElasticsearchClient(ctx context.Context) (*es.Client, error) {
+	esEndpoint := GetElasticSearchEndpoint()
+	return getElasticsearchClientFromHostPort(ctx, esEndpoint.Host, esEndpoint.Port, esEndpoint.Scheme)
 }
 
 // getElasticsearchClientFromHostPort returns a client connected to a running elasticseach, defined
@@ -111,10 +131,6 @@ func getElasticsearchClient(ctx context.Context) (*es.Client, error) {
 // random port at localhost, we will build the URL with the bound port at localhost.
 //nolint:unused
 func getElasticsearchClientFromHostPort(ctx context.Context, host string, port int, scheme string) (*es.Client, error) {
-	if host == "" {
-		host = "localhost"
-	}
-
 	cfg := es.Config{
 		Addresses: []string{fmt.Sprintf("%s://%s:%d", scheme, host, port)},
 		Username:  "elastic",
@@ -220,15 +236,9 @@ func Search(ctx context.Context, indexName string, query map[string]interface{})
 	return result, nil
 }
 
-// WaitForElasticsearch waits for elasticsearch running in localhost:9200 to be healthy, returning false
+// WaitForElasticsearch waits for elasticsearch running to be healthy, returning false
 // if elasticsearch does not get healthy status in a defined number of minutes.
 func WaitForElasticsearch(ctx context.Context, maxTimeoutMinutes time.Duration) (bool, error) {
-	return WaitForElasticsearchFromHostPort(ctx, "localhost", 9200, maxTimeoutMinutes)
-}
-
-// WaitForElasticsearchFromHostPort waits for an elasticsearch running in a host:port to be healthy, returning false
-// if elasticsearch does not get healthy status in a defined number of minutes.
-func WaitForElasticsearchFromHostPort(ctx context.Context, host string, port int, maxTimeoutMinutes time.Duration) (bool, error) {
 	exp := utils.GetExponentialBackOff(maxTimeoutMinutes)
 
 	retryCount := 1
@@ -280,12 +290,13 @@ func WaitForElasticsearchFromHostPort(ctx context.Context, host string, port int
 func WaitForIndices() (string, error) {
 	exp := utils.GetExponentialBackOff(60 * time.Second)
 
+	esEndpoint := GetElasticSearchEndpoint()
 	retryCount := 1
 	body := ""
 
 	catIndices := func() error {
 		r := curl.HTTPRequest{
-			URL:               "http://localhost:9200/_cat/indices?v",
+			URL:               fmt.Sprintf("%s://%s:%d/_cat/indices?v", esEndpoint.Scheme, esEndpoint.Host, esEndpoint.Port),
 			BasicAuthPassword: shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"),
 			BasicAuthUser:     "elastic",
 		}
@@ -308,7 +319,7 @@ func WaitForIndices() (string, error) {
 			"retries":        retryCount,
 			"statusEndpoint": r.URL,
 			"elapsedTime":    exp.GetElapsedTime(),
-		}).Trace("The Elasticsearc Cat Indices API is available")
+		}).Trace("The Elasticsearch Cat Indices API is available")
 
 		body = response
 		return nil
