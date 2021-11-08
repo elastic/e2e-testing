@@ -11,10 +11,6 @@ SUITES:
       - name: "Metricbeat"
         tags: "metricbeat"
   - suite: "fleet"
-    platforms:
-      - labels: "arm64"
-      - labels: "ubuntu-20.04"
-        provider: "elastic-package"
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode_agent"
@@ -71,6 +67,9 @@ SUITES:
       - name: "Beats Background Processes"
         pullRequestFilter: " && ~debian"
         tags: "running_on_beats"
+        platforms:
+          - labels: "arm64"
+          - labels: "amd64"
       - name: "Preconfigured Policies"
         pullRequestFilter: " && ~debian"
         tags: "preconfigured_policies"

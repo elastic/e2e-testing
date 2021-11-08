@@ -283,6 +283,7 @@ def pyrun(command){
                 python3 -m venv ${env.WORKSPACE}/.venv
                  ${env.WORKSPACE}/.venv/bin/pip3 -q install wheel
                  ${env.WORKSPACE}/.venv/bin/pip3 -q install ansible requests google-auth boto3 boto
+                 ${env.WORKSPACE}/.venv/bin/ansible-galaxy install geerlingguy.docker
             fi
             ${env.WORKSPACE}/.venv/bin/${command}
           """,
@@ -458,11 +459,11 @@ def generateFunctionalTestStep(Map args = [:]){
           }
         }
       } finally {
-        sh "mkdir -p outputs || true"
-        scpr(testRunner, "e2e-testing/outputs/*", "outputs/.")
-        sh "ls -l outputs/"
-        junit allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/*.xml"
-        archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/*.xml"
+        sh "mkdir -p outputs/${testRunner.split('@')[1]} || true"
+        scpr(testRunner, "e2e-testing/outputs/*", "outputs//${testRunner.split('@')[1]}/.")
+        sh "ls -l outputs/${testRunner.split('@')[1]}"
+        junit allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunner.split('@')[1]}/*.xml"
+        archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/${testRunner.split('@')[1]}/*.xml"
       }
     }
   } else {
