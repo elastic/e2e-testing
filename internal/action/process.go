@@ -65,6 +65,7 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 		for _, p := range processes {
 			processName, _ := p.Name()
 			pid := p.Pid
+			status, _ := p.Status()
 			ppid, _ := p.Ppid()
 			cmd, _ := p.Cmdline()
 			isRunning, _ := p.IsRunning()
@@ -76,8 +77,9 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 					"ppid":      ppid,
 					"cmd":       cmd,
 					"isRunning": isRunning,
+					"status":    status,
 				}).Trace("Checking Process")
-				if mustBePresent && isRunning {
+				if mustBePresent && status[0] == "S" {
 					desiredStatePids = append(desiredStatePids, pid)
 				} else if !mustBePresent {
 					desiredStatePids = append(desiredStatePids, pid)

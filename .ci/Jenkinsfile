@@ -295,7 +295,7 @@ def pyrun(command){
 }
 
 def ansible(args){
-     pyrun("ansible-playbook -v --private-key=\"${env.WORKSPACE}/${env.BASE_DIR}/e2essh\" --extra-vars=\"workspace=${env.WORKSPACE}/${env.BASE_DIR} runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${env.WORKSPACE}/${env.BASE_DIR}/.ci/ansible/playbook.yml ${args}")
+     pyrun("ansible-playbook -v --private-key=\"${env.WORKSPACE}/${env.BASE_DIR}/e2essh\" --extra-vars=\"workspace=${env.WORKSPACE}/${env.BASE_DIR} numAgents=1 runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${env.WORKSPACE}/${env.BASE_DIR}/.ci/ansible/playbook.yml ${args}")
 }
 
 

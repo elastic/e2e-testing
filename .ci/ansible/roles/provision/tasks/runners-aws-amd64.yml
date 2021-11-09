@@ -9,7 +9,7 @@
     instance_type: c5.2xlarge
     instance_tags:
       Name: "e2e-amd64-{{runId}}"
-    exact_count: 1
+    exact_count: "{{numAgents or 9}}"
     count_tag:
       Name: "e2e-amd64-{{runId}}"
     volumes:

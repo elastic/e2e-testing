@@ -9,7 +9,7 @@
     instance_type: a1.large
     instance_tags:
       Name: "e2e-arm64-{{runId}}"
-    exact_count: 9
+    exact_count: "{{numAgents or 9}}"
     count_tag:
       Name: "e2e-arm64-{{runId}}"
     volumes:
