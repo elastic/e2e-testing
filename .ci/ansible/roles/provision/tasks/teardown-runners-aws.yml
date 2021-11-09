@@ -1,7 +1,6 @@
 ---
 - name: "Delete arm64 instances"
   ec2:
-    key_name: "e2essh-{{runId}}"
     region: us-east-2
     group: e2e
     image: 'ami-03b47d2d727e13114'
@@ -13,7 +12,6 @@
 
 - name: "Delete amd64 instances"
   ec2:
-    key_name: "e2essh-{{runId}}"
     region: us-east-2
     group: e2e
     image: 'ami-0629230e074c580f2'
@@ -21,11 +19,10 @@
       Name: "e2e-amd64-{{runId}}"
     exact_count: 0
     count_tag:
-      Name: e2e-amd64
+      Name: "e2e-amd64-{{runId}}"
 
 - name: "Delete elastic stack"
   ec2:
-    key_name: "e2essh-{{runId}}"
     region: us-east-2
     group: e2e
     image: 'ami-0629230e074c580f2'

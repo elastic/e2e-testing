@@ -79,7 +79,7 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 					"isRunning": isRunning,
 					"status":    status,
 				}).Trace("Checking Process")
-				if mustBePresent && status[0] == "S" {
+				if mustBePresent && strings.EqualFold(status[0], "sleep") {
 					desiredStatePids = append(desiredStatePids, pid)
 				} else if !mustBePresent {
 					desiredStatePids = append(desiredStatePids, pid)

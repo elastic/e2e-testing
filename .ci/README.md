@@ -25,7 +25,7 @@ Install python deps:
 
 ```
 > venv/bin/ansible-playbook .ci/ansible/playbook.yml \
-    --extra-vars "numAgents=1 runId=$RUN_ID workspace=$(pwd)/ sshPublicKey=~/.ssh/id_rsa.pub" \
+    --extra-vars "numAgents=1 runId=$RUN_ID workspace=$HOME/Projects/e2e-testing/ sshPublicKey=~/.ssh/id_rsa.pub" \
     --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
     -t provision-stack
 ```
