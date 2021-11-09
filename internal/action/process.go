@@ -88,6 +88,11 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 					desiredStatePids = append(desiredStatePids, pid)
 				}
 
+			}
+		}
+
+		occurrencesMatched := (len(desiredStatePids) == a.opts.Occurrences)
+
 		// both true or both false
 		if mustBePresent == occurrencesMatched {
 			log.WithFields(log.Fields{
