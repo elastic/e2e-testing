@@ -55,9 +55,10 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 		processes, err := process.Processes()
 
 		log.WithFields(log.Fields{
-			"desiredState": a.opts.DesiredState,
-			"occurrences":  a.opts.Occurrences,
-			"process":      a.opts.Process,
+			"desiredState":  a.opts.DesiredState,
+			"occurrences":   a.opts.Occurrences,
+			"process":       a.opts.Process,
+			"mustBePresent": mustBePresent,
 		}).Trace("Checking process desired state on the container")
 
 		desiredStatePids := []int32{}
@@ -81,12 +82,11 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 				}).Trace("Checking Process")
 				if mustBePresent && strings.EqualFold(status[0], "sleep") {
 					desiredStatePids = append(desiredStatePids, pid)
+				} else if !mustBePresent && strings.EqualFold(status[0], "stopped") {
+					desiredStatePids = append(desiredStatePids, pid)
 				} else if !mustBePresent {
 					desiredStatePids = append(desiredStatePids, pid)
 				}
-			}
-		}
-		occurrencesMatched := (len(desiredStatePids) == a.opts.Occurrences)
 
 		// both true or both false
 		if mustBePresent == occurrencesMatched {
