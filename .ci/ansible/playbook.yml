@@ -24,15 +24,15 @@
     tags:
       - always
 
-  - name: Setup Test Runners (AWS:arm64)
-    include_role:
-      name: provision
-      tasks_from: runners-aws-arm64.yml
-      apply:
-        tags:
-          - provision-stack
-    tags:
-      - always
+  # - name: Setup Test Runners (AWS:arm64)
+  #   include_role:
+  #     name: provision
+  #     tasks_from: runners-aws-arm64.yml
+  #     apply:
+  #       tags:
+  #         - provision-stack
+  #   tags:
+  #     - always
 
 - name: Teardown environment
   hosts: localhost
