@@ -373,12 +373,7 @@ func WaitForNumberOfHits(ctx context.Context, indexName string, query map[string
 
 // GetSecurityApiKey waits for the elasticsearch SecurityApiKey to return the list of Api Keys.
 func GetSecurityApiKey() (*gabs.Container, error) {
-	//exp := utils.GetExponentialBackOff(60 * time.Second)
 
-	//retryCount := 1
-	//body := ""
-
-	//SecurityApiKeys := func()  error{
 	r := curl.HTTPRequest{
 		URL:               "http://localhost:9200/_security/api_key?",
 		BasicAuthPassword: "changeme",
@@ -408,11 +403,6 @@ func GetSecurityApiKey() (*gabs.Container, error) {
 		return jsonParsed, err
 	}
 	data := jsonParsed.Path("api_keys")
-	//body = data
-	//return nil
-	//}
 
-	//err := backoff.Retry(SecurityApiKeys, exp)
 	return data, err
-
 }
