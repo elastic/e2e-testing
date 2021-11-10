@@ -7,6 +7,8 @@ package installer
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 
 	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
@@ -106,45 +108,62 @@ func (i *elasticAgentTARPackage) Postinstall(ctx context.Context) error {
 
 // Preinstall executes operations before installing a TAR package
 func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
-	span, _ := apm.StartSpanOptions(ctx, "Pre-install operations for the Elastic Agent", "elastic-agent.tar.pre-install", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	defer span.End()
+	installArtifactFn := func(ctx context.Context, artifact string) error {
+		span, _ := apm.StartSpanOptions(ctx, "Pre-install operations for the Elastic Agent", "elastic-agent.tar.pre-install", apm.SpanOptions{
+			Parent: apm.SpanFromContext(ctx).TraceContext(),
+		})
+		defer span.End()
 
-	artifact := "elastic-agent"
-	os := "linux"
-	arch := "x86_64"
-	if utils.GetArchitecture() == "arm64" {
-		arch = "arm64"
-	}
-	extension := "tar.gz"
+		runningOS := "linux"
+		arch := "x86_64"
+		if utils.GetArchitecture() == "arm64" {
+			arch = "arm64"
+		}
+		extension := "tar.gz"
 
-	found, err := io.Exists("elastic-agent")
-	if found && err == nil {
-		log.Trace("Install directory already exists, will not overwrite")
+		found, err := io.Exists(artifact)
+		if found && err == nil {
+			err = os.RemoveAll(artifact)
+			if err != nil {
+				log.Fatal("Could not remove artifact directory for reinitialization.")
+			}
+			log.Trace("Cleared previously downloaded artifacts")
+		}
+		_, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, runningOS, arch, extension, false, true)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"artifact":  artifact,
+				"version":   common.BeatVersion,
+				"os":        runningOS,
+				"arch":      arch,
+				"extension": extension,
+				"error":     err,
+			}).Error("Could not download the binary for the agent")
+			return err
+		}
+
+		_, err = i.Exec(ctx, []string{"tar", "-xvf", binaryPath})
+		if err != nil {
+			return err
+		}
+
+		output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), runningOS, arch), "elastic-agent"})
+		log.WithField("output", output).Trace("Moved elastic-agent")
 		return nil
 	}
-	_, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"artifact":  artifact,
-			"version":   common.BeatVersion,
-			"os":        os,
-			"arch":      arch,
-			"extension": extension,
-			"error":     err,
-		}).Error("Could not download the binary for the agent")
-		return err
+
+	for _, bp := range i.service.BackgroundProcesses {
+		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
+			// pre-install the dependant binary first
+			err := installArtifactFn(ctx, bp)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
-	_, err = i.Exec(ctx, []string{"tar", "-xvf", binaryPath})
-	if err != nil {
-		return err
-	}
+	return installArtifactFn(ctx, "elastic-agent")
 
-	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "elastic-agent"})
-	log.WithField("output", output).Trace("Moved elastic-agent")
-	return nil
 }
 
 // Start will start a service
