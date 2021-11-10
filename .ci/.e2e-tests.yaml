@@ -35,12 +35,12 @@ SUITES:
       #   platforms:
       #     - labels: "arm64"
       #     - labels: "amd64"
-      # - name: "Permissions Output change"
-      #   pullRequestFilter: " && ~debian"
-      #   tags: "permission_change"
-      #   platforms:
-      #     - labels: "arm64"
-      #     - labels: "amd64"
+      - name: "Permissions Output change"
+        pullRequestFilter: " && ~debian"
+        tags: "permission_change"
+        platforms:
+          # - labels: "arm64"
+          - labels: "amd64"
       # - name: "Policies"
       #   pullRequestFilter: " && ~debian"
       #   tags: "policies"
@@ -64,18 +64,18 @@ SUITES:
         platforms:
           # - labels: "arm64"
           - labels: "amd64"
-  #     - name: "Beats Background Processes"
-  #       pullRequestFilter: " && ~debian"
-  #       tags: "running_on_beats"
-  #       platforms:
+      - name: "Beats Background Processes"
+        pullRequestFilter: " && ~debian"
+        tags: "running_on_beats"
+        platforms:
+          # - labels: "arm64"
+          - labels: "amd64"
+      - name: "Preconfigured Policies"
+        pullRequestFilter: " && ~debian"
+        tags: "preconfigured_policies"
+        platforms:
   #         - labels: "arm64"
-  #         - labels: "amd64"
-  #     - name: "Preconfigured Policies"
-  #       pullRequestFilter: " && ~debian"
-  #       tags: "preconfigured_policies"
-  #       platforms:
-  #         - labels: "arm64"
-  #         - labels: "amd64"
+          - labels: "amd64"
   # - suite: "kubernetes-autodiscover"
   #   platforms:
   #     - labels: "ubuntu-20.04"
