@@ -7,7 +7,7 @@ The following variables need to be exported:
 - *RUN_ID*: This is a unique identifying ID for the current run. It can be an arbitrary name or something like this:
 
 ```
-export RUN_ID=$(uuidgen|cut -d'-' -f1))
+export RUN_ID=$(uuidgen|cut -d'-' -f1)
 ```
 
 - *AWS_SECRET_ACCESS_KEY*: AWS secret access key
