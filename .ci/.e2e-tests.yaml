@@ -1,90 +1,91 @@
 ---
 SUITES:
-  # - suite: "helm"
-  #   platforms:
-  #     - labels: "ubuntu-20.04"
-  #   scenarios:
-  #     - name: "APM Server"
-  #       tags: "apm-server"
-  #     - name: "Filebeat"
-  #       tags: "filebeat"
-  #     - name: "Metricbeat"
-  #       tags: "metricbeat"
+  - suite: "helm"
+    scenarios:
+      - name: "APM Server"
+        tags: "apm-server"
+        platforms:
+          - labels: "helm"
+      - name: "Filebeat"
+        tags: "filebeat"
+        platforms:
+          - labels: "helm"
+      - name: "Metricbeat"
+        tags: "metricbeat"
+        platforms:
+          - labels: "helm"
   - suite: "fleet"
     scenarios:
-      # - name: "Fleet"
-      #   tags: "fleet_mode_agent"
-      #   platforms:
-      #     - labels: "arm64"
-      #     - labels: "amd64"
-      # - name: "Integrations"
-      #   pullRequestFilter: " && ~debian"
-      #   tags: "integrations"
-      #   platforms:
-      #     - labels: "arm64"
-      #     - labels: "amd64"
-      # - name: "APM Integration"
-      #   pullRequestFilter: " && ~debian"
-      #   tags: "apm_server"
-      #   platforms:
-      #     - labels: "ubuntu-20.04"
-      #       provider: "elastic-package"
-      # - name: "Linux Integration"
-      #   pullRequestFilter: " && ~debian"
-      #   tags: "linux_integration"
-      #   platforms:
-      #     - labels: "arm64"
-      #     - labels: "amd64"
+      - name: "Fleet"
+        tags: "fleet_mode_agent"
+        platforms:
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
+      - name: "Integrations"
+        tags: "integrations"
+        platforms:
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
+      - name: "APM Integration"
+        tags: "apm_server"
+        platforms:
+          - labels: "fleet-amd64"
+            provider: "elastic-package"
+      - name: "Linux Integration"
+        tags: "linux_integration"
+        platforms:
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
       - name: "Permissions Output change"
-        pullRequestFilter: " && ~debian"
         tags: "permission_change"
         platforms:
-          # - labels: "arm64"
-          - labels: "amd64"
-      # - name: "Policies"
-      #   pullRequestFilter: " && ~debian"
-      #   tags: "policies"
-      #   platforms:
-      #     - labels: "arm64"
-      #     - labels: "amd64"
-      # - name: "System Integration"
-      #   pullRequestFilter: " && ~debian"
-      #   tags: "system_integration"
-      #   platforms:
-      #     - labels: "arm64"
-      #     - labels: "amd64"
-      # - name: "Stand-alone"
-      #   pullRequestFilter: " && ~ubi8"
-      #   tags: "stand_alone_agent"
-      #   platforms:
-      #     - labels: "ubuntu-20.04"
-      #       provider: "elastic-package"
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
+      - name: "Policies"
+        tags: "policies"
+        platforms:
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
+      - name: "System Integration"
+        tags: "system_integration"
+        platforms:
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
+      - name: "Stand-alone"
+        tags: "stand_alone_agent"
+        platforms:
+          - labels: "fleet-amd64"
+            provider: "elastic-package"
       - name: "Backend Processes"
         tags: "backend_processes"
         platforms:
-          # - labels: "arm64"
-          - labels: "amd64"
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
       - name: "Beats Background Processes"
-        pullRequestFilter: " && ~debian"
         tags: "running_on_beats"
         platforms:
-          # - labels: "arm64"
-          - labels: "amd64"
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
       - name: "Preconfigured Policies"
-        pullRequestFilter: " && ~debian"
         tags: "preconfigured_policies"
         platforms:
-  #         - labels: "arm64"
-          - labels: "amd64"
-  # - suite: "kubernetes-autodiscover"
-  #   platforms:
-  #     - labels: "ubuntu-20.04"
-  #   scenarios:
-  #     - name: "kubernetes autodiscover with elastic-agent"
-  #       tags: "kubernetes-autodiscover && elastic-agent"
-  #     - name: "kubernetes autodiscover with filebeat"
-  #       tags: "kubernetes-autodiscover && filebeat"
-  #     - name: "kubernetes autodiscover with heartbeat"
-  #       tags: "kubernetes-autodiscover && heartbeat"
-  #     - name: "kubernetes autodiscover with metricbeat"
-  #       tags: "kubernetes-autodiscover && metricbeat"
+          - labels: "fleet-amd64"
+            provider: "elastic-package"
+  - suite: "kubernetes-autodiscover"
+    scenarios:
+      - name: "kubernetes autodiscover with elastic-agent"
+        tags: "kubernetes-autodiscover && elastic-agent"
+        platforms:
+          - labels: "kubernetes-autodiscover"
+      - name: "kubernetes autodiscover with filebeat"
+        tags: "kubernetes-autodiscover && filebeat"
+        platforms:
+          - labels: "kubernetes-autodiscover"
+      - name: "kubernetes autodiscover with heartbeat"
+        tags: "kubernetes-autodiscover && heartbeat"
+        platforms:
+          - labels: "kubernetes-autodiscover"
+      - name: "kubernetes autodiscover with metricbeat"
+        tags: "kubernetes-autodiscover && metricbeat"
+        platforms:
+          - labels: "kubernetes-autodiscover"

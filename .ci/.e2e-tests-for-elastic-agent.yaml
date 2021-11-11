@@ -1,47 +1,59 @@
 ---
 SUITES:
   - suite: "fleet"
-    platforms:
-      - labels: "arm64"
-      - labels: "ubuntu-18.04"
-        provider: "elastic-package"
     scenarios:
       - name: "Fleet"
-        pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent"
         platforms:
-          - labels: "ubuntu-18.04"
-            provider: "elastic-package"
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
       - name: "Integrations"
-        pullRequestFilter: " && ~debian"
         tags: "integrations"
+        platforms:
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
       - name: "APM Integration"
-        pullRequestFilter: " && ~debian"
         tags: "apm_server"
+        platforms:
+          - labels: "fleet-amd64"
+            provider: "elastic-package"
       - name: "Linux Integration"
-        pullRequestFilter: " && ~debian"
         tags: "linux_integration"
+        platforms:
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
       - name: "Permissions Output change"
-        pullRequestFilter: " && ~debian"
         tags: "permission_change"
+        platforms:
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
+      - name: "Policies"
+        tags: "policies"
+        platforms:
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
       - name: "System Integration"
-        platforms:
-          - labels: "ubuntu-18.04"
-            provider: "elastic-package"
-        pullRequestFilter: " && ~debian"
         tags: "system_integration"
-      - name: "Stand-alone"
         platforms:
-          - labels: "ubuntu-18.04"
-            provider: "elastic-package"
-        pullRequestFilter: " && ~ubi8"
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
+      - name: "Stand-alone"
         tags: "stand_alone_agent"
+        platforms:
+          - labels: "fleet-amd64"
+            provider: "elastic-package"
       - name: "Backend Processes"
-        pullRequestFilter: " && ~debian"
         tags: "backend_processes"
+        platforms:
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
       - name: "Beats Background Processes"
-        pullRequestFilter: " && ~debian"
         tags: "running_on_beats"
+        platforms:
+          - labels: "fleet-arm64"
+          - labels: "fleet-amd64"
       - name: "Preconfigured Policies"
-        pullRequestFilter: " && ~debian"
         tags: "preconfigured_policies"
+        platforms:
+          - labels: "fleet-amd64"
+            provider: "elastic-package"

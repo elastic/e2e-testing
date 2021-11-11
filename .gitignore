@@ -3,6 +3,6 @@ outputs
 dist/
 *.bck
 .env
-venv
+.venv
 hosts
 *-sshhosts

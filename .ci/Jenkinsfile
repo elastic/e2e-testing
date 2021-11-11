@@ -176,6 +176,36 @@ pipeline {
         //     }
         //   }
         // }
+
+        stage('Deploy Test Infra') {
+          failFast true
+          options { skipDefaultCheckout() }
+          environment {
+            GO111MODULE = 'on'
+            PATH = "${env.HOME}/bin:${env.WORKSPACE}/${env.BASE_DIR}/bin:${HOME}/go/bin:${env.PATH}"
+          }
+          when {
+            beforeAgent true
+            anyOf {
+              expression { return env.FORCE_SKIP_GIT_CHECKS == "true" }
+              expression { return env.SKIP_TESTS == "false" }
+            }
+          }
+          steps {
+            withGithubNotify(context: 'Deployment', tab: 'tests') {
+              deleteDir()
+              unstash 'source'
+              dir("${BASE_DIR}") {
+                script {
+                  // Deploy the test infrastructure
+                  sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/${env.BASE_DIR}/e2essh -q -N \"\" "
+                  ansible("-t provision-stack")
+                }
+              }
+            }
+          }
+        }
+
         stage('End-To-End Tests') {
           failFast true
           options { skipDefaultCheckout() }
@@ -196,6 +226,8 @@ pipeline {
               unstash 'source'
               dir("${BASE_DIR}") {
                 script {
+                  ansible("-t setup")
+
                   def suitesParam = params.runTestsSuites
                   def existingSuites = readYaml(file: "${TEST_MATRIX_FILE}")
                   def parallelTasks = [:]
@@ -265,8 +297,6 @@ def scpr(connection, remote_src, local_dst){
  * Runs python in venv
  */
 def pyrun(command){
-  def props = getVaultSecret(secret: "${ELASTIC_CLOUD_SECRET}")
-  def authObj = props?.data
   def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
   def awsAuthObj = awsProps?.data
   withEnv([
@@ -282,12 +312,12 @@ def pyrun(command){
             if ! test -d ${env.WORKSPACE}/.venv; then
                 python3 -m venv ${env.WORKSPACE}/.venv
                  ${env.WORKSPACE}/.venv/bin/pip3 -q install wheel
-                 ${env.WORKSPACE}/.venv/bin/pip3 -q install ansible requests google-auth boto3 boto
-                 ${env.WORKSPACE}/.venv/bin/ansible-galaxy install geerlingguy.docker
+                 ${env.WORKSPACE}/.venv/bin/pip3 -q install ansible requests boto3 boto
+                 ${env.WORKSPACE}/.venv/bin/ansible-galaxy install -r .ci/ansible/requirements.yml
             fi
             ${env.WORKSPACE}/.venv/bin/${command}
           """,
-           label: "Executing pyrun"
+           label: "Executing ${command}"
         )
       }
     }
@@ -295,19 +325,13 @@ def pyrun(command){
 }
 
 def ansible(args){
-     pyrun("ansible-playbook -v --private-key=\"${env.WORKSPACE}/${env.BASE_DIR}/e2essh\" --extra-vars=\"workspace=${env.WORKSPACE}/${env.BASE_DIR} numAgents=4 runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${env.WORKSPACE}/${env.BASE_DIR}/.ci/ansible/playbook.yml ${args}")
+     pyrun("ansible-playbook --private-key=\"${env.WORKSPACE}/${env.BASE_DIR}/e2essh\" --extra-vars=\"workspace=${env.WORKSPACE}/${env.BASE_DIR} numAgents=3 runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${env.WORKSPACE}/${env.BASE_DIR}/.ci/ansible/playbook.yml -i ${env.WORKSPACE}/${env.BASE_DIR}/.ci/ansible/inventory ${args}")
 }
 
 
 def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   def suite = item.suite
   def platforms = item.platforms
-
-  if(suite == "fleet"){
-    // Deploy the test infrastructure to fleet related tests
-    sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/${env.BASE_DIR}/e2essh -q -N \"\" "
-    ansible("-t provision-stack")
-  }
 
   item.scenarios.eachWithIndex { scenario, scenarioIdx ->
     def name = scenario.name
@@ -323,14 +347,9 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
       platformsValue.each { platform ->
         def platformLabels = platform.labels
-        if(suite == "fleet" && (platformLabels == "arm64" || platformLabels == "amd64")){
-          def testRunners = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${platformLabels}-sshhosts")
-          log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
-          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}", testRunner: testRunners[scenarioIdx])
-        } else {
-          log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
-          parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}")
-        }
+        def testRunners = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${platformLabels}-sshhosts")
+        log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
+        parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}", platform: platform,  suite: "${suite}", tags: "${tags}", pullRequestFilter: "${pullRequestFilter}", testRunner: testRunners[scenarioIdx])
       }
     } else {
       log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed in any platform because there are no modified files")
@@ -362,22 +381,6 @@ def doNotifyBuildResult(boolean slackNotify) {
                     slackChannel: "${channels}",
                     slackComment: true,
                     slackNotify: slackNotify)
-}
-
-/**
- * Tear down the setup for the static workers.
- */
-def tearDown(Map args = [:]){
-  catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-    dir("${BASE_DIR}"){
-      sh(label: 'Remove the entire module cache', script: 'go clean -modcache', returnStatus: true)
-    }
-    if (isStaticWorker(labels: args.labels)) {
-      dir("${WORKSPACE}") {
-        deleteDir()
-      }
-    }
-  }
 }
 
 /**
@@ -418,6 +421,7 @@ def generateFunctionalTestStep(Map args = [:]){
   }
   tags += excludeNightlyTag
 
+  // TODO: Is this still relevant?
   if (isPR() || isUpstreamTrigger(filter: 'PR-')) {
     // when the "Run_As_Master_Branch" param is disabled, we will honour the PR filters, which
     // basically exclude some less frequent platforms or operative systems. If the user enabled
@@ -428,12 +432,9 @@ def generateFunctionalTestStep(Map args = [:]){
   }
 
   def goArch = "amd64"
-  def workerLabels = "${platformLabels} && immutable"
   def linuxIp = null
-  if (platformLabels == "arm64") {
+  if (platformLabels.contains("arm64")) {
     goArch = "arm64"
-    // let's use centos8 ARM as base VM, trying to mitigate the flakiness described in https://github.com/elastic/e2e-testing/issues/1271
-    workerLabels = "centos-8-aarch64"
   }
 
   // Skip scenarios per platform
@@ -445,97 +446,24 @@ def generateFunctionalTestStep(Map args = [:]){
   envContext.add("SUITE=${suite}")
   envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
 
-  if (testRunner){
-    return {
-      try {
-        dir("${BASE_DIR}") {
-          withEnv(envContext) {
-            // This step will help to send the APM traces to the
-            // APM service defined by the Otel Jenkins plugin.
-            withOtelEnv() {
-              ansible("-i ${env.WORKSPACE}/${BASE_DIR}/hosts -t setup")
-              sshexec(testRunner, """sudo bash /home/${testRunner.split('@')[0]}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
-            }
+  return {
+    try {
+      dir("${BASE_DIR}") {
+        withEnv(envContext) {
+          // This step will help to send the APM traces to the
+          // APM service defined by the Otel Jenkins plugin.
+          // TODO: This will need to be integrated into the provisioned VMs
+          withOtelEnv() {
+            sshexec(testRunner, """sudo bash /home/${testRunner.split('@')[0]}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
           }
         }
-      } finally {
-        sh "mkdir -p outputs/${testRunner.split('@')[1]} || true"
-        scpr(testRunner, "e2e-testing/outputs/*", "outputs//${testRunner.split('@')[1]}/.")
-        sh "ls -l outputs/${testRunner.split('@')[1]}"
-        junit allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunner.split('@')[1]}/*.xml"
-        archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/${testRunner.split('@')[1]}/*.xml"
       }
-    }
-  } else {
-    return {
-      withNode(labels: "${workerLabels}", sleepMax: 20, forceWorkspace: true){
-        deleteDir()
-        unstash 'source'
-        try {
-          withDockerEnv(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}") {
-            filebeat(output: "docker_logs_${platformLabels}_${goArch}_${suite}_${name}.log", workdir: "${env.WORKSPACE}") {
-              dir("${BASE_DIR}") {
-                // Doing a windows agent test, start up docker before the new environment is applied for windows
-                if (platformLabels.contains("windows")) {
-                  sh script: "docker-compose -f cli/config/compose/profiles/${suite}/docker-compose.yml up -d", label: "Deploying ${suite} via docker"
-                  linuxIp = grabWorkerIP()
-                  def mingwArch = is32() ? '32' : '64'
-                  def chocoPath = 'C:\\ProgramData\\chocolatey\\bin'
-                  def chocoPython3Path = 'C:\\Python38;C:\\Python38\\Scripts'
-                  path = "${env.WORKSPACE}\\bin;${chocoPath};${chocoPython3Path};C:\\tools\\mingw${mingwArch}\\bin;C:\\windows\\system32;C:\\windows\\system32\\WindowsPowerShell\\v1.0\\"
-                  envContext.add("KIBANA_URL=https://${linuxIp}:5601")
-                  envContext.add("ELASTICSEARCH_URL=https://${linuxIp}:9200")
-                  envContext.add("FLEET_URL=https://${linuxIp}:8220")
-                  envContext.add("PROVIDER=remote") // a remote provider is needed for Windows
-                  envContext.add("OP_LOG_LEVEL=TRACE")
-                  envContext.add("PATH=${path}")
-                }
-                withEnv(envContext) {
-                  if (platformLabels.contains("windows")) {
-                    // Boot up a windows VM to deploy Elastic Agent to be tested against
-                    // a remote deployed stack
-                    withNode(labels: platformLabels, forceWorkspace: true) {
-                      deleteDir()
-                      unstash 'source'
-                      dir("${BASE_DIR}"){
-                        withGoEnvWindows(version: "${GO_VERSION}"){
-                          echo "The PATH is: ${PATH}; Provider is: ${PROVIDER}; KIBANA URL: ${KIBANA_URL}; ES URL: ${ELASTICSEARCH_URL}; FLEET URL: ${FLEET_URL}"
-                          powershell label: "Disk Information", script: "Get-PSDrive"
-                          powershell label: "Pinging Linux VM", script: "ping -n 1 ${linuxIp}"
-                          powershell label: "Check for running elasticsearch", script: "Test-NetConnection ${linuxIp} -Port 9200"
-                          powershell label: "Check for running kibana", script: "Test-NetConnection ${linuxIp} -Port 5601"
-                          powershell label: "Check for running fleet server", script: "Test-NetConnection ${linuxIp} -Port 8220"
-                          cmd script: "mkdir outputs"
-                          try {
-                            dir("e2e/_suites/${suite}") {
-                              cmd script: "go test -timeout 60m -v --godog.format=\"junit:..\\..\\..\\outputs\\TEST-windows-${suite}.xml\" --godog.tags=\"${tags}\"", label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
-                            }
-                          } finally {
-                            junit(allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/TEST-*.xml")
-                            archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/TEST-*.xml"
-                          }
-                        }
-                      }
-                    }
-                  } else {
-                    withGoEnv(version: "${GO_VERSION}") {
-                      // This step will help to send the APM traces to the
-                      // APM service defined by the Otel Jenkins plugin.
-                      withOtelEnv() {
-                        sh script: """.ci/scripts/functional-test.sh "${suite}" "${tags}" "${STACK_VERSION}" "${BEAT_VERSION}" """, label: "Run functional tests for ${platformLabels}:${suite}:${tags}"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        } finally {
-          junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-          archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml,${BASE_DIR}/outputs/${suite}"
-          tearDown(labels: workerLabels)
-        }
-      }
+    } finally {
+      sh "mkdir -p outputs/${testRunner.split('@')[1]} || true"
+      scpr(testRunner, "e2e-testing/outputs/*", "outputs/${testRunner.split('@')[1]}/.")
+      sh "ls -l outputs/${testRunner.split('@')[1]}"
+      junit allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunner.split('@')[1]}/*.xml"
+      archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/${testRunner.split('@')[1]}/*.xml"
     }
   }
 }
