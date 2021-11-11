@@ -1,0 +1,59 @@
+---
+- name: "Create AWS keypair"
+  ec2_key:
+    name: "e2essh-{{runId}}"
+    key_material: "{{ lookup('file', sshPublicKey) }}"
+    region: us-east-2
+    state: present
+  tags:
+    - provision-stack
+
+- name: "Create {{instance_meta.label}} AWS instances"
+  ec2:
+    wait: yes
+    key_name: "e2essh-{{runId}}"
+    region: us-east-2
+    group: e2e
+    image: '{{instance_meta.image}}'
+    instance_type: '{{instance_meta.instance_type}}'
+    instance_tags:
+      Name: "e2e-{{instance_meta.label}}-{{runId}}"
+    exact_count: "{{instance_meta.count}}"
+    count_tag:
+      Name: "e2e-{{instance_meta.label}}-{{runId}}"
+    volumes:
+      - device_name: /dev/sda1
+        volume_type: gp2
+        volume_size: 50
+        delete_on_termination: yes
+  register: ec2
+  tags:
+    - provision-stack
+
+- name: Add AWS host to ssh address list
+  become: no
+  lineinfile:
+    state: present
+    line: "- ubuntu@{{addr.public_ip}}"
+    insertafter: EOF
+    dest: "{{workspace}}/{{instance_meta.label}}-sshhosts"
+    create: yes
+  loop: "{{ ec2.instances }}"
+  loop_control:
+    loop_var: addr
+  tags:
+    - provision-stack
+
+- name: Add AWS host to hosts file
+  become: no
+  lineinfile:
+    state: present
+    line: "{{addr.public_ip}}"
+    insertafter: EOF
+    dest: "{{workspace}}/.ci/ansible/inventory/{{instance_meta.label}}"
+    create: yes
+  loop: "{{ ec2.instances }}"
+  loop_control:
+    loop_var: addr
+  tags:
+    - provision-stack

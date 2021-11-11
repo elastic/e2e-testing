@@ -1,0 +1,5 @@
+- src: geerlingguy.docker
+- src: andrewrothstein.kubectl
+- src: andrewrothstein.kind
+- src: andrewrothstein.go
+- src: andrewrothstein.kubernetes-helm
