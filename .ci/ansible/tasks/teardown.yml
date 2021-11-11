@@ -24,3 +24,19 @@
     - destroy
   async: 45
   poll: 0
+
+- name: Clear out instance inventory
+  become: no
+  copy:
+    content: "[{{name}}]\n"
+    dest: "{{workspace}}/.ci/ansible/inventory/{{name}}"
+  loop:
+    - fleet-amd64
+    - fleet-arm64
+    - stack
+    - kubernetes-autodiscover
+    - helm
+  loop_control:
+    loop_var: name
+  tags:
+    - destroy
