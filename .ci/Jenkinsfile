@@ -405,8 +405,8 @@ def generateFunctionalTestStep(Map args = [:]){
   def tags = args.get('tags')
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
   def testRunner = args.get('testRunner')?.trim()
-  def sshUser = ${testRunner.split('@')[0]}
-  def sshHostIP = ${testRunner.split('@')[1]}
+  def sshUser = testRunner.split('@')[0]
+  def sshHostIP = testRunner.split('@')[1]
 
   def platformLabels = platform.labels
   def platformProvider = platform.provider
