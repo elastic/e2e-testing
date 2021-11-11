@@ -348,7 +348,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     platformsValue.each { platform ->
       def platformLabels = platform.labels
       def testRunners = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${platformLabels}-sshhosts")
-      log(level: 'INFO', text: "Adding ${platformLabels}:${suite}:${tags} test suite to the build execution")
+      log(level: 'INFO', text: "[testRunner: ${testRunners[scenarioIdx]}] Adding ${scenarioIdx}:${platformLabels}:${suite}:${tags} test suite to the build execution")
       parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}",
                                                                                        platform: platform,
                                                                                        suite: "${suite}",
