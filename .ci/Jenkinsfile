@@ -200,6 +200,8 @@ pipeline {
                   // Deploy the test infrastructure
                   sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/${env.BASE_DIR}/e2essh -q -N \"\" "
                   ansible("-t provision-stack")
+                  sh "ls -lh ${env.WORKSPACE}/${env.BASE_DIR}/"
+                  sh "ls -lh ${env.WORKSPACE}"
                 }
               }
             }
@@ -222,8 +224,8 @@ pipeline {
           }
           steps {
             withGithubNotify(context: 'E2E Tests', tab: 'tests') {
-              deleteDir()
-              unstash 'source'
+              // deleteDir()
+              // unstash 'source'
               dir("${BASE_DIR}") {
                 script {
                   ansible("-t setup")
@@ -317,7 +319,7 @@ def pyrun(command){
             fi
             ${env.WORKSPACE}/.venv/bin/${command}
           """,
-           label: "Executing ${command}"
+           label: "Executing ${command.split(' ')[0]}"
         )
       }
     }
@@ -402,7 +404,9 @@ def generateFunctionalTestStep(Map args = [:]){
   def suite = args.get('suite')
   def tags = args.get('tags')
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
-  def testRunner = args.get('testRunner')?.trim() ? args.get('testRunner') : null
+  def testRunner = args.get('testRunner')?.trim()
+  def sshUser = ${testRunner.split('@')[0]}
+  def sshHostIP = ${testRunner.split('@')[1]}
 
   def platformLabels = platform.labels
   def platformProvider = platform.provider
@@ -454,16 +458,16 @@ def generateFunctionalTestStep(Map args = [:]){
           // APM service defined by the Otel Jenkins plugin.
           // TODO: This will need to be integrated into the provisioned VMs
           withOtelEnv() {
-            sshexec(testRunner, """sudo bash /home/${testRunner.split('@')[0]}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
+            sshexec(testRunner, """sudo bash /home/${sshUser}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
           }
         }
       }
     } finally {
-      sh "mkdir -p outputs/${testRunner.split('@')[1]} || true"
-      scpr(testRunner, "e2e-testing/outputs/*", "outputs/${testRunner.split('@')[1]}/.")
-      sh "ls -l outputs/${testRunner.split('@')[1]}"
-      junit allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunner.split('@')[1]}/*.xml"
-      archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/${testRunner.split('@')[1]}/*.xml"
+      sh "mkdir -p outputs/${sshHostIP} || true"
+      scpr(testRunner, "e2e-testing/outputs/*", "outputs/${sshHostIP}/.")
+      sh "ls -l outputs/${sshHostIP}"
+      junit allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${sshHostIP}/*.xml"
+      archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/${sshHostIP}/*.xml"
     }
   }
 }
