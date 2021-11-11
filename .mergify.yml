@@ -75,3 +75,40 @@ pull_request_rules:
         - files~=docker-compose\.yml$
     actions:
       delete_head_branch:
+<<<<<<< HEAD
+=======
+  - name: remove-backport label
+    conditions:
+      - label~=backport-v
+    actions:
+      label:
+        remove:
+          - backport-skip
+  - name: notify the backport policy
+    conditions:
+      - -label~=^backport
+      - base=master
+    actions:
+      comment:
+        message: |
+          This pull request does not have a backport label. Could you fix it @{{author}}? 🙏
+          To fixup this pull request, you need to add the backport labels for the needed
+          branches, such as:
+          * `backport-v./d./d./d` is the label to automatically backport to the `7./d` branch. `/d` is the digit
+          **NOTE**: `backport-skip` has been added to this pull request.
+      label:
+        add:
+          - backport-skip
+  - name: notify the backport has not been merged yet
+    conditions:
+      - -merged
+      - -closed
+      - author=mergify[bot]
+      - "#check-success>0"
+      - schedule=Mon-Fri 06:00-10:00[Europe/Paris]
+      #- created-at<3 days ago
+    actions:
+      comment:
+        message: |
+          This pull request has not been merged yet. Could you please review and merge it @{{ assignee | join(', @') }}? 🙏
+>>>>>>> 5d98f6a2 ([mergify] notify to the assignee if PR was not merged yet (#1792))
