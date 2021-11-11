@@ -192,7 +192,7 @@ pipeline {
             }
           }
           steps {
-            withGithubNotify(context: 'Deployment', tab: 'tests') {
+            withGithubNotify(context: 'Deployment and Setup', tab: 'tests') {
               deleteDir()
               unstash 'source'
               dir("${BASE_DIR}") {
@@ -200,8 +200,9 @@ pipeline {
                   // Deploy the test infrastructure
                   sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/${env.BASE_DIR}/e2essh -q -N \"\" "
                   ansible("-t provision-stack")
-                  sh "ls -lh ${env.WORKSPACE}/${env.BASE_DIR}/"
-                  sh "ls -lh ${env.WORKSPACE}"
+                  // Give it time to initialize so gather facts works
+                  sleep(20)
+                  ansible("-t setup")
                 }
               }
             }
@@ -224,12 +225,9 @@ pipeline {
           }
           steps {
             withGithubNotify(context: 'E2E Tests', tab: 'tests') {
-              // dir("${BASE_DIR}") {
                 script {
-                  ansible("-t setup")
-
                   def suitesParam = params.runTestsSuites
-                  def existingSuites = readYaml(file: "${TEST_MATRIX_FILE}")
+                  def existingSuites = readYaml(file: ":${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE}")
                   def parallelTasks = [:]
 
                   if (suitesParam == "") {
@@ -247,7 +245,6 @@ pipeline {
                   }
                   parallel(parallelTasks)
                 }
-              // }
             }
           }
           post {
