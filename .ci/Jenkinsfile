@@ -224,9 +224,7 @@ pipeline {
           }
           steps {
             withGithubNotify(context: 'E2E Tests', tab: 'tests') {
-              // deleteDir()
-              // unstash 'source'
-              dir("${BASE_DIR}") {
+              // dir("${BASE_DIR}") {
                 script {
                   ansible("-t setup")
 
@@ -249,7 +247,7 @@ pipeline {
                   }
                   parallel(parallelTasks)
                 }
-              }
+              // }
             }
           }
           post {
@@ -327,7 +325,7 @@ def pyrun(command){
 }
 
 def ansible(args){
-     pyrun("ansible-playbook --private-key=\"${env.WORKSPACE}/${env.BASE_DIR}/e2essh\" --extra-vars=\"workspace=${env.WORKSPACE}/${env.BASE_DIR} numAgents=3 runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${env.WORKSPACE}/${env.BASE_DIR}/.ci/ansible/playbook.yml -i ${env.WORKSPACE}/${env.BASE_DIR}/.ci/ansible/inventory ${args}")
+     pyrun("ansible-playbook --private-key=\"${env.WORKSPACE}/${env.BASE_DIR}/e2essh\" --extra-vars=\"workspace=${env.WORKSPACE}/${env.BASE_DIR}/ runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${env.WORKSPACE}/${env.BASE_DIR}/.ci/ansible/playbook.yml -i ${env.WORKSPACE}/${env.BASE_DIR}/.ci/ansible/inventory ${args}")
 }
 
 

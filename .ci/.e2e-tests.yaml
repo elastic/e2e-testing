@@ -74,18 +74,18 @@ SUITES:
   - suite: "kubernetes-autodiscover"
     scenarios:
       - name: "kubernetes autodiscover with elastic-agent"
-        tags: "kubernetes-autodiscover && elastic-agent"
+        tags: "elastic-agent"
         platforms:
           - labels: "kubernetes-autodiscover"
       - name: "kubernetes autodiscover with filebeat"
-        tags: "kubernetes-autodiscover && filebeat"
+        tags: "filebeat"
         platforms:
           - labels: "kubernetes-autodiscover"
       - name: "kubernetes autodiscover with heartbeat"
-        tags: "kubernetes-autodiscover && heartbeat"
+        tags: "heartbeat"
         platforms:
           - labels: "kubernetes-autodiscover"
       - name: "kubernetes autodiscover with metricbeat"
-        tags: "kubernetes-autodiscover && metricbeat"
+        tags: "metricbeat"
         platforms:
           - labels: "kubernetes-autodiscover"
