@@ -99,8 +99,11 @@ pull_request_rules:
           - backport-skip
   - name: notify the backport has not been merged yet
     conditions:
+      - -merged
+      - -closed
       - author=mergify[bot]
       - schedule=Mon-Fri 06:00-10:00[Europe/Paris]
+      #- created-at<3 days ago
     actions:
       comment:
         message: |
