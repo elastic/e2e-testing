@@ -464,6 +464,7 @@ def generateFunctionalTestStep(Map args = [:]){
       }
     } finally {
       sh "mkdir -p outputs/${sshHostIP} || true"
+      sshexec(testRunner, """sudo chown ubuntu:ubuntu -R /home/${sshUser}/e2e-testing/outputs """)
       scpr(testRunner, "e2e-testing/outputs/*", "outputs/${sshHostIP}/.")
       sh "ls -l outputs/${sshHostIP}"
       junit allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${sshHostIP}/*.xml"

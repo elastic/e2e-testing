@@ -1,5 +1,5 @@
 - src: geerlingguy.docker
 - src: andrewrothstein.kubectl
 - src: andrewrothstein.kind
-- src: andrewrothstein.go
+- src: gantsign.golang
 - src: andrewrothstein.kubernetes-helm

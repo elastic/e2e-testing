@@ -62,9 +62,9 @@
     - role: geerlingguy.docker
     - role: andrewrothstein.kubectl
     - role: andrewrothstein.kind
-    - role: andrewrothstein.go
+    - role: gantsign.golang
       vars:
-        go_ver: 1.16.3
+        golang_version: 1.16.3
   vars:
     ansible_user: ubuntu
   tasks:
@@ -123,9 +123,9 @@
       when: "'kubernetes-autodiscover' in group_names or 'helm' in group_names"
     - role: andrewrothstein.kubernetes-helm
       when: "'kubernetes-autodiscover' in group_names or 'helm' in group_names"
-    - role: andrewrothstein.go
+    - role: gantsign.golang
       vars:
-        go_ver: 1.16.3
+        golang_version: 1.16.3
   vars:
     ansible_user: ubuntu
   tasks:
