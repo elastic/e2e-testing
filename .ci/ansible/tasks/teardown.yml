@@ -33,6 +33,7 @@
   loop:
     - fleet-amd64
     - fleet-arm64
+    - fleet-elastic-pkg
     - stack
     - kubernetes-autodiscover
     - helm

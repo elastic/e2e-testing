@@ -11,6 +11,25 @@
     - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'remote' }}"
   when: "'fleet-arm64' in group_names or 'fleet-amd64' in group_names"
 
+- name: Extend environment for Fleet with elastic-package testing
+  lineinfile:
+    state: present
+    line: "{{item}}"
+    insertafter: EOF
+    dest: "/home/{{ansible_user}}/e2e-testing/.env"
+    create: yes
+  with_items:
+    - "export SUITE={{ lookup('env', 'SUITE') or 'fleet' }}"
+    - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'elastic-package' }}"
+    - "unset KIBANA_URL"
+    - "unset KIBANA_PASSWORD"
+    - "unset ELASTICSEARCH_URL"
+    - "unset ELASTICSEARCH_PASSWORD"
+    - "unset FLEET_URL"
+    - "unset SKIP_PULL"
+  when: "'fleet-elastic-pkg' in group_names"
+
+
 - name: Extend environment for Kubernetes Autodiscover testing
   lineinfile:
     state: present
