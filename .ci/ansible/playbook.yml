@@ -121,7 +121,7 @@
       when: "'kubernetes-autodiscover' in group_names or 'helm' in group_names"
     - role: andrewrothstein.kind
       when: "'kubernetes-autodiscover' in group_names or 'helm' in group_names"
-    - role: andrewrothstein.kubernetes-helm
+    - role: geerlingguy.helm
       when: "'kubernetes-autodiscover' in group_names or 'helm' in group_names"
     - role: gantsign.golang
       vars:

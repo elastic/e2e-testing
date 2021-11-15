@@ -171,7 +171,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 
 // Start will start a service
 func (i *elasticAgentTARPackage) Start(ctx context.Context) error {
-	cmds := []string{"systemctl", "start", "elastic-agent"}
+	cmds := []string{"elastic-agent", "start"}
 	span, _ := apm.StartSpanOptions(ctx, "Starting Elastic Agent service", "elastic-agent.tar.start", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -187,7 +187,7 @@ func (i *elasticAgentTARPackage) Start(ctx context.Context) error {
 
 // Stop will start a service
 func (i *elasticAgentTARPackage) Stop(ctx context.Context) error {
-	cmds := []string{"systemctl", "stop", "elastic-agent"}
+	cmds := []string{"elastic-agent", "stop"}
 	span, _ := apm.StartSpanOptions(ctx, "Stopping Elastic Agent service", "elastic-agent.tar.stop", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
