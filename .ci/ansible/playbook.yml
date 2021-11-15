@@ -9,7 +9,7 @@
     loop:
       - {label: "stack", image: "ami-0629230e074c580f2", instance_type: "c5.4xlarge", count: 1}
       - {label: "fleet-amd64", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 11}
-      - {label: "fleet-elastic-pkg", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 3}
+      - {label: "fleet-elastic-pkg", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 5}
       - {label: "fleet-arm64", image: "ami-03b47d2d727e13114", instance_type: "a1.large", count: 11}
       - {label: "kubernetes-autodiscover", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 4}
       - {label: "helm", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 3}
@@ -30,7 +30,7 @@
       - {label: "stack", image: "ami-0629230e074c580f2", instance_type: "c5.4xlarge", count: 1}
       - {label: "fleet-amd64", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 11}
       - {label: "fleet-arm64", image: "ami-03b47d2d727e13114", instance_type: "a1.large", count: 11}
-      - {label: "fleet-elastic-pkg", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 3}
+      - {label: "fleet-elastic-pkg", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 5}
       - {label: "kubernetes-autodiscover", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 4}
       - {label: "helm", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 3}
     loop_control:
