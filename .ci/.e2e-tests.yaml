@@ -29,7 +29,7 @@ SUITES:
       - name: "APM Integration"
         tags: "apm_server"
         platforms:
-          - labels: "fleet-amd64"
+          - labels: "fleet-elastic-pkg"
             provider: "elastic-package"
       - name: "Linux Integration"
         tags: "linux_integration"
@@ -54,7 +54,7 @@ SUITES:
       - name: "Stand-alone"
         tags: "stand_alone_agent"
         platforms:
-          - labels: "fleet-amd64"
+          - labels: "fleet-elastic-pkg"
             provider: "elastic-package"
       - name: "Backend Processes"
         tags: "backend_processes"
@@ -69,7 +69,7 @@ SUITES:
       - name: "Preconfigured Policies"
         tags: "preconfigured_policies"
         platforms:
-          - labels: "fleet-amd64"
+          - labels: "fleet-elastic-pkg"
             provider: "elastic-package"
   - suite: "kubernetes-autodiscover"
     scenarios:
