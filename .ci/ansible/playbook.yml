@@ -16,7 +16,7 @@
     loop:
       - {label: "stack", image: "ami-0629230e074c580f2", instance_type: "c5.4xlarge", count: "{{machineMeta.MACHINES.stack}}"}
       - {label: "fleet_amd64", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.fleet_amd64}}"}
-      - {label: "fleet_elastic_pkg", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.fleet_elastic_pkg}}"}
+      - {label: "fleet_elastic_pkg", image: "ami-0629230e074c580f2", instance_type: "c5.4xlarge", count: "{{machineMeta.MACHINES.fleet_elastic_pkg}}"}
       - {label: "fleet_arm64", image: "ami-03b47d2d727e13114", instance_type: "a1.large", count: "{{machineMeta.MACHINES.fleet_arm64}}"}
       - {label: "kubernetes_autodiscover", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.kubernetes_autodiscover}}"}
       - {label: "helm", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.helm}}"}
@@ -42,7 +42,7 @@
     loop:
       - {label: "stack", image: "ami-0629230e074c580f2", instance_type: "c5.4xlarge", count: "{{machineMeta.MACHINES.stack}}"}
       - {label: "fleet_amd64", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.fleet_amd64}}"}
-      - {label: "fleet_elastic_pkg", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.fleet_elastic_pkg}}"}
+      - {label: "fleet_elastic_pkg", image: "ami-0629230e074c580f2", instance_type: "c5.4xlarge", count: "{{machineMeta.MACHINES.fleet_elastic_pkg}}"}
       - {label: "fleet_arm64", image: "ami-03b47d2d727e13114", instance_type: "a1.large", count: "{{machineMeta.MACHINES.fleet_arm64}}"}
       - {label: "kubernetes_autodiscover", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.kubernetes_autodiscover}}"}
       - {label: "helm", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.helm}}"}

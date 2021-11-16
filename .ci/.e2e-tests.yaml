@@ -2,9 +2,9 @@
 MACHINES:
   stack: 1
   helm: 3
-  fleet_arm64: 7
-  fleet_amd64: 7
-  fleet_elastic_pkg: 2
+  fleet_arm64: 6
+  fleet_amd64: 6
+  fleet_elastic_pkg: 3
   kubernetes_autodiscover: 4
 
 SUITES:
@@ -38,7 +38,6 @@ SUITES:
         tags: "apm_server"
         platforms:
           - labels: "fleet_elastic_pkg"
-            provider: "elastic-package"
       - name: "Linux Integration"
         tags: "linux_integration"
         platforms:
@@ -58,7 +57,6 @@ SUITES:
         tags: "stand_alone_agent"
         platforms:
           - labels: "fleet_elastic_pkg"
-            provider: "elastic-package"
       - name: "Backend Processes"
         tags: "backend_processes"
         platforms:
@@ -67,8 +65,8 @@ SUITES:
       - name: "Beats Background Processes"
         tags: "running_on_beats"
         platforms:
-          - labels: "fleet_arm64"
-          - labels: "fleet_amd64"
+          - labels: "fleet_elastic_pkg"
+          # - labels: "fleet_amd64"
       # - name: "Preconfigured Policies"
       #   tags: "preconfigured_policies"
       #   platforms:
