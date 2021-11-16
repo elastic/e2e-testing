@@ -665,30 +665,23 @@ func (fts *FleetTestSuite) theAgentGetDefaultAPIKey() error {
 func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
 	newDefaultAPIKey, _ := fts.getAgentDefaultAPIKey()
 
+	logFields := log.Fields{
+		"new_default_api_key": newDefaultAPIKey,
+		"old_default_api_key": fts.DefaultAPIKey,
+	}
+
 	if status == "changed" {
 		if newDefaultAPIKey != fts.DefaultAPIKey {
-			log.WithFields(log.Fields{
-				"new_default_api_key": newDefaultAPIKey,
-				"old_default_api_key": fts.DefaultAPIKey,
-			}).Infof("Default API Key has %s when the Integration has been added", status)
+			log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been added", status)
 		} else {
-			log.WithFields(log.Fields{
-				"new_default_api_key": newDefaultAPIKey,
-				"old_default_api_key": fts.DefaultAPIKey,
-			}).Error("Integration added and Default API Key do not change")
+			log.WithFields(logFields).Error("Integration added and Default API Key do not change")
 			return errors.New("Integration added and Default API Key do not change")
 		}
 	} else if status == "not changed" {
 		if newDefaultAPIKey == fts.DefaultAPIKey {
-			log.WithFields(log.Fields{
-				"new_default_api_key": newDefaultAPIKey,
-				"old_default_api_key": fts.DefaultAPIKey,
-			}).Infof("Default API Key has %s when the Integration has been updated" + status)
+			log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been updated" + status)
 		} else {
-			log.WithFields(log.Fields{
-				"new_default_api_key": newDefaultAPIKey,
-				"old_default_api_key": fts.DefaultAPIKey,
-			}).Error("Integration updated and Default API Key is changed")
+			log.WithFields(logFields).Error("Integration updated and Default API Key is changed")
 			return errors.New("Integration updated and Default API Key is changed")
 		}
 	}
