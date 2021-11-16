@@ -117,12 +117,15 @@ func (fts *FleetTestSuite) afterScenario() {
 	env := fts.getProfileEnv()
 	_ = fts.deployer.Remove(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{deploy.NewServiceRequest(serviceName)}, env)
 
-	err := fts.kibanaClient.DeleteEnrollmentAPIKey(fts.currentContext, fts.CurrentTokenID)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err":     err,
-			"tokenID": fts.CurrentTokenID,
-		}).Warn("The enrollment token could not be deleted")
+	// TODO: Determine why this may be empty here before being cleared out
+	if fts.CurrentTokenID != "" {
+		err := fts.kibanaClient.DeleteEnrollmentAPIKey(fts.currentContext, fts.CurrentTokenID)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err":     err,
+				"tokenID": fts.CurrentTokenID,
+			}).Warn("The enrollment token could not be deleted")
+		}
 	}
 
 	fts.kibanaClient.DeleteAllPolicies(fts.currentContext)
