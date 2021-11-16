@@ -4,15 +4,22 @@
   vars:
       ansible_user: ubuntu
   tasks:
+  - name: Read e2e spec
+    include_vars:
+      file: "{{workspace}}/.ci/.e2e-tests.yaml"
+      name: machineMeta
+    tags:
+      - provision-stack
+
   - name: Setup nodes
     include_tasks: tasks/runners.yml
     loop:
-      - {label: "stack", image: "ami-0629230e074c580f2", instance_type: "c5.4xlarge", count: 1}
-      - {label: "fleet-amd64", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 11}
-      - {label: "fleet-elastic-pkg", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 5}
-      - {label: "fleet-arm64", image: "ami-03b47d2d727e13114", instance_type: "a1.large", count: 11}
-      - {label: "kubernetes-autodiscover", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 4}
-      - {label: "helm", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 3}
+      - {label: "stack", image: "ami-0629230e074c580f2", instance_type: "c5.4xlarge", count: "{{machineMeta.MACHINES.stack}}"}
+      - {label: "fleet_amd64", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.fleet_amd64}}"}
+      - {label: "fleet_elastic_pkg", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.fleet_elastic_pkg}}"}
+      - {label: "fleet_arm64", image: "ami-03b47d2d727e13114", instance_type: "a1.large", count: "{{machineMeta.MACHINES.fleet_arm64}}"}
+      - {label: "kubernetes_autodiscover", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.kubernetes_autodiscover}}"}
+      - {label: "helm", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.helm}}"}
     loop_control:
       loop_var: instance_meta
     tags:
@@ -24,15 +31,21 @@
   vars:
       ansible_user: ubuntu
   tasks:
+  - name: Read e2e spec
+    include_vars:
+      file: "{{workspace}}/.ci/.e2e-tests.yaml"
+      name: machineMeta
+    tags:
+      - destroy
   - name: Teardown Test Runners (AWS)
     include_tasks: tasks/teardown.yml
     loop:
-      - {label: "stack", image: "ami-0629230e074c580f2", instance_type: "c5.4xlarge", count: 1}
-      - {label: "fleet-amd64", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 11}
-      - {label: "fleet-arm64", image: "ami-03b47d2d727e13114", instance_type: "a1.large", count: 11}
-      - {label: "fleet-elastic-pkg", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 5}
-      - {label: "kubernetes-autodiscover", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 4}
-      - {label: "helm", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: 3}
+      - {label: "stack", image: "ami-0629230e074c580f2", instance_type: "c5.4xlarge", count: "{{machineMeta.MACHINES.stack}}"}
+      - {label: "fleet_amd64", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.fleet_amd64}}"}
+      - {label: "fleet_elastic_pkg", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.fleet_elastic_pkg}}"}
+      - {label: "fleet_arm64", image: "ami-03b47d2d727e13114", instance_type: "a1.large", count: "{{machineMeta.MACHINES.fleet_arm64}}"}
+      - {label: "kubernetes_autodiscover", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.kubernetes_autodiscover}}"}
+      - {label: "helm", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.helm}}"}
     loop_control:
       loop_var: instance_meta
     tags:
@@ -41,11 +54,11 @@
 - name: Wait for SSH
   hosts:
     - stack
-    - kubernetes-autodiscover
+    - kubernetes_autodiscover
     - helm
-    - fleet-amd64
-    - fleet-arm64
-    - fleet-elastic-pkg
+    - fleet_amd64
+    - fleet_arm64
+    - fleet_elastic_pkg
   connection: ssh
   vars:
       ansible_user: ubuntu
@@ -109,24 +122,24 @@
 
 - name: Manage runner instances
   hosts:
-    - kubernetes-autodiscover
+    - kubernetes_autodiscover
     - helm
-    - fleet-amd64
-    - fleet-arm64
-    - fleet-elastic-pkg
+    - fleet_amd64
+    - fleet_arm64
+    - fleet_elastic_pkg
   connection: ssh
   become: True
   tags:
     - setup
   roles:
     - role: geerlingguy.docker
-      when: "'kubernetes-autodiscover' in group_names or 'helm' in group_names or 'fleet-amd64' in group_names or 'fleet-elastic-pkg' in group_names"
+      when: "'kubernetes_autodiscover' in group_names or 'helm' in group_names or 'fleet_amd64' in group_names or 'fleet_elastic_pkg' in group_names"
     - role: andrewrothstein.kubectl
-      when: "'kubernetes-autodiscover' in group_names or 'helm' in group_names"
+      when: "'kubernetes_autodiscover' in group_names or 'helm' in group_names"
     - role: andrewrothstein.kind
-      when: "'kubernetes-autodiscover' in group_names or 'helm' in group_names"
+      when: "'kubernetes_autodiscover' in group_names or 'helm' in group_names"
     - role: geerlingguy.helm
-      when: "'kubernetes-autodiscover' in group_names or 'helm' in group_names"
+      when: "'kubernetes_autodiscover' in group_names or 'helm' in group_names"
     - role: gantsign.golang
       vars:
         golang_version: 1.16.3

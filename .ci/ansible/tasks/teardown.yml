@@ -31,11 +31,11 @@
     content: "[{{name}}]\n"
     dest: "{{workspace}}/.ci/ansible/inventory/{{name}}"
   loop:
-    - fleet-amd64
-    - fleet-arm64
-    - fleet-elastic-pkg
+    - fleet_amd64
+    - fleet_arm64
+    - fleet_elastic_pkg
     - stack
-    - kubernetes-autodiscover
+    - kubernetes_autodiscover
     - helm
   loop_control:
     loop_var: name

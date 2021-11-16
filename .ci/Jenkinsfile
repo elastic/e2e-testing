@@ -230,26 +230,26 @@ pipeline {
           }
           steps {
             withGithubNotify(context: 'E2E Tests', tab: 'tests') {
-                script {
-                  def suitesParam = params.runTestsSuites
-                  def existingSuites = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE}")
-                  def parallelTasks = [:]
+              script {
+                def suitesParam = params.runTestsSuites
+                def existingSuites = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE}")
+                def parallelTasks = [:]
 
-                  if (suitesParam == "") {
-                    log(level: 'DEBUG', text: "Iterate through existing test suites")
-                    existingSuites['SUITES'].each { item ->
-                      checkTestSuite(parallelTasks, item)
-                    }
-                  } else {
-                    log(level: 'DEBUG', text: "Iterate through the comma-separated test suites (${suitesParam}), comparing with the existing test suites")
-                    suitesParam.split(',').each { suiteParam ->
-                      existingSuites['SUITES'].findAll { suiteParam.trim() == it.suite }.each { item ->
-                        checkTestSuite(parallelTasks, item)
-                      }
+                if (suitesParam == "") {
+                  log(level: 'DEBUG', text: "Iterate through existing test suites")
+                  existingSuites['SUITES'].each { item ->
+                    checkTestSuite(parallelTasks, item, existingSuites['MACHINES'])
+                  }
+                } else {
+                  log(level: 'DEBUG', text: "Iterate through the comma-separated test suites (${suitesParam}), comparing with the existing test suites")
+                  suitesParam.split(',').each { suiteParam ->
+                    existingSuites['SUITES'].findAll { suiteParam.trim() == it.suite }.each { item ->
+                      checkTestSuite(parallelTasks, item, existingSuites['MACHINES'])
                     }
                   }
-                  parallel(parallelTasks)
                 }
+                parallel(parallelTasks)
+              }
             }
           }
           post {
@@ -331,11 +331,11 @@ def ansible(args){
 }
 
 
-def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
+def checkTestSuite(Map parallelTasks = [:], Map item = [:], Map machines = [:]) {
   def suite = item.suite
   def platforms = item.platforms
 
-  item.scenarios.eachWithIndex { scenario, scenarioIdx ->
+  item.scenarios.each { scenario ->
     def name = scenario.name
     def platformsValue = platforms
     def scenarioPlatforms = scenario.platforms
@@ -347,14 +347,20 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     def tags = scenario.tags
     platformsValue.each { platform ->
       def platformLabels = platform.labels
+
+      // Decrease the machine count from spec in order to index which ssh session to connect to in our
+      // sshhosts file, must set the index to support 0 based
+      machines[platformLabels] = machines[platformLabels] - 1
+      labelIdx = machines[platformLabels]
+
       def testRunners = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${platformLabels}-sshhosts")
-      log(level: 'INFO', text: "[testRunner: ${testRunners[scenarioIdx]}] Adding ${scenarioIdx}:${platformLabels}:${suite}:${tags} test suite to the build execution")
+      log(level: 'INFO', text: "[testRunner: ${testRunners[labelIdx]}] Adding ${labelIdx}:${platformLabels}:${suite}:${tags} test suite to the build execution")
       parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}",
                                                                                        platform: platform,
                                                                                        suite: "${suite}",
                                                                                        tags: "${tags}",
                                                                                        pullRequestFilter: "${pullRequestFilter}",
-                                                                                       testRunner: testRunners[scenarioIdx])
+                                                                                       testRunner: testRunners[labelIdx])
       }
   }
 }

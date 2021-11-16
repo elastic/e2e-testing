@@ -1,4 +1,12 @@
 ---
+MACHINES:
+  stack: 1
+  helm: 3
+  fleet_arm64: 8
+  fleet_amd64: 8
+  fleet_elastic_pkg: 3
+  kubernetes_autodiscover: 4
+
 SUITES:
   - suite: "helm"
     scenarios:
@@ -19,73 +27,73 @@ SUITES:
       - name: "Fleet"
         tags: "fleet_mode_agent"
         platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
+          - labels: "fleet_arm64"
+          - labels: "fleet_amd64"
       - name: "Integrations"
         tags: "integrations"
         platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
+          - labels: "fleet_arm64"
+          - labels: "fleet_amd64"
       - name: "APM Integration"
         tags: "apm_server"
         platforms:
-          - labels: "fleet-elastic-pkg"
+          - labels: "fleet_elastic_pkg"
             provider: "elastic-package"
       - name: "Linux Integration"
         tags: "linux_integration"
         platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
+          - labels: "fleet_arm64"
+          - labels: "fleet_amd64"
       - name: "Permissions Output change"
         tags: "permission_change"
         platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
+          - labels: "fleet_arm64"
+          - labels: "fleet_amd64"
       - name: "Policies"
         tags: "policies"
         platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
+          - labels: "fleet_arm64"
+          - labels: "fleet_amd64"
       - name: "System Integration"
         tags: "system_integration"
         platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
+          - labels: "fleet_arm64"
+          - labels: "fleet_amd64"
       - name: "Stand-alone"
         tags: "stand_alone_agent"
         platforms:
-          - labels: "fleet-elastic-pkg"
+          - labels: "fleet_elastic_pkg"
             provider: "elastic-package"
       - name: "Backend Processes"
         tags: "backend_processes"
         platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
+          - labels: "fleet_arm64"
+          - labels: "fleet_amd64"
       - name: "Beats Background Processes"
         tags: "running_on_beats"
         platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
+          - labels: "fleet_arm64"
+          - labels: "fleet_amd64"
       - name: "Preconfigured Policies"
         tags: "preconfigured_policies"
         platforms:
-          - labels: "fleet-elastic-pkg"
+          - labels: "fleet_elastic_pkg"
             provider: "elastic-package"
   - suite: "kubernetes-autodiscover"
     scenarios:
       - name: "kubernetes autodiscover with elastic-agent"
         tags: "elastic-agent"
         platforms:
-          - labels: "kubernetes-autodiscover"
+          - labels: "kubernetes_autodiscover"
       - name: "kubernetes autodiscover with filebeat"
         tags: "filebeat"
         platforms:
-          - labels: "kubernetes-autodiscover"
+          - labels: "kubernetes_autodiscover"
       - name: "kubernetes autodiscover with heartbeat"
         tags: "heartbeat"
         platforms:
-          - labels: "kubernetes-autodiscover"
+          - labels: "kubernetes_autodiscover"
       - name: "kubernetes autodiscover with metricbeat"
         tags: "metricbeat"
         platforms:
-          - labels: "kubernetes-autodiscover"
+          - labels: "kubernetes_autodiscover"

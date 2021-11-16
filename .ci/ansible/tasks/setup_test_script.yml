@@ -9,7 +9,7 @@
   with_items:
     - "export SUITE={{ lookup('env', 'SUITE') or 'fleet' }}"
     - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'remote' }}"
-  when: "'fleet-arm64' in group_names or 'fleet-amd64' in group_names"
+  when: "'fleet_arm64' in group_names or 'fleet_amd64' in group_names"
 
 - name: Extend environment for Fleet with elastic-package testing
   lineinfile:
@@ -27,7 +27,7 @@
     - "unset ELASTICSEARCH_PASSWORD"
     - "unset FLEET_URL"
     - "unset SKIP_PULL"
-  when: "'fleet-elastic-pkg' in group_names"
+  when: "'fleet_elastic_pkg' in group_names"
 
 
 - name: Extend environment for Kubernetes Autodiscover testing
@@ -46,7 +46,7 @@
     - "unset ELASTICSEARCH_PASSWORD"
     - "unset FLEET_URL"
     - "unset SKIP_PULL"
-  when: "'kubernetes-autodiscover' in group_names"
+  when: "'kubernetes_autodiscover' in group_names"
 
 - name: Extend environment for Helm testing
   lineinfile:
