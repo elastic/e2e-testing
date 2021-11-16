@@ -67,6 +67,7 @@ type FleetTestSuite struct {
 // afterScenario destroys the state created by a scenario
 func (fts *FleetTestSuite) afterScenario() {
 	defer func() {
+		fts.DefaultAPIKey = ""
 		// Reset Kibana Profile to default
 		fts.KibanaProfile = ""
 		deployedAgentsCount = 0
