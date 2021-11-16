@@ -354,13 +354,13 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:], Map machines = [:]) 
       labelIdx = machines[platformLabels]
 
       def testRunners = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${platformLabels}-sshhosts")
-      log(level: 'INFO', text: "[testRunner: ${testRunners[labelIdx]}] Adding ${labelIdx}:${platformLabels}:${suite}:${tags} test suite to the build execution")
-      parallelTasks["${platformLabels}_${suite}_${tags}"] = generateFunctionalTestStep(name: "${name}",
-                                                                                       platform: platform,
-                                                                                       suite: "${suite}",
-                                                                                       tags: "${tags}",
-                                                                                       pullRequestFilter: "${pullRequestFilter}",
-                                                                                       testRunner: testRunners[labelIdx])
+      log(level: 'INFO', text: "[testRunner: ${testRunners[labelIdx]}] Adding ${labelIdx}:${platformLabels}:${tags} test suite to the build execution")
+      parallelTasks["${platformLabels}_${tags}"] = generateFunctionalTestStep(name: "${name}",
+                                                                              platform: platform,
+                                                                              suite: "${suite}",
+                                                                              tags: "${tags}",
+                                                                              pullRequestFilter: "${pullRequestFilter}",
+                                                                              testRunner: testRunners[labelIdx])
       }
   }
 }

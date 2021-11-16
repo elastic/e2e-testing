@@ -97,12 +97,6 @@
       content: |
         export OP_LOG_LEVEL=TRACE
         export LOG_LEVEL=TRACE
-        export ELASTICSEARCH_URL=http://{{inventory_hostname}}:9200
-        export ELASTICSEARCH_PASSWORD=changeme
-        export KIBANA_PASSWORD=changeme
-        export KIBANA_URL=http://{{inventory_hostname}}:5601
-        export FLEET_URL=http://{{inventory_hostname}}:8220
-        export SKIP_PULL=1
     tags:
       - setup
 
