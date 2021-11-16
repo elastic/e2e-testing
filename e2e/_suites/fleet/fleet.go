@@ -487,7 +487,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 			return err
 		}
 
-		utils.Sleep(time.Duration(utils.TimeoutFactor) * 20 * time.Second)
+		utils.Sleep(time.Duration(utils.TimeoutFactor) * 30 * time.Second)
 
 		err = agentInstaller.Start(fts.currentContext)
 		if err != nil {
