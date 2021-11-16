@@ -4,7 +4,7 @@ MACHINES:
   helm: 3
   fleet_arm64: 6
   fleet_amd64: 6
-  fleet_elastic_pkg: 3
+  fleet_elastic_pkg: 2
   kubernetes_autodiscover: 4
 
 SUITES:
@@ -43,11 +43,11 @@ SUITES:
         platforms:
           - labels: "fleet_arm64"
           - labels: "fleet_amd64"
-      - name: "Permissions Output change"
-        tags: "permission_change"
-        platforms:
-          - labels: "fleet_arm64"
-          - labels: "fleet_amd64"
+      # - name: "Permissions Output change"
+      #   tags: "permission_change"
+      #   platforms:
+      #     - labels: "fleet_arm64"
+      #     - labels: "fleet_amd64"
       - name: "System Integration"
         tags: "system_integration"
         platforms:
@@ -65,13 +65,8 @@ SUITES:
       - name: "Beats Background Processes"
         tags: "running_on_beats"
         platforms:
-          - labels: "fleet_elastic_pkg"
-          # - labels: "fleet_amd64"
-      # - name: "Preconfigured Policies"
-      #   tags: "preconfigured_policies"
-      #   platforms:
-      #     - labels: "fleet_elastic_pkg"
-      #       provider: "elastic-package"
+          - labels: "fleet_arm64"
+          - labels: "fleet_amd64"
   - suite: "kubernetes-autodiscover"
     scenarios:
       - name: "kubernetes autodiscover with elastic-agent"
