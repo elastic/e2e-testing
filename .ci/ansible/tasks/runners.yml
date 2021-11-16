@@ -23,8 +23,8 @@
       Name: "e2e-{{instance_meta.label}}-{{runId}}"
     volumes:
       - device_name: /dev/sda1
-        volume_type: gp2
-        volume_size: 50
+        volume_type: gp3
+        volume_size: 100
         delete_on_termination: yes
   register: ec2
   tags:
