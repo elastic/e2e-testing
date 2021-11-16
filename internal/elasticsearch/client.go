@@ -9,7 +9,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Jeffail/gabs/v2"
 	"net"
 	"net/http"
 	"net/url"
@@ -33,6 +32,27 @@ type Query struct {
 	EventModule    string
 	IndexName      string
 	ServiceVersion string
+}
+
+type APIKey struct {
+	APIKeys []APIKeys `json:"api_keys"`
+}
+type Metadata struct {
+	PolicyID  string `json:"policy_id, omitempty"`
+	AgentID   string `json:"agent_id, omitempty"`
+	ManagedBy string `json:"managed_by"`
+	Managed   bool   `json:"managed"`
+	Type      string `json:"type"`
+}
+
+type APIKeys struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Creation    int64    `json:"creation"`
+	Invalidated bool     `json:"invalidated"`
+	Username    string   `json:"username"`
+	Realm       string   `json:"realm"`
+	Metadata    Metadata `json:"metadata,omitempty"`
 }
 
 // SearchResult wraps a search result
@@ -372,7 +392,8 @@ func WaitForNumberOfHits(ctx context.Context, indexName string, query map[string
 }
 
 // GetSecurityApiKey waits for the elasticsearch SecurityApiKey to return the list of Api Keys.
-func GetSecurityApiKey() (*gabs.Container, error) {
+func GetSecurityApiKey() (APIKey, error) {
+	data := APIKey{}
 
 	r := curl.HTTPRequest{
 		URL:               "http://localhost:9200/_security/api_key?",
@@ -387,22 +408,15 @@ func GetSecurityApiKey() (*gabs.Container, error) {
 			"statusEndpoint": r.URL,
 		}).Warn("The Elasticsearch Cat Indices API is not available yet")
 
-		return nil, err
+		return APIKey{}, err
 	}
 
 	log.WithFields(log.Fields{
 		"statusEndpoint": r.URL,
+		"Response":       response,
 	}).Trace("The Elasticsearch Console SecurityApiKey API is available")
 
-	jsonParsed, err := gabs.ParseJSON([]byte(response))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":        err,
-			"responseBody": jsonParsed,
-		}).Error("Could not parse response into JSON")
-		return jsonParsed, err
-	}
-	data := jsonParsed.Path("api_keys")
+	json.Unmarshal([]byte(response), &data)
 
 	return data, err
 }

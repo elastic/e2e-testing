@@ -13,6 +13,8 @@ import (
 	"runtime"
 	"strconv"
 
+	//"strconv"
+
 	"strings"
 	"time"
 
@@ -1627,16 +1629,18 @@ func (fts *FleetTestSuite) theAgentApiKeyIsInvalidated(invalidated string) error
 		return err
 	}
 
-	for _, item := range body.Children() {
-		if item.Path("name").Data().(string) == fts.AgentId {
-			if item.Path("invalidated").Data().(bool) == invalidatedBool {
+	for _, item := range body.APIKeys {
+		if item.Metadata.AgentID == fts.AgentId {
+			if item.Invalidated == invalidatedBool {
 				log.WithFields(log.Fields{
 					"agentId": fts.AgentId,
-				}).Info("The agent Api key invalidated: ", item.Path("invalidated").Data().(bool))
+					"Type":    item.Metadata.Type,
+				}).Info("The agent Api key invalidated: ", item.Invalidated)
 			} else {
 				log.WithFields(log.Fields{
 					"agentId": fts.AgentId,
-				}).Error("The agent Api key invalidated: ", item.Path("invalidated").Data().(bool))
+					"Type":    item.Metadata.Type,
+				}).Error("The agent Api key invalidated: ", item.Invalidated)
 				return errors.New("The agent Api key invalidated is should be: " + invalidated)
 			}
 		}
