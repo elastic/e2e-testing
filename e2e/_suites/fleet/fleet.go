@@ -664,6 +664,7 @@ func (fts *FleetTestSuite) theAgentGetDefaultAPIKey() error {
 
 func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
 	newDefaultAPIKey, _ := fts.getAgentDefaultAPIKey()
+
 	if status == "changed" {
 		if newDefaultAPIKey != fts.DefaultAPIKey {
 			log.WithFields(log.Fields{
@@ -677,8 +678,7 @@ func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
 			}).Error("Integration added and Default Api Key do not change")
 			return errors.New("Integration added and Default Api Key do not change")
 		}
-	}
-	if status == "not changed" {
+	} else if status == "not changed" {
 		if newDefaultAPIKey == fts.DefaultAPIKey {
 			log.WithFields(log.Fields{
 				"new_default_api_key": newDefaultAPIKey,
@@ -692,6 +692,7 @@ func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
 			return errors.New("Integration updated and Default Api Key is changed")
 		}
 	}
+
 	return nil
 }
 
