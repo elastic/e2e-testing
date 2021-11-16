@@ -22,9 +22,6 @@ const (
 
 	// EndpointAPI is the endpoint API
 	EndpointAPI = "/api/endpoint"
-
-	// ConsoleAPI is the console API
-	ConsoleAPI = "/api/console"
 )
 
 // getBaseURL will pull in the baseurl or an alternative host based on settings
