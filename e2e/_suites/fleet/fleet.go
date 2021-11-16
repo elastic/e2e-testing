@@ -673,22 +673,27 @@ func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
 	defaultAPIKeyHasChanged := (newDefaultAPIKey != fts.DefaultAPIKey)
 
 	if status == "changed" {
-		if defaultAPIKeyHasChanged {
-			log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been added", status)
-		} else {
+		if !defaultAPIKeyHasChanged {
 			log.WithFields(logFields).Error("Integration added and Default API Key do not change")
 			return errors.New("Integration added and Default API Key do not change")
 		}
-	} else if status == "not changed" {
-		if !defaultAPIKeyHasChanged {
-			log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been updated" + status)
-		} else {
+
+		log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been added", status)
+		return nil
+	}
+
+	if status == "not changed" {
+		if defaultAPIKeyHasChanged {
 			log.WithFields(logFields).Error("Integration updated and Default API Key is changed")
 			return errors.New("Integration updated and Default API Key is changed")
 		}
+
+		log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been updated" + status)
+		return nil
 	}
 
-	return nil
+	log.Warnf("Status %s is not supported yet", status)
+	return godog.ErrPending
 }
 
 func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string, hostname string) error {
