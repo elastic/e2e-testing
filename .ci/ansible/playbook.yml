@@ -76,6 +76,8 @@
     - setup
   roles:
     - role: geerlingguy.docker
+      docker_daemon_options:
+        default-ulimit: ["nofile=1024000:1024000"]
     - role: andrewrothstein.kubectl
     - role: andrewrothstein.kind
     - role: gantsign.golang
@@ -127,6 +129,8 @@
     - setup
   roles:
     - role: geerlingguy.docker
+      docker_daemon_options:
+        default-ulimit: ["nofile=1024000:1024000"]
       when: "'kubernetes_autodiscover' in group_names or 'helm' in group_names or 'fleet_amd64' in group_names or 'fleet_elastic_pkg' in group_names"
     - role: andrewrothstein.kubectl
       when: "'kubernetes_autodiscover' in group_names or 'helm' in group_names"
@@ -149,8 +153,10 @@
     include_tasks: tasks/copy_test_files.yml
     tags:
       - setup
+      - copy-source
 
   - name: Configure test script
     include_tasks: tasks/setup_test_script.yml
     tags:
       - setup
+      - copy-source

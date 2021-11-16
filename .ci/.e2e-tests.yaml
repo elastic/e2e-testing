@@ -2,9 +2,9 @@
 MACHINES:
   stack: 1
   helm: 3
-  fleet_arm64: 8
-  fleet_amd64: 8
-  fleet_elastic_pkg: 3
+  fleet_arm64: 7
+  fleet_amd64: 7
+  fleet_elastic_pkg: 2
   kubernetes_autodiscover: 4
 
 SUITES:
@@ -49,11 +49,6 @@ SUITES:
         platforms:
           - labels: "fleet_arm64"
           - labels: "fleet_amd64"
-      - name: "Policies"
-        tags: "policies"
-        platforms:
-          - labels: "fleet_arm64"
-          - labels: "fleet_amd64"
       - name: "System Integration"
         tags: "system_integration"
         platforms:
@@ -74,11 +69,11 @@ SUITES:
         platforms:
           - labels: "fleet_arm64"
           - labels: "fleet_amd64"
-      - name: "Preconfigured Policies"
-        tags: "preconfigured_policies"
-        platforms:
-          - labels: "fleet_elastic_pkg"
-            provider: "elastic-package"
+      # - name: "Preconfigured Policies"
+      #   tags: "preconfigured_policies"
+      #   platforms:
+      #     - labels: "fleet_elastic_pkg"
+      #       provider: "elastic-package"
   - suite: "kubernetes-autodiscover"
     scenarios:
       - name: "kubernetes autodiscover with elastic-agent"
