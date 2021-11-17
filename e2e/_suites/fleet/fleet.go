@@ -67,6 +67,7 @@ type FleetTestSuite struct {
 // afterScenario destroys the state created by a scenario
 func (fts *FleetTestSuite) afterScenario() {
 	defer func() {
+		fts.DefaultAPIKey = ""
 		// Reset Kibana Profile to default
 		fts.KibanaProfile = ""
 		deployedAgentsCount = 0
@@ -664,35 +665,36 @@ func (fts *FleetTestSuite) theAgentGetDefaultAPIKey() error {
 
 func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
 	newDefaultAPIKey, _ := fts.getAgentDefaultAPIKey()
+
+	logFields := log.Fields{
+		"new_default_api_key": newDefaultAPIKey,
+		"old_default_api_key": fts.DefaultAPIKey,
+	}
+
+	defaultAPIKeyHasChanged := (newDefaultAPIKey != fts.DefaultAPIKey)
+
 	if status == "changed" {
-		if newDefaultAPIKey != fts.DefaultAPIKey {
-			log.WithFields(log.Fields{
-				"new_default_api_key": newDefaultAPIKey,
-				"old_default_api_key": fts.DefaultAPIKey,
-			}).Info("Integration added and Default Api Key is " + status)
-		} else {
-			log.WithFields(log.Fields{
-				"new_default_api_key": newDefaultAPIKey,
-				"old_default_api_key": fts.DefaultAPIKey,
-			}).Error("Integration added and Default Api Key do not change")
-			return errors.New("Integration added and Default Api Key do not change")
+		if !defaultAPIKeyHasChanged {
+			log.WithFields(logFields).Error("Integration added and Default API Key do not change")
+			return errors.New("Integration added and Default API Key do not change")
 		}
+
+		log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been added", status)
+		return nil
 	}
+
 	if status == "not changed" {
-		if newDefaultAPIKey == fts.DefaultAPIKey {
-			log.WithFields(log.Fields{
-				"new_default_api_key": newDefaultAPIKey,
-				"old_default_api_key": fts.DefaultAPIKey,
-			}).Info("Integration updated and Default Api Key " + status)
-		} else {
-			log.WithFields(log.Fields{
-				"new_default_api_key": newDefaultAPIKey,
-				"old_default_api_key": fts.DefaultAPIKey,
-			}).Error("Integration updated and Default Api Key is changed")
-			return errors.New("Integration updated and Default Api Key is changed")
+		if defaultAPIKeyHasChanged {
+			log.WithFields(logFields).Error("Integration updated and Default API Key is changed")
+			return errors.New("Integration updated and Default API Key is changed")
 		}
+
+		log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been updated" + status)
+		return nil
 	}
-	return nil
+
+	log.Warnf("Status %s is not supported yet", status)
+	return godog.ErrPending
 }
 
 func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string, hostname string) error {
