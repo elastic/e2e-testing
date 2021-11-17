@@ -414,7 +414,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
   def machines = args.get('machines')
 
-  def platformProvider = platform.provider
+  def platformProvider = platform.containsKey('provider') ? platform.provider : ''
 
   if (!platformProvider || !platformProvider?.trim()) {
     // default provider is Docker
