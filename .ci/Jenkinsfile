@@ -203,10 +203,10 @@ pipeline {
                     sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/${env.BASE_DIR}/e2essh -q -N \"\" "
                     def existingMachines = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE}")
                     def stackMachine = existingMachines['MACHINES']['stack']
-                    ansible('-t provision-stack --extra-vars="nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}"')
+                    ansible("-t provision-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
                     def stackRunner = getNodeIp('stack')
-                    ansible('-i "${stackRunner.ip}," -t setup-stack --extra-vars="nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}"')
+                    ansible("-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
                   } else {
                     log(level: 'WARN', text: "The test suites won't be executed in any platform because there are no modified files")
                   }
@@ -467,12 +467,12 @@ def generateFunctionalTestStep(Map args = [:]){
           // TODO: This will need to be integrated into the provisioned VMs
           withOtelEnv() {
             // Start node, capture ip address
-            ansible('-t start-node --extra-vars="stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}"')
+            ansible("-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
 
             def testRunner = getNodeIp(platform)
 
             // Configure node for testing
-            ansible('-i "${testRunner.ip}," -t setup-node --extra-vars="stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}"')
+            ansible("-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
 
             sshexec(testRunner, """sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
           }
