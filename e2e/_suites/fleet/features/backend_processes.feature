@@ -23,13 +23,12 @@ Scenario Outline: Stopping the agent stops backend processes
   Then the "filebeat" process is in the "stopped" state on the host
     And the "metricbeat" process is in the "stopped" state on the host
 
-# TODO: Investigate why agent restart isn't bring up 2 filebeats on VM
-# @restart-agent
-# Scenario Outline: Restarting the installed agent
-#   Given an agent is deployed to Fleet with "tar" installer
-#   When the "elastic-agent" process is "restarted" on the host
-#   Then there are "2" instances of the "filebeat" process in the "started" state
-#     And there are "2" instances of the "metricbeat" process in the "started" state
+@restart-agent
+Scenario Outline: Restarting the installed agent
+  Given an agent is deployed to Fleet with "tar" installer
+  When the "elastic-agent" process is "restarted" on the host
+  Then there are "2" instances of the "filebeat" process in the "started" state
+    And there are "2" instances of the "metricbeat" process in the "started" state
 
 # @restart-host
 # Scenario Outline: Restarting the host with persistent agent restarts backend processes
