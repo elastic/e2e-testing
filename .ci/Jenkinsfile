@@ -207,6 +207,7 @@ pipeline {
 
                     def stackRunner = getNodeIp('stack')
                     ansible("-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                    stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false
                   } else {
                     log(level: 'WARN', text: "The test suites won't be executed in any platform because there are no modified files")
                   }
@@ -461,7 +462,7 @@ def generateFunctionalTestStep(Map args = [:]){
     withNode(labels: 'ubuntu-20.04', forceWorkspace: true, forceWorker: true){
       try {
         deleteDir()
-        unstash 'source'
+        unstash 'sourceEnvModified'
         dir("${BASE_DIR}") {
           withEnv(envContext) {
             // This step will help to send the APM traces to the
