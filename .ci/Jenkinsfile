@@ -204,13 +204,14 @@ pipeline {
                     def existingMachines = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE}")
                     def stackMachine = existingMachines['MACHINES']['stack']
 
-                    ansible("-t provision-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                    ansible("${env.WORKSPACE}/${env.BASE_DIR}",
+                            "-t provision-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
                     def stackRunner = getNodeIp('stack')
-                    ansible("-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                    ansible("${env.WORKSPACE}/${env.BASE_DIR}",
+                            "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
                     // Update stash with latest changes from the stack deployment
-                    sh "ls -l"
                     stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false
                   } else {
                     log(level: 'WARN', text: "The test suites won't be executed in any platform because there are no modified files")
@@ -261,7 +262,8 @@ pipeline {
           }
           post {
             cleanup {
-              ansible('-t destroy')
+              ansible("${env.WORKSPACE}/${env.BASE_DIR}",
+                      "-t destroy")
             }
           }
         }
@@ -340,8 +342,8 @@ def getNodeIp(platform){
   return [user: runnerUser, ip: runnerIP]
 }
 
-def ansible(args){
-     pyrun("ansible-playbook --private-key=\"${env.WORKSPACE}/${env.BASE_DIR}/e2essh\" --extra-vars=\"workspace=${env.WORKSPACE}/${env.BASE_DIR}/ runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${env.WORKSPACE}/${env.BASE_DIR}/.ci/ansible/playbook.yml ${args}")
+def ansible(workspace, args){
+     pyrun("ansible-playbook --private-key=\"${workspace}/e2essh\" --extra-vars=\"workspace=${workspace}/ runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${workspace}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${workspace}/.ci/ansible/playbook.yml ${args}")
 }
 
 
@@ -466,23 +468,20 @@ def generateFunctionalTestStep(Map args = [:]){
       try {
         deleteDir()
         unstash 'sourceEnvModified'
-        sh "ls -l ${env.WORKSPACE}/${env.BASE_DIR}/"
         withEnv(envContext) {
           // This step will help to send the APM traces to the
           // APM service defined by the Otel Jenkins plugin.
           // TODO: This will need to be integrated into the provisioned VMs
           withOtelEnv() {
-            sh "pwd"
-
-            // sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/${env.BASE_DIR}/e2essh -q -N \"\" "
-
             // Start node, capture ip address
-            ansible("-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
+            ansible(".",
+                    "-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
 
             def testRunner = getNodeIp(platform)
 
             // Configure node for testing
-            ansible("-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
+            ansible(".",
+                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
 
             sshexec(testRunner, """sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
           }
@@ -493,7 +492,8 @@ def generateFunctionalTestStep(Map args = [:]){
         sshexec(testRunner, """sudo chown ubuntu:ubuntu -R /home/${testRunner.user}/e2e-testing/outputs """)
         scpr(testRunner, "e2e-testing/outputs/*", "outputs/${testRunner.ip}/.")
         sh "ls -l outputs/${testRunner.ip}"
-        ansible('-t destroy --extra-vars="nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}"')
+        ansible(".",
+                '-t destroy --extra-vars="nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}"')
         junit allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunner.ip}/*.xml"
         archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/${testRunner.ip}/*.xml"
       }
