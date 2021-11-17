@@ -52,8 +52,3 @@ SUITES:
         platforms:
           - labels: "fleet-arm64"
           - labels: "fleet-amd64"
-      - name: "Preconfigured Policies"
-        tags: "preconfigured_policies"
-        platforms:
-          - labels: "fleet-amd64"
-            provider: "elastic-package"
