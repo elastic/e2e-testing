@@ -462,20 +462,22 @@ def generateFunctionalTestStep(Map args = [:]){
       try {
         deleteDir()
         unstash 'source'
-        withEnv(envContext) {
-          // This step will help to send the APM traces to the
-          // APM service defined by the Otel Jenkins plugin.
-          // TODO: This will need to be integrated into the provisioned VMs
-          withOtelEnv() {
-            // Start node, capture ip address
-            ansible("-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
+        dir("${BASE_DIR}") {
+          withEnv(envContext) {
+            // This step will help to send the APM traces to the
+            // APM service defined by the Otel Jenkins plugin.
+            // TODO: This will need to be integrated into the provisioned VMs
+            withOtelEnv() {
+              // Start node, capture ip address
+              ansible("-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
 
-            def testRunner = getNodeIp(platform)
+              def testRunner = getNodeIp(platform)
 
-            // Configure node for testing
-            ansible("-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
+              // Configure node for testing
+              ansible("-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
 
-            sshexec(testRunner, """sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
+              sshexec(testRunner, """sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
+            }
           }
         }
       } finally {
