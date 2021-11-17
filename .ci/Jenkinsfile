@@ -203,18 +203,20 @@ pipeline {
                     sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/${env.BASE_DIR}/e2essh -q -N \"\" "
                     def existingMachines = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE}")
                     def stackMachine = existingMachines['MACHINES']['stack']
+
                     ansible("-t provision-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
                     def stackRunner = getNodeIp('stack')
                     ansible("-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+
+                    // Update stash with latest changes from the stack deployment
+                    sh "ls -l"
+                    stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false
                   } else {
                     log(level: 'WARN', text: "The test suites won't be executed in any platform because there are no modified files")
                   }
                 }
               }
-              // Update stash with latest changes from the stack deployment
-              sh "ls -l"
-              stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false
             }
           }
         }
@@ -332,7 +334,6 @@ def pyrun(command){
 }
 
 def getNodeIp(platform){
-  sh "ls -l ${env.WORKSPACE}/${env.BASE_DIR}/"
   def runners = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${platform}-sshhosts")
   def runnerUser = runners[0].split('@')[0]
   def runnerIP = runners[0].split('@')[1]
@@ -474,6 +475,8 @@ def generateFunctionalTestStep(Map args = [:]){
             // TODO: This will need to be integrated into the provisioned VMs
             withOtelEnv() {
               sh "pwd"
+
+              sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/${env.BASE_DIR}/e2essh -q -N \"\" "
 
               // Start node, capture ip address
               ansible("-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
