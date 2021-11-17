@@ -337,6 +337,7 @@ def pyrun(command){
 }
 
 def getNodeIp(workspace, platform){
+  sh "ls -l ${workspace}"
   def runners = readYaml(file: "${workspace}/${platform}-sshhosts")
   def runnerUser = runners[0].split('@')[0]
   def runnerIP = runners[0].split('@')[1]
@@ -479,6 +480,7 @@ def generateFunctionalTestStep(Map args = [:]){
             ansible(".",
                     "-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
 
+            sh "ls -l"
             def testRunner = getNodeIp(".",
                                        platform)
 
