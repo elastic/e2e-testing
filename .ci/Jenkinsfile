@@ -492,7 +492,8 @@ def generateFunctionalTestStep(Map args = [:]){
           }
         }
       } finally {
-        def testRunner = getNodeIp(platform)
+        def testRunner = getNodeIp("${env.WORKSPACE}",
+                                   platform)
         sh "mkdir -p outputs/${testRunner.ip} || true"
         sshexec("${env.WORKSPACE}",
                 testRunner,
