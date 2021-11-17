@@ -1,48 +1,50 @@
 ---
 MACHINES:
-  stack: 1
-  helm: 3
-  fleet_arm64: 6
-  fleet_amd64: 6
-  fleet_elastic_pkg: 2
-  kubernetes_autodiscover: 4
+  stack:
+    image: "ami-0629230e074c580f2"
+    instance_type: "c5.4xlarge"
+  helm:
+    image: "ami-0629230e074c580f2"
+    instance_type: "c5.2xlarge"
+  fleet_arm64:
+    image: "ami-03b47d2d727e13114"
+    instance_type: "a1.large"
+  fleet_amd64:
+    image: "ami-0629230e074c580f2"
+    instance_type: "c5.2xlarge"
+  fleet_elastic_pkg:
+    image: "ami-0629230e074c580f2"
+    instance_type: "c5.4xlarge"
+  kubernetes_autodiscover:
+    image: "ami-0629230e074c580f2"
+    instance_type: "c5.2xlarge"
 
 SUITES:
   - suite: "helm"
     scenarios:
       - name: "APM Server"
         tags: "apm-server"
-        platforms:
-          - labels: "helm"
+        platforms: ["helm"]
       - name: "Filebeat"
         tags: "filebeat"
-        platforms:
-          - labels: "helm"
+        platforms: ["helm"]
       - name: "Metricbeat"
         tags: "metricbeat"
-        platforms:
-          - labels: "helm"
+        platforms: ["helm"]
   - suite: "fleet"
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode_agent"
-        platforms:
-          - labels: "fleet_arm64"
-          - labels: "fleet_amd64"
+        platforms: ["fleet_arm64", "fleet_amd64"]
       - name: "Integrations"
         tags: "integrations"
-        platforms:
-          - labels: "fleet_arm64"
-          - labels: "fleet_amd64"
+        platforms: ["fleet_arm64", "fleet_amd64"]
       - name: "APM Integration"
         tags: "apm_server"
-        platforms:
-          - labels: "fleet_elastic_pkg"
+        platforms: ["fleet_elastic_pkg"]
       - name: "Linux Integration"
         tags: "linux_integration"
-        platforms:
-          - labels: "fleet_arm64"
-          - labels: "fleet_amd64"
+        platforms: ["fleet_arm64", "fleet_amd64"]
       # - name: "Permissions Output change"
       #   tags: "permission_change"
       #   platforms:
@@ -50,38 +52,26 @@ SUITES:
       #     - labels: "fleet_amd64"
       - name: "System Integration"
         tags: "system_integration"
-        platforms:
-          - labels: "fleet_arm64"
-          - labels: "fleet_amd64"
+        platforms: ["fleet_arm64", "fleet_amd64"]
       - name: "Stand-alone"
         tags: "stand_alone_agent"
-        platforms:
-          - labels: "fleet_elastic_pkg"
       - name: "Backend Processes"
         tags: "backend_processes"
-        platforms:
-          - labels: "fleet_arm64"
-          - labels: "fleet_amd64"
+        platforms: ["fleet_arm64", "fleet_amd64"]
       - name: "Beats Background Processes"
         tags: "running_on_beats"
-        platforms:
-          - labels: "fleet_arm64"
-          - labels: "fleet_amd64"
+        platforms: ["fleet_arm64", "fleet_amd64"]
   - suite: "kubernetes-autodiscover"
     scenarios:
       - name: "kubernetes autodiscover with elastic-agent"
         tags: "elastic-agent"
-        platforms:
-          - labels: "kubernetes_autodiscover"
+        platforms: ["kubernetes_autodiscover"]
       - name: "kubernetes autodiscover with filebeat"
         tags: "filebeat"
-        platforms:
-          - labels: "kubernetes_autodiscover"
+        platforms: ["kubernetes_autodiscover"]
       - name: "kubernetes autodiscover with heartbeat"
         tags: "heartbeat"
-        platforms:
-          - labels: "kubernetes_autodiscover"
+        platforms: ["kubernetes_autodiscover"]
       - name: "kubernetes autodiscover with metricbeat"
         tags: "metricbeat"
-        platforms:
-          - labels: "kubernetes_autodiscover"
+        platforms: ["kubernetes_autodiscover"]

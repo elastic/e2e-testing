@@ -9,14 +9,14 @@
   with_items:
     - "export SUITE={{ lookup('env', 'SUITE') or 'fleet' }}"
     - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'remote' }}"
-    - "export ELASTICSEARCH_URL=http://{{groups['stack'][0]}}:9200"
+    - "export ELASTICSEARCH_URL=http://{{stackRunner}}:9200"
     - "export ELASTICSEARCH_PASSWORD=changeme"
     - "export KIBANA_PASSWORD=changeme"
-    - "export KIBANA_URL=http://{{groups['stack'][0]}}:5601"
-    - "export FLEET_URL=http://{{groups['stack'][0]}}:8220"
+    - "export KIBANA_URL=http://{{stackRunner}}:5601"
+    - "export FLEET_URL=http://{{stackRunner}}:8220"
     - "export SKIP_PULL=1"
 
-  when: "'fleet_arm64' in group_names or 'fleet_amd64' in group_names"
+  when: "'fleet_arm64' == nodeLabel or 'fleet_amd64' == nodeLabel"
 
 - name: Extend environment for Fleet with elastic-package testing
   lineinfile:
@@ -28,7 +28,7 @@
   with_items:
     - "export SUITE={{ lookup('env', 'SUITE') or 'fleet' }}"
     - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'elastic-package' }}"
-  when: "'fleet_elastic_pkg' in group_names"
+  when: "'fleet_elastic_pkg' in nodeLabel"
 
 
 - name: Extend environment for Kubernetes Autodiscover testing
@@ -41,7 +41,7 @@
   with_items:
     - "export SUITE={{ lookup('env', 'SUITE') or 'kubernetes-autodiscover' }}"
     - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'docker' }}"
-  when: "'kubernetes_autodiscover' in group_names"
+  when: "'kubernetes_autodiscover' == nodeLabel"
 
 - name: Extend environment for Helm testing
   lineinfile:
@@ -53,7 +53,7 @@
   with_items:
     - "export SUITE={{ lookup('env', 'SUITE') or 'helm' }}"
     - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'docker' }}"
-  when: "'helm' in group_names"
+  when: "'helm' == nodeLabel"
 
 - name: Extend environment
   lineinfile:

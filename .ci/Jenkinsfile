@@ -192,7 +192,7 @@ pipeline {
             }
           }
           steps {
-            withGithubNotify(context: 'Deployment and Setup', tab: 'tests') {
+            withGithubNotify(context: 'Deploy Stack', tab: 'tests') {
               deleteDir()
               unstash 'source'
               dir("${BASE_DIR}") {
@@ -201,10 +201,12 @@ pipeline {
                   if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
                     // Deploy the test infrastructure
                     sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/${env.BASE_DIR}/e2essh -q -N \"\" "
-                    ansible("-t provision-stack")
-                    // Give it time to initialize so gather facts works
-                    sleep(20)
-                    ansible("-t setup")
+                    def existingMachines = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE}")
+                    def stackMachine = existingMachines['stack']
+                    ansible('-t provision-stack --extra-vars="nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}"')
+
+                    def stackRunner = getNodeIp('stack')
+                    ansible('-i "${stackRunner.ip}," -t setup-stack --extra-vars="nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}"')
                   } else {
                     log(level: 'WARN', text: "The test suites won't be executed in any platform because there are no modified files")
                   }
@@ -326,8 +328,15 @@ def pyrun(command){
   }
 }
 
+def getNodeIp(platform){
+  def runners = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/stack-sshhosts")
+  def runnerUser = runners[0].split('@')[0]
+  def runnerIP = runners[0].split('@')[1]
+  return [user: runnerUser, ip: runnerIP]
+}
+
 def ansible(args){
-     pyrun("ansible-playbook --private-key=\"${env.WORKSPACE}/${env.BASE_DIR}/e2essh\" --extra-vars=\"workspace=${env.WORKSPACE}/${env.BASE_DIR}/ runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${env.WORKSPACE}/${env.BASE_DIR}/.ci/ansible/playbook.yml -i ${env.WORKSPACE}/${env.BASE_DIR}/.ci/ansible/inventory ${args}")
+     pyrun("ansible-playbook --private-key=\"${env.WORKSPACE}/${env.BASE_DIR}/e2essh\" --extra-vars=\"workspace=${env.WORKSPACE}/${env.BASE_DIR}/ runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${env.WORKSPACE}/${env.BASE_DIR}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${env.WORKSPACE}/${env.BASE_DIR}/.ci/ansible/playbook.yml ${args}")
 }
 
 
@@ -346,21 +355,13 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:], Map machines = [:]) 
     def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
     def tags = scenario.tags
     platformsValue.each { platform ->
-      def platformLabels = platform.labels
-
-      // Decrease the machine count from spec in order to index which ssh session to connect to in our
-      // sshhosts file, must set the index to support 0 based
-      machines[platformLabels] = machines[platformLabels] - 1
-      labelIdx = machines[platformLabels]
-
-      def testRunners = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${platformLabels}-sshhosts")
-      log(level: 'INFO', text: "[testRunner: ${testRunners[labelIdx]}] Adding ${labelIdx}:${platformLabels}:${tags} test suite to the build execution")
-      parallelTasks["${platformLabels}_${tags}"] = generateFunctionalTestStep(name: "${name}",
-                                                                              platform: platform,
-                                                                              suite: "${suite}",
-                                                                              tags: "${tags}",
-                                                                              pullRequestFilter: "${pullRequestFilter}",
-                                                                              testRunner: testRunners[labelIdx])
+      log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
+      parallelTasks["${platform}_${tags}"] = generateFunctionalTestStep(name: "${name}",
+                                                                        platform: platform,
+                                                                        suite: "${suite}",
+                                                                        tags: "${tags}",
+                                                                        pullRequestFilter: "${pullRequestFilter}",
+                                                                        machines: machines)
       }
   }
 }
@@ -410,11 +411,8 @@ def generateFunctionalTestStep(Map args = [:]){
   def suite = args.get('suite')
   def tags = args.get('tags')
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
-  def testRunner = args.get('testRunner')?.trim()
-  def sshUser = testRunner.split('@')[0]
-  def sshHostIP = testRunner.split('@')[1]
+  def machines = args.get('machines')
 
-  def platformLabels = platform.labels
   def platformProvider = platform.provider
 
   if (!platformProvider || !platformProvider?.trim()) {
@@ -443,7 +441,7 @@ def generateFunctionalTestStep(Map args = [:]){
 
   def goArch = "amd64"
   def linuxIp = null
-  if (platformLabels.contains("arm64")) {
+  if (platform.contains("arm64")) {
     goArch = "arm64"
   }
 
@@ -456,25 +454,39 @@ def generateFunctionalTestStep(Map args = [:]){
   envContext.add("SUITE=${suite}")
   envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
 
+  def stackRunner = getNodeIp('stack')
+
   return {
-    try {
-      dir("${BASE_DIR}") {
+    withNode(labels: 'ubuntu-20.04', forceWorkspace: true, forceWorker: true){
+      try {
+        deleteDir()
+        unstash 'source'
         withEnv(envContext) {
           // This step will help to send the APM traces to the
           // APM service defined by the Otel Jenkins plugin.
           // TODO: This will need to be integrated into the provisioned VMs
           withOtelEnv() {
-            sshexec(testRunner, """sudo bash /home/${sshUser}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
+            // Start node, capture ip address
+            ansible('-t start-node --extra-vars="stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}"')
+
+            def testRunner = getNodeIp(platform)
+
+            // Configure node for testing
+            ansible('-i "${testRunner.ip}," -t setup-node --extra-vars="stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}"')
+
+            sshexec(testRunner, """sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
           }
         }
+      } finally {
+        def testRunner = getNodeIp(platform)
+        sh "mkdir -p outputs/${testRunner.ip} || true"
+        sshexec(testRunner, """sudo chown ubuntu:ubuntu -R /home/${testRunner.user}/e2e-testing/outputs """)
+        scpr(testRunner, "e2e-testing/outputs/*", "outputs/${testRunner.ip}/.")
+        sh "ls -l outputs/${testRunner.ip}"
+        ansible('-t destroy --extra-vars="nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}"')
+        junit allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunner.ip}/*.xml"
+        archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/${testRunner.ip}/*.xml"
       }
-    } finally {
-      sh "mkdir -p outputs/${sshHostIP} || true"
-      sshexec(testRunner, """sudo chown ubuntu:ubuntu -R /home/${sshUser}/e2e-testing/outputs """)
-      scpr(testRunner, "e2e-testing/outputs/*", "outputs/${sshHostIP}/.")
-      sh "ls -l outputs/${sshHostIP}"
-      junit allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${sshHostIP}/*.xml"
-      archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/${sshHostIP}/*.xml"
     }
   }
 }

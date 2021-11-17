@@ -4,12 +4,12 @@
     key_name: "e2essh-{{runId}}"
     region: us-east-2
     group: e2e
-    image: '{{instance_meta.image}}'
+    image: '{{nodeImage}}'
     instance_tags:
-      Name: "e2e-{{instance_meta.label}}-{{runId}}"
+      Name: "e2e-{{nodeLabel}}-{{runId}}"
     exact_count: 0
     count_tag:
-      Name: "e2e-{{instance_meta.label}}-{{runId}}"
+      Name: "e2e-{{nodeLabel}}-{{runId}}"
   tags:
     - destroy
   async: 45

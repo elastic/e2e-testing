@@ -4,26 +4,11 @@
   vars:
       ansible_user: ubuntu
   tasks:
-  - name: Read e2e spec
-    include_vars:
-      file: "{{workspace}}/.ci/.e2e-tests.yaml"
-      name: machineMeta
-    tags:
-      - provision-stack
-
   - name: Setup nodes
     include_tasks: tasks/runners.yml
-    loop:
-      - {label: "stack", image: "ami-0629230e074c580f2", instance_type: "c5.4xlarge", count: "{{machineMeta.MACHINES.stack}}"}
-      - {label: "fleet_amd64", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.fleet_amd64}}"}
-      - {label: "fleet_elastic_pkg", image: "ami-0629230e074c580f2", instance_type: "c5.4xlarge", count: "{{machineMeta.MACHINES.fleet_elastic_pkg}}"}
-      - {label: "fleet_arm64", image: "ami-03b47d2d727e13114", instance_type: "a1.large", count: "{{machineMeta.MACHINES.fleet_arm64}}"}
-      - {label: "kubernetes_autodiscover", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.kubernetes_autodiscover}}"}
-      - {label: "helm", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.helm}}"}
-    loop_control:
-      loop_var: instance_meta
     tags:
       - provision-stack
+      - start-node
 
 - name: Teardown environment
   hosts: localhost
@@ -31,49 +16,17 @@
   vars:
       ansible_user: ubuntu
   tasks:
-  - name: Read e2e spec
-    include_vars:
-      file: "{{workspace}}/.ci/.e2e-tests.yaml"
-      name: machineMeta
-    tags:
-      - destroy
   - name: Teardown Test Runners (AWS)
     include_tasks: tasks/teardown.yml
-    loop:
-      - {label: "stack", image: "ami-0629230e074c580f2", instance_type: "c5.4xlarge", count: "{{machineMeta.MACHINES.stack}}"}
-      - {label: "fleet_amd64", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.fleet_amd64}}"}
-      - {label: "fleet_elastic_pkg", image: "ami-0629230e074c580f2", instance_type: "c5.4xlarge", count: "{{machineMeta.MACHINES.fleet_elastic_pkg}}"}
-      - {label: "fleet_arm64", image: "ami-03b47d2d727e13114", instance_type: "a1.large", count: "{{machineMeta.MACHINES.fleet_arm64}}"}
-      - {label: "kubernetes_autodiscover", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.kubernetes_autodiscover}}"}
-      - {label: "helm", image: "ami-0629230e074c580f2", instance_type: "c5.2xlarge", count: "{{machineMeta.MACHINES.helm}}"}
-    loop_control:
-      loop_var: instance_meta
     tags:
       - destroy
 
-- name: Wait for SSH
-  hosts:
-    - stack
-    - kubernetes_autodiscover
-    - helm
-    - fleet_amd64
-    - fleet_arm64
-    - fleet_elastic_pkg
-  connection: ssh
-  vars:
-      ansible_user: ubuntu
-  tags:
-    - setup
-  tasks:
-    - name: Testing connection
-      include_tasks: tasks/wait_for_ssh.yml
-
 - name: Manage stack instance
-  hosts: stack
+  hosts: all
   connection: ssh
   become: True
   tags:
-    - setup
+    - setup-stack
   roles:
     - role: geerlingguy.docker
       docker_daemon_options:
@@ -86,11 +39,6 @@
   vars:
     ansible_user: ubuntu
   tasks:
-  - name: Wait for SSH
-    include_tasks: tasks/wait_for_ssh.yml
-    tags:
-      - setup
-
   - name: Create environment file
     become: no
     local_action:
@@ -99,13 +47,14 @@
       content: |
         export OP_LOG_LEVEL=INFO
         export LOG_LEVEL=INFO
+        export TIMEOUT_FACTOR=7
     tags:
-      - setup
+      - setup-stack
 
   - name: Setup source code
     include_tasks: tasks/copy_test_files.yml
     tags:
-      - setup
+      - setup-stack
 
   - name: Start stack
     shell: |
@@ -114,30 +63,25 @@
       sed -i '' -e 's,http://package-registry:8080,https://epr-staging.elastic.co,g' /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml
       sudo docker-compose -f /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/docker-compose.yml up -d
     tags:
-      - setup
+      - setup-stack
 
 - name: Manage runner instances
-  hosts:
-    - kubernetes_autodiscover
-    - helm
-    - fleet_amd64
-    - fleet_arm64
-    - fleet_elastic_pkg
+  hosts: all
   connection: ssh
   become: True
   tags:
-    - setup
+    - setup-node
   roles:
     - role: geerlingguy.docker
       docker_daemon_options:
         default-ulimit: ["nofile=1024000:1024000"]
-      when: "'kubernetes_autodiscover' in group_names or 'helm' in group_names or 'fleet_amd64' in group_names or 'fleet_elastic_pkg' in group_names"
+      when: "'kubernetes_autodiscover' in nodeLabel or 'helm' in nodeLabel or 'fleet_amd64' in nodeLabel or 'fleet_elastic_pkg' in nodeLabel"
     - role: andrewrothstein.kubectl
-      when: "'kubernetes_autodiscover' in group_names or 'helm' in group_names"
+      when: "'kubernetes_autodiscover' in nodeLabel or 'helm' in nodeLabel"
     - role: andrewrothstein.kind
-      when: "'kubernetes_autodiscover' in group_names or 'helm' in group_names"
+      when: "'kubernetes_autodiscover' in nodeLabel or 'helm' in nodeLabel"
     - role: geerlingguy.helm
-      when: "'kubernetes_autodiscover' in group_names or 'helm' in group_names"
+      when: "'kubernetes_autodiscover' in nodeLabel or 'helm' in nodeLabel"
     - role: gantsign.golang
       vars:
         golang_version: 1.16.3
@@ -147,16 +91,16 @@
   - name: Install deps
     include_tasks: tasks/install_deps.yml
     tags:
-      - setup
+      - setup-node
 
   - name: Setup source code
     include_tasks: tasks/copy_test_files.yml
     tags:
-      - setup
+      - setup-node
       - copy-source
 
   - name: Configure test script
     include_tasks: tasks/setup_test_script.yml
     tags:
-      - setup
+      - setup-node
       - copy-source

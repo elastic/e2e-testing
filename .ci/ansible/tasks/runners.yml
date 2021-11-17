@@ -8,19 +8,18 @@
   tags:
     - provision-stack
 
-- name: "Create {{instance_meta.label}} AWS instances"
+- name: "Create {{nodeLabel}} AWS instances"
   ec2:
     wait: yes
     key_name: "e2essh-{{runId}}"
     region: us-east-2
     group: e2e
-    image: '{{instance_meta.image}}'
-    instance_type: '{{instance_meta.instance_type}}'
+    image: '{{nodeImage}}'
+    instance_type: '{{nodeInstanceType}}'
     instance_tags:
-      Name: "e2e-{{instance_meta.label}}-{{runId}}"
-    exact_count: "{{instance_meta.count}}"
+      Name: "e2e-{{nodeLabel}}-{{runId}}"
     count_tag:
-      Name: "e2e-{{instance_meta.label}}-{{runId}}"
+      Name: "e2e-{{nodeLabel}}-{{runId}}"
     volumes:
       - device_name: /dev/sda1
         volume_type: gp3
@@ -30,6 +29,7 @@
   register: ec2
   tags:
     - provision-stack
+    - start-node
 
 - name: Add AWS host to ssh address list
   become: no
@@ -37,24 +37,35 @@
     state: present
     line: "- ubuntu@{{addr.public_ip}}"
     insertafter: EOF
-    dest: "{{workspace}}/{{instance_meta.label}}-sshhosts"
+    dest: "{{workspace}}/{{nodeLabel}}-sshhosts"
     create: yes
   loop: "{{ ec2.instances }}"
   loop_control:
     loop_var: addr
   tags:
     - provision-stack
+    - start-node
 
-- name: Add AWS host to hosts file
-  become: no
-  lineinfile:
-    state: present
-    line: "{{addr.public_ip}}"
-    insertafter: EOF
-    dest: "{{workspace}}/.ci/ansible/inventory/{{instance_meta.label}}"
-    create: yes
+# - name: Add AWS host to hosts file
+#   become: no
+#   lineinfile:
+#     state: present
+#     line: "{{addr.public_ip}}"
+#     insertafter: EOF
+#     dest: "{{workspace}}/.ci/ansible/inventory/{{nodeLabel}}"
+#     create: yes
+#   loop: "{{ ec2.instances }}"
+#   loop_control:
+#     loop_var: addr
+#   tags:
+#     - provision-stack
+#     - start-node
+
+- name: Wait for SSH to come up
+  wait_for: host={{ nodeItem.public_ip }} port=22 delay=10 timeout=60
   loop: "{{ ec2.instances }}"
   loop_control:
-    loop_var: addr
+    loop_var: nodeItem
   tags:
     - provision-stack
+    - start-node
