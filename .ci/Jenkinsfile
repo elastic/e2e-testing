@@ -206,7 +206,8 @@ pipeline {
                     ansible("-t provision-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
                     def stackRunner = getNodeIp('stack')
-                    ansible("-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
+                    def machine = machines['stack']
+                    ansible("-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
                   } else {
                     log(level: 'WARN', text: "The test suites won't be executed in any platform because there are no modified files")
                   }
@@ -290,11 +291,11 @@ pipeline {
 }
 
 def sshexec(connection, cmd){
-  sh "ssh -tt -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/${env.BASE_DIR}/e2essh ${connection} -- '${cmd}'"
+  sh "ssh -tt -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/${env.BASE_DIR}/e2essh ${connection.user}@${connection.ip} -- '${cmd}'"
 }
 
 def scpr(connection, remote_src, local_dst){
-  sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/${env.BASE_DIR}/e2essh ${connection}:${remote_src} ${local_dst}"
+  sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/${env.BASE_DIR}/e2essh ${connection.user}@${connection.ip}:${remote_src} ${local_dst}"
 }
 
 /*
@@ -329,7 +330,8 @@ def pyrun(command){
 }
 
 def getNodeIp(platform){
-  def runners = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/stack-sshhosts")
+  sh "ls -l ${env.WORKSPACE}/${env.BASE_DIR}/"
+  def runners = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${platform}-sshhosts")
   def runnerUser = runners[0].split('@')[0]
   def runnerIP = runners[0].split('@')[1]
   return [user: runnerUser, ip: runnerIP]
