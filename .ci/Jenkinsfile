@@ -477,15 +477,15 @@ def generateFunctionalTestStep(Map args = [:]){
           // TODO: This will need to be integrated into the provisioned VMs
           withOtelEnv() {
             // Start node, capture ip address
-            ansible(".",
+            ansible("${env.WORKSPACE}",
                     "-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
 
-            sh "ls -l"
-            def testRunner = getNodeIp(".",
+            sh "ls -l ${env.WORKSPACE}"
+            def testRunner = getNodeIp("${env.WORKSPACE}",
                                        platform)
 
             // Configure node for testing
-            ansible(".",
+            ansible("${env.WORKSPACE}",
                     "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
 
             sshexec(".", testRunner, """sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
@@ -494,13 +494,21 @@ def generateFunctionalTestStep(Map args = [:]){
       } finally {
         def testRunner = getNodeIp(platform)
         sh "mkdir -p outputs/${testRunner.ip} || true"
-        sshexec(".", testRunner, """sudo chown ubuntu:ubuntu -R /home/${testRunner.user}/e2e-testing/outputs """)
-        scpr(".", testRunner, "e2e-testing/outputs/*", "outputs/${testRunner.ip}/.")
+        sshexec("${env.WORKSPACE}",
+                testRunner,
+                """sudo chown ubuntu:ubuntu -R /home/${testRunner.user}/e2e-testing/outputs """)
+        scpr("${env.WORKSPACE}",
+             testRunner,
+             "e2e-testing/outputs/*",
+             "outputs/${testRunner.ip}/.")
         sh "ls -l outputs/${testRunner.ip}"
-        ansible(".",
-                '-t destroy --extra-vars="nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}"')
-        junit allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunner.ip}/*.xml"
-        archiveArtifacts allowEmptyArchive: true, artifacts: "outputs/${testRunner.ip}/*.xml"
+        ansible("${env.WORKSPACE}",
+                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
+        junit allowEmptyResults: true,
+          keepLongStdio: true,
+          testResults: "outputs/${testRunner.ip}/*.xml"
+        archiveArtifacts allowEmptyArchive: true,
+          artifacts: "outputs/${testRunner.ip}/*.xml"
       }
     }
   }
