@@ -97,8 +97,8 @@
       module: copy
       dest: "{{workspace}}/.env"
       content: |
-        export OP_LOG_LEVEL=TRACE
-        export LOG_LEVEL=TRACE
+        export OP_LOG_LEVEL=INFO
+        export LOG_LEVEL=INFO
     tags:
       - setup
 
