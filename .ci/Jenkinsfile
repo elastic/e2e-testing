@@ -207,7 +207,8 @@ pipeline {
                     ansible("${env.WORKSPACE}/${env.BASE_DIR}",
                             "-t provision-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
-                    def stackRunner = getNodeIp('stack')
+                    def stackRunner = getNodeIp("${env.WORKSPACE}/${env.BASE_DIR}",
+                                                'stack')
                     ansible("${env.WORKSPACE}/${env.BASE_DIR}",
                             "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
@@ -296,12 +297,12 @@ pipeline {
   }
 }
 
-def sshexec(connection, cmd){
-  sh "ssh -tt -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/${env.BASE_DIR}/e2essh ${connection.user}@${connection.ip} -- '${cmd}'"
+def sshexec(workspace, connection, cmd){
+  sh "ssh -tt -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${workspace}/e2essh ${connection.user}@${connection.ip} -- '${cmd}'"
 }
 
-def scpr(connection, remote_src, local_dst){
-  sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${env.WORKSPACE}/${env.BASE_DIR}/e2essh ${connection.user}@${connection.ip}:${remote_src} ${local_dst}"
+def scpr(workspace, connection, remote_src, local_dst){
+  sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${workspace}/e2essh ${connection.user}@${connection.ip}:${remote_src} ${local_dst}"
 }
 
 /*
@@ -335,8 +336,8 @@ def pyrun(command){
   }
 }
 
-def getNodeIp(platform){
-  def runners = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${platform}-sshhosts")
+def getNodeIp(workspace, platform){
+  def runners = readYaml(file: "${workspace}/${platform}-sshhosts")
   def runnerUser = runners[0].split('@')[0]
   def runnerIP = runners[0].split('@')[1]
   return [user: runnerUser, ip: runnerIP]
@@ -461,7 +462,8 @@ def generateFunctionalTestStep(Map args = [:]){
   envContext.add("SUITE=${suite}")
   envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
 
-  def stackRunner = getNodeIp('stack')
+  def stackRunner = getNodeIp("${env.WORKSPACE}/${env.BASE_DIR}",
+                              'stack')
 
   return {
     withNode(labels: 'ubuntu-20.04', forceWorkspace: true, forceWorker: true){
@@ -477,20 +479,21 @@ def generateFunctionalTestStep(Map args = [:]){
             ansible(".",
                     "-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
 
-            def testRunner = getNodeIp(platform)
+            def testRunner = getNodeIp(".",
+                                       platform)
 
             // Configure node for testing
             ansible(".",
                     "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
 
-            sshexec(testRunner, """sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
+            sshexec(".", testRunner, """sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
           }
         }
       } finally {
         def testRunner = getNodeIp(platform)
         sh "mkdir -p outputs/${testRunner.ip} || true"
-        sshexec(testRunner, """sudo chown ubuntu:ubuntu -R /home/${testRunner.user}/e2e-testing/outputs """)
-        scpr(testRunner, "e2e-testing/outputs/*", "outputs/${testRunner.ip}/.")
+        sshexec(".", testRunner, """sudo chown ubuntu:ubuntu -R /home/${testRunner.user}/e2e-testing/outputs """)
+        scpr(".", testRunner, "e2e-testing/outputs/*", "outputs/${testRunner.ip}/.")
         sh "ls -l outputs/${testRunner.ip}"
         ansible(".",
                 '-t destroy --extra-vars="nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}"')
