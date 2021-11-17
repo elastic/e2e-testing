@@ -207,12 +207,14 @@ pipeline {
 
                     def stackRunner = getNodeIp('stack')
                     ansible("-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
-                    stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false
                   } else {
                     log(level: 'WARN', text: "The test suites won't be executed in any platform because there are no modified files")
                   }
                 }
               }
+              // Update stash with latest changes from the stack deployment
+              sh "ls -l"
+              stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false
             }
           }
         }
@@ -463,12 +465,16 @@ def generateFunctionalTestStep(Map args = [:]){
       try {
         deleteDir()
         unstash 'sourceEnvModified'
+        sh "ls -l"
         dir("${BASE_DIR}") {
+          sh "ls -l"
           withEnv(envContext) {
             // This step will help to send the APM traces to the
             // APM service defined by the Otel Jenkins plugin.
             // TODO: This will need to be integrated into the provisioned VMs
             withOtelEnv() {
+              sh "pwd"
+
               // Start node, capture ip address
               ansible("-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
 
