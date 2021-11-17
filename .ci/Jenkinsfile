@@ -206,8 +206,7 @@ pipeline {
                     ansible("-t provision-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
                     def stackRunner = getNodeIp('stack')
-                    def machine = machines['stack']
-                    ansible("-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    ansible("-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
                   } else {
                     log(level: 'WARN', text: "The test suites won't be executed in any platform because there are no modified files")
                   }
