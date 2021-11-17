@@ -414,12 +414,12 @@ def generateFunctionalTestStep(Map args = [:]){
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
   def machines = args.get('machines')
 
-  def platformProvider = platform.containsKey('provider') ? platform.provider : ''
+  // def platformProvider = platform.containsKey('provider') ? platform.provider : ''
 
-  if (!platformProvider || !platformProvider?.trim()) {
-    // default provider is Docker
-    platformProvider = "docker"
-  }
+  // if (!platformProvider || !platformProvider?.trim()) {
+  //   // default provider is Docker
+  //   platformProvider = "docker"
+  // }
 
   // We will decide whether to include the nightly tests in the execution at CI time, only.
   // On the other hand, the developers can use the TAGS environment variable locally.
@@ -451,7 +451,7 @@ def generateFunctionalTestStep(Map args = [:]){
 
   // Setup environment for platform
   def envContext = []
-  envContext.add("PROVIDER=${platformProvider}")
+  // envContext.add("PROVIDER=${platformProvider}")
   envContext.add("SUITE=${suite}")
   envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
 
