@@ -202,7 +202,7 @@ pipeline {
                     // Deploy the test infrastructure
                     sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/${env.BASE_DIR}/e2essh -q -N \"\" "
                     def existingMachines = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE}")
-                    def stackMachine = existingMachines['stack']
+                    def stackMachine = existingMachines['MACHINES']['stack']
                     ansible('-t provision-stack --extra-vars="nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}"')
 
                     def stackRunner = getNodeIp('stack')
