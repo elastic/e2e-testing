@@ -22,7 +22,7 @@
     count_tag:
       Name: "e2e-{{nodeLabel}}-{{runId}}"
     volumes:
-      - device_name: /dev/sda1
+      - device_name: /dev/xvda
         volume_type: gp3
         volume_size: 100
         delete_on_termination: yes

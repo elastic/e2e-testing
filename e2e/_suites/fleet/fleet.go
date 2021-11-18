@@ -483,12 +483,17 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		err := agentInstaller.Start(fts.currentContext)
 		return err
 	} else if state == "restarted" {
-		err := agentInstaller.Stop(fts.currentContext)
+		// Lets wait for filebeat to be started properly before killing elastic-agent
+		log.Trace("Making sure filebeat is at the ready before restarting elastic-agent")
+		err := CheckProcessState(fts.deployer, agentService.Name, "filebeat", "started", 2)
+		if err != nil {
+			log.Fatal("elastic-agent did not fully start before restart issued.")
+		}
+
+		err = agentInstaller.Stop(fts.currentContext)
 		if err != nil {
 			return err
 		}
-
-		utils.Sleep(time.Duration(utils.TimeoutFactor) * 30 * time.Second)
 
 		err = agentInstaller.Start(fts.currentContext)
 		if err != nil {
