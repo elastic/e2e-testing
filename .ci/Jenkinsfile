@@ -198,18 +198,21 @@ pipeline {
               dir("${BASE_DIR}") {
                 script {
                   def regexps = [ "^e2e/_suites/fleet/.*", "^e2e/_suites/helm/.*", "^e2e/_suites/kubernetes-autodiscover/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
+                  def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
                   if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
                     // Deploy the test infrastructure
-                    sh "ssh-keygen -b 4096 -t rsa -f ${env.WORKSPACE}/${env.BASE_DIR}/e2essh -q -N \"\" "
-                    def existingMachines = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE}")
-                    def stackMachine = existingMachines['MACHINES']['stack']
+                    sh "ssh-keygen -b 4096 -t rsa -f ${stackWorkspace}/e2essh -q -N \"\" "
+                    def stackMachine = getMachineInfo(stackWorkspace, 'stack')
 
-                    ansible("${env.WORKSPACE}/${env.BASE_DIR}",
+                    ansible(stackWorkspace,,
+                            env.RUN_ID.split('-')[0],
                             "-t provision-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
-                    def stackRunner = getNodeIp("${env.WORKSPACE}/${env.BASE_DIR}",
-                                                'stack')
-                    ansible("${env.WORKSPACE}/${env.BASE_DIR}",
+                    // Must be gathered after deployment as the public IP is known at that time
+                    def stackRunner = getNodeIp(stackWorkspace, 'stack')
+
+                    ansible(stackWorkspace,
+                            env.RUN_ID.split('-')[0],
                             "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
                     // Update stash with latest changes from the stack deployment
@@ -263,8 +266,14 @@ pipeline {
           }
           post {
             cleanup {
-              ansible("${env.WORKSPACE}/${env.BASE_DIR}",
-                      "-t destroy")
+              // Once all tests are complete we need to teardown the single instance with the deployed stack
+              script {
+                def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
+                def stackMachine = getMachineInfo(stackWorkspace, 'stack')
+                ansible(stackWorkspace,
+                        env.RUN_ID.split('-')[0],
+                        "-t destroy --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+              }
             }
           }
         }
@@ -298,7 +307,7 @@ pipeline {
 }
 
 def sshexec(workspace, connection, cmd){
-  sh "ssh -vvv -tt -o TCPKeepAlive=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${workspace}/e2essh ${connection.user}@${connection.ip} -- '${cmd}'"
+  sh "ssh -tt -o TCPKeepAlive=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${workspace}/e2essh ${connection.user}@${connection.ip} -- '${cmd}'"
 }
 
 def scpr(workspace, connection, remote_src, local_dst){
@@ -337,15 +346,20 @@ def pyrun(command){
 }
 
 def getNodeIp(workspace, platform){
-  sh "ls -l ${workspace}"
   def runners = readYaml(file: "${workspace}/${platform}-sshhosts")
   def runnerUser = runners[0].split('@')[0]
   def runnerIP = runners[0].split('@')[1]
   return [user: runnerUser, ip: runnerIP]
 }
 
-def ansible(workspace, args){
-     pyrun("ansible-playbook --private-key=\"${workspace}/e2essh\" --extra-vars=\"workspace=${workspace}/ runId=${env.RUN_ID.split('-')[0]} sshPublicKey=${workspace}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${workspace}/.ci/ansible/playbook.yml ${args}")
+def getMachineInfo(workspace, platform){
+  def machineYaml = readYaml(file: "${workspace}/${TEST_MATRIX_FILE}")
+  def machines = machineYaml['MACHINES']
+  return machines.get(platform)
+}
+
+def ansible(workspace, run_id, args){
+     pyrun("ansible-playbook --private-key=\"${workspace}/e2essh\" --extra-vars=\"workspace=${workspace}/ runId=${run_id}} sshPublicKey=${workspace}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${workspace}/.ci/ansible/playbook.yml ${args}")
 }
 
 
@@ -365,12 +379,14 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:], Map machines = [:]) 
     def tags = scenario.tags
     platformsValue.each { platform ->
       log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
+      machineInfo = getMachineInfo("${env.WORKSPACE}/${env.BASE_DIR}",
+                                   platform)
       parallelTasks["${platform}_${tags}"] = generateFunctionalTestStep(name: "${name}",
                                                                         platform: platform,
                                                                         suite: "${suite}",
                                                                         tags: "${tags}",
                                                                         pullRequestFilter: "${pullRequestFilter}",
-                                                                        machines: machines)
+                                                                        machine: machineInfo)
       }
   }
 }
@@ -420,7 +436,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def suite = args.get('suite')
   def tags = args.get('tags')
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
-  def machines = args.get('machines')
+  def machine = args.get('machine')
 
   // def platformProvider = platform.containsKey('provider') ? platform.provider : ''
 
@@ -466,6 +482,8 @@ def generateFunctionalTestStep(Map args = [:]){
   def stackRunner = getNodeIp("${env.WORKSPACE}/${env.BASE_DIR}",
                               'stack')
 
+  def runId = UUID.randomUUID().toString().split('-')[0]
+
   return {
     withNode(labels: 'ubuntu-20.04', forceWorkspace: true, forceWorker: true){
       try {
@@ -478,17 +496,20 @@ def generateFunctionalTestStep(Map args = [:]){
           withOtelEnv() {
             // Start node, capture ip address
             ansible("${env.WORKSPACE}",
-                    "-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
+                    runId,
+                    "-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
-            sh "ls -l ${env.WORKSPACE}"
             def testRunner = getNodeIp("${env.WORKSPACE}",
                                        platform)
 
             // Configure node for testing
             ansible("${env.WORKSPACE}",
-                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
+                    runId,
+                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines.image} nodeInstanceType=${machines.instance_type}\"")
 
-            sshexec(".", testRunner, """sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
+            sshexec("${env.WORKSPACE}",
+                    testRunner,
+                    """sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
           }
         }
       } finally {
@@ -497,14 +518,15 @@ def generateFunctionalTestStep(Map args = [:]){
         sh "mkdir -p outputs/${testRunner.ip} || true"
         sshexec("${env.WORKSPACE}",
                 testRunner,
-                """sudo chown ubuntu:ubuntu -R /home/${testRunner.user}/e2e-testing/outputs """)
+                """sudo chown ${testRunner.user}:${testRunner.user} -R /home/${testRunner.user}/e2e-testing/outputs """)
         scpr("${env.WORKSPACE}",
              testRunner,
              "e2e-testing/outputs/*",
              "outputs/${testRunner.ip}/.")
         sh "ls -l outputs/${testRunner.ip}"
-        // ansible("${env.WORKSPACE}",
-        //         "-t destroy --extra-vars=\"nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
+        ansible("${env.WORKSPACE}",
+                runId,
+                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeImage=${machines.image} nodeInstanceType=${machines.instance_type}\"")
         junit allowEmptyResults: true,
           keepLongStdio: true,
           testResults: "outputs/${testRunner.ip}/*.xml"

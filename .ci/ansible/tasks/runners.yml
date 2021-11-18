@@ -35,7 +35,7 @@
   become: no
   lineinfile:
     state: present
-    line: "- ubuntu@{{addr.public_ip}}"
+    line: "- admin@{{addr.public_ip}}"
     insertafter: EOF
     dest: "{{workspace}}/{{nodeLabel}}-sshhosts"
     create: yes
