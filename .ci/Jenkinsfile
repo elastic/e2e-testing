@@ -204,7 +204,7 @@ pipeline {
                     sh "ssh-keygen -b 4096 -t rsa -f ${stackWorkspace}/e2essh -q -N \"\" "
                     def stackMachine = getMachineInfo(stackWorkspace, 'stack')
 
-                    ansible(stackWorkspace,,
+                    ansible(stackWorkspace,
                             env.RUN_ID.split('-')[0],
                             "-t provision-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
@@ -359,7 +359,7 @@ def getMachineInfo(workspace, platform){
 }
 
 def ansible(workspace, run_id, args){
-     pyrun("ansible-playbook --private-key=\"${workspace}/e2essh\" --extra-vars=\"workspace=${workspace}/ runId=${run_id}} sshPublicKey=${workspace}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${workspace}/.ci/ansible/playbook.yml ${args}")
+     pyrun("ansible-playbook --private-key=\"${workspace}/e2essh\" --extra-vars=\"workspace=${workspace}/ runId=${run_id} sshPublicKey=${workspace}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${workspace}/.ci/ansible/playbook.yml ${args}")
 }
 
 
@@ -472,8 +472,7 @@ def generateFunctionalTestStep(Map args = [:]){
   envContext.add("SUITE=${suite}")
   envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
 
-  def stackRunner = getNodeIp("${env.WORKSPACE}/${env.BASE_DIR}",
-                              'stack')
+  def stackRunner = getNodeIp("${env.WORKSPACE}/${env.BASE_DIR}", 'stack')
 
   def runId = UUID.randomUUID().toString().split('-')[0]
 
@@ -498,7 +497,7 @@ def generateFunctionalTestStep(Map args = [:]){
             // Configure node for testing
             ansible("${env.WORKSPACE}",
                     runId,
-                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machines.image} nodeInstanceType=${machines.instance_type}\"")
+                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             sshexec("${env.WORKSPACE}",
                     testRunner,
@@ -519,7 +518,7 @@ def generateFunctionalTestStep(Map args = [:]){
         sh "ls -l outputs/${testRunner.ip}"
         ansible("${env.WORKSPACE}",
                 runId,
-                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeImage=${machines.image} nodeInstanceType=${machines.instance_type}\"")
+                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
         junit allowEmptyResults: true,
           keepLongStdio: true,
           testResults: "outputs/${testRunner.ip}/*.xml"
