@@ -10,16 +10,16 @@
       - provision-stack
       - start-node
 
-- name: Teardown environment
-  hosts: localhost
-  gather_facts: no
-  vars:
-      ansible_user: ubuntu
-  tasks:
-  - name: Teardown Test Runners (AWS)
-    include_tasks: tasks/teardown.yml
-    tags:
-      - destroy
+#- name: Teardown environment
+#  hosts: localhost
+#  gather_facts: no
+#  vars:
+#      ansible_user: ubuntu
+#  tasks:
+#  - name: Teardown Test Runners (AWS)
+#    include_tasks: tasks/teardown.yml
+#    tags:
+#      - destroy
 
 - name: Manage stack instance
   hosts: all
