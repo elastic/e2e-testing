@@ -1,54 +1,51 @@
 ---
+MACHINES:
+  stack:
+    image: "ami-0d90bed76900e679a"
+    instance_type: "c5.4xlarge"
+  helm:
+    image: "ami-0d90bed76900e679a"
+    instance_type: "c5.2xlarge"
+  fleet_arm64:
+    image: "ami-06dac44ad759182bd"
+    instance_type: "a1.large"
+  fleet_amd64:
+    image: "ami-0d90bed76900e679a"
+    instance_type: "c5.2xlarge"
+  fleet_elastic_pkg:
+    image: "ami-0d90bed76900e679a"
+    instance_type: "c5.4xlarge"
+  kubernetes_autodiscover:
+    image: "ami-0d90bed76900e679a"
+    instance_type: "c5.2xlarge"
+
 SUITES:
   - suite: "fleet"
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode_agent"
-        platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
+        platforms: ["fleet_arm64", "fleet_amd64"]
       - name: "Integrations"
         tags: "integrations"
-        platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
+        platforms: ["fleet_arm64", "fleet_amd64"]
       - name: "APM Integration"
         tags: "apm_server"
-        platforms:
-          - labels: "fleet-amd64"
-            provider: "elastic-package"
+        platforms: ["fleet_elastic_pkg"]
       - name: "Linux Integration"
         tags: "linux_integration"
-        platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
+        platforms: ["fleet_arm64", "fleet_amd64"]
       - name: "Permissions Output change"
         tags: "permission_change"
-        platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
-      - name: "Policies"
-        tags: "policies"
-        platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
+        platforms: ["fleet_arm64", "fleet_amd64"]
       - name: "System Integration"
         tags: "system_integration"
-        platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
+        platforms: ["fleet_arm64", "fleet_amd64"]
       - name: "Stand-alone"
         tags: "stand_alone_agent"
-        platforms:
-          - labels: "fleet-amd64"
-            provider: "elastic-package"
+        platforms: ["fleet_elastic_pkg"]
       - name: "Backend Processes"
         tags: "backend_processes"
-        platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
+        platforms: ["fleet_arm64", "fleet_amd64"]
       - name: "Beats Background Processes"
         tags: "running_on_beats"
-        platforms:
-          - labels: "fleet-arm64"
-          - labels: "fleet-amd64"
+        platforms: ["fleet_arm64", "fleet_amd64"]

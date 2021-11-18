@@ -250,13 +250,13 @@ pipeline {
                 if (suitesParam == "") {
                   log(level: 'DEBUG', text: "Iterate through existing test suites")
                   existingSuites['SUITES'].each { item ->
-                    checkTestSuite(parallelTasks, item, existingSuites['MACHINES'])
+                    checkTestSuite(parallelTasks, item)
                   }
                 } else {
                   log(level: 'DEBUG', text: "Iterate through the comma-separated test suites (${suitesParam}), comparing with the existing test suites")
                   suitesParam.split(',').each { suiteParam ->
                     existingSuites['SUITES'].findAll { suiteParam.trim() == it.suite }.each { item ->
-                      checkTestSuite(parallelTasks, item, existingSuites['MACHINES'])
+                      checkTestSuite(parallelTasks, item)
                     }
                   }
                 }
@@ -363,7 +363,7 @@ def ansible(workspace, run_id, args){
 }
 
 
-def checkTestSuite(Map parallelTasks = [:], Map item = [:], Map machines = [:]) {
+def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   def suite = item.suite
   def platforms = item.platforms
 
@@ -432,18 +432,12 @@ def githubCheckNotify(String status) {
 
 def generateFunctionalTestStep(Map args = [:]){
   def name = args.get('name')
+  def name_normalize = name.replace(' ', '_')
   def platform = args.get('platform')
   def suite = args.get('suite')
   def tags = args.get('tags')
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
   def machine = args.get('machine')
-
-  // def platformProvider = platform.containsKey('provider') ? platform.provider : ''
-
-  // if (!platformProvider || !platformProvider?.trim()) {
-  //   // default provider is Docker
-  //   platformProvider = "docker"
-  // }
 
   // We will decide whether to include the nightly tests in the execution at CI time, only.
   // On the other hand, the developers can use the TAGS environment variable locally.
@@ -465,7 +459,6 @@ def generateFunctionalTestStep(Map args = [:]){
   }
 
   def goArch = "amd64"
-  def linuxIp = null
   if (platform.contains("arm64")) {
     goArch = "arm64"
   }

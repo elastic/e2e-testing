@@ -7,6 +7,7 @@
     state: present
   tags:
     - provision-stack
+    - start-node
 
 - name: "Create {{nodeLabel}} AWS instances"
   ec2:
