@@ -17,6 +17,14 @@ Scenario: Monitor service availability using hints
     And "heartbeat" collects events with "monitor.status:up"
     And "heartbeat" does not collect events with "monitor.status:down" during "20s"
 
+Scenario: Monitor http service availability using hints
+  Given "heartbeat" is running with "hints enabled for services"
+    And "nginx service" is deployed with "monitor annotations"
+   When "nginx" is running
+   Then "heartbeat" collects events with "kubernetes.service.name:nginx"
+    And "heartbeat" collects events with "monitor.status:up"
+    And "heartbeat" does not collect events with "monitor.status:down" during "20s"
+
 # A service without backend pods should be reported as down.
 Scenario: Monitor service unavailability using hints
   Given "heartbeat" is running with "hints enabled for services"

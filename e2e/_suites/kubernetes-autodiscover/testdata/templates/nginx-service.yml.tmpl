@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  annotations:
+{{ if option "monitor annotations" }}
+    co.elastic.monitor/check.response.status.0: "307"
+    co.elastic.monitor/check.response.status.1: "200"
+    co.elastic.monitor/id: nginx-uptime-id
+    co.elastic.monitor/name: nginx-uptime
+    co.elastic.monitor/schedule: '@every 1s'
+    co.elastic.monitor/type: http
+    co.elastic.monitor/urls: http://nginx.{{ namespace }}
+{{ end }}
+spec:
+  selector:
+    k8s-app: nginx
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: otherhttp
+      protocol: TCP
+      port: 81
+      targetPort: 81
