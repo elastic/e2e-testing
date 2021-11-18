@@ -298,7 +298,7 @@ pipeline {
 }
 
 def sshexec(workspace, connection, cmd){
-  sh "ssh -tt -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${workspace}/e2essh ${connection.user}@${connection.ip} -- '${cmd}'"
+  sh "ssh -tttttt -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${workspace}/e2essh ${connection.user}@${connection.ip} -- '${cmd}'"
 }
 
 def scpr(workspace, connection, remote_src, local_dst){
