@@ -406,7 +406,7 @@ func GetSecurityApiKey() (APIKey, error) {
 		log.WithFields(log.Fields{
 			"error":          err,
 			"statusEndpoint": r.URL,
-		}).Warn("The Elasticsearch Cat Indices API is not available yet")
+		}).Warn("The Elasticsearch Console SecurityApiKey API is not available yet")
 
 		return APIKey{}, err
 	}
@@ -414,7 +414,7 @@ func GetSecurityApiKey() (APIKey, error) {
 	log.WithFields(log.Fields{
 		"statusEndpoint": r.URL,
 		"Response":       response,
-	}).Trace("The Elasticsearch Console SecurityApiKey API is available")
+	}).Trace("The Elasticsearch  API is available")
 
 	json.Unmarshal([]byte(response), &data)
 

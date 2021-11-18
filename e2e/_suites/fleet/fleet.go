@@ -1613,38 +1613,44 @@ func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) er
 }
 
 func (fts *FleetTestSuite) theAgentApiKeyIsInvalidated(invalidated string) error {
-	invalidatedBool, _ := strconv.ParseBool(invalidated)
-	body, err := elasticsearch.GetSecurityApiKey()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"Error": err,
-		}).Error("Could not return Security Api Keys")
-		return err
-	}
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":        err,
-			"responseBody": body,
-		}).Error("Could not parse response into JSON")
-		return err
-	}
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
+	exp := utils.GetExponentialBackOff(maxTimeout)
+	retryCount := 1
 
-	for _, item := range body.APIKeys {
-		if item.Metadata.AgentID == fts.AgentId {
-			if item.Invalidated == invalidatedBool {
-				log.WithFields(log.Fields{
-					"agentId": fts.AgentId,
-					"Type":    item.Metadata.Type,
-				}).Info("The agent Api key invalidated: ", item.Invalidated)
-			} else {
-				log.WithFields(log.Fields{
-					"agentId": fts.AgentId,
-					"Type":    item.Metadata.Type,
-				}).Error("The agent Api key invalidated: ", item.Invalidated)
-				return errors.New("The agent Api key invalidated is should be: " + invalidated)
+	invalidatedBool, _ := strconv.ParseBool(invalidated)
+	apiKeyInvalidated := func() error {
+		body, err := elasticsearch.GetSecurityApiKey()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Error": err,
+			}).Error("Could not return Security Api Keys")
+			return err
+		}
+
+		for _, item := range body.APIKeys {
+			if item.Metadata.AgentID == fts.AgentId {
+				if item.Invalidated == invalidatedBool {
+					log.WithFields(log.Fields{
+						"agentId": fts.AgentId,
+						"Type":    item.Metadata.Type,
+					}).Info("The agent Api key invalidated: ", item.Invalidated)
+				} else {
+					log.WithFields(log.Fields{
+						"agentId": fts.AgentId,
+						"Type":    item.Metadata.Type,
+					}).Error("The agent Api key invalidated: ", item.Invalidated)
+					return errors.New("The agent Api key invalidated is should be: " + invalidated)
+				}
 			}
 		}
+		retryCount++
+
+		return nil
 	}
 
+	err := backoff.Retry(apiKeyInvalidated, exp)
+	if err != nil {
+		return err
+	}
 	return nil
 }

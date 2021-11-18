@@ -263,7 +263,7 @@ func (c *Client) UnEnrollAgent(ctx context.Context, hostname string, revoke bool
 	}
 	log.WithFields(log.Fields{
 		"body": reqBody,
-	}).Info("This is the body")
+	}).Info("Sending un-enrollment request")
 	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/agents/%s/unenroll", FleetAPI, agentID), []byte(reqBody))
 	if statusCode != 200 {
 		return fmt.Errorf("could not unenroll agent; API status code = %d, response body = %s", statusCode, respBody)
