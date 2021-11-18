@@ -503,8 +503,8 @@ def generateFunctionalTestStep(Map args = [:]){
              "e2e-testing/outputs/*",
              "outputs/${testRunner.ip}/.")
         sh "ls -l outputs/${testRunner.ip}"
-        ansible("${env.WORKSPACE}",
-                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
+        // ansible("${env.WORKSPACE}",
+        //         "-t destroy --extra-vars=\"nodeLabel=${platform} nodeImage=${machines[platform].image} nodeInstanceType=${machines[platform].instance_type}\"")
         junit allowEmptyResults: true,
           keepLongStdio: true,
           testResults: "outputs/${testRunner.ip}/*.xml"
