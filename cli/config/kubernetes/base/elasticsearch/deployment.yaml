@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: elasticsearch
-        image: docker.elastic.co/elasticsearch/elasticsearch:8.1.0-a31f3b73-SNAPSHOT
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.1.0-875ad7e2-SNAPSHOT
         envFrom:
           - configMapRef:
               name: elasticsearch-config
