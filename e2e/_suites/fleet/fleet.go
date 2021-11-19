@@ -692,7 +692,7 @@ func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
 			return errors.New("Integration updated and Default API Key is changed")
 		}
 
-		log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been updated" + status)
+		log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been updated", status)
 		return nil
 	}
 
