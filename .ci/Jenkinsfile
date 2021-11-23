@@ -502,16 +502,15 @@ def generateFunctionalTestStep(Map args = [:]){
             sshexec("${env.WORKSPACE}",
                     testRunner,
                     """sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
+            sshexec("${env.WORKSPACE}",
+                    testRunner,
+                    """sudo tar -czvf /home/${testRunner.user}/e2e-testing/outputs/agent-data.tar.gz /opt/Elastic/Agent """)
           }
         }
       } finally {
         def testRunner = getNodeIp("${env.WORKSPACE}",
                                    platform)
         sh "mkdir -p outputs/${testRunner.ip} || true"
-        sshexec("${env.WORKSPACE}",
-                testRunner,
-                """sudo tar -czvf /home/${testRunner.user}/e2e-testing/outputs/agent-data.tar.gz /opt/Elastic/Agent """)
-
         sshexec("${env.WORKSPACE}",
                 testRunner,
                 """sudo chown ${testRunner.user}:${testRunner.user} -R /home/${testRunner.user}/e2e-testing/outputs """)

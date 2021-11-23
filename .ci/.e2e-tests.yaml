@@ -33,9 +33,9 @@ SUITES:
   #       platforms: ["helm"]
   - suite: "fleet"
     scenarios:
-      # - name: "Fleet"
-      #   tags: "fleet_mode_agent"
-      #   platforms: ["fleet_arm64", "fleet_amd64"]
+      - name: "Fleet"
+        tags: "fleet_mode_agent"
+        platforms: ["fleet_arm64", "fleet_amd64"]
       # - name: "Integrations"
       #   tags: "integrations"
       #   platforms: ["fleet_arm64", "fleet_amd64"]
