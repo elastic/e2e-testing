@@ -515,11 +515,6 @@ def generateFunctionalTestStep(Map args = [:]){
              testRunner,
              "e2e-testing/outputs/TEST-*${runId}*.xml",
              "outputs/${testRunner.ip}/.")
-        scpr("${env.WORKSPACE}",
-             testRunner,
-             "e2e-testing/outputs/agent-data.tar.gz",
-             "outputs/${testRunner.ip}/.")
-
         sh "ls -l outputs/${testRunner.ip}"
         ansible("${env.WORKSPACE}",
                 runId,
