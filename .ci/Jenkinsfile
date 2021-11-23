@@ -502,9 +502,6 @@ def generateFunctionalTestStep(Map args = [:]){
             sshexec("${env.WORKSPACE}",
                     testRunner,
                     """sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
-            sshexec("${env.WORKSPACE}",
-                    testRunner,
-                    """sudo tar -czvf /home/${testRunner.user}/e2e-testing/outputs/agent-data.tar.gz /opt/Elastic/Agent """)
           }
         }
       } finally {
@@ -531,7 +528,7 @@ def generateFunctionalTestStep(Map args = [:]){
           keepLongStdio: true,
           testResults: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
         archiveArtifacts allowEmptyArchive: true,
-          artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml, outputs/${testRunner.ip}/agent-data.tar.gz"
+          artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
       }
     }
   }

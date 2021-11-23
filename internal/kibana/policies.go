@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
@@ -115,6 +116,49 @@ func (c *Client) DeleteAllPolicies(ctx context.Context) {
 			}
 		}
 	}
+}
+
+// CreatePolicy deletes all policies except fleet_server and system
+func (c *Client) CreatePolicy(ctx context.Context) (Policy, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Creating agent policy", "fleet.package-policies.create", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	reqBody := `{
+		"description": "Test policy",
+		"namespace": "default",
+		"monitoring_enabled": ["logs", "metrics"],
+		"name": "test-policy-` + uuid.New().String() + `"
+	}`
+
+	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/agent_policies?sys_monitoring=true", FleetAPI), []byte(reqBody))
+
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":  respBody,
+			"error": err,
+		}).Error("Could not create Fleet's policy")
+		return Policy{}, err
+	}
+
+	if statusCode != 200 {
+		log.WithFields(log.Fields{
+			"error":      err,
+			"statusCode": statusCode,
+		}).Error("Could not create Fleet's policy")
+
+		return Policy{}, err
+	}
+
+	var resp struct {
+		Item Policy `json:"item"`
+	}
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return Policy{}, errors.Wrap(err, "Unable to convert list of new policy to JSON")
+	}
+
+	return resp.Item, nil
 }
 
 // Var represents a single variable at the package or

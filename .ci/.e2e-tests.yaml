@@ -20,46 +20,46 @@ MACHINES:
     instance_type: "c5.4xlarge"
 
 SUITES:
-  # - suite: "helm"
-  #   scenarios:
-  #     - name: "APM Server"
-  #       tags: "apm-server"
-  #       platforms: ["helm"]
-  #     - name: "Filebeat"
-  #       tags: "filebeat"
-  #       platforms: ["helm"]
-  #     - name: "Metricbeat"
-  #       tags: "metricbeat"
-  #       platforms: ["helm"]
+  - suite: "helm"
+    scenarios:
+      - name: "APM Server"
+        tags: "apm-server"
+        platforms: ["helm"]
+      - name: "Filebeat"
+        tags: "filebeat"
+        platforms: ["helm"]
+      - name: "Metricbeat"
+        tags: "metricbeat"
+        platforms: ["helm"]
   - suite: "fleet"
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode_agent"
         platforms: ["fleet_arm64", "fleet_amd64"]
-      # - name: "Integrations"
-      #   tags: "integrations"
-      #   platforms: ["fleet_arm64", "fleet_amd64"]
-      # - name: "APM Integration"
-      #   tags: "apm_server"
-      #   platforms: ["fleet_elastic_pkg"]
-      # - name: "Linux Integration"
-      #   tags: "linux_integration"
-      #   platforms: ["fleet_arm64", "fleet_amd64"]
-      # - name: "Permissions Output change"
-      #   tags: "permission_change"
-      #   platforms: ["fleet_arm64", "fleet_amd64"]
-      # - name: "System Integration"
-      #   tags: "system_integration"
-      #   platforms: ["fleet_arm64", "fleet_amd64"]
-      # - name: "Stand-alone"
-      #   tags: "stand_alone_agent"
-      #   platforms: ["fleet_elastic_pkg"]
+      - name: "Integrations"
+        tags: "integrations"
+        platforms: ["fleet_arm64", "fleet_amd64"]
+      - name: "APM Integration"
+        tags: "apm_server"
+        platforms: ["fleet_elastic_pkg"]
+      - name: "Linux Integration"
+        tags: "linux_integration"
+        platforms: ["fleet_arm64", "fleet_amd64"]
+      - name: "Permissions Output change"
+        tags: "permission_change"
+        platforms: ["fleet_arm64", "fleet_amd64"]
+      - name: "System Integration"
+        tags: "system_integration"
+        platforms: ["fleet_arm64", "fleet_amd64"]
+      - name: "Stand-alone"
+        tags: "stand_alone_agent"
+        platforms: ["fleet_elastic_pkg"]
       - name: "Backend Processes"
         tags: "backend_processes"
         platforms: ["fleet_arm64", "fleet_amd64"]
-      # - name: "Beats Background Processes"
-      #   tags: "running_on_beats"
-      #   platforms: ["fleet_arm64", "fleet_amd64"]
+      - name: "Beats Background Processes"
+        tags: "running_on_beats"
+        platforms: ["fleet_arm64", "fleet_amd64"]
   - suite: "kubernetes-autodiscover"
     scenarios:
       - name: "kubernetes autodiscover with elastic-agent"

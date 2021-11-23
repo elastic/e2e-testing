@@ -147,11 +147,11 @@ func (fts *FleetTestSuite) beforeScenario() {
 
 	fts.Version = common.BeatVersion
 
-	policy, err := fts.kibanaClient.GetDefaultPolicy(fts.currentContext, false)
+	policy, err := fts.kibanaClient.CreatePolicy(fts.currentContext)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,
-		}).Warn("The default policy could not be obtained")
+		}).Warn("A new policy could not be obtained")
 
 	}
 	fts.Policy = policy
