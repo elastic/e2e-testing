@@ -510,11 +510,20 @@ def generateFunctionalTestStep(Map args = [:]){
         sh "mkdir -p outputs/${testRunner.ip} || true"
         sshexec("${env.WORKSPACE}",
                 testRunner,
+                """sudo tar -czvf /home/${testRunner.user}/e2e-testing/outputs/agent-data.tar.gz /opt/Elastic/Agent """)
+
+        sshexec("${env.WORKSPACE}",
+                testRunner,
                 """sudo chown ${testRunner.user}:${testRunner.user} -R /home/${testRunner.user}/e2e-testing/outputs """)
         scpr("${env.WORKSPACE}",
              testRunner,
              "e2e-testing/outputs/TEST-*${runId}*.xml",
              "outputs/${testRunner.ip}/.")
+        scpr("${env.WORKSPACE}",
+             testRunner,
+             "e2e-testing/outputs/agent-data.tar.gz",
+             "outputs/${testRunner.ip}/.")
+
         sh "ls -l outputs/${testRunner.ip}"
         ansible("${env.WORKSPACE}",
                 runId,
@@ -523,7 +532,7 @@ def generateFunctionalTestStep(Map args = [:]){
           keepLongStdio: true,
           testResults: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
         archiveArtifacts allowEmptyArchive: true,
-          artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
+          artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml, outputs/${testRunner.ip}/agent-data.tar.gz"
       }
     }
   }

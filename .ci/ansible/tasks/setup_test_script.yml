@@ -27,7 +27,7 @@
     create: yes
   with_items:
     - "export SUITE={{ lookup('env', 'SUITE') or 'fleet' }}"
-    - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'docker' }}"
+    - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'elastic-package' }}"
   when: "'fleet_elastic_pkg' in nodeLabel"
 
 
