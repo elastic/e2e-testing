@@ -138,7 +138,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	fts.Image = ""
 	fts.StandAlone = false
 	fts.BeatsProcess = ""
-	fts.Policy = Policy{}
+	fts.Policy = kibana.Policy{}
 }
 
 // beforeScenario creates the state needed by a scenario
