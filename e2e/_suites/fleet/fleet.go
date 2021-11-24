@@ -139,7 +139,6 @@ func (fts *FleetTestSuite) afterScenario() {
 	fts.Image = ""
 	fts.StandAlone = false
 	fts.BeatsProcess = ""
-	fts.Policy = kibana.Policy{}
 }
 
 // beforeScenario creates the state needed by a scenario
@@ -155,12 +154,24 @@ func (fts *FleetTestSuite) beforeScenario() {
 
 	waitForPolicy := func() error {
 		policy, err := fts.kibanaClient.CreatePolicy(fts.currentContext)
+		log.WithFields(log.Fields{
+			"policy": policy,
+			"err":    err,
+		}).Trace("waitForPolicy result")
+
 		if err != nil {
-			log.WithFields(log.Fields{
-				"err": err,
-			}).Warn("A new policy could not be obtained, retrying.")
-			return err
+			return errors.Wrap(err, "A new policy could not be obtained, retrying.")
 		}
+
+		if strings.TrimSpace(policy.Name) == "" {
+			return errors.Wrap(err, "No name associated with policy, retrying")
+		}
+
+		log.WithFields(log.Fields{
+			"id":          policy.ID,
+			"name":        policy.Name,
+			"description": policy.Description,
+		}).Info("Policy created")
 
 		fts.Policy = policy
 		return nil
@@ -169,7 +180,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 	log.Trace("BEFORE: Creating a new test policy")
 	err := backoff.Retry(waitForPolicy, exp)
 	if err != nil {
-		log.Fatal("Unable to create a test policy for agent")
+		log.Fatal(err)
 	}
 
 	// Grab a new enrollment key for new agent

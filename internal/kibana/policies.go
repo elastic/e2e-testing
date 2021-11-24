@@ -136,6 +136,13 @@ func (c *Client) CreatePolicy(ctx context.Context) (Policy, error) {
 
 	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/agent_policies?sys_monitoring=true", FleetAPI), []byte(reqBody))
 
+	log.WithFields(log.Fields{
+		"status":   statusCode,
+		"err":      err,
+		"reqBody":  reqBody,
+		"respBody": respBody,
+	}).Trace("Policy creation result")
+
 	if err != nil {
 		return Policy{}, errors.Wrap(err, "Could not create Fleet's policy")
 	}
@@ -156,17 +163,6 @@ func (c *Client) CreatePolicy(ctx context.Context) (Policy, error) {
 	if err := json.Unmarshal(respBody, &resp); err != nil {
 		return Policy{}, errors.Wrap(err, "Unable to convert list of new policy to JSON")
 	}
-
-	if strings.TrimSpace(resp.Item.Name) == "" {
-		return Policy{}, errors.Wrap(err, "No name associated with policy, retrying")
-	}
-
-	log.WithFields(log.Fields{
-		"id":          resp.Item.ID,
-		"name":        resp.Item.Name,
-		"description": resp.Item.Description,
-		"policy":      resp.Item,
-	}).Info("Policy created")
 
 	return resp.Item, nil
 }
