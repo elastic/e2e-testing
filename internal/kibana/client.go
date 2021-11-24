@@ -7,11 +7,13 @@ package kibana
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 
 	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
@@ -78,6 +80,7 @@ func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, b
 	log.WithFields(log.Fields{
 		"method": method,
 		"url":    u,
+		"body":   body,
 	}).Trace("Kibana API Query")
 
 	req, err := http.NewRequest(method, u.String(), reqBody)
@@ -87,7 +90,7 @@ func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, b
 
 	req.SetBasicAuth(c.username, c.password)
 	req.Header.Add("content-type", "application/json")
-	req.Header.Add("kbn-xsrf", "e2e-tests")
+	req.Header.Add("kbn-xsrf", fmt.Sprintf("e2e-tests-%s", uuid.New().String()))
 
 	client := http.Client{}
 	resp, err := client.Do(req)

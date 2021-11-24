@@ -138,6 +138,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	fts.Image = ""
 	fts.StandAlone = false
 	fts.BeatsProcess = ""
+	fts.Policy = ""
 }
 
 // beforeScenario creates the state needed by a scenario
@@ -155,9 +156,8 @@ func (fts *FleetTestSuite) beforeScenario() {
 		if err != nil {
 			log.WithFields(log.Fields{
 				"err": err,
-			}).Warn("A new policy could not be obtained")
+			}).Warn("A new policy could not be obtained, retrying.")
 			return err
-
 		}
 
 		fts.Policy = policy
@@ -169,6 +169,14 @@ func (fts *FleetTestSuite) beforeScenario() {
 		log.Fatal("Unable to create a test policy for agent")
 	}
 
+	// Grab a new enrollment key for new agent
+	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.currentContext, fts.Policy)
+
+	if err != nil {
+		return err
+	}
+	fts.CurrentToken = enrollmentKey.APIKey
+	fts.CurrentTokenID = enrollmentKey.ID
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
@@ -458,15 +466,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	deployedAgentsCount++
 
 	fts.InstallerType = installerType
-
-	// Grab a new enrollment key for new agent
-	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.currentContext, fts.Policy)
-
-	if err != nil {
-		return err
-	}
-	fts.CurrentToken = enrollmentKey.APIKey
-	fts.CurrentTokenID = enrollmentKey.ID
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithScale(deployedAgentsCount)
 	if fts.BeatsProcess != "" {

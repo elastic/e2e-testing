@@ -52,8 +52,8 @@
       module: copy
       dest: "{{workspace}}/.env"
       content: |
-        export OP_LOG_LEVEL=DEBUG
-        export LOG_LEVEL=DEBUG
+        export OP_LOG_LEVEL=TRACE
+        export LOG_LEVEL=TRACE
         export TIMEOUT_FACTOR=7
     tags:
       - setup-stack

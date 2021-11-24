@@ -135,20 +135,16 @@ func (c *Client) CreatePolicy(ctx context.Context) (Policy, error) {
 	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/agent_policies?sys_monitoring=true", FleetAPI), []byte(reqBody))
 
 	if err != nil {
-		log.WithFields(log.Fields{
-			"body":  respBody,
-			"error": err,
-		}).Error("Could not create Fleet's policy")
-		return Policy{}, err
+		return Policy{}, errors.Wrap(err, "Could not create Fleet's policy")
+	}
+
+	// Specifically check for 400 status error
+	if statusCode == 400 {
+		return Policy{}, errors.Wrap(err, "Could not create Fleet's policy, 400 server error")
 	}
 
 	if statusCode != 200 {
-		log.WithFields(log.Fields{
-			"error":      err,
-			"statusCode": statusCode,
-		}).Error("Could not create Fleet's policy")
-
-		return Policy{}, err
+		return Policy{}, errors.Wrap(err, "Could not create Fleet's policy, unhandled server error")
 	}
 
 	var resp struct {
