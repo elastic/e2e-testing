@@ -143,13 +143,8 @@ func (c *Client) CreatePolicy(ctx context.Context) (Policy, error) {
 		"respBody": respBody,
 	}).Trace("Policy creation result")
 
-	// Specifically check for 400 status error
-	if statusCode == 400 {
-		return Policy{}, errors.Wrap(err, "Could not create Fleet's policy, 400 server error")
-	}
-
 	if statusCode != 200 {
-		return Policy{}, errors.Wrap(err, "Could not create Fleet's policy, unhandled server error")
+		return Policy{}, fmt.Errorf("Could not create Fleet's policy, unhandled server error (%d)", statusCode)
 	}
 
 	if err != nil {

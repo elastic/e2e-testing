@@ -154,17 +154,8 @@ func (fts *FleetTestSuite) beforeScenario() {
 
 	waitForPolicy := func() error {
 		policy, err := fts.kibanaClient.CreatePolicy(fts.currentContext)
-		log.WithFields(log.Fields{
-			"policy": policy,
-			"err":    err,
-		}).Trace("waitForPolicy result")
-
 		if err != nil {
 			return errors.Wrap(err, "A new policy could not be obtained, retrying.")
-		}
-
-		if strings.TrimSpace(policy.Name) == "" {
-			return errors.Wrap(err, "No name associated with policy, retrying")
 		}
 
 		log.WithFields(log.Fields{
