@@ -138,7 +138,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	fts.Image = ""
 	fts.StandAlone = false
 	fts.BeatsProcess = ""
-	fts.Policy = ""
+	fts.Policy = Policy{}
 }
 
 // beforeScenario creates the state needed by a scenario
@@ -173,8 +173,9 @@ func (fts *FleetTestSuite) beforeScenario() {
 	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.currentContext, fts.Policy)
 
 	if err != nil {
-		return err
+		log.Fatal("Unable to create enrollment token for agent")
 	}
+
 	fts.CurrentToken = enrollmentKey.APIKey
 	fts.CurrentTokenID = enrollmentKey.ID
 }
@@ -476,7 +477,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 		agentService,
 	}
 	env := fts.getProfileEnv()
-	err = fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, env)
+	err := fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, env)
 	if err != nil {
 		return err
 	}
