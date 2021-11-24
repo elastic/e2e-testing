@@ -158,6 +158,10 @@ func (c *Client) CreatePolicy(ctx context.Context) (Policy, error) {
 		return Policy{}, errors.Wrap(err, "Unable to convert list of new policy to JSON")
 	}
 
+	if resp.Item.Name == "" {
+		return Policy{}, errors.Wrap(err, "No name associated with policy, retrying")
+	}
+
 	return resp.Item, nil
 }
 
