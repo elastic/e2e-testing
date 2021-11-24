@@ -125,11 +125,13 @@ func (c *Client) CreatePolicy(ctx context.Context) (Policy, error) {
 	})
 	defer span.End()
 
+	policyUUID := uuid.New().String()
+
 	reqBody := `{
-		"description": "Test policy",
+		"description": "Test policy ` + policyUUID + `",
 		"namespace": "default",
 		"monitoring_enabled": ["logs", "metrics"],
-		"name": "test-policy-` + uuid.New().String() + `"
+		"name": "test-policy-` + policyUUID + `"
 	}`
 
 	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/agent_policies?sys_monitoring=true", FleetAPI), []byte(reqBody))

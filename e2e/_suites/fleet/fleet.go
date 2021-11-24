@@ -129,7 +129,8 @@ func (fts *FleetTestSuite) afterScenario() {
 		}
 	}
 
-	fts.kibanaClient.DeleteAllPolicies(fts.currentContext)
+	// TODO: Dont think this is needed if we are making all policies unique
+	// fts.kibanaClient.DeleteAllPolicies(fts.currentContext)
 
 	// clean up fields
 	fts.CurrentTokenID = ""
@@ -143,6 +144,7 @@ func (fts *FleetTestSuite) afterScenario() {
 
 // beforeScenario creates the state needed by a scenario
 func (fts *FleetTestSuite) beforeScenario() {
+	log.Trace("BEFORE: Running before scenario state setup")
 	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 	exp := utils.GetExponentialBackOff(maxTimeout)
 
@@ -164,12 +166,14 @@ func (fts *FleetTestSuite) beforeScenario() {
 		return nil
 	}
 
+	log.Trace("BEFORE: Creating a new test policy")
 	err := backoff.Retry(waitForPolicy, exp)
 	if err != nil {
 		log.Fatal("Unable to create a test policy for agent")
 	}
 
 	// Grab a new enrollment key for new agent
+	log.Trace("BEFORE: Creating enrollment token")
 	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.currentContext, fts.Policy)
 
 	if err != nil {
@@ -178,6 +182,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 
 	fts.CurrentToken = enrollmentKey.APIKey
 	fts.CurrentTokenID = enrollmentKey.ID
+	log.Trace("BEFORE: Finish state setup")
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
