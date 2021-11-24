@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Jeffail/gabs/v2"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -134,13 +135,23 @@ func (c *Client) CreatePolicy(ctx context.Context) (Policy, error) {
 		"name": "test-policy-` + policyUUID + `"
 	}`
 
-	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/agent_policies?sys_monitoring=true", FleetAPI), []byte(reqBody))
+	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/agent_policies?sys_monitoring=true", FleetAPI), []byte(reqBody))
+
+	jsonParsed, err := gabs.ParseJSON([]byte(respBody))
+
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": jsonParsed,
+		}).Error("Could not parse get response into JSON")
+		return Policy{}, err
+	}
 
 	log.WithFields(log.Fields{
 		"status":   statusCode,
 		"err":      err,
 		"reqBody":  reqBody,
-		"respBody": respBody,
+		"respBody": jsonParsed,
 	}).Trace("Policy creation result")
 
 	if statusCode != 200 {
