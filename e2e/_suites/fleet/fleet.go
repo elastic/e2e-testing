@@ -142,19 +142,38 @@ func (fts *FleetTestSuite) afterScenario() {
 
 // beforeScenario creates the state needed by a scenario
 func (fts *FleetTestSuite) beforeScenario() {
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
+	exp := utils.GetExponentialBackOff(maxTimeout)
+
 	fts.StandAlone = false
 	fts.ElasticAgentStopped = false
 
 	fts.Version = common.BeatVersion
 
-	policy, err := fts.kibanaClient.CreatePolicy(fts.currentContext)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Warn("A new policy could not be obtained")
+	waitForPolicy := func() error {
+		policy, err := fts.kibanaClient.CreatePolicy(fts.currentContext)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Warn("A new policy could not be obtained")
+			return err
 
+		}
+
+		log.WithFields(log.Fields{
+			"Name":        policy.Name,
+			"Description": policy.Description,
+		}).Info("Policy created")
+
+		fts.Policy = policy
+		return nil
 	}
-	fts.Policy = policy
+
+	err := backoff.Retry(waitForPolicy, exp)
+	if err != nil {
+		log.Fatal("Unable to create a test policy for agent")
+	}
+
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
