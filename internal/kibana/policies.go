@@ -154,13 +154,21 @@ func (c *Client) CreatePolicy(ctx context.Context) (Policy, error) {
 	var resp struct {
 		Item Policy `json:"item"`
 	}
+
 	if err := json.Unmarshal(respBody, &resp); err != nil {
 		return Policy{}, errors.Wrap(err, "Unable to convert list of new policy to JSON")
 	}
 
-	if resp.Item.Name == "" {
+	if strings.TrimSpace(resp.Item.Name) == "" {
 		return Policy{}, errors.Wrap(err, "No name associated with policy, retrying")
 	}
+
+	log.WithFields(log.Fields{
+		"id":          resp.Item.ID,
+		"name":        resp.Item.Name,
+		"description": resp.Item.Description,
+		"policy":      resp.Item,
+	}).Info("Policy created")
 
 	return resp.Item, nil
 }

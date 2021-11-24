@@ -160,11 +160,6 @@ func (fts *FleetTestSuite) beforeScenario() {
 
 		}
 
-		log.WithFields(log.Fields{
-			"Name":        policy.Name,
-			"Description": policy.Description,
-		}).Info("Policy created")
-
 		fts.Policy = policy
 		return nil
 	}
