@@ -165,6 +165,53 @@ func (fts *FleetTestSuite) beforeScenario() {
 		}).Info("Policy created")
 
 		fts.Policy = policy
+
+		// Grab the system integration as we'll need to assign it a new name so it wont collide during
+		// multiple policy creations at once
+		integration, err := fts.kibanaClient.GetIntegrationByPackageName(context.Background(), "system")
+		if err != nil {
+			return err
+		}
+
+		packageDataStream := kibana.PackageDataStream{
+			Name:        fmt.Sprintf("%s-%s", integration.Name, uuid.New().String()),
+			Description: integration.Title,
+			Namespace:   "default",
+			PolicyID:    fts.Policy.ID,
+			Enabled:     true,
+			Package:     integration,
+			Inputs:      []kibana.Input{},
+		}
+
+		systemMetricsFile := filepath.Join(testResourcesDir, "/default_system_metrics.json")
+		jsonData := readJSONFile(systemMetricsFile)
+		for _, item := range jsonData.Children() {
+			if item.Path("type").Data().(string) == "system/metrics" {
+				packageDataStream.Inputs = append(packageDataStream.Inputs, kibana.Input{
+					Type:    item.Path("type").Data().(string),
+					Enabled: item.Path("enabled").Data().(bool),
+					Streams: item.S("streams").Data().([]interface{}),
+					Vars: map[string]kibana.Var{
+						"system.hostfs": {
+							Value: "",
+							Type:  "text",
+						},
+					},
+				})
+			} else {
+				packageDataStream.Inputs = append(packageDataStream.Inputs, kibana.Input{
+					Type:    item.Path("type").Data().(string),
+					Enabled: item.Path("enabled").Data().(bool),
+					Streams: item.S("streams").Data().([]interface{}),
+				})
+			}
+		}
+
+		err = fts.kibanaClient.AddIntegrationToPolicy(context.Background(), packageDataStream)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	}
 
@@ -1468,7 +1515,8 @@ func (fts *FleetTestSuite) getAgentDefaultAPIKey() (string, error) {
 
 func metricsInputs(integration string, set string, file string, metrics string) []kibana.Input {
 	metricsFile := filepath.Join(testResourcesDir, file)
-	data := readJSONFile(metricsFile, integration, set, metrics)
+	jsonData := readJSONFile(metricsFile)
+	data := parseJSONMetrics(jsonData, integration, set, metrics)
 	return []kibana.Input{
 		{
 			Type:    integration,
@@ -1480,7 +1528,7 @@ func metricsInputs(integration string, set string, file string, metrics string) 
 	return []kibana.Input{}
 }
 
-func readJSONFile(file string, integration string, set string, metrics string) []interface{} {
+func readJSONFile(file string) *gabs.Container {
 	jsonFile, err := os.Open(file)
 	if err != nil {
 		fmt.Println(err)
@@ -1498,21 +1546,24 @@ func readJSONFile(file string, integration string, set string, metrics string) [
 	if err != nil {
 		log.Fatal("Unable to parse json")
 	}
-	children := jsonParsed.S("inputs").Children()
-	for i, item := range children {
+	return jsonParsed.S("inputs")
+}
+
+func parseJSONMetrics(data *gabs.Container, integration string, set string, metrics string) []interface{} {
+	for i, item := range data.Children() {
 		if item.Path("type").Data().(string) == integration {
 			for idx, stream := range item.S("streams").Children() {
 				dataSet, _ := stream.Path("data_stream.dataset").Data().(string)
 				if dataSet == metrics+"."+set {
-					jsonParsed.SetP(
+					data.SetP(
 						integration+"-"+metrics+"."+set+"-"+uuid.New().String(),
 						fmt.Sprintf("inputs.%d.streams.%d.id", i, idx),
 					)
-					jsonParsed.SetP(
+					data.SetP(
 						true,
 						fmt.Sprintf("inputs.%d.streams.%d.enabled", i, idx),
 					)
-					dataStreamOut, _ := jsonParsed.Path(fmt.Sprintf("inputs.%d.streams", i)).Data().([]interface{})
+					dataStreamOut, _ := data.Path(fmt.Sprintf("inputs.%d.streams", i)).Data().([]interface{})
 					return dataStreamOut
 				}
 			}

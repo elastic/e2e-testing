@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/Jeffail/gabs/v2"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -77,10 +78,12 @@ func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, b
 
 	u := base.ResolveReference(rel)
 
+	jsonParsed, _ := gabs.ParseJSON([]byte(body))
+
 	log.WithFields(log.Fields{
 		"method": method,
 		"url":    u,
-		"body":   body,
+		"body":   jsonParsed,
 	}).Trace("Kibana API Query")
 
 	req, err := http.NewRequest(method, u.String(), reqBody)

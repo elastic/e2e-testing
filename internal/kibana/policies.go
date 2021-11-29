@@ -119,7 +119,7 @@ func (c *Client) DeleteAllPolicies(ctx context.Context) {
 	}
 }
 
-// CreatePolicy deletes all policies except fleet_server and system
+// CreatePolicy creates a new policy for agent to utilize
 func (c *Client) CreatePolicy(ctx context.Context) (Policy, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Creating agent policy", "fleet.package-policies.create", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -135,7 +135,7 @@ func (c *Client) CreatePolicy(ctx context.Context) (Policy, error) {
 		"name": "test-policy-` + policyUUID + `"
 	}`
 
-	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/agent_policies?sys_monitoring=true", FleetAPI), []byte(reqBody))
+	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/agent_policies", FleetAPI), []byte(reqBody))
 
 	jsonParsed, err := gabs.ParseJSON([]byte(respBody))
 
