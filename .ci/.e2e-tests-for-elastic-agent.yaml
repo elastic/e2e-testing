@@ -11,13 +11,13 @@ MACHINES:
     instance_type: "a1.large"
   fleet_amd64:
     image: "ami-0d90bed76900e679a"
-    instance_type: "c5.2xlarge"
+    instance_type: "c5.4xlarge"
   fleet_elastic_pkg:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
   kubernetes_autodiscover:
     image: "ami-0d90bed76900e679a"
-    instance_type: "c5.2xlarge"
+    instance_type: "c5.4xlarge"
 
 SUITES:
   - suite: "fleet"
@@ -34,15 +34,15 @@ SUITES:
       - name: "Linux Integration"
         tags: "linux_integration"
         platforms: ["fleet_arm64", "fleet_amd64"]
-      - name: "Permissions Output change"
-        tags: "permission_change"
-        platforms: ["fleet_arm64", "fleet_amd64"]
-      - name: "System Integration"
-        tags: "system_integration"
-        platforms: ["fleet_arm64", "fleet_amd64"]
-      - name: "Stand-alone"
-        tags: "stand_alone_agent"
-        platforms: ["fleet_elastic_pkg"]
+      # - name: "Permissions Output change"
+      #   tags: "permission_change"
+      #   platforms: ["fleet_arm64", "fleet_amd64"]
+      # - name: "System Integration"
+      #   tags: "system_integration"
+      #   platforms: ["fleet_arm64", "fleet_amd64"]
+      # - name: "Stand-alone"
+      #   tags: "stand_alone_agent"
+      #   platforms: ["fleet_elastic_pkg"]
       - name: "Backend Processes"
         tags: "backend_processes"
         platforms: ["fleet_arm64", "fleet_amd64"]

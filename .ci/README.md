@@ -21,37 +21,63 @@ Install python deps:
 > venv/bin/ansible-galaxy install -r .ci/ansible/requirements.yml
 ```
 
-## Deploy stack with X number of agents
+## Deploy stack
 
 ```
 > venv/bin/ansible-playbook .ci/ansible/playbook.yml \
     --private-key="$HOME/.ssh/id_rsa" \
-    --extra-vars "numAgents=1 runId=$RUN_ID workspace=$HOME/Projects/e2e-testing/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
+    --extra-vars "nodeLabel=stack nodeImage=ami-0d90bed76900e679a nodeInstanceType=c5.4xlarge" \
+    --extra-vars "runId=$RUN_ID workspace=$HOME/Projects/e2e-testing/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
     --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
-    -i inventory \
     -t provision-stack
 ```
 
-## Setup test script
+Make note of the IP address displayed in the ansible summary.
 
-After deployment a `$(pwd)/hosts` file should exists. Using this hosts file we can configure the testing scripts to be run on each node.
+## Setup stack
 
 ```
 > venv/bin/ansible-playbook .ci/ansible/playbook.yml \
     --private-key="$HOME/.ssh/id_rsa" \
-    --extra-vars "numAgents=1 runId=$RUN_ID workspace=$HOME/Projects/e2e-testing/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
+    --extra-vars "nodeLabel=stack nodeImage=ami-0d90bed76900e679a nodeInstanceType=c5.4xlarge" \
+    --extra-vars "runId=$RUN_ID workspace=$HOME/Projects/e2e-testing/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
     --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
-    -i inventory \
-    -t setup
+    -t setup-stack \
+    -i <ip address above>,
 ```
 
+**Note**: The comma at the end of the ip address is required.
 
-## Teardown stack
+## Deploy test node
+
 ```
 > venv/bin/ansible-playbook .ci/ansible/playbook.yml \
     --private-key="$HOME/.ssh/id_rsa" \
-    --extra-vars "numAgents=1 runId=$RUN_ID workspace=$HOME/Projects/e2e-testing/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
+    --extra-vars "stackRunner=<ip address from above> nodeLabel=fleet_amd64 nodeImage=ami-0d90bed76900e679a nodeInstanceType=c5.4xlarge" \
+    --extra-vars "runId=$RUN_ID workspace=$HOME/Projects/e2e-testing/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
     --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
-    -i inventory \
-    -t destroy
+    -t setup-stack
+```
+
+Make note of the ip address displayed in the ansible summary.
+
+## Setup test node
+
+```
+> venv/bin/ansible-playbook .ci/ansible/playbook.yml \
+    --private-key="$HOME/.ssh/id_rsa" \
+    --extra-vars "stackRunner=<ip address from above> nodeLabel=fleet_amd64 nodeImage=ami-0d90bed76900e679a nodeInstanceType=c5.4xlarge" \
+    --extra-vars "runId=$RUN_ID workspace=$HOME/Projects/e2e-testing/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
+    --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
+    -t setup-node \
+    -i <ip address of node from above>,
+```
+
+**Note**: The comma at the end of the ip address is required.
+
+## Run a test suite
+
+```
+> ssh -i $HOME/.ssh/id_rsa admin@<node ip address>
+node> sudo bash e2e-testing/.ci/scripts/functional-test.sh "fleet_mode_agent"
 ```
