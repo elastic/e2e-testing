@@ -143,7 +143,6 @@ func (fts *FleetTestSuite) afterScenario() {
 
 // beforeScenario creates the state needed by a scenario
 func (fts *FleetTestSuite) beforeScenario() {
-	log.Trace("BEFORE: Running before scenario state setup")
 	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 	exp := utils.GetExponentialBackOff(maxTimeout)
 
@@ -215,14 +214,12 @@ func (fts *FleetTestSuite) beforeScenario() {
 		return nil
 	}
 
-	log.Trace("BEFORE: Creating a new test policy")
 	err := backoff.Retry(waitForPolicy, exp)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Grab a new enrollment key for new agent
-	log.Trace("BEFORE: Creating enrollment token")
 	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.currentContext, fts.Policy)
 
 	if err != nil {
@@ -231,7 +228,6 @@ func (fts *FleetTestSuite) beforeScenario() {
 
 	fts.CurrentToken = enrollmentKey.APIKey
 	fts.CurrentTokenID = enrollmentKey.ID
-	log.Trace("BEFORE: Finish state setup")
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
@@ -551,14 +547,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		err := agentInstaller.Start(fts.currentContext)
 		return err
 	} else if state == "restarted" {
-		// Lets wait for filebeat to be started properly before killing elastic-agent
-		log.Trace("Making sure filebeat is at the ready before restarting elastic-agent")
-		err := CheckProcessState(fts.deployer, agentService.Name, "filebeat", "started", 2)
-		if err != nil {
-			log.Fatal("elastic-agent did not fully start before restart issued.")
-		}
-
-		err = agentInstaller.Stop(fts.currentContext)
+		err := agentInstaller.Stop(fts.currentContext)
 		if err != nil {
 			return err
 		}
@@ -1002,7 +991,7 @@ func theIntegrationIsOperatedInThePolicy(ctx context.Context, client *kibana.Cli
 
 	if strings.ToLower(action) == actionADDED {
 		packageDataStream := kibana.PackageDataStream{
-			Name:        integration.Name,
+			Name:        fmt.Sprintf("%s-%s", integration.Name, uuid.New().String()),
 			Description: integration.Title,
 			Namespace:   "default",
 			PolicyID:    policy.ID,
@@ -1012,7 +1001,13 @@ func theIntegrationIsOperatedInThePolicy(ctx context.Context, client *kibana.Cli
 		}
 		packageDataStream.Inputs = inputs(integration.Name)
 
-		return client.AddIntegrationToPolicy(ctx, packageDataStream)
+		err = client.AddIntegrationToPolicy(ctx, packageDataStream)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err":       err,
+				"packageDS": packageDataStream,
+			}).Fatal("Unable to add integration to policy")
+		}
 	} else if strings.ToLower(action) == actionREMOVED {
 		packageDataStream, err := client.GetIntegrationFromAgentPolicy(ctx, integration.Name, policy)
 		if err != nil {
