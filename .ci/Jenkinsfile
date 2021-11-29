@@ -106,7 +106,7 @@ pipeline {
           }
           parallel {
             stage('Sanity checks') {
-              agent { label 'ubuntu-18.04 && immutable && docker' }
+              agent { label 'ubuntu-20.04 && immutable && docker' }
               environment {
                 PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.PATH}"
                 GO111MODULE = 'auto'
