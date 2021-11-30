@@ -83,13 +83,15 @@ func DeleteIndex(ctx context.Context, index string) error {
 
 // Endpoint - Elastic search endpoint information
 type Endpoint struct {
-	Scheme string
-	Host   string
-	Port   int
+	Scheme      string
+	Host        string
+	Port        int
+	Credentials string
 }
 
 // GetElasticSearchEndpoint - Query environment for correct endpoint information
 func GetElasticSearchEndpoint() *Endpoint {
+	creds := fmt.Sprintf("elastic:%s", shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"))
 	remoteESHost := shell.GetEnv("ELASTICSEARCH_URL", "")
 	if remoteESHost != "" {
 		remoteESHost = utils.RemoveQuotes(remoteESHost)
@@ -103,15 +105,17 @@ func GetElasticSearchEndpoint() *Endpoint {
 		}
 		remoteESHostPort, _ := strconv.Atoi(port)
 		return &Endpoint{
-			Scheme: u.Scheme,
-			Host:   host,
-			Port:   remoteESHostPort,
+			Scheme:      u.Scheme,
+			Host:        host,
+			Port:        remoteESHostPort,
+			Credentials: creds,
 		}
 	}
 	return &Endpoint{
-		Scheme: "http",
-		Host:   "localhost",
-		Port:   9200,
+		Scheme:      "http",
+		Host:        "localhost",
+		Port:        9200,
+		Credentials: creds,
 	}
 }
 
