@@ -96,6 +96,10 @@ pipeline {
             dir("${BASE_DIR}"){
               // Skip all the test stages for PR's with markdown changes only
               setEnvVar("SKIP_TESTS", isGitRegionMatch(patterns: [ '.*\\.md' ], shouldMatchAll: true))
+              script {
+                def regexps = [ "^e2e/_suites/fleet/.*", "^e2e/_suites/helm/.*", "^e2e/_suites/kubernetes-autodiscover/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
+                setEnvVar("SKIP_TESTS", !isGitRegionMatch(patterns: regexps, shouldMatchAll: false))
+              }
             }
           }
         }
@@ -241,25 +245,20 @@ pipeline {
                 def suitesParam = params.runTestsSuites
                 def existingSuites = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE}")
                 def parallelTasks = [:]
-                def regexps = [ "^e2e/_suites/fleet/.*", "^e2e/_suites/helm/.*", "^e2e/_suites/kubernetes-autodiscover/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
-                if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
-                  if (suitesParam == "") {
-                    log(level: 'DEBUG', text: "Iterate through existing test suites")
-                    existingSuites['SUITES'].each { item ->
+                if (suitesParam == "") {
+                  log(level: 'DEBUG', text: "Iterate through existing test suites")
+                  existingSuites['SUITES'].each { item ->
+                    checkTestSuite(parallelTasks, item)
+                  }
+                } else {
+                  log(level: 'DEBUG', text: "Iterate through the comma-separated test suites (${suitesParam}), comparing with the existing test suites")
+                  suitesParam.split(',').each { suiteParam ->
+                    existingSuites['SUITES'].findAll { suiteParam.trim() == it.suite }.each { item ->
                       checkTestSuite(parallelTasks, item)
                     }
-                  } else {
-                    log(level: 'DEBUG', text: "Iterate through the comma-separated test suites (${suitesParam}), comparing with the existing test suites")
-                    suitesParam.split(',').each { suiteParam ->
-                      existingSuites['SUITES'].findAll { suiteParam.trim() == it.suite }.each { item ->
-                        checkTestSuite(parallelTasks, item)
-                      }
-                    }
                   }
-                  parallel(parallelTasks)
-                } else {
-                  log(level: 'WARN', text: "The test suites won't be executed in any platform because there are no modified files")
                 }
+                parallel(parallelTasks)
               }
             }
           }
