@@ -197,29 +197,24 @@ pipeline {
               unstash 'source'
               dir("${BASE_DIR}") {
                 script {
-                  def regexps = [ "^e2e/_suites/fleet/.*", "^e2e/_suites/helm/.*", "^e2e/_suites/kubernetes-autodiscover/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
                   def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
-                  if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
-                    // Deploy the test infrastructure
-                    sh "ssh-keygen -b 4096 -t rsa -f ${stackWorkspace}/e2essh -q -N \"\" "
-                    def stackMachine = getMachineInfo(stackWorkspace, 'stack')
+                  // Deploy the test infrastructure
+                  sh "ssh-keygen -b 4096 -t rsa -f ${stackWorkspace}/e2essh -q -N \"\" "
+                  def stackMachine = getMachineInfo(stackWorkspace, 'stack')
 
-                    ansible(stackWorkspace,
-                            env.RUN_ID.split('-')[0],
-                            "-t provision-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                  ansible(stackWorkspace,
+                          env.RUN_ID.split('-')[0],
+                          "-t provision-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
-                    // Must be gathered after deployment as the public IP is known at that time
-                    def stackRunner = getNodeIp(stackWorkspace, 'stack')
+                  // Must be gathered after deployment as the public IP is known at that time
+                  def stackRunner = getNodeIp(stackWorkspace, 'stack')
 
-                    ansible(stackWorkspace,
-                            env.RUN_ID.split('-')[0],
-                            "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                  ansible(stackWorkspace,
+                          env.RUN_ID.split('-')[0],
+                          "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
-                    // Update stash with latest changes from the stack deployment
-                    stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false
-                  } else {
-                    log(level: 'WARN', text: "The test suites won't be executed in any platform because there are no modified files")
-                  }
+                  // Update stash with latest changes from the stack deployment
+                  stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false
                 }
               }
             }
@@ -354,7 +349,7 @@ def getNodeIp(workspace, platform){
 
 def getMachineInfo(workspace, platform){
   def machineYaml = readYaml(file: "${workspace}/${TEST_MATRIX_FILE}")
-  def machines = machineYaml['MACHINES']
+  def machines = machineYaml['PLATFORMS']
   return machines.get(platform)
 }
 
@@ -377,17 +372,21 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     }
     def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
     def tags = scenario.tags
-    platformsValue.each { platform ->
-      log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
-      machineInfo = getMachineInfo("${env.WORKSPACE}/${env.BASE_DIR}",
-                                   platform)
-      parallelTasks["${platform}_${tags}"] = generateFunctionalTestStep(name: "${name}",
-                                                                        platform: platform,
-                                                                        suite: "${suite}",
-                                                                        tags: "${tags}",
-                                                                        pullRequestFilter: "${pullRequestFilter}",
-                                                                        machine: machineInfo)
+    def regexps = [ "^e2e/_suites/fleet/.*", "^e2e/_suites/helm/.*", "^e2e/_suites/kubernetes-autodiscover/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
+    if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
+      platformsValue.each { platform ->
+        log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
+        machineInfo = getMachineInfo("${env.WORKSPACE}/${env.BASE_DIR}", platform)
+        parallelTasks["${platform}_${tags}"] = generateFunctionalTestStep(name: "${name}",
+                                                                          platform: platform,
+                                                                          suite: "${suite}",
+                                                                          tags: "${tags}",
+                                                                          pullRequestFilter: "${pullRequestFilter}",
+                                                                          machine: machineInfo)
       }
+    } else {
+      log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed in any platform because there are no modified files")
+    }
   }
 }
 
@@ -491,8 +490,7 @@ def generateFunctionalTestStep(Map args = [:]){
                     runId,
                     "-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
-            def testRunner = getNodeIp("${env.WORKSPACE}",
-                                       platform)
+            def testRunner = getNodeIp("${env.WORKSPACE}", platform)
 
             // Configure node for testing
             ansible("${env.WORKSPACE}",
@@ -505,8 +503,7 @@ def generateFunctionalTestStep(Map args = [:]){
           }
         }
       } finally {
-        def testRunner = getNodeIp("${env.WORKSPACE}",
-                                   platform)
+        def testRunner = getNodeIp("${env.WORKSPACE}", platform)
         sh "mkdir -p outputs/${testRunner.ip} || true"
         sshexec("${env.WORKSPACE}",
                 testRunner,

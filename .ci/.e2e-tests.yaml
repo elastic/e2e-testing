@@ -1,5 +1,5 @@
 ---
-MACHINES:
+PLATFORMS:
   stack:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
