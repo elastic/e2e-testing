@@ -502,11 +502,6 @@ def generateFunctionalTestStep(Map args = [:]){
           }
         }
       } finally {
-<<<<<<< HEAD
-        junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml,${BASE_DIR}/outputs/${suite}"
-        tearDown(labels: workerLabels)
-=======
         def testRunner = getNodeIp("${env.WORKSPACE}", platform)
         sh "mkdir -p outputs/${testRunner.ip} || true"
         sshexec("${env.WORKSPACE}",
@@ -525,7 +520,6 @@ def generateFunctionalTestStep(Map args = [:]){
           testResults: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
         archiveArtifacts allowEmptyArchive: true,
           artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
->>>>>>> 8a94011 (Support running tests in full VM's (#1740))
       }
     }
   }
