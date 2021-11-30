@@ -54,17 +54,19 @@ pull_request_rules:
       - merged
     actions:
       delete_head_branch:
-  - name: automatic squash and merge with success checks and the files matching the regex docker-compose.yml$ are modified.
+  - name: automatic squash and merge with success checks for those automated PRs created by the apmmachine.
     conditions:
+      - -merged
+      - -closed
       - check-success=beats-ci/e2e-testing/pr-merge
       - label=automation
-      - files~=docker-compose\.yml$
+      - author=apmmachine
       - head~=^update-.*-version.*
     actions:
       merge:
         method: squash
         strict: smart+fasttrack
-  - name: delete upstream branch after merging changes on docker-compose.yml or it's closed
+  - name: delete upstream branch after merging changes the automated PR or it's closed
     conditions:
       - or:
         - merged
@@ -72,7 +74,6 @@ pull_request_rules:
       - and:
         - label=automation
         - head~=^update-.*-version.*
-        - files~=docker-compose\.yml$
     actions:
       delete_head_branch:
   - name: remove-backport label
