@@ -1,0 +1,16 @@
+---
+- name: Update cache
+  shell: |
+    sudo apt-get update
+
+- name: Install dependencies
+  ansible.builtin.package:
+    name:
+      - rsync
+      - wget
+      - build-essential
+    state: latest
+    use: apt
+  register: package_install_res
+  retries: 5
+  until: package_install_res is success
