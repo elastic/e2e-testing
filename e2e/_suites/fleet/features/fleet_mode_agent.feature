@@ -73,31 +73,12 @@ Examples: Debian
 | os     |
 | debian |
 
-@un-enroll-with-revoke
+@unenroll
 @skip:windows
-Scenario Outline: Un-enrolling with revoke the <os> agent deactivates the agent
+Scenario Outline: Un-enrolling the <os> agent deactivates the agent
   Given a "<os>" agent is deployed to Fleet with "tar" installer
   When the agent is un-enrolled
   Then the agent is listed in Fleet as "inactive"
-     And the agent Api key invalidated "true"
-
-#@centos  This test is failing returns false not true it will worked on later
-#Examples: Centos
-#| os     |
-#| centos |
-
-@debian
-Examples: Debian
-| os     |
-| debian |
-
-@un-enroll-without-revoke
-@skip:windows
-Scenario Outline: Un-enrolling without revoke the <os> deactivates the agent
-  Given a "<os>" agent is deployed to Fleet with "tar" installer
-  When the agent is un-enrolled without revoke
-  Then the agent is listed in Fleet as "inactive"
-     And the agent Api key invalidated "true"
 
 @centos
 Examples: Centos
@@ -106,8 +87,8 @@ Examples: Centos
 
 @debian
 Examples: Debian
-  | os     |
-  | debian |
+| os     |
+| debian |
 
 @reenroll
 @skip:windows

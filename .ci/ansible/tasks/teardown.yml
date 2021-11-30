@@ -1,0 +1,26 @@
+---
+- name: "Destroy environment"
+  ec2:
+    key_name: "e2essh-{{runId}}"
+    region: us-east-2
+    group: e2e
+    image: '{{nodeImage}}'
+    instance_tags:
+      Name: "e2e-{{nodeLabel}}-{{runId}}"
+    exact_count: 0
+    count_tag:
+      Name: "e2e-{{nodeLabel}}-{{runId}}"
+  tags:
+    - destroy
+  async: 45
+  poll: 0
+
+- name: "Delete AWS keypair"
+  ec2_key:
+    region: us-east-2
+    name: "e2essh-{{runId}}"
+    state: absent
+  tags:
+    - destroy
+  async: 45
+  poll: 0

@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"strconv"
 
 	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,33 +26,53 @@ const (
 	EndpointAPI = "/api/endpoint"
 )
 
-// getBaseURL will pull in the baseurl or an alternative host based on settings
-func getBaseURL() string {
-	// If a custom KIBANA URL is passed, use that instead
+// Endpoint - Kibana endpoint information
+type Endpoint struct {
+	Scheme string
+	Host   string
+	Port   int
+}
+
+// GetKibanaEndpoint - capture kibana environment information for determining endpoint
+func GetKibanaEndpoint() *Endpoint {
 	remoteKibanaHost := shell.GetEnv("KIBANA_URL", "")
 	if remoteKibanaHost != "" {
+		remoteKibanaHost = utils.RemoveQuotes(remoteKibanaHost)
 		u, err := url.Parse(remoteKibanaHost)
 		if err != nil {
-			log.Fatal("Could not parse KIBANA_URL")
+			log.WithFields(log.Fields{
+				"url":   remoteKibanaHost,
+				"error": err,
+			}).Trace("Could not parse KIBANA_URL, will attempt with original.")
+			return &Endpoint{
+				Scheme: "http",
+				Host:   "localhost",
+				Port:   5601,
+			}
 		}
 		host, port, err := net.SplitHostPort(u.Host)
 		if err != nil {
 			log.Fatal("Could not determine host/port from KIBANA_URL")
 		}
-		endpoint := fmt.Sprintf("http://%s:%s", host, port)
-		return endpoint
+		kibanaPort, _ := strconv.Atoi(port)
+		return &Endpoint{
+			Scheme: u.Scheme,
+			Host:   host,
+			Port:   kibanaPort,
+		}
+
+	}
+	return &Endpoint{
+		Scheme: "http",
+		Host:   "localhost",
+		Port:   5601,
 	}
 
-	// If a remote docker host is set we need to make sure that kibana is pointed there
-	// since API calls happen outside of the docker network
-	dockerHost := shell.GetEnv("DOCKER_HOST", "")
-	if dockerHost != "" {
-		u, err := url.Parse(dockerHost)
-		if err != nil {
-			return BaseURL
-		}
-		endpoint := fmt.Sprintf("http://%s:5601", u.Host)
-		return endpoint
-	}
-	return BaseURL
+}
+
+// getBaseURL will pull in the baseurl or an alternative host based on settings
+func getBaseURL() string {
+	kibanaEndpoint := GetKibanaEndpoint()
+	endpoint := fmt.Sprintf("%s://%s:%d", kibanaEndpoint.Scheme, kibanaEndpoint.Host, kibanaEndpoint.Port)
+	return endpoint
 }

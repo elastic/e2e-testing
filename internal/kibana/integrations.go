@@ -151,7 +151,7 @@ func (c *Client) GetIntegrationFromAgentPolicy(ctx context.Context, packageName 
 	}
 
 	for _, child := range packagePolicies {
-		if policy.ID == child.PolicyID && (strings.EqualFold(packageName, child.Name) || strings.EqualFold(packageName, child.Package.Title)) {
+		if policy.ID == child.PolicyID && (strings.EqualFold(packageName, child.Name) || strings.EqualFold(packageName, child.Package.Title) || strings.EqualFold(packageName, child.Package.Name)) {
 			return child, nil
 		}
 	}
