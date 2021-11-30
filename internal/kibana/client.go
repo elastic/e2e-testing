@@ -7,10 +7,14 @@ package kibana
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 
+	"github.com/Jeffail/gabs/v2"
+	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
@@ -27,7 +31,7 @@ type Client struct {
 func NewClient() (*Client, error) {
 	host := getBaseURL()
 	username := "elastic"
-	password := "changeme"
+	password := shell.GetEnv("KIBANA_PASSWORD", "changeme")
 
 	return &Client{
 		host:     host,
@@ -74,9 +78,12 @@ func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, b
 
 	u := base.ResolveReference(rel)
 
+	jsonParsed, _ := gabs.ParseJSON([]byte(body))
+
 	log.WithFields(log.Fields{
 		"method": method,
 		"url":    u,
+		"body":   jsonParsed,
 	}).Trace("Kibana API Query")
 
 	req, err := http.NewRequest(method, u.String(), reqBody)
@@ -86,7 +93,7 @@ func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, b
 
 	req.SetBasicAuth(c.username, c.password)
 	req.Header.Add("content-type", "application/json")
-	req.Header.Add("kbn-xsrf", "e2e-tests")
+	req.Header.Add("kbn-xsrf", fmt.Sprintf("e2e-tests-%s", uuid.New().String()))
 
 	client := http.Client{}
 	resp, err := client.Do(req)
