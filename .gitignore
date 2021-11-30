@@ -2,10 +2,7 @@ bin
 outputs
 dist/
 *.bck
-<<<<<<< HEAD
-=======
 .env
 .venv
 hosts
 *-sshhosts
->>>>>>> 8a940112 (Support running tests in full VM's (#1740))

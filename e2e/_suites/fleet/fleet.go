@@ -468,19 +468,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 
 	fts.InstallerType = installerType
 
-<<<<<<< HEAD
-	// Grab a new enrollment key for new agent
-	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.currentContext, fts.Policy)
-	if err != nil {
-		return err
-	}
-	fts.CurrentToken = enrollmentKey.APIKey
-	fts.CurrentTokenID = enrollmentKey.ID
-
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(image).WithScale(deployedAgentsCount)
-=======
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithScale(deployedAgentsCount)
->>>>>>> 8a940112 (Support running tests in full VM's (#1740))
 	if fts.BeatsProcess != "" {
 		agentService = agentService.WithBackgroundProcess(fts.BeatsProcess)
 	}
@@ -488,13 +476,8 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	services := []deploy.ServiceRequest{
 		agentService,
 	}
-<<<<<<< HEAD
-
-	err = fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, common.ProfileEnv)
-=======
 	env := fts.getProfileEnv()
 	err := fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, env)
->>>>>>> 8a940112 (Support running tests in full VM's (#1740))
 	if err != nil {
 		return err
 	}

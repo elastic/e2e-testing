@@ -31,12 +31,6 @@ Scenario Outline: Deploying the agent
 # | os     |
 # | debian |
 
-<<<<<<< HEAD
-@debian
-Examples: Debian
-| os     |
-| debian |
-=======
 # @upgrade-agent
 @nightly
 @skip:windows
@@ -46,8 +40,6 @@ Scenario Outline: Upgrading the installed agent
     And the "elastic-agent" process is "restarted" on the host
   When agent is upgraded to version "latest"
   Then agent is in version "latest"
-
->>>>>>> 8a940112 (Support running tests in full VM's (#1740))
 
 @restart-agent
 @skip:windows

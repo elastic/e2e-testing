@@ -44,23 +44,6 @@ SUITES:
         platforms: ["fleet_elastic_pkg"]
       - name: "Linux Integration"
         tags: "linux_integration"
-<<<<<<< HEAD
-      - name: "Permissions Output change"
-        pullRequestFilter: " && ~debian"
-        tags: "permission_change"
-      - name: "System Integration"
-        platforms:
-          - labels: "ubuntu-18.04"
-            provider: "elastic-package"
-        pullRequestFilter: " && ~debian"
-        tags: "system_integration"
-      - name: "Stand-alone"
-        platforms:
-          - labels: "ubuntu-18.04"
-            provider: "elastic-package"
-        pullRequestFilter: " && ~ubi8"
-        tags: "stand_alone_agent"
-=======
         platforms: ["fleet_arm64", "fleet_amd64"]
       # - name: "Permissions Output change"
       #   tags: "permission_change"
@@ -71,7 +54,6 @@ SUITES:
       # - name: "Stand-alone"
       #   tags: "stand_alone_agent"
       #   platforms: ["fleet_elastic_pkg"]
->>>>>>> 8a940112 (Support running tests in full VM's (#1740))
       - name: "Backend Processes"
         tags: "backend_processes"
         platforms: ["fleet_arm64", "fleet_amd64"]
@@ -80,12 +62,9 @@ SUITES:
         platforms: ["fleet_arm64", "fleet_amd64"]
   - suite: "kubernetes-autodiscover"
     scenarios:
-<<<<<<< HEAD
-=======
       - name: "kubernetes autodiscover with elastic-agent"
         tags: "elastic-agent"
         platforms: ["kubernetes_autodiscover"]
->>>>>>> 8a940112 (Support running tests in full VM's (#1740))
       - name: "kubernetes autodiscover with filebeat"
         tags: "filebeat"
         platforms: ["kubernetes_autodiscover"]
