@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Jeffail/gabs/v2"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
@@ -115,6 +117,60 @@ func (c *Client) DeleteAllPolicies(ctx context.Context) {
 			}
 		}
 	}
+}
+
+// CreatePolicy creates a new policy for agent to utilize
+func (c *Client) CreatePolicy(ctx context.Context) (Policy, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Creating agent policy", "fleet.package-policies.create", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	policyUUID := uuid.New().String()
+
+	reqBody := `{
+		"description": "Test policy ` + policyUUID + `",
+		"namespace": "default",
+		"monitoring_enabled": ["logs", "metrics"],
+		"name": "test-policy-` + policyUUID + `"
+	}`
+
+	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/agent_policies", FleetAPI), []byte(reqBody))
+
+	jsonParsed, err := gabs.ParseJSON([]byte(respBody))
+
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": jsonParsed,
+		}).Error("Could not parse get response into JSON")
+		return Policy{}, err
+	}
+
+	log.WithFields(log.Fields{
+		"status":   statusCode,
+		"err":      err,
+		"reqBody":  reqBody,
+		"respBody": jsonParsed,
+	}).Trace("Policy creation result")
+
+	if statusCode != 200 {
+		return Policy{}, fmt.Errorf("Could not create Fleet's policy, unhandled server error (%d)", statusCode)
+	}
+
+	if err != nil {
+		return Policy{}, errors.Wrap(err, "Could not create Fleet's policy")
+	}
+
+	var resp struct {
+		Item Policy `json:"item"`
+	}
+
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return Policy{}, errors.Wrap(err, "Unable to convert list of new policy to JSON")
+	}
+
+	return resp.Item, nil
 }
 
 // Var represents a single variable at the package or

@@ -12,12 +12,15 @@ require (
 	github.com/docker/docker v20.10.6+incompatible
 	github.com/elastic/elastic-package v0.27.0
 	github.com/elastic/go-elasticsearch/v8 v8.0.0-20210317102009-a9d74cec0186
+	github.com/elastic/go-windows v1.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gobuffalo/packr/v2 v2.8.1
 	github.com/google/uuid v1.2.0
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/procfs v0.7.3 // indirect
+	github.com/shirou/gopsutil/v3 v3.21.10
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -26,9 +29,12 @@ require (
 	go.elastic.co/apm v1.13.0
 	go.elastic.co/apm/module/apmelasticsearch v1.10.0
 	go.elastic.co/apm/module/apmhttp v1.10.0
+	go.elastic.co/go-licence-detector v0.5.0 // indirect
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
+	golang.org/x/sys v0.0.0-20211109065445-02f5c0300f6e // indirect
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/gotestsum v1.7.0
+	howett.net/plist v0.0.0-20201203080718-1454fab16a06 // indirect
 )
