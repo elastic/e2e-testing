@@ -241,21 +241,25 @@ pipeline {
                 def suitesParam = params.runTestsSuites
                 def existingSuites = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE}")
                 def parallelTasks = [:]
-
-                if (suitesParam == "") {
-                  log(level: 'DEBUG', text: "Iterate through existing test suites")
-                  existingSuites['SUITES'].each { item ->
-                    checkTestSuite(parallelTasks, item)
-                  }
-                } else {
-                  log(level: 'DEBUG', text: "Iterate through the comma-separated test suites (${suitesParam}), comparing with the existing test suites")
-                  suitesParam.split(',').each { suiteParam ->
-                    existingSuites['SUITES'].findAll { suiteParam.trim() == it.suite }.each { item ->
+                def regexps = [ "^e2e/_suites/fleet/.*", "^e2e/_suites/helm/.*", "^e2e/_suites/kubernetes-autodiscover/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
+                if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
+                  if (suitesParam == "") {
+                    log(level: 'DEBUG', text: "Iterate through existing test suites")
+                    existingSuites['SUITES'].each { item ->
                       checkTestSuite(parallelTasks, item)
                     }
+                  } else {
+                    log(level: 'DEBUG', text: "Iterate through the comma-separated test suites (${suitesParam}), comparing with the existing test suites")
+                    suitesParam.split(',').each { suiteParam ->
+                      existingSuites['SUITES'].findAll { suiteParam.trim() == it.suite }.each { item ->
+                        checkTestSuite(parallelTasks, item)
+                      }
+                    }
                   }
+                  parallel(parallelTasks)
+                } else {
+                  log(level: 'WARN', text: "The test suites won't be executed in any platform because there are no modified files")
                 }
-                parallel(parallelTasks)
               }
             }
           }
@@ -372,8 +376,6 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     }
     def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
     def tags = scenario.tags
-    def regexps = [ "^e2e/_suites/fleet/.*", "^e2e/_suites/helm/.*", "^e2e/_suites/kubernetes-autodiscover/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
-    if ("${FORCE_SKIP_GIT_CHECKS}" == "true" || isGitRegionMatch(patterns: regexps, shouldMatchAll: false)) {
       platformsValue.each { platform ->
         log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
         machineInfo = getMachineInfo("${env.WORKSPACE}/${env.BASE_DIR}", platform)
@@ -384,9 +386,6 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
                                                                           pullRequestFilter: "${pullRequestFilter}",
                                                                           machine: machineInfo)
       }
-    } else {
-      log(level: 'WARN', text: "The ${suite}:${tags} test suite won't be executed in any platform because there are no modified files")
-    }
   }
 }
 
