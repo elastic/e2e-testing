@@ -104,7 +104,7 @@ pull_request_rules:
       - author=mergify[bot]
       - "#check-success>0"
       - schedule=Mon-Mon 06:00-10:00[Europe/Paris]
-      #- created-at<3 days ago
+      - created-at<2 days ago
     actions:
       comment:
         message: |
