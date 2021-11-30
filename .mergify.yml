@@ -109,3 +109,16 @@ pull_request_rules:
       comment:
         message: |
           This pull request has not been merged yet. Could you please review and merge it @{{ assignee | join(', @') }}? 🙏
+  - name: automatic close the automated PRs that have not been merged.
+    conditions:
+      - -merged
+      - -closed
+      - author=apmmachine
+      - schedule=Mon-Fri 06:00-10:00[Europe/Paris]
+      - created-at<3 days ago
+      - head~=^update-.*-version.*
+    actions:
+      close:
+        message: |
+          This pull request has been automatically closed by Mergify.
+          There are likely new up-to-date and open pull requests.
