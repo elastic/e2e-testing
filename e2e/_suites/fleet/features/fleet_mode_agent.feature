@@ -24,7 +24,7 @@ Scenario: Deploying the <os> agent with enroll and then run on rpm and deb
 # @upgrade-agent
 @nightly
 @skip:windows
-Scenario Outline: Upgrading the installed <os> agent
+Scenario: Upgrading the installed <os> agent
   Given an agent "stale" is deployed to Fleet with "tar" installer
     And certs are installed
     And the "elastic-agent" process is "restarted" on the host
