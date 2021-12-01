@@ -1,3 +1,8 @@
+queue_rules:
+  - name: default
+    conditions:
+      - check-success=beats-ci/e2e-testing/pr-merge
+
 pull_request_rules:
   - name: ask to resolve conflict
     conditions:
@@ -61,9 +66,9 @@ pull_request_rules:
       - files~=docker-compose\.yml$
       - head~=^update-.*-version.*
     actions:
-      merge:
+      queue:
         method: squash
-        strict: smart+fasttrack
+        name: default
   - name: delete upstream branch after merging changes on docker-compose.yml or it's closed
     conditions:
       - or:
