@@ -1,3 +1,8 @@
+queue_rules:
+  - name: default
+    conditions:
+      - check-success=beats-ci/e2e-testing/pr-merge
+
 pull_request_rules:
   - name: ask to resolve conflict
     conditions:
@@ -63,7 +68,7 @@ pull_request_rules:
       - author=apmmachine
       - head~=^update-.*-version.*
     actions:
-      merge:
+      queue:
         method: squash
         strict: smart+fasttrack
   - name: delete upstream branch after merging changes the automated PR or it's closed
