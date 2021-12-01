@@ -7,7 +7,7 @@ Background: Setting up kibana instance with the default profile
 
 @install
 @skip:windows
-Scenario: Deploying the <os> agent
+Scenario: Deploying the agent
   Given an agent is deployed to Fleet with "tar" installer
   When the "elastic-agent" process is in the "started" state on the host
   Then the agent is listed in Fleet as "online"
@@ -15,7 +15,7 @@ Scenario: Deploying the <os> agent
 
 @enroll
 @skip:windows
-Scenario: Deploying the <os> agent with enroll and then run on rpm and deb
+Scenario: Deploying the agent with enroll and then run on rpm and deb
   Given an agent is deployed to Fleet
   When the "elastic-agent" process is in the "started" state on the host
   Then the agent is listed in Fleet as "online"
@@ -24,7 +24,7 @@ Scenario: Deploying the <os> agent with enroll and then run on rpm and deb
 # @upgrade-agent
 @nightly
 @skip:windows
-Scenario: Upgrading the installed <os> agent
+Scenario: Upgrading the installed agent
   Given an agent "stale" is deployed to Fleet with "tar" installer
     And certs are installed
     And the "elastic-agent" process is "restarted" on the host
@@ -33,7 +33,7 @@ Scenario: Upgrading the installed <os> agent
 
 @restart-agent
 @skip:windows
-Scenario: Restarting the installed <os> agent
+Scenario: Restarting the installed agent
   Given an agent is deployed to Fleet with "tar" installer
   When the "elastic-agent" process is "restarted" on the host
   Then the agent is listed in Fleet as "online"
