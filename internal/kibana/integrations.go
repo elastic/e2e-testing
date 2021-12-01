@@ -191,8 +191,7 @@ func (c *Client) GetMetadataFromSecurityApp(ctx context.Context) ([]SecurityEndp
 	})
 	defer span.End()
 
-	reqBody := `{}`
-	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/metadata", EndpointAPI), []byte(reqBody))
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/metadata", EndpointAPI))
 	if err != nil {
 		return []SecurityEndpoint{}, errors.Wrap(err, "could not get endpoint metadata")
 	}
