@@ -410,11 +410,12 @@ func WaitForNumberOfHits(ctx context.Context, indexName string, query map[string
 
 // GetSecurityApiKey waits for the elasticsearch SecurityApiKey to return the list of Api Keys.
 func GetSecurityApiKey() (APIKey, error) {
+	esEndpoint := GetElasticSearchEndpoint()
 	data := APIKey{}
 
 	r := curl.HTTPRequest{
-		URL:               "http://localhost:9200/_security/api_key?",
-		BasicAuthPassword: "changeme",
+		URL:               fmt.Sprintf("%s://%s:%d/_security/api_key?", esEndpoint.Scheme, esEndpoint.Host, esEndpoint.Port),
+		BasicAuthPassword: shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"),
 		BasicAuthUser:     "elastic",
 	}
 
