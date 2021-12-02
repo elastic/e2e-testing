@@ -70,7 +70,7 @@ pull_request_rules:
     actions:
       queue:
         method: squash
-        strict: smart+fasttrack
+        name: default
   - name: delete upstream branch after merging changes the automated PR or it's closed
     conditions:
       - or:
