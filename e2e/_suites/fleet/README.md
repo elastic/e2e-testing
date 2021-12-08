@@ -141,7 +141,11 @@ Background: Setting up kibana instance with default profile
 ```
 3. Run the tests! Kibana will be recreated with the profile configuration in those scenarios using the new step.
 
-### Running against a Kibana pull request
+### Fleet UI e2e tests CI job
+
+https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-kibana-fleet/build?delay=0sec
+
+### Running against a Kibana pull request locally
 
 1. Build kibana docker image from pull request using this job: (Custom Kibana - Deploy)[https://apm-ci.elastic.co/job/apm-shared/job/oblt-test-env/job/custom-kibana-deploy/build?delay=0sec]
    - Provide `kibana_branch` parameter to refer to your pr number e.g. `PR/100000`
