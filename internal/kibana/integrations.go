@@ -234,16 +234,16 @@ func (c *Client) InstallIntegrationAssets(ctx context.Context, integration Integ
 	}
 
 	var resp struct {
-		Item struct {
+		Items struct {
 			ID string `json:"id"`
-		} `json:"item"`
+		} `json:"items"`
 	}
 
 	if err := json.Unmarshal(respBody, &resp); err != nil {
 		return "", errors.Wrap(err, "Unable to convert install integration assets to JSON")
 	}
 
-	return resp.Item.ID, nil
+	return resp.Items.ID, nil
 }
 
 // IsAgentListedInSecurityApp retrieves the hosts from Endpoint to check if a hostname
