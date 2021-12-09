@@ -64,7 +64,7 @@ func (c *Client) DeleteIntegrationFromPolicy(ctx context.Context, packageDS Pack
 
 // GetIntegrations returns all available integrations
 func (c *Client) GetIntegrations(ctx context.Context) ([]IntegrationPackage, error) {
-	span, _ := apm.StartSpanOptions(ctx, "Listing integrations", "fleet.integrations.list", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Listing integrations", "fleet.integrations.items", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
