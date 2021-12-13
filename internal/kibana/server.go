@@ -36,7 +36,7 @@ func (c *Client) CreateEnrollmentAPIKey(ctx context.Context, policy Policy) (Enr
 	defer span.End()
 
 	reqBody := `{"policy_id": "` + policy.ID + `"}`
-	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/enrollment-api-keys", FleetAPI), []byte(reqBody))
+	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/enrollment_api_keys", FleetAPI), []byte(reqBody))
 	if statusCode != 200 {
 		jsonParsed, err := gabs.ParseJSON([]byte(respBody))
 		log.WithFields(log.Fields{
@@ -74,7 +74,7 @@ func (c *Client) CreateServiceToken(ctx context.Context) (ServiceToken, error) {
 	defer span.End()
 
 	reqBody := `{}`
-	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/service-tokens", FleetAPI), []byte(reqBody))
+	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/service_tokens", FleetAPI), []byte(reqBody))
 	if statusCode != 200 {
 		jsonParsed, err := gabs.ParseJSON([]byte(respBody))
 		log.WithFields(log.Fields{
@@ -103,7 +103,7 @@ func (c *Client) DeleteEnrollmentAPIKey(ctx context.Context, enrollmentID string
 	})
 	defer span.End()
 
-	statusCode, respBody, err := c.delete(ctx, fmt.Sprintf("%s/enrollment-api-keys/%s", FleetAPI, enrollmentID))
+	statusCode, respBody, err := c.delete(ctx, fmt.Sprintf("%s/enrollment_api_keys/%s", FleetAPI, enrollmentID))
 
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -178,7 +178,7 @@ func (c *Client) ListEnrollmentAPIKeys(ctx context.Context) ([]EnrollmentAPIKey,
 	})
 	defer span.End()
 
-	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/enrollment-api-keys", FleetAPI))
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/enrollment_api_keys", FleetAPI))
 
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -199,14 +199,14 @@ func (c *Client) ListEnrollmentAPIKeys(ctx context.Context) ([]EnrollmentAPIKey,
 	}
 
 	var resp struct {
-		List []EnrollmentAPIKey `json:"list"`
+		Items []EnrollmentAPIKey `json:"items"`
 	}
 
 	if err := json.Unmarshal(respBody, &resp); err != nil {
 		return nil, errors.Wrap(err, "Unable to convert list of enrollment apis to JSON")
 	}
 
-	return resp.List, nil
+	return resp.Items, nil
 
 }
 

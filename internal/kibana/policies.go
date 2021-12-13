@@ -217,7 +217,7 @@ type PackageDataStream struct {
 
 // ListPackagePolicies return list of package policies
 func (c *Client) ListPackagePolicies(ctx context.Context) ([]PackageDataStream, error) {
-	span, _ := apm.StartSpanOptions(ctx, "Listing package policies", "fleet.package-policies.list", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Listing package policies", "fleet.package-policies.items", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
