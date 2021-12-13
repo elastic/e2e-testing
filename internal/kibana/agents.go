@@ -208,7 +208,7 @@ func (c *Client) GetAgentEvents(ctx context.Context, applicationName string, age
 
 // ListAgents returns the list of agents enrolled with Fleet.
 func (c *Client) ListAgents(ctx context.Context) ([]Agent, error) {
-	span, _ := apm.StartSpanOptions(ctx, "Listing Elastic Agents", "fleet.agents.list", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Listing Elastic Agents", "fleet.agents.items", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
@@ -234,14 +234,14 @@ func (c *Client) ListAgents(ctx context.Context) ([]Agent, error) {
 	}
 
 	var resp struct {
-		List []Agent `json:"list"`
+		Items []Agent `json:"items"`
 	}
 
 	if err := json.Unmarshal(respBody, &resp); err != nil {
-		return nil, errors.Wrap(err, "could not convert list agents (response) to JSON")
+		return nil, errors.Wrap(err, "could not convert list of agents (response) to JSON")
 	}
 
-	return resp.List, nil
+	return resp.Items, nil
 
 }
 
