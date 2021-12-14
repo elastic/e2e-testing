@@ -183,7 +183,11 @@ func (fts *FleetTestSuite) beforeScenario() {
 		}
 
 		systemMetricsFile := filepath.Join(testResourcesDir, "/default_system_metrics.json")
-		jsonData := readJSONFile(systemMetricsFile)
+		jsonData, err := readJSONFile(systemMetricsFile)
+		if err != nil {
+			return err
+		}
+
 		for _, item := range jsonData.Children() {
 			if item.Path("type").Data().(string) == "system/metrics" {
 				packageDataStream.Inputs = append(packageDataStream.Inputs, kibana.Input{
@@ -1510,7 +1514,12 @@ func (fts *FleetTestSuite) getAgentDefaultAPIKey() (string, error) {
 
 func metricsInputs(integration string, set string, file string, metrics string) []kibana.Input {
 	metricsFile := filepath.Join(testResourcesDir, file)
-	jsonData := readJSONFile(metricsFile)
+	jsonData, err := readJSONFile(metricsFile)
+	if err != nil {
+		log.Warnf("An error happened while reading metrics file, returning an empty array of inputs: %v", err)
+		return []kibana.Input{}
+	}
+
 	data := parseJSONMetrics(jsonData, integration, set, metrics)
 	return []kibana.Input{
 		{
@@ -1523,7 +1532,7 @@ func metricsInputs(integration string, set string, file string, metrics string) 
 	return []kibana.Input{}
 }
 
-func readJSONFile(file string) *gabs.Container {
+func readJSONFile(file string) (*gabs.Container, error) {
 	jsonFile, err := os.Open(file)
 	if err != nil {
 		fmt.Println(err)
@@ -1535,13 +1544,15 @@ func readJSONFile(file string) *gabs.Container {
 	defer jsonFile.Close()
 	data, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		return nil, err
 	}
+
 	jsonParsed, err := gabs.ParseJSON(data)
 	if err != nil {
-		log.Fatal("Unable to parse json")
+		return nil, err
 	}
-	return jsonParsed.S("inputs")
+
+	return jsonParsed.S("inputs"), nil
 }
 
 func parseJSONMetrics(data *gabs.Container, integration string, set string, metrics string) []interface{} {
