@@ -115,12 +115,14 @@ func (c *Client) GetIntegrationByPackageName(ctx context.Context, packageName st
 	span, _ := apm.StartSpanOptions(ctx, "Getting integration by package name", "fleet.integration.get-by-name", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("package", packageName)
 	defer span.End()
 
 	integrationPackages, err := c.GetIntegrations(ctx)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"error": err,
+			"error":   err,
+			"package": packageName,
 		}).Error("Could not get Integration packages list")
 		return IntegrationPackage{}, err
 	}
@@ -131,7 +133,7 @@ func (c *Client) GetIntegrationByPackageName(ctx context.Context, packageName st
 		}
 	}
 
-	return IntegrationPackage{}, errors.New("Unable to find package")
+	return IntegrationPackage{}, fmt.Errorf("unable to find package %s", packageName)
 }
 
 // GetIntegrationFromAgentPolicy get package policy from agent policy
@@ -139,13 +141,15 @@ func (c *Client) GetIntegrationFromAgentPolicy(ctx context.Context, packageName 
 	span, _ := apm.StartSpanOptions(ctx, "Getting integration from Elastic Agent policy", "fleet.integration.get-from-policy", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("package", packageName)
 	defer span.End()
 
 	packagePolicies, err := c.ListPackagePolicies(ctx)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"error":  err,
-			"policy": policy,
+			"error":   err,
+			"package": packageName,
+			"policy":  policy,
 		}).Trace("An error retrieving the package policies")
 		return PackageDataStream{}, err
 	}
@@ -156,7 +160,7 @@ func (c *Client) GetIntegrationFromAgentPolicy(ctx context.Context, packageName 
 		}
 	}
 
-	return PackageDataStream{}, errors.New("Unable to find package in policy")
+	return PackageDataStream{}, fmt.Errorf("Unable to find package %s in policy %s", packageName, policy.ID)
 }
 
 // SecurityEndpoint endpoint metadata
