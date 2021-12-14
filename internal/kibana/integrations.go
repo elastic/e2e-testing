@@ -64,7 +64,7 @@ func (c *Client) DeleteIntegrationFromPolicy(ctx context.Context, packageDS Pack
 
 // GetIntegrations returns all available integrations
 func (c *Client) GetIntegrations(ctx context.Context) ([]IntegrationPackage, error) {
-	span, _ := apm.StartSpanOptions(ctx, "Listing integrations", "fleet.integrations.list", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Listing integrations", "fleet.integrations.items", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
@@ -99,7 +99,7 @@ func (c *Client) GetIntegrations(ctx context.Context) ([]IntegrationPackage, err
 	}
 
 	var resp struct {
-		Packages []IntegrationPackage `json:"response"`
+		Packages []IntegrationPackage `json:"items"`
 	}
 
 	if err := json.Unmarshal(respBody, &resp); err != nil {
@@ -229,7 +229,7 @@ func (c *Client) InstallIntegrationAssets(ctx context.Context, integration Integ
 	defer span.End()
 
 	reqBody := `{}`
-	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/epm/packages/%s-%s", FleetAPI, integration.Name, integration.Version), []byte(reqBody))
+	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/epm/packages/%s/%s", FleetAPI, integration.Name, integration.Version), []byte(reqBody))
 	if err != nil {
 		return "", errors.Wrap(err, "could not install integration assets")
 	}
@@ -239,16 +239,16 @@ func (c *Client) InstallIntegrationAssets(ctx context.Context, integration Integ
 	}
 
 	var resp struct {
-		Response struct {
+		Items struct {
 			ID string `json:"id"`
-		} `json:"response"`
+		} `json:"items"`
 	}
 
 	if err := json.Unmarshal(respBody, &resp); err != nil {
 		return "", errors.Wrap(err, "Unable to convert install integration assets to JSON")
 	}
 
-	return resp.Response.ID, nil
+	return resp.Items.ID, nil
 }
 
 // IsAgentListedInSecurityApp retrieves the hosts from Endpoint to check if a hostname
