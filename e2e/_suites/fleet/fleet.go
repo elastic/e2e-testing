@@ -143,6 +143,62 @@ func (fts *FleetTestSuite) beforeScenario() {
 			"err": err,
 		}).Warn("The default policy could not be obtained")
 
+<<<<<<< HEAD
+=======
+		fts.Policy = policy
+
+		// Grab the system integration as we'll need to assign it a new name so it wont collide during
+		// multiple policy creations at once
+		integration, err := fts.kibanaClient.GetIntegrationByPackageName(context.Background(), "system")
+		if err != nil {
+			return err
+		}
+
+		packageDataStream := kibana.PackageDataStream{
+			Name:        fmt.Sprintf("%s-%s", integration.Name, uuid.New().String()),
+			Description: integration.Title,
+			Namespace:   "default",
+			PolicyID:    fts.Policy.ID,
+			Enabled:     true,
+			Package:     integration,
+			Inputs:      []kibana.Input{},
+		}
+
+		systemMetricsFile := filepath.Join(testResourcesDir, "/default_system_metrics.json")
+		jsonData, err := readJSONFile(systemMetricsFile)
+		if err != nil {
+			return err
+		}
+
+		for _, item := range jsonData.Children() {
+			if item.Path("type").Data().(string) == "system/metrics" {
+				packageDataStream.Inputs = append(packageDataStream.Inputs, kibana.Input{
+					Type:    item.Path("type").Data().(string),
+					Enabled: item.Path("enabled").Data().(bool),
+					Streams: item.S("streams").Data().([]interface{}),
+					Vars: map[string]kibana.Var{
+						"system.hostfs": {
+							Value: "",
+							Type:  "text",
+						},
+					},
+				})
+			} else {
+				packageDataStream.Inputs = append(packageDataStream.Inputs, kibana.Input{
+					Type:    item.Path("type").Data().(string),
+					Enabled: item.Path("enabled").Data().(bool),
+					Streams: item.S("streams").Data().([]interface{}),
+				})
+			}
+		}
+
+		err = fts.kibanaClient.AddIntegrationToPolicy(context.Background(), packageDataStream)
+		if err != nil {
+			return err
+		}
+
+		return nil
+>>>>>>> f8ee29cd (chore: do not exit with log.Fatal while reading JSON file (#1901))
 	}
 	fts.Policy = policy
 }
@@ -1345,7 +1401,17 @@ func (fts *FleetTestSuite) getAgentDefaultAPIKey() (string, error) {
 
 func metricsInputs(integration string, set string, file string, metrics string) []kibana.Input {
 	metricsFile := filepath.Join(testResourcesDir, file)
+<<<<<<< HEAD
 	data := readJSONFile(metricsFile, integration, set, metrics)
+=======
+	jsonData, err := readJSONFile(metricsFile)
+	if err != nil {
+		log.Warnf("An error happened while reading metrics file, returning an empty array of inputs: %v", err)
+		return []kibana.Input{}
+	}
+
+	data := parseJSONMetrics(jsonData, integration, set, metrics)
+>>>>>>> f8ee29cd (chore: do not exit with log.Fatal while reading JSON file (#1901))
 	return []kibana.Input{
 		{
 			Type:    integration,
@@ -1357,7 +1423,11 @@ func metricsInputs(integration string, set string, file string, metrics string) 
 	return []kibana.Input{}
 }
 
+<<<<<<< HEAD
 func readJSONFile(file string, integration string, set string, metrics string) []interface{} {
+=======
+func readJSONFile(file string) (*gabs.Container, error) {
+>>>>>>> f8ee29cd (chore: do not exit with log.Fatal while reading JSON file (#1901))
 	jsonFile, err := os.Open(file)
 	if err != nil {
 		fmt.Println(err)
@@ -1369,14 +1439,24 @@ func readJSONFile(file string, integration string, set string, metrics string) [
 	defer jsonFile.Close()
 	data, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		return nil, err
 	}
+
 	jsonParsed, err := gabs.ParseJSON(data)
 	if err != nil {
-		log.Fatal("Unable to parse json")
+		return nil, err
 	}
+<<<<<<< HEAD
 	children := jsonParsed.S("inputs").Children()
 	for i, item := range children {
+=======
+
+	return jsonParsed.S("inputs"), nil
+}
+
+func parseJSONMetrics(data *gabs.Container, integration string, set string, metrics string) []interface{} {
+	for i, item := range data.Children() {
+>>>>>>> f8ee29cd (chore: do not exit with log.Fatal while reading JSON file (#1901))
 		if item.Path("type").Data().(string) == integration {
 			for idx, stream := range item.S("streams").Children() {
 				dataSet, _ := stream.Path("data_stream.dataset").Data().(string)
