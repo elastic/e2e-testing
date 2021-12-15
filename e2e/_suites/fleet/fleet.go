@@ -111,15 +111,19 @@ func (fts *FleetTestSuite) afterScenario() {
 
 	_ = fts.deployer.Remove(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{deploy.NewServiceRequest(serviceName)}, common.ProfileEnv)
 
-	err := fts.kibanaClient.DeleteEnrollmentAPIKey(fts.currentContext, fts.CurrentTokenID)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err":     err,
-			"tokenID": fts.CurrentTokenID,
-		}).Warn("The enrollment token could not be deleted")
+	// TODO: Determine why this may be empty here before being cleared out
+	if fts.CurrentTokenID != "" {
+		err := fts.kibanaClient.DeleteEnrollmentAPIKey(fts.currentContext, fts.CurrentTokenID)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err":     err,
+				"tokenID": fts.CurrentTokenID,
+			}).Warn("The enrollment token could not be deleted")
+		}
 	}
 
-	fts.kibanaClient.DeleteAllPolicies(fts.currentContext)
+	// TODO: Dont think this is needed if we are making all policies unique
+	// fts.kibanaClient.DeleteAllPolicies(fts.currentContext)
 
 	// clean up fields
 	fts.CurrentTokenID = ""
@@ -132,27 +136,99 @@ func (fts *FleetTestSuite) afterScenario() {
 
 // beforeScenario creates the state needed by a scenario
 func (fts *FleetTestSuite) beforeScenario() {
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
+	exp := utils.GetExponentialBackOff(maxTimeout)
+
 	fts.StandAlone = false
 	fts.ElasticAgentStopped = false
 
 	fts.Version = common.BeatVersion
 
-	policy, err := fts.kibanaClient.GetDefaultPolicy(fts.currentContext, false)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Warn("The default policy could not be obtained")
+	waitForPolicy := func() error {
+		policy, err := fts.kibanaClient.CreatePolicy(fts.currentContext)
+		if err != nil {
+			return errors.Wrap(err, "A new policy could not be obtained, retrying.")
+		}
 
+		log.WithFields(log.Fields{
+			"id":          policy.ID,
+			"name":        policy.Name,
+			"description": policy.Description,
+		}).Info("Policy created")
+
+		fts.Policy = policy
+
+		// Grab the system integration as we'll need to assign it a new name so it wont collide during
+		// multiple policy creations at once
+		integration, err := fts.kibanaClient.GetIntegrationByPackageName(context.Background(), "system")
+		if err != nil {
+			return err
+		}
+
+		packageDataStream := kibana.PackageDataStream{
+			Name:        fmt.Sprintf("%s-%s", integration.Name, uuid.New().String()),
+			Description: integration.Title,
+			Namespace:   "default",
+			PolicyID:    fts.Policy.ID,
+			Enabled:     true,
+			Package:     integration,
+			Inputs:      []kibana.Input{},
+		}
+
+		systemMetricsFile := filepath.Join(testResourcesDir, "/default_system_metrics.json")
+		jsonData := readJSONFile(systemMetricsFile)
+		for _, item := range jsonData.Children() {
+			if item.Path("type").Data().(string) == "system/metrics" {
+				packageDataStream.Inputs = append(packageDataStream.Inputs, kibana.Input{
+					Type:    item.Path("type").Data().(string),
+					Enabled: item.Path("enabled").Data().(bool),
+					Streams: item.S("streams").Data().([]interface{}),
+					Vars: map[string]kibana.Var{
+						"system.hostfs": {
+							Value: "",
+							Type:  "text",
+						},
+					},
+				})
+			} else {
+				packageDataStream.Inputs = append(packageDataStream.Inputs, kibana.Input{
+					Type:    item.Path("type").Data().(string),
+					Enabled: item.Path("enabled").Data().(bool),
+					Streams: item.S("streams").Data().([]interface{}),
+				})
+			}
+		}
+
+		err = fts.kibanaClient.AddIntegrationToPolicy(context.Background(), packageDataStream)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
-	fts.Policy = policy
+
+	err := backoff.Retry(waitForPolicy, exp)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Grab a new enrollment key for new agent
+	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.currentContext, fts.Policy)
+
+	if err != nil {
+		log.Fatal("Unable to create enrollment token for agent")
+	}
+
+	fts.CurrentToken = enrollmentKey.APIKey
+	fts.CurrentTokenID = enrollmentKey.ID
 }
 
 func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^kibana uses "([^"]*)" profile$`, fts.kibanaUsesProfile)
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
-	s.Step(`^a "([^"]*)" agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
-	s.Step(`^a "([^"]*)" agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
-	s.Step(`^a "([^"]*)" agent "([^"]*)" is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
+	s.Step(`^an agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
+	s.Step(`^an agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
+	s.Step(`^an agent "([^"]*)" is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
 	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
 	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
@@ -173,7 +249,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the "([^"]*)" datasource is shown in the policy as added$`, fts.thePolicyShowsTheDatasourceAdded)
 	s.Step(`^the host name is shown in the Administration view in the Security App as "([^"]*)"$`, fts.theHostNameIsShownInTheAdminViewInTheSecurityApp)
 	s.Step(`^the host name is not shown in the Administration view in the Security App$`, fts.theHostNameIsNotShownInTheAdminViewInTheSecurityApp)
-	s.Step(`^an "([^"]*)" is successfully deployed with a "([^"]*)" Agent using "([^"]*)" installer$`, fts.anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller)
+	s.Step(`^an "([^"]*)" is successfully deployed with an Agent using "([^"]*)" installer$`, fts.anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller)
 	s.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
 	s.Step(`^the policy is updated to have "([^"]*)" in "([^"]*)" mode$`, fts.thePolicyIsUpdatedToHaveMode)
 	s.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
@@ -236,7 +312,7 @@ func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredSt
 	return nil
 }
 
-func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, version, installerType string) error {
+func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(version, installerType string) error {
 	agentVersionBackup := fts.Version
 	defer func() { fts.Version = agentVersionBackup }()
 
@@ -268,7 +344,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(image, ver
 
 	fts.Version = version
 
-	return fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
+	return fts.anAgentIsDeployedToFleetWithInstaller(installerType)
 }
 
 func (fts *FleetTestSuite) installCerts() error {
@@ -353,14 +429,11 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
 	if runtime.GOOS == "windows" && common.Provider == "remote" {
 		installerType = "zip"
 	}
-	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType)
+	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType)
 }
 
-func (fts *FleetTestSuite) anAgentIsDeployedToFleetOnTopOfBeat(image string, beatsProcess string) error {
-	installerType := "rpm"
-	if image == "debian" {
-		installerType = "deb"
-	}
+func (fts *FleetTestSuite) anAgentIsDeployedToFleetOnTopOfBeat(beatsProcess string) error {
+	installerType := "tar"
 
 	// FIXME: We need to cleanup the steps to support different operating systems
 	// for now we will force the zip installer type when the agent is running on windows
@@ -370,11 +443,11 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetOnTopOfBeat(image string, bea
 
 	fts.BeatsProcess = beatsProcess
 
-	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType)
+	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType)
 }
 
 // supported installers: tar, rpm, deb
-func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, installerType string) error {
+func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(installerType string) error {
 	fts.BeatsProcess = ""
 
 	// FIXME: We need to cleanup the steps to support different operating systems
@@ -383,29 +456,19 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(image string, i
 		installerType = "zip"
 	}
 
-	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(image, installerType)
+	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType)
 }
 
-func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(image string, installerType string) error {
+func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType string) error {
 	log.WithFields(log.Fields{
-		"image":     image,
 		"installer": installerType,
 	}).Trace("Deploying an agent to Fleet with base image using an already bootstrapped Fleet Server")
 
 	deployedAgentsCount++
 
-	fts.Image = image
 	fts.InstallerType = installerType
 
-	// Grab a new enrollment key for new agent
-	enrollmentKey, err := fts.kibanaClient.CreateEnrollmentAPIKey(fts.currentContext, fts.Policy)
-	if err != nil {
-		return err
-	}
-	fts.CurrentToken = enrollmentKey.APIKey
-	fts.CurrentTokenID = enrollmentKey.ID
-
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(image).WithScale(deployedAgentsCount)
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithScale(deployedAgentsCount)
 	if fts.BeatsProcess != "" {
 		agentService = agentService.WithBackgroundProcess(fts.BeatsProcess)
 	}
@@ -413,8 +476,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	services := []deploy.ServiceRequest{
 		agentService,
 	}
-
-	err = fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, common.ProfileEnv)
+	err := fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, common.ProfileEnv)
 	if err != nil {
 		return err
 	}
@@ -438,8 +500,6 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		if err != nil {
 			return err
 		}
-
-		utils.Sleep(time.Duration(utils.TimeoutFactor) * 10 * time.Second)
 
 		err = agentInstaller.Start(fts.currentContext)
 		if err != nil {
@@ -832,7 +892,7 @@ func theIntegrationIsOperatedInThePolicy(ctx context.Context, client *kibana.Cli
 
 	if strings.ToLower(action) == actionADDED {
 		packageDataStream := kibana.PackageDataStream{
-			Name:        integration.Name,
+			Name:        fmt.Sprintf("%s-%s", integration.Name, uuid.New().String()),
 			Description: integration.Title,
 			Namespace:   "default",
 			PolicyID:    policy.ID,
@@ -842,7 +902,13 @@ func theIntegrationIsOperatedInThePolicy(ctx context.Context, client *kibana.Cli
 		}
 		packageDataStream.Inputs = inputs(integration.Name)
 
-		return client.AddIntegrationToPolicy(ctx, packageDataStream)
+		err = client.AddIntegrationToPolicy(ctx, packageDataStream)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err":       err,
+				"packageDS": packageDataStream,
+			}).Fatal("Unable to add integration to policy")
+		}
 	} else if strings.ToLower(action) == actionREMOVED {
 		packageDataStream, err := client.GetIntegrationFromAgentPolicy(ctx, integration.Name, policy)
 		if err != nil {
@@ -941,8 +1007,8 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(stat
 	return nil
 }
 
-func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller(integration string, image string, installerType string) error {
-	err := fts.anAgentIsDeployedToFleetWithInstaller(image, installerType)
+func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller(integration string, installerType string) error {
+	err := fts.anAgentIsDeployedToFleetWithInstaller(installerType)
 	if err != nil {
 		return err
 	}
@@ -1119,7 +1185,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	// increase the number of agents
 	deployedAgentsCount++
 
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(fts.Image).WithScale(deployedAgentsCount)
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithScale(deployedAgentsCount)
 	services := []deploy.ServiceRequest{
 		agentService,
 	}
@@ -1345,7 +1411,8 @@ func (fts *FleetTestSuite) getAgentDefaultAPIKey() (string, error) {
 
 func metricsInputs(integration string, set string, file string, metrics string) []kibana.Input {
 	metricsFile := filepath.Join(testResourcesDir, file)
-	data := readJSONFile(metricsFile, integration, set, metrics)
+	jsonData := readJSONFile(metricsFile)
+	data := parseJSONMetrics(jsonData, integration, set, metrics)
 	return []kibana.Input{
 		{
 			Type:    integration,
@@ -1357,7 +1424,7 @@ func metricsInputs(integration string, set string, file string, metrics string) 
 	return []kibana.Input{}
 }
 
-func readJSONFile(file string, integration string, set string, metrics string) []interface{} {
+func readJSONFile(file string) *gabs.Container {
 	jsonFile, err := os.Open(file)
 	if err != nil {
 		fmt.Println(err)
@@ -1375,21 +1442,24 @@ func readJSONFile(file string, integration string, set string, metrics string) [
 	if err != nil {
 		log.Fatal("Unable to parse json")
 	}
-	children := jsonParsed.S("inputs").Children()
-	for i, item := range children {
+	return jsonParsed.S("inputs")
+}
+
+func parseJSONMetrics(data *gabs.Container, integration string, set string, metrics string) []interface{} {
+	for i, item := range data.Children() {
 		if item.Path("type").Data().(string) == integration {
 			for idx, stream := range item.S("streams").Children() {
 				dataSet, _ := stream.Path("data_stream.dataset").Data().(string)
 				if dataSet == metrics+"."+set {
-					jsonParsed.SetP(
+					data.SetP(
 						integration+"-"+metrics+"."+set+"-"+uuid.New().String(),
 						fmt.Sprintf("inputs.%d.streams.%d.id", i, idx),
 					)
-					jsonParsed.SetP(
+					data.SetP(
 						true,
 						fmt.Sprintf("inputs.%d.streams.%d.enabled", i, idx),
 					)
-					dataStreamOut, _ := jsonParsed.Path(fmt.Sprintf("inputs.%d.streams", i)).Data().([]interface{})
+					dataStreamOut, _ := data.Path(fmt.Sprintf("inputs.%d.streams", i)).Data().([]interface{})
 					return dataStreamOut
 				}
 			}

@@ -2,3 +2,7 @@ bin
 outputs
 dist/
 *.bck
+.env
+.venv
+hosts
+*-sshhosts
