@@ -124,7 +124,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 			log.Trace("Cleared previously downloaded artifacts")
 		}
 
-		beat := beats.NewLinuxBeat(artifact, types.GetArchitecture(), types.TarGz, common.BeatVersion)
+		beat := beats.NewLinuxBeat(artifact, types.TarGz, common.BeatVersion)
 
 		_, binaryPath, err := beat.Download(ctx)
 		if err != nil {

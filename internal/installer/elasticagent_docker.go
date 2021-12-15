@@ -96,7 +96,7 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 	// handle ubi8 images
 	artifact := "elastic-agent" + common.ProfileEnv["elasticAgentDockerImageSuffix"]
 
-	beat := beats.NewLinuxBeat(artifact, types.GetArchitecture(), types.TarGz, common.BeatVersion).AsDocker()
+	beat := beats.NewLinuxBeat(artifact, types.TarGz, common.BeatVersion).AsDocker()
 
 	_, binaryPath, err := beat.Download(ctx)
 	if err != nil {

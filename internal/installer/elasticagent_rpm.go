@@ -139,12 +139,7 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 		})
 		defer span.End()
 
-		arch := types.GetArchitecture()
-		if arch == types.Arm64 {
-			arch = types.Aarch64
-		}
-
-		beat := beats.NewLinuxBeat(artifact, arch, types.Rpm, common.BeatVersion)
+		beat := beats.NewLinuxBeat(artifact, types.Rpm, common.BeatVersion)
 
 		binaryName, binaryPath, err := beat.Download(ctx)
 		if err != nil {

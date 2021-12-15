@@ -138,7 +138,7 @@ func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
 		})
 		defer span.End()
 
-		beat := beats.NewLinuxBeat(artifact, types.GetArchitecture(), types.Deb, common.BeatVersion)
+		beat := beats.NewLinuxBeat(artifact, types.Deb, common.BeatVersion)
 
 		binaryName, binaryPath, err := beat.Download(ctx)
 		if err != nil {

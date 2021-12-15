@@ -10,7 +10,6 @@ import (
 	"runtime"
 
 	elasticversion "github.com/elastic/e2e-testing/internal"
-	types "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/beats"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
@@ -112,7 +111,7 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 
 	artifact := "elastic-agent"
 
-	beat := beats.NewMacBeat(artifact, types.GetArchitecture(), common.BeatVersion)
+	beat := beats.NewMacBeat(artifact, common.BeatVersion)
 	_, binaryPath, err := beat.Download(ctx)
 	if err != nil {
 		return err

@@ -47,8 +47,15 @@ func (b *Beat) NoXPack() *Beat {
 	return b
 }
 
-// GenerickBeat creates an instance of an x-pack Beat
-func GenerickBeat(name string, os types.OperativeSystem, arch types.Architecture, osPackage types.InstallationPackage, version string) *Beat {
+// GenericBeat creates an instance of an x-pack Beat
+func GenericBeat(name string, os types.OperativeSystem, arch types.Architecture, osPackage types.InstallationPackage, version string) *Beat {
+	if os == types.Linux {
+		// Centos uses "aarch64" as architecture for ARM
+		if arch == types.Arm64 && osPackage == types.Rpm {
+			arch = types.Aarch64
+		}
+	}
+
 	return &Beat{
 		Arch:                arch,
 		Docker:              false,
@@ -61,18 +68,18 @@ func GenerickBeat(name string, os types.OperativeSystem, arch types.Architecture
 }
 
 // NewLinuxBeat creates an instance of a Beat for Linux
-func NewLinuxBeat(name string, arch types.Architecture, osPackage types.InstallationPackage, version string) *Beat {
-	return GenerickBeat(name, types.Linux, arch, osPackage, version)
+func NewLinuxBeat(name string, osPackage types.InstallationPackage, version string) *Beat {
+	return GenericBeat(name, types.Linux, types.GetArchitecture(), osPackage, version)
 }
 
 // NewMacBeat creates an instance of a Beat for Linux
-func NewMacBeat(name string, arch types.Architecture, version string) *Beat {
-	return GenerickBeat(name, types.Linux, arch, types.TarGz, version)
+func NewMacBeat(name string, version string) *Beat {
+	return GenericBeat(name, types.Linux, types.GetArchitecture(), types.TarGz, version)
 }
 
 // NewWindowsBeat creates an instance of a Beat for Windows, running on AMD64 (x86_64) using a ZIP file
 func NewWindowsBeat(name string, version string, xpack bool) *Beat {
-	return GenerickBeat(name, types.Windows, types.Amd64, types.Zip, version)
+	return GenericBeat(name, types.Windows, types.Amd64, types.Zip, version)
 }
 
 // Download downloads the beat
