@@ -10,10 +10,11 @@ import (
 	"runtime"
 
 	elasticversion "github.com/elastic/e2e-testing/internal"
+	types "github.com/elastic/e2e-testing/internal"
+	"github.com/elastic/e2e-testing/internal/beats"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
-	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -110,23 +111,10 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 	defer span.End()
 
 	artifact := "elastic-agent"
-	os := "darwin"
-	arch := "x86_64"
-	if utils.GetArchitecture() == "arm64" {
-		arch = "arm64"
-	}
-	extension := "tar.gz"
 
-	_, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+	beat := beats.NewMacBeat(artifact, types.GetArchitecture(), common.BeatVersion)
+	_, binaryPath, err := beat.Download(ctx)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"artifact":  artifact,
-			"version":   common.BeatVersion,
-			"os":        os,
-			"arch":      arch,
-			"extension": extension,
-			"error":     err,
-		}).Error("Could not download the binary for the agent")
 		return err
 	}
 
@@ -135,7 +123,7 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "/elastic-agent"})
+	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), beat.OSToString(), beat.ArchToString()), "/elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }

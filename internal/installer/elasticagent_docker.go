@@ -9,10 +9,10 @@ import (
 	"fmt"
 
 	elasticversion "github.com/elastic/e2e-testing/internal"
+	types "github.com/elastic/e2e-testing/internal"
+	"github.com/elastic/e2e-testing/internal/beats"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
-	"github.com/elastic/e2e-testing/internal/utils"
-	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
 
@@ -95,20 +95,11 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 
 	// handle ubi8 images
 	artifact := "elastic-agent" + common.ProfileEnv["elasticAgentDockerImageSuffix"]
-	os := "linux"
-	arch := utils.GetArchitecture()
-	extension := "tar.gz"
 
-	_, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, true, true)
+	beat := beats.NewLinuxBeat(artifact, types.GetArchitecture(), types.TarGz, common.BeatVersion).AsDocker()
+
+	_, binaryPath, err := beat.Download(ctx)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"artifact":  artifact,
-			"version":   common.BeatVersion,
-			"os":        os,
-			"arch":      arch,
-			"extension": extension,
-			"error":     err,
-		}).Error("Could not download the binary for the agent")
 		return err
 	}
 
@@ -120,9 +111,9 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 	// we need to tag the loaded image because its tag relates to the target branch
 	return deploy.TagImage(
 		fmt.Sprintf("docker.elastic.co/beats/%s:%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersionBase)),
-		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), arch),
+		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), beat.ArchToString()),
 		// tagging including git commit and snapshot
-		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, elasticversion.GetFullVersion(common.BeatVersion), arch),
+		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, elasticversion.GetFullVersion(common.BeatVersion), beat.ArchToString()),
 	)
 }
 

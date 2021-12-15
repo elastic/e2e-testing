@@ -9,11 +9,11 @@ import (
 	"fmt"
 	"strings"
 
-	elasticversion "github.com/elastic/e2e-testing/internal"
+	types "github.com/elastic/e2e-testing/internal"
+	"github.com/elastic/e2e-testing/internal/beats"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
-	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -138,20 +138,10 @@ func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
 		})
 		defer span.End()
 
-		os := "linux"
-		arch := utils.GetArchitecture()
-		extension := "deb"
+		beat := beats.NewLinuxBeat(artifact, types.GetArchitecture(), types.Deb, common.BeatVersion)
 
-		binaryName, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+		binaryName, binaryPath, err := beat.Download(ctx)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"artifact":  artifact,
-				"version":   common.BeatVersion,
-				"os":        os,
-				"arch":      arch,
-				"extension": extension,
-				"error":     err,
-			}).Error("Could not download the binary for the agent")
 			return err
 		}
 

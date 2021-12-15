@@ -11,11 +11,12 @@ import (
 	"strings"
 
 	elasticversion "github.com/elastic/e2e-testing/internal"
+	types "github.com/elastic/e2e-testing/internal"
+	"github.com/elastic/e2e-testing/internal/beats"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/kibana"
-	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -114,13 +115,6 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 		})
 		defer span.End()
 
-		runningOS := "linux"
-		arch := "x86_64"
-		if utils.GetArchitecture() == "arm64" {
-			arch = "arm64"
-		}
-		extension := "tar.gz"
-
 		found, err := io.Exists(artifact)
 		if found && err == nil {
 			err = os.RemoveAll(artifact)
@@ -129,16 +123,11 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 			}
 			log.Trace("Cleared previously downloaded artifacts")
 		}
-		_, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, runningOS, arch, extension, false, true)
+
+		beat := beats.NewLinuxBeat(artifact, types.GetArchitecture(), types.TarGz, common.BeatVersion)
+
+		_, binaryPath, err := beat.Download(ctx)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"artifact":  artifact,
-				"version":   common.BeatVersion,
-				"os":        runningOS,
-				"arch":      arch,
-				"extension": extension,
-				"error":     err,
-			}).Error("Could not download the binary for the agent")
 			return err
 		}
 
@@ -147,7 +136,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 			return err
 		}
 
-		output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), runningOS, arch), artifact})
+		output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), beat.OSToString(), beat.ArchToString()), artifact})
 		log.WithFields(log.Fields{
 			"output":   output,
 			"artifact": artifact,

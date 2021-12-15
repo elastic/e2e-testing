@@ -23,6 +23,8 @@ import (
 	"github.com/cucumber/godog/colors"
 	messages "github.com/cucumber/messages-go/v10"
 	apme2e "github.com/elastic/e2e-testing/internal"
+	types "github.com/elastic/e2e-testing/internal"
+	beats "github.com/elastic/e2e-testing/internal/beats"
 	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
 	"go.elastic.co/apm"
@@ -139,7 +141,9 @@ func (m *podsManager) configureDockerImage(podName string) error {
 	if useCISnapshots || elasticversion.BeatsLocalPath != "" {
 		log.Debugf("Configuring Docker image for %s", podName)
 
-		_, imagePath, err := elasticversion.FetchElasticArtifact(m.ctx, podName, common.BeatVersion, "linux", "amd64", "tar.gz", true, true)
+		beat := beats.NewLinuxBeat(podName, types.Amd64, types.TarGz, common.BeatVersion)
+
+		_, imagePath, err := beat.AsDocker().Download()
 		if err != nil {
 			return err
 		}

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	elasticversion "github.com/elastic/e2e-testing/internal"
+	"github.com/elastic/e2e-testing/internal/beats"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
@@ -106,20 +107,11 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 	defer span.End()
 
 	artifact := "elastic-agent"
-	os := "windows"
-	arch := "x86_64"
-	extension := "zip"
 
-	_, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+	beat := beats.NewWindowsBeat(artifact, common.BeatVersion, true)
+
+	_, binaryPath, err := beat.Download(ctx)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"artifact":  artifact,
-			"version":   common.BeatVersion,
-			"os":        os,
-			"arch":      arch,
-			"extension": extension,
-			"error":     err,
-		}).Error("Could not download the binary for the agent")
 		return err
 	}
 
@@ -135,7 +127,7 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 			return err
 		}
 
-		output, _ := i.Exec(ctx, []string{"powershell.exe", "Move-Item", "-Force", "-Path", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "-Destination", "C:\\elastic-agent"})
+		output, _ := i.Exec(ctx, []string{"powershell.exe", "Move-Item", "-Force", "-Path", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), beat.OSToString(), beat.ArchToString()), "-Destination", "C:\\elastic-agent"})
 		log.WithField("output", output).Trace("Moved elastic-agent")
 		return nil
 	}

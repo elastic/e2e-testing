@@ -9,11 +9,11 @@ import (
 	"fmt"
 	"strings"
 
-	elasticversion "github.com/elastic/e2e-testing/internal"
+	types "github.com/elastic/e2e-testing/internal"
+	"github.com/elastic/e2e-testing/internal/beats"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
-	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -139,23 +139,15 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 		})
 		defer span.End()
 
-		os := "linux"
-		arch := "x86_64"
-		if utils.GetArchitecture() == "arm64" {
-			arch = "aarch64"
+		arch := types.GetArchitecture()
+		if arch == types.Arm64 {
+			arch = types.Aarch64
 		}
-		extension := "rpm"
 
-		binaryName, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+		beat := beats.NewLinuxBeat(artifact, arch, types.Rpm, common.BeatVersion)
+
+		binaryName, binaryPath, err := beat.Download(ctx)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"artifact":  artifact,
-				"version":   common.BeatVersion,
-				"os":        os,
-				"arch":      arch,
-				"extension": extension,
-				"error":     err,
-			}).Error("Could not download the binary for the agent")
 			return err
 		}
 
