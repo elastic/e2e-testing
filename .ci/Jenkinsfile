@@ -483,7 +483,7 @@ def generateFunctionalTestStep(Map args = [:]){
           // This step will help to send the APM traces to the
           // withOtelEnv is the one that uses the APM service defined by the Otel Jenkins plugin.
           // withAPMEnv uses Vault to prepare the context.
-					// IMPORTANT: withAPMEnv is now the one in used since withOtelEnv uses a specific Opentelemetry Collector at the moment.
+          // IMPORTANT: withAPMEnv is now the one in used since withOtelEnv uses a specific Opentelemetry Collector at the moment.
           // TODO: This will need to be integrated into the provisioned VMs
           withAPMEnv() {
             // Start node, capture ip address
