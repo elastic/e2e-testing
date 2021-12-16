@@ -7,7 +7,7 @@ package beats
 import (
 	"testing"
 
-	types "github.com/elastic/e2e-testing/internal"
+	"github.com/elastic/e2e-testing/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 

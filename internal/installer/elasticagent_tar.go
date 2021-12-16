@@ -11,12 +11,12 @@ import (
 	"strings"
 
 	elasticversion "github.com/elastic/e2e-testing/internal"
-	types "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/beats"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/kibana"
+	"github.com/elastic/e2e-testing/internal/types"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )

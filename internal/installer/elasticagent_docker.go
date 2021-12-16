@@ -9,10 +9,10 @@ import (
 	"fmt"
 
 	elasticversion "github.com/elastic/e2e-testing/internal"
-	types "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/beats"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
+	"github.com/elastic/e2e-testing/internal/types"
 	"go.elastic.co/apm"
 )
 

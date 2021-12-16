@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/elastic/e2e-testing/internal"
-	types "github.com/elastic/e2e-testing/internal"
+	"github.com/elastic/e2e-testing/internal/types"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
