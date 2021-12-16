@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Jeffail/gabs/v2"
+	"github.com/cenkalti/backoff/v4"
+	"github.com/elastic/e2e-testing/internal/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
@@ -22,24 +25,67 @@ type IntegrationPackage struct {
 
 // AddIntegrationToPolicy adds an integration to policy
 func (c *Client) AddIntegrationToPolicy(ctx context.Context, packageDS PackageDataStream) error {
-	span, _ := apm.StartSpanOptions(ctx, "Adding integration to policy", "fleet.package.add-to-policy", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	defer span.End()
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
+	retryCount := 1
 
-	reqBody, err := json.Marshal(packageDS)
+	exp := utils.GetExponentialBackOff(maxTimeout)
+
+	addIntegrationFn := func() error {
+		span, _ := apm.StartSpanOptions(ctx, "Adding integration to policy", "fleet.package.add-to-policy", apm.SpanOptions{
+			Parent: apm.SpanFromContext(ctx).TraceContext(),
+		})
+		defer span.End()
+
+		reqBody, err := json.Marshal(packageDS)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"err":         err,
+				"package":     packageDS,
+				"retry":       retryCount,
+			}).Warn("Could not convert policy-package (request) to JSON. Retrying")
+
+			retryCount++
+
+			return err
+		}
+
+		statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/package_policies", FleetAPI), reqBody)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"err":         err,
+				"package":     packageDS,
+				"retry":       retryCount,
+			}).Warn("Could not add package to policy. Retrying")
+
+			retryCount++
+
+			return err
+		}
+
+		if statusCode != 200 {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"err":         err,
+				"statusCode":  statusCode,
+				"response":    respBody,
+				"package":     packageDS,
+				"retry":       retryCount,
+			}).Warn("could not add package to policy because of HTTP code is not 200")
+
+			retryCount++
+			return fmt.Errorf("could not add package to policy; API status code = %d; response body = %s", statusCode, respBody)
+		}
+
+		return nil
+	}
+
+	err := backoff.Retry(addIntegrationFn, exp)
 	if err != nil {
-		return errors.Wrap(err, "could not convert policy-package (request) to JSON")
+		return err
 	}
 
-	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/package_policies", FleetAPI), reqBody)
-	if err != nil {
-		return errors.Wrap(err, "could not add package to policy")
-	}
-
-	if statusCode != 200 {
-		return fmt.Errorf("could not add package to policy; API status code = %d; response body = %s", statusCode, respBody)
-	}
 	return nil
 }
 
