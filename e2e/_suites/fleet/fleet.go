@@ -536,7 +536,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 		return err
 	}
 
-	agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, installerType)
+	agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
 	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken)
 	if err != nil {
 		return err
