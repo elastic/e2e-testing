@@ -11,6 +11,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	elasticversion "github.com/elastic/e2e-testing/internal"
+	types "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/installer"
@@ -100,7 +101,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		dockerInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, "docker")
 		dockerInstaller.Preinstall(fts.currentContext)
 
-		arch := utils.GetArchitecture()
+		arch := types.Architectures[types.GetArchitecture()]
 		dockerImageTag += "-" + arch
 	}
 

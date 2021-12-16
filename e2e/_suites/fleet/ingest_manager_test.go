@@ -16,6 +16,7 @@ import (
 	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
 	apme2e "github.com/elastic/e2e-testing/internal"
+	types "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
@@ -149,7 +150,7 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 
 		common.ProfileEnv = map[string]string{
 			"kibanaVersion": common.KibanaVersion,
-			"stackPlatform": "linux/" + utils.GetArchitecture(),
+			"stackPlatform": "linux/" + types.Architectures[types.GetArchitecture()],
 			"stackVersion":  common.StackVersion,
 		}
 

@@ -27,6 +27,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+	e2etypes "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -523,7 +524,7 @@ func PullImages(ctx context.Context, images []string) {
 	c := getDockerClient()
 	defer c.Close()
 
-	platform := "linux/" + utils.GetArchitecture()
+	platform := "linux/" + e2etypes.Architectures[e2etypes.GetArchitecture()]
 
 	authConfig := types.AuthConfig{
 		Username: os.Getenv("DOCKER_USER"),

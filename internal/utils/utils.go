@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v4"
@@ -25,17 +24,6 @@ const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 //nolint:unused
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
-
-// GetArchitecture retrieves if the underlying system platform is arm64 or amd64
-func GetArchitecture() string {
-	arch, present := os.LookupEnv("GOARCH")
-	if !present {
-		arch = runtime.GOARCH
-	}
-
-	log.Debugf("Go's architecture is (%s)", arch)
-	return arch
-}
 
 // DownloadFile will download a url and store it in a temporary path.
 // It writes to the destination file as it downloads it, without
