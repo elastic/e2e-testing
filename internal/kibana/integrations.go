@@ -60,6 +60,8 @@ func (c *Client) AddIntegrationToPolicy(ctx context.Context, packageDS PackageDa
 			}).Warn("Could not add package to policy. Retrying")
 
 			retryCount++
+
+			return err			
 		}
 
 		if statusCode != 200 {
