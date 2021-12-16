@@ -61,7 +61,7 @@ func (c *Client) AddIntegrationToPolicy(ctx context.Context, packageDS PackageDa
 
 			retryCount++
 
-			return err			
+			return err
 		}
 
 		if statusCode != 200 {
