@@ -141,9 +141,9 @@ func (m *podsManager) configureDockerImage(podName string) error {
 	if useCISnapshots || elasticversion.BeatsLocalPath != "" {
 		log.Debugf("Configuring Docker image for %s", podName)
 
-		beat := beats.NewLinuxBeat(podName, types.Amd64, types.TarGz, common.BeatVersion)
+		beat := beats.GenericBeat(podName, types.Linux, types.Amd64, types.TarGz, common.BeatVersion)
 
-		_, imagePath, err := beat.AsDocker().Download()
+		_, imagePath, err := beat.AsDocker().Download(m.ctx)
 		if err != nil {
 			return err
 		}
