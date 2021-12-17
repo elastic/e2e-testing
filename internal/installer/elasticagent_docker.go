@@ -18,15 +18,15 @@ import (
 
 // elasticAgentDockerPackage implements operations for a docker installer
 type elasticAgentDockerPackage struct {
-	service deploy.ServiceRequest
-	deploy  deploy.Deployer
+	service  deploy.ServiceRequest
+	deployer deploy.Deployer
 }
 
 // AttachElasticAgentDockerPackage creates an instance for the docker installer
-func AttachElasticAgentDockerPackage(deploy deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentDockerPackage(deployer deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentDockerPackage{
-		service: service,
-		deploy:  deploy,
+		service:  service,
+		deployer: deployer,
 	}
 }
 
@@ -38,7 +38,7 @@ func (i *elasticAgentDockerPackage) AddFiles(ctx context.Context, files []string
 	span.Context.SetLabel("files", files)
 	defer span.End()
 
-	return i.deploy.AddFiles(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, files)
+	return i.deployer.AddFiles(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, files)
 }
 
 // Inspect returns info on package
@@ -62,7 +62,7 @@ func (i *elasticAgentDockerPackage) Exec(ctx context.Context, args []string) (st
 	span.Context.SetLabel("arguments", args)
 	defer span.End()
 
-	output, err := i.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, args)
+	output, err := i.deployer.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, args)
 	return output, err
 }
 
@@ -78,7 +78,7 @@ func (i *elasticAgentDockerPackage) InstallCerts(ctx context.Context) error {
 
 // Logs prints logs of service
 func (i *elasticAgentDockerPackage) Logs(ctx context.Context) error {
-	return i.deploy.Logs(ctx, i.service)
+	return i.deployer.Logs(ctx, i.service)
 }
 
 // Postinstall executes operations after installing a package

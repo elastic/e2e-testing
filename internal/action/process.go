@@ -27,17 +27,17 @@ type ProcessAction struct {
 
 // actionWaitProcess implements operation for waiting on a process status
 type actionWaitProcess struct {
-	service deploy.ServiceRequest
-	deploy  deploy.Deployer
-	opts    ProcessAction
+	service  deploy.ServiceRequest
+	deployer deploy.Deployer
+	opts     ProcessAction
 }
 
 // AttachActionWaitProcess action to woit for a process status on *nix like systems
-func AttachActionWaitProcess(deploy deploy.Deployer, service deploy.ServiceRequest, actionOpts ProcessAction) deploy.ServiceOperation {
+func AttachActionWaitProcess(deployer deploy.Deployer, service deploy.ServiceRequest, actionOpts ProcessAction) deploy.ServiceOperation {
 	return &actionWaitProcess{
-		service: service,
-		deploy:  deploy,
-		opts:    actionOpts,
+		service:  service,
+		deployer: deployer,
+		opts:     actionOpts,
 	}
 }
 

@@ -23,15 +23,15 @@ import (
 
 // elasticAgentTARPackage implements operations for a RPM installer
 type elasticAgentTARPackage struct {
-	service deploy.ServiceRequest
-	deploy  deploy.Deployer
+	service  deploy.ServiceRequest
+	deployer deploy.Deployer
 }
 
 // AttachElasticAgentTARPackage creates an instance for the RPM installer
-func AttachElasticAgentTARPackage(deploy deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentTARPackage(deployer deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentTARPackage{
-		service: service,
-		deploy:  deploy,
+		service:  service,
+		deployer: deployer,
 	}
 }
 
@@ -43,7 +43,7 @@ func (i *elasticAgentTARPackage) AddFiles(ctx context.Context, files []string) e
 	span.Context.SetLabel("files", files)
 	defer span.End()
 
-	return i.deploy.AddFiles(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, files)
+	return i.deployer.AddFiles(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, files)
 }
 
 // Inspect returns info on package
@@ -68,7 +68,7 @@ func (i *elasticAgentTARPackage) Exec(ctx context.Context, args []string) (strin
 	span.Context.SetLabel("arguments", args)
 	defer span.End()
 
-	output, err := i.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, args)
+	output, err := i.deployer.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, args)
 	return output, err
 }
 

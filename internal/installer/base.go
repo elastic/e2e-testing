@@ -19,7 +19,7 @@ import (
 
 // Attach will attach a installer to a deployment allowing
 // the installation of a package to be transparently configured no matter the backend
-func Attach(ctx context.Context, deploy deploy.Deployer, service deploy.ServiceRequest, installType string) (deploy.ServiceOperator, error) {
+func Attach(ctx context.Context, deployer deploy.Deployer, service deploy.ServiceRequest, installType string) (deploy.ServiceOperator, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Attaching installer to host", "elastic-agent.installer.attach", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -36,22 +36,22 @@ func Attach(ctx context.Context, deploy deploy.Deployer, service deploy.ServiceR
 			// Since both Linux and macOS distribute elastic-agent using TAR format we must
 			// determine the runtime to figure out which tar installer to use here
 			if runtime.GOOS == "darwin" && common.Provider == "remote" {
-				install := AttachElasticAgentTARDarwinPackage(deploy, service)
+				install := AttachElasticAgentTARDarwinPackage(deployer, service)
 				return install, nil
 			}
-			install := AttachElasticAgentTARPackage(deploy, service)
+			install := AttachElasticAgentTARPackage(deployer, service)
 			return install, nil
 		case "zip":
-			install := AttachElasticAgentZIPPackage(deploy, service)
+			install := AttachElasticAgentZIPPackage(deployer, service)
 			return install, nil
 		case "rpm":
-			install := AttachElasticAgentRPMPackage(deploy, service)
+			install := AttachElasticAgentRPMPackage(deployer, service)
 			return install, nil
 		case "deb":
-			install := AttachElasticAgentDEBPackage(deploy, service)
+			install := AttachElasticAgentDEBPackage(deployer, service)
 			return install, nil
 		case "docker":
-			install := AttachElasticAgentDockerPackage(deploy, service)
+			install := AttachElasticAgentDockerPackage(deployer, service)
 			return install, nil
 		}
 	}

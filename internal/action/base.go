@@ -18,7 +18,7 @@ const (
 )
 
 // Attach will attach a service operator action to service operator
-func Attach(ctx context.Context, deploy deploy.Deployer, service deploy.ServiceRequest, action string, actionOpts interface{}) (deploy.ServiceOperation, error) {
+func Attach(ctx context.Context, deployer deploy.Deployer, service deploy.ServiceRequest, action string, actionOpts interface{}) (deploy.ServiceOperation, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Attaching action to service operator", "action.attach", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -35,7 +35,7 @@ func Attach(ctx context.Context, deploy deploy.Deployer, service deploy.ServiceR
 		if !ok {
 			log.Fatal("Unable to cast to action options to ProcessAction")
 		}
-		attachAction := AttachActionWaitProcess(deploy, service, newActionOpts)
+		attachAction := AttachActionWaitProcess(deployer, service, newActionOpts)
 		return attachAction, nil
 	}
 

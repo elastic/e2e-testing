@@ -20,15 +20,15 @@ import (
 
 // elasticAgentZIPPackage implements operations for a ZIP installer
 type elasticAgentZIPPackage struct {
-	service deploy.ServiceRequest
-	deploy  deploy.Deployer
+	service  deploy.ServiceRequest
+	deployer deploy.Deployer
 }
 
 // AttachElasticAgentZIPPackage creates an instance for the ZIP installer
-func AttachElasticAgentZIPPackage(deploy deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentZIPPackage(deployer deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentZIPPackage{
-		service: service,
-		deploy:  deploy,
+		service:  service,
+		deployer: deployer,
 	}
 }
 
@@ -59,7 +59,7 @@ func (i *elasticAgentZIPPackage) Exec(ctx context.Context, args []string) (strin
 	span.Context.SetLabel("arguments", args)
 	defer span.End()
 
-	output, err := i.deploy.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, args)
+	output, err := i.deployer.ExecIn(ctx, deploy.NewServiceRequest(common.FleetProfileName), i.service, args)
 	return output, err
 }
 
@@ -91,7 +91,7 @@ func (i *elasticAgentZIPPackage) InstallCerts(ctx context.Context) error {
 func (i *elasticAgentZIPPackage) Logs(ctx context.Context) error {
 	// TODO: we need to find a way to read Winidows logs for the service
 	// or we could read "C:\Program Files\Elastic\Agent\data\elastic-agent-*\logs\elastic-agent-json.log*"
-	return i.deploy.Logs(ctx, i.service)
+	return i.deployer.Logs(ctx, i.service)
 }
 
 // Postinstall executes operations after installing a ZIP package
