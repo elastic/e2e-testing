@@ -133,8 +133,10 @@ pipeline {
               options { skipDefaultCheckout() }
               when {
                 beforeAgent true
-                expression { return env.FORCE_SKIP_GIT_CHECKS == "true" }
-                expression { return env.SKIP_TESTS == "false" }
+                anyOf {
+                  expression { return env.FORCE_SKIP_GIT_CHECKS == "true" }
+                  expression { return env.SKIP_TESTS == "false" }
+                }
               }
               steps {
                 withGithubNotify(context: 'Tests', tab: 'tests') {
