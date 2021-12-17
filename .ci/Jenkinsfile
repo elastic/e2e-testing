@@ -93,14 +93,7 @@ pipeline {
             githubCheckNotify('PENDING')  // we want to notify the upstream about the e2e the soonest
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
             setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
-            dir("${BASE_DIR}"){
-              // Skip all the test stages for PR's with markdown changes only
-              setEnvVar("SKIP_TESTS", isGitRegionMatch(patterns: [ '.*\\.md' ], shouldMatchAll: true))
-              script {
-                def regexps = [ "^e2e/_suites/fleet/.*", "^e2e/_suites/helm/.*", "^e2e/_suites/kubernetes-autodiscover/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
-                setEnvVar("SKIP_TESTS", !isGitRegionMatch(patterns: regexps, shouldMatchAll: false))
-              }
-            }
+            checkSkipTests()
           }
         }
         stage('Pre-Submit') {
@@ -133,8 +126,10 @@ pipeline {
               options { skipDefaultCheckout() }
               when {
                 beforeAgent true
-                expression { return env.FORCE_SKIP_GIT_CHECKS == "true" }
-                expression { return env.SKIP_TESTS == "false" }
+                anyOf {
+                  expression { return env.FORCE_SKIP_GIT_CHECKS == "true" }
+                  expression { return env.SKIP_TESTS == "false" }
+                }
               }
               steps {
                 withGithubNotify(context: 'Tests', tab: 'tests') {
@@ -304,6 +299,23 @@ pipeline {
     }
   }
 }
+
+// this function evaluates if the test stage of the build must be executed
+def checkSkipTests() {
+  dir("${BASE_DIR}"){
+
+    // only docs means no tests are run
+    if (isGitRegionMatch(patterns: [ '.*\\.md' ], shouldMatchAll: true)) {
+      setEnvVar("SKIP_TESTS", true)
+      return
+    }
+
+    // patterns for all places that should trigger a full build
+    def regexps = [ "^e2e/_suites/fleet/.*", "^e2e/_suites/helm/.*", "^e2e/_suites/kubernetes-autodiscover/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
+    setEnvVar("SKIP_TESTS", !isGitRegionMatch(patterns: regexps, shouldMatchAll: false))
+  }
+}
+
 
 def sshexec(workspace, connection, cmd){
   sh "ssh -tt -o TCPKeepAlive=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${workspace}/e2essh ${connection.user}@${connection.ip} -- '${cmd}'"
