@@ -21,11 +21,11 @@ import (
 // elasticAgentDEBPackage implements operations for a DEB installer
 type elasticAgentDEBPackage struct {
 	service deploy.ServiceRequest
-	deploy  deploy.Deployment
+	deploy  deploy.Deployer
 }
 
 // AttachElasticAgentDEBPackage creates an instance for the DEB installer
-func AttachElasticAgentDEBPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentDEBPackage(deploy deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentDEBPackage{
 		service: service,
 		deploy:  deploy,

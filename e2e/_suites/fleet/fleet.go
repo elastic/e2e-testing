@@ -54,7 +54,7 @@ type FleetTestSuite struct {
 	PolicyUpdatedAt     string // the moment the policy was updated
 	Version             string // current elastic-agent version
 	kibanaClient        *kibana.Client
-	deployer            deploy.Deployment
+	deployer            deploy.Deployer
 	BeatsProcess        string // (optional) name of the Beats that must be present before installing the elastic-agent
 	// date controls for queries
 	AgentStoppedDate             time.Time

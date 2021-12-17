@@ -21,11 +21,11 @@ import (
 // elasticAgentRPMPackage implements operations for a RPM installer
 type elasticAgentRPMPackage struct {
 	service deploy.ServiceRequest
-	deploy  deploy.Deployment
+	deploy  deploy.Deployer
 }
 
 // AttachElasticAgentRPMPackage creates an instance for the RPM installer
-func AttachElasticAgentRPMPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentRPMPackage(deploy deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentRPMPackage{
 		service: service,
 		deploy:  deploy,

@@ -22,7 +22,7 @@ type dockerDeploymentManifest struct {
 	ConnectionString string
 }
 
-func newDockerDeploy() Deployment {
+func newDockerDeploy() Deployer {
 	connectionString := shell.GetEnv("DOCKER_HOST", "")
 	return &dockerDeploymentManifest{
 		Context:          context.Background(),

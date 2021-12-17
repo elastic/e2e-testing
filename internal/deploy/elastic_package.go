@@ -33,7 +33,7 @@ type EPServiceManager struct {
 	Context context.Context
 }
 
-func newElasticPackage() Deployment {
+func newElasticPackage() Deployer {
 	return &EPServiceManager{
 		Context: context.Background(),
 	}

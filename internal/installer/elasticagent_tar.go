@@ -24,11 +24,11 @@ import (
 // elasticAgentTARPackage implements operations for a RPM installer
 type elasticAgentTARPackage struct {
 	service deploy.ServiceRequest
-	deploy  deploy.Deployment
+	deploy  deploy.Deployer
 }
 
 // AttachElasticAgentTARPackage creates an instance for the RPM installer
-func AttachElasticAgentTARPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentTARPackage(deploy deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentTARPackage{
 		service: service,
 		deploy:  deploy,

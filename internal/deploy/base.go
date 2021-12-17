@@ -12,9 +12,9 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-// Deployment interface for operations dealing with deployments of the bits
+// Deployer interface for operations dealing with deployments of the bits
 // required for testing
-type Deployment interface {
+type Deployer interface {
 	Add(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error    // adds service deployments
 	AddFiles(ctx context.Context, profile ServiceRequest, service ServiceRequest, files []string) error         // adds files to a service
 	Bootstrap(ctx context.Context, profile ServiceRequest, env map[string]string, waitCB func() error) error    // will bootstrap or reuse existing cluster if kubernetes is selected
@@ -24,7 +24,7 @@ type Deployment interface {
 	Logs(ctx context.Context, service ServiceRequest) error                                                     // prints logs of deployed service
 	PreBootstrap(ctx context.Context) error                                                                     // run any pre-bootstrap commands
 	Remove(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error // Removes services from deployment
-	Start(ctx context.Context, service ServiceRequest) error                                                    // Starts a service or container depending on Deployment
+	Start(ctx context.Context, service ServiceRequest) error                                                    // Starts a service or container depending on Deployer
 	Stop(ctx context.Context, service ServiceRequest) error                                                     // Stop a service or container depending on deployment
 }
 
@@ -136,7 +136,7 @@ func (sr ServiceRequest) WaitingFor(w ...WaitForServiceRequest) ServiceRequest {
 }
 
 // New creates a new deployment
-func New(provider string) Deployment {
+func New(provider string) Deployer {
 	if strings.EqualFold(provider, "docker") {
 		return newDockerDeploy()
 	}

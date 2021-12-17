@@ -21,11 +21,11 @@ import (
 // elasticAgentTARDarwinPackage implements operations for a TAR installer
 type elasticAgentTARDarwinPackage struct {
 	service deploy.ServiceRequest
-	deploy  deploy.Deployment
+	deploy  deploy.Deployer
 }
 
 // AttachElasticAgentTARDarwinPackage creates an instance for the TAR installer
-func AttachElasticAgentTARDarwinPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentTARDarwinPackage(deploy deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentTARDarwinPackage{
 		service: service,
 		deploy:  deploy,

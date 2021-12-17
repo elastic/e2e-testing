@@ -19,7 +19,7 @@ type remoteDeploymentManifest struct {
 	Context context.Context
 }
 
-func newRemoteDeploy() Deployment {
+func newRemoteDeploy() Deployer {
 	return &remoteDeploymentManifest{Context: context.Background()}
 }
 

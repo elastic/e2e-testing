@@ -19,11 +19,11 @@ import (
 // elasticAgentDockerPackage implements operations for a docker installer
 type elasticAgentDockerPackage struct {
 	service deploy.ServiceRequest
-	deploy  deploy.Deployment
+	deploy  deploy.Deployer
 }
 
 // AttachElasticAgentDockerPackage creates an instance for the docker installer
-func AttachElasticAgentDockerPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentDockerPackage(deploy deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentDockerPackage{
 		service: service,
 		deploy:  deploy,

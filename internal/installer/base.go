@@ -19,7 +19,7 @@ import (
 
 // Attach will attach a installer to a deployment allowing
 // the installation of a package to be transparently configured no matter the backend
-func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.ServiceRequest, installType string) (deploy.ServiceOperator, error) {
+func Attach(ctx context.Context, deploy deploy.Deployer, service deploy.ServiceRequest, installType string) (deploy.ServiceOperator, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Attaching installer to host", "elastic-agent.installer.attach", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})

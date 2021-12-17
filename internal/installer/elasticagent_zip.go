@@ -21,11 +21,11 @@ import (
 // elasticAgentZIPPackage implements operations for a ZIP installer
 type elasticAgentZIPPackage struct {
 	service deploy.ServiceRequest
-	deploy  deploy.Deployment
+	deploy  deploy.Deployer
 }
 
 // AttachElasticAgentZIPPackage creates an instance for the ZIP installer
-func AttachElasticAgentZIPPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentZIPPackage(deploy deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentZIPPackage{
 		service: service,
 		deploy:  deploy,

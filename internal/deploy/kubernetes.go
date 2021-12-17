@@ -24,7 +24,7 @@ type kubernetesDeploymentManifest struct {
 	Context context.Context
 }
 
-func newK8sDeploy() Deployment {
+func newK8sDeploy() Deployer {
 	return &kubernetesDeploymentManifest{Context: context.Background()}
 }
 
