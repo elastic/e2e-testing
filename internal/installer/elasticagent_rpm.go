@@ -24,8 +24,8 @@ type elasticAgentRPMPackage struct {
 	deployer deploy.Deployer
 }
 
-// AttachElasticAgentRPMPackage creates an instance for the RPM installer
-func AttachElasticAgentRPMPackage(deployer deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
+// ElasticAgentRPMPackage creates an instance for the RPM installer
+func ElasticAgentRPMPackage(deployer deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentRPMPackage{
 		service:  service,
 		deployer: deployer,

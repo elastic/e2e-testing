@@ -22,8 +22,8 @@ type elasticAgentDockerPackage struct {
 	deployer deploy.Deployer
 }
 
-// AttachElasticAgentDockerPackage creates an instance for the docker installer
-func AttachElasticAgentDockerPackage(deployer deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
+// ElasticAgentDockerPackage creates an instance for the docker installer
+func ElasticAgentDockerPackage(deployer deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentDockerPackage{
 		service:  service,
 		deployer: deployer,

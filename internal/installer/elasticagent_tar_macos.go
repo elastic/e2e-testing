@@ -24,8 +24,8 @@ type elasticAgentTARDarwinPackage struct {
 	deployer deploy.Deployer
 }
 
-// AttachElasticAgentTARDarwinPackage creates an instance for the TAR installer
-func AttachElasticAgentTARDarwinPackage(deployer deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
+// ElasticAgentTARDarwinPackage creates an instance for the TAR installer
+func ElasticAgentTARDarwinPackage(deployer deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentTARDarwinPackage{
 		service:  service,
 		deployer: deployer,

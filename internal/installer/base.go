@@ -36,22 +36,22 @@ func Attach(ctx context.Context, deployer deploy.Deployer, service deploy.Servic
 			// Since both Linux and macOS distribute elastic-agent using TAR format we must
 			// determine the runtime to figure out which tar installer to use here
 			if runtime.GOOS == "darwin" && common.Provider == "remote" {
-				install := AttachElasticAgentTARDarwinPackage(deployer, service)
+				install := ElasticAgentTARDarwinPackage(deployer, service)
 				return install, nil
 			}
-			install := AttachElasticAgentTARPackage(deployer, service)
+			install := ElasticAgentTARPackage(deployer, service)
 			return install, nil
 		case "zip":
-			install := AttachElasticAgentZIPPackage(deployer, service)
+			install := ElasticAgentZIPPackage(deployer, service)
 			return install, nil
 		case "rpm":
-			install := AttachElasticAgentRPMPackage(deployer, service)
+			install := ElasticAgentRPMPackage(deployer, service)
 			return install, nil
 		case "deb":
-			install := AttachElasticAgentDEBPackage(deployer, service)
+			install := ElasticAgentDEBPackage(deployer, service)
 			return install, nil
 		case "docker":
-			install := AttachElasticAgentDockerPackage(deployer, service)
+			install := ElasticAgentDockerPackage(deployer, service)
 			return install, nil
 		}
 	}

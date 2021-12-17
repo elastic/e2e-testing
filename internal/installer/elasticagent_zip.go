@@ -24,8 +24,8 @@ type elasticAgentZIPPackage struct {
 	deployer deploy.Deployer
 }
 
-// AttachElasticAgentZIPPackage creates an instance for the ZIP installer
-func AttachElasticAgentZIPPackage(deployer deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
+// ElasticAgentZIPPackage creates an instance for the ZIP installer
+func ElasticAgentZIPPackage(deployer deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentZIPPackage{
 		service:  service,
 		deployer: deployer,

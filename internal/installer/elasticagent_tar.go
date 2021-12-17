@@ -27,8 +27,8 @@ type elasticAgentTARPackage struct {
 	deployer deploy.Deployer
 }
 
-// AttachElasticAgentTARPackage creates an instance for the RPM installer
-func AttachElasticAgentTARPackage(deployer deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
+// ElasticAgentTARPackage creates an instance for the RPM installer
+func ElasticAgentTARPackage(deployer deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentTARPackage{
 		service:  service,
 		deployer: deployer,

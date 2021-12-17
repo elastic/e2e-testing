@@ -24,8 +24,8 @@ type elasticAgentDEBPackage struct {
 	deployer deploy.Deployer
 }
 
-// AttachElasticAgentDEBPackage creates an instance for the DEB installer
-func AttachElasticAgentDEBPackage(deployer deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
+// ElasticAgentDEBPackage creates an instance for the DEB installer
+func ElasticAgentDEBPackage(deployer deploy.Deployer, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentDEBPackage{
 		service:  service,
 		deployer: deployer,
