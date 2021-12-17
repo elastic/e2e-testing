@@ -85,7 +85,7 @@ func (fts *FleetTestSuite) afterScenario() {
 		if !fts.StandAlone {
 			// for the centos/debian flavour we need to retrieve the internal log files for the elastic-agent, as they are not
 			// exposed as container logs. For that reason we need to go through the installer abstraction
-			agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
+			agentInstaller, _ := installer.NewElasticAgentDeployer(fts.deployer).AttachInstaller(fts.currentContext, agentService, fts.InstallerType)
 
 			if log.IsLevelEnabled(log.DebugLevel) {
 				err := agentInstaller.Logs(fts.currentContext)
@@ -362,7 +362,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(version, i
 
 func (fts *FleetTestSuite) installCerts() error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
+	agentInstaller, _ := installer.NewElasticAgentDeployer(fts.deployer).AttachInstaller(fts.currentContext, agentService, fts.InstallerType)
 
 	err := agentInstaller.InstallCerts(fts.currentContext)
 	if err != nil {
@@ -536,7 +536,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 		return err
 	}
 
-	agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
+	agentInstaller, _ := installer.NewElasticAgentDeployer(fts.deployer).AttachInstaller(fts.currentContext, agentService, fts.InstallerType)
 	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken)
 	if err != nil {
 		return err
@@ -546,7 +546,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 
 func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state string) error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
+	agentInstaller, _ := installer.NewElasticAgentDeployer(fts.deployer).AttachInstaller(fts.currentContext, agentService, fts.InstallerType)
 	if state == "started" {
 		err := agentInstaller.Start(fts.currentContext)
 		return err
@@ -836,7 +836,7 @@ func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string
 
 func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
+	agentInstaller, _ := installer.NewElasticAgentDeployer(fts.deployer).AttachInstaller(fts.currentContext, agentService, fts.InstallerType)
 
 	pkgManifest, _ := agentInstaller.Inspect()
 	cmd := []string{
@@ -946,7 +946,7 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 	log.Trace("Re-enrolling the agent on the host with same token")
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
+	agentInstaller, _ := installer.NewElasticAgentDeployer(fts.deployer).AttachInstaller(fts.currentContext, agentService, fts.InstallerType)
 
 	err := agentInstaller.Enroll(fts.currentContext, fts.CurrentToken)
 	if err != nil {
@@ -1298,7 +1298,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 		return err
 	}
 
-	agentInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, fts.InstallerType)
+	agentInstaller, _ := installer.NewElasticAgentDeployer(fts.deployer).AttachInstaller(fts.currentContext, agentService, fts.InstallerType)
 	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken)
 
 	if err == nil {

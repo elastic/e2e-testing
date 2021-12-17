@@ -98,7 +98,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries
 		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		dockerInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, "docker")
+		dockerInstaller, _ := installer.NewElasticAgentDeployer(fts.deployer).AttachInstaller(fts.currentContext, agentService, "docker")
 		dockerInstaller.Preinstall(fts.currentContext)
 
 		arch := types.Architectures[types.GetArchitecture()]
