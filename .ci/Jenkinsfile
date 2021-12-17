@@ -305,8 +305,6 @@ pipeline {
 // this function evaluates if the test stage of the build must be executed
 def checkSkipTests() {
   dir("${BASE_DIR}"){
-    // running the test should be mandatory by default
-    setEnvVar("SKIP_TESTS", false)
 
     // only docs means no tests are run
     if (isGitRegionMatch(patterns: [ '.*\\.md' ], shouldMatchAll: true)) {
