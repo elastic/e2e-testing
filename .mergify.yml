@@ -1,3 +1,8 @@
+queue_rules:
+  - name: default
+    conditions:
+      - check-success=beats-ci/e2e-testing/pr-merge
+
 pull_request_rules:
   - name: ask to resolve conflict
     conditions:
@@ -13,11 +18,23 @@ pull_request_rules:
             git merge upstream/{{base}}
             git push upstream {{head}}
             ```
+  - name: backport patches to 8.0 branch
+    conditions:
+      - merged
+      - base=main
+      - label=backport-v8.0.0
+    actions:
+      backport:
+        assignees:
+          - "{{ author }}"
+        branches:
+          - "8.0"
+        title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
   - name: backport patches to 7.16 branch
     conditions:
       - merged
-      - base=master
-      - label=v7.15.0
+      - base=main
+      - label=backport-v7.16.0
     actions:
       backport:
         assignees:
@@ -25,53 +42,89 @@ pull_request_rules:
         branches:
           - "7.16"
         title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
-  - name: backport patches to 7.14 branch
+  - name: backport patches to 7.15 branch
     conditions:
       - merged
-      - base=master
-      - label=v7.14.0
+      - base=main
+      - label=backport-v7.15.0
     actions:
       backport:
         assignees:
           - "{{ author }}"
         branches:
-          - "7.14.x"
-        title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
-  - name: backport patches to 7.13 branch
-    conditions:
-      - merged
-      - base=master
-      - label=v7.13.0
-    actions:
-      backport:
-        assignees:
-          - "{{ author }}"
-        branches:
-          - "7.13.x"
+          - "7.15"
         title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
   - name: delete head branch after merge
     conditions:
       - merged
     actions:
       delete_head_branch:
-  - name: automatic squash and merge with success checks and the files matching the regex docker-compose.yml$ are modified.
+  - name: automatic squash and merge with success checks for those automated PRs created by the apmmachine.
     conditions:
+      - -merged
+      - -closed
       - check-success=beats-ci/e2e-testing/pr-merge
       - label=automation
-      - files~=docker-compose\.yml$
-      - head~=^update-.*-version
+      - author=apmmachine
+      - head~=^update-.*-version.*
     actions:
-      merge:
+      queue:
         method: squash
-        strict: smart+fasttrack
-  - name: delete upstream branch after merging changes on docker-compose.yml or it's closed
+        name: default
+  - name: delete upstream branch after merging changes the automated PR or it's closed
     conditions:
       - or:
         - merged
         - closed
       - and:
         - label=automation
-        - head~=^update-.*-version
-        - files~=docker-compose\.yml$
+        - head~=^update-.*-version.*
     actions:
       delete_head_branch:
+  - name: remove-backport label
+    conditions:
+      - label~=backport-v
+    actions:
+      label:
+        remove:
+          - backport-skip
+  - name: notify the backport policy
+    conditions:
+      - -label~=^backport
+      - base=main
+    actions:
+      comment:
+        message: |
+          This pull request does not have a backport label. Could you fix it @{{author}}? 🙏
+          To fixup this pull request, you need to add the backport labels for the needed
+          branches, such as:
+          * `backport-v./d./d./d` is the label to automatically backport to the `7./d` branch. `/d` is the digit
+          **NOTE**: `backport-skip` has been added to this pull request.
+      label:
+        add:
+          - backport-skip
+  - name: notify the backport has not been merged yet
+    conditions:
+      - -merged
+      - -closed
+      - author=mergify[bot]
+      - "#check-success>0"
+      - schedule=Mon-Mon 06:00-10:00[Europe/Paris]
+      - created-at<2 days ago
+    actions:
+      comment:
+        message: |
+          This pull request has not been merged yet. Could you please review and merge it @{{ assignee | join(', @') }}? 🙏
+  - name: automatic close the automated PRs that have not been merged.
+    conditions:
+      - -merged
+      - -closed
+      - author=apmmachine
+      - schedule=Mon-Fri 06:00-10:00[Europe/Paris]
+      - created-at<3 days ago
+      - head~=^update-.*-version.*
+    actions:
+      close:
+        message: |
+          This pull request has been automatically closed by Mergify.
+          There are likely new up-to-date and open pull requests.

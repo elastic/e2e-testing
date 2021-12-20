@@ -116,7 +116,7 @@ Projects that have to build a dependency are harder to maintain, because the way
 If we are able to remove this build part on a consumer, then the code base would be simpler, increasing how it's used by developers.
 
 #### Build time
-Projects that have to build a dependency uses more CI time, as they have to build the dependencies each time the CI triggers a job, be it a PR or branch. It's true that Jenkins (an other CI providers) allows to skip stages depending on conditions, but in the end we always need to build the dependencies at some point (probably at the merge to master).
+Projects that have to build a dependency uses more CI time, as they have to build the dependencies each time the CI triggers a job, be it a PR or branch. It's true that Jenkins (an other CI providers) allows to skip stages depending on conditions, but in the end we always need to build the dependencies at some point (probably at the merge to main).
 
 If we are able to remove this build part on a consumer, then the CI build will take less time to finish, as we will consume already published artefacts instead of building them. The pull time will be taken into consideration too, but it would be way faster than the build time.
 
