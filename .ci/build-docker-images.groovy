@@ -24,6 +24,12 @@ pipeline {
     rateLimitBuilds(throttle: [count: 60, durationName: 'hour', userBoost: true])
     quietPeriod(10)
   }
+<<<<<<< HEAD
+=======
+  parameters {
+    string(name: 'BRANCH_SPECIFIER', defaultValue: 'main', description: 'It would not be defined on the first build, see JENKINS-41929.')
+  }
+>>>>>>> 304c97fa (Update main branch (#1928))
   triggers {
     cron 'H H(0-5) * * 1-5'
   }
