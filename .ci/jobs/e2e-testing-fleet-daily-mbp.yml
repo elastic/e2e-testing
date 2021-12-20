@@ -9,11 +9,7 @@
     scm:
       - github:
           branch-discovery: no-pr
-<<<<<<< HEAD
-          head-filter-regex: '(master|7\.16|7\.15)'
-=======
           head-filter-regex: '(main|8\.0|7\.16|7\.15)'
->>>>>>> 304c97f (Update main branch (#1928))
           discover-pr-forks-strategy: merge-current
           discover-pr-forks-trust: permission
           discover-pr-origin: merge-current
