@@ -1,3 +1,8 @@
+queue_rules:
+  - name: default
+    conditions:
+      - check-success=beats-ci/e2e-testing/pr-merge
+
 pull_request_rules:
   - name: ask to resolve conflict
     conditions:
@@ -13,13 +18,6 @@ pull_request_rules:
             git merge upstream/{{base}}
             git push upstream {{head}}
             ```
-<<<<<<< HEAD
-  - name: backport patches to 7.16 branch
-    conditions:
-      - merged
-      - base=master
-      - label=v7.15.0
-=======
   - name: backport patches to 8.0 branch
     conditions:
       - merged
@@ -37,7 +35,6 @@ pull_request_rules:
       - merged
       - base=main
       - label=backport-v7.16.0
->>>>>>> 304c97fa (Update main branch (#1928))
     actions:
       backport:
         assignees:
@@ -45,63 +42,45 @@ pull_request_rules:
         branches:
           - "7.16"
         title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
-  - name: backport patches to 7.14 branch
+  - name: backport patches to 7.15 branch
     conditions:
       - merged
-<<<<<<< HEAD
-      - base=master
-      - label=v7.14.0
-=======
       - base=main
       - label=backport-v7.15.0
->>>>>>> 304c97fa (Update main branch (#1928))
     actions:
       backport:
         assignees:
           - "{{ author }}"
         branches:
-          - "7.14.x"
-        title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
-  - name: backport patches to 7.13 branch
-    conditions:
-      - merged
-      - base=master
-      - label=v7.13.0
-    actions:
-      backport:
-        assignees:
-          - "{{ author }}"
-        branches:
-          - "7.13.x"
+          - "7.15"
         title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
   - name: delete head branch after merge
     conditions:
       - merged
     actions:
       delete_head_branch:
-  - name: automatic squash and merge with success checks and the files matching the regex docker-compose.yml$ are modified.
+  - name: automatic squash and merge with success checks for those automated PRs created by the apmmachine.
     conditions:
+      - -merged
+      - -closed
       - check-success=beats-ci/e2e-testing/pr-merge
       - label=automation
-      - files~=docker-compose\.yml$
-      - head~=^update-.*-version
+      - author=apmmachine
+      - head~=^update-.*-version.*
     actions:
-      merge:
+      queue:
         method: squash
-        strict: smart+fasttrack
-  - name: delete upstream branch after merging changes on docker-compose.yml or it's closed
+        name: default
+  - name: delete upstream branch after merging changes the automated PR or it's closed
     conditions:
       - or:
         - merged
         - closed
       - and:
         - label=automation
-        - head~=^update-.*-version
-        - files~=docker-compose\.yml$
+        - head~=^update-.*-version.*
     actions:
       delete_head_branch:
-<<<<<<< HEAD
-=======
   - name: remove-backport label
     conditions:
       - label~=backport-v
@@ -149,4 +128,3 @@ pull_request_rules:
         message: |
           This pull request has been automatically closed by Mergify.
           There are likely new up-to-date and open pull requests.
->>>>>>> 304c97fa (Update main branch (#1928))
