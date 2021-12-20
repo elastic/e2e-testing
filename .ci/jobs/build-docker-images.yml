@@ -22,6 +22,10 @@
             credentials-id: f6c7695a-671e-4f4f-a331-acdce44ff9ba
             reference-repo: /var/lib/jenkins/.git-references/e2e-testing.git
             branches:
+<<<<<<< HEAD
               - $BRANCH_REFERENCE
     triggers:
       - timed: 'H H(0-5) * * 1-5'
+=======
+              - main
+>>>>>>> 304c97fa (Update main branch (#1928))

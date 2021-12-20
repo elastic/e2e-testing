@@ -43,7 +43,7 @@ pipeline {
     )
   }
   parameters {
-    string(name: 'kibana_pr', defaultValue: "master", description: "PR ID to use to build the Docker image. (e.g 10000)")
+    string(name: 'kibana_pr', defaultValue: "main", description: "PR ID to use to build the Docker image. (e.g 10000)")
   }
   stages {
     stage('Process GitHub Event') {
@@ -91,6 +91,16 @@ def runE2ETests(String suite) {
   // we need a second API request, as the issue_comment API does not retrieve data about the pull request
   // See https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#issue_comment
   def prID = getID()
+<<<<<<< HEAD
+=======
+
+  if (!prID.isInteger()) {
+    // in the case we are triggering the job for a branch (i.e main, 7.16) we directly use branch name as Docker tag
+    setEnvVar("BASE_REF", prID)
+    return prID
+  }
+
+>>>>>>> 304c97fa (Update main branch (#1928))
   def token = githubAppToken(secret: "${env.GITHUB_APP_SECRET}")
 
   def pullRequest = githubApiCall(token: token, url: "https://api.github.com/repos/${env.ELASTIC_REPO}/pulls/${prID}")
@@ -104,7 +114,39 @@ def runE2ETests(String suite) {
     dockerTag = headSha
   }
 
+<<<<<<< HEAD
   log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for PR-${prID} using '${dockerTag}' as Docker tag")
+=======
+  return dockerTag
+}
+
+def getID(){
+  if(env.GT_PR){
+    return "${env.GT_PR}"
+  }
+
+  return "${params.kibana_pr}"
+}
+
+def pushMultiPlatformManifest() {
+  def dockerTag = "${env.DOCKER_TAG}"
+
+  dir("${BASE_DIR}") {
+    def url = 'https://raw.githubusercontent.com/elastic/e2e-testing/main/.ci/scripts/push-multiplatform-manifest.sh'
+    retryWithSleep(retries: 3, seconds: 5, backoff: true) {
+      sh(label: 'Download script', script: "wget -q -O push-multiplatform-manifest.sh ${url}")
+      sh(label: 'Grant permissions to script', script: "chmod +x push-multiplatform-manifest.sh")
+    }
+
+    sh(label: 'Push multiplatform manifest', script: "./push-multiplatform-manifest.sh kibana ${dockerTag}")
+  }
+}
+
+def runE2ETests(String suite) {
+  def dockerTag = "${env.DOCKER_TAG}"
+
+  log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for "+getBranch()+" using '${dockerTag}' as Docker tag")
+>>>>>>> 304c97fa (Update main branch (#1928))
 
   // Kibana's maintenance branches follow the 7.11, 7.12 schema.
   def branchName = "${baseRef}"
