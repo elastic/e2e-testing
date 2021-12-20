@@ -13,11 +13,31 @@ pull_request_rules:
             git merge upstream/{{base}}
             git push upstream {{head}}
             ```
+<<<<<<< HEAD
   - name: backport patches to 7.16 branch
     conditions:
       - merged
       - base=master
       - label=v7.16.0
+=======
+  - name: backport patches to 8.0 branch
+    conditions:
+      - merged
+      - base=main
+      - label=backport-v8.0.0
+    actions:
+      backport:
+        assignees:
+          - "{{ author }}"
+        branches:
+          - "8.0"
+        title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
+  - name: backport patches to 7.16 branch
+    conditions:
+      - merged
+      - base=main
+      - label=backport-v7.16.0
+>>>>>>> 304c97f (Update main branch (#1928))
     actions:
       backport:
         assignees:
@@ -28,8 +48,13 @@ pull_request_rules:
   - name: backport patches to 7.15 branch
     conditions:
       - merged
+<<<<<<< HEAD
       - base=master
       - label=v7.15.0
+=======
+      - base=main
+      - label=backport-v7.15.0
+>>>>>>> 304c97f (Update main branch (#1928))
     actions:
       backport:
         assignees:
@@ -72,8 +97,13 @@ pull_request_rules:
           - backport-skip
   - name: notify the backport policy
     conditions:
+<<<<<<< HEAD
       - -label~=(^backport|^v7.*)
       - base=master
+=======
+      - -label~=^backport
+      - base=main
+>>>>>>> 304c97f (Update main branch (#1928))
     actions:
       comment:
         message: |

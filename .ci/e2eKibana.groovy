@@ -47,7 +47,7 @@ pipeline {
     )
   }
   parameters {
-    string(name: 'kibana_pr', defaultValue: "master", description: "PR ID to use to build the Docker image. (e.g 10000)")
+    string(name: 'kibana_pr', defaultValue: "main", description: "PR ID to use to build the Docker image. (e.g 10000)")
   }
   stages {
     stage('Initialize'){
@@ -150,7 +150,7 @@ def getDockerTagFromPayload() {
   def prID = getID()
 
   if (!prID.isInteger()) {
-    // in the case we are triggering the job for a branch (i.e master, 7.16) we directly use branch name as Docker tag
+    // in the case we are triggering the job for a branch (i.e main, 7.16) we directly use branch name as Docker tag
     setEnvVar("BASE_REF", prID)
     return prID
   }
@@ -186,7 +186,7 @@ def pushMultiPlatformManifest() {
   def dockerTag = "${env.DOCKER_TAG}"
 
   dir("${BASE_DIR}") {
-    def url = 'https://raw.githubusercontent.com/elastic/e2e-testing/master/.ci/scripts/push-multiplatform-manifest.sh'
+    def url = 'https://raw.githubusercontent.com/elastic/e2e-testing/main/.ci/scripts/push-multiplatform-manifest.sh'
     retryWithSleep(retries: 3, seconds: 5, backoff: true) {
       sh(label: 'Download script', script: "wget -q -O push-multiplatform-manifest.sh ${url}")
       sh(label: 'Grant permissions to script', script: "chmod +x push-multiplatform-manifest.sh")
