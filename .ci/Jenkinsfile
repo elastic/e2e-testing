@@ -520,9 +520,11 @@ def generateFunctionalTestStep(Map args = [:]){
         unstash 'sourceEnvModified'
         withEnv(envContext) {
           // This step will help to send the APM traces to the
-          // APM service defined by the Otel Jenkins plugin.
+          // withOtelEnv is the one that uses the APM service defined by the Otel Jenkins plugin.
+          // withAPMEnv uses Vault to prepare the context.
+          // IMPORTANT: withAPMEnv is now the one in used since withOtelEnv uses a specific Opentelemetry Collector at the moment.
           // TODO: This will need to be integrated into the provisioned VMs
-          withOtelEnv() {
+          withAPMEnv() {
             // Start node, capture ip address
             ansible("${env.WORKSPACE}",
                     runId,
