@@ -89,10 +89,10 @@ $ make build-docs
 It will generate the website under the `./docs` directory (which is ignored in Git). You'll be able to navigate through any feature file and test scenario in a website.
 
 ## Regression testing
-We have built the project and the CI job in a manner that it is possible to override different parameters about projects versions, so that we can set i.e. the version of the Elastic Stack to be used, or the version of the Elastic Agent. We have built and maintain branches to test the most recent versions of the stack, each release that comes out we maintain for a brief period and drop support for the oldest, while always keeping 'master' (8.0) and the 7.16 maintenance line, too:
+We have built the project and the CI job in a manner that it is possible to override different parameters about projects versions, so that we can set i.e. the version of the Elastic Stack to be used, or the version of the Elastic Agent. We have built and maintain branches to test the most recent versions of the stack, each release that comes out we maintain for a brief period and drop support for the oldest, while always keeping 'master' (8.0) and the 7.17 maintenance line, too:
 
 - **7.13**: (for example): will use `7.13` alias for the Elastic Stack (including Fleet Server), Agent and Endpoint / Beats
-- **7.16**: will use `7.16` alias for the all noted components, always being on the cusp of development, ahead of / newer than the .x release that came before it
+- **7.17**: will use `7.17` alias for the all noted components, always being on the cusp of development, ahead of / newer than the .x release that came before it
 - **master**: will use `8.0.0-SNAPSHOT` for the Elastic Stack and the Agent, representing the current development version of the different products under test.
 
 With that in mind, the project supports setting these versions in environment variables, overriding the pre-branch default ones.
@@ -191,7 +191,7 @@ To do so:
 
 1. Navigate to Jenkins: https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-mbp/
 1. Login as a user
-1. Select the base branch for the test code: main (for 8.0.0-SNAPSHOT), 7.16, or any other maintenance branch.
+1. Select the base branch for the test code: main (for 8.0.0-SNAPSHOT), 7.17, or any other maintenance branch.
 1. In the left menu, click on `Buid with Parameters`.
 1. In the input parameters form, set the stack version (for Fleet) using the specific variables for the test suite.
 1. (Optional) Set the product version (Fleet or Helm charts) using the specific variables for the test suite if you want to consume a different artifact.

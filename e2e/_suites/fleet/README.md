@@ -80,11 +80,11 @@ This is an example of the optional configuration:
 
    ```shell
    # There should be a Docker image for the runtime dependencies (elasticsearch, package registry)
-   export STACK_VERSION=7.16-SNAPSHOT
+   export STACK_VERSION=7.17-SNAPSHOT
    # There should be a Docker image for the runtime dependencies (kibana)
    export KIBANA_VERSION=pr12345
    # (Fleet mode) This environment variable will use a fixed version of the Elastic agent binary, obtained from
-   # https://artifacts-api.elastic.co/v1/search/7.16-SNAPSHOT/elastic-agent
+   # https://artifacts-api.elastic.co/v1/search/7.17-SNAPSHOT/elastic-agent
    export ELASTIC_AGENT_DOWNLOAD_URL="https://snapshots.elastic.co/7.12.0-069dfaa4/downloads/beats/elastic-agent/elastic-agent-7.12.0-SNAPSHOT-linux-x86_64.tar.gz"
    # This environment variable will use the its value as the Docker tag produced by Beats CI (Please look up Google Cloud Storage CI bucket).
    export GITHUB_CHECK_SHA1="78a762c76080aafa34c52386341b590dac24e2df"
