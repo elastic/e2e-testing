@@ -133,9 +133,9 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		return nil
 	}
 
-	beatVersion := elasticversion.GetSnapshotVersion(common.BeatVersion) + "-amd64"
+	beatVersion := downloads.GetSnapshotVersion(common.BeatVersion) + "-amd64"
 
-	useCISnapshots := elasticversion.GithubCommitSha1 != ""
+	useCISnapshots := downloads.GithubCommitSha1 != ""
 	if useCISnapshots || downloads.BeatsLocalPath != "" {
 		log.Debugf("Configuring Docker image for %s", podName)
 
@@ -152,7 +152,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 
 		// tag the image with the proper docker tag, including platform
 		err = deploy.TagImage(
-			"docker.elastic.co/beats/"+podName+":"+elasticversion.GetSnapshotVersion(common.BeatVersionBase),
+			"docker.elastic.co/beats/"+podName+":"+downloads.GetSnapshotVersion(common.BeatVersionBase),
 			"docker.elastic.co/observability-ci/"+podName+":"+beatVersion,
 		)
 		if err != nil {
