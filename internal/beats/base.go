@@ -13,6 +13,18 @@ import (
 	"go.elastic.co/apm"
 )
 
+// Operator operations that a Beat is able to perform
+type Operator interface {
+	Download(ctx context.Context) (string, string, error) // downloads a Beat package to the instance where the Beat runs
+	Install(ctx context.Context) error                    // installs the Beat package in the instance where the Beat runs
+	Logs(ctx context.Context) error                       // retrieve Beat log from the instance where the Beat runs
+	Postinstall(ctx context.Context) error                // operations after the Beat is installed in the instance where the Beat runs
+	Preinstall(ctx context.Context) error                 // operations before the Beat is installed in the instance where the Beat runs
+	Start(ctx context.Context) error                      // start a Beat
+	Stop(ctx context.Context) error                       // stop a Beat
+	Uninstall(ctx context.Context) error                  // uninstall a Beat
+}
+
 // Beat struct representing an instance of a Beat
 type Beat struct {
 	Arch                types.Architecture        // Architecture where to install the Beat
@@ -112,6 +124,48 @@ func (b *Beat) Download(ctx context.Context) (string, string, error) {
 	}
 
 	return binaryName, binaryPath, nil
+}
+
+// Install installs a Beat that was previously installed in the machine
+func (b *Beat) Install(ctx context.Context) error {
+	log.Tracef("Executing install commands for %s", b.Name)
+	return nil
+}
+
+// Logs retrieve logs for a Beat
+func (b *Beat) Logs(ctx context.Context) error {
+	log.Tracef("Retrieving logs for %s", b.Name)
+	return nil
+}
+
+// PostInstall executes operations after a Beat is installed in the machine
+func (b *Beat) PostInstall(ctx context.Context) error {
+	log.Tracef("Executing additional post install commands for %s", b.Name)
+	return nil
+}
+
+// PreInstall executes operations before a Beat is installed in the machine
+func (b *Beat) PreInstall(ctx context.Context) error {
+	log.Tracef("Executing additional pre install commands for %s", b.Name)
+	return nil
+}
+
+// Start starts a Beat
+func (b *Beat) Start(ctx context.Context) error {
+	log.Tracef("Starting %s", b.Name)
+	return nil
+}
+
+// Stop starts a Beat
+func (b *Beat) Stop(ctx context.Context) error {
+	log.Tracef("Stopping %s", b.Name)
+	return nil
+}
+
+// Uninstall starts a Beat
+func (b *Beat) Uninstall(ctx context.Context) error {
+	log.Tracef("Uninstalling %s", b.Name)
+	return nil
 }
 
 // ArchToString resolves the architecture to its string representation
