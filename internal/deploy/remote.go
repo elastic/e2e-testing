@@ -68,11 +68,21 @@ func (c *remoteDeploymentManifest) GetServiceManifest(ctx context.Context, servi
 	if runtime.GOOS == "windows" {
 		hostname, _ = shell.Execute(ctx, ".", "powershell.exe", "hostname")
 	} else {
-		hasHostname, _ := io.Exists("/etc/hostname")
+		hasHostname, err := io.Exists("/etc/hostname")
+		if err != nil {
+			return &ServiceManifest{}, err
+		}
+
 		if hasHostname {
-			hostname, _ = shell.Execute(ctx, ".", "cat", "/etc/hostname")
+			hostname, err = shell.Execute(ctx, ".", "cat", "/etc/hostname")
+			if err != nil {
+				return &ServiceManifest{}, err
+			}
 		} else {
-			hostname, _ = shell.Execute(ctx, ".", "hostname")
+			hostname, err = shell.Execute(ctx, ".", "hostname")
+			if err != nil {
+				return &ServiceManifest{}, err
+			}
 		}
 	}
 
