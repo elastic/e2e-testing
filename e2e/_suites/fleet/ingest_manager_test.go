@@ -52,7 +52,7 @@ func setUpSuite() {
 
 func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(p *messages.Pickle) {
-		log.Trace("Before Fleet scenario")
+		log.Tracef("Before Fleet scenario: %s", p.GetName())
 
 		tx = apme2e.StartTransaction(p.GetName(), "test.scenario")
 		tx.Context.SetLabel("suite", "fleet")
@@ -63,7 +63,7 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	})
 
 	ctx.AfterScenario(func(p *messages.Pickle, err error) {
-		log.Trace("After Fleet scenario")
+		log.Tracef("After Fleet scenario: %s", p.GetName())
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
 			e.Context.SetLabel("scenario", p.GetName())
@@ -82,10 +82,12 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	})
 
 	ctx.BeforeStep(func(step *godog.Step) {
+		log.Tracef("Before Fleet scenario step: %s", step.GetText())
 		stepSpan = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
 		imts.Fleet.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
 	})
 	ctx.AfterStep(func(st *godog.Step, err error) {
+		log.Tracef("After Fleet scenario step: %s", step.GetText())
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
 			e.Context.SetLabel("step", st.GetText())
