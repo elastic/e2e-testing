@@ -60,8 +60,8 @@ func (c *remoteDeploymentManifest) ExecIn(ctx context.Context, profile ServiceRe
 	return output, nil
 }
 
-// Inspect inspects a service
-func (c *remoteDeploymentManifest) Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
+// GetServiceManifest inspects a service
+func (c *remoteDeploymentManifest) GetServiceManifest(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
 	var hostname string
 	// TODO: convert to a platform agnostic command structure
 	if runtime.GOOS == "windows" {

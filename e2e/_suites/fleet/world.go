@@ -30,7 +30,7 @@ func (imts *IngestManagerTestSuite) processStateOnTheHost(process string, state 
 
 func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocurrences string, process string, state string) error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := imts.Fleet.deployer.Inspect(imts.Fleet.currentContext, agentService)
+	manifest, _ := imts.Fleet.deployer.GetServiceManifest(imts.Fleet.currentContext, agentService)
 
 	count, err := strconv.Atoi(ocurrences)
 	if err != nil {

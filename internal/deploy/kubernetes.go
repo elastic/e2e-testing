@@ -58,7 +58,7 @@ func (c *kubernetesDeploymentManifest) AddFiles(ctx context.Context, profile Ser
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
-	container, _ := c.Inspect(ctx, service)
+	container, _ := c.GetServiceManifest(ctx, service)
 	kubectl = cluster.Kubectl().WithNamespace(ctx, getNamespaceFromProfile(profile))
 
 	for _, file := range files {
@@ -136,8 +136,8 @@ type kubernetesServiceManifest struct {
 	} `json:"metadata"`
 }
 
-// Inspect inspects a service
-func (c *kubernetesDeploymentManifest) Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
+// GetServiceManifest inspects a service
+func (c *kubernetesDeploymentManifest) GetServiceManifest(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Inspecting kubernetes deployment", "kubernetes.manifest.inspect", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})

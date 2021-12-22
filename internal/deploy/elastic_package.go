@@ -176,7 +176,7 @@ func (ep *EPServiceManager) AddFiles(ctx context.Context, profile ServiceRequest
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
-	container, _ := ep.Inspect(ctx, service)
+	container, _ := ep.GetServiceManifest(ctx, service)
 	for _, file := range files {
 		isTar := true
 		fileExt := filepath.Ext(file)
@@ -221,7 +221,7 @@ func (ep *EPServiceManager) ExecIn(ctx context.Context, profile ServiceRequest, 
 		return "", fmt.Errorf("profile %s not supported in elastic-package provisioner. Service: %v", profile.Name, service)
 	}
 
-	inspect, _ := ep.Inspect(ctx, service)
+	inspect, _ := ep.GetServiceManifest(ctx, service)
 
 	args := []string{"exec", "-u", "root", "-i", inspect.Name}
 	args = append(args, cmd...)
@@ -233,8 +233,8 @@ func (ep *EPServiceManager) ExecIn(ctx context.Context, profile ServiceRequest, 
 	return output, nil
 }
 
-// Inspect inspects a service
-func (ep *EPServiceManager) Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
+// GetServiceManifest inspects a service
+func (ep *EPServiceManager) GetServiceManifest(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Inspecting Elastic Package deployment", "elastic-package.manifest.inspect", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -264,7 +264,7 @@ func (ep *EPServiceManager) Logs(ctx context.Context, service ServiceRequest) er
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
-	manifest, _ := ep.Inspect(context.Background(), service)
+	manifest, _ := ep.GetServiceManifest(context.Background(), service)
 	_, err := shell.Execute(ep.Context, ".", "docker", "logs", manifest.Name)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -301,7 +301,7 @@ func (ep *EPServiceManager) Remove(ctx context.Context, profile ServiceRequest, 
 	}
 
 	for _, service := range services {
-		manifest, inspectErr := ep.Inspect(context.Background(), service)
+		manifest, inspectErr := ep.GetServiceManifest(context.Background(), service)
 		if inspectErr != nil {
 			log.Warnf("Service %s could not be deleted: %v", service.Name, inspectErr)
 			continue
@@ -323,7 +323,7 @@ func (ep *EPServiceManager) Start(ctx context.Context, service ServiceRequest) e
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
-	manifest, _ := ep.Inspect(context.Background(), service)
+	manifest, _ := ep.GetServiceManifest(context.Background(), service)
 	_, err := shell.Execute(ep.Context, ".", "docker", "start", manifest.Name)
 	return err
 }
@@ -336,7 +336,7 @@ func (ep *EPServiceManager) Stop(ctx context.Context, service ServiceRequest) er
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
-	manifest, _ := ep.Inspect(context.Background(), service)
+	manifest, _ := ep.GetServiceManifest(context.Background(), service)
 	_, err := shell.Execute(ep.Context, ".", "docker", "stop", manifest.Name)
 	return err
 }
