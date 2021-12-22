@@ -25,7 +25,7 @@ pipeline {
     quietPeriod(10)
   }
   parameters {
-    string(name: 'BRANCH_SPECIFIER', defaultValue: 'master', description: 'It would not be defined on the first build, see JENKINS-41929.')
+    string(name: 'BRANCH_SPECIFIER', defaultValue: 'main', description: 'It would not be defined on the first build, see JENKINS-41929.')
   }
   triggers {
     cron 'H H(4-5) * * 1-5'

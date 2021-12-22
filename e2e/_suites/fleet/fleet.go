@@ -1010,7 +1010,8 @@ func theIntegrationIsOperatedInThePolicy(ctx context.Context, client *kibana.Cli
 			log.WithFields(log.Fields{
 				"err":       err,
 				"packageDS": packageDataStream,
-			}).Fatal("Unable to add integration to policy")
+			}).Error("Unable to add integration to policy")
+			return err
 		}
 	} else if strings.ToLower(action) == actionREMOVED {
 		packageDataStream, err := client.GetIntegrationFromAgentPolicy(ctx, integration.Name, policy)
