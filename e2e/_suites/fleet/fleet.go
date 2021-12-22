@@ -728,7 +728,11 @@ func (fts *FleetTestSuite) theAgentGetDefaultAPIKey() error {
 }
 
 func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
-	newDefaultAPIKey, _ := fts.getAgentDefaultAPIKey()
+	newDefaultAPIKey, err := fts.getAgentDefaultAPIKey()
+	if err != nil {
+		log.Error("Could not get Agent's default API Key from Fleet")
+		return err
+	}
 
 	logFields := log.Fields{
 		"new_default_api_key": newDefaultAPIKey,
