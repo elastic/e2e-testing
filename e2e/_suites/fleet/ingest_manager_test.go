@@ -86,11 +86,11 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 		stepSpan = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
 		imts.Fleet.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
 	})
-	ctx.AfterStep(func(st *godog.Step, err error) {
+	ctx.AfterStep(func(step *godog.Step, err error) {
 		log.Tracef("After Fleet scenario step: %s", step.GetText())
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
-			e.Context.SetLabel("step", st.GetText())
+			e.Context.SetLabel("step", step.GetText())
 			e.Context.SetLabel("gherkin_type", "step")
 			e.Send()
 		}
