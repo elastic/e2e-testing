@@ -739,6 +739,8 @@ func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
 		"old_default_api_key": fts.DefaultAPIKey,
 	}
 
+	log.WithFields(logFields).Trace("Verifying default API key")
+
 	defaultAPIKeyHasChanged := (newDefaultAPIKey != fts.DefaultAPIKey)
 
 	if status == "changed" {
@@ -1508,6 +1510,7 @@ func (fts *FleetTestSuite) getAgentOSData() (string, error) {
 }
 
 func (fts *FleetTestSuite) getAgentDefaultAPIKey() (string, error) {
+	log.Trace("Obtaining default API key")
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	manifest, _ := fts.deployer.GetServiceManifest(fts.currentContext, agentService)
 	agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
