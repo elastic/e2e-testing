@@ -17,21 +17,28 @@ import (
 	"go.elastic.co/apm"
 )
 
-// ElasticAgentDeployer struct representing the deployer for an elastic-agent
-type ElasticAgentDeployer struct {
+// BeatDeployer struct representing the deployer for a Beat
+type BeatDeployer struct {
+	beatName string
 	deployer deploy.Deployer
 }
 
-// NewElasticAgentDeployer retrives a new instance of the elastic-agent deployer
-func NewElasticAgentDeployer(deployer deploy.Deployer) ElasticAgentDeployer {
-	return ElasticAgentDeployer{
+// NewBeatDeployer retrives a new instance of the Beat deployer
+func NewBeatDeployer(name string, deployer deploy.Deployer) BeatDeployer {
+	return BeatDeployer{
+		beatName: name,
 		deployer: deployer,
 	}
 }
 
+// NewElasticAgentDeployer retrives a new instance of the Elastic Agent deployer
+func NewElasticAgentDeployer(deployer deploy.Deployer) BeatDeployer {
+	return NewBeatDeployer(common.ElasticAgentServiceName, deployer)
+}
+
 // AttachInstaller will attach an Elastic Agent installer to a deployment allowing
 // the installation of a package to be transparently configured no matter the backend
-func (ead ElasticAgentDeployer) AttachInstaller(ctx context.Context, service deploy.ServiceRequest, installType string) (deploy.ServiceOperator, error) {
+func (bd BeatDeployer) AttachInstaller(ctx context.Context, service deploy.ServiceRequest, installType string) (deploy.ServiceOperator, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Attaching installer to host", "elastic-agent.installer.attach", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -42,7 +49,7 @@ func (ead ElasticAgentDeployer) AttachInstaller(ctx context.Context, service dep
 		"installType": installType,
 	}).Trace("Attaching service for configuration")
 
-	deployer := ead.deployer
+	deployer := bd.deployer
 
 	if strings.EqualFold(service.Name, "elastic-agent") {
 		switch installType {
