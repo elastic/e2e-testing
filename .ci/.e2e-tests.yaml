@@ -45,9 +45,9 @@ SUITES:
       - name: "Linux Integration"
         tags: "linux_integration"
         platforms: ["fleet_arm64", "fleet_amd64"]
-      # - name: "Permissions Output change"
-      #   tags: "permission_change"
-      #   platforms: ["fleet_arm64", "fleet_amd64"]
+      - name: "Permissions Output change"
+        tags: "permission_change"
+        platforms: ["fleet_arm64", "fleet_amd64"]
       # - name: "System Integration"
       #   tags: "system_integration"
       #   platforms: ["fleet_arm64", "fleet_amd64"]
