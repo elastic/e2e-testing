@@ -11,6 +11,7 @@ import (
 
 	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/shell"
+	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
 
@@ -74,12 +75,24 @@ func (c *remoteDeploymentManifest) GetServiceManifest(ctx context.Context, servi
 			hostname, _ = shell.Execute(ctx, ".", "hostname")
 		}
 	}
-	return &ServiceManifest{
+
+	sm := &ServiceManifest{
 		Hostname:   strings.TrimSpace(hostname),
 		Connection: service.Name,
 		Alias:      service.Name,
 		Platform:   runtime.GOOS,
-	}, nil
+	}
+
+	log.WithFields(log.Fields{
+		"alias":      sm.Alias,
+		"connection": sm.Connection,
+		"hostname":   sm.Hostname,
+		"ID":         sm.ID,
+		"name":       sm.Name,
+		"platform":   sm.Platform,
+	}).Trace("Service Manifest found")
+
+	return sm, nil
 }
 
 // Logs print logs of service

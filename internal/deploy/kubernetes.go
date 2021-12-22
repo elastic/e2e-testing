@@ -153,14 +153,26 @@ func (c *kubernetesDeploymentManifest) GetServiceManifest(ctx context.Context, s
 	if err = json.Unmarshal([]byte(out), &inspect); err != nil {
 		return &ServiceManifest{}, errors.Wrap(err, "Could not convert metadata to JSON")
 	}
-	return &ServiceManifest{
+
+	sm := &ServiceManifest{
 		ID:         inspect.Metadata.ID,
 		Name:       strings.TrimPrefix(inspect.Metadata.Name, "/"),
 		Connection: service.Name,
 		Hostname:   service.Name,
 		Alias:      service.Name,
 		Platform:   "linux",
-	}, nil
+	}
+
+	log.WithFields(log.Fields{
+		"alias":      sm.Alias,
+		"connection": sm.Connection,
+		"hostname":   sm.Hostname,
+		"ID":         sm.ID,
+		"name":       sm.Name,
+		"platform":   sm.Platform,
+	}).Trace("Service Manifest found")
+
+	return sm, nil
 }
 
 // Logs print logs of service

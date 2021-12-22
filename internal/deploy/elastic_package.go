@@ -246,14 +246,25 @@ func (ep *EPServiceManager) GetServiceManifest(ctx context.Context, service Serv
 		return &ServiceManifest{}, err
 	}
 
-	return &ServiceManifest{
+	sm := &ServiceManifest{
 		ID:         inspect.ID,
 		Name:       strings.TrimPrefix(inspect.Name, "/"),
 		Connection: service.Name,
 		Alias:      inspect.NetworkSettings.Networks["elastic-package-stack_default"].Aliases[0],
 		Hostname:   inspect.Config.Hostname,
 		Platform:   inspect.Platform,
-	}, nil
+	}
+
+	log.WithFields(log.Fields{
+		"alias":      sm.Alias,
+		"connection": sm.Connection,
+		"hostname":   sm.Hostname,
+		"ID":         sm.ID,
+		"name":       sm.Name,
+		"platform":   sm.Platform,
+	}).Trace("Service Manifest found")
+
+	return sm, nil
 }
 
 // Logs print logs of service
