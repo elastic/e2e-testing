@@ -35,7 +35,7 @@ services:
     volumes:
       - ./${kibanaProfile:-default}/kibana.config.yml:/usr/share/kibana/config/kibana.yml
   fleet-server:
-    image: "docker.elastic.co/beats/elastic-agent:${stackVersion:-8.1.0-dbc834fd-SNAPSHOT}"
+    image: "docker.elastic.co/beats/elastic-agent-complete:${stackVersion:-8.1.0-dbc834fd-SNAPSHOT}"
     depends_on:
       elasticsearch:
         condition: service_healthy
