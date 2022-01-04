@@ -135,14 +135,8 @@ func (m *podsManager) configureDockerImage(podName string) error {
 
 	beatVersion := downloads.GetSnapshotVersion(common.BeatVersion) + "-amd64"
 
-<<<<<<< HEAD
-	useCISnapshots := elasticversion.GithubCommitSha1 != ""
-	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
-	if useCISnapshots || beatsLocalPath != "" {
-=======
 	useCISnapshots := downloads.GithubCommitSha1 != ""
 	if useCISnapshots || downloads.BeatsLocalPath != "" {
->>>>>>> 63b6f427 (feat: export Fetch&Download methods in the /pkg directory (#1943))
 		log.Debugf("Configuring Docker image for %s", podName)
 
 		_, imagePath, err := downloads.FetchElasticArtifact(m.ctx, podName, common.BeatVersion, "linux", "amd64", "tar.gz", true, true)
