@@ -5,8 +5,8 @@
 package common
 
 import (
-	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -36,7 +36,7 @@ const FleetServerAgentServiceName = "fleet-server"
 var AgentStaleVersion = "7.15-SNAPSHOT"
 
 // BeatVersionBase is the base version of the Beat to use
-var BeatVersionBase = "8.1.0-60bffc32-SNAPSHOT"
+var BeatVersionBase = "8.1.0-dbc834fd-SNAPSHOT"
 
 // BeatVersion is the version of the Beat to use
 // It can be overriden by BEAT_VERSION env var
@@ -81,7 +81,7 @@ func init() {
 // supporting lazy-loading the versions when needed. Basically, the CLI part does not
 // need to load them
 func InitVersions() {
-	v, err := elasticversion.GetElasticArtifactVersion(BeatVersionBase)
+	v, err := downloads.GetElasticArtifactVersion(BeatVersionBase)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -93,7 +93,7 @@ func InitVersions() {
 	BeatVersion = shell.GetEnv("BEAT_VERSION", BeatVersionBase)
 
 	// check if version is an alias
-	v, err = elasticversion.GetElasticArtifactVersion(BeatVersion)
+	v, err = downloads.GetElasticArtifactVersion(BeatVersion)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -111,10 +111,10 @@ func InitVersions() {
 		}).Trace("Beat Version provided: will be used as fallback")
 		fallbackVersion = BeatVersion
 	}
-	BeatVersion = elasticversion.CheckPRVersion(BeatVersion, fallbackVersion)
+	BeatVersion = downloads.CheckPRVersion(BeatVersion, fallbackVersion)
 
 	StackVersion = shell.GetEnv("STACK_VERSION", BeatVersionBase)
-	v, err = elasticversion.GetElasticArtifactVersion(StackVersion)
+	v, err = downloads.GetElasticArtifactVersion(StackVersion)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -127,7 +127,7 @@ func InitVersions() {
 	if KibanaVersion == "" {
 		// we want to deploy a released version for Kibana
 		// if not set, let's use StackVersion
-		KibanaVersion, err = elasticversion.GetElasticArtifactVersion(StackVersion)
+		KibanaVersion, err = downloads.GetElasticArtifactVersion(StackVersion)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":   err,

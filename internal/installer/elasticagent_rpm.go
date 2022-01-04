@@ -9,11 +9,11 @@ import (
 	"fmt"
 	"strings"
 
-	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -146,7 +146,7 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 		}
 		extension := "rpm"
 
-		binaryName, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+		binaryName, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"artifact":  artifact,

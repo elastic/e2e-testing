@@ -24,7 +24,6 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
-	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
@@ -32,6 +31,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -338,7 +338,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(version, i
 
 	common.AgentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", common.AgentStaleVersion)
 	// check if stale version is an alias
-	v, err := elasticversion.GetElasticArtifactVersion(common.AgentStaleVersion)
+	v, err := downloads.GetElasticArtifactVersion(common.AgentStaleVersion)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -348,7 +348,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(version, i
 	}
 	common.AgentStaleVersion = v
 
-	useCISnapshots := elasticversion.GithubCommitSha1 != ""
+	useCISnapshots := downloads.GithubCommitSha1 != ""
 	if useCISnapshots && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
 		common.AgentStaleVersion += "-SNAPSHOT"
 	}
@@ -406,7 +406,7 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	case "stale":
 		version = common.AgentStaleVersion
 	case "latest":
-		version = elasticversion.GetSnapshotVersion(common.BeatVersion)
+		version = downloads.GetSnapshotVersion(common.BeatVersion)
 	}
 
 	agentInVersionFn := func() error {

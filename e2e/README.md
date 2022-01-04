@@ -149,7 +149,7 @@ In the following example, we will run the Fleet tests for the 8.0.0-SNAPSHOT sta
 
 ```shell
 # Use the proper branch
-git checkout master
+git checkout main
 # Run the tests for a specific branch
 TAGS="fleet_mode_agent" \
     TIMEOUT_FACTOR=3 LOG_LEVEL=TRACE \
@@ -159,7 +159,7 @@ TAGS="fleet_mode_agent" \
 Or running by feature file:
 ```shell
 # Use the proper branch
-git checkout master
+git checkout main
 FEATURES="fleet_mode_agent.feature" \
     TIMEOUT_FACTOR=3 LOG_LEVEL=TRACE \
     BEAT_VERSION="7.10.1" \
@@ -191,7 +191,7 @@ To do so:
 
 1. Navigate to Jenkins: https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-mbp/
 1. Login as a user
-1. Select the base branch for the test code: master (for 8.0.0-SNAPSHOT), 7.16, or any other maintenance branch.
+1. Select the base branch for the test code: main (for 8.0.0-SNAPSHOT), 7.16, or any other maintenance branch.
 1. In the left menu, click on `Buid with Parameters`.
 1. In the input parameters form, set the stack version (for Fleet) using the specific variables for the test suite.
 1. (Optional) Set the product version (Fleet or Helm charts) using the specific variables for the test suite if you want to consume a different artifact.
@@ -209,7 +209,7 @@ To do so:
 
 1. Navigate to Jenkins: https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-mbp/
 1. Login as a user
-1. Select the base branch for the test code: 7.14, 7.15, 7.16 or master.
+1. Select the base branch for the test code: 7.14, 7.15, 7.16 or main.
 1. In the left menu, click on `Buid with Parameters`.
 1. In the input parameters form, keep the Beat version (for Fleet) as is, to use each branch's default version.
 1. In the input parameters form, keep the stack version (for Fleet) as is, to use each branch's default version.

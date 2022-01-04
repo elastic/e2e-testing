@@ -37,7 +37,7 @@ pipeline {
     issueCommentTrigger("${obltGitHubComments()}")
   }
   parameters {
-    booleanParam(name: 'Run_As_Master_Branch', defaultValue: false, description: 'Allow to run any steps on a PR, some steps normally only run on master branch.')
+    booleanParam(name: 'Run_As_Main_Branch', defaultValue: false, description: 'Allow to run any steps on a PR, some steps normally only run on main branch.')
     booleanParam(name: "SKIP_SCENARIOS", defaultValue: true, description: "If it's needed to skip those scenarios marked as @skip. Default true")
     booleanParam(name: "NIGHTLY_SCENARIOS", defaultValue: false, description: "If it's needed to include the scenarios marked as @nightly in the test execution. Default false")
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
@@ -47,12 +47,12 @@ pipeline {
     booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify to Slack with green builds.")
     string(name: 'SLACK_CHANNEL', defaultValue: 'observablt-bots', description: 'The Slack channel(s) where errors will be posted. For multiple channels, use a comma-separated list of channels')
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
-    string(name: 'BEAT_VERSION', defaultValue: '8.1.0-60bffc32-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
+    string(name: 'BEAT_VERSION', defaultValue: '8.1.0-dbc834fd-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
     string(name: 'ELASTIC_AGENT_STALE_VERSION', defaultValue: '7.15-SNAPSHOT', description: 'SemVer version of the stale stand-alone elastic-agent to be used for Fleet upgrade tests.')
     choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'TRACE', 'INFO'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
     string(name: 'KIBANA_VERSION', defaultValue: '', description: 'Docker tag of the kibana to be used for the tests. It will refer to an image related to a Kibana PR, under the Observability-CI namespace')
-    string(name: 'STACK_VERSION', defaultValue: '8.1.0-60bffc32-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
+    string(name: 'STACK_VERSION', defaultValue: '8.1.0-dbc834fd-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
     string(name: 'HELM_CHART_VERSION', defaultValue: '7.11.2', description: 'SemVer version of Helm chart to be used.')
     string(name: 'HELM_VERSION', defaultValue: '3.5.2', description: 'SemVer version of Helm to be used.')
     string(name: 'KIND_VERSION', defaultValue: '0.10.0', description: 'SemVer version of Kind to be used.')
@@ -460,10 +460,10 @@ def generateFunctionalTestStep(Map args = [:]){
 
   // TODO: Is this still relevant?
   if (isPR() || isUpstreamTrigger(filter: 'PR-')) {
-    // when the "Run_As_Master_Branch" param is disabled, we will honour the PR filters, which
+    // when the "Run_As_Main_Branch" param is disabled, we will honour the PR filters, which
     // basically exclude some less frequent platforms or operative systems. If the user enabled
     // this param, the pipeline will remove the filters from the test runner.
-    if (!params.Run_As_Master_Branch) {
+    if (!params.Run_As_Main_Branch) {
       tags += pullRequestFilter
     }
   }
@@ -493,9 +493,11 @@ def generateFunctionalTestStep(Map args = [:]){
         unstash 'sourceEnvModified'
         withEnv(envContext) {
           // This step will help to send the APM traces to the
-          // APM service defined by the Otel Jenkins plugin.
+          // withOtelEnv is the one that uses the APM service defined by the Otel Jenkins plugin.
+          // withAPMEnv uses Vault to prepare the context.
+          // IMPORTANT: withAPMEnv is now the one in used since withOtelEnv uses a specific Opentelemetry Collector at the moment.
           // TODO: This will need to be integrated into the provisioned VMs
-          withOtelEnv() {
+          withAPMEnv() {
             // Start node, capture ip address
             ansible("${env.WORKSPACE}",
                     runId,
