@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"strings"
 
-	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -110,7 +110,7 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 	arch := "x86_64"
 	extension := "zip"
 
-	_, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -135,7 +135,7 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 			return err
 		}
 
-		output, _ := i.Exec(ctx, []string{"powershell.exe", "Move-Item", "-Force", "-Path", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), os, arch), "-Destination", "C:\\elastic-agent"})
+		output, _ := i.Exec(ctx, []string{"powershell.exe", "Move-Item", "-Force", "-Path", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.BeatVersion), os, arch), "-Destination", "C:\\elastic-agent"})
 		log.WithField("output", output).Trace("Moved elastic-agent")
 		return nil
 	}

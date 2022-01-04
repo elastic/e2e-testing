@@ -28,11 +28,11 @@ import (
 	"go.elastic.co/apm"
 
 	"github.com/elastic/e2e-testing/cli/config"
-	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/elastic/e2e-testing/internal/utils"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 )
 
 var beatVersions = map[string]string{}
@@ -132,13 +132,13 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		return nil
 	}
 
-	beatVersion := elasticversion.GetSnapshotVersion(common.BeatVersion) + "-amd64"
+	beatVersion := downloads.GetSnapshotVersion(common.BeatVersion) + "-amd64"
 
-	useCISnapshots := elasticversion.GithubCommitSha1 != ""
-	if useCISnapshots || elasticversion.BeatsLocalPath != "" {
+	useCISnapshots := downloads.GithubCommitSha1 != ""
+	if useCISnapshots || downloads.BeatsLocalPath != "" {
 		log.Debugf("Configuring Docker image for %s", podName)
 
-		_, imagePath, err := elasticversion.FetchElasticArtifact(m.ctx, podName, common.BeatVersion, "linux", "amd64", "tar.gz", true, true)
+		_, imagePath, err := downloads.FetchElasticArtifact(m.ctx, podName, common.BeatVersion, "linux", "amd64", "tar.gz", true, true)
 		if err != nil {
 			return err
 		}
@@ -151,7 +151,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 
 		// tag the image with the proper docker tag, including platform
 		err = deploy.TagImage(
-			"docker.elastic.co/beats/"+podName+":"+elasticversion.GetSnapshotVersion(common.BeatVersionBase),
+			"docker.elastic.co/beats/"+podName+":"+downloads.GetSnapshotVersion(common.BeatVersionBase),
 			"docker.elastic.co/observability-ci/"+podName+":"+beatVersion,
 		)
 		if err != nil {
