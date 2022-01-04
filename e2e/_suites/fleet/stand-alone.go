@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	log "github.com/sirupsen/logrus"
@@ -91,10 +91,16 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		common.ProfileEnv["elasticAgentDockerImageSuffix"] = "-" + image
 	}
 
+<<<<<<< HEAD
 	useCISnapshots := elasticversion.GithubCommitSha1 != ""
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 
 	if useCISnapshots || beatsLocalPath != "" {
+=======
+	useCISnapshots := downloads.GithubCommitSha1 != ""
+
+	if useCISnapshots || downloads.BeatsLocalPath != "" {
+>>>>>>> 63b6f427 (feat: export Fetch&Download methods in the /pkg directory (#1943))
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries

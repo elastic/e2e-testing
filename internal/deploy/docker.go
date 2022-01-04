@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -278,9 +278,14 @@ func (c *dockerDeploymentManifest) Stop(ctx context.Context, service ServiceRequ
 // the images produced by local Beats build, or not.
 // If an error occurred reading the environment, will return the passed namespace as fallback
 func GetDockerNamespaceEnvVar(fallback string) string {
+<<<<<<< HEAD
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	useCISnapshots := elasticversion.GithubCommitSha1 != ""
 	if useCISnapshots || beatsLocalPath != "" {
+=======
+	useCISnapshots := downloads.GithubCommitSha1 != ""
+	if useCISnapshots || downloads.BeatsLocalPath != "" {
+>>>>>>> 63b6f427 (feat: export Fetch&Download methods in the /pkg directory (#1943))
 		return "observability-ci"
 	}
 	return fallback
