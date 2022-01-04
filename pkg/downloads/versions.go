@@ -2,7 +2,7 @@
 // or more contributor license agreements. Licensed under the Elastic License;
 // you may not use this file except in compliance with the Elastic License.
 
-package internal
+package downloads
 
 import (
 	"context"
@@ -24,6 +24,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// BeatsLocalPath is the path to a local copy of the Beats git repository
+// It can be overriden by BEATS_LOCAL_PATH env var. Using the empty string as a default.
+var BeatsLocalPath = ""
+
 // to avoid downloading the same artifacts, we are adding this map to cache the URL of the downloaded binaries, using as key
 // the URL of the artifact. If another installer is trying to download the same URL, it will return the location of the
 // already downloaded artifact.
@@ -39,6 +43,11 @@ var GithubCommitSha1 string
 
 func init() {
 	GithubCommitSha1 = shell.GetEnv("GITHUB_CHECK_SHA1", "")
+
+	BeatsLocalPath = shell.GetEnv("BEATS_LOCAL_PATH", BeatsLocalPath)
+	if BeatsLocalPath != "" {
+		log.Infof(`Beats local path will be used for artifacts. Please make sure all binaries are properly built in their "build/distributions" folder: %s`, BeatsLocalPath)
+	}
 }
 
 // elasticVersion represents a version

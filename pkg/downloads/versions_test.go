@@ -2,7 +2,7 @@
 // or more contributor license agreements. Licensed under the Elastic License;
 // you may not use this file except in compliance with the Elastic License.
 
-package internal
+package downloads
 
 import (
 	"context"
@@ -22,6 +22,8 @@ var testVersion = "BEATS_VERSION"
 var ubi8VersionPrefix = artifact + "-ubi8-" + testVersion
 var versionPrefix = artifact + "-" + testVersion
 
+var testResourcesBasePath = path.Join("..", "_testresources")
+
 const bucket = "beats-ci-artifacts"
 const commits = "commits"
 const snapshots = "snapshots"
@@ -31,19 +33,19 @@ var commitsJSON *gabs.Container
 var snapshotsJSON *gabs.Container
 
 func init() {
-	nextTokenParamContent, err := ioutil.ReadFile(path.Join("_testresources", "gcp", "nextPageParam.json"))
+	nextTokenParamContent, err := ioutil.ReadFile(path.Join(testResourcesBasePath, "gcp", "nextPageParam.json"))
 	if err != nil {
 		os.Exit(1)
 	}
 	nextTokenParamJSON, _ = gabs.ParseJSON([]byte(nextTokenParamContent))
 
-	commitsContent, err := ioutil.ReadFile(path.Join("_testresources", "gcp", "commits.json"))
+	commitsContent, err := ioutil.ReadFile(path.Join(testResourcesBasePath, "gcp", "commits.json"))
 	if err != nil {
 		os.Exit(1)
 	}
 	commitsJSON, _ = gabs.ParseJSON([]byte(commitsContent))
 
-	snapshotsContent, err := ioutil.ReadFile(path.Join("_testresources", "gcp", "snapshots.json"))
+	snapshotsContent, err := ioutil.ReadFile(path.Join(testResourcesBasePath, "gcp", "snapshots.json"))
 	if err != nil {
 		os.Exit(1)
 	}
@@ -375,7 +377,7 @@ func TestCheckPRVersion(t *testing.T) {
 
 func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 	artifact := "elastic-agent"
-	beatsDir := path.Join("_testresources", "beats")
+	beatsDir := path.Join(testResourcesBasePath, "beats")
 	distributionsDir, _ := filepath.Abs(path.Join(beatsDir, "x-pack", "elastic-agent", "build", "distributions"))
 	version := testVersion
 
