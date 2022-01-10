@@ -83,7 +83,7 @@ func CheckPRVersion(version string, fallbackVersion string) string {
 // FetchElasticArtifact fetches an artifact from the right repository, returning binary name, path and error
 func FetchElasticArtifact(ctx context.Context, artifact string, version string, os string, arch string, extension string, isDocker bool, xpack bool) (string, string, error) {
 	binaryName := buildArtifactName(artifact, version, os, arch, extension, isDocker)
-	binaryPath, err := fetchBeatsBinary(ctx, binaryName, artifact, version, utils.TimeoutFactor, xpack)
+	binaryPath, err := FetchBeatsBinary(ctx, binaryName, artifact, version, utils.TimeoutFactor, xpack)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -347,12 +347,12 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 
 }
 
-// fetchBeatsBinary it downloads the binary and returns the location of the downloaded file
+// FetchBeatsBinary it downloads the binary and returns the location of the downloaded file
 // If the environment variable BEATS_LOCAL_PATH is set, then the artifact
 // to be used will be defined by the local snapshot produced by the local build.
 // Else, if the environment variable GITHUB_CHECK_SHA1 is set, then the artifact
 // to be downloaded will be defined by the snapshot produced by the Beats CI for that commit.
-func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool) (string, error) {
+func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string) (string, error) {
 	if BeatsLocalPath != "" {
 		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.local.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -389,7 +389,7 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 			return val, nil
 		}
 
-		filePathFull, err := utils.DownloadFile(URL)
+		filePathFull, err := utils.DownloadFile(URL, downloadPath)
 		if err != nil {
 			return filePathFull, err
 		}

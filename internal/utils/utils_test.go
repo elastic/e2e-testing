@@ -9,7 +9,7 @@ import (
 )
 
 func TestDownloadFile(t *testing.T) {
-	f, err := DownloadFile("https://www.elastic.co/robots.txt")
+	f, err := DownloadFile("https://www.elastic.co/robots.txt", "")
 	assert.Nil(t, err)
 	defer os.Remove(filepath.Dir(f))
 }

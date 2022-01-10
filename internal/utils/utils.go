@@ -40,7 +40,8 @@ func GetArchitecture() string {
 // DownloadFile will download a url and store it in a temporary path.
 // It writes to the destination file as it downloads it, without
 // loading the entire file into memory.
-func DownloadFile(url string) (string, error) {
+func DownloadFile(url string, downloadPath string) (string, error) {
+	var filepathFull string
 	tempParentDir := filepath.Join(os.TempDir(), uuid.NewString())
 	internalio.MkdirAll(tempParentDir)
 
@@ -54,7 +55,11 @@ func DownloadFile(url string) (string, error) {
 	}
 	defer tempFile.Close()
 
-	filepathFull := tempFile.Name()
+	if downloadPath != "" {
+		filepathFull = downloadPath
+	} else {
+		filepathFull = tempFile.Name()
+	}
 
 	exp := GetExponentialBackOff(3)
 
