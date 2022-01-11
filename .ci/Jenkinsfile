@@ -209,9 +209,13 @@ pipeline {
                   // Must be gathered after deployment as the public IP is known at that time
                   def stackRunner = getNodeIp(stackWorkspace, 'stack')
 
-                  ansible(stackWorkspace,
-                          env.RUN_ID.split('-')[0],
-                          "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                  retryWithSleep(retries: 2, seconds: 5, backoff: true) {
+                    ansible(
+                      stackWorkspace,
+                      env.RUN_ID.split('-')[0],
+                      "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
+                    )
+                  }
 
                   // Update stash with latest changes from the stack deployment
                   stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false
