@@ -83,7 +83,7 @@ func CheckPRVersion(version string, fallbackVersion string) string {
 // FetchElasticArtifact fetches an artifact from the right repository, returning binary name, path and error
 func FetchElasticArtifact(ctx context.Context, artifact string, version string, os string, arch string, extension string, isDocker bool, xpack bool) (string, string, error) {
 	binaryName := buildArtifactName(artifact, version, os, arch, extension, isDocker)
-	binaryPath, err := FetchBeatsBinary(ctx, binaryName, artifact, version, utils.TimeoutFactor, xpack,"")
+	binaryPath, err := FetchBeatsBinary(ctx, binaryName, artifact, version, utils.TimeoutFactor, xpack, "", false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -109,7 +109,7 @@ func GetCommitVersion(version string) string {
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-$ARCH.deb", "elastic-agent", "$VERSION")
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-x86_64.rpm", "elastic-agent","$VERSION")
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-linux-$ARCH.tar.gz", "elastic-agent","$VERSION")
-func GetElasticArtifactURL(artifactName string, artifact string, version string) (string, error) {
+func GetElasticArtifactURL(artifactName string, artifact string, version string) (string, string, error) {
 	exp := utils.GetExponentialBackOff(time.Minute)
 
 	retryCount := 1
@@ -161,7 +161,7 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 
 	err := backoff.Retry(apiStatus, exp)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	jsonParsed, err := gabs.ParseJSON([]byte(body))
@@ -171,7 +171,7 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 			"artifactName": artifactName,
 			"version":      tmpVersion,
 		}).Error("Could not parse the response body for the artifact")
-		return "", err
+		return "", "", err
 	}
 
 	log.WithFields(log.Fields{
@@ -191,8 +191,9 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 	// we need to get keys with dots using Search instead of Path
 	downloadObject := packagesObject.Search(artifactName)
 	downloadURL := downloadObject.Path("url").Data().(string)
+	downloadshaURL := downloadObject.Path("sha_url").Data().(string)
 
-	return downloadURL, nil
+	return downloadURL, downloadshaURL, nil
 }
 
 // GetElasticArtifactVersion returns the current version:
@@ -352,7 +353,7 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 // to be used will be defined by the local snapshot produced by the local build.
 // Else, if the environment variable GITHUB_CHECK_SHA1 is set, then the artifact
 // to be downloaded will be defined by the snapshot produced by the Beats CI for that commit.
-func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string) (string, error) {
+func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFIle bool) (string, error) {
 	if BeatsLocalPath != "" {
 		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.local.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -376,6 +377,11 @@ func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 	}
 
 	handleDownload := func(URL string) (string, error) {
+		name := artifactName
+		downloadRequest := utils.DownloadRequest{
+			DownloadPath: downloadPath,
+			URL:          URL,
+		}
 		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.url.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
@@ -389,13 +395,16 @@ func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 			return val, nil
 		}
 
-		filePathFull, err := utils.DownloadFile(URL, downloadPath)
+		filePathFull, err := utils.DownloadFile(&downloadRequest)
 		if err != nil {
 			return filePathFull, err
 		}
 
+		if strings.HasSuffix(URL, ".sha512") {
+			name = fmt.Sprintf("%s.sha512", name)
+		}
 		// use artifact name as file name to avoid having URL params in the name
-		sanitizedFilePath := filepath.Join(path.Dir(filePathFull), artifactName)
+		sanitizedFilePath := filepath.Join(path.Dir(filePathFull), name)
 		err = os.Rename(filePathFull, sanitizedFilePath)
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -410,7 +419,7 @@ func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 		return sanitizedFilePath, nil
 	}
 
-	var downloadURL string
+	var downloadURL, downloadShaURL string
 	var err error
 
 	useCISnapshots := GithubCommitSha1 != ""
@@ -434,12 +443,18 @@ func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 		return handleDownload(downloadURL)
 	}
 
-	downloadURL, err = GetElasticArtifactURL(artifactName, artifact, version)
+	downloadURL, downloadShaURL, err = GetElasticArtifactURL(artifactName, artifact, version)
 	if err != nil {
 		return "", err
 	}
-
-	return handleDownload(downloadURL)
+	downloadLocation, err := handleDownload(downloadURL)
+	if err != nil {
+		return "", err
+	}
+	if downloadSHAFIle == true && downloadShaURL != "" {
+		downloadLocation, err = handleDownload(downloadShaURL)
+	}
+	return downloadLocation, err
 }
 
 func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
