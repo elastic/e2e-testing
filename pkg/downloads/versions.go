@@ -395,23 +395,23 @@ func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 			return val, nil
 		}
 
-		filePathFull, err := utils.DownloadFile(&downloadRequest)
+		err := utils.DownloadFile(&downloadRequest)
 		if err != nil {
-			return filePathFull, err
+			return downloadRequest.UnsanitizedFilePath, err
 		}
 
 		if strings.HasSuffix(URL, ".sha512") {
 			name = fmt.Sprintf("%s.sha512", name)
 		}
 		// use artifact name as file name to avoid having URL params in the name
-		sanitizedFilePath := filepath.Join(path.Dir(filePathFull), name)
-		err = os.Rename(filePathFull, sanitizedFilePath)
+		sanitizedFilePath := filepath.Join(path.Dir(downloadRequest.UnsanitizedFilePath), name)
+		err = os.Rename(downloadRequest.UnsanitizedFilePath, sanitizedFilePath)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"fileName":          filePathFull,
+				"fileName":          downloadRequest.UnsanitizedFilePath,
 				"sanitizedFileName": sanitizedFilePath,
 			}).Warn("Could not sanitize downloaded file name. Keeping old name")
-			sanitizedFilePath = filePathFull
+			sanitizedFilePath = downloadRequest.UnsanitizedFilePath
 		}
 
 		binariesCache[URL] = sanitizedFilePath

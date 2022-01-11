@@ -52,6 +52,12 @@ func init() {
 	snapshotsJSON, _ = gabs.ParseJSON([]byte(snapshotsContent))
 }
 
+func TestFetch(t *testing.T) {
+	ctx := context.Background()
+	_, err := FetchBeatsBinary(ctx, "filebeat-8.1.0-SNAPSHOT-windows-x86_64.zip", "filebeat", "8.1.0-SNAPSHOT", utils.TimeoutFactor, false, "C:\\Work\\e2e-testing\\pkg\\downloads\\hello", true)
+	assert.Nil(t, err)
+}
+
 func TestBuildArtifactName(t *testing.T) {
 	OS := "linux"
 	version := testVersion

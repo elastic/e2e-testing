@@ -13,9 +13,10 @@ func TestDownloadFile(t *testing.T) {
 		URL:          "https://www.elastic.co/robots.txt",
 		DownloadPath: "",
 	}
-	f, err := DownloadFile(&dRequest)
+	err := DownloadFile(&dRequest)
 	assert.Nil(t, err)
-	defer os.Remove(filepath.Dir(f))
+	assert.NotEmpty(t, dRequest.UnsanitizedFilePath)
+	defer os.Remove(filepath.Dir(dRequest.UnsanitizedFilePath))
 }
 
 func TestGetArchitecture(t *testing.T) {
