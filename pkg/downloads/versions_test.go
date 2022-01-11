@@ -6,15 +6,14 @@ package downloads
 
 import (
 	"context"
+	"github.com/Jeffail/gabs/v2"
+	"github.com/elastic/e2e-testing/internal/utils"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
-
-	"github.com/Jeffail/gabs/v2"
-	"github.com/elastic/e2e-testing/internal/utils"
-	"github.com/stretchr/testify/assert"
 )
 
 var artifact = "elastic-agent"

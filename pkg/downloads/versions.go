@@ -431,15 +431,26 @@ func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 
 		log.Debugf("Using CI snapshots for %s", artifact)
 
-		bucket, prefix, object := getGCPBucketCoordinates(artifactName, artifact)
-
 		maxTimeout := time.Duration(timeoutFactor) * time.Minute
+
+		bucket, prefix, object := getGCPBucketCoordinates(artifactName, artifact)
 
 		downloadURL, err = getObjectURLFromBucket(bucket, prefix, object, maxTimeout)
 		if err != nil {
 			return "", err
 		}
+		downloadLocation, err := handleDownload(downloadURL)
 
+		// check if sha file should be downloaded, else return
+		if downloadSHAFIle == false {
+			return downloadLocation, err
+		}
+
+		bucket, prefix, object = getGCPBucketCoordinates(fmt.Sprintf("%s.sha512", artifactName), artifact)
+		downloadURL, err = getObjectURLFromBucket(bucket, prefix, object, maxTimeout)
+		if err != nil {
+			return "", err
+		}
 		return handleDownload(downloadURL)
 	}
 
