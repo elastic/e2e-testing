@@ -4,10 +4,10 @@
 
 The following variables need to be exported:
 
-- *RUN_ID*: This is a unique identifying ID for the current run. It can be an arbitrary name or something like this:
+- *RUN_ID*: This is a unique identifying ID for the current run. It should represent the last commit in your repository/branch:
 
 ```
-export RUN_ID=$(uuidgen|cut -d'-' -f1)
+export RUN_ID=$(git rev-parse HEAD)
 ```
 
 - *AWS_SECRET_ACCESS_KEY*: AWS secret access key
