@@ -38,6 +38,7 @@ pipeline {
   }
   parameters {
     booleanParam(name: 'Run_As_Main_Branch', defaultValue: false, description: 'Allow to run any steps on a PR, some steps normally only run on main branch.')
+    booleanParam(name: "DEVELOPER_MODE", defaultValue: false, description: "If checked, cloud resources won't be destroyed at the end of the pipeline. Default false")
     booleanParam(name: "SKIP_SCENARIOS", defaultValue: true, description: "If it's needed to skip those scenarios marked as @skip. Default true")
     booleanParam(name: "NIGHTLY_SCENARIOS", defaultValue: false, description: "If it's needed to include the scenarios marked as @nightly in the test execution. Default false")
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
@@ -268,9 +269,14 @@ pipeline {
               script {
                 def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
                 def stackMachine = getMachineInfo(stackWorkspace, 'stack')
-                ansible(stackWorkspace,
+                if (params.DEVELOPER_MODE) {
+                  def stackRunner = getNodeIp(stackWorkspace, 'stack')
+                  log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunner.ip}")
+                } else {
+                  ansible(stackWorkspace,
                         env.RUN_ID.split('-')[0],
                         "-t destroy --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                }
               }
             }
           }
@@ -530,9 +536,13 @@ def generateFunctionalTestStep(Map args = [:]){
              "e2e-testing/outputs/TEST-*${runId}*.xml",
              "outputs/${testRunner.ip}/.")
         sh "ls -l outputs/${testRunner.ip}"
-        ansible("${env.WORKSPACE}",
+        if (params.DEVELOPER_MODE) {
+          log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunner.ip}. ")
+        } else {
+          ansible("${env.WORKSPACE}",
                 runId,
                 "-t destroy --extra-vars=\"nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+        }
         junit allowEmptyResults: true,
           keepLongStdio: true,
           testResults: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
