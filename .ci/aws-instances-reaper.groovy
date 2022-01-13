@@ -46,7 +46,7 @@ pipeline {
       steps {
         deleteDir()
         unstash 'source'
-        withAWSEnv(secret: "${env.AWS_PROVISIONER_SECRET}") {
+        withAWSEnv(secret: "${env.AWS_PROVISIONER_SECRET}", forceInstallation: true) {
           sh("aws ec2 terminate-instances --instance-ids `aws ec2 describe-instances --filters Name=tag:Kind,Values=${env.AWS_EC2_INSTANCES_TAG} --query Reservations[].Instances[].InstanceId --output text`")
         }
       }
