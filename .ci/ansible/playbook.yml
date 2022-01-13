@@ -108,16 +108,16 @@
     tags:
       - setup-node
 
-  - name: Add SSH keys to runner instances
-    include_tasks: tasks/install_ssh_keys.yml
-    tags:
-      - setup-node
-
   - name: Setup source code
     include_tasks: tasks/copy_test_files.yml
     tags:
       - setup-node
       - copy-source
+
+  - name: Add SSH keys to runner instances
+    include_tasks: tasks/install_ssh_keys.yml
+    tags:
+      - setup-node
 
   - name: Configure test script
     include_tasks: tasks/setup_test_script.yml
