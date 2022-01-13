@@ -9,6 +9,7 @@
       - rsync
       - wget
       - build-essential
+      - python3-pip
     state: latest
     use: apt
   register: package_install_res
