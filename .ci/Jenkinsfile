@@ -205,7 +205,7 @@ pipeline {
 
                   ansible(stackWorkspace,
                           env.RUN_ID,
-                          "-t provision-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                          "-t provision-stack --extra-vars=\"buildUrl=${env.BUILD_URL} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
                   // Must be gathered after deployment as the public IP is known at that time
                   def stackRunner = getNodeIp(stackWorkspace, 'stack')
@@ -214,7 +214,7 @@ pipeline {
                     ansible(
                       stackWorkspace,
                       env.RUN_ID,
-                      "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
+                      "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"buildUrl=${env.BUILD_URL} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
                     )
                   }
 
