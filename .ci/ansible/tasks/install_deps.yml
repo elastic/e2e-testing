@@ -14,3 +14,7 @@
   register: package_install_res
   retries: 5
   until: package_install_res is success
+
+- name: Install ssh-import-id python package to copy public SSH keys from Github accounts
+  pip:
+    name: ssh-import-id
