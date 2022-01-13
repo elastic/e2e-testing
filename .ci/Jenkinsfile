@@ -21,7 +21,6 @@ pipeline {
     GCP_PROVISIONER_SECRET = 'secret/observability-team/ci/service-account/jenkins-gce-provisioner'
     AWS_PROVISIONER_SECRET = 'secret/observability-team/ci/elastic-observability-aws-account-auth'
     TEST_MATRIX_FILE = "${params.testMatrixFile}"
-    RUN_ID = UUID.randomUUID().toString()
   }
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -94,6 +93,7 @@ pipeline {
             githubCheckNotify('PENDING')  // we want to notify the upstream about the e2e the soonest
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
             setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
+            setEnvVar("RUN_ID", "${GIT_BASE_COMMIT}")
             checkSkipTests()
           }
         }
@@ -204,7 +204,7 @@ pipeline {
                   def stackMachine = getMachineInfo(stackWorkspace, 'stack')
 
                   ansible(stackWorkspace,
-                          env.RUN_ID.split('-')[0],
+                          env.RUN_ID,
                           "-t provision-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
                   // Must be gathered after deployment as the public IP is known at that time
@@ -213,7 +213,7 @@ pipeline {
                   retryWithSleep(retries: 2, seconds: 5, backoff: true) {
                     ansible(
                       stackWorkspace,
-                      env.RUN_ID.split('-')[0],
+                      env.RUN_ID,
                       "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
                     )
                   }
@@ -274,7 +274,7 @@ pipeline {
                   log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunner.ip}")
                 } else {
                   ansible(stackWorkspace,
-                        env.RUN_ID.split('-')[0],
+                        env.RUN_ID,
                         "-t destroy --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
                 }
               }
@@ -494,7 +494,7 @@ def generateFunctionalTestStep(Map args = [:]){
 
   def stackRunner = getNodeIp("${env.WORKSPACE}/${env.BASE_DIR}", 'stack')
 
-  def runId = UUID.randomUUID().toString().split('-')[0]
+  def runId = "${env.RUN_ID}"
 
   return {
     withNode(labels: 'ubuntu-20.04', forceWorkspace: true, forceWorker: true){
