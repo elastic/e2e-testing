@@ -18,6 +18,7 @@
     image: '{{nodeImage}}'
     instance_type: '{{nodeInstanceType}}'
     instance_tags:
+      Kind: "e2e-testing-vm"
       Name: "e2e-{{nodeLabel}}-{{runId}}"
     count_tag:
       Name: "e2e-{{nodeLabel}}-{{runId}}"
