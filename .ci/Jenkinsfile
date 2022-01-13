@@ -511,14 +511,14 @@ def generateFunctionalTestStep(Map args = [:]){
             // Start node, capture ip address
             ansible("${env.WORKSPACE}",
                     runId,
-                    "-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-t start-node --extra-vars=\"buildURL=${env.BUILD_URL} stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             def testRunner = getNodeIp("${env.WORKSPACE}", platform)
 
             // Configure node for testing
             ansible("${env.WORKSPACE}",
                     runId,
-                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"buildURL=${env.BUILD_URL} stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             sshexec("${env.WORKSPACE}",
                     testRunner,
