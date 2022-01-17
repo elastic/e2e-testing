@@ -12,6 +12,9 @@ PLATFORMS:
   fleet_amd64:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
+  fleet_sles15:
+    image: "ami-0f7cb53c916a75006"
+    instance_type: "c5.4xlarge"
   fleet_elastic_pkg:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
@@ -35,7 +38,7 @@ SUITES:
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode_agent"
-        platforms: ["fleet_arm64", "fleet_amd64"]
+        platforms: ["fleet_arm64", "fleet_amd64","fleet_sles15"]
       - name: "Integrations"
         tags: "integrations"
         platforms: ["fleet_arm64", "fleet_amd64"]
