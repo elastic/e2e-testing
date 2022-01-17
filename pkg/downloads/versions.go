@@ -106,6 +106,7 @@ func GetCommitVersion(version string) string {
 
 // GetElasticArtifactURL returns the URL of a released artifact, which its full name is defined in the first argument,
 // from Elastic's artifact repository, building the JSON path query based on the full name
+// It also returns the URL of the sha512 file of the released artifact.
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-$ARCH.deb", "elastic-agent", "$VERSION")
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-x86_64.rpm", "elastic-agent","$VERSION")
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-linux-$ARCH.tar.gz", "elastic-agent","$VERSION")
@@ -353,7 +354,7 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 // to be used will be defined by the local snapshot produced by the local build.
 // Else, if the environment variable GITHUB_CHECK_SHA1 is set, then the artifact
 // to be downloaded will be defined by the snapshot produced by the Beats CI for that commit.
-func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFIle bool) (string, error) {
+func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFile bool) (string, error) {
 	if BeatsLocalPath != "" {
 		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.local.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -442,7 +443,7 @@ func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 		downloadLocation, err := handleDownload(downloadURL)
 
 		// check if sha file should be downloaded, else return
-		if downloadSHAFIle == false {
+		if downloadSHAFile == false {
 			return downloadLocation, err
 		}
 
@@ -462,7 +463,7 @@ func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 	if err != nil {
 		return "", err
 	}
-	if downloadSHAFIle == true && downloadShaURL != "" {
+	if downloadSHAFile == true && downloadShaURL != "" {
 		downloadLocation, err = handleDownload(downloadShaURL)
 	}
 	return downloadLocation, err

@@ -52,6 +52,7 @@ func DownloadFile(downloadRequest *DownloadRequest) error {
 		tempParentDir := filepath.Join(os.TempDir(), uuid.NewString())
 		internalio.MkdirAll(tempParentDir)
 		filePath = filepath.Join(tempParentDir, uuid.NewString())
+		downloadRequest.DownloadPath = filePath
 	} else {
 		filePath = filepath.Join(downloadRequest.DownloadPath, uuid.NewString())
 	}
