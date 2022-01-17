@@ -26,6 +26,7 @@ const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 //nolint:unused
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
+// DownloadRequest struct contains download details ad path and URL
 type DownloadRequest struct {
 	URL                 string
 	DownloadPath        string
