@@ -1,1 +1,1 @@
-ansible_user: root
+ansible_user: ec2-user
