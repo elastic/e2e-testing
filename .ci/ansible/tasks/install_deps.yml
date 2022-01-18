@@ -10,10 +10,10 @@
   register: package_install_res
   retries: 5
   until: package_install_res is success
-  when: ansible_distribution in ["Debian", "Ubuntu"]
+  when: ansible_pkg_mgr == 'apt' or ansible_distribution in ["Debian", "Ubuntu"]
 
 - name: Install dependencies (SUSE)
-  ansible.builtin.package:
+  zypper:
     name:
       - autoconf
       - bison
@@ -25,11 +25,8 @@
       - m4
       - rsync
       - wget
-    state: latest
-  register: package_install_res
-  retries: 5
-  until: package_install_res is success
-  when: ansible_distribution == "SUSE"
+    state: present
+  when: ansible_pkg_mgr == 'zypper' or ansible_os_family == "Suse"
 
 - name: Install dependencies (CentOS)
   ansible.builtin.package:
@@ -46,7 +43,4 @@
       - rsync
       - wget
     state: latest
-  register: package_install_res
-  retries: 5
-  until: package_install_res is success
   when: ansible_distribution in ["Fedora", "RedHat", "CentOS"]
