@@ -1,11 +1,12 @@
 ---
 - name: Install dependencies (Debian/Ubuntu)
-  ansible.builtin.package:
+  apt:
     name:
       - rsync
       - wget
       - build-essential
     state: latest
+    update_cache: yes
   register: package_install_res
   retries: 5
   until: package_install_res is success
