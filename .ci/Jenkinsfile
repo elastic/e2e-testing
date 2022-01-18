@@ -524,7 +524,7 @@ def generateFunctionalTestStep(Map args = [:]){
         sh "mkdir -p outputs/${testRunner.ip} || true"
         sshexec("${env.WORKSPACE}",
                 testRunner,
-                """sudo chown ${testRunner.user}:${testRunner.user} -R /home/${testRunner.user}/e2e-testing/outputs """)
+                """sudo chown ${testRunner.user} -R /home/${testRunner.user}/e2e-testing/outputs """)
         scpr("${env.WORKSPACE}",
              testRunner,
              "e2e-testing/outputs/TEST-*${runId}*.xml",
