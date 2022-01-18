@@ -1,6 +1,9 @@
 - name: Create test environment
   hosts: localhost
   gather_facts: no
+  vars:
+    ansible_playbook_vars_root: "{{workspace}}/.ci/ansible/vars"
+
   tasks:
   - include_vars: 'vars/{{ ansible_distribution }}.yml'
   - name: Setup nodes
