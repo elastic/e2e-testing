@@ -332,8 +332,7 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 		}
 	}
 
-	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
-	if beatsLocalPath != "" && isDocker {
+	if BeatsLocalPath != "" && isDocker {
 		dockerString = ".docker"
 		return fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, artifactVersion, OS, arch, dockerString, lowerCaseExtension)
 	}
@@ -355,22 +354,16 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 // to be used will be defined by the local snapshot produced by the local build.
 // Else, if the environment variable GITHUB_CHECK_SHA1 is set, then the artifact
 // to be downloaded will be defined by the snapshot produced by the Beats CI for that commit.
-<<<<<<< HEAD
-func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool) (string, error) {
-	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
-	if beatsLocalPath != "" {
-=======
 func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFile bool) (string, error) {
 	if BeatsLocalPath != "" {
->>>>>>> d3365c99 (Update `fetchBeatsBinary` to be reused in elastic-agent-poc (#1984))
 		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.local.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
 		defer span.End()
 
-		distributions := path.Join(beatsLocalPath, artifact, "build", "distributions")
+		distributions := path.Join(BeatsLocalPath, artifact, "build", "distributions")
 		if xpack {
-			distributions = path.Join(beatsLocalPath, "x-pack", artifact, "build", "distributions")
+			distributions = path.Join(BeatsLocalPath, "x-pack", artifact, "build", "distributions")
 		}
 
 		log.Debugf("Using local snapshots for the %s: %s", artifact, distributions)
