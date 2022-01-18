@@ -98,6 +98,11 @@
     - apt: {update_cache: yes}
   tasks:
   - include_vars: '{{ ansible_distribution }}.yml'
+
+  - name: Print Ansible User obtained from the distribution vars
+    ansible.builtin.debug:
+    var: "ansible_user"
+
   - name: Install deps
     include_tasks: tasks/install_deps.yml
     tags:
