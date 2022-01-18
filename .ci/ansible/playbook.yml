@@ -39,8 +39,6 @@
   vars:
     ansible_user: admin
     ansible_python_interpreter: /usr/bin/python3
-  vars_files:
-    - "{{ ansible_distribution }}.yml"
   pre_tasks:
     - apt: {update_cache: yes}
   tasks:
@@ -96,27 +94,22 @@
         golang_version: 1.17
   vars:
     ansible_python_interpreter: /usr/bin/python3
-  vars_files:
-    - "{{ ansible_distribution }}.yml"
   pre_tasks:
     - apt: {update_cache: yes}
   tasks:
+  - include_vars: '{{ ansible_distribution }}.yml'
   - name: Install deps
     include_tasks: tasks/install_deps.yml
     tags:
       - setup-node
 
   - name: Setup source code
-    include_vars:
-      - "{{ ansible_distribution }}.yml"
     include_tasks: tasks/copy_test_files.yml
     tags:
       - setup-node
       - copy-source
 
   - name: Configure test script
-    include_vars:
-      - "{{ ansible_distribution }}.yml"
     include_tasks: tasks/setup_test_script.yml
     tags:
       - setup-node
