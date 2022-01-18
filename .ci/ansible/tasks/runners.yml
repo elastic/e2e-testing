@@ -46,6 +46,8 @@
   tags:
     - provision-stack
     - start-node
+  include_vars:
+    file: "vars/{{ ansible_distribution }}.yml"
 
 - name: Wait for SSH to come up
   wait_for: host={{ nodeItem.public_ip }} port=22 delay=10 timeout=60

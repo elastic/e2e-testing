@@ -2,12 +2,6 @@
   hosts: localhost
   gather_facts: no
   tasks:
-  - name: Load config
-    include_vars:
-      file: "vars/{{ ansible_distribution }}.yml"
-    tags:
-      - provision-stack
-      - start-node
   - name: Setup nodes
     include_tasks: tasks/runners.yml
     tags:
@@ -18,12 +12,6 @@
   hosts: localhost
   gather_facts: no
   tasks:
-  - name: Load config
-    include_vars:
-      file: "vars/{{ ansible_distribution }}.yml"
-    tags:
-      - destroy
-
   - name: Teardown Test Runners (AWS)
     include_tasks: tasks/teardown.yml
     tags:
