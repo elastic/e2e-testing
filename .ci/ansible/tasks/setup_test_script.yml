@@ -16,7 +16,7 @@
     - "export FLEET_URL=http://{{stackRunner}}:8220"
     - "export SKIP_PULL=1"
 
-  when: "'fleet_arm64' == nodeLabel or 'fleet_amd64' == nodeLabel"
+  when: "'fleet_arm64' == nodeLabel or 'fleet_amd64' == nodeLabel or 'fleet_sles15' == nodeLabel"
 
 - name: Extend environment for Fleet with elastic-package testing
   lineinfile:

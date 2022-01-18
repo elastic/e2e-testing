@@ -1,9 +1,8 @@
 - name: Create test environment
   hosts: localhost
   gather_facts: no
-  vars:
-    ansible_user: admin
   tasks:
+  - include_vars: '{{ ansible_distribution }}.yml'
   - name: Setup nodes
     include_tasks: tasks/runners.yml
     tags:
@@ -13,9 +12,8 @@
 - name: Teardown environment
   hosts: localhost
   gather_facts: no
-  vars:
-    ansible_user: admin
   tasks:
+  - include_vars: '{{ ansible_distribution }}.yml'
   - name: Teardown Test Runners (AWS)
     include_tasks: tasks/teardown.yml
     tags:
@@ -37,11 +35,11 @@
       vars:
         golang_version: 1.17
   vars:
-    ansible_user: admin
     ansible_python_interpreter: /usr/bin/python3
   pre_tasks:
     - apt: {update_cache: yes}
   tasks:
+  - include_vars: '{{ ansible_distribution }}.yml'
   - name: Install deps
     include_tasks: tasks/install_deps.yml
     tags:

@@ -36,7 +36,7 @@
   become: no
   lineinfile:
     state: present
-    line: "- admin@{{addr.public_ip}}"
+    line: "- {{ansible_user}}@{{addr.public_ip}}"
     insertafter: EOF
     dest: "{{workspace}}/{{nodeLabel}}-sshhosts"
     create: yes
