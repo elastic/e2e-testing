@@ -1,11 +1,8 @@
 - name: Create test environment
   hosts: localhost
   gather_facts: no
-  vars:
-    ansible_playbook_vars_root: "{{workspace}}/.ci/ansible/vars"
-
+  var_files: 'vars/{{ ansible_distribution }}.yml'
   tasks:
-  - include_vars: 'vars/{{ ansible_distribution }}.yml'
   - name: Setup nodes
     include_tasks: tasks/runners.yml
     tags:
@@ -15,8 +12,8 @@
 - name: Teardown environment
   hosts: localhost
   gather_facts: no
+  var_files: 'vars/{{ ansible_distribution }}.yml'
   tasks:
-  - include_vars: 'vars/{{ ansible_distribution }}.yml'
   - name: Teardown Test Runners (AWS)
     include_tasks: tasks/teardown.yml
     tags:
@@ -41,8 +38,8 @@
     ansible_python_interpreter: /usr/bin/python3
   pre_tasks:
     - apt: {update_cache: yes}
+  var_files: 'vars/{{ ansible_distribution }}.yml'
   tasks:
-  - include_vars: 'vars/{{ ansible_distribution }}.yml'
   - name: Install deps
     include_tasks: tasks/install_deps.yml
     tags:
@@ -93,13 +90,12 @@
     - role: gantsign.golang
       vars:
         golang_version: 1.17
+  var_files: 'vars/{{ ansible_distribution }}.yml'
   vars:
     ansible_python_interpreter: /usr/bin/python3
   pre_tasks:
     - apt: {update_cache: yes}
   tasks:
-  - include_vars: 'vars/{{ ansible_distribution }}.yml'
-
   - name: Print Ansible User obtained from the distribution vars
     ansible.builtin.debug:
       var: ansible_user
