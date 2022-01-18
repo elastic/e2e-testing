@@ -1,7 +1,7 @@
 - name: Create test environment
   hosts: localhost
   gather_facts: no
-  var_files: 'vars/{{ ansible_distribution }}.yml'
+  vars_files: 'vars/{{ ansible_distribution }}.yml'
   tasks:
   - name: Setup nodes
     include_tasks: tasks/runners.yml
@@ -12,7 +12,7 @@
 - name: Teardown environment
   hosts: localhost
   gather_facts: no
-  var_files: 'vars/{{ ansible_distribution }}.yml'
+  vars_files: 'vars/{{ ansible_distribution }}.yml'
   tasks:
   - name: Teardown Test Runners (AWS)
     include_tasks: tasks/teardown.yml
@@ -38,7 +38,7 @@
     ansible_python_interpreter: /usr/bin/python3
   pre_tasks:
     - apt: {update_cache: yes}
-  var_files: 'vars/{{ ansible_distribution }}.yml'
+  vars_files: 'vars/{{ ansible_distribution }}.yml'
   tasks:
   - name: Install deps
     include_tasks: tasks/install_deps.yml
@@ -90,7 +90,7 @@
     - role: gantsign.golang
       vars:
         golang_version: 1.17
-  var_files: 'vars/{{ ansible_distribution }}.yml'
+  vars_files: 'vars/{{ ansible_distribution }}.yml'
   vars:
     ansible_python_interpreter: /usr/bin/python3
   pre_tasks:
