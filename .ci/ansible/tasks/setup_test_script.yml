@@ -72,7 +72,6 @@
   become: no
   copy:
     owner: "{{ansible_user}}"
-    group: "{{ansible_user}}"
     mode: '0777'
     dest: "/home/{{ansible_user}}/e2e-testing/.ci/scripts/functional-test.sh"
     content: |
