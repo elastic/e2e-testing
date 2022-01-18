@@ -101,7 +101,7 @@
 
   - name: Print Ansible User obtained from the distribution vars
     ansible.builtin.debug:
-    var: "ansible_user"
+      var: ansible_user
 
   - name: Install deps
     include_tasks: tasks/install_deps.yml
