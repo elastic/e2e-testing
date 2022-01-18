@@ -2,7 +2,7 @@
   hosts: localhost
   gather_facts: no
   vars_files:
-    - "/vars/{{ ansible_distribution }}.yml"
+    - "{{ ansible_distribution }}.yml"
   tasks:
   - name: Setup nodes
     include_tasks: tasks/runners.yml
@@ -14,7 +14,7 @@
   hosts: localhost
   gather_facts: no
   vars_files:
-    - "/vars/{{ ansible_distribution }}.yml"
+    - "{{ ansible_distribution }}.yml"
   tasks:
   - name: Teardown Test Runners (AWS)
     include_tasks: tasks/teardown.yml
@@ -39,7 +39,7 @@
   vars:
     ansible_python_interpreter: /usr/bin/python3
   vars_files:
-    - "/vars/{{ ansible_distribution }}.yml"
+    - "{{ ansible_distribution }}.yml"
   pre_tasks:
     - apt: {update_cache: yes}
   tasks:
@@ -96,7 +96,7 @@
   vars:
     ansible_python_interpreter: /usr/bin/python3
   vars_files:
-    - "/vars/{{ ansible_distribution }}.yml"
+    - "{{ ansible_distribution }}.yml"
   pre_tasks:
     - apt: {update_cache: yes}
   tasks:
