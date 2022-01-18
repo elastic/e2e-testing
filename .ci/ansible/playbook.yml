@@ -27,6 +27,10 @@
   become: True
   tags:
     - setup-stack
+  pre_tasks:
+    - name: Update apt cache.
+      apt: update_cache=yes cache_valid_time=600
+      when: ansible_os_family == 'Debian'
   roles:
     - role: geerlingguy.docker
       docker_daemon_options:
@@ -75,6 +79,10 @@
   become: True
   tags:
     - setup-node
+  pre_tasks:
+    - name: Update apt cache.
+      apt: update_cache=yes cache_valid_time=600
+      when: ansible_os_family == 'Debian'
   roles:
     - role: geerlingguy.docker
       docker_daemon_options:
