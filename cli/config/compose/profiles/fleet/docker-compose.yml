@@ -35,11 +35,7 @@ services:
     volumes:
       - ./${kibanaProfile:-default}/kibana.config.yml:/usr/share/kibana/config/kibana.yml
   fleet-server:
-<<<<<<< HEAD
-    image: "docker.elastic.co/beats/elastic-agent:${stackVersion:-8.0.0-52f8db06-SNAPSHOT}"
-=======
-    image: "docker.elastic.co/beats/elastic-agent-complete:${stackVersion:-8.1.0-dbc834fd-SNAPSHOT}"
->>>>>>> 686c531 (chore: bump elastic-package to v0.32.1 (#1959))
+    image: "docker.elastic.co/beats/elastic-agent-complete:${stackVersion:-8.0.0-52f8db06-SNAPSHOT}"
     depends_on:
       elasticsearch:
         condition: service_healthy
