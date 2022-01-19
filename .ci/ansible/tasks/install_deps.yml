@@ -24,6 +24,7 @@
       - kernel-default-devel
       - make
       - m4
+      - python3-pip
       - rsync
       - wget
     state: present
@@ -41,6 +42,7 @@
       - make
       - m4
       - patch
+      - python3-pip
       - rsync
       - wget
     state: latest
