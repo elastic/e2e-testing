@@ -205,7 +205,7 @@ pipeline {
 
                   ansible(stackWorkspace,
                           env.RUN_ID,
-                          "-t provision-stack --extra-vars=\"buildURL=${env.BUILD_URL} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                          "-t provision-stack --extra-vars=\"buildURL=${env.BUILD_URL} nodeUser=${stackMachine.username} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
                   // Must be gathered after deployment as the public IP is known at that time
                   def stackRunner = getNodeIp(stackWorkspace, 'stack')
@@ -214,7 +214,7 @@ pipeline {
                     ansible(
                       stackWorkspace,
                       env.RUN_ID,
-                      "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"buildURL=${env.BUILD_URL} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
+                      "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"buildURL=${env.BUILD_URL} nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
                     )
                   }
 
@@ -275,7 +275,7 @@ pipeline {
                 } else {
                   ansible(stackWorkspace,
                         env.RUN_ID,
-                        "-t destroy --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                        "-t destroy --extra-vars=\"nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
                 }
               }
             }
@@ -511,14 +511,14 @@ def generateFunctionalTestStep(Map args = [:]){
             // Start node, capture ip address
             ansible("${env.WORKSPACE}",
                     runId,
-                    "-t start-node --extra-vars=\"buildURL=${env.BUILD_URL} stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-t start-node --extra-vars=\"buildURL=${env.BUILD_URL} stackRunner=${stackRunner.ip} nodeUser=${machine.username} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             def testRunner = getNodeIp("${env.WORKSPACE}", platform)
 
             // Configure node for testing
             ansible("${env.WORKSPACE}",
                     runId,
-                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"buildURL=${env.BUILD_URL} stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"buildURL=${env.BUILD_URL} stackRunner=${stackRunner.ip} nodeUser=${machine.username} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             sshexec("${env.WORKSPACE}",
                     testRunner,
@@ -530,7 +530,7 @@ def generateFunctionalTestStep(Map args = [:]){
         sh "mkdir -p outputs/${testRunner.ip} || true"
         sshexec("${env.WORKSPACE}",
                 testRunner,
-                """sudo chown ${testRunner.user}:${testRunner.user} -R /home/${testRunner.user}/e2e-testing/outputs """)
+                """sudo chown ${testRunner.user} -R /home/${testRunner.user}/e2e-testing/outputs """)
         scpr("${env.WORKSPACE}",
              testRunner,
              "e2e-testing/outputs/TEST-*${runId}*.xml",
@@ -541,7 +541,7 @@ def generateFunctionalTestStep(Map args = [:]){
         } else {
           ansible("${env.WORKSPACE}",
                 runId,
-                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeUser=${machine.username} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
         }
         junit allowEmptyResults: true,
           keepLongStdio: true,
