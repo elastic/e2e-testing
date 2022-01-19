@@ -20,6 +20,10 @@ PLATFORMS:
     image: "ami-0f7cb53c916a75006"
     instance_type: "c5.4xlarge"
     username: ec2-user
+  fleet_windowsserver2022:
+    image: "ami-0717cced87236c1f7"
+    instance_type: "c5.4xlarge"
+    username: ec2-user
   fleet_elastic_pkg:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
@@ -45,7 +49,7 @@ SUITES:
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode_agent"
-        platforms: ["fleet_arm64", "fleet_amd64", "fleet_sles15"]
+        platforms: ["fleet_arm64", "fleet_amd64", "fleet_sles15", "fleet_windowsserver2022"]
       - name: "Integrations"
         tags: "integrations"
         platforms: ["fleet_arm64", "fleet_amd64"]
