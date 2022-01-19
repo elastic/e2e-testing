@@ -201,8 +201,8 @@ func TestBuildArtifactName(t *testing.T) {
 	})
 
 	t.Run("For Docker from local repository (amd64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", "/tmp")
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = "/tmp"
 
 		artifact = "elastic-agent"
 		arch := "amd64"
@@ -216,8 +216,8 @@ func TestBuildArtifactName(t *testing.T) {
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker from local repository (arm64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", "/tmp")
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = "/tmp"
 
 		artifact = "elastic-agent"
 		arch := "arm64"
@@ -232,8 +232,8 @@ func TestBuildArtifactName(t *testing.T) {
 	})
 
 	t.Run("For Docker UBI8 from local repository (amd64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", "/tmp")
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = "/tmp"
 
 		artifact = "elastic-agent-ubi8"
 		arch := "amd64"
@@ -247,8 +247,8 @@ func TestBuildArtifactName(t *testing.T) {
 		assert.Equal(t, expectedFileName, artifactName)
 	})
 	t.Run("For Docker UBI8 from local repository (arm64)", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", "/tmp")
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = "/tmp"
 
 		artifact = "elastic-agent-ubi8"
 		arch := "arm64"
@@ -384,135 +384,135 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Fetching non-existent binary from local Beats dir throws an error", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
-		_, err := fetchBeatsBinary(ctx, "foo_fileName", artifact, version, utils.TimeoutFactor, true)
+		_, err := FetchBeatsBinary(ctx, "foo_fileName", artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.NotNil(t, err)
 	})
 
 	t.Run("Fetching RPM binary (amd64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-x86_64.rpm"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 	t.Run("Fetching RPM binary (arm64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-aarch64.rpm"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 
 	t.Run("Fetching DEB binary (amd64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-amd64.deb"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 	t.Run("Fetching DEB binary (arm64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-arm64.deb"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 
 	t.Run("Fetching TAR binary (amd64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-linux-amd64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 	t.Run("Fetching TAR binary (x86_64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-linux-x86_64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 	t.Run("Fetching TAR binary (arm64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-linux-arm64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 
 	t.Run("Fetching Docker binary (amd64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-linux-amd64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 	t.Run("Fetching Docker binary (arm64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-linux-arm64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 
 	t.Run("Fetching ubi8 Docker binary (amd64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := ubi8VersionPrefix + "-linux-amd64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
 	t.Run("Fetching ubi8 Docker binary (arm64) from local Beats dir", func(t *testing.T) {
-		defer os.Unsetenv("BEATS_LOCAL_PATH")
-		os.Setenv("BEATS_LOCAL_PATH", beatsDir)
+		defer func() { BeatsLocalPath = "" }()
+		BeatsLocalPath = beatsDir
 
 		artifactName := ubi8VersionPrefix + "-linux-arm64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
