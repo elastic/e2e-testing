@@ -94,6 +94,7 @@ pipeline {
             githubCheckNotify('PENDING')  // we want to notify the upstream about the e2e the soonest
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
             setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
+            setEnvVar("LABELS_STRING", "buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT}")
             checkSkipTests()
           }
         }
@@ -205,7 +206,7 @@ pipeline {
 
                   ansible(stackWorkspace,
                           env.RUN_ID.split('-')[0],
-                          "-t provision-stack --extra-vars=\"buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT} nodeUser=${stackMachine.username} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                          "-t provision-stack --extra-vars=\"${LABELS_STRING} nodeUser=${stackMachine.username} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
                   // Must be gathered after deployment as the public IP is known at that time
                   def stackRunner = getNodeIp(stackWorkspace, 'stack')
@@ -214,7 +215,7 @@ pipeline {
                     ansible(
                       stackWorkspace,
                       env.RUN_ID.split('-')[0],
-                      "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT} nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
+                      "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"${LABELS_STRING} nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
                     )
                   }
 
@@ -511,14 +512,14 @@ def generateFunctionalTestStep(Map args = [:]){
             // Start node, capture ip address
             ansible("${env.WORKSPACE}",
                     runId,
-                    "-t start-node --extra-vars=\"buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT} stackRunner=${stackRunner.ip} nodeUser=${machine.username} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-t start-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             def testRunner = getNodeIp("${env.WORKSPACE}", platform)
 
             // Configure node for testing
             ansible("${env.WORKSPACE}",
                     runId,
-                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT} stackRunner=${stackRunner.ip} nodeUser=${machine.username} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             sshexec("${env.WORKSPACE}",
                     testRunner,
