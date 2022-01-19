@@ -3,21 +3,31 @@ PLATFORMS:
   stack:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
+    username: admin
   helm:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.2xlarge"
+    username: admin
   fleet_arm64:
     image: "ami-06dac44ad759182bd"
     instance_type: "a1.large"
+    username: admin
   fleet_amd64:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
+    username: admin
+  fleet_sles15:
+    image: "ami-0f7cb53c916a75006"
+    instance_type: "c5.4xlarge"
+    username: ec2-user
   fleet_elastic_pkg:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
+    username: admin
   kubernetes_autodiscover:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
+    username: admin
 
 SUITES:
   - suite: "helm"
@@ -35,7 +45,7 @@ SUITES:
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode_agent"
-        platforms: ["fleet_arm64", "fleet_amd64"]
+        platforms: ["fleet_arm64", "fleet_amd64", "fleet_sles15"]
       - name: "Integrations"
         tags: "integrations"
         platforms: ["fleet_arm64", "fleet_amd64"]

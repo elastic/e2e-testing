@@ -1,11 +1,11 @@
 ---
 - name: Create outputs dir
+  become: no
   ansible.builtin.file:
     path: "/home/{{ansible_user}}/e2e-testing/outputs"
     state: directory
     mode: '0755'
     owner: "{{ansible_user}}"
-    group: "{{ansible_user}}"
 
 - name: Copy source code
   become: no
