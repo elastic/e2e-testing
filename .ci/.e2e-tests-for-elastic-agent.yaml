@@ -34,7 +34,7 @@ SUITES:
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode_agent"
-        platforms: ["debian_arm64", "debian_amd64"]
+        platforms: ["debian_arm64", "debian_amd64", "sles15"]
       - name: "Integrations"
         tags: "integrations"
         platforms: ["debian_arm64", "debian_amd64"]
