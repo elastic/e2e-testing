@@ -4,10 +4,6 @@ PLATFORMS:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
     username: admin
-  helm:
-    image: "ami-0d90bed76900e679a"
-    instance_type: "c5.2xlarge"
-    username: admin
   debian_arm64:
     image: "ami-06dac44ad759182bd"
     instance_type: "a1.large"
@@ -21,10 +17,6 @@ PLATFORMS:
     instance_type: "c5.4xlarge"
     username: ec2-user
   fleet_elastic_pkg:
-    image: "ami-0d90bed76900e679a"
-    instance_type: "c5.4xlarge"
-    username: admin
-  kubernetes_autodiscover:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
     username: admin
