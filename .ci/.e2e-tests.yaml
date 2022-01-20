@@ -8,15 +8,15 @@ PLATFORMS:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.2xlarge"
     username: admin
-  fleet_arm64:
+  debian_arm64:
     image: "ami-06dac44ad759182bd"
     instance_type: "a1.large"
     username: admin
-  fleet_amd64:
+  debian_amd64:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
     username: admin
-  fleet_sles15:
+  sles15:
     image: "ami-0f7cb53c916a75006"
     instance_type: "c5.4xlarge"
     username: ec2-user
@@ -45,31 +45,31 @@ SUITES:
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode_agent"
-        platforms: ["fleet_arm64", "fleet_amd64", "fleet_sles15"]
+        platforms: ["debian_arm64", "debian_amd64", "sles15"]
       - name: "Integrations"
         tags: "integrations"
-        platforms: ["fleet_arm64", "fleet_amd64"]
+        platforms: ["debian_arm64", "debian_amd64"]
       - name: "APM Integration"
         tags: "apm_server"
         platforms: ["fleet_elastic_pkg"]
       - name: "Linux Integration"
         tags: "linux_integration"
-        platforms: ["fleet_arm64", "fleet_amd64"]
+        platforms: ["debian_arm64", "debian_amd64"]
       # - name: "Permissions Output change"
       #   tags: "permission_change"
-      #   platforms: ["fleet_arm64", "fleet_amd64"]
+      #   platforms: ["debian_arm64", "debian_amd64"]
       # - name: "System Integration"
       #   tags: "system_integration"
-      #   platforms: ["fleet_arm64", "fleet_amd64"]
+      #   platforms: ["debian_arm64", "debian_amd64"]
       # - name: "Stand-alone"
       #   tags: "stand_alone_agent"
       #   platforms: ["fleet_elastic_pkg"]
       - name: "Backend Processes"
         tags: "backend_processes"
-        platforms: ["fleet_arm64", "fleet_amd64"]
+        platforms: ["debian_arm64", "debian_amd64"]
       - name: "Beats Background Processes"
         tags: "running_on_beats"
-        platforms: ["fleet_arm64", "fleet_amd64"]
+        platforms: ["debian_arm64", "debian_amd64"]
   - suite: "kubernetes-autodiscover"
     scenarios:
       - name: "kubernetes autodiscover with elastic-agent"
