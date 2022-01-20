@@ -63,6 +63,11 @@
     tags:
       - setup-stack
 
+  - name: Add SSH keys to stack
+    include_tasks: tasks/install_ssh_keys.yml
+    tags:
+      - setup-stack
+
   - name: Start stack
     shell: |
       sed -i '' -e 's,http://elasticsearch,http://{{inventory_hostname}},g' /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml
@@ -108,6 +113,11 @@
     tags:
       - setup-node
       - copy-source
+
+  - name: Add SSH keys to runner instances
+    include_tasks: tasks/install_ssh_keys.yml
+    tags:
+      - setup-node
 
   - name: Configure test script
     include_tasks: tasks/setup_test_script.yml
