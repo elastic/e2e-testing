@@ -63,6 +63,14 @@
     tags:
       - setup-stack
 
+<<<<<<< HEAD
+=======
+  - name: Add SSH keys to stack
+    include_tasks: tasks/install_ssh_keys.yml
+    tags:
+      - setup-stack
+
+>>>>>>> fd75b804 (feat: enable SSH access to users for debugging cloud instances (#2001))
   - name: Start stack
     shell: |
       sed -i '' -e 's,http://elasticsearch,http://{{inventory_hostname}},g' /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml
@@ -109,6 +117,14 @@
       - setup-node
       - copy-source
 
+<<<<<<< HEAD
+=======
+  - name: Add SSH keys to runner instances
+    include_tasks: tasks/install_ssh_keys.yml
+    tags:
+      - setup-node
+
+>>>>>>> fd75b804 (feat: enable SSH access to users for debugging cloud instances (#2001))
   - name: Configure test script
     include_tasks: tasks/setup_test_script.yml
     tags:

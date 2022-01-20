@@ -38,6 +38,7 @@ pipeline {
   }
   parameters {
     booleanParam(name: 'Run_As_Main_Branch', defaultValue: false, description: 'Allow to run any steps on a PR, some steps normally only run on main branch.')
+    booleanParam(name: "DEVELOPER_MODE", defaultValue: false, description: "If checked, cloud resources won't be destroyed at the end of the pipeline. Default false")
     booleanParam(name: "SKIP_SCENARIOS", defaultValue: true, description: "If it's needed to skip those scenarios marked as @skip. Default true")
     booleanParam(name: "NIGHTLY_SCENARIOS", defaultValue: false, description: "If it's needed to include the scenarios marked as @nightly in the test execution. Default false")
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
@@ -93,6 +94,7 @@ pipeline {
             githubCheckNotify('PENDING')  // we want to notify the upstream about the e2e the soonest
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
             setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
+            setEnvVar("LABELS_STRING", "buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT}")
             checkSkipTests()
           }
         }
@@ -204,7 +206,11 @@ pipeline {
 
                   ansible(stackWorkspace,
                           env.RUN_ID.split('-')[0],
+<<<<<<< HEAD
                           "-t provision-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+=======
+                          "-t provision-stack --extra-vars=\"${LABELS_STRING} nodeUser=${stackMachine.username} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+>>>>>>> fd75b804 (feat: enable SSH access to users for debugging cloud instances (#2001))
 
                   // Must be gathered after deployment as the public IP is known at that time
                   def stackRunner = getNodeIp(stackWorkspace, 'stack')
@@ -213,7 +219,11 @@ pipeline {
                     ansible(
                       stackWorkspace,
                       env.RUN_ID.split('-')[0],
+<<<<<<< HEAD
                       "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
+=======
+                      "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"${LABELS_STRING} nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
+>>>>>>> fd75b804 (feat: enable SSH access to users for debugging cloud instances (#2001))
                     )
                   }
 
@@ -268,9 +278,18 @@ pipeline {
               script {
                 def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
                 def stackMachine = getMachineInfo(stackWorkspace, 'stack')
-                ansible(stackWorkspace,
+                if (params.DEVELOPER_MODE) {
+                  def stackRunner = getNodeIp(stackWorkspace, 'stack')
+                  log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunner.ip}")
+                } else {
+                  ansible(stackWorkspace,
                         env.RUN_ID.split('-')[0],
+<<<<<<< HEAD
                         "-t destroy --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+=======
+                        "-t destroy --extra-vars=\"nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                }
+>>>>>>> fd75b804 (feat: enable SSH access to users for debugging cloud instances (#2001))
               }
             }
           }
@@ -505,14 +524,22 @@ def generateFunctionalTestStep(Map args = [:]){
             // Start node, capture ip address
             ansible("${env.WORKSPACE}",
                     runId,
+<<<<<<< HEAD
                     "-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+=======
+                    "-t start-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+>>>>>>> fd75b804 (feat: enable SSH access to users for debugging cloud instances (#2001))
 
             def testRunner = getNodeIp("${env.WORKSPACE}", platform)
 
             // Configure node for testing
             ansible("${env.WORKSPACE}",
                     runId,
+<<<<<<< HEAD
                     "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+=======
+                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+>>>>>>> fd75b804 (feat: enable SSH access to users for debugging cloud instances (#2001))
 
             sshexec("${env.WORKSPACE}",
                     testRunner,
@@ -530,9 +557,17 @@ def generateFunctionalTestStep(Map args = [:]){
              "e2e-testing/outputs/TEST-*${runId}*.xml",
              "outputs/${testRunner.ip}/.")
         sh "ls -l outputs/${testRunner.ip}"
-        ansible("${env.WORKSPACE}",
+        if (params.DEVELOPER_MODE) {
+          log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunner.ip}. ")
+        } else {
+          ansible("${env.WORKSPACE}",
                 runId,
+<<<<<<< HEAD
                 "-t destroy --extra-vars=\"nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+=======
+                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeUser=${machine.username} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+        }
+>>>>>>> fd75b804 (feat: enable SSH access to users for debugging cloud instances (#2001))
         junit allowEmptyResults: true,
           keepLongStdio: true,
           testResults: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
