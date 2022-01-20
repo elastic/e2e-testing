@@ -24,10 +24,6 @@ PLATFORMS:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
     username: admin
-  kubernetes_autodiscover:
-    image: "ami-0d90bed76900e679a"
-    instance_type: "c5.4xlarge"
-    username: admin
 
 SUITES:
   - suite: "helm"
@@ -74,13 +70,13 @@ SUITES:
     scenarios:
       - name: "kubernetes autodiscover with elastic-agent"
         tags: "elastic-agent"
-        platforms: ["kubernetes_autodiscover"]
+        platforms: ["debian_amd64"]
       - name: "kubernetes autodiscover with filebeat"
         tags: "filebeat"
-        platforms: ["kubernetes_autodiscover"]
+        platforms: ["debian_amd64"]
       - name: "kubernetes autodiscover with heartbeat"
         tags: "heartbeat"
-        platforms: ["kubernetes_autodiscover"]
+        platforms: ["debian_amd64"]
       - name: "kubernetes autodiscover with metricbeat"
         tags: "metricbeat"
-        platforms: ["kubernetes_autodiscover"]
+        platforms: ["debian_amd64"]
