@@ -79,6 +79,17 @@
     tags:
       - setup-stack
 
+- name: Install Python in target nodes with ansible
+  hosts: all
+  become: true
+  gather_facts: false
+  tags:
+    - setup-node
+  pre_tasks:
+  - name: Install Python for CentOS
+    raw: 'yum install -y python3'
+    when: ansible_distribution in ["CentOS"]
+
 - name: Manage runner instances
   hosts: all
   connection: ssh
