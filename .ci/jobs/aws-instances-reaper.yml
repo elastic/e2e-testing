@@ -1,0 +1,22 @@
+---
+- job:
+    name: e2e-tests/aws-instances-reaper
+    display-name: AWS Instances Reaper
+    description: Job to remove cloud resources on Sundays
+    view: Beats
+    project-type: pipeline
+    pipeline-scm:
+      script-path: .ci/aws-instances-reaper.groovy
+      scm:
+        - git:
+            url: git@github.com:elastic/e2e-testing.git
+            refspec: +refs/heads/*:refs/remotes/origin/*
+            wipe-workspace: true
+            name: origin
+            shallow-clone: true
+            credentials-id: f6c7695a-671e-4f4f-a331-acdce44ff9ba
+            reference-repo: /var/lib/jenkins/.git-references/e2e-testing.git
+            branches:
+              - main
+    triggers:
+      - timed: '0 0 * * 0'
