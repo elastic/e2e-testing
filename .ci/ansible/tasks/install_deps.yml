@@ -1,16 +1,53 @@
 ---
-- name: Update cache
-  shell: |
-    sudo apt-get update
-
-- name: Install dependencies
-  ansible.builtin.package:
+- name: Install dependencies (Debian/Ubuntu)
+  apt:
     name:
       - rsync
       - wget
       - build-essential
+      - python3-pip
     state: latest
-    use: apt
+    update_cache: yes
   register: package_install_res
   retries: 5
   until: package_install_res is success
+  when: ansible_pkg_mgr == 'apt' or ansible_distribution in ["Debian", "Ubuntu"]
+
+- name: Install dependencies (SUSE)
+  zypper:
+    name:
+      - autoconf
+      - bison
+      - flex
+      - gcc
+      - gcc-c++
+      - kernel-default-devel
+      - make
+      - m4
+      - python3-pip
+      - rsync
+      - wget
+    state: present
+  when: ansible_pkg_mgr == 'zypper' or ansible_os_family == "Suse"
+
+- name: Install dependencies (CentOS)
+  ansible.builtin.package:
+    name:
+      - autoconf
+      - bison
+      - flex
+      - gcc
+      - gcc-c++
+      - kernel-devel
+      - make
+      - m4
+      - patch
+      - python3-pip
+      - rsync
+      - wget
+    state: latest
+  when: ansible_distribution in ["Fedora", "RedHat", "CentOS"]
+
+- name: Install ssh-import-id python package to copy public SSH keys from Github accounts
+  pip:
+    name: ssh-import-id

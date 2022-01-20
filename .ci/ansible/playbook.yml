@@ -2,7 +2,7 @@
   hosts: localhost
   gather_facts: no
   vars:
-      ansible_user: admin
+    ansible_user: "{{nodeUser}}"
   tasks:
   - name: Setup nodes
     include_tasks: tasks/runners.yml
@@ -14,7 +14,7 @@
   hosts: localhost
   gather_facts: no
   vars:
-      ansible_user: admin
+    ansible_user: "{{nodeUser}}"
   tasks:
   - name: Teardown Test Runners (AWS)
     include_tasks: tasks/teardown.yml
@@ -27,6 +27,10 @@
   become: True
   tags:
     - setup-stack
+  pre_tasks:
+    - name: Update apt cache.
+      apt: update_cache=yes cache_valid_time=600
+      when: ansible_os_family == 'Debian'
   roles:
     - role: geerlingguy.docker
       docker_daemon_options:
@@ -37,10 +41,8 @@
       vars:
         golang_version: 1.17
   vars:
-    ansible_user: admin
+    ansible_user: "{{nodeUser}}"
     ansible_python_interpreter: /usr/bin/python3
-  pre_tasks:
-    - apt: {update_cache: yes}
   tasks:
   - name: Install deps
     include_tasks: tasks/install_deps.yml
@@ -63,6 +65,11 @@
     tags:
       - setup-stack
 
+  - name: Add SSH keys to stack
+    include_tasks: tasks/install_ssh_keys.yml
+    tags:
+      - setup-stack
+
   - name: Start stack
     shell: |
       sed -i '' -e 's,http://elasticsearch,http://{{inventory_hostname}},g' /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml
@@ -78,6 +85,10 @@
   become: True
   tags:
     - setup-node
+  pre_tasks:
+    - name: Update apt cache.
+      apt: update_cache=yes cache_valid_time=600
+      when: ansible_os_family == 'Debian'
   roles:
     - role: geerlingguy.docker
       docker_daemon_options:
@@ -93,10 +104,8 @@
       vars:
         golang_version: 1.17
   vars:
-    ansible_user: admin
     ansible_python_interpreter: /usr/bin/python3
-  pre_tasks:
-    - apt: {update_cache: yes}
+    ansible_user: "{{nodeUser}}"
   tasks:
   - name: Install deps
     include_tasks: tasks/install_deps.yml
@@ -108,6 +117,11 @@
     tags:
       - setup-node
       - copy-source
+
+  - name: Add SSH keys to runner instances
+    include_tasks: tasks/install_ssh_keys.yml
+    tags:
+      - setup-node
 
   - name: Configure test script
     include_tasks: tasks/setup_test_script.yml
