@@ -542,6 +542,7 @@ def generateFunctionalTestStep(Map args = [:]){
           ansible("${env.WORKSPACE}",
                 runId,
                 "-t destroy --extra-vars=\"nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+        }
         junit allowEmptyResults: true,
           keepLongStdio: true,
           testResults: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
