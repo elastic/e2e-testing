@@ -277,6 +277,7 @@ pipeline {
                   ansible(stackWorkspace,
                         env.RUN_ID.split('-')[0],
                         "-t destroy --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                }
               }
             }
           }
