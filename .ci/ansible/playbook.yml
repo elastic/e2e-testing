@@ -73,7 +73,7 @@
   - name: Configure stack files
     ansible.builtin.replace:
       path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml"
-      regexp: '^{{ item.old }}$'
+      regexp: '{{ item.old }}'
       replace: '{{ item.new }}'
     loop:
       - { old: 'http://elasticsearch', new: 'http://{{ inventory_hostname }}' }
