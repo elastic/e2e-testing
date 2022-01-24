@@ -9,20 +9,6 @@
     - provision-stack
     - start-node
 
-- name: "Set default user_data"
-  set_fact:
-    user_data: ""
-  tags:
-    - provision-stack
-    - start-node
-
-- name: "Set user_data for CentOS"
-  set_fact:
-    user_data: "{{ lookup('file', user_data_centos.sh) }}"
-  when: '"centos" in nodeLabel'
-  tags:
-    - start-node
-
 - name: "Create {{nodeLabel}} AWS instances"
   ec2:
     wait: yes
@@ -39,7 +25,6 @@
       ReaperMark: "e2e-testing-vm"
     count_tag:
       Name: "e2e-{{nodeLabel}}-{{runId}}"
-    user_data: "{{ user_data }}"
     volumes:
       - device_name: /dev/xvda
         volume_type: gp3
