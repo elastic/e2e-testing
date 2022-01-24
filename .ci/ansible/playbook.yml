@@ -42,7 +42,7 @@
         golang_version: 1.17
   vars:
     ansible_user: "{{nodeUser}}"
-    ansible_python_interpreter: /usr/bin/python3
+    ansible_python_interpreter: "{{ '/usr/libexec/platform-python' if ansible_distribution == 'CentOS' else '/usr/bin/python3' }}"
   tasks:
   - name: Install deps
     include_tasks: tasks/install_deps.yml
@@ -88,17 +88,6 @@
     tags:
       - setup-stack
 
-- name: Install Python in target nodes with ansible
-  hosts: all
-  become: true
-  gather_facts: false
-  tags:
-    - setup-node
-  pre_tasks:
-  - name: Install Python for CentOS
-    raw: 'yum install -y python3'
-    when: ansible_os_family == 'CentOS'
-
 - name: Manage runner instances
   hosts: all
   connection: ssh
@@ -124,7 +113,7 @@
       vars:
         golang_version: 1.17
   vars:
-    ansible_python_interpreter: /usr/bin/python3
+    ansible_python_interpreter: "{{ '/usr/libexec/platform-python' if ansible_distribution == 'CentOS' else '/usr/bin/python3' }}"
     ansible_user: "{{nodeUser}}"
   tasks:
   - name: Install deps
