@@ -88,7 +88,8 @@
   pre_tasks:
   - name: Install Python for CentOS
     raw: 'yum install -y python3'
-    when: ansible_os_family == 'CentOS'
+    become: true
+    platform: 'CentOS'
 
 - name: Manage runner instances
   hosts: all
