@@ -16,7 +16,7 @@
     - "export FLEET_URL=http://{{stackRunner}}:8220"
     - "export SKIP_PULL=1"
 
-  when: "'fleet_arm64' == nodeLabel or 'fleet_amd64' == nodeLabel or 'fleet_sles15' == nodeLabel"
+  when: "'fleet' == suite"
 
 - name: Extend environment for Fleet with elastic-package testing
   lineinfile:
@@ -41,7 +41,7 @@
   with_items:
     - "export SUITE={{ lookup('env', 'SUITE') or 'kubernetes-autodiscover' }}"
     - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'docker' }}"
-  when: "'kubernetes_autodiscover' == nodeLabel"
+  when: "'kubernetes_autodiscover' == suite"
 
 - name: Extend environment for Helm testing
   lineinfile:
@@ -53,7 +53,7 @@
   with_items:
     - "export SUITE={{ lookup('env', 'SUITE') or 'helm' }}"
     - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'docker' }}"
-  when: "'helm' == nodeLabel"
+  when: "'helm' == suite"
 
 - name: Extend environment
   lineinfile:
