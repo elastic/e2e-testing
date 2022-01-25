@@ -42,7 +42,7 @@
         golang_version: 1.16.3
   vars:
     ansible_user: "{{nodeUser}}"
-    ansible_python_interpreter: /usr/bin/python3
+    ansible_python_interpreter: "auto"
   tasks:
   - name: Install deps
     include_tasks: tasks/install_deps.yml
@@ -113,7 +113,7 @@
       vars:
         golang_version: 1.16.3
   vars:
-    ansible_python_interpreter: /usr/bin/python3
+    ansible_python_interpreter: "auto"
     ansible_user: "{{nodeUser}}"
   tasks:
   - name: Install deps
