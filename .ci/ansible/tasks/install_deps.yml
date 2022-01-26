@@ -5,6 +5,7 @@
       - rsync
       - wget
       - build-essential
+      - python3-pip
     state: latest
     update_cache: yes
   register: package_install_res
@@ -23,6 +24,7 @@
       - kernel-default-devel
       - make
       - m4
+      - python3-pip
       - rsync
       - wget
     state: present
@@ -40,7 +42,12 @@
       - make
       - m4
       - patch
+      - python3-pip
       - rsync
       - wget
     state: latest
   when: ansible_distribution in ["Fedora", "RedHat", "CentOS"]
+
+- name: Install ssh-import-id python package to copy public SSH keys from Github accounts
+  pip:
+    name: ssh-import-id
