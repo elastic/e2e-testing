@@ -2,7 +2,7 @@
   hosts: localhost
   gather_facts: no
   vars:
-      ansible_user: admin
+      ansible_user: "{{ nodeUser }}"
   tasks:
   - name: Setup nodes
     include_tasks: tasks/runners.yml
@@ -14,7 +14,7 @@
   hosts: localhost
   gather_facts: no
   vars:
-      ansible_user: admin
+      ansible_user: "{{ nodeUser }}"
   tasks:
   - name: Teardown Test Runners (AWS)
     include_tasks: tasks/teardown.yml
@@ -37,10 +37,8 @@
       vars:
         golang_version: 1.16.3
   vars:
-    ansible_user: admin
-    ansible_python_interpreter: /usr/bin/python3
-  pre_tasks:
-    - apt: {update_cache: yes}
+    ansible_user: "{{nodeUser}}"
+    ansible_python_interpreter: "auto"
   tasks:
   - name: Install deps
     include_tasks: tasks/install_deps.yml
@@ -112,10 +110,8 @@
       vars:
         golang_version: 1.16.3
   vars:
-    ansible_user: admin
-    ansible_python_interpreter: /usr/bin/python3
-  pre_tasks:
-    - apt: {update_cache: yes}
+    ansible_python_interpreter: "auto"
+    ansible_user: "{{nodeUser}}"
   tasks:
   - name: Install deps
     include_tasks: tasks/install_deps.yml
