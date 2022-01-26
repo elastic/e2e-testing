@@ -78,6 +78,6 @@ Make note of the ip address displayed in the ansible summary.
 ## Run a test suite
 
 ```
-> ssh -i $HOME/.ssh/id_rsa admin@<node ip address>
+> ssh -i $HOME/.ssh/id_rsa <node username>@<node ip address>
 node> sudo bash e2e-testing/.ci/scripts/functional-test.sh "fleet_mode_agent"
 ```

@@ -16,11 +16,7 @@
     - "export FLEET_URL=http://{{stackRunner}}:8220"
     - "export SKIP_PULL=1"
 
-<<<<<<< HEAD
-  when: "'fleet_arm64' == nodeLabel or 'fleet_amd64' == nodeLabel"
-=======
   when: "'fleet' == suite"
->>>>>>> aec2a7a5 (feat: add CentOS 8 support (#2034))
 
 - name: Extend environment for Fleet with elastic-package testing
   lineinfile:
