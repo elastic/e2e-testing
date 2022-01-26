@@ -6,7 +6,7 @@ PLATFORMS:
     username: admin
   centos8_arm64:
     image: "ami-01cdc9e8306344fe0"
-    instance_type: "c5.4xlarge"
+    instance_type: "a1.large"
     username: centos
   centos8_amd64:
     image: "ami-045b0a05944af45c1"
