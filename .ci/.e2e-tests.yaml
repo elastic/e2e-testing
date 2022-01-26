@@ -4,31 +4,31 @@ PLATFORMS:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
     username: admin
-  helm:
-    image: "ami-0d90bed76900e679a"
-    instance_type: "c5.2xlarge"
-    username: admin
-  fleet_arm64:
+  centos8_arm64:
+    image: "ami-01cdc9e8306344fe0"
+    instance_type: "a1.large"
+    username: centos
+  centos8_amd64:
+    image: "ami-045b0a05944af45c1"
+    instance_type: "c5.4xlarge"
+    username: centos
+  debian_arm64:
     image: "ami-06dac44ad759182bd"
     instance_type: "a1.large"
     username: admin
-  fleet_amd64:
+  debian_amd64:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
     username: admin
-  fleet_sles15:
+  sles15:
     image: "ami-0f7cb53c916a75006"
     instance_type: "c5.4xlarge"
     username: ec2-user
-  fleet_windowsserver2022:
+  windowsserver2022:
     image: "ami-0717cced87236c1f7"
     instance_type: "c5.4xlarge"
     username: ec2-user
   fleet_elastic_pkg:
-    image: "ami-0d90bed76900e679a"
-    instance_type: "c5.4xlarge"
-    username: admin
-  kubernetes_autodiscover:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
     username: admin
@@ -38,53 +38,53 @@ SUITES:
     scenarios:
       - name: "APM Server"
         tags: "apm-server"
-        platforms: ["helm"]
+        platforms: ["debian_amd64"]
       - name: "Filebeat"
         tags: "filebeat"
-        platforms: ["helm"]
+        platforms: ["debian_amd64"]
       - name: "Metricbeat"
         tags: "metricbeat"
-        platforms: ["helm"]
+        platforms: ["debian_amd64"]
   - suite: "fleet"
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode_agent"
-        platforms: ["fleet_arm64", "fleet_amd64", "fleet_sles15", "fleet_windowsserver2022"]
+        platforms: ["centos8_arm64", "centos8_amd64", "debian_arm64", "debian_amd64", "sles15","windowsserver2022"]
       - name: "Integrations"
         tags: "integrations"
-        platforms: ["fleet_arm64", "fleet_amd64"]
+        platforms: ["debian_arm64", "debian_amd64", "sles15"]
       - name: "APM Integration"
         tags: "apm_server"
         platforms: ["fleet_elastic_pkg"]
       - name: "Linux Integration"
         tags: "linux_integration"
-        platforms: ["fleet_arm64", "fleet_amd64"]
+        platforms: ["debian_arm64", "debian_amd64", "sles15"]
       # - name: "Permissions Output change"
       #   tags: "permission_change"
-      #   platforms: ["fleet_arm64", "fleet_amd64"]
+      #   platforms: ["debian_arm64", "debian_amd64", "sles15"]
       # - name: "System Integration"
       #   tags: "system_integration"
-      #   platforms: ["fleet_arm64", "fleet_amd64"]
+      #   platforms: ["debian_arm64", "debian_amd64", "sles15"]
       # - name: "Stand-alone"
       #   tags: "stand_alone_agent"
       #   platforms: ["fleet_elastic_pkg"]
       - name: "Backend Processes"
         tags: "backend_processes"
-        platforms: ["fleet_arm64", "fleet_amd64"]
+        platforms: ["debian_arm64", "debian_amd64", "sles15"]
       - name: "Beats Background Processes"
         tags: "running_on_beats"
-        platforms: ["fleet_arm64", "fleet_amd64"]
+        platforms: ["debian_arm64", "debian_amd64", "sles15"]
   - suite: "kubernetes-autodiscover"
     scenarios:
       - name: "kubernetes autodiscover with elastic-agent"
         tags: "elastic-agent"
-        platforms: ["kubernetes_autodiscover"]
+        platforms: ["debian_amd64"]
       - name: "kubernetes autodiscover with filebeat"
         tags: "filebeat"
-        platforms: ["kubernetes_autodiscover"]
+        platforms: ["debian_amd64"]
       - name: "kubernetes autodiscover with heartbeat"
         tags: "heartbeat"
-        platforms: ["kubernetes_autodiscover"]
+        platforms: ["debian_amd64"]
       - name: "kubernetes autodiscover with metricbeat"
         tags: "metricbeat"
-        platforms: ["kubernetes_autodiscover"]
+        platforms: ["debian_amd64"]

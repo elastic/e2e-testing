@@ -400,9 +400,9 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
     def tags = scenario.tags
       platformsValue.each { platform ->
-        log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
+        log(level: 'INFO', text: "Adding ${suite}:${platform}:${tags} test suite to the build execution")
         machineInfo = getMachineInfo("${env.WORKSPACE}/${env.BASE_DIR}", platform)
-        parallelTasks["${platform}_${tags}"] = generateFunctionalTestStep(name: "${name}",
+        parallelTasks["${suite}_${platform}_${tags}"] = generateFunctionalTestStep(name: "${name}",
                                                                           platform: platform,
                                                                           suite: "${suite}",
                                                                           tags: "${tags}",
@@ -512,14 +512,14 @@ def generateFunctionalTestStep(Map args = [:]){
             // Start node, capture ip address
             ansible("${env.WORKSPACE}",
                     runId,
-                    "-t start-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-t start-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             def testRunner = getNodeIp("${env.WORKSPACE}", platform)
 
             // Configure node for testing
             ansible("${env.WORKSPACE}",
                     runId,
-                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             sshexec("${env.WORKSPACE}",
                     testRunner,
