@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Jeffail/gabs/v2"
+	"github.com/cenkalti/backoff/v4"
+	"github.com/elastic/e2e-testing/internal/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
@@ -22,24 +25,67 @@ type IntegrationPackage struct {
 
 // AddIntegrationToPolicy adds an integration to policy
 func (c *Client) AddIntegrationToPolicy(ctx context.Context, packageDS PackageDataStream) error {
-	span, _ := apm.StartSpanOptions(ctx, "Adding integration to policy", "fleet.package.add-to-policy", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	defer span.End()
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
+	retryCount := 1
 
-	reqBody, err := json.Marshal(packageDS)
+	exp := utils.GetExponentialBackOff(maxTimeout)
+
+	addIntegrationFn := func() error {
+		span, _ := apm.StartSpanOptions(ctx, "Adding integration to policy", "fleet.package.add-to-policy", apm.SpanOptions{
+			Parent: apm.SpanFromContext(ctx).TraceContext(),
+		})
+		defer span.End()
+
+		reqBody, err := json.Marshal(packageDS)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"err":         err,
+				"package":     packageDS,
+				"retry":       retryCount,
+			}).Warn("Could not convert policy-package (request) to JSON. Retrying")
+
+			retryCount++
+
+			return err
+		}
+
+		statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/package_policies", FleetAPI), reqBody)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"err":         err,
+				"package":     packageDS,
+				"retry":       retryCount,
+			}).Warn("Could not add package to policy. Retrying")
+
+			retryCount++
+
+			return err
+		}
+
+		if statusCode != 200 {
+			log.WithFields(log.Fields{
+				"elapsedTime": exp.GetElapsedTime(),
+				"err":         err,
+				"statusCode":  statusCode,
+				"response":    respBody,
+				"package":     packageDS,
+				"retry":       retryCount,
+			}).Warn("could not add package to policy because of HTTP code is not 200")
+
+			retryCount++
+			return fmt.Errorf("could not add package to policy; API status code = %d; response body = %s", statusCode, respBody)
+		}
+
+		return nil
+	}
+
+	err := backoff.Retry(addIntegrationFn, exp)
 	if err != nil {
-		return errors.Wrap(err, "could not convert policy-package (request) to JSON")
+		return err
 	}
 
-	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/package_policies", FleetAPI), reqBody)
-	if err != nil {
-		return errors.Wrap(err, "could not add package to policy")
-	}
-
-	if statusCode != 200 {
-		return fmt.Errorf("could not add package to policy; API status code = %d; response body = %s", statusCode, respBody)
-	}
 	return nil
 }
 
@@ -64,7 +110,7 @@ func (c *Client) DeleteIntegrationFromPolicy(ctx context.Context, packageDS Pack
 
 // GetIntegrations returns all available integrations
 func (c *Client) GetIntegrations(ctx context.Context) ([]IntegrationPackage, error) {
-	span, _ := apm.StartSpanOptions(ctx, "Listing integrations", "fleet.integrations.list", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Listing integrations", "fleet.integrations.items", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
@@ -99,7 +145,7 @@ func (c *Client) GetIntegrations(ctx context.Context) ([]IntegrationPackage, err
 	}
 
 	var resp struct {
-		Packages []IntegrationPackage `json:"response"`
+		Packages []IntegrationPackage `json:"items"`
 	}
 
 	if err := json.Unmarshal(respBody, &resp); err != nil {
@@ -115,12 +161,14 @@ func (c *Client) GetIntegrationByPackageName(ctx context.Context, packageName st
 	span, _ := apm.StartSpanOptions(ctx, "Getting integration by package name", "fleet.integration.get-by-name", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("package", packageName)
 	defer span.End()
 
 	integrationPackages, err := c.GetIntegrations(ctx)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"error": err,
+			"error":   err,
+			"package": packageName,
 		}).Error("Could not get Integration packages list")
 		return IntegrationPackage{}, err
 	}
@@ -131,7 +179,7 @@ func (c *Client) GetIntegrationByPackageName(ctx context.Context, packageName st
 		}
 	}
 
-	return IntegrationPackage{}, errors.New("Unable to find package")
+	return IntegrationPackage{}, fmt.Errorf("unable to find package %s", packageName)
 }
 
 // GetIntegrationFromAgentPolicy get package policy from agent policy
@@ -139,24 +187,26 @@ func (c *Client) GetIntegrationFromAgentPolicy(ctx context.Context, packageName 
 	span, _ := apm.StartSpanOptions(ctx, "Getting integration from Elastic Agent policy", "fleet.integration.get-from-policy", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("package", packageName)
 	defer span.End()
 
 	packagePolicies, err := c.ListPackagePolicies(ctx)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"error":  err,
-			"policy": policy,
+			"error":   err,
+			"package": packageName,
+			"policy":  policy,
 		}).Trace("An error retrieving the package policies")
 		return PackageDataStream{}, err
 	}
 
 	for _, child := range packagePolicies {
-		if policy.ID == child.PolicyID && (strings.EqualFold(packageName, child.Name) || strings.EqualFold(packageName, child.Package.Title)) {
+		if policy.ID == child.PolicyID && (strings.EqualFold(packageName, child.Name) || strings.EqualFold(packageName, child.Package.Title) || strings.EqualFold(packageName, child.Package.Name)) {
 			return child, nil
 		}
 	}
 
-	return PackageDataStream{}, errors.New("Unable to find package in policy")
+	return PackageDataStream{}, fmt.Errorf("Unable to find package %s in policy %s", packageName, policy.ID)
 }
 
 // SecurityEndpoint endpoint metadata
@@ -191,8 +241,7 @@ func (c *Client) GetMetadataFromSecurityApp(ctx context.Context) ([]SecurityEndp
 	})
 	defer span.End()
 
-	reqBody := `{}`
-	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/metadata", EndpointAPI), []byte(reqBody))
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/metadata", EndpointAPI))
 	if err != nil {
 		return []SecurityEndpoint{}, errors.Wrap(err, "could not get endpoint metadata")
 	}
@@ -225,7 +274,7 @@ func (c *Client) InstallIntegrationAssets(ctx context.Context, integration Integ
 	defer span.End()
 
 	reqBody := `{}`
-	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/epm/packages/%s-%s", FleetAPI, integration.Name, integration.Version), []byte(reqBody))
+	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/epm/packages/%s/%s", FleetAPI, integration.Name, integration.Version), []byte(reqBody))
 	if err != nil {
 		return "", errors.Wrap(err, "could not install integration assets")
 	}
@@ -235,16 +284,16 @@ func (c *Client) InstallIntegrationAssets(ctx context.Context, integration Integ
 	}
 
 	var resp struct {
-		Response struct {
+		Items struct {
 			ID string `json:"id"`
-		} `json:"response"`
+		} `json:"items"`
 	}
 
 	if err := json.Unmarshal(respBody, &resp); err != nil {
 		return "", errors.Wrap(err, "Unable to convert install integration assets to JSON")
 	}
 
-	return resp.Response.ID, nil
+	return resp.Items.ID, nil
 }
 
 // IsAgentListedInSecurityApp retrieves the hosts from Endpoint to check if a hostname

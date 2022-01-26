@@ -1,5 +1,10 @@
 {"name": "github.com/elastic/e2e-testing/cli", "licenceType": "Elastic"}
+{"name": "github.com/elastic/elastic-package", "licenceType": "Elastic"}
+{"name": "github.com/elastic/package-spec", "licenceType": "Elastic"}
 {"name": "github.com/elastic/go-elasticsearch/v8", "licenceType": "Elastic"}
+{"name": "github.com/acomagu/bufpipe", "licenceType": "Elastic"}
+{"name": "github.com/go-errors/errors", "licenceType": "MIT"}
+{"name": "github.com/xi2/xz", "licenceType": "Public Domain"}
 {"name": "github.com/opencontainers/go-digest", "licenceFile": "LICENSE.code", "licenceType": "Apache-2.0"}
 {"name": "github.com/pelletier/go-buffruneio", "licenceType": "MIT", "url": "https://github.com/pelletier/go-buffruneio/blob/master/LICENSE"}
 {"name": "github.com/bmizerany/assert", "licenceType": "MIT"}

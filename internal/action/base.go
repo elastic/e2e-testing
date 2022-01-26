@@ -6,7 +6,6 @@ package action
 
 import (
 	"context"
-	"runtime"
 
 	"github.com/elastic/e2e-testing/internal/deploy"
 	log "github.com/sirupsen/logrus"
@@ -35,10 +34,6 @@ func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.Servic
 		newActionOpts, ok := actionOpts.(ProcessAction)
 		if !ok {
 			log.Fatal("Unable to cast to action options to ProcessAction")
-		}
-		if runtime.GOOS == "windows" {
-			attachAction := AttachActionWaitProcessWin(deploy, service, newActionOpts)
-			return attachAction, nil
 		}
 		attachAction := AttachActionWaitProcess(deploy, service, newActionOpts)
 		return attachAction, nil

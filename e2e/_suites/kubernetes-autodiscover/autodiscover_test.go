@@ -28,12 +28,12 @@ import (
 	"go.elastic.co/apm"
 
 	"github.com/elastic/e2e-testing/cli/config"
-	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 )
 
 var beatVersions = map[string]string{}
@@ -133,13 +133,13 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		return nil
 	}
 
-	beatVersion := elasticversion.GetSnapshotVersion(common.BeatVersion) + "-amd64"
+	beatVersion := downloads.GetSnapshotVersion(common.BeatVersion) + "-amd64"
 
-	useCISnapshots := elasticversion.GithubCommitSha1 != ""
-	if useCISnapshots || elasticversion.BeatsLocalPath != "" {
+	useCISnapshots := downloads.GithubCommitSha1 != ""
+	if useCISnapshots || downloads.BeatsLocalPath != "" {
 		log.Debugf("Configuring Docker image for %s", podName)
 
-		_, imagePath, err := elasticversion.FetchElasticArtifact(m.ctx, podName, common.BeatVersion, "linux", "amd64", "tar.gz", true, true)
+		_, imagePath, err := downloads.FetchElasticArtifact(m.ctx, podName, common.BeatVersion, "linux", "amd64", "tar.gz", true, true)
 		if err != nil {
 			return err
 		}
@@ -152,7 +152,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 
 		// tag the image with the proper docker tag, including platform
 		err = deploy.TagImage(
-			"docker.elastic.co/beats/"+podName+":"+elasticversion.GetSnapshotVersion(common.BeatVersionBase),
+			"docker.elastic.co/beats/"+podName+":"+downloads.GetSnapshotVersion(common.BeatVersionBase),
 			"docker.elastic.co/observability-ci/"+podName+":"+beatVersion,
 		)
 		if err != nil {
@@ -366,17 +366,43 @@ func (m *podsManager) waitForEventsCondition(podName string, conditionFn func(ct
 	localPath := filepath.Join(tmpDir, "events")
 	exp := backoff.WithContext(backoff.NewConstantBackOff(1*time.Second), ctx)
 	return backoff.Retry(func() error {
-		_, err := m.kubectl.Run(ctx, "cp", "--no-preserve", containerPath, localPath)
+		err := m.copyEvents(ctx, containerPath, localPath)
 		if err != nil {
-			log.Debugf("Failed to copy events from %s to %s: %s", containerPath, localPath, err)
-			return err
+			return fmt.Errorf("failed to copy events from %s: %w", containerPath, err)
 		}
 		ok, err := conditionFn(ctx, localPath)
+		if err != nil {
+			return fmt.Errorf("events condition failed: %w", err)
+		}
 		if !ok {
 			return fmt.Errorf("events do not satisfy condition")
 		}
 		return nil
 	}, exp)
+}
+
+func (m *podsManager) copyEvents(ctx context.Context, containerPath string, localPath string) error {
+	today := time.Now().Format("20060102")
+	paths := []string{
+		containerPath,
+
+		// Format used since 8.0.
+		containerPath + "-" + today + ".ndjson",
+	}
+
+	var err error
+	var output string
+	for _, containerPath := range paths {
+		// This command always succeeds, so check if the local path has been created.
+		os.Remove(localPath)
+		output, _ = m.kubectl.Run(ctx, "cp", "--no-preserve", containerPath, localPath)
+		if _, err = os.Stat(localPath); os.IsNotExist(err) {
+			continue
+		}
+		return nil
+	}
+	log.Debugf("Failed to copy events from %s to %s: %s", containerPath, localPath, output)
+	return err
 }
 
 func (m *podsManager) getPodInstances(ctx context.Context, podName string) (instances []string, err error) {

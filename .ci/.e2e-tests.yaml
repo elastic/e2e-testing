@@ -1,74 +1,86 @@
 ---
+PLATFORMS:
+  stack:
+    image: "ami-0d90bed76900e679a"
+    instance_type: "c5.4xlarge"
+    username: admin
+  centos8_arm64:
+    image: "ami-01cdc9e8306344fe0"
+    instance_type: "c5.4xlarge"
+    username: centos
+  centos8_amd64:
+    image: "ami-045b0a05944af45c1"
+    instance_type: "c5.4xlarge"
+    username: centos
+  debian_arm64:
+    image: "ami-06dac44ad759182bd"
+    instance_type: "a1.large"
+    username: admin
+  debian_amd64:
+    image: "ami-0d90bed76900e679a"
+    instance_type: "c5.4xlarge"
+    username: admin
+  sles15:
+    image: "ami-0f7cb53c916a75006"
+    instance_type: "c5.4xlarge"
+    username: ec2-user
+  fleet_elastic_pkg:
+    image: "ami-0d90bed76900e679a"
+    instance_type: "c5.4xlarge"
+    username: admin
+
 SUITES:
   - suite: "helm"
-    platforms:
-      - labels: "ubuntu-18.04"
     scenarios:
       - name: "APM Server"
         tags: "apm-server"
+        platforms: ["debian_amd64"]
       - name: "Filebeat"
         tags: "filebeat"
+        platforms: ["debian_amd64"]
       - name: "Metricbeat"
         tags: "metricbeat"
+        platforms: ["debian_amd64"]
   - suite: "fleet"
-    platforms:
-      - labels: "aarch64"
-      - labels: "ubuntu-18.04"
-        provider: "elastic-package"
     scenarios:
       - name: "Fleet"
-        pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent"
-        platforms:
-          - labels: "ubuntu-18.04"
-            provider: "elastic-package"
-          - labels: "windows-2019"
-            provider: "elastic-package"
+        platforms: ["centos8_arm64", "centos8_amd64", "debian_arm64", "debian_amd64", "sles15"]
       - name: "Integrations"
-        pullRequestFilter: " && ~debian"
         tags: "integrations"
+        platforms: ["debian_arm64", "debian_amd64", "sles15"]
       - name: "APM Integration"
-        pullRequestFilter: " && ~debian"
         tags: "apm_server"
+        platforms: ["fleet_elastic_pkg"]
       - name: "Linux Integration"
-        pullRequestFilter: " && ~debian"
         tags: "linux_integration"
-      - name: "Permissions Output change"
-        pullRequestFilter: " && ~debian"
-        tags: "permission_change"
-      - name: "Policies"
-        pullRequestFilter: " && ~debian"
-        tags: "policies"
-      - name: "System Integration"
-        platforms:
-          - labels: "ubuntu-18.04"
-            provider: "elastic-package"
-        pullRequestFilter: " && ~debian"
-        tags: "system_integration"
-      - name: "Stand-alone"
-        platforms:
-          - labels: "ubuntu-18.04"
-            provider: "elastic-package"
-        pullRequestFilter: " && ~ubi8"
-        tags: "stand_alone_agent"
+        platforms: ["debian_arm64", "debian_amd64", "sles15"]
+      # - name: "Permissions Output change"
+      #   tags: "permission_change"
+      #   platforms: ["debian_arm64", "debian_amd64", "sles15"]
+      # - name: "System Integration"
+      #   tags: "system_integration"
+      #   platforms: ["debian_arm64", "debian_amd64", "sles15"]
+      # - name: "Stand-alone"
+      #   tags: "stand_alone_agent"
+      #   platforms: ["fleet_elastic_pkg"]
       - name: "Backend Processes"
-        pullRequestFilter: " && ~debian"
         tags: "backend_processes"
+        platforms: ["debian_arm64", "debian_amd64", "sles15"]
       - name: "Beats Background Processes"
-        pullRequestFilter: " && ~debian"
         tags: "running_on_beats"
-      - name: "Preconfigured Policies"
-        pullRequestFilter: " && ~debian"
-        tags: "preconfigured_policies"
+        platforms: ["debian_arm64", "debian_amd64", "sles15"]
   - suite: "kubernetes-autodiscover"
-    platforms:
-      - labels: "ubuntu-18.04"
     scenarios:
       - name: "kubernetes autodiscover with elastic-agent"
-        tags: "kubernetes-autodiscover && elastic-agent"
+        tags: "elastic-agent"
+        platforms: ["debian_amd64"]
       - name: "kubernetes autodiscover with filebeat"
-        tags: "kubernetes-autodiscover && filebeat"
+        tags: "filebeat"
+        platforms: ["debian_amd64"]
       - name: "kubernetes autodiscover with heartbeat"
-        tags: "kubernetes-autodiscover && heartbeat"
+        tags: "heartbeat"
+        platforms: ["debian_amd64"]
       - name: "kubernetes autodiscover with metricbeat"
-        tags: "kubernetes-autodiscover && metricbeat"
+        tags: "metricbeat"
+        platforms: ["debian_amd64"]
