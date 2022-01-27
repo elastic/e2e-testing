@@ -8,6 +8,8 @@ services:
       kibana:
         condition: service_healthy
     environment:
+      - "ELASTICSEARCH_USERNAME=admin"
+      - "ELASTICSEARCH_PASSWORD=changeme"
       - "FLEET_SERVER_ENABLE=${fleetServerMode:-0}"
       - "FLEET_SERVER_INSECURE_HTTP=${fleetServerMode:-0}"
       - "FLEET_ENROLL=${fleetEnroll:-1}"

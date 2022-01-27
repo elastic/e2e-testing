@@ -137,7 +137,7 @@ func getElasticsearchClient(ctx context.Context) (*es.Client, error) {
 func getElasticsearchClientFromHostPort(ctx context.Context, host string, port int, scheme string) (*es.Client, error) {
 	cfg := es.Config{
 		Addresses: []string{fmt.Sprintf("%s://%s:%d", scheme, host, port)},
-		Username:  "elastic",
+		Username:  "admin",
 		Password:  shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"),
 	}
 
@@ -302,7 +302,7 @@ func WaitForIndices() (string, error) {
 		r := curl.HTTPRequest{
 			URL:               fmt.Sprintf("%s://%s:%d/_cat/indices?v", esEndpoint.Scheme, esEndpoint.Host, esEndpoint.Port),
 			BasicAuthPassword: shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"),
-			BasicAuthUser:     "elastic",
+			BasicAuthUser:     "admin",
 		}
 
 		response, err := curl.Get(r)
