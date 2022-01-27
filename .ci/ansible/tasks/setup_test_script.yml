@@ -1,4 +1,18 @@
 ---
+- name: Extend environment for Stack Bootstrapping
+  lineinfile:
+    state: present
+    line: "{{ itemd }}"
+    insertafter: EOF
+    dest: "/home/{{ ansible_user }}/e2e-testing/.env"
+    create: yes
+  with_items:
+    - "export SUITE=fleet"
+    - "export PROVIDER=docker"
+    - "export DEVELOPER_MODE=true"
+    - "export SKIP_PULL=1"
+  when: "'stack' == nodeLabel"
+
 - name: Extend environment for Fleet testing
   lineinfile:
     state: present

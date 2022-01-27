@@ -65,6 +65,11 @@
     tags:
       - setup-stack
 
+  - name: Configure test script
+    include_tasks: tasks/setup_test_script.yml
+    tags:
+      - setup-stack
+
   - name: Add SSH keys to stack
     include_tasks: tasks/install_ssh_keys.yml
     tags:
@@ -72,19 +77,20 @@
 
   - name: Configure stack files
     ansible.builtin.replace:
-      path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml"
+      path: '{{ item.path }}'
       regexp: '{{ item.old }}'
       replace: '{{ item.new }}'
     loop:
-      - { old: 'http://elasticsearch', new: 'http://{{ inventory_hostname }}' }
-      - { old: 'http://fleet-server', new: 'http://{{ inventory_hostname }}' }
-      - { old: 'http://package-registry:8080', new: 'https://epr-staging.elastic.co' }
+      - { old: 'http://elasticsearch', new: 'http://{{ inventory_hostname }}', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml" }
+      - { old: 'http://fleet-server', new: 'http://{{ inventory_hostname }}', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml" }
+      - { old: 'http://kibana', new: 'http://{{ inventory_hostname }}', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/services/elastic-agent/fleet-server/docker-compose.yml" }
+      - { old: 'http://package-registry:8080', new: 'https://epr-staging.elastic.co', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml" }
     tags:
       - setup-stack
 
-  - name: Start stack
+  - name: Start stack without any tag to spin up the stack using Fleet's bootstrapping code
     become: true
-    shell: docker-compose -f /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/docker-compose.yml up -d
+    shell: "/home/{{ ansible_user }}/e2e-testing/.ci/scripts/functional-test.sh 'non-existing-tag'"
     tags:
       - setup-stack
 
