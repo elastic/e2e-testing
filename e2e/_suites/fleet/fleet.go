@@ -618,12 +618,48 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			}).Fatal("Unable to create kibana client")
 		}
 
+		err = elasticsearch.WaitForClusterHealth(ctx)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Fatal("Elasticsearch Cluster is not healthy")
+		}
+
 		err = kibanaClient.RecreateFleet(ctx)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
 				"env":   env,
 			}).Fatal("Fleet could not be recreated")
+		}
+
+		serviceToken, err := elasticsearch.GetAPIToken(ctx)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Fatal("Could not get API Token from Elasticsearch")
+		}
+
+		fleetServerEnv := make(map[string]string)
+		for k, v := range env {
+			fleetServerEnv[k] = v
+		}
+		fleetServerEnv["fleetServerMode"] = "1"
+		fleetServerEnv["fleetServerPort"] = "8220"
+		fleetServerEnv["fleetInsecure"] = "1"
+		fleetServerEnv["fleetServerServiceToken"] = serviceToken.AccessToken
+
+		fleetServerSrv := deploy.ServiceRequest{
+			Name:    common.ElasticAgentServiceName,
+			Flavour: "fleet-server",
+		}
+
+		err = deployer.Add(ctx, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{fleetServerSrv}, fleetServerEnv)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"env":   fleetServerEnv,
+			}).Fatal("Fleet Server could not be started")
 		}
 
 		err = kibanaClient.WaitForFleet(ctx)
