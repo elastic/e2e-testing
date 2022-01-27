@@ -290,6 +290,60 @@ func WaitForElasticsearch(ctx context.Context, maxTimeoutMinutes time.Duration) 
 	return true, nil
 }
 
+// WaitForClusterHealth waits for the elasticsearch cluster to be healthy
+func WaitForClusterHealth(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "ClusterHealth", "elasticsearch.cluster.health", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	esClient, err := getElasticsearchClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	exp := utils.GetExponentialBackOff(60 * time.Second)
+
+	retryCount := 1
+
+	healthFunction := func() error {
+		response, err := esClient.Cluster.Health()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":       err,
+				"retry":       retryCount,
+				"elapsedTime": exp.GetElapsedTime(),
+			}).Warn("The Elasticsearch Cluster Health API is not available yet")
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"retries":     retryCount,
+			"response":    response,
+			"elapsedTime": exp.GetElapsedTime(),
+		}).Trace("The Elasticsearch Cluster Health API is  available")
+
+		if response.StatusCode != 200 {
+			log.WithFields(log.Fields{
+				"retries":     retryCount,
+				"statusCode":  response.StatusCode,
+				"elapsedTime": exp.GetElapsedTime(),
+			}).Warn("The Elasticsearch Cluster is not healthy yet. Retrying")
+
+			retryCount++
+
+			return fmt.Errorf("the Elasticsearch Cluster is not healthy yet. Retrying")
+		}
+
+		return nil
+	}
+
+	return backoff.Retry(healthFunction, exp)
+}
+
 // WaitForIndices waits for the elasticsearch indices to return the list of indices.
 func WaitForIndices() (string, error) {
 	exp := utils.GetExponentialBackOff(60 * time.Second)
