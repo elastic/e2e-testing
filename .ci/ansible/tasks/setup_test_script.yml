@@ -2,7 +2,7 @@
 - name: Extend environment for Stack Bootstrapping
   lineinfile:
     state: present
-    line: "{{ itemd }}"
+    line: "{{ item }}"
     insertafter: EOF
     dest: "/home/{{ ansible_user }}/e2e-testing/.env"
     create: yes
