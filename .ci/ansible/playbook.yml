@@ -108,13 +108,13 @@
     - role: geerlingguy.docker
       docker_daemon_options:
         default-ulimit: ["nofile=1024000:1024000"]
-      when: "'kubernetes_autodiscover' in nodeLabel or 'helm' in nodeLabel or 'fleet_amd64' in nodeLabel or 'fleet_elastic_pkg' in nodeLabel"
+      when: nodeLabel in ["kubernetes_autodiscover", "helm", "debian_amd64", "centos8_amd64", "sles15", "fleet_elastic_pkg"]
     - role: andrewrothstein.kubectl
-      when: "'kubernetes_autodiscover' in nodeLabel or 'helm' in nodeLabel"
+      when: nodeLabel in ["kubernetes_autodiscover", "helm"]
     - role: andrewrothstein.kind
-      when: "'kubernetes_autodiscover' in nodeLabel or 'helm' in nodeLabel"
+      when: nodeLabel in ["kubernetes_autodiscover", "helm"]
     - role: geerlingguy.helm
-      when: "'kubernetes_autodiscover' in nodeLabel or 'helm' in nodeLabel"
+      when: nodeLabel in ["kubernetes_autodiscover", "helm"]
     - role: gantsign.golang
       vars:
         golang_version: 1.17
