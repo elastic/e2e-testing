@@ -29,7 +29,9 @@
     - "export KIBANA_URL=http://{{stackRunner}}:5601"
     - "export FLEET_URL=http://{{stackRunner}}:8220"
     - "export SKIP_PULL=1"
-  when: "'fleet' == suite and 'stack' not in nodeLabel"
+  when:
+    - suite == "fleet"
+    - nodeLabel != "stack"
 
 - name: Extend environment for Fleet with elastic-package testing
   lineinfile:
