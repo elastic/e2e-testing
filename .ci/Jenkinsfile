@@ -343,6 +343,7 @@ def pyrun(command){
   def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
   def awsAuthObj = awsProps?.data
   withEnv([
+    "ANSIBLE_CONFIG=${env.WORKSPACE}/.ci/ansible/ansible.cfg",
     "ANSIBLE_HOST_KEY_CHECKING=False",
   ]){
     withVaultToken(){
