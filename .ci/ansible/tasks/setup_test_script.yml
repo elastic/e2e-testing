@@ -54,7 +54,7 @@
   with_items:
     - "export SUITE={{ lookup('env', 'SUITE') or 'kubernetes-autodiscover' }}"
     - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'docker' }}"
-  when: "'kubernetes_autodiscover' == suite"
+  when: "suite is defined and 'kubernetes_autodiscover' == suite"
 
 - name: Extend environment for Helm testing
   lineinfile:
@@ -66,7 +66,7 @@
   with_items:
     - "export SUITE={{ lookup('env', 'SUITE') or 'helm' }}"
     - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'docker' }}"
-  when: "'helm' == suite"
+  when: "suite is defined and 'helm' == suite"
 
 - name: Extend environment
   lineinfile:
