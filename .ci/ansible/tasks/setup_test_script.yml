@@ -59,7 +59,7 @@
     - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'docker' }}"
   when:
     - suite is defined
-    - suite == "kubernetes_autodiscover"
+    - suite == "kubernetes-autodiscover"
 
 - name: Extend environment for Helm testing
   lineinfile:

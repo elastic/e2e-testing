@@ -108,7 +108,7 @@
     - role: geerlingguy.docker
       docker_daemon_options:
         default-ulimit: ["nofile=1024000:1024000"]
-      when: nodeLabel in ["kubernetes_autodiscover", "helm", "debian_amd64", "centos8_amd64", "sles15", "fleet_elastic_pkg"]
+      when: nodeLabel in ["kubernetes_autodiscover", "helm", "debian_amd64", "centos8_amd64", "fleet_elastic_pkg"]
     - role: andrewrothstein.kubectl
       when: nodeLabel in ["kubernetes_autodiscover", "helm"]
     - role: andrewrothstein.kind
