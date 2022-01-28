@@ -1,3 +1,7 @@
 ---
 - name: Wait for SSH to come up
-  wait_for: host={{ inventory_hostname }} port=22 delay=10 timeout=120
+  wait_for:
+    host: "{{ inventory_hostname }}"
+    port: 22
+    delay: 10
+    timeout: 120
