@@ -343,6 +343,7 @@ def pyrun(command){
   def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
   def awsAuthObj = awsProps?.data
   withEnv([
+    "ANSIBLE_CONFIG=${env.WORKSPACE}/.ci/ansible/ansible.cfg",
     "ANSIBLE_HOST_KEY_CHECKING=False",
   ]){
     withVaultToken(){
@@ -355,7 +356,7 @@ def pyrun(command){
             if ! test -d ${env.WORKSPACE}/.venv; then
                 python3 -m venv ${env.WORKSPACE}/.venv
                  ${env.WORKSPACE}/.venv/bin/pip3 -q install wheel
-                 ${env.WORKSPACE}/.venv/bin/pip3 -q install ansible requests boto3 boto
+                 ${env.WORKSPACE}/.venv/bin/pip3 -q install -r .ci/ansible/requirements.txt
                  ${env.WORKSPACE}/.venv/bin/ansible-galaxy install -r .ci/ansible/requirements.yml
             fi
             ${env.WORKSPACE}/.venv/bin/${command}
