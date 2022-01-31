@@ -41,7 +41,7 @@
   with_items:
     - "export SUITE={{ lookup('env', 'SUITE') or 'kubernetes-autodiscover' }}"
     - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'docker' }}"
-  when: "'kubernetes_autodiscover' == suite"
+  when: "'kubernetes-autodiscover' == suite"
 
 - name: Extend environment for Helm testing
   lineinfile:
