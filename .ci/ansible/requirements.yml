@@ -1,5 +1,6 @@
+- src: andrewrothstein.kind
+- src: andrewrothstein.kubectl
+- src: community.general
+- src: gantsign.golang
 - src: geerlingguy.docker
 - src: geerlingguy.helm
-- src: andrewrothstein.kubectl
-- src: andrewrothstein.kind
-- src: gantsign.golang

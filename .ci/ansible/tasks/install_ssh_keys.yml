@@ -1,5 +1,12 @@
 ---
-- name: Install SSH keys
+- name: Install SSH keys (Linux)
   become: false
   shell: |
     /home/{{ansible_user}}/e2e-testing/.ci/scripts/import-ssh-keys.sh
+  when: ansible_os_family != 'Darwin'
+
+- name: Install SSH keys (MacOS)
+  become: false
+  shell: |
+    /Users/{{ansible_user}}/e2e-testing/.ci/scripts/import-ssh-keys.sh
+  when: ansible_os_family == 'Darwin'

@@ -20,14 +20,14 @@ PLATFORMS:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
     username: admin
-  sles15:
-    image: "ami-0f7cb53c916a75006"
-    instance_type: "c5.4xlarge"
-    username: ec2-user
   fleet_elastic_pkg:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
     username: admin
+  sles15:
+    image: "ami-0f7cb53c916a75006"
+    instance_type: "c5.4xlarge"
+    username: ec2-user
 
 SUITES:
   - suite: "helm"

@@ -31,6 +31,11 @@
     - name: Update apt cache.
       apt: update_cache=yes cache_valid_time=600
       when: ansible_os_family == 'Debian'
+    - name: Update Homebrew.
+      community.general.homebrew:
+        update_homebrew: yes
+        upgrade_all: yes
+      when: ansible_os_family == 'Darwin'
   roles:
     - role: geerlingguy.docker
       docker_daemon_options:

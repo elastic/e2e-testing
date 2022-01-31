@@ -1,11 +1,21 @@
 ---
-- name: Create outputs dir
+- name: Create outputs dir (Linux)
   become: no
   ansible.builtin.file:
     path: "/home/{{ansible_user}}/e2e-testing/outputs"
     state: directory
     mode: '0755'
     owner: "{{ansible_user}}"
+  when: ansible_os_family != 'Darwin'
+
+- name: Create outputs dir (MacOS)
+  become: no
+  ansible.builtin.file:
+    path: "/Users/{{ansible_user}}/e2e-testing/outputs"
+    state: directory
+    mode: '0755'
+    owner: "{{ansible_user}}"
+  when: ansible_os_family == 'Darwin'
 
 - name: Copy source code
   become: no

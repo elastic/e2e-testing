@@ -20,24 +20,29 @@ PLATFORMS:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
     username: admin
-  sles15:
-    image: "ami-0f7cb53c916a75006"
-    instance_type: "c5.4xlarge"
+  macos_amd64:
+#    AMI info: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-mac-instances.html#mac-instance-updates
+    image: "ami-056dc9ac02058c12d"
+    instance_type: "mac1.metal"
     username: ec2-user
   fleet_elastic_pkg:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
     username: admin
+  sles15:
+    image: "ami-0f7cb53c916a75006"
+    instance_type: "c5.4xlarge"
+    username: ec2-user
 
 SUITES:
   - suite: "fleet"
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode_agent"
-        platforms: ["centos8_arm64", "centos8_amd64", "debian_arm64", "debian_amd64", "sles15"]
+        platforms: ["centos8_arm64", "centos8_amd64", "debian_arm64", "debian_amd64", "macos_amd64", "sles15"]
       - name: "Integrations"
         tags: "integrations"
-        platforms: ["debian_arm64", "debian_amd64", "sles15"]
+        platforms: ["debian_arm64", "debian_amd64", "sles15", "macos_amd64"]
       - name: "APM Integration"
         tags: "apm_server"
         platforms: ["fleet_elastic_pkg"]
