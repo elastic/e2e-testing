@@ -4,35 +4,43 @@ PLATFORMS:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
     username: admin
+    home_path: "/home"
   centos8_arm64:
     image: "ami-01cdc9e8306344fe0"
     instance_type: "a1.large"
     username: centos
+    home_path: "/home"
   centos8_amd64:
     image: "ami-045b0a05944af45c1"
     instance_type: "c5.4xlarge"
     username: centos
+    home_path: "/home"
   debian_arm64:
     image: "ami-06dac44ad759182bd"
     instance_type: "a1.large"
     username: admin
+    home_path: "/home"
   debian_amd64:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
     username: admin
+    home_path: "/home"
   macos_amd64:
 #    AMI info: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-mac-instances.html#mac-instance-updates
     image: "ami-056dc9ac02058c12d"
     instance_type: "mac1.metal"
     username: ec2-user
+    home_path: "/Users"
   fleet_elastic_pkg:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
     username: admin
+    home_path: "/home"
   sles15:
     image: "ami-0f7cb53c916a75006"
     instance_type: "c5.4xlarge"
     username: ec2-user
+    home_path: "/home"
 
 SUITES:
   - suite: "fleet"

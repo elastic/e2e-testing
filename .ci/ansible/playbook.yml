@@ -3,6 +3,7 @@
   gather_facts: no
   vars:
     ansible_user: "{{nodeUser}}"
+    ansibe_home_folder: "{{homePath}}/{{nodeUser}}"
   tasks:
   - name: Setup nodes
     include_tasks: tasks/runners.yml
