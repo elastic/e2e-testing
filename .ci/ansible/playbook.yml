@@ -36,7 +36,7 @@
       community.general.homebrew:
         update_homebrew: yes
         upgrade_all: yes
-      when: ansible_os_family == 'Darwin'
+    when: ansible_os_family == 'Darwin'
   roles:
     - role: geerlingguy.docker
       docker_daemon_options:
