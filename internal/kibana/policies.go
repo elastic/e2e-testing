@@ -195,7 +195,7 @@ type DataStream struct {
 type Input struct {
 	Type           string      `json:"type"`
 	Enabled        bool        `json:"enabled"`
-	Streams        []Stream    `json:"streams"`
+	Streams        []Stream    `json:"streams",omitempty`
 	Vars           Vars        `json:"vars,omitempty"`
 	Config         interface{} `json:"config,omitempty"`
 	CompiledStream interface{} `json:"compiled_stream,omitempty"`
