@@ -51,3 +51,12 @@
 - name: Install ssh-import-id python package to copy public SSH keys from Github accounts
   pip:
     name: ssh-import-id
+
+- name: Set sshd configuration for client alive settings
+  ansible.builtin.copy:
+    src: sshd_config
+    dest: /etc/ssh/sshd_config
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0600'
+  when: ansible_distribution in ["CentOS", "Debian", "Fedora", "RedHat", "Ubuntu"]
