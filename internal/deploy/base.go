@@ -77,6 +77,7 @@ type ServiceRequest struct {
 	Name                string
 	BackgroundProcesses []string                // optional, configured using builder method to add processes that must be installed in the service
 	Flavour             string                  // optional, configured using builder method
+	IsContainer         bool                    // optional, set to true when the service is backed by a container
 	Scale               int                     // default: 1
 	WaitStrategies      []WaitForServiceRequest // wait strategies for the service
 }
@@ -89,6 +90,15 @@ func NewServiceRequest(n string) ServiceRequest {
 		Scale:               1,
 		WaitStrategies:      []WaitForServiceRequest{},
 	}
+}
+
+// NewServiceContainerRequest creates a request for a service
+func NewServiceContainerRequest(n string) ServiceRequest {
+	srv := NewServiceRequest(n)
+
+	srv.IsContainer = true
+
+	return srv
 }
 
 // GetName returns the name of the service request, including flavour if needed

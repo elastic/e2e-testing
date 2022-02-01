@@ -602,7 +602,14 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 
 	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 
-	return CheckProcessState(fts.deployer, manifest.Name, process, "stopped", 0)
+	var srv deploy.ServiceRequest
+	if fts.StandAlone {
+		srv = deploy.NewServiceContainerRequest(manifest.Name)
+	} else {
+		srv = deploy.NewServiceRequest(manifest.Name)
+	}
+
+	return CheckProcessState(fts.currentContext, fts.deployer, srv, process, "stopped", 0)
 }
 
 // bootstrapFleet this method creates the runtime dependencies for the Fleet test suite, being of special
