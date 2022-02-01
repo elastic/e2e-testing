@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -189,11 +190,16 @@ func (fts *FleetTestSuite) beforeScenario() {
 		}
 
 		for _, item := range jsonData.Children() {
+			var streams []kibana.Stream
+			if err := json.Unmarshal(item.Path("streams").Bytes(), &streams); err != nil {
+				return err
+			}
+
 			if item.Path("type").Data().(string) == "system/metrics" {
 				packageDataStream.Inputs = append(packageDataStream.Inputs, kibana.Input{
 					Type:    item.Path("type").Data().(string),
 					Enabled: item.Path("enabled").Data().(bool),
-					Streams: item.S("streams").Data().([]interface{}),
+					Streams: streams,
 					Vars: map[string]kibana.Var{
 						"system.hostfs": {
 							Value: "",
@@ -205,7 +211,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 				packageDataStream.Inputs = append(packageDataStream.Inputs, kibana.Input{
 					Type:    item.Path("type").Data().(string),
 					Enabled: item.Path("enabled").Data().(bool),
-					Streams: item.S("streams").Data().([]interface{}),
+					Streams: streams,
 				})
 			}
 		}
@@ -1493,7 +1499,7 @@ func inputs(integration string) []kibana.Input {
 			{
 				Type:    "apm",
 				Enabled: true,
-				Streams: []interface{}{},
+				Streams: []kibana.Stream{},
 				Vars: map[string]kibana.Var{
 					"apm-server": {
 						Value: "host",
@@ -1507,20 +1513,20 @@ func inputs(integration string) []kibana.Input {
 			{
 				Type:    "linux/metrics",
 				Enabled: true,
-				Streams: []interface{}{
-					map[string]interface{}{
-						"id":      "linux/metrics-linux.memory-" + uuid.New().String(),
-						"enabled": true,
-						"data_stream": map[string]interface{}{
-							"dataset": "linux.memory",
-							"type":    "metrics",
+				Streams: []kibana.Stream{
+					{
+						ID:      "linux/metrics-linux.memory-" + uuid.New().String(),
+						Enabled: true,
+						DS: kibana.DataStream{
+							Dataset: "linux.memory",
+							Type:    "metrics",
 						},
-					},
-				},
-				Vars: map[string]kibana.Var{
-					"period": {
-						Value: "1s",
-						Type:  "string",
+						Vars: map[string]kibana.Var{
+							"period": {
+								Value: "1s",
+								Type:  "string",
+							},
+						},
 					},
 				},
 			},
@@ -1592,7 +1598,7 @@ func readJSONFile(file string) (*gabs.Container, error) {
 	return jsonParsed.S("inputs"), nil
 }
 
-func parseJSONMetrics(data *gabs.Container, integration string, set string, metrics string) []interface{} {
+func parseJSONMetrics(data *gabs.Container, integration string, set string, metrics string) []kibana.Stream {
 	for i, item := range data.Children() {
 		if item.Path("type").Data().(string) == integration {
 			for idx, stream := range item.S("streams").Children() {
@@ -1606,13 +1612,18 @@ func parseJSONMetrics(data *gabs.Container, integration string, set string, metr
 						true,
 						fmt.Sprintf("inputs.%d.streams.%d.enabled", i, idx),
 					)
-					dataStreamOut, _ := data.Path(fmt.Sprintf("inputs.%d.streams", i)).Data().([]interface{})
+
+					var dataStreamOut []kibana.Stream
+					if err := json.Unmarshal(data.Path(fmt.Sprintf("inputs.%d.streams", i)).Bytes(), &dataStreamOut); err != nil {
+						return []kibana.Stream{}
+					}
+
 					return dataStreamOut
 				}
 			}
 		}
 	}
-	return nil
+	return []kibana.Stream{}
 }
 
 func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set string) error {
