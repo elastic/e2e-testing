@@ -23,4 +23,4 @@ services:
       - "KIBANA_FLEET_SETUP=${fleetServerMode:-0}"
     platform: ${stackPlatform:-linux/amd64}
     ports:
-      - "127.0.0.1:${fleetServerPort:-8220}:8220"
+      - "${fleetServerPort:-8220}:8220"
