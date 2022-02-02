@@ -110,8 +110,6 @@
         default-ulimit: ["nofile=1024000:1024000"]
       when: '"arm64" not in nodeLabel'
     - role: geerlingguy.docker_arm
-      docker_daemon_options:
-        default-ulimit: ["nofile=1024000:1024000"]
       when: '"arm64" in nodeLabel'
     - role: andrewrothstein.kubectl
       when: suite in ["kubernetes-autodiscover", "helm"]
