@@ -1,3 +1,4 @@
+- src: geerlingguy.pip
 - src: geerlingguy.docker
 - src: geerlingguy.docker_arm
 - src: geerlingguy.helm

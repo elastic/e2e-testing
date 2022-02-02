@@ -109,7 +109,10 @@
       docker_daemon_options:
         default-ulimit: ["nofile=1024000:1024000"]
       when: '"arm64" not in nodeLabel'
+    - role: geerlingguy.pip
+      when: '"arm64" in nodeLabel'
     - role: geerlingguy.docker_arm
+      docker_install_compose: true
       when: '"arm64" in nodeLabel'
     - role: andrewrothstein.kubectl
       when: suite in ["kubernetes-autodiscover", "helm"]
@@ -123,6 +126,7 @@
   vars:
     ansible_python_interpreter: "auto"
     ansible_user: "{{nodeUser}}"
+    pip_package: "python3-pip"
   tasks:
   - name: Install deps
     include_tasks: tasks/install_deps.yml
