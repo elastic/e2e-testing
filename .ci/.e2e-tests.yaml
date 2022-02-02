@@ -51,7 +51,7 @@ SUITES:
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
       - name: "APM Integration"
         tags: "apm_server"
-        platforms: ["fleet_elastic_pkg"]
+        platforms: ["debian_arm64", "debian_amd64", "sles15"]
       - name: "Linux Integration"
         tags: "linux_integration"
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
