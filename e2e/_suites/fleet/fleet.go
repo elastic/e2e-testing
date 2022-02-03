@@ -1371,7 +1371,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 
 	// checking the error message produced by the install command in TAR installer
 	// to distinguish from other install errors
-	if err != nil && strings.HasPrefix(err.Error(), "Failed to install the agent with subcommand:") {
+	if err != nil && strings.Contains(err.Error(), "Error: enroll command failed") {
 		log.WithFields(log.Fields{
 			"err":   err,
 			"token": fts.CurrentToken,
