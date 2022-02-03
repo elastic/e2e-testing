@@ -18,6 +18,7 @@
     name:
       - autoconf
       - bison
+      - docker
       - flex
       - gcc
       - gcc-c++
