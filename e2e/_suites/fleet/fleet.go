@@ -200,7 +200,8 @@ func (fts *FleetTestSuite) beforeScenario() {
 		for _, item := range jsonData.Children() {
 			var streams []kibana.Stream
 			if err := json.Unmarshal(item.Path("streams").Bytes(), &streams); err != nil {
-				return err
+				log.WithError(err).Warn("Could not unmarshall streams, will use an empty array instead")
+				streams = []kibana.Stream{}
 			}
 
 			if item.Path("type").Data().(string) == "system/metrics" {
