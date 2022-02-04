@@ -39,8 +39,9 @@ type ServiceOperator interface {
 	Logs(ctx context.Context) error
 	Postinstall(ctx context.Context) error
 	Preinstall(ctx context.Context) error
-	Start(ctx context.Context) error // will start a service
-	Stop(ctx context.Context) error  // will stop a service
+	Restart(ctx context.Context) error // will restart a service
+	Start(ctx context.Context) error   // will start a service
+	Stop(ctx context.Context) error    // will stop a service
 	Uninstall(ctx context.Context) error
 }
 

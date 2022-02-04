@@ -566,15 +566,11 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state st
 		err := agentInstaller.Start(fts.currentContext)
 		return err
 	} else if state == "restarted" {
-		err := agentInstaller.Stop(fts.currentContext)
+		err := agentInstaller.Restart(fts.currentContext)
 		if err != nil {
 			return err
 		}
 
-		err = agentInstaller.Start(fts.currentContext)
-		if err != nil {
-			return err
-		}
 		return nil
 	} else if state == "uninstalled" {
 		err := agentInstaller.Uninstall(fts.currentContext)

@@ -140,6 +140,15 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 	return nil
 }
 
+// Restart will restart a service
+func (i *elasticAgentTARDarwinPackage) Restart(ctx context.Context) error {
+	err := i.Stop(ctx)
+	if err != nil {
+		return err
+	}
+	return i.Start(ctx)
+}
+
 // Start will start a service
 func (i *elasticAgentTARDarwinPackage) Start(ctx context.Context) error {
 	cmds := []string{"launchctl", "start", "elastic-agent"}
