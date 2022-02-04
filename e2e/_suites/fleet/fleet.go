@@ -655,17 +655,17 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			}).Fatal("Fleet could not be recreated")
 		}
 
-		fleetServicePolicy, err := kibanaClient.CreatePolicy(ctx)
+		fleetServicePolicy, err := kibanaClient.GetDefaultPolicy(ctx, true)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
-			}).Fatal("Could not create a policy for Fleet Server")
+			}).Fatal("Could not get Fleet Server's default policy")
 		}
 		log.WithFields(log.Fields{
 			"id":          fleetServicePolicy.ID,
 			"name":        fleetServicePolicy.Name,
 			"description": fleetServicePolicy.Description,
-		}).Info("Fleet Server Policy created")
+		}).Info("Fleet Server Policy retrieved")
 
 		serviceToken, err := elasticsearch.GetAPIToken(ctx)
 		if err != nil {
