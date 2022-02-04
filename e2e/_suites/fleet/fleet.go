@@ -655,6 +655,18 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			}).Fatal("Fleet could not be recreated")
 		}
 
+		fleetServicePolicy, err := kibanaClient.CreatePolicy(ctx)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Fatal("Could not create a policy for Fleet Server")
+		}
+		log.WithFields(log.Fields{
+			"id":          fleetServicePolicy.ID,
+			"name":        fleetServicePolicy.Name,
+			"description": fleetServicePolicy.Description,
+		}).Info("Fleet Server Policy created")
+
 		serviceToken, err := elasticsearch.GetAPIToken(ctx)
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -670,6 +682,7 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 		fleetServerEnv["fleetServerPort"] = "8220"
 		fleetServerEnv["fleetInsecure"] = "1"
 		fleetServerEnv["fleetServerServiceToken"] = serviceToken.AccessToken
+		fleetServerEnv["fleetServerPolicyId"] = fleetServicePolicy.ID
 
 		fleetServerSrv := deploy.ServiceRequest{
 			Name:    common.ElasticAgentServiceName,

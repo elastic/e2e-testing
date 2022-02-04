@@ -15,6 +15,7 @@ services:
       - "FLEET_SERVER_INSECURE_HTTP=${fleetServerMode:-0}"
       - "FLEET_SERVER_PORT=${fleetServerPort:-8220}"
       - "FLEET_SERVER_SERVICE_TOKEN=${fleetServerServiceToken:-}"
+      - "FLEET_SERVER_POLICY_ID=${fleetServerPolicyId:-}"
       - "FLEET_ENROLL=${fleetEnroll:-1}"
       - "FLEET_ENROLLMENT_TOKEN=${fleetEnrollmentToken:-}"
       - "FLEET_INSECURE=${fleetInsecure:-0}"
