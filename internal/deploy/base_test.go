@@ -11,6 +11,59 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+<<<<<<< HEAD
+=======
+func Test_New(t *testing.T) {
+	t.Run("New Docker Provider", func(t *testing.T) {
+		provider := New("docker")
+
+		_, ok := provider.(*dockerDeploymentManifest)
+		assert.True(t, ok, "Provider is not Docker")
+	})
+
+	t.Run("New Elastic Package Provider", func(t *testing.T) {
+		provider := New("elastic-package")
+
+		_, ok := provider.(*EPServiceManager)
+		assert.True(t, ok, "Provider is not Elastic Package")
+	})
+
+	t.Run("New K8S Provider", func(t *testing.T) {
+		provider := New("kubernetes")
+
+		_, ok := provider.(*kubernetesDeploymentManifest)
+		assert.True(t, ok, "Provider is not Kubernetes")
+	})
+
+	t.Run("New Remote Provider", func(t *testing.T) {
+		provider := New("remote")
+
+		_, ok := provider.(*remoteDeploymentManifest)
+		assert.True(t, ok, "Provider is not Remote")
+	})
+
+	t.Run("New Not Found Provider", func(t *testing.T) {
+		provider := New("asdf")
+
+		assert.Nil(t, provider, "Provider is not Nil")
+	})
+}
+
+func Test_ServiceRequest(t *testing.T) {
+	t.Run("ServiceRequest as service", func(t *testing.T) {
+		srv := NewServiceRequest("foo")
+
+		assert.False(t, srv.IsContainer, "Service should not be a container")
+	})
+
+	t.Run("ServiceRequest as container", func(t *testing.T) {
+		srv := NewServiceContainerRequest("foo")
+
+		assert.True(t, srv.IsContainer, "Service should be a container")
+	})
+}
+
+>>>>>>> a31f8073 (fix: update stack deployment to follow Users&Roles best practices (#2064))
 func Test_ServiceRequest_GetName(t *testing.T) {
 	t.Run("ServiceRequest without flavour", func(t *testing.T) {
 		srv := NewServiceRequest("foo")

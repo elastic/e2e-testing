@@ -44,8 +44,9 @@ func setUpSuite() {
 
 	imts = IngestManagerTestSuite{
 		Fleet: &FleetTestSuite{
-			kibanaClient: kibanaClient,
-			deployer:     deploy.New(common.Provider),
+			kibanaClient:   kibanaClient,
+			deployer:       deploy.New(common.Provider),
+			dockerDeployer: deploy.New("docker"),
 		},
 	}
 }

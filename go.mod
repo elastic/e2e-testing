@@ -5,12 +5,18 @@ go 1.14
 require (
 	github.com/Flaque/filet v0.0.0-20201012163910-45f684403088
 	github.com/Jeffail/gabs/v2 v2.6.0
-	github.com/cenkalti/backoff/v4 v4.1.0
+	github.com/cenkalti/backoff/v4 v4.1.1
 	github.com/cucumber/godog v0.11.0
 	github.com/cucumber/messages-go/v10 v10.0.3 // indirect
+<<<<<<< HEAD
 	github.com/docker/cli v20.10.7+incompatible
 	github.com/docker/docker v20.10.6+incompatible
 	github.com/elastic/elastic-package v0.27.0
+=======
+	github.com/docker/cli v20.10.11+incompatible
+	github.com/docker/docker v20.10.12+incompatible
+	github.com/elastic/elastic-package v0.36.0
+>>>>>>> a31f8073 (fix: update stack deployment to follow Users&Roles best practices (#2064))
 	github.com/elastic/go-elasticsearch/v8 v8.0.0-20210317102009-a9d74cec0186
 	github.com/elastic/go-windows v1.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
