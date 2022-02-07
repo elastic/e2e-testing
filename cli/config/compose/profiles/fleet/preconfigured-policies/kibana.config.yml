@@ -5,7 +5,7 @@ server.host: "0.0.0.0"
 telemetry.enabled: false
 
 elasticsearch.hosts: [ "http://elasticsearch:9200" ]
-elasticsearch.username: elastic
+elasticsearch.username: admin
 elasticsearch.password: changeme
 xpack.monitoring.ui.container.elasticsearch.enabled: true
 
