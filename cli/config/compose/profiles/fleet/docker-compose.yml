@@ -14,12 +14,18 @@ services:
       - xpack.license.self_generated.type=trial
       - xpack.security.enabled=true
       - xpack.security.authc.api_key.enabled=true
-      - ELASTIC_USERNAME=elastic
+      - xpack.security.authc.token.enabled=true
+      - xpack.security.authc.token.timeout=60m
+      - ELASTIC_USERNAME=admin
       - ELASTIC_PASSWORD=changeme
     image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion:-7.16.4-206b88b5-SNAPSHOT}"
     platform: ${stackPlatform:-linux/amd64}
     ports:
       - "9200:9200"
+    volumes:
+      - ./elasticsearch-roles.yml:/usr/share/elasticsearch/config/roles.yml
+      - ./elasticsearch-users:/usr/share/elasticsearch/config/users
+      - ./elasticsearch-users_roles:/usr/share/elasticsearch/config/users_roles
   kibana:
     depends_on:
       elasticsearch:
@@ -34,6 +40,7 @@ services:
       - "5601:5601"
     volumes:
       - ./${kibanaProfile:-default}/kibana.config.yml:/usr/share/kibana/config/kibana.yml
+<<<<<<< HEAD
   fleet-server:
     image: "docker.elastic.co/beats/elastic-agent:${stackVersion:-7.16.4-206b88b5-SNAPSHOT}"
     depends_on:
@@ -54,3 +61,5 @@ services:
       - "KIBANA_FLEET_HOST=http://kibana:5601"
       - "FLEET_SERVER_HOST=0.0.0.0"
       - "FLEET_SERVER_PORT=8220"
+=======
+>>>>>>> a31f8073 (fix: update stack deployment to follow Users&Roles best practices (#2064))

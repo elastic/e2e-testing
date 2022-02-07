@@ -193,12 +193,12 @@ type DataStream struct {
 
 // Input represents a package-level input.
 type Input struct {
-	Type           string        `json:"type"`
-	Enabled        bool          `json:"enabled"`
-	Streams        []interface{} `json:"streams"`
-	Vars           Vars          `json:"vars,omitempty"`
-	Config         interface{}   `json:"config,omitempty"`
-	CompiledStream interface{}   `json:"compiled_stream,omitempty"`
+	Type           string      `json:"type"`
+	Enabled        bool        `json:"enabled"`
+	Streams        []Stream    `json:"streams,omitempty"`
+	Vars           Vars        `json:"vars,omitempty"`
+	Config         interface{} `json:"config,omitempty"`
+	CompiledStream interface{} `json:"compiled_stream,omitempty"`
 }
 
 // PackageDataStream represents a request to add a single package's single data stream to a
@@ -213,6 +213,14 @@ type PackageDataStream struct {
 	OutputID    string             `json:"output_id"`
 	Inputs      []Input            `json:"inputs"`
 	Package     IntegrationPackage `json:"package"`
+}
+
+// Stream represents a stream for an input
+type Stream struct {
+	DS      DataStream `json:"data_stream"`
+	Enabled bool       `json:"enabled"`
+	ID      string     `json:"id"`
+	Vars    Vars       `json:"vars,omitempty"`
 }
 
 // ListPackagePolicies return list of package policies

@@ -144,6 +144,11 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 	return nil
 }
 
+// Restart will restart a service
+func (i *elasticAgentZIPPackage) Restart(ctx context.Context) error {
+	return nil
+}
+
 // Start will start a service
 func (i *elasticAgentZIPPackage) Start(ctx context.Context) error {
 	return nil

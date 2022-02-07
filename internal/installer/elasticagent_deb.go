@@ -181,6 +181,21 @@ func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
 	return installArtifactFn(ctx, "elastic-agent")
 }
 
+// Restart will restart a service
+func (i *elasticAgentDEBPackage) Restart(ctx context.Context) error {
+	for _, bp := range i.service.BackgroundProcesses {
+		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
+			// restart the dependant binary first
+			err := systemCtlRestart(ctx, "debian", bp, i.Exec)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return systemCtlRestart(ctx, "debian", "elastic-agent", i.Exec)
+}
+
 // Start will start a service
 func (i *elasticAgentDEBPackage) Start(ctx context.Context) error {
 	for _, bp := range i.service.BackgroundProcesses {

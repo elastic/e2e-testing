@@ -61,6 +61,11 @@
     tags:
       - setup-stack
 
+  - name: Configure test script
+    include_tasks: tasks/setup_test_script.yml
+    tags:
+      - setup-stack
+
   - name: Add SSH keys to stack
     include_tasks: tasks/install_ssh_keys.yml
     tags:
@@ -73,19 +78,20 @@
 
   - name: Configure stack files
     ansible.builtin.replace:
-      path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml"
+      path: '{{ item.path }}'
       regexp: '{{ item.old }}'
       replace: '{{ item.new }}'
     loop:
-      - { old: 'http://elasticsearch', new: 'http://{{ inventory_hostname }}' }
-      - { old: 'http://fleet-server', new: 'http://{{ inventory_hostname }}' }
-      - { old: 'http://package-registry:8080', new: 'https://epr-staging.elastic.co' }
+      - { old: 'http://elasticsearch', new: 'http://{{ inventory_hostname }}', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml" }
+      - { old: 'http://fleet-server', new: 'http://{{ inventory_hostname }}', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml" }
+      - { old: 'http://kibana', new: 'http://{{ inventory_hostname }}', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/services/elastic-agent/fleet-server/docker-compose.yml" }
+      - { old: 'http://package-registry:8080', new: 'https://epr-staging.elastic.co', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml" }
     tags:
       - setup-stack
 
-  - name: Start stack
+  - name: Start stack without any tag to spin up the stack using Fleet's bootstrapping code
     become: true
-    shell: docker-compose -f /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/docker-compose.yml up -d
+    shell: "/home/{{ ansible_user }}/e2e-testing/.ci/scripts/functional-test.sh 'non-existing-tag'"
     tags:
       - setup-stack
 
@@ -99,19 +105,22 @@
     - role: geerlingguy.docker
       docker_daemon_options:
         default-ulimit: ["nofile=1024000:1024000"]
-      when: "'kubernetes-autodiscover' in suite or 'helm' in suite or 'fleet_amd64' in nodeLabel or 'fleet_elastic_pkg' in nodeLabel"
+      when:
+        - '"arm64" not in nodeLabel'
+        - 'ansible_os_family not in ["Suse"]'
     - role: andrewrothstein.kubectl
-      when: "'kubernetes-autodiscover' in suite or 'helm' in suite"
+      when: suite in ["kubernetes-autodiscover", "helm"]
     - role: andrewrothstein.kind
-      when: "'kubernetes-autodiscover' in suite or 'helm' in suite"
+      when: suite in ["kubernetes-autodiscover", "helm"]
     - role: geerlingguy.helm
-      when: "'kubernetes-autodiscover' in suite or 'helm' in suite"
+      when: suite in ["kubernetes-autodiscover", "helm"]
     - role: gantsign.golang
       vars:
         golang_version: 1.16.3
   vars:
     ansible_python_interpreter: "auto"
     ansible_user: "{{nodeUser}}"
+    pip_package: "python3-pip"
   tasks:
   - name: Install deps
     include_tasks: tasks/install_deps.yml
