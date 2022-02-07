@@ -215,7 +215,7 @@ pipeline {
                     ansible(
                       stackWorkspace,
                       env.RUN_ID.split('-')[0],
-                      "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"${LABELS_STRING} nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
+                      "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
                     )
                   }
 
