@@ -76,7 +76,7 @@ func NewFleetConfig(token string) (*FleetConfig, error) {
 // Flags bootstrap flags for fleet server
 func (cfg FleetConfig) Flags() []string {
 	flags := []string{
-		"-e", "-v", "--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken,
+		"--e", "--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken,
 		"--url", cfg.FleetServerURL(),
 	}
 

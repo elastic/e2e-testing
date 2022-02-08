@@ -16,7 +16,7 @@ Examples: default
 | default |
 
 @ubi8
-@skip:arm64
+@skip
 Examples: Ubi8
 | image   |
 | ubi8    |
@@ -32,7 +32,7 @@ Examples: default
 | default |
 
 @ubi8
-@skip:arm64
+@skip
 Examples: Ubi8
 | image   |
 | ubi8    |
@@ -49,7 +49,7 @@ Examples: default
 | default |
 
 @ubi8
-@skip:arm64
+@skip
 Examples: Ubi8
 | image   |
 | ubi8    |
@@ -66,7 +66,7 @@ Examples: default
   | default |
 
 @ubi8
-@skip:arm64
+@skip
 Examples: Ubi8
   | image   |
   | ubi8    |
@@ -79,7 +79,7 @@ Scenario Outline: Adding the process_summary System Integration to an stand-alon
   Then "system/metrics" with "process.summary" metrics are present in the datastreams
 
 @ubi8
-@skip:arm64
+@skip
 Examples: Ubi8
 | image   |
 | ubi8 |
@@ -97,7 +97,7 @@ Scenario Outline: Adding the core System Integration to an stand-alone-agent
   Then "system/metrics" with "core" metrics are present in the datastreams
 
 @ubi8
-@skip:arm64
+@skip
 Examples: Ubi8
 | image |
 | ubi8  |
@@ -115,7 +115,7 @@ Scenario Outline: Adding the cpu System Integration to an stand-alone-agent
   Then "system/metrics" with "cpu" metrics are present in the datastreams
 
 @ubi8
-@skip:arm64
+@skip
 Examples: Ubi8
 | image |
 | ubi8  |
@@ -133,7 +133,7 @@ Scenario Outline: Adding the diskio System Integration to an stand-alone-agent
   Then "system/metrics" with "diskio" metrics are present in the datastreams
 
 @ubi8
-@skip:arm64
+@skip
 Examples: Ubi8
 | image |
 | ubi8  |
@@ -151,7 +151,7 @@ Scenario Outline: Adding the fsstat System Integration to an stand-alone-agent
   Then "system/metrics" with "fsstat" metrics are present in the datastreams
 
 @ubi8
-@skip:arm64
+@skip
 Examples: Ubi8
 | image |
 | ubi8  |
@@ -169,7 +169,7 @@ Scenario Outline: Adding the load System Integration to an stand-alone-agent
   Then "system/metrics" with "load" metrics are present in the datastreams
 
 @ubi8
-@skip:arm64
+@skip
 Examples: Ubi8
 | image |
 | ubi8  |
@@ -187,7 +187,7 @@ Scenario Outline: SAdding the memory System Integration to an stand-alone-agent
   Then "system/metrics" with "memory" metrics are present in the datastreams
 
 @ubi8
-@skip:arm64
+@skip
 Examples: Ubi8
 | image |
 | ubi8  |
@@ -205,7 +205,7 @@ Scenario Outline: Adding the network System Integration to an stand-alone-agent
   Then "system/metrics" with "network" metrics are present in the datastreams
 
 @ubi8
-@skip:arm64
+@skip
 Examples: Ubi8
 | image |
 | ubi8  |
@@ -223,7 +223,7 @@ Scenario Outline: Adding the process System Integration to an stand-alone-agent
   Then "system/metrics" with "process" metrics are present in the datastreams
 
 @ubi8
-@skip:arm64
+@skip
 Examples: Ubi8
 | image |
 | ubi8  |
@@ -241,7 +241,7 @@ Scenario Outline: Adding the socket_summary System Integration to an stand-alone
   Then "system/metrics" with "socket_summary" metrics are present in the datastreams
 
 @ubi8
-@skip:arm64
+@skip
 Examples: Ubi8
 | image |
 | ubi8  |
@@ -259,7 +259,7 @@ Scenario Outline: Adding the uptime System Integration to an stand-alone-agent
   Then "system/metrics" with "uptime" metrics are present in the datastreams
 
 @ubi8
-@skip:arm64
+@skip
 Examples: Ubi8
 | image |
 | ubi8  |
