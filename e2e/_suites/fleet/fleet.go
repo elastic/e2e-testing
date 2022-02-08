@@ -626,6 +626,52 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			}).Fatal("Fleet could not be recreated")
 		}
 
+<<<<<<< HEAD
+=======
+		// these values comes from the kibana.config.yml file at Fleet's profile dir
+		fleetServicePolicy := kibana.Policy{
+			ID:          "fleet-server-policy",
+			Name:        "Fleet Server Policy",
+			Description: "Fleet Server policy",
+		}
+
+		log.WithFields(log.Fields{
+			"id":          fleetServicePolicy.ID,
+			"name":        fleetServicePolicy.Name,
+			"description": fleetServicePolicy.Description,
+		}).Info("Fleet Server Policy retrieved")
+
+		serviceToken, err := elasticsearch.GetAPIToken(ctx)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Fatal("Could not get API Token from Elasticsearch")
+		}
+
+		fleetServerEnv := make(map[string]string)
+		for k, v := range env {
+			fleetServerEnv[k] = v
+		}
+		fleetServerEnv["fleetServerMode"] = "1"
+		fleetServerEnv["fleetServerPort"] = "8220"
+		fleetServerEnv["fleetInsecure"] = "1"
+		fleetServerEnv["fleetServerServiceToken"] = serviceToken.AccessToken
+		fleetServerEnv["fleetServerPolicyId"] = fleetServicePolicy.ID
+
+		fleetServerSrv := deploy.ServiceRequest{
+			Name:    common.ElasticAgentServiceName,
+			Flavour: "fleet-server",
+		}
+
+		err = deployer.Add(ctx, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{fleetServerSrv}, fleetServerEnv)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"env":   fleetServerEnv,
+			}).Fatal("Fleet Server could not be started")
+		}
+
+>>>>>>> 5ed1aff (chore: use preconfigured policy for fleet-server's default policy (#2111))
 		err = kibanaClient.WaitForFleet(ctx)
 		if err != nil {
 			log.WithFields(log.Fields{
