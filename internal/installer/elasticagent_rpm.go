@@ -185,6 +185,21 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 	return installArtifactFn(ctx, "elastic-agent")
 }
 
+// Restart will restart a service
+func (i *elasticAgentRPMPackage) Restart(ctx context.Context) error {
+	for _, bp := range i.service.BackgroundProcesses {
+		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
+			// start the dependant binary first
+			err := systemCtlRestart(ctx, "centos", bp, i.Exec)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return systemCtlRestart(ctx, "centos", "elastic-agent", i.Exec)
+}
+
 // Start will start a service
 func (i *elasticAgentRPMPackage) Start(ctx context.Context) error {
 	for _, bp := range i.service.BackgroundProcesses {
