@@ -11,8 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-<<<<<<< HEAD
-=======
 func Test_New(t *testing.T) {
 	t.Run("New Docker Provider", func(t *testing.T) {
 		provider := New("docker")
@@ -63,7 +61,6 @@ func Test_ServiceRequest(t *testing.T) {
 	})
 }
 
->>>>>>> a31f8073 (fix: update stack deployment to follow Users&Roles best practices (#2064))
 func Test_ServiceRequest_GetName(t *testing.T) {
 	t.Run("ServiceRequest without flavour", func(t *testing.T) {
 		srv := NewServiceRequest("foo")
