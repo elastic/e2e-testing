@@ -33,9 +33,9 @@ func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
 	minimumHitsCount := 20
 
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(fts.Image)
+	agentService := deploy.NewServiceContainerRequest(common.ElasticAgentServiceName).WithFlavour(fts.Image)
 
-	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
 	result, err := searchAgentData(fts.currentContext, manifest.Hostname, fts.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err
@@ -47,8 +47,8 @@ func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 }
 
 func (fts *FleetTestSuite) theDockerContainerIsStopped(serviceName string) error {
-	agentService := deploy.NewServiceRequest(serviceName)
-	err := fts.deployer.Stop(fts.currentContext, agentService)
+	agentService := deploy.NewServiceContainerRequest(serviceName)
+	err := fts.getDeployer().Stop(fts.currentContext, agentService)
 	if err != nil {
 		return err
 	}
@@ -61,8 +61,8 @@ func (fts *FleetTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error
 	maxTimeout := time.Duration(30) * time.Second
 	minimumHitsCount := 1
 
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+	agentService := deploy.NewServiceContainerRequest(common.ElasticAgentServiceName)
+	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
 	result, err := searchAgentData(fts.currentContext, manifest.Hostname, fts.AgentStoppedDate, minimumHitsCount, maxTimeout)
 	if err != nil {
 		if strings.Contains(err.Error(), "type:index_not_found_exception") {
@@ -96,8 +96,8 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries
-		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		dockerInstaller, _ := installer.Attach(fts.currentContext, fts.deployer, agentService, "docker")
+		agentService := deploy.NewServiceContainerRequest(common.ElasticAgentServiceName)
+		dockerInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, "docker")
 		dockerInstaller.Preinstall(fts.currentContext)
 
 		arch := utils.GetArchitecture()
@@ -133,9 +133,9 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		common.ProfileEnv[k] = v
 	}
 
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithFlavour(flavour)
+	agentService := deploy.NewServiceContainerRequest(common.ElasticAgentServiceName).WithFlavour(flavour)
 
-	err = fts.deployer.Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{agentService}, common.ProfileEnv)
+	err = fts.getDeployer().Add(fts.currentContext, deploy.NewServiceContainerRequest(common.FleetProfileName), []deploy.ServiceRequest{agentService}, common.ProfileEnv)
 	if err != nil {
 		log.Error("Could not deploy the elastic-agent")
 		return err
@@ -143,7 +143,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 
 	fts.Image = image
 
-	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
 
 	err = fts.installTestTools(manifest.Name)
 	if err != nil {
