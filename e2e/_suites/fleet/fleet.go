@@ -626,8 +626,6 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			}).Fatal("Fleet could not be recreated")
 		}
 
-<<<<<<< HEAD
-=======
 		// these values comes from the kibana.config.yml file at Fleet's profile dir
 		fleetServicePolicy := kibana.Policy{
 			ID:          "fleet-server-policy",
@@ -671,7 +669,6 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			}).Fatal("Fleet Server could not be started")
 		}
 
->>>>>>> 5ed1aff (chore: use preconfigured policy for fleet-server's default policy (#2111))
 		err = kibanaClient.WaitForFleet(ctx)
 		if err != nil {
 			log.WithFields(log.Fields{
