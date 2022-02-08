@@ -27,13 +27,10 @@
   become: True
   tags:
     - setup-stack
-<<<<<<< HEAD
-=======
   pre_tasks:
     - name: Update apt cache.
       apt: update_cache=yes cache_valid_time=600
       when: ansible_pkg_mgr == 'apt'
->>>>>>> 72306fa2 (fix: update APT cache for both Debian and Ubuntu (#2107))
   roles:
     - role: geerlingguy.docker
       docker_daemon_options:
@@ -102,13 +99,10 @@
   become: True
   tags:
     - setup-node
-<<<<<<< HEAD
-=======
   pre_tasks:
     - name: Update apt cache.
       apt: update_cache=yes cache_valid_time=600
       when: ansible_pkg_mgr == 'apt'
->>>>>>> 72306fa2 (fix: update APT cache for both Debian and Ubuntu (#2107))
   roles:
     - role: geerlingguy.docker
       docker_daemon_options:
