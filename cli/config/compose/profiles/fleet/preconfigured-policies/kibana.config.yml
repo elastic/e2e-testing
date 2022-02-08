@@ -22,6 +22,9 @@ xpack.fleet.outputs:
     type: "elasticsearch"
     id: "output-123"
     hosts: ["http://elasticsearch:9200"]
+xpack.fleet.packages:
+  - name: fleet_server
+    version: latest
 xpack.fleet.agentPolicies:
   - name: Test preconfigured policy
     id: "test-preconfigured"
@@ -32,3 +35,11 @@ xpack.fleet.agentPolicies:
       - package:
           name: system
         name: sytem-1
+  - name: Fleet Server policy
+    id: fleet-server-policy
+    description: Fleet server policy
+    namespace: default
+    package_policies:
+      - name: Fleet Server
+        package:
+          name: fleet_server
