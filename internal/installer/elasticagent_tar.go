@@ -142,7 +142,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 			return err
 		}
 
-		_, err = i.Exec(ctx, []string{"tar", "-xvf", binaryPath})
+		_, err = i.Exec(ctx, []string{"tar", "-zxf", binaryPath})
 		if err != nil {
 			return err
 		}
@@ -167,6 +167,22 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 
 	return installArtifactFn(ctx, "elastic-agent")
 
+}
+
+// Restart will restart a service
+func (i *elasticAgentTARPackage) Restart(ctx context.Context) error {
+	cmds := []string{"systemctl", "restart", "elastic-agent"}
+	span, _ := apm.StartSpanOptions(ctx, "Restarting Elastic Agent service", "elastic-agent.tar.restart", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+
+	_, err := i.Exec(ctx, cmds)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Start will start a service
