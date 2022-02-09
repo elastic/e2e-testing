@@ -1,13 +1,13 @@
 ---
-- name: Install dependencies
-  ansible.builtin.package:
+- name: Install dependencies (Debian/Ubuntu)
+  apt:
     name:
       - rsync
       - wget
       - build-essential
       - python3-pip
     state: latest
-    use: apt
+    update_cache: yes
   register: package_install_res
   retries: 5
   until: package_install_res is success
