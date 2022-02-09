@@ -75,11 +75,6 @@
     tags:
       - setup-stack
 
-  - name: Add SSH keys to stack
-    include_tasks: tasks/install_ssh_keys.yml
-    tags:
-      - setup-stack
-
   - name: Configure stack files
     ansible.builtin.replace:
       path: '{{ item.path }}'
