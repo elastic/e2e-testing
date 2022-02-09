@@ -204,6 +204,10 @@ func (fts *FleetTestSuite) beforeScenario() {
 				streams = []kibana.Stream{}
 			}
 
+			if streams == nil {
+				streams = []kibana.Stream{}
+			}
+
 			if item.Path("type").Data().(string) == "system/metrics" {
 				packageDataStream.Inputs = append(packageDataStream.Inputs, kibana.Input{
 					Type:    item.Path("type").Data().(string),

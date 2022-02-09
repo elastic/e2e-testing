@@ -276,7 +276,7 @@ pipeline {
                 } else {
                   ansible(stackWorkspace,
                         env.RUN_ID.split('-')[0],
-                        "-t destroy --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                        "-t destroy --extra-vars=\"nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
                 }
               }
             }
@@ -534,7 +534,7 @@ def generateFunctionalTestStep(Map args = [:]){
         sh "mkdir -p outputs/${testRunner.ip} || true"
         sshexec("${env.WORKSPACE}",
                 testRunner,
-                """sudo chown ${testRunner.user}:${testRunner.user} -R /home/${testRunner.user}/e2e-testing/outputs """)
+                """sudo chown ${testRunner.user} -R /home/${testRunner.user}/e2e-testing/outputs """)
         scpr("${env.WORKSPACE}",
              testRunner,
              "e2e-testing/outputs/TEST-*${runId}*.xml",
@@ -545,7 +545,7 @@ def generateFunctionalTestStep(Map args = [:]){
         } else {
           ansible("${env.WORKSPACE}",
                 runId,
-                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeUser=${machine.username} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
         }
         junit allowEmptyResults: true,
           keepLongStdio: true,

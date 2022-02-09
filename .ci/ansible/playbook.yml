@@ -2,7 +2,7 @@
   hosts: localhost
   gather_facts: no
   vars:
-      ansible_user: "{{ nodeUser }}"
+    ansible_user: "{{nodeUser}}"
   tasks:
   - name: Setup nodes
     include_tasks: tasks/runners.yml
@@ -14,7 +14,7 @@
   hosts: localhost
   gather_facts: no
   vars:
-      ansible_user: "{{ nodeUser }}"
+    ansible_user: "{{nodeUser}}"
   tasks:
   - name: Teardown Test Runners (AWS)
     include_tasks: tasks/teardown.yml
@@ -39,7 +39,7 @@
     - role: andrewrothstein.kind
     - role: gantsign.golang
       vars:
-        golang_version: 1.16.3
+        golang_version: 1.17
   vars:
     ansible_user: "{{nodeUser}}"
     ansible_python_interpreter: "auto"
@@ -67,11 +67,6 @@
 
   - name: Configure test script
     include_tasks: tasks/setup_test_script.yml
-    tags:
-      - setup-stack
-
-  - name: Add SSH keys to stack
-    include_tasks: tasks/install_ssh_keys.yml
     tags:
       - setup-stack
 
@@ -124,7 +119,7 @@
       when: suite in ["kubernetes-autodiscover", "helm"]
     - role: gantsign.golang
       vars:
-        golang_version: 1.16.3
+        golang_version: 1.17
   vars:
     ansible_python_interpreter: "auto"
     ansible_user: "{{nodeUser}}"
