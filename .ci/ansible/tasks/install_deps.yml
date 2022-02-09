@@ -1,8 +1,4 @@
 ---
-- name: Update cache
-  shell: |
-    sudo apt-get update
-
 - name: Install dependencies
   ansible.builtin.package:
     name:
