@@ -678,6 +678,7 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 		for k, v := range env {
 			fleetServerEnv[k] = v
 		}
+		fleetServerEnv["elasticAgentTag"] = common.BeatVersion
 		fleetServerEnv["fleetServerMode"] = "1"
 		fleetServerEnv["fleetServerPort"] = "8220"
 		fleetServerEnv["fleetInsecure"] = "1"
