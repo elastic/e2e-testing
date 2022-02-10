@@ -11,6 +11,7 @@
     - "export PROVIDER=docker"
     - "export DEVELOPER_MODE=true"
     - "export SKIP_PULL=1"
+    - "export LOG_LEVEL=TRACE"
   when: "'stack' == nodeLabel"
 
 - name: Extend environment for Fleet testing
@@ -86,6 +87,7 @@
     - "export STACK_VERSION={{ lookup('file', '{{workspace}}/.stack-version') or '8.0.0-SNAPSHOT' }}"
     - "export BEAT_VERSION={{ lookup('file', '{{workspace}}/.stack-version') or '8.0.0-SNAPSHOT' }}"
     - "export ELASTIC_APM_GLOBAL_LABELS={{ lookup('env', 'ELASTIC_APM_GLOBAL_LABELS') }}"
+    - "export LOG_LEVEL=TRACE"
     - "export PATH=$PATH:/opt/go/{{golang_version}}/bin:/usr/local/bin"
 
 - name: Create Fleet test script file
@@ -107,6 +109,7 @@
        REPORT="${BASE_DIR}/outputs/TEST-$(uname -m)-${SUITE}-{{runId}}-${SEED}"
 
        TAGS="${1}" \
+         LOG_LEVEL=TRACE \
          FORMAT=junit:${REPORT}.xml \
          STACK_VERSION=${STACK_VERSION} \
          BEAT_VERSION=${BEAT_VERSION} \
