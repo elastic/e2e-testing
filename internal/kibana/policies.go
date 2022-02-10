@@ -31,7 +31,6 @@ type Policy struct {
 }
 
 // GetDefaultPolicy gets the default policy or optionally the default fleet policy
-// deprecated: will be removed in upcoming releases
 func (c *Client) GetDefaultPolicy(ctx context.Context, fleetServer bool) (Policy, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Getting default policy", "fleet.package-policies.get-default", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
