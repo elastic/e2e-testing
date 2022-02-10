@@ -69,7 +69,7 @@ func (c *Client) AddIntegrationToPolicy(ctx context.Context, packageDS PackageDa
 				"elapsedTime": exp.GetElapsedTime(),
 				"err":         err,
 				"statusCode":  statusCode,
-				"response":    respBody,
+				"response":    string(respBody),
 				"package":     packageDS,
 				"retry":       retryCount,
 			}).Warn("could not add package to policy because of HTTP code is not 200")

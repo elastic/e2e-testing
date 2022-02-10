@@ -30,7 +30,7 @@ type Client struct {
 // NewClient creates a new instance of the client.
 func NewClient() (*Client, error) {
 	host := getBaseURL()
-	username := "elastic"
+	username := "admin"
 	password := shell.GetEnv("KIBANA_PASSWORD", "changeme")
 
 	return &Client{
