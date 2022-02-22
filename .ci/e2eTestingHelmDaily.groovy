@@ -34,9 +34,6 @@ pipeline {
     rateLimitBuilds(throttle: [count: 60, durationName: 'hour', userBoost: true])
     quietPeriod(10)
   }
-  triggers {
-    cron('H H(4-5) * * 1-5')
-  }
   stages {
     stage('Run Tests') {
       steps {
