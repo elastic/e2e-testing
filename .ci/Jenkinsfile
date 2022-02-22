@@ -351,18 +351,31 @@ def pyrun(command){
         [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
         [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
       ]) {
-        sh(script: """#!/bin/bash
-            set -eux
-            if ! test -d ${env.WORKSPACE}/.venv; then
-                python3 -m venv ${env.WORKSPACE}/.venv
-                 ${env.WORKSPACE}/.venv/bin/pip3 -q install wheel
-                 ${env.WORKSPACE}/.venv/bin/pip3 -q install -r .ci/ansible/requirements.txt
-                 ${env.WORKSPACE}/.venv/bin/ansible-galaxy install -r .ci/ansible/requirements.yml
-            fi
-            ${env.WORKSPACE}/.venv/bin/${command}
-          """,
-           label: "Executing ${command.split(' ')[0]}"
-        )
+        retryWithSleep(retries: 3, seconds: 5, backoff: true){
+          sh(script: """#!/bin/bash
+              set -eux
+              if ! test -f ${env.WORKSPACE}/.venv-installed; then
+                  python3 -m venv ${env.WORKSPACE}/.venv
+                  touch ${env.WORKSPACE}/.venv-installed
+              fi
+            """,
+            label: "Creating virtualenv"
+          )
+        }
+        retryWithSleep(retries: 3, seconds: 30, backoff: true){
+          sh(script: """#!/bin/bash
+              set -eux
+              if ! test -f ${env.WORKSPACE}/.python-dependencies; then
+                ${env.WORKSPACE}/.venv/bin/pip3 -q install wheel
+                ${env.WORKSPACE}/.venv/bin/pip3 -q install -r .ci/ansible/requirements.txt
+                ${env.WORKSPACE}/.venv/bin/ansible-galaxy install -r .ci/ansible/requirements.yml
+                touch ${env.WORKSPACE}/.python-dependencies
+              fi
+            """,
+            label: "Installing dependencies"
+          )
+        }
+        sh(script: "${env.WORKSPACE}/.venv/bin/${command}", label: "Executing ${command.split(' ')[0]}")
       }
     }
   }
