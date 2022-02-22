@@ -9,7 +9,11 @@
     scm:
       - github:
           branch-discovery: no-pr
+<<<<<<< HEAD
           head-filter-regex: '(main|8\.0|7\.16|7\.15)'
+=======
+          head-filter-regex: '(main|8\.\d|7\.17|7\.16)'
+>>>>>>> bccd4856 (jjbb: daily job with branch aliases (#2159))
           discover-pr-forks-strategy: merge-current
           discover-pr-forks-trust: permission
           discover-pr-origin: merge-current
