@@ -52,8 +52,7 @@ pull_request_rules:
         assignees:
           - "{{ author }}"
         branches:
-<<<<<<< HEAD
-          - "7.16"
+          - "7.17"
         title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
   - name: backport patches to 7.15 branch
     conditions:
@@ -66,9 +65,6 @@ pull_request_rules:
           - "{{ author }}"
         branches:
           - "7.15"
-=======
-          - "7.17"
->>>>>>> bccd4856 (jjbb: daily job with branch aliases (#2159))
         title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
   - name: delete head branch after merge
     conditions:
