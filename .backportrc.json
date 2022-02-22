@@ -7,15 +7,9 @@
     "multipleCommits": true,
     "prTitle": "{commitMessages} backport for {targetBranch}",
     "targetBranchChoices": [
-<<<<<<< HEAD
-        { "name": "7.16", "checked": true },
-        { "name": "7.15", "checked": true },
-        { "name": "7.14", "checked": true }
-=======
         { "name": "8.1", "checked": true },
         { "name": "8.0", "checked": true },
         { "name": "7.17", "checked": true }
->>>>>>> bccd4856 (jjbb: daily job with branch aliases (#2159))
     ],
     "targetPRLabels": ["backport"],
     "upstream": "elastic/e2e-testing"
