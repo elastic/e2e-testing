@@ -28,11 +28,12 @@ type BeatsLegacyURLResolver struct {
 
 // NewBeatsLegacyURLResolver creates a new resolver for Beats projects
 // The Elastic Agent must use the project resolver
-func NewBeatsLegacyURLResolver(beat string, fileName string) *BeatsLegacyURLResolver {
+func NewBeatsLegacyURLResolver(beat string, fileName string, variant string) *BeatsLegacyURLResolver {
 	return &BeatsLegacyURLResolver{
 		Bucket:   BeatsCIArtifactsBase,
 		Beat:     beat,
 		FileName: fileName,
+		Variant:  variant,
 	}
 }
 
@@ -68,11 +69,12 @@ type BeatsURLResolver struct {
 
 // NewBeatsURLResolver creates a new resolver for Beats projects
 // The Elastic Agent must use the project resolver
-func NewBeatsURLResolver(beat string, fileName string) *BeatsURLResolver {
+func NewBeatsURLResolver(beat string, fileName string, variant string) *BeatsURLResolver {
 	return &BeatsURLResolver{
 		Bucket:   BeatsCIArtifactsBase,
 		Beat:     beat,
 		FileName: fileName,
+		Variant:  variant,
 	}
 }
 

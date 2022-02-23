@@ -445,9 +445,22 @@ func FetchProjectBinary(ctx context.Context, project string, artifactName string
 
 		maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
-		bucket, prefix, object := getGCPBucketCoordinatesForProject(project, artifactName, artifact)
+		variant := ""
+		if strings.HasSuffix(artifactName, "-ubi8") {
+			variant = "ubi8"
+		}
 
-		downloadURL, err = getObjectURLFromBucket(bucket, prefix, object, maxTimeout)
+		// look up the bucket in this particular order:
+		// 1. the project layout (elastic-agent, fleet-server)
+		// 2. the new beats layout (beats)
+		// 3. the legacy Beats layout (commits/snapshots)
+		resolvers := []BucketURLResolver{
+			NewProjectURLResolver(project, artifactName),
+			NewBeatsURLResolver(artifact, artifactName, variant),
+			NewBeatsLegacyURLResolver(artifact, artifactName, variant),
+		}
+
+		downloadURL, err = getObjectURLFromResolvers(resolvers, maxTimeout)
 		if err != nil {
 			return "", err
 		}
@@ -458,8 +471,15 @@ func FetchProjectBinary(ctx context.Context, project string, artifactName string
 			return downloadLocation, err
 		}
 
-		bucket, prefix, object = getGCPBucketCoordinatesForProject(project, fmt.Sprintf("%s.sha512", artifactName), artifact)
-		downloadURL, err = getObjectURLFromBucket(bucket, prefix, object, maxTimeout)
+		sha512ArtifactName := fmt.Sprintf("%s.sha512", artifactName)
+
+		sha512Resolvers := []BucketURLResolver{
+			NewProjectURLResolver(project, sha512ArtifactName),
+			NewBeatsURLResolver(artifact, sha512ArtifactName, variant),
+			NewBeatsLegacyURLResolver(artifact, sha512ArtifactName, variant),
+		}
+
+		downloadURL, err = getObjectURLFromResolvers(sha512Resolvers, maxTimeout)
 		if err != nil {
 			return "", err
 		}
@@ -490,22 +510,29 @@ func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
 	return "&pageToken=" + nextPageToken
 }
 
-// getGCPBucketCoordinates it calculates the bucket path in GCP for Beats
-func getGCPBucketCoordinates(fileName string, artifact string) (string, string, string) {
-	resolver := NewBeatsLegacyURLResolver(artifact, fileName)
+// getObjectURLFromResolvers extracts the media URL for the desired artifact from the
+// Google Cloud Storage bucket used by the CI to push snapshots
+func getObjectURLFromResolvers(resolvers []BucketURLResolver, maxtimeout time.Duration) (string, error) {
+	for i, resolver := range resolvers {
+		bucket, prefix, object := resolver.Resolve()
 
-	if strings.HasSuffix(artifact, "-ubi8") {
-		resolver.Variant = "ubi8"
+		downloadURL, err := getObjectURLFromBucket(bucket, prefix, object, maxtimeout)
+		if err != nil {
+			if i < len(resolvers)-1 {
+				log.WithFields(log.Fields{
+					"resolver": resolver,
+				}).Warn("Object not found. Trying with another artifact resolver")
+				continue
+			} else {
+				log.Error("Object not found. There is no other artifact resolver")
+				return "", err
+			}
+		}
+
+		return downloadURL, nil
 	}
 
-	return resolver.Resolve()
-}
-
-// getGCPBucketCoordinates it calculates the bucket path in GCP for a project
-func getGCPBucketCoordinatesForProject(project string, fileName string, artifact string) (string, string, string) {
-	resolver := NewProjectURLResolver(project, fileName)
-
-	return resolver.Resolve()
+	return "", fmt.Errorf("the artifact was not found")
 }
 
 // getObjectURLFromBucket extracts the media URL for the desired artifact from the

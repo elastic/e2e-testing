@@ -14,7 +14,7 @@ func TestBeatsLegacyURLResolver(t *testing.T) {
 	beat := "metricbeat"
 
 	t.Run("Fetching snapshots bucket for RPM package", func(t *testing.T) {
-		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-x86_64.rpm")
+		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-x86_64.rpm", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -24,7 +24,7 @@ func TestBeatsLegacyURLResolver(t *testing.T) {
 	})
 
 	t.Run("Fetching snapshots bucket for DEB package", func(t *testing.T) {
-		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-amd64.deb")
+		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-amd64.deb", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -34,7 +34,7 @@ func TestBeatsLegacyURLResolver(t *testing.T) {
 	})
 
 	t.Run("Fetching snapshots bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
-		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-linux-x86_64.tar.gz")
+		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-linux-x86_64.tar.gz", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -47,7 +47,7 @@ func TestBeatsLegacyURLResolver(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
 		defer func() { GithubCommitSha1 = "" }()
 
-		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-x86_64.rpm")
+		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-x86_64.rpm", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -60,7 +60,7 @@ func TestBeatsLegacyURLResolver(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
 		defer func() { GithubCommitSha1 = "" }()
 
-		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-amd64.deb")
+		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-amd64.deb", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -69,11 +69,11 @@ func TestBeatsLegacyURLResolver(t *testing.T) {
 		assert.Equal(t, object, beat+"/"+beat+"-"+testVersion+"-amd64.deb")
 	})
 
-	t.Run("Fetching Elastic Agent commits bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
+	t.Run("Fetching commits bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
 		defer func() { GithubCommitSha1 = "" }()
 
-		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-linux-x86_64.tar.gz")
+		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-linux-x86_64.tar.gz", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -82,11 +82,11 @@ func TestBeatsLegacyURLResolver(t *testing.T) {
 		assert.Equal(t, object, beat+"/"+beat+"-"+testVersion+"-linux-x86_64.tar.gz")
 	})
 
-	t.Run("Fetching Elastic Agent commits bucket for ubi8 Docker image", func(t *testing.T) {
+	t.Run("Fetching commits bucket for ubi8 Docker image", func(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
 		defer func() { GithubCommitSha1 = "" }()
 
-		resolver := NewBeatsLegacyURLResolver(beat, beat+"-ubi8-"+testVersion+"-linux-x86_64.tar.gz")
+		resolver := NewBeatsLegacyURLResolver(beat, beat+"-ubi8-"+testVersion+"-linux-x86_64.tar.gz", "ubi8")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -100,7 +100,7 @@ func TestBeatsURLResolver(t *testing.T) {
 	beat := "metricbeat"
 
 	t.Run("Fetching snapshots bucket for RPM package", func(t *testing.T) {
-		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-x86_64.rpm")
+		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-x86_64.rpm", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -110,7 +110,7 @@ func TestBeatsURLResolver(t *testing.T) {
 	})
 
 	t.Run("Fetching snapshots bucket for DEB package", func(t *testing.T) {
-		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-amd64.deb")
+		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-amd64.deb", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -120,7 +120,7 @@ func TestBeatsURLResolver(t *testing.T) {
 	})
 
 	t.Run("Fetching snapshots bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
-		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-linux-x86_64.tar.gz")
+		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-linux-x86_64.tar.gz", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -133,7 +133,7 @@ func TestBeatsURLResolver(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
 		defer func() { GithubCommitSha1 = "" }()
 
-		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-x86_64.rpm")
+		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-x86_64.rpm", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -146,7 +146,7 @@ func TestBeatsURLResolver(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
 		defer func() { GithubCommitSha1 = "" }()
 
-		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-amd64.deb")
+		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-amd64.deb", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -155,24 +155,24 @@ func TestBeatsURLResolver(t *testing.T) {
 		assert.Equal(t, object, beat+"/"+beat+"-"+testVersion+"-amd64.deb")
 	})
 
-	t.Run("Fetching Elastic Agent commits bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
+	t.Run("Fetching commits bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
 		defer func() { GithubCommitSha1 = "" }()
 
-		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-linux-x86_64.tar.gz")
+		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-linux-x86_64.tar.gz", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "beats/commits/0123456789")
-		assert.Equal(t, object, beat+"/"+beat+"-"+testVersion+"-linux-x86_64.tar.gz")
+		assert.Equal(t, object, beat+"/"+beat+"-"+testVersion+"-linux-x86_64.tar.gz", "")
 	})
 
-	t.Run("Fetching Elastic Agent commits bucket for ubi8 Docker image", func(t *testing.T) {
+	t.Run("Fetching commits bucket for ubi8 Docker image", func(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
 		defer func() { GithubCommitSha1 = "" }()
 
-		resolver := NewBeatsURLResolver(beat, beat+"-ubi8-"+testVersion+"-linux-x86_64.tar.gz")
+		resolver := NewBeatsURLResolver(beat, beat+"-ubi8-"+testVersion+"-linux-x86_64.tar.gz", "ubi8")
 
 		bucket, prefix, object := resolver.Resolve()
 
