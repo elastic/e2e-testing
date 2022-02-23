@@ -355,10 +355,20 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 // Else, if the environment variable GITHUB_CHECK_SHA1 is set, then the artifact
 // to be downloaded will be defined by the snapshot produced by the Beats CI for that commit.
 func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFile bool) (string, error) {
-	if BeatsLocalPath != "" {
-		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.local.fetch-binary", apm.SpanOptions{
+	return FetchProjectBinary(ctx, "beats", artifactName, artifact, version, timeoutFactor, xpack, downloadPath, downloadSHAFile)
+}
+
+// FetchProjectBinary it downloads the binary and returns the location of the downloaded file
+// If the environment variable BEATS_LOCAL_PATH is set, then the artifact
+// to be used will be defined by the local snapshot produced by the local build.
+// Else, if the environment variable GITHUB_CHECK_SHA1 is set, then the artifact
+// to be downloaded will be defined by the snapshot produced by the Beats CI for that commit.
+func FetchProjectBinary(ctx context.Context, project string, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFile bool) (string, error) {
+	if BeatsLocalPath != "" && project == "beats" {
+		span, _ := apm.StartSpanOptions(ctx, "Fetching Project binary", "project.local.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
+		span.Context.SetLabel("project", project)
 		defer span.End()
 
 		distributions := path.Join(BeatsLocalPath, artifact, "build", "distributions")
@@ -383,9 +393,10 @@ func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 			DownloadPath: downloadPath,
 			URL:          URL,
 		}
-		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.url.fetch-binary", apm.SpanOptions{
+		span, _ := apm.StartSpanOptions(ctx, "Fetching Project binary", "project.url.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
+		span.Context.SetLabel("project", project)
 		defer span.End()
 
 		if val, ok := binariesCache[URL]; ok {
@@ -434,7 +445,7 @@ func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 
 		maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
-		bucket, prefix, object := getGCPBucketCoordinates(artifactName, artifact)
+		bucket, prefix, object := getGCPBucketCoordinatesForProject(project, artifactName, artifact)
 
 		downloadURL, err = getObjectURLFromBucket(bucket, prefix, object, maxTimeout)
 		if err != nil {
@@ -447,7 +458,7 @@ func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 			return downloadLocation, err
 		}
 
-		bucket, prefix, object = getGCPBucketCoordinates(fmt.Sprintf("%s.sha512", artifactName), artifact)
+		bucket, prefix, object = getGCPBucketCoordinatesForProject(project, fmt.Sprintf("%s.sha512", artifactName), artifact)
 		downloadURL, err = getObjectURLFromBucket(bucket, prefix, object, maxTimeout)
 		if err != nil {
 			return "", err
@@ -479,15 +490,24 @@ func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
 	return "&pageToken=" + nextPageToken
 }
 
-// getGCPBucketCoordinates it calculates the bucket path in GCP
+// getGCPBucketCoordinates it calculates the bucket path in GCP for Beats
 func getGCPBucketCoordinates(fileName string, artifact string) (string, string, string) {
+	return getGCPBucketCoordinatesForProject("beats", fileName, artifact)
+}
+
+// getGCPBucketCoordinates it calculates the bucket path in GCP for a project
+func getGCPBucketCoordinatesForProject(project string, fileName string, artifact string) (string, string, string) {
 	bucket := "beats-ci-artifacts"
 
 	if strings.HasSuffix(artifact, "-ubi8") {
 		artifact = strings.ReplaceAll(artifact, "-ubi8", "")
 	}
 
-	prefix := fmt.Sprintf("snapshots/%s", artifact)
+	prefix := fmt.Sprintf("%s/snapshots/%s", project, artifact)
+	if project == "elastic-agent" {
+		// the elastic-agent
+		prefix = fmt.Sprintf("%s/snapshots", project)
+	}
 	object := fileName
 
 	// the commit SHA will identify univocally the artifact in the GCP storage bucket
@@ -496,8 +516,12 @@ func getGCPBucketCoordinates(fileName string, artifact string) (string, string, 
 			"commit": GithubCommitSha1,
 			"file":   fileName,
 		}).Debug("Using CI snapshots for a commit")
-		prefix = fmt.Sprintf("commits/%s", GithubCommitSha1)
+		prefix = fmt.Sprintf("%s/commits/%s", project, GithubCommitSha1)
 		object = artifact + "/" + fileName
+		if project == "elastic-agent" {
+			// the elastic-agent
+			object = fileName
+		}
 	}
 
 	return bucket, prefix, object
