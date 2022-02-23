@@ -11,7 +11,7 @@
     - "export PROVIDER=docker"
     - "export DEVELOPER_MODE=true"
     - "export SKIP_PULL=1"
-    - "export KIBANA_VERSION=={{ lookup('env', 'KIBANA_VERSION') }}"
+    - "export KIBANA_VERSION=={{ lookup('env', 'KIBANA_VERSION') or lookup('file', '{{ workspace }}/.stack-version') }}"
   when: "'stack' == nodeLabel"
 
 - name: Extend environment for Fleet testing
