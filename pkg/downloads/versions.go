@@ -492,39 +492,20 @@ func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
 
 // getGCPBucketCoordinates it calculates the bucket path in GCP for Beats
 func getGCPBucketCoordinates(fileName string, artifact string) (string, string, string) {
-	return getGCPBucketCoordinatesForProject("beats", fileName, artifact)
+	resolver := NewBeatsLegacyURLResolver(artifact, fileName)
+
+	if strings.HasSuffix(artifact, "-ubi8") {
+		resolver.Variant = "ubi8"
+	}
+
+	return resolver.Resolve()
 }
 
 // getGCPBucketCoordinates it calculates the bucket path in GCP for a project
 func getGCPBucketCoordinatesForProject(project string, fileName string, artifact string) (string, string, string) {
-	bucket := "beats-ci-artifacts"
+	resolver := NewProjectURLResolver(project, fileName)
 
-	if strings.HasSuffix(artifact, "-ubi8") {
-		artifact = strings.ReplaceAll(artifact, "-ubi8", "")
-	}
-
-	prefix := fmt.Sprintf("%s/snapshots/%s", project, artifact)
-	if project == "elastic-agent" {
-		// the elastic-agent
-		prefix = fmt.Sprintf("%s/snapshots", project)
-	}
-	object := fileName
-
-	// the commit SHA will identify univocally the artifact in the GCP storage bucket
-	if GithubCommitSha1 != "" {
-		log.WithFields(log.Fields{
-			"commit": GithubCommitSha1,
-			"file":   fileName,
-		}).Debug("Using CI snapshots for a commit")
-		prefix = fmt.Sprintf("%s/commits/%s", project, GithubCommitSha1)
-		object = artifact + "/" + fileName
-		if project == "elastic-agent" {
-			// the elastic-agent
-			object = fileName
-		}
-	}
-
-	return bucket, prefix, object
+	return resolver.Resolve()
 }
 
 // getObjectURLFromBucket extracts the media URL for the desired artifact from the

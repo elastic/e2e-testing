@@ -617,17 +617,6 @@ func TestGetGCPBucketCoordinatesForProject_Commits(t *testing.T) {
 		assert.Equal(t, prefix, "elastic-agent/commits/0123456789")
 		assert.Equal(t, object, "elastic-agent-"+testVersion+"-x86_64.rpm")
 	})
-	t.Run("Fetching Beats commits bucket for RPM package", func(t *testing.T) {
-		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
-
-		fileName := "metricbeat-" + testVersion + "-x86_64.rpm"
-
-		bucket, prefix, object := getGCPBucketCoordinatesForProject("beats", fileName, "metricbeat")
-		assert.Equal(t, bucket, "beats-ci-artifacts")
-		assert.Equal(t, prefix, "beats/commits/0123456789")
-		assert.Equal(t, object, "metricbeat/metricbeat-"+testVersion+"-x86_64.rpm")
-	})
 
 	t.Run("Fetching Elastic Agent commits bucket for DEB package", func(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
@@ -639,17 +628,6 @@ func TestGetGCPBucketCoordinatesForProject_Commits(t *testing.T) {
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "elastic-agent/commits/0123456789")
 		assert.Equal(t, object, "elastic-agent-"+testVersion+"-amd64.deb")
-	})
-	t.Run("Fetching Beats commits bucket for DEB package", func(t *testing.T) {
-		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
-
-		fileName := "metricbeat-" + testVersion + "-amd64.deb"
-
-		bucket, prefix, object := getGCPBucketCoordinatesForProject("beats", fileName, "metricbeat")
-		assert.Equal(t, bucket, "beats-ci-artifacts")
-		assert.Equal(t, prefix, "beats/commits/0123456789")
-		assert.Equal(t, object, "metricbeat/metricbeat-"+testVersion+"-amd64.deb")
 	})
 
 	t.Run("Fetching Elastic Agent commits bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
@@ -663,17 +641,6 @@ func TestGetGCPBucketCoordinatesForProject_Commits(t *testing.T) {
 		assert.Equal(t, prefix, "elastic-agent/commits/0123456789")
 		assert.Equal(t, object, "elastic-agent-"+testVersion+"-linux-x86_64.tar.gz")
 	})
-	t.Run("Fetching Beats commits bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
-		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
-
-		fileName := "metricbeat-" + testVersion + "-linux-x86_64.tar.gz"
-
-		bucket, prefix, object := getGCPBucketCoordinatesForProject("beats", fileName, "metricbeat")
-		assert.Equal(t, bucket, "beats-ci-artifacts")
-		assert.Equal(t, prefix, "beats/commits/0123456789")
-		assert.Equal(t, object, "metricbeat/metricbeat-"+testVersion+"-linux-x86_64.tar.gz")
-	})
 
 	t.Run("Fetching Elastic Agent commits bucket for ubi8 Docker image", func(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
@@ -685,17 +652,6 @@ func TestGetGCPBucketCoordinatesForProject_Commits(t *testing.T) {
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "elastic-agent/commits/0123456789")
 		assert.Equal(t, object, "elastic-agent-ubi8-"+testVersion+"-x86_64.tar.gz")
-	})
-	t.Run("Fetching Beats commits bucket for ubi8 Docker image", func(t *testing.T) {
-		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
-
-		fileName := "metricbeat-ubi8-" + testVersion + "-x86_64.tar.gz"
-
-		bucket, prefix, object := getGCPBucketCoordinatesForProject("beats", fileName, "metricbeat-ubi8")
-		assert.Equal(t, bucket, "beats-ci-artifacts")
-		assert.Equal(t, prefix, "beats/commits/0123456789")
-		assert.Equal(t, object, "metricbeat/metricbeat-ubi8-"+testVersion+"-x86_64.tar.gz")
 	})
 }
 
@@ -741,14 +697,6 @@ func TestGetGCPBucketCoordinates_ForProjectSnapshots(t *testing.T) {
 		assert.Equal(t, prefix, "elastic-agent/snapshots")
 		assert.Equal(t, object, "elastic-agent-"+testVersion+"-x86_64.rpm")
 	})
-	t.Run("Fetching Beats snapshots bucket for RPM package", func(t *testing.T) {
-		fileName := "metricbeat-" + testVersion + "-x86_64.rpm"
-
-		bucket, prefix, object := getGCPBucketCoordinatesForProject("beats", fileName, "metricbeat")
-		assert.Equal(t, bucket, "beats-ci-artifacts")
-		assert.Equal(t, prefix, "beats/snapshots/metricbeat")
-		assert.Equal(t, object, "metricbeat-"+testVersion+"-x86_64.rpm")
-	})
 
 	t.Run("Fetching Elastic Agent snapshots bucket for DEB package", func(t *testing.T) {
 		fileName := "elastic-agent-" + testVersion + "-amd64.deb"
@@ -758,14 +706,6 @@ func TestGetGCPBucketCoordinates_ForProjectSnapshots(t *testing.T) {
 		assert.Equal(t, prefix, "beats/snapshots/elastic-agent")
 		assert.Equal(t, object, "elastic-agent-"+testVersion+"-amd64.deb")
 	})
-	t.Run("Fetching Beats snapshots bucket for DEB package", func(t *testing.T) {
-		fileName := "metricbeat-" + testVersion + "-amd64.deb"
-
-		bucket, prefix, object := getGCPBucketCoordinatesForProject("beats", fileName, "metricbeat")
-		assert.Equal(t, bucket, "beats-ci-artifacts")
-		assert.Equal(t, prefix, "beats/snapshots/metricbeat")
-		assert.Equal(t, object, "metricbeat-"+testVersion+"-amd64.deb")
-	})
 
 	t.Run("Fetching Elastic Agent snapshots bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
 		fileName := "elastic-agent-" + testVersion + "-linux-x86_64.tar.gz"
@@ -774,14 +714,6 @@ func TestGetGCPBucketCoordinates_ForProjectSnapshots(t *testing.T) {
 		assert.Equal(t, bucket, "beats-ci-artifacts")
 		assert.Equal(t, prefix, "beats/snapshots/elastic-agent")
 		assert.Equal(t, object, "elastic-agent-"+testVersion+"-linux-x86_64.tar.gz")
-	})
-	t.Run("Fetching Beats snapshots bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
-		fileName := "metricbeat-" + testVersion + "-linux-x86_64.tar.gz"
-
-		bucket, prefix, object := getGCPBucketCoordinatesForProject("beats", fileName, "metricbeat")
-		assert.Equal(t, bucket, "beats-ci-artifacts")
-		assert.Equal(t, prefix, "beats/snapshots/metricbeat")
-		assert.Equal(t, object, "metricbeat-"+testVersion+"-linux-x86_64.tar.gz")
 	})
 }
 
