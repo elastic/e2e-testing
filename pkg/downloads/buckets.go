@@ -45,6 +45,46 @@ func (r *BeatsLegacyURLResolver) Resolve() (string, string, string) {
 		artifact = strings.ReplaceAll(artifact, "-ubi8", "")
 	}
 
+	prefix := fmt.Sprintf("snapshots/%s", artifact)
+	object := fileName
+
+	// the commit SHA will identify univocally the artifact in the GCP storage bucket
+	if GithubCommitSha1 != "" {
+		prefix = fmt.Sprintf("commits/%s", GithubCommitSha1)
+		object = artifact + "/" + fileName
+	}
+
+	return r.Bucket, prefix, object
+}
+
+// BeatsURLResolver resolver for Beats projects, such as metricbeat, filebeat, etc
+// The Elastic Agent must use the project resolver
+type BeatsURLResolver struct {
+	Bucket   string
+	Beat     string
+	Variant  string
+	FileName string
+}
+
+// NewBeatsURLResolver creates a new resolver for Beats projects
+// The Elastic Agent must use the project resolver
+func NewBeatsURLResolver(beat string, fileName string) *BeatsURLResolver {
+	return &BeatsURLResolver{
+		Bucket:   BeatsCIArtifactsBase,
+		Beat:     beat,
+		FileName: fileName,
+	}
+}
+
+// Resolve returns the bucket, prefix and object for Beats artifacts
+func (r *BeatsURLResolver) Resolve() (string, string, string) {
+	artifact := r.Beat
+	fileName := r.FileName
+
+	if strings.EqualFold(r.Variant, "ubi8") {
+		artifact = strings.ReplaceAll(artifact, "-ubi8", "")
+	}
+
 	prefix := fmt.Sprintf("beats/snapshots/%s", artifact)
 	object := fileName
 
