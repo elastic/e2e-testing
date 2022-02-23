@@ -467,7 +467,7 @@ func FetchProjectBinary(ctx context.Context, project string, artifactName string
 		downloadLocation, err := handleDownload(downloadURL)
 
 		// check if sha file should be downloaded, else return
-		if downloadSHAFile == false {
+		if !downloadSHAFile {
 			return downloadLocation, err
 		}
 
@@ -494,7 +494,7 @@ func FetchProjectBinary(ctx context.Context, project string, artifactName string
 	if err != nil {
 		return "", err
 	}
-	if downloadSHAFile == true && downloadShaURL != "" {
+	if downloadSHAFile && downloadShaURL != "" {
 		downloadLocation, err = handleDownload(downloadShaURL)
 	}
 	return downloadLocation, err
