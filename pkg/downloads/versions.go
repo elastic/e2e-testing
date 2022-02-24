@@ -82,8 +82,15 @@ func CheckPRVersion(version string, fallbackVersion string) string {
 
 // FetchElasticArtifact fetches an artifact from the right repository, returning binary name, path and error
 func FetchElasticArtifact(ctx context.Context, artifact string, version string, os string, arch string, extension string, isDocker bool, xpack bool) (string, string, error) {
+	useCISnapshots := GithubCommitSha1 != ""
+
+	return FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, os, arch, extension, isDocker, xpack)
+}
+
+// FetchElasticArtifactForSnapshots fetches an artifact from the right repository, returning binary name, path and error
+func FetchElasticArtifactForSnapshots(ctx context.Context, useCISnapshots bool, artifact string, version string, os string, arch string, extension string, isDocker bool, xpack bool) (string, string, error) {
 	binaryName := buildArtifactName(artifact, version, os, arch, extension, isDocker)
-	binaryPath, err := FetchProjectBinary(ctx, artifact, binaryName, artifact, version, utils.TimeoutFactor, xpack, "", false)
+	binaryPath, err := FetchProjectBinaryForSnapshots(ctx, useCISnapshots, artifact, binaryName, artifact, version, utils.TimeoutFactor, xpack, "", false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -364,6 +371,17 @@ func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 // Else, if the environment variable GITHUB_CHECK_SHA1 is set, then the artifact
 // to be downloaded will be defined by the snapshot produced by the Beats CI for that commit.
 func FetchProjectBinary(ctx context.Context, project string, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFile bool) (string, error) {
+	useCISnapshots := GithubCommitSha1 != ""
+
+	return FetchProjectBinaryForSnapshots(ctx, useCISnapshots, project, artifactName, artifact, version, timeoutFactor, xpack, downloadPath, downloadSHAFile)
+}
+
+// FetchProjectBinaryForSnapshots it downloads the binary and returns the location of the downloaded file
+// If the environment variable BEATS_LOCAL_PATH is set, then the artifact
+// to be used will be defined by the local snapshot produced by the local build.
+// Else, if the useCISnapshots argument is set to true, then the artifact
+// to be downloaded will be defined by the snapshot produced by the Beats CI or Fleet CI for that commit.
+func FetchProjectBinaryForSnapshots(ctx context.Context, useCISnapshots bool, project string, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFile bool) (string, error) {
 	if BeatsLocalPath != "" && project == "beats" {
 		span, _ := apm.StartSpanOptions(ctx, "Fetching Project binary", "project.local.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -434,7 +452,6 @@ func FetchProjectBinary(ctx context.Context, project string, artifactName string
 	var downloadURL, downloadShaURL string
 	var err error
 
-	useCISnapshots := GithubCommitSha1 != ""
 	if useCISnapshots {
 		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.gcp.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
