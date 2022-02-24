@@ -108,8 +108,8 @@ func (i *elasticAgentTARPackage) Postinstall(ctx context.Context) error {
 
 // Preinstall executes operations before installing a TAR package
 func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
-	installArtifactFn := func(ctx context.Context, artifact string) error {
-		span, _ := apm.StartSpanOptions(ctx, "Pre-install operations for the Elastic Agent", "elastic-agent.tar.pre-install", apm.SpanOptions{
+	installArtifactFn := func(ctx context.Context, artifact string, version string) error {
+		span, _ := apm.StartSpanOptions(ctx, "Pre-install "+artifact, artifact+".tar.pre-install", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
 		defer span.End()
@@ -129,16 +129,16 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 			}
 			log.Trace("Cleared previously downloaded artifacts")
 		}
-		_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, common.BeatVersion, runningOS, arch, extension, false, true)
+		_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, version, runningOS, arch, extension, false, true)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"artifact":  artifact,
-				"version":   common.BeatVersion,
+				"version":   version,
 				"os":        runningOS,
 				"arch":      arch,
 				"extension": extension,
 				"error":     err,
-			}).Error("Could not download the binary for the agent")
+			}).Error("Could not download the binary")
 			return err
 		}
 
@@ -158,14 +158,14 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 	for _, bp := range i.service.BackgroundProcesses {
 		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
 			// pre-install the dependant binary first
-			err := installArtifactFn(ctx, bp)
+			err := installArtifactFn(ctx, bp, common.StackVersion)
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	return installArtifactFn(ctx, "elastic-agent")
+	return installArtifactFn(ctx, "elastic-agent", common.BeatVersion)
 
 }
 
