@@ -125,32 +125,40 @@ type ProjectURLResolver struct {
 	Bucket   string
 	Project  string
 	FileName string
+	Variant  string
 }
 
 // NewProjectURLResolver creates a new resolver for Elastic projects
 // The Elastic Agent and Fleet Server must use the project resolver
-func NewProjectURLResolver(project string, fileName string) *ProjectURLResolver {
+func NewProjectURLResolver(project string, fileName string, variant string) *ProjectURLResolver {
 	return &ProjectURLResolver{
 		Bucket:   BeatsCIArtifactsBase,
 		Project:  project,
 		FileName: fileName,
+		Variant:  variant,
 	}
 }
 
 // Resolve returns the bucket, prefix and object for Elastic artifacts
 func (r *ProjectURLResolver) Resolve() (string, string, string) {
-	prefix := fmt.Sprintf("%s/snapshots", r.Project)
+	artifact := r.Project
+
+	if strings.EqualFold(r.Variant, "ubi8") {
+		artifact = strings.ReplaceAll(artifact, "-ubi8", "")
+	}
+
+	prefix := fmt.Sprintf("%s/snapshots", artifact)
 
 	// the commit SHA will identify univocally the artifact in the GCP storage bucket
 	if GithubCommitSha1 != "" {
-		prefix = fmt.Sprintf("%s/commits/%s", r.Project, GithubCommitSha1)
+		prefix = fmt.Sprintf("%s/commits/%s", artifact, GithubCommitSha1)
 	}
 
 	log.WithFields(log.Fields{
 		"bucket":  r.Bucket,
 		"object":  r.FileName,
 		"prefix":  prefix,
-		"project": r.Project,
+		"project": artifact,
 	}).Debug("Resolving URL from Project resolver")
 
 	return r.Bucket, prefix, r.FileName

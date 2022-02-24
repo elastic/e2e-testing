@@ -455,7 +455,7 @@ func FetchProjectBinary(ctx context.Context, project string, artifactName string
 		// 2. the new beats layout (beats)
 		// 3. the legacy Beats layout (commits/snapshots)
 		resolvers := []BucketURLResolver{
-			NewProjectURLResolver(project, artifactName),
+			NewProjectURLResolver(project, artifactName, variant),
 			NewBeatsURLResolver(artifact, artifactName, variant),
 			NewBeatsLegacyURLResolver(artifact, artifactName, variant),
 		}
@@ -474,7 +474,7 @@ func FetchProjectBinary(ctx context.Context, project string, artifactName string
 		sha512ArtifactName := fmt.Sprintf("%s.sha512", artifactName)
 
 		sha512Resolvers := []BucketURLResolver{
-			NewProjectURLResolver(project, sha512ArtifactName),
+			NewProjectURLResolver(project, sha512ArtifactName, variant),
 			NewBeatsURLResolver(artifact, sha512ArtifactName, variant),
 			NewBeatsLegacyURLResolver(artifact, sha512ArtifactName, variant),
 		}
