@@ -58,11 +58,12 @@ func (r *BeatsLegacyURLResolver) Resolve() (string, string, string) {
 	}
 
 	log.WithFields(log.Fields{
-		"bucket":  r.Bucket,
-		"object":  r.FileName,
-		"prefix":  prefix,
-		"project": r.Beat,
-		"variant": r.Variant,
+		"beat":     r.Beat,
+		"bucket":   r.Bucket,
+		"fileName": r.FileName,
+		"object":   object,
+		"prefix":   prefix,
+		"variant":  r.Variant,
 	}).Debug("Resolving URL from Beats Legacy resolver")
 
 	return r.Bucket, prefix, object
@@ -107,11 +108,12 @@ func (r *BeatsURLResolver) Resolve() (string, string, string) {
 	}
 
 	log.WithFields(log.Fields{
-		"bucket":  r.Bucket,
-		"object":  r.FileName,
-		"prefix":  prefix,
-		"project": r.Beat,
-		"variant": r.Variant,
+		"beat":     r.Beat,
+		"bucket":   r.Bucket,
+		"fileName": r.FileName,
+		"object":   object,
+		"prefix":   prefix,
+		"variant":  r.Variant,
 	}).Debug("Resolving URL from Beats resolver")
 
 	return r.Bucket, prefix, object
