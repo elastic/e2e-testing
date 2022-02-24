@@ -7,6 +7,8 @@ package downloads
 import (
 	"fmt"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // BeatsCIArtifactsBase name of the bucket used to store the artifacts
@@ -55,6 +57,14 @@ func (r *BeatsLegacyURLResolver) Resolve() (string, string, string) {
 		object = artifact + "/" + fileName
 	}
 
+	log.WithFields(log.Fields{
+		"bucket":  r.Bucket,
+		"object":  r.FileName,
+		"prefix":  prefix,
+		"project": r.Beat,
+		"variant": r.Variant,
+	}).Debug("Resolving URL from Beats Legacy resolver")
+
 	return r.Bucket, prefix, object
 }
 
@@ -96,6 +106,14 @@ func (r *BeatsURLResolver) Resolve() (string, string, string) {
 		object = artifact + "/" + fileName
 	}
 
+	log.WithFields(log.Fields{
+		"bucket":  r.Bucket,
+		"object":  r.FileName,
+		"prefix":  prefix,
+		"project": r.Beat,
+		"variant": r.Variant,
+	}).Debug("Resolving URL from Beats resolver")
+
 	return r.Bucket, prefix, object
 }
 
@@ -125,6 +143,13 @@ func (r *ProjectURLResolver) Resolve() (string, string, string) {
 	if GithubCommitSha1 != "" {
 		prefix = fmt.Sprintf("%s/commits/%s", r.Project, GithubCommitSha1)
 	}
+
+	log.WithFields(log.Fields{
+		"bucket":  r.Bucket,
+		"object":  r.FileName,
+		"prefix":  prefix,
+		"project": r.Project,
+	}).Debug("Resolving URL from Project resolver")
 
 	return r.Bucket, prefix, r.FileName
 }
