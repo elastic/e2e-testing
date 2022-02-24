@@ -450,17 +450,13 @@ func FetchProjectBinary(ctx context.Context, project string, artifactName string
 			variant = "ubi8"
 		}
 
-		bucketBase := BeatsCIArtifactsBase
-		if strings.EqualFold(project, "elastic-agent") || strings.EqualFold(project, "fleet-server") {
-			bucketBase = FleetCIArtifactsBase
-		}
-
 		// look up the bucket in this particular order:
 		// 1. the project layout (elastic-agent, fleet-server)
 		// 2. the new beats layout (beats)
 		// 3. the legacy Beats layout (commits/snapshots)
 		resolvers := []BucketURLResolver{
-			NewProjectURLResolver(bucketBase, project, artifactName, variant),
+			NewProjectURLResolver(FleetCIArtifactsBase, project, artifactName, variant),
+			NewProjectURLResolver(BeatsCIArtifactsBase, project, artifactName, variant),
 			NewBeatsURLResolver(artifact, artifactName, variant),
 			NewBeatsLegacyURLResolver(artifact, artifactName, variant),
 		}
@@ -479,7 +475,8 @@ func FetchProjectBinary(ctx context.Context, project string, artifactName string
 		sha512ArtifactName := fmt.Sprintf("%s.sha512", artifactName)
 
 		sha512Resolvers := []BucketURLResolver{
-			NewProjectURLResolver(bucketBase, project, sha512ArtifactName, variant),
+			NewProjectURLResolver(FleetCIArtifactsBase, project, sha512ArtifactName, variant),
+			NewProjectURLResolver(BeatsCIArtifactsBase, project, sha512ArtifactName, variant),
 			NewBeatsURLResolver(artifact, sha512ArtifactName, variant),
 			NewBeatsLegacyURLResolver(artifact, sha512ArtifactName, variant),
 		}
