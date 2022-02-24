@@ -83,7 +83,7 @@ func CheckPRVersion(version string, fallbackVersion string) string {
 // FetchElasticArtifact fetches an artifact from the right repository, returning binary name, path and error
 func FetchElasticArtifact(ctx context.Context, artifact string, version string, os string, arch string, extension string, isDocker bool, xpack bool) (string, string, error) {
 	binaryName := buildArtifactName(artifact, version, os, arch, extension, isDocker)
-	binaryPath, err := FetchBeatsBinary(ctx, binaryName, artifact, version, utils.TimeoutFactor, xpack, "", false)
+	binaryPath, err := FetchProjectBinary(ctx, artifact, binaryName, artifact, version, utils.TimeoutFactor, xpack, "", false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -92,7 +92,7 @@ func FetchElasticArtifact(ctx context.Context, artifact string, version string, 
 			"arch":      arch,
 			"extension": extension,
 			"error":     err,
-		}).Error("Could not download the binary for the agent")
+		}).Error("Could not download the binary for the Elastic artifact")
 		return "", "", err
 	}
 
