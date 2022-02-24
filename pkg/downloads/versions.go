@@ -446,7 +446,7 @@ func FetchProjectBinary(ctx context.Context, project string, artifactName string
 		maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
 		variant := ""
-		if strings.HasSuffix(artifactName, "-ubi8") {
+		if strings.HasSuffix(artifact, "-ubi8") {
 			variant = "ubi8"
 		}
 
