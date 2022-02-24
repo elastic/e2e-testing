@@ -11,8 +11,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// BeatsCIArtifactsBase name of the bucket used to store the artifacts
+// BeatsCIArtifactsBase name of the bucket used to store the artifacts generated on Beats CI
 const BeatsCIArtifactsBase = "beats-ci-artifacts"
+
+// FleetCIArtifactsBase name of the bucket used to store the artifacts generated on FLeet CI
+const FleetCIArtifactsBase = "fleet-ci-artifacts"
 
 // BucketURLResolver interface to resolve URL for artifacts in a bucket
 type BucketURLResolver interface {
@@ -130,9 +133,9 @@ type ProjectURLResolver struct {
 
 // NewProjectURLResolver creates a new resolver for Elastic projects
 // The Elastic Agent and Fleet Server must use the project resolver
-func NewProjectURLResolver(project string, fileName string, variant string) *ProjectURLResolver {
+func NewProjectURLResolver(bucketBase string, project string, fileName string, variant string) *ProjectURLResolver {
 	return &ProjectURLResolver{
-		Bucket:   BeatsCIArtifactsBase,
+		Bucket:   bucketBase,
 		Project:  project,
 		FileName: fileName,
 		Variant:  variant,

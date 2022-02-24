@@ -186,7 +186,7 @@ func TestProjectURLResolver(t *testing.T) {
 	project := "elastic-agent"
 
 	t.Run("Fetching snapshots bucket for RPM package", func(t *testing.T) {
-		resolver := NewProjectURLResolver(project, project+"-"+testVersion+"-x86_64.rpm", "")
+		resolver := NewProjectURLResolver(BeatsCIArtifactsBase, project, project+"-"+testVersion+"-x86_64.rpm", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -196,7 +196,7 @@ func TestProjectURLResolver(t *testing.T) {
 	})
 
 	t.Run("Fetching snapshots bucket for DEB package", func(t *testing.T) {
-		resolver := NewProjectURLResolver(project, project+"-"+testVersion+"-amd64.deb", "")
+		resolver := NewProjectURLResolver(BeatsCIArtifactsBase, project, project+"-"+testVersion+"-amd64.deb", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -206,7 +206,7 @@ func TestProjectURLResolver(t *testing.T) {
 	})
 
 	t.Run("Fetching snapshots bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
-		resolver := NewProjectURLResolver(project, project+"-"+testVersion+"-linux-x86_64.tar.gz", "")
+		resolver := NewProjectURLResolver(BeatsCIArtifactsBase, project, project+"-"+testVersion+"-linux-x86_64.tar.gz", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -219,7 +219,7 @@ func TestProjectURLResolver(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
 		defer func() { GithubCommitSha1 = "" }()
 
-		resolver := NewProjectURLResolver(project, project+"-"+testVersion+"-x86_64.rpm", "")
+		resolver := NewProjectURLResolver(BeatsCIArtifactsBase, project, project+"-"+testVersion+"-x86_64.rpm", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -232,7 +232,7 @@ func TestProjectURLResolver(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
 		defer func() { GithubCommitSha1 = "" }()
 
-		resolver := NewProjectURLResolver(project, project+"-"+testVersion+"-amd64.deb", "")
+		resolver := NewProjectURLResolver(BeatsCIArtifactsBase, project, project+"-"+testVersion+"-amd64.deb", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -245,7 +245,7 @@ func TestProjectURLResolver(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
 		defer func() { GithubCommitSha1 = "" }()
 
-		resolver := NewProjectURLResolver(project, project+"-"+testVersion+"-linux-x86_64.tar.gz", "")
+		resolver := NewProjectURLResolver(BeatsCIArtifactsBase, project, project+"-"+testVersion+"-linux-x86_64.tar.gz", "")
 
 		bucket, prefix, object := resolver.Resolve()
 
@@ -258,7 +258,7 @@ func TestProjectURLResolver(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
 		defer func() { GithubCommitSha1 = "" }()
 
-		resolver := NewProjectURLResolver(project, project+"-ubi8-"+testVersion+"-linux-x86_64.tar.gz", "ubi8")
+		resolver := NewProjectURLResolver(BeatsCIArtifactsBase, project, project+"-ubi8-"+testVersion+"-linux-x86_64.tar.gz", "ubi8")
 
 		bucket, prefix, object := resolver.Resolve()
 
