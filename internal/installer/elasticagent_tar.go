@@ -108,7 +108,7 @@ func (i *elasticAgentTARPackage) Postinstall(ctx context.Context) error {
 
 // Preinstall executes operations before installing a TAR package
 func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
-	installArtifactFn := func(ctx context.Context, artifact string, version string) error {
+	installArtifactFn := func(ctx context.Context, artifact string, version string, useCISnapshots bool) error {
 		span, _ := apm.StartSpanOptions(ctx, "Pre-install "+artifact, artifact+".tar.pre-install", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
@@ -129,7 +129,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 			}
 			log.Trace("Cleared previously downloaded artifacts")
 		}
-		_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, version, runningOS, arch, extension, false, true)
+		_, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, runningOS, arch, extension, false, true)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"artifact":  artifact,
@@ -158,14 +158,16 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 	for _, bp := range i.service.BackgroundProcesses {
 		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
 			// pre-install the dependant binary first
-			err := installArtifactFn(ctx, bp, common.StackVersion)
+			err := installArtifactFn(ctx, bp, common.StackVersion, false)
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	return installArtifactFn(ctx, "elastic-agent", common.BeatVersion)
+	useCISnapshots := downloads.GithubCommitSha1 != ""
+
+	return installArtifactFn(ctx, "elastic-agent", common.BeatVersion, useCISnapshots)
 
 }
 
