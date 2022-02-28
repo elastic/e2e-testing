@@ -5,8 +5,8 @@
 package common
 
 import (
-	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -41,6 +41,10 @@ var BeatVersionBase = "7.17.1-952e96f1-SNAPSHOT"
 // BeatVersion is the version of the Beat to use
 // It can be overriden by BEAT_VERSION env var
 var BeatVersion = BeatVersionBase
+
+// ElasticAgentVersion is the version of the Elastic Agent to use
+// It can be overriden by ELASTIC_AGENT_VERSION env var
+var ElasticAgentVersion = BeatVersionBase
 
 // DeveloperMode if enabled will keep deployments around after test runs
 var DeveloperMode = false
@@ -81,7 +85,7 @@ func init() {
 // supporting lazy-loading the versions when needed. Basically, the CLI part does not
 // need to load them
 func InitVersions() {
-	v, err := elasticversion.GetElasticArtifactVersion(BeatVersionBase)
+	v, err := downloads.GetElasticArtifactVersion(BeatVersionBase)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -93,7 +97,7 @@ func InitVersions() {
 	BeatVersion = shell.GetEnv("BEAT_VERSION", BeatVersionBase)
 
 	// check if version is an alias
-	v, err = elasticversion.GetElasticArtifactVersion(BeatVersion)
+	v, err = downloads.GetElasticArtifactVersion(BeatVersion)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -111,10 +115,33 @@ func InitVersions() {
 		}).Trace("Beat Version provided: will be used as fallback")
 		fallbackVersion = BeatVersion
 	}
-	BeatVersion = elasticversion.CheckPRVersion(BeatVersion, fallbackVersion)
+	BeatVersion = downloads.CheckPRVersion(BeatVersion, fallbackVersion)
+
+	ElasticAgentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", BeatVersionBase)
+
+	// check if version is an alias
+	v, err = downloads.GetElasticArtifactVersion(ElasticAgentVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": ElasticAgentVersion,
+		}).Fatal("Failed to get Elastic Agent version, aborting")
+	}
+	ElasticAgentVersion = v
+
+	// detects if the ElasticAgentVersion is set by the GITHUB_CHECK_SHA1 variable
+	fallbackVersion = BeatVersionBase
+	if ElasticAgentVersion != BeatVersionBase {
+		log.WithFields(log.Fields{
+			"BeatVersionBase":     BeatVersionBase,
+			"ElasticAgentVersion": ElasticAgentVersion,
+		}).Trace("Elastic Agent Version provided: will be used as fallback")
+		fallbackVersion = ElasticAgentVersion
+	}
+	ElasticAgentVersion = downloads.CheckPRVersion(ElasticAgentVersion, fallbackVersion)
 
 	StackVersion = shell.GetEnv("STACK_VERSION", BeatVersionBase)
-	v, err = elasticversion.GetElasticArtifactVersion(StackVersion)
+	v, err = downloads.GetElasticArtifactVersion(StackVersion)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -127,7 +154,7 @@ func InitVersions() {
 	if KibanaVersion == "" {
 		// we want to deploy a released version for Kibana
 		// if not set, let's use StackVersion
-		KibanaVersion, err = elasticversion.GetElasticArtifactVersion(StackVersion)
+		KibanaVersion, err = downloads.GetElasticArtifactVersion(StackVersion)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":   err,
@@ -137,9 +164,10 @@ func InitVersions() {
 	}
 
 	log.WithFields(log.Fields{
-		"BeatVersionBase": BeatVersionBase,
-		"BeatVersion":     BeatVersion,
-		"StackVersion":    StackVersion,
-		"KibanaVersion":   KibanaVersion,
+		"BeatVersionBase":     BeatVersionBase,
+		"BeatVersion":         BeatVersion,
+		"ElasticAgentVersion": ElasticAgentVersion,
+		"StackVersion":        StackVersion,
+		"KibanaVersion":       KibanaVersion,
 	}).Info("Initial artifact versions defined")
 }

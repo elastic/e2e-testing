@@ -9,11 +9,11 @@ import (
 	"fmt"
 	"strings"
 
-	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -132,7 +132,7 @@ func (i *elasticAgentDEBPackage) Postinstall(ctx context.Context) error {
 
 // Preinstall executes operations before installing a DEB package
 func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
-	installArtifactFn := func(ctx context.Context, artifact string) error {
+	installArtifactFn := func(ctx context.Context, artifact string, version string, useCISnapshots bool) error {
 		span, _ := apm.StartSpanOptions(ctx, "Pre-install "+artifact, artifact+".debian.pre-install", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
@@ -142,11 +142,11 @@ func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
 		arch := utils.GetArchitecture()
 		extension := "deb"
 
-		binaryName, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, false, true)
+		binaryName, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, os, arch, extension, false, true)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"artifact":  artifact,
-				"version":   common.BeatVersion,
+				"version":   version,
 				"os":        os,
 				"arch":      arch,
 				"extension": extension,
@@ -170,15 +170,15 @@ func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
 
 	for _, bp := range i.service.BackgroundProcesses {
 		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
-			// pre-install the dependant binary first
-			err := installArtifactFn(ctx, bp)
+			// pre-install the dependant binary first, using the stack version
+			err := installArtifactFn(ctx, bp, common.BeatVersion, downloads.UseBeatsCISnapshots())
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	return installArtifactFn(ctx, "elastic-agent")
+	return installArtifactFn(ctx, "elastic-agent", common.ElasticAgentVersion, downloads.UseElasticAgentCISnapshots())
 }
 
 // Restart will restart a service
