@@ -48,12 +48,8 @@ pipeline {
     booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify to Slack with green builds.")
     string(name: 'SLACK_CHANNEL', defaultValue: 'observablt-bots', description: 'The Slack channel(s) where errors will be posted. For multiple channels, use a comma-separated list of channels')
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
-<<<<<<< HEAD
+    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.0.0-61c39847-SNAPSHOT', description: 'SemVer version of the Elastic Agent to be used for the tests. You can use here the tag of your PR to test your changes')
     string(name: 'BEAT_VERSION', defaultValue: '8.0.0-61c39847-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
-=======
-    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.2.0-4a677e18-SNAPSHOT', description: 'SemVer version of the Elastic Agent to be used for the tests. You can use here the tag of your PR to test your changes')
-    string(name: 'BEAT_VERSION', defaultValue: '8.2.0-4a677e18-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
->>>>>>> 044dedf4 (feat: support downloading project artifacts for the new bucket layout (#2172))
     string(name: 'ELASTIC_AGENT_STALE_VERSION', defaultValue: '7.17-SNAPSHOT', description: 'SemVer version of the stale stand-alone elastic-agent to be used for Fleet upgrade tests.')
     choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'TRACE', 'INFO'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
