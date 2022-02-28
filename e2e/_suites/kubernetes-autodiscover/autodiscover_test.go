@@ -76,7 +76,7 @@ func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, optio
 			return false
 		},
 		"beats_namespace": func() string {
-			return deploy.GetDockerNamespaceEnvVar("beats")
+			return deploy.GetDockerNamespaceEnvVarForRepository(podName, "beats")
 		},
 		"beats_version": func() string {
 			return beatVersions[podName]
