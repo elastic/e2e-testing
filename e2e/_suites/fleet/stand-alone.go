@@ -83,7 +83,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 	fts.StandAlone = true
 	log.Trace("Deploying an agent to Fleet")
 
-	dockerImageTag := common.BeatVersion
+	dockerImageTag := common.ElasticAgentVersion
 
 	common.ProfileEnv["elasticAgentDockerNamespace"] = deploy.GetDockerNamespaceEnvVar("beats")
 	common.ProfileEnv["elasticAgentDockerImageSuffix"] = ""
@@ -91,10 +91,14 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		common.ProfileEnv["elasticAgentDockerImageSuffix"] = "-" + image
 	}
 
+<<<<<<< HEAD
 	useCISnapshots := elasticversion.GithubCommitSha1 != ""
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 
 	if useCISnapshots || beatsLocalPath != "" {
+=======
+	if downloads.UseElasticAgentCISnapshots() || downloads.BeatsLocalPath != "" {
+>>>>>>> 044dedf4 (feat: support downloading project artifacts for the new bucket layout (#2172))
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries

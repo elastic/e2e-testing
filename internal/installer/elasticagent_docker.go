@@ -99,11 +99,15 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 	arch := utils.GetArchitecture()
 	extension := "tar.gz"
 
+<<<<<<< HEAD
 	_, binaryPath, err := elasticversion.FetchElasticArtifact(ctx, artifact, common.BeatVersion, os, arch, extension, true, true)
+=======
+	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, common.ElasticAgentVersion, os, arch, extension, true, true)
+>>>>>>> 044dedf4 (feat: support downloading project artifacts for the new bucket layout (#2172))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
-			"version":   common.BeatVersion,
+			"version":   common.ElasticAgentVersion,
 			"os":        os,
 			"arch":      arch,
 			"extension": extension,
@@ -119,10 +123,17 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 
 	// we need to tag the loaded image because its tag relates to the target branch
 	return deploy.TagImage(
+<<<<<<< HEAD
 		fmt.Sprintf("docker.elastic.co/beats/%s:%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersionBase)),
 		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), arch),
 		// tagging including git commit and snapshot
 		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, elasticversion.GetFullVersion(common.BeatVersion), arch),
+=======
+		fmt.Sprintf("docker.elastic.co/beats/%s:%s", artifact, downloads.GetSnapshotVersion(common.BeatVersionBase)),
+		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), arch),
+		// tagging including git commit and snapshot
+		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, downloads.GetFullVersion(common.ElasticAgentVersion), arch),
+>>>>>>> 044dedf4 (feat: support downloading project artifacts for the new bucket layout (#2172))
 	)
 }
 

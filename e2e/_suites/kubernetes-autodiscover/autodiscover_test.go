@@ -76,7 +76,7 @@ func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, optio
 			return false
 		},
 		"beats_namespace": func() string {
-			return deploy.GetDockerNamespaceEnvVar("beats")
+			return deploy.GetDockerNamespaceEnvVarForRepository(podName, "beats")
 		},
 		"beats_version": func() string {
 			return beatVersions[podName]
@@ -133,6 +133,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		return nil
 	}
 
+<<<<<<< HEAD
 	beatVersion := elasticversion.GetSnapshotVersion(common.BeatVersion) + "-amd64"
 
 	useCISnapshots := elasticversion.GithubCommitSha1 != ""
@@ -141,6 +142,23 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		log.Debugf("Configuring Docker image for %s", podName)
 
 		_, imagePath, err := elasticversion.FetchElasticArtifact(m.ctx, podName, common.BeatVersion, "linux", "amd64", "tar.gz", true, true)
+=======
+	v := common.BeatVersion
+	if strings.EqualFold(podName, "elastic-agent") {
+		v = common.ElasticAgentVersion
+	}
+	beatVersion := downloads.GetSnapshotVersion(v) + "-amd64"
+
+	ciSnapshotsFn := downloads.UseBeatsCISnapshots
+	if strings.EqualFold(podName, "elastic-agent") {
+		ciSnapshotsFn = downloads.UseElasticAgentCISnapshots
+	}
+
+	if ciSnapshotsFn() || downloads.BeatsLocalPath != "" {
+		log.Debugf("Configuring Docker image for %s", podName)
+
+		_, imagePath, err := downloads.FetchElasticArtifact(m.ctx, podName, v, "linux", "amd64", "tar.gz", true, true)
+>>>>>>> 044dedf4 (feat: support downloading project artifacts for the new bucket layout (#2172))
 		if err != nil {
 			return err
 		}

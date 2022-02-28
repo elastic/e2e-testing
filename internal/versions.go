@@ -37,8 +37,21 @@ var elasticVersionsCache = map[string]string{}
 // GithubCommitSha1 represents the value of the "GITHUB_CHECK_SHA1" environment variable
 var GithubCommitSha1 string
 
+// GithubRepository represents the value of the "GITHUB_CHECK_REPO" environment variable
+// Default is "elastic-agent"
+var GithubRepository string
+
 func init() {
 	GithubCommitSha1 = shell.GetEnv("GITHUB_CHECK_SHA1", "")
+<<<<<<< HEAD:internal/versions.go
+=======
+	GithubRepository = shell.GetEnv("GITHUB_CHECK_REPO", "elastic-agent")
+
+	BeatsLocalPath = shell.GetEnv("BEATS_LOCAL_PATH", BeatsLocalPath)
+	if BeatsLocalPath != "" {
+		log.Infof(`Beats local path will be used for artifacts. Please make sure all binaries are properly built in their "build/distributions" folder: %s`, BeatsLocalPath)
+	}
+>>>>>>> 044dedf4 (feat: support downloading project artifacts for the new bucket layout (#2172)):pkg/downloads/versions.go
 }
 
 // elasticVersion represents a version
@@ -73,8 +86,19 @@ func CheckPRVersion(version string, fallbackVersion string) string {
 
 // FetchElasticArtifact fetches an artifact from the right repository, returning binary name, path and error
 func FetchElasticArtifact(ctx context.Context, artifact string, version string, os string, arch string, extension string, isDocker bool, xpack bool) (string, string, error) {
+	useCISnapshots := GithubCommitSha1 != ""
+
+	return FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, os, arch, extension, isDocker, xpack)
+}
+
+// FetchElasticArtifactForSnapshots fetches an artifact from the right repository, returning binary name, path and error
+func FetchElasticArtifactForSnapshots(ctx context.Context, useCISnapshots bool, artifact string, version string, os string, arch string, extension string, isDocker bool, xpack bool) (string, string, error) {
 	binaryName := buildArtifactName(artifact, version, os, arch, extension, isDocker)
+<<<<<<< HEAD:internal/versions.go
 	binaryPath, err := fetchBeatsBinary(ctx, binaryName, artifact, version, utils.TimeoutFactor, xpack)
+=======
+	binaryPath, err := FetchProjectBinaryForSnapshots(ctx, useCISnapshots, artifact, binaryName, artifact, version, utils.TimeoutFactor, xpack, "", false)
+>>>>>>> 044dedf4 (feat: support downloading project artifacts for the new bucket layout (#2172)):pkg/downloads/versions.go
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -83,7 +107,7 @@ func FetchElasticArtifact(ctx context.Context, artifact string, version string, 
 			"arch":      arch,
 			"extension": extension,
 			"error":     err,
-		}).Error("Could not download the binary for the agent")
+		}).Error("Could not download the binary for the Elastic artifact")
 		return "", "", err
 	}
 
@@ -302,6 +326,27 @@ func SnapshotHasCommit(s string) bool {
 	return re.MatchString(s)
 }
 
+// UseBeatsCISnapshots check if CI snapshots should be used for the Beats, where the given SHA commit
+// lives in the beats repository
+func UseBeatsCISnapshots() bool {
+	return useCISnapshots("beats")
+}
+
+// UseElasticAgentCISnapshots check if CI snapshots should be used for the Elastic Agent, where the given SHA commit
+// lives in the elastic-agent repository
+func UseElasticAgentCISnapshots() bool {
+	return useCISnapshots("elastic-agent")
+}
+
+// useCISnapshots check if CI snapshots should be used, passing a function that evaluates the repository in which
+// the given Sha commit has context. I.e. a commit in the elastic-agent repository should pass a function that
+func useCISnapshots(repository string) bool {
+	if GithubCommitSha1 != "" && strings.EqualFold(GithubRepository, repository) {
+		return true
+	}
+	return false
+}
+
 // buildArtifactName builds the artifact name from the different coordinates for the artifact
 func buildArtifactName(artifact string, artifactVersion string, OS string, arch string, extension string, isDocker bool) string {
 	dockerString := ""
@@ -344,12 +389,39 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 // to be used will be defined by the local snapshot produced by the local build.
 // Else, if the environment variable GITHUB_CHECK_SHA1 is set, then the artifact
 // to be downloaded will be defined by the snapshot produced by the Beats CI for that commit.
+<<<<<<< HEAD:internal/versions.go
 func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool) (string, error) {
 	beatsLocalPath := shell.GetEnv("BEATS_LOCAL_PATH", "")
 	if beatsLocalPath != "" {
 		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.local.fetch-binary", apm.SpanOptions{
+=======
+func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFile bool) (string, error) {
+	return FetchProjectBinary(ctx, "beats", artifactName, artifact, version, timeoutFactor, xpack, downloadPath, downloadSHAFile)
+}
+
+// FetchProjectBinary it downloads the binary and returns the location of the downloaded file
+// If the environment variable BEATS_LOCAL_PATH is set, then the artifact
+// to be used will be defined by the local snapshot produced by the local build.
+// Else, if the environment variable GITHUB_CHECK_SHA1 is set, then the artifact
+// to be downloaded will be defined by the snapshot produced by the Beats CI for that commit.
+func FetchProjectBinary(ctx context.Context, project string, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFile bool) (string, error) {
+	useCISnapshots := GithubCommitSha1 != ""
+
+	return FetchProjectBinaryForSnapshots(ctx, useCISnapshots, project, artifactName, artifact, version, timeoutFactor, xpack, downloadPath, downloadSHAFile)
+}
+
+// FetchProjectBinaryForSnapshots it downloads the binary and returns the location of the downloaded file
+// If the environment variable BEATS_LOCAL_PATH is set, then the artifact
+// to be used will be defined by the local snapshot produced by the local build.
+// Else, if the useCISnapshots argument is set to true, then the artifact
+// to be downloaded will be defined by the snapshot produced by the Beats CI or Fleet CI for that commit.
+func FetchProjectBinaryForSnapshots(ctx context.Context, useCISnapshots bool, project string, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFile bool) (string, error) {
+	if BeatsLocalPath != "" && project == "beats" {
+		span, _ := apm.StartSpanOptions(ctx, "Fetching Project binary", "project.local.fetch-binary", apm.SpanOptions{
+>>>>>>> 044dedf4 (feat: support downloading project artifacts for the new bucket layout (#2172)):pkg/downloads/versions.go
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
+		span.Context.SetLabel("project", project)
 		defer span.End()
 
 		distributions := path.Join(beatsLocalPath, artifact, "build", "distributions")
@@ -369,9 +441,19 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 	}
 
 	handleDownload := func(URL string) (string, error) {
+<<<<<<< HEAD:internal/versions.go
 		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.url.fetch-binary", apm.SpanOptions{
+=======
+		name := artifactName
+		downloadRequest := utils.DownloadRequest{
+			DownloadPath: downloadPath,
+			URL:          URL,
+		}
+		span, _ := apm.StartSpanOptions(ctx, "Fetching Project binary", "project.url.fetch-binary", apm.SpanOptions{
+>>>>>>> 044dedf4 (feat: support downloading project artifacts for the new bucket layout (#2172)):pkg/downloads/versions.go
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
+		span.Context.SetLabel("project", project)
 		defer span.End()
 
 		if val, ok := binariesCache[URL]; ok {
@@ -406,7 +488,6 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 	var downloadURL string
 	var err error
 
-	useCISnapshots := GithubCommitSha1 != ""
 	if useCISnapshots {
 		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.gcp.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -415,15 +496,58 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 
 		log.Debugf("Using CI snapshots for %s", artifact)
 
+<<<<<<< HEAD:internal/versions.go
 		bucket, prefix, object := getGCPBucketCoordinates(artifactName, artifact)
 
 		maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
 		downloadURL, err = getObjectURLFromBucket(bucket, prefix, object, maxTimeout)
+=======
+		maxTimeout := time.Duration(timeoutFactor) * time.Minute
+
+		variant := ""
+		if strings.HasSuffix(artifact, "-ubi8") {
+			variant = "ubi8"
+		}
+
+		// look up the bucket in this particular order:
+		// 1. the project layout (elastic-agent, fleet-server)
+		// 2. the new beats layout (beats)
+		// 3. the legacy Beats layout (commits/snapshots)
+		resolvers := []BucketURLResolver{
+			NewProjectURLResolver(FleetCIArtifactsBase, project, artifactName, variant),
+			NewProjectURLResolver(BeatsCIArtifactsBase, project, artifactName, variant),
+			NewBeatsURLResolver(artifact, artifactName, variant),
+			NewBeatsLegacyURLResolver(artifact, artifactName, variant),
+		}
+
+		downloadURL, err = getObjectURLFromResolvers(resolvers, maxTimeout)
+>>>>>>> 044dedf4 (feat: support downloading project artifacts for the new bucket layout (#2172)):pkg/downloads/versions.go
 		if err != nil {
 			return "", err
 		}
 
+<<<<<<< HEAD:internal/versions.go
+=======
+		// check if sha file should be downloaded, else return
+		if !downloadSHAFile {
+			return downloadLocation, err
+		}
+
+		sha512ArtifactName := fmt.Sprintf("%s.sha512", artifactName)
+
+		sha512Resolvers := []BucketURLResolver{
+			NewProjectURLResolver(FleetCIArtifactsBase, project, sha512ArtifactName, variant),
+			NewProjectURLResolver(BeatsCIArtifactsBase, project, sha512ArtifactName, variant),
+			NewBeatsURLResolver(artifact, sha512ArtifactName, variant),
+			NewBeatsLegacyURLResolver(artifact, sha512ArtifactName, variant),
+		}
+
+		downloadURL, err = getObjectURLFromResolvers(sha512Resolvers, maxTimeout)
+		if err != nil {
+			return "", err
+		}
+>>>>>>> 044dedf4 (feat: support downloading project artifacts for the new bucket layout (#2172)):pkg/downloads/versions.go
 		return handleDownload(downloadURL)
 	}
 
@@ -431,8 +555,19 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 	if err != nil {
 		return "", err
 	}
+<<<<<<< HEAD:internal/versions.go
 
 	return handleDownload(downloadURL)
+=======
+	downloadLocation, err := handleDownload(downloadURL)
+	if err != nil {
+		return "", err
+	}
+	if downloadSHAFile && downloadShaURL != "" {
+		downloadLocation, err = handleDownload(downloadShaURL)
+	}
+	return downloadLocation, err
+>>>>>>> 044dedf4 (feat: support downloading project artifacts for the new bucket layout (#2172)):pkg/downloads/versions.go
 }
 
 func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
@@ -445,28 +580,29 @@ func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
 	return "&pageToken=" + nextPageToken
 }
 
-// getGCPBucketCoordinates it calculates the bucket path in GCP
-func getGCPBucketCoordinates(fileName string, artifact string) (string, string, string) {
-	bucket := "beats-ci-artifacts"
+// getObjectURLFromResolvers extracts the media URL for the desired artifact from the
+// Google Cloud Storage bucket used by the CI to push snapshots
+func getObjectURLFromResolvers(resolvers []BucketURLResolver, maxtimeout time.Duration) (string, error) {
+	for i, resolver := range resolvers {
+		bucket, prefix, object := resolver.Resolve()
 
-	if strings.HasSuffix(artifact, "-ubi8") {
-		artifact = strings.ReplaceAll(artifact, "-ubi8", "")
+		downloadURL, err := getObjectURLFromBucket(bucket, prefix, object, maxtimeout)
+		if err != nil {
+			if i < len(resolvers)-1 {
+				log.WithFields(log.Fields{
+					"resolver": resolver,
+				}).Warn("Object not found. Trying with another artifact resolver")
+				continue
+			} else {
+				log.Error("Object not found. There is no other artifact resolver")
+				return "", err
+			}
+		}
+
+		return downloadURL, nil
 	}
 
-	prefix := fmt.Sprintf("snapshots/%s", artifact)
-	object := fileName
-
-	// the commit SHA will identify univocally the artifact in the GCP storage bucket
-	if GithubCommitSha1 != "" {
-		log.WithFields(log.Fields{
-			"commit": GithubCommitSha1,
-			"file":   fileName,
-		}).Debug("Using CI snapshots for a commit")
-		prefix = fmt.Sprintf("commits/%s", GithubCommitSha1)
-		object = artifact + "/" + fileName
-	}
-
-	return bucket, prefix, object
+	return "", fmt.Errorf("the artifact was not found")
 }
 
 // getObjectURLFromBucket extracts the media URL for the desired artifact from the

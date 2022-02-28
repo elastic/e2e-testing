@@ -158,7 +158,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 	fts.StandAlone = false
 	fts.ElasticAgentStopped = false
 
-	fts.Version = common.BeatVersion
+	fts.Version = common.ElasticAgentVersion
 
 	waitForPolicy := func() error {
 		policy, err := fts.kibanaClient.CreatePolicy(fts.currentContext)
@@ -360,8 +360,12 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(version, i
 	}
 	common.AgentStaleVersion = v
 
+<<<<<<< HEAD
 	useCISnapshots := elasticversion.GithubCommitSha1 != ""
 	if useCISnapshots && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
+=======
+	if downloads.UseElasticAgentCISnapshots() && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
+>>>>>>> 044dedf4 (feat: support downloading project artifacts for the new bucket layout (#2172))
 		common.AgentStaleVersion += "-SNAPSHOT"
 	}
 
@@ -369,7 +373,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(version, i
 	case "stale":
 		version = common.AgentStaleVersion
 	case "latest":
-		version = common.BeatVersion
+		version = common.ElasticAgentVersion
 	default:
 		version = common.AgentStaleVersion
 	}
@@ -386,7 +390,7 @@ func (fts *FleetTestSuite) installCerts() error {
 	err := agentInstaller.InstallCerts(fts.currentContext)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"agentVersion":      common.BeatVersion,
+			"agentVersion":      common.ElasticAgentVersion,
 			"agentStaleVersion": common.AgentStaleVersion,
 			"error":             err,
 			"installer":         agentInstaller,
@@ -403,9 +407,9 @@ func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
 	case "stale":
 		desiredVersion = common.AgentStaleVersion
 	case "latest":
-		desiredVersion = common.BeatVersion
+		desiredVersion = common.ElasticAgentVersion
 	default:
-		desiredVersion = common.BeatVersion
+		desiredVersion = common.ElasticAgentVersion
 	}
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
@@ -418,7 +422,11 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	case "stale":
 		version = common.AgentStaleVersion
 	case "latest":
+<<<<<<< HEAD
 		version = elasticversion.GetSnapshotVersion(common.BeatVersion)
+=======
+		version = downloads.GetSnapshotVersion(common.ElasticAgentVersion)
+>>>>>>> 044dedf4 (feat: support downloading project artifacts for the new bucket layout (#2172))
 	}
 
 	agentInVersionFn := func() error {
@@ -678,7 +686,7 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 		for k, v := range env {
 			fleetServerEnv[k] = v
 		}
-		fleetServerEnv["elasticAgentTag"] = common.BeatVersion
+		fleetServerEnv["elasticAgentTag"] = common.ElasticAgentVersion
 		fleetServerEnv["fleetServerMode"] = "1"
 		fleetServerEnv["fleetServerPort"] = "8220"
 		fleetServerEnv["fleetInsecure"] = "1"
