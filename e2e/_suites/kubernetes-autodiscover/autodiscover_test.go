@@ -168,14 +168,14 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		}
 
 		// load PR image into kind
-		err = cluster.LoadImage(m.ctx, "docker.elastic.co/observability-ci/"+podName+":"+v)
+		err = cluster.LoadImage(m.ctx, "docker.elastic.co/observability-ci/"+podName+":"+beatVersion)
 		if err != nil {
 			return err
 		}
 
 	}
 
-	log.Tracef("Caching beat version '%s' for %s", v, podName)
+	log.Tracef("Caching beat version '%s' for %s", beatVersion, podName)
 	beatVersions[podName] = beatVersion
 
 	return nil
