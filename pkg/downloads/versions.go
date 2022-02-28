@@ -320,6 +320,11 @@ func SnapshotHasCommit(s string) bool {
 	return re.MatchString(s)
 }
 
+// UseCISnapshots check if CI snapshots should be used
+func UseCISnapshots() bool {
+	return (GithubCommitSha1 != "")
+}
+
 // buildArtifactName builds the artifact name from the different coordinates for the artifact
 func buildArtifactName(artifact string, artifactVersion string, OS string, arch string, extension string, isDocker bool) string {
 	dockerString := ""

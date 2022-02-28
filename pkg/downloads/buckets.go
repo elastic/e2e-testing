@@ -55,7 +55,7 @@ func (r *BeatsLegacyURLResolver) Resolve() (string, string, string) {
 	object := fileName
 
 	// the commit SHA will identify univocally the artifact in the GCP storage bucket
-	if GithubCommitSha1 != "" {
+	if UseCISnapshots() {
 		prefix = fmt.Sprintf("commits/%s", GithubCommitSha1)
 		object = artifact + "/" + fileName
 	}
@@ -105,7 +105,7 @@ func (r *BeatsURLResolver) Resolve() (string, string, string) {
 	object := fileName
 
 	// the commit SHA will identify univocally the artifact in the GCP storage bucket
-	if GithubCommitSha1 != "" {
+	if UseCISnapshots() {
 		prefix = fmt.Sprintf("beats/commits/%s", GithubCommitSha1)
 		object = artifact + "/" + fileName
 	}
@@ -153,7 +153,7 @@ func (r *ProjectURLResolver) Resolve() (string, string, string) {
 	prefix := fmt.Sprintf("%s/snapshots", artifact)
 
 	// the commit SHA will identify univocally the artifact in the GCP storage bucket
-	if GithubCommitSha1 != "" {
+	if UseCISnapshots() {
 		prefix = fmt.Sprintf("%s/commits/%s", artifact, GithubCommitSha1)
 	}
 

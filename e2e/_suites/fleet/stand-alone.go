@@ -90,9 +90,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		common.ProfileEnv["elasticAgentDockerImageSuffix"] = "-" + image
 	}
 
-	useCISnapshots := downloads.GithubCommitSha1 != ""
-
-	if useCISnapshots || downloads.BeatsLocalPath != "" {
+	if downloads.UseCISnapshots() || downloads.BeatsLocalPath != "" {
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries

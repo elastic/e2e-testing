@@ -356,8 +356,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(version, i
 	}
 	common.AgentStaleVersion = v
 
-	useCISnapshots := downloads.GithubCommitSha1 != ""
-	if useCISnapshots && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
+	if downloads.UseCISnapshots() && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
 		common.AgentStaleVersion += "-SNAPSHOT"
 	}
 

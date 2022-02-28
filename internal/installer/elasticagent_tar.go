@@ -165,9 +165,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 		}
 	}
 
-	useCISnapshots := downloads.GithubCommitSha1 != ""
-
-	return installArtifactFn(ctx, "elastic-agent", common.ElasticAgentVersion, useCISnapshots)
+	return installArtifactFn(ctx, "elastic-agent", common.ElasticAgentVersion, downloads.UseCISnapshots())
 
 }
 

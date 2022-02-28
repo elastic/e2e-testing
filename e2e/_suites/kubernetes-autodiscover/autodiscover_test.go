@@ -139,8 +139,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 	}
 	beatVersion := downloads.GetSnapshotVersion(v) + "-amd64"
 
-	useCISnapshots := downloads.GithubCommitSha1 != ""
-	if useCISnapshots || downloads.BeatsLocalPath != "" {
+	if downloads.UseCISnapshots() || downloads.BeatsLocalPath != "" {
 		log.Debugf("Configuring Docker image for %s", podName)
 
 		_, imagePath, err := downloads.FetchElasticArtifact(m.ctx, podName, v, "linux", "amd64", "tar.gz", true, true)
