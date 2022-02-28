@@ -88,6 +88,8 @@ This is an example of the optional configuration:
    export ELASTIC_AGENT_DOWNLOAD_URL="https://snapshots.elastic.co/7.12.0-069dfaa4/downloads/beats/elastic-agent/elastic-agent-7.12.0-SNAPSHOT-linux-x86_64.tar.gz"
    # This environment variable will use the its value as the Docker tag produced by Beats CI (Please look up Google Cloud Storage CI bucket).
    export GITHUB_CHECK_SHA1="78a762c76080aafa34c52386341b590dac24e2df"
+   # This environment variable will use the name of the repository where the commit lives
+   export GITHUB_CHECK_REPO="beats"
    ```
 
 3. Define the proper Docker images to be used in tests (Optional).
