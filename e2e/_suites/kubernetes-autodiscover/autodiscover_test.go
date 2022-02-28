@@ -141,7 +141,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 
 	ciSnapshotsFn := downloads.UseBeatsCISnapshots
 	if strings.EqualFold(podName, "elastic-agent") {
-		ciSnapshotsFn = UseElasticAgentCISnapshots
+		ciSnapshotsFn = downloads.UseElasticAgentCISnapshots
 	}
 
 	if ciSnapshotsFn() || downloads.BeatsLocalPath != "" {
