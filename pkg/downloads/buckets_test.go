@@ -12,6 +12,7 @@ import (
 
 func TestBeatsLegacyURLResolver(t *testing.T) {
 	beat := "metricbeat"
+	defer func() { GithubRepository = "elastic-agent" }()
 
 	t.Run("Fetching snapshots bucket for RPM package", func(t *testing.T) {
 		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-x86_64.rpm", "")
@@ -45,7 +46,11 @@ func TestBeatsLegacyURLResolver(t *testing.T) {
 
 	t.Run("Fetching commits bucket for RPM package", func(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
+		GithubRepository = "beats"
+		defer func() {
+			GithubCommitSha1 = ""
+			GithubRepository = ""
+		}()
 
 		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-x86_64.rpm", "")
 
@@ -58,7 +63,11 @@ func TestBeatsLegacyURLResolver(t *testing.T) {
 
 	t.Run("Fetching commits bucket for DEB package", func(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
+		GithubRepository = "beats"
+		defer func() {
+			GithubCommitSha1 = ""
+			GithubRepository = ""
+		}()
 
 		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-amd64.deb", "")
 
@@ -71,7 +80,11 @@ func TestBeatsLegacyURLResolver(t *testing.T) {
 
 	t.Run("Fetching commits bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
+		GithubRepository = "beats"
+		defer func() {
+			GithubCommitSha1 = ""
+			GithubRepository = ""
+		}()
 
 		resolver := NewBeatsLegacyURLResolver(beat, beat+"-"+testVersion+"-linux-x86_64.tar.gz", "")
 
@@ -84,7 +97,11 @@ func TestBeatsLegacyURLResolver(t *testing.T) {
 
 	t.Run("Fetching commits bucket for ubi8 Docker image", func(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
+		GithubRepository = "beats"
+		defer func() {
+			GithubCommitSha1 = ""
+			GithubRepository = ""
+		}()
 
 		resolver := NewBeatsLegacyURLResolver(beat, beat+"-ubi8-"+testVersion+"-linux-x86_64.tar.gz", "ubi8")
 
@@ -98,6 +115,7 @@ func TestBeatsLegacyURLResolver(t *testing.T) {
 
 func TestBeatsURLResolver(t *testing.T) {
 	beat := "metricbeat"
+	defer func() { GithubRepository = "elastic-agent" }()
 
 	t.Run("Fetching snapshots bucket for RPM package", func(t *testing.T) {
 		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-x86_64.rpm", "")
@@ -131,7 +149,11 @@ func TestBeatsURLResolver(t *testing.T) {
 
 	t.Run("Fetching commits bucket for RPM package", func(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
+		GithubRepository = "beats"
+		defer func() {
+			GithubCommitSha1 = ""
+			GithubRepository = ""
+		}()
 
 		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-x86_64.rpm", "")
 
@@ -144,7 +166,11 @@ func TestBeatsURLResolver(t *testing.T) {
 
 	t.Run("Fetching commits bucket for DEB package", func(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
+		GithubRepository = "beats"
+		defer func() {
+			GithubCommitSha1 = ""
+			GithubRepository = ""
+		}()
 
 		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-amd64.deb", "")
 
@@ -157,7 +183,11 @@ func TestBeatsURLResolver(t *testing.T) {
 
 	t.Run("Fetching commits bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
+		GithubRepository = "beats"
+		defer func() {
+			GithubCommitSha1 = ""
+			GithubRepository = ""
+		}()
 
 		resolver := NewBeatsURLResolver(beat, beat+"-"+testVersion+"-linux-x86_64.tar.gz", "")
 
@@ -170,7 +200,11 @@ func TestBeatsURLResolver(t *testing.T) {
 
 	t.Run("Fetching commits bucket for ubi8 Docker image", func(t *testing.T) {
 		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
+		GithubRepository = "beats"
+		defer func() {
+			GithubCommitSha1 = ""
+			GithubRepository = ""
+		}()
 
 		resolver := NewBeatsURLResolver(beat, beat+"-ubi8-"+testVersion+"-linux-x86_64.tar.gz", "ubi8")
 

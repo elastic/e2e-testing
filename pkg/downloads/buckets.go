@@ -54,8 +54,13 @@ func (r *BeatsLegacyURLResolver) Resolve() (string, string, string) {
 	prefix := fmt.Sprintf("snapshots/%s", artifact)
 	object := fileName
 
+	ciSnapshotsFn := UseBeatsCISnapshots
+	if strings.EqualFold(artifact, "elastic-agent") {
+		ciSnapshotsFn = UseElasticAgentCISnapshots
+	}
+
 	// the commit SHA will identify univocally the artifact in the GCP storage bucket
-	if UseCISnapshots() {
+	if ciSnapshotsFn() {
 		prefix = fmt.Sprintf("commits/%s", GithubCommitSha1)
 		object = artifact + "/" + fileName
 	}
@@ -104,8 +109,13 @@ func (r *BeatsURLResolver) Resolve() (string, string, string) {
 	prefix := fmt.Sprintf("beats/snapshots/%s", artifact)
 	object := fileName
 
+	ciSnapshotsFn := UseBeatsCISnapshots
+	if strings.EqualFold(artifact, "elastic-agent") {
+		ciSnapshotsFn = UseElasticAgentCISnapshots
+	}
+
 	// the commit SHA will identify univocally the artifact in the GCP storage bucket
-	if UseCISnapshots() {
+	if ciSnapshotsFn() {
 		prefix = fmt.Sprintf("beats/commits/%s", GithubCommitSha1)
 		object = artifact + "/" + fileName
 	}
@@ -152,8 +162,13 @@ func (r *ProjectURLResolver) Resolve() (string, string, string) {
 
 	prefix := fmt.Sprintf("%s/snapshots", artifact)
 
+	ciSnapshotsFn := UseBeatsCISnapshots
+	if strings.EqualFold(artifact, "elastic-agent") {
+		ciSnapshotsFn = UseElasticAgentCISnapshots
+	}
+
 	// the commit SHA will identify univocally the artifact in the GCP storage bucket
-	if UseCISnapshots() {
+	if ciSnapshotsFn() {
 		prefix = fmt.Sprintf("%s/commits/%s", artifact, GithubCommitSha1)
 	}
 

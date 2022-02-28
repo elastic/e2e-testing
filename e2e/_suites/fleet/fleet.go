@@ -356,7 +356,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(version, i
 	}
 	common.AgentStaleVersion = v
 
-	if downloads.UseCISnapshots() && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
+	if downloads.UseElasticAgentCISnapshots() && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
 		common.AgentStaleVersion += "-SNAPSHOT"
 	}
 

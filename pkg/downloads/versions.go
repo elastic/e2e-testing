@@ -41,8 +41,13 @@ var elasticVersionsCache = map[string]string{}
 // GithubCommitSha1 represents the value of the "GITHUB_CHECK_SHA1" environment variable
 var GithubCommitSha1 string
 
+// GithubRepository represents the value of the "GITHUB_CHECK_REPO" environment variable
+// Default is "elastic-agent"
+var GithubRepository string
+
 func init() {
 	GithubCommitSha1 = shell.GetEnv("GITHUB_CHECK_SHA1", "")
+	GithubRepository = shell.GetEnv("GITHUB_CHECK_REPO", "elastic-agent")
 
 	BeatsLocalPath = shell.GetEnv("BEATS_LOCAL_PATH", BeatsLocalPath)
 	if BeatsLocalPath != "" {
@@ -320,9 +325,25 @@ func SnapshotHasCommit(s string) bool {
 	return re.MatchString(s)
 }
 
-// UseCISnapshots check if CI snapshots should be used
-func UseCISnapshots() bool {
-	return (GithubCommitSha1 != "")
+// UseBeatsCISnapshots check if CI snapshots should be used for the Beats, where the given SHA commit
+// lives in the beats repository
+func UseBeatsCISnapshots() bool {
+	return useCISnapshots("beats")
+}
+
+// UseElasticAgentCISnapshots check if CI snapshots should be used for the Elastic Agent, where the given SHA commit
+// lives in the elastic-agent repository
+func UseElasticAgentCISnapshots() bool {
+	return useCISnapshots("elastic-agent")
+}
+
+// useCISnapshots check if CI snapshots should be used, passing a function that evaluates the repository in which
+// the given Sha commit has context. I.e. a commit in the elastic-agent repository should pass a function that
+func useCISnapshots(repository string) bool {
+	if GithubCommitSha1 != "" && strings.EqualFold(GithubRepository, repository) {
+		return true
+	}
+	return false
 }
 
 // buildArtifactName builds the artifact name from the different coordinates for the artifact

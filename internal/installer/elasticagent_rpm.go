@@ -175,14 +175,14 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 	for _, bp := range i.service.BackgroundProcesses {
 		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
 			// pre-install the dependant binary first, using the stack version
-			err := installArtifactFn(ctx, bp, common.BeatVersion, false)
+			err := installArtifactFn(ctx, bp, common.BeatVersion, downloads.UseBeatsCISnapshots())
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	return installArtifactFn(ctx, "elastic-agent", common.ElasticAgentVersion, downloads.UseCISnapshots())
+	return installArtifactFn(ctx, "elastic-agent", common.ElasticAgentVersion, downloads.UseElasticAgentCISnapshots())
 }
 
 // Restart will restart a service
