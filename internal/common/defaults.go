@@ -36,11 +36,15 @@ const FleetServerAgentServiceName = "fleet-server"
 var AgentStaleVersion = "7.17-SNAPSHOT"
 
 // BeatVersionBase is the base version of the Beat to use
-var BeatVersionBase = "8.2.0-5d69c4c3-SNAPSHOT"
+var BeatVersionBase = "8.2.0-4a677e18-SNAPSHOT"
 
 // BeatVersion is the version of the Beat to use
 // It can be overriden by BEAT_VERSION env var
 var BeatVersion = BeatVersionBase
+
+// ElasticAgentVersion is the version of the Elastic Agent to use
+// It can be overriden by ELASTIC_AGENT_VERSION env var
+var ElasticAgentVersion = BeatVersionBase
 
 // DeveloperMode if enabled will keep deployments around after test runs
 var DeveloperMode = false
@@ -113,6 +117,29 @@ func InitVersions() {
 	}
 	BeatVersion = downloads.CheckPRVersion(BeatVersion, fallbackVersion)
 
+	ElasticAgentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", BeatVersionBase)
+
+	// check if version is an alias
+	v, err = downloads.GetElasticArtifactVersion(ElasticAgentVersion)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": ElasticAgentVersion,
+		}).Fatal("Failed to get Elastic Agent version, aborting")
+	}
+	ElasticAgentVersion = v
+
+	// detects if the ElasticAgentVersion is set by the GITHUB_CHECK_SHA1 variable
+	fallbackVersion = BeatVersionBase
+	if ElasticAgentVersion != BeatVersionBase {
+		log.WithFields(log.Fields{
+			"BeatVersionBase":     BeatVersionBase,
+			"ElasticAgentVersion": ElasticAgentVersion,
+		}).Trace("Elastic Agent Version provided: will be used as fallback")
+		fallbackVersion = ElasticAgentVersion
+	}
+	ElasticAgentVersion = downloads.CheckPRVersion(ElasticAgentVersion, fallbackVersion)
+
 	StackVersion = shell.GetEnv("STACK_VERSION", BeatVersionBase)
 	v, err = downloads.GetElasticArtifactVersion(StackVersion)
 	if err != nil {
@@ -137,9 +164,10 @@ func InitVersions() {
 	}
 
 	log.WithFields(log.Fields{
-		"BeatVersionBase": BeatVersionBase,
-		"BeatVersion":     BeatVersion,
-		"StackVersion":    StackVersion,
-		"KibanaVersion":   KibanaVersion,
+		"BeatVersionBase":     BeatVersionBase,
+		"BeatVersion":         BeatVersion,
+		"ElasticAgentVersion": ElasticAgentVersion,
+		"StackVersion":        StackVersion,
+		"KibanaVersion":       KibanaVersion,
 	}).Info("Initial artifact versions defined")
 }

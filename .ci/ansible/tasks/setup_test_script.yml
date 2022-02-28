@@ -12,6 +12,9 @@
     - "export DEVELOPER_MODE=true"
     - "export SKIP_PULL=1"
     - "export LOG_LEVEL=TRACE"
+    - "export STACK_VERSION={{ lookup('env', 'STACK_VERSION') or lookup('file', '{{workspace}}/.stack-version') }}"
+    - "export KIBANA_VERSION={{ lookup('env', 'KIBANA_VERSION') or lookup('file', '{{ workspace }}/.stack-version') }}"
+    - "export ELASTIC_AGENT_VERSION={{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('file', '{{ workspace }}/.stack-version') }}"
   when: "'stack' == nodeLabel"
 
 - name: Extend environment for Fleet testing
@@ -58,6 +61,8 @@
   with_items:
     - "export SUITE={{ lookup('env', 'SUITE') or 'kubernetes-autodiscover' }}"
     - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'docker' }}"
+    - "export KIND_VERSION={{ lookup('env', 'KIND_VERSION') }}"
+    - "export KUBERNETES_VERSION={{ lookup('env', 'KUBERNETES_VERSION') }}"
   when:
     - suite is defined
     - suite == "kubernetes-autodiscover"
@@ -72,6 +77,10 @@
   with_items:
     - "export SUITE={{ lookup('env', 'SUITE') or 'helm' }}"
     - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'docker' }}"
+    - "export HELM_CHART_VERSION={{ lookup('env', 'HELM_CHART_VERSION') }}"
+    - "export HELM_VERSION={{ lookup('env', 'HELM_VERSION') }}"
+    - "export KIND_VERSION={{ lookup('env', 'KIND_VERSION') }}"
+    - "export KUBERNETES_VERSION={{ lookup('env', 'KUBERNETES_VERSION') }}"
   when:
     - suite is defined
     - suite == "helm"
@@ -86,6 +95,9 @@
   with_items:
     - "export STACK_VERSION={{ lookup('file', '{{workspace}}/.stack-version') or '8.0.0-SNAPSHOT' }}"
     - "export BEAT_VERSION={{ lookup('file', '{{workspace}}/.stack-version') or '8.0.0-SNAPSHOT' }}"
+    - "export ELASTIC_AGENT_VERSION={{ lookup('file', '{{workspace}}/.stack-version') or '8.0.0-SNAPSHOT' }}"
+    - "export GITHUB_CHECK_SHA1={{ lookup('env', 'GITHUB_CHECK_SHA1') }}"
+    - "export GITHUB_CHECK_REPO={{ lookup('env', 'GITHUB_CHECK_REPO') }}"
     - "export ELASTIC_APM_GLOBAL_LABELS={{ lookup('env', 'ELASTIC_APM_GLOBAL_LABELS') }}"
     - "export LOG_LEVEL=TRACE"
     - "export PATH=$PATH:/opt/go/{{golang_version}}/bin:/usr/local/bin"
@@ -113,4 +125,5 @@
          FORMAT=junit:${REPORT}.xml \
          STACK_VERSION=${STACK_VERSION} \
          BEAT_VERSION=${BEAT_VERSION} \
+         ELASTIC_AGENT_VERSION=${ELASTIC_AGENT_VERSION} \
          make --no-print-directory -C "${BASE_DIR}/e2e/_suites/${SUITE}" functional-test
