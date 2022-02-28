@@ -82,7 +82,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 	fts.StandAlone = true
 	log.Trace("Deploying an agent to Fleet")
 
-	dockerImageTag := common.BeatVersion
+	dockerImageTag := common.ElasticAgentVersion
 
 	common.ProfileEnv["elasticAgentDockerNamespace"] = deploy.GetDockerNamespaceEnvVar("beats")
 	common.ProfileEnv["elasticAgentDockerImageSuffix"] = ""

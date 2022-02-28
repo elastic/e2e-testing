@@ -175,7 +175,7 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 	for _, bp := range i.service.BackgroundProcesses {
 		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
 			// pre-install the dependant binary first, using the stack version
-			err := installArtifactFn(ctx, bp, common.StackVersion, false)
+			err := installArtifactFn(ctx, bp, common.BeatVersion, false)
 			if err != nil {
 				return err
 			}
@@ -184,7 +184,7 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 
 	useCISnapshots := downloads.GithubCommitSha1 != ""
 
-	return installArtifactFn(ctx, "elastic-agent", common.BeatVersion, useCISnapshots)
+	return installArtifactFn(ctx, "elastic-agent", common.ElasticAgentVersion, useCISnapshots)
 }
 
 // Restart will restart a service

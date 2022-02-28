@@ -133,13 +133,17 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		return nil
 	}
 
-	beatVersion := downloads.GetSnapshotVersion(common.BeatVersion) + "-amd64"
+	v := common.BeatVersion
+	if strings.EqualFold(podName, "elastic-agent") {
+		v = common.ElasticAgentVersion
+	}
+	beatVersion := downloads.GetSnapshotVersion(v) + "-amd64"
 
 	useCISnapshots := downloads.GithubCommitSha1 != ""
 	if useCISnapshots || downloads.BeatsLocalPath != "" {
 		log.Debugf("Configuring Docker image for %s", podName)
 
-		_, imagePath, err := downloads.FetchElasticArtifact(m.ctx, podName, common.BeatVersion, "linux", "amd64", "tar.gz", true, true)
+		_, imagePath, err := downloads.FetchElasticArtifact(m.ctx, podName, v, "linux", "amd64", "tar.gz", true, true)
 		if err != nil {
 			return err
 		}
@@ -160,14 +164,14 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		}
 
 		// load PR image into kind
-		err = cluster.LoadImage(m.ctx, "docker.elastic.co/observability-ci/"+podName+":"+beatVersion)
+		err = cluster.LoadImage(m.ctx, "docker.elastic.co/observability-ci/"+podName+":"+v)
 		if err != nil {
 			return err
 		}
 
 	}
 
-	log.Tracef("Caching beat version '%s' for %s", beatVersion, podName)
+	log.Tracef("Caching beat version '%s' for %s", v, podName)
 	beatVersions[podName] = beatVersion
 
 	return nil

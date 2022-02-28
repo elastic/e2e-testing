@@ -147,7 +147,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 			return err
 		}
 
-		output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.BeatVersion), runningOS, arch), artifact})
+		output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), runningOS, arch), artifact})
 		log.WithFields(log.Fields{
 			"output":   output,
 			"artifact": artifact,
@@ -158,7 +158,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 	for _, bp := range i.service.BackgroundProcesses {
 		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
 			// pre-install the dependant binary first
-			err := installArtifactFn(ctx, bp, common.StackVersion, false)
+			err := installArtifactFn(ctx, bp, common.BeatVersion, false)
 			if err != nil {
 				return err
 			}
@@ -167,7 +167,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 
 	useCISnapshots := downloads.GithubCommitSha1 != ""
 
-	return installArtifactFn(ctx, "elastic-agent", common.BeatVersion, useCISnapshots)
+	return installArtifactFn(ctx, "elastic-agent", common.ElasticAgentVersion, useCISnapshots)
 
 }
 

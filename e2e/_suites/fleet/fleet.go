@@ -158,7 +158,7 @@ func (fts *FleetTestSuite) beforeScenario() {
 	fts.StandAlone = false
 	fts.ElasticAgentStopped = false
 
-	fts.Version = common.BeatVersion
+	fts.Version = common.ElasticAgentVersion
 
 	waitForPolicy := func() error {
 		policy, err := fts.kibanaClient.CreatePolicy(fts.currentContext)
@@ -365,7 +365,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(version, i
 	case "stale":
 		version = common.AgentStaleVersion
 	case "latest":
-		version = common.BeatVersion
+		version = common.ElasticAgentVersion
 	default:
 		version = common.AgentStaleVersion
 	}
@@ -382,7 +382,7 @@ func (fts *FleetTestSuite) installCerts() error {
 	err := agentInstaller.InstallCerts(fts.currentContext)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"agentVersion":      common.BeatVersion,
+			"agentVersion":      common.ElasticAgentVersion,
 			"agentStaleVersion": common.AgentStaleVersion,
 			"error":             err,
 			"installer":         agentInstaller,
@@ -399,9 +399,9 @@ func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
 	case "stale":
 		desiredVersion = common.AgentStaleVersion
 	case "latest":
-		desiredVersion = common.BeatVersion
+		desiredVersion = common.ElasticAgentVersion
 	default:
-		desiredVersion = common.BeatVersion
+		desiredVersion = common.ElasticAgentVersion
 	}
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
@@ -414,7 +414,7 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	case "stale":
 		version = common.AgentStaleVersion
 	case "latest":
-		version = downloads.GetSnapshotVersion(common.BeatVersion)
+		version = downloads.GetSnapshotVersion(common.ElasticAgentVersion)
 	}
 
 	agentInVersionFn := func() error {
@@ -675,7 +675,7 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 		for k, v := range env {
 			fleetServerEnv[k] = v
 		}
-		fleetServerEnv["elasticAgentTag"] = common.BeatVersion
+		fleetServerEnv["elasticAgentTag"] = common.ElasticAgentVersion
 		fleetServerEnv["fleetServerMode"] = "1"
 		fleetServerEnv["fleetServerPort"] = "8220"
 		fleetServerEnv["fleetInsecure"] = "1"

@@ -36,6 +36,7 @@ git add $FILE
 echo "Update stack with version ${VERSION} in Jenkinsfile"
 FILE="./.ci/Jenkinsfile"
 ${SED} -E -e "s#(name: 'BEAT_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1${VERSION}#g" $FILE
+${SED} -E -e "s#(name: 'ELASTIC_AGENT_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1${VERSION}#g" $FILE
 ${SED} -E -e "s#(name: 'STACK_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1${VERSION}#g" $FILE
 git add $FILE
 
