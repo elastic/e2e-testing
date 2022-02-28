@@ -24,8 +24,8 @@ pipeline {
     RUN_ID = UUID.randomUUID().toString()
   }
   options {
-    timeout(time: 1, unit: 'HOURS')
-    buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '20', daysToKeepStr: '30'))
+    timeout(time: 90, unit: 'MINUTES')
+    buildDiscarder(logRotator(numToKeepStr: '200', artifactNumToKeepStr: '30', daysToKeepStr: '30'))
     timestamps()
     ansiColor('xterm')
     disableResume()
