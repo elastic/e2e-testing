@@ -132,11 +132,11 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 		// cyclic imports since common.defaults now imports deploy module
 		if !shell.GetEnvBool("SKIP_PULL") && common.Provider != "remote" {
 			images := []string{
-				"docker.elastic.co/beats/elastic-agent:" + common.BeatVersion,
-				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.BeatVersion,
+				"docker.elastic.co/beats/elastic-agent:" + common.ElasticAgentVersion,
+				"docker.elastic.co/beats/elastic-agent-ubi8:" + common.ElasticAgentVersion,
 				"docker.elastic.co/elasticsearch/elasticsearch:" + common.StackVersion,
-				"docker.elastic.co/observability-ci/elastic-agent:" + common.BeatVersion,
-				"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.BeatVersion,
+				"docker.elastic.co/observability-ci/elastic-agent:" + common.ElasticAgentVersion,
+				"docker.elastic.co/observability-ci/elastic-agent-ubi8:" + common.ElasticAgentVersion,
 				"docker.elastic.co/observability-ci/elasticsearch:" + common.StackVersion,
 				"docker.elastic.co/observability-ci/kibana:" + common.KibanaVersion,
 			}
