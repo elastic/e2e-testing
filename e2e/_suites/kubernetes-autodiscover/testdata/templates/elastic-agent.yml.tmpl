@@ -145,15 +145,9 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       initContainers:
       - name: wait-for-elasticsearch
-        image: busybox
-        args:
-        - /bin/sh
-        - -c
-        - >
-          set -x;
-          while [ $(curl -sw '%{http_code}' --user elastic:changeme http://elasticsearch:9200/_cat/indices -o /dev/null) -ne 200 ]; do
-            sleep 15;
-          done
+        image: curlimages/curl:latest
+        command: ["/bin/sh","-c"]
+        args: ["while [ $(curl -sw '%{http_code}' http://elastic:changme@elasticsearch:9200/_cat/indices -o /dev/null) -ne 200 ]; do sleep 5; echo 'Waiting for Elasticsearch...'; done"]
       containers:
         - name: elastic-agent
           image: docker.elastic.co/{{ beats_namespace }}/elastic-agent:{{ beats_version }}
