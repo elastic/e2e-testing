@@ -143,6 +143,17 @@ spec:
       serviceAccountName: elastic-agent
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
+      initContainers:
+      - name: wait-for-elasticsearch
+        image: busybox
+        args:
+        - /bin/sh
+        - -c
+        - >
+          set -x;
+          while [ $(curl -sw '%{http_code}' --user elastic:changeme http://elasticsearch:9200/_cat/indices -o /dev/null) -ne 200 ]; do
+            sleep 15;
+          done
       containers:
         - name: elastic-agent
           image: docker.elastic.co/{{ beats_namespace }}/elastic-agent:{{ beats_version }}
