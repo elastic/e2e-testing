@@ -50,7 +50,7 @@
   when: ansible_distribution in ["Fedora", "RedHat", "CentOS"]
 
 - name: Install dependencies (Oracle Linux)
-  apt:
+  ansible.builtin.package:
     name:
       - autoconf
       - bison
