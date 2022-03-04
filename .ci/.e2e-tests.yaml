@@ -22,7 +22,7 @@ PLATFORMS:
     username: admin
   oracle_linux8:
     image: "ami-00371eeb8fd8e0e16"
-    instance_type: "c5.4xlarge"
+    instance_type: "c5.2xlarge"
     username: ec2-user
   sles15:
     image: "ami-0f7cb53c916a75006"
