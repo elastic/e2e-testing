@@ -21,10 +21,9 @@ SUITES:
       # - name: "System Integration"
       #   tags: "system_integration"
       #   platforms: ["debian_arm64", "debian_amd64", "sles15"]
-      - name: "Stand-alone"
-        tags: "stand_alone_agent"
-        platforms: ["debian_amd64"]
-        provider: "docker"
+      # - name: "Stand-alone"
+      #   tags: "stand_alone_agent"
+      #   platforms: ["fleet_elastic_pkg"]
       - name: "Backend Processes"
         tags: "backend_processes"
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
