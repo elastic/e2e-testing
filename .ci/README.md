@@ -12,6 +12,8 @@ To support multiple test suite descriptors, we are defining the available platfo
   - **instance_type**: the AWS instance type, representing the size of the machine, i.e. `c5.4xlarge`. Required.
   - **username**: the default user name when connecting to the machine using SSH, used by Ansible to execute commands on the remote machine. I.e. `centos`, `admin` or `ec2-user`. Required.
 
+In order to configure each platform, there is an `Ansible` script that installs the runtime dependencies for the machine, such as specific OS packages or libraries. Any available platform must declare its own block in the [`./ansible/tasks/install_deps.yml`](./ansible/tasks/install_deps.yml) file in order to be considered as supported.
+
 ### Test suites and scenarios file structure
 It's possible that a consumer of the e2e tests would need to define a specific layout for the test execution, adding or removing suites and/or scenarios. That's the case for Beats or the Elastic Agent, which triggers the E2E tests with a different layout than for the own development of the test framework: while in Beats or the Elastic Agent we are more interested in running the test for Fleet only, when developing the project we want to verify all the test suites at a time. The structure of these files is the following:
 
