@@ -393,7 +393,7 @@ def getNodeIp(workspace, platform){
 }
 
 def getMachineInfo(workspace, platform){
-  def machineYaml = readYaml(file: "${workspace}/${TEST_MATRIX_FILE}")
+  def machineYaml = readYaml(file: "${workspace}/.e2e-platforms.yaml")
   def machines = machineYaml['PLATFORMS']
   return machines.get(platform)
 }
