@@ -1,7 +1,7 @@
 # CI considerations
 
 ## Jenkins Stages and platform support
-There are a set of YAML files, named after `.e2e-tests*.yaml`, that drive the execution of the different test scenarios and suites in the CI. These files are read by Jenkin at build time creating as many Jenkins parallel branch as items declared in the files. Ideally, each parallel branch should run a set of tests in a specific platform, i.e. the _"apm-server scenarios on Centos 8"_.
+There are a set of YAML files, named after `.e2e-tests*.yaml`, that drive the execution of the different test scenarios and suites in the CI. These files are read by Jenkins at build time creating as many Jenkins parallel branch as items declared in the files. Ideally, each parallel branch should run a set of tests in a specific platform, i.e. the _"apm-server scenarios on Centos 8"_.
 
 ### File structure
 - **PLATFORMS**: this entry will hold a YAML object will all the available platforms where the tests could be run. Each available platform will be defined as a key in the YAML object, where each object will have a key identifying the platform with a very descriptiva name (i.e. `stack` or `debian_arm64`) and the following attributes:
