@@ -518,7 +518,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def runId = UUID.randomUUID().toString().split('-')[0]
 
   return {
-    withNode(labels: 'ubuntu-20.04', forceWorkspace: true, forceWorker: true){
+    withNode(labels: 'ubuntu-20.04 && gobld/machineType:e2-small', forceWorkspace: true, forceWorker: true){
       try {
         deleteDir()
         unstash 'sourceEnvModified'
