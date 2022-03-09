@@ -409,9 +409,24 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   def suite = item.suite
   def platforms = item.platforms
 
+  // Predefine the remote provider to use the already provisioned stack VM.
+  // Each suite or scenario in the CI test suite would be able to define its own provider
+  // (i.e. docker). If empty, remote will be used as fallback
+  def suiteProvider = item.provider
+  if (!suiteProvider || suiteProvider?.trim() == '') {
+    suiteProvider = 'remote'
+  }
+
   item.scenarios.each { scenario ->
     def name = scenario.name
     def platformsValue = platforms
+
+    def scenarioProvider = scenario.provider
+    // if the scenario does not set its own provider, use suite's provider
+    if (!scenarioProvider || scenarioProvider?.trim() == '') {
+      scenarioProvider = suiteProvider
+    }
+
     def scenarioPlatforms = scenario.platforms
     if (scenarioPlatforms?.size() > 0) {
       // scenario platforms take precedence over suite platforms, overriding them
@@ -424,6 +439,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
         machineInfo = getMachineInfo("${env.WORKSPACE}/${env.BASE_DIR}", platform)
         parallelTasks["${suite}_${platform}_${tags}"] = generateFunctionalTestStep(name: "${name}",
                                                                           platform: platform,
+                                                                          provider: scenarioProvider,
                                                                           suite: "${suite}",
                                                                           tags: "${tags}",
                                                                           pullRequestFilter: "${pullRequestFilter}",
@@ -475,6 +491,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def name = args.get('name')
   def name_normalize = name.replace(' ', '_')
   def platform = args.get('platform')
+  def provider = args.get('provider')
   def suite = args.get('suite')
   def tags = args.get('tags')
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
@@ -509,7 +526,7 @@ def generateFunctionalTestStep(Map args = [:]){
 
   // Setup environment for platform
   def envContext = []
-  // envContext.add("PROVIDER=${platformProvider}")
+  envContext.add("PROVIDER=${provider}")
   envContext.add("SUITE=${suite}")
   envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},elastic_agent_version=${env.ELASTIC_AGENT_VERSION},stack_version=${env.STACK_VERSION}")
 
