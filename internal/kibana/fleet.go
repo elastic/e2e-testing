@@ -65,9 +65,10 @@ func NewFleetConfig(token string) (*FleetConfig, error) {
 	}
 
 	log.WithFields(log.Fields{
-		"elasticsearch":     cfg.ElasticsearchURI,
-		"elasticsearchPort": cfg.ElasticsearchPort,
-		"token":             cfg.EnrollmentToken,
+		"elasticsearch": fmt.Sprintf("%s:%d", cfg.ElasticsearchURI, cfg.ElasticsearchPort),
+		"fleet-server":  fmt.Sprintf("%s:%d", cfg.FleetServerURI, cfg.FleetServerPort),
+		"kibana":        fmt.Sprintf("%s:%d", cfg.KibanaURI, cfg.KibanaPort),
+		"token":         cfg.EnrollmentToken,
 	}).Debug("Fleet Server config created")
 
 	return cfg, nil
