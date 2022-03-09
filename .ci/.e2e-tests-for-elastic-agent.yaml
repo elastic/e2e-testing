@@ -1,4 +1,5 @@
 ---
+<<<<<<< HEAD
 PLATFORMS:
   stack:
     image: "ami-0d90bed76900e679a"
@@ -29,6 +30,8 @@ PLATFORMS:
     instance_type: "c5.4xlarge"
     username: admin
 
+=======
+>>>>>>> 2ddece66 (chore: define provider for each test suite (#2213))
 SUITES:
   - suite: "fleet"
     scenarios:
@@ -41,6 +44,7 @@ SUITES:
       - name: "APM Integration"
         tags: "apm_server"
         platforms: ["debian_amd64"]
+        provider: "docker"
       - name: "Linux Integration"
         tags: "linux_integration"
         platforms: ["debian_arm64", "debian_amd64", "sles15"]

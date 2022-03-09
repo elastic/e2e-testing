@@ -1,4 +1,5 @@
 ---
+<<<<<<< HEAD
 PLATFORMS:
   stack:
     image: "ami-0d90bed76900e679a"
@@ -29,8 +30,11 @@ PLATFORMS:
     instance_type: "c5.4xlarge"
     username: admin
 
+=======
+>>>>>>> 2ddece66 (chore: define provider for each test suite (#2213))
 SUITES:
   - suite: "helm"
+    provider: "docker"
     scenarios:
       - name: "APM Server"
         tags: "apm-server"
@@ -52,6 +56,7 @@ SUITES:
       - name: "APM Integration"
         tags: "apm_server"
         platforms: ["debian_amd64"]
+        provider: "docker"
       - name: "Linux Integration"
         tags: "linux_integration"
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
@@ -71,6 +76,7 @@ SUITES:
         tags: "running_on_beats"
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
   - suite: "kubernetes-autodiscover"
+    provider: "docker"
     scenarios:
       - name: "kubernetes autodiscover with elastic-agent"
         tags: "elastic-agent"

@@ -22,7 +22,7 @@ import (
 )
 
 func (fts *FleetTestSuite) aStandaloneAgentIsDeployed(image string) error {
-	return fts.startStandAloneAgent(image, "", nil)
+	return fts.startStandAloneAgent(image, "", map[string]string{"fleetServerMode": "0"})
 }
 
 func (fts *FleetTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string) error {
