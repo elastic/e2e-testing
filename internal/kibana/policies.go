@@ -17,6 +17,14 @@ import (
 	"go.elastic.co/apm"
 )
 
+// FleetServicePolicy these values comes from the kibana.config.yml file at Fleet's profile dir
+var FleetServicePolicy = Policy{
+	ID:                   "fleet-server-policy",
+	Name:                 "Fleet Server Policy",
+	Description:          "Fleet Server policy",
+	IsDefaultFleetServer: true,
+}
+
 // Policy represents an Ingest Manager policy.
 type Policy struct {
 	ID                   string `json:"id,omitempty"`
