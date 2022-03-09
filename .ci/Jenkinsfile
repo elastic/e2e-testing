@@ -206,7 +206,7 @@ pipeline {
                   def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
                   // Deploy the test infrastructure
                   sh "ssh-keygen -b 4096 -t rsa -f ${stackWorkspace}/e2essh -q -N \"\" "
-                  def stackMachine = getMachineInfo(stackWorkspace, 'stack')
+                  def stackMachine = getMachineInfo('stack')
 
                   ansible(stackWorkspace,
                           env.RUN_ID.split('-')[0],
@@ -273,7 +273,7 @@ pipeline {
               // Once all tests are complete we need to teardown the single instance with the deployed stack
               script {
                 def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
-                def stackMachine = getMachineInfo(stackWorkspace, 'stack')
+                def stackMachine = getMachineInfo('stack')
                 if (params.DEVELOPER_MODE) {
                   def stackRunner = getNodeIp(stackWorkspace, 'stack')
                   log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunner.ip}")
@@ -392,8 +392,8 @@ def getNodeIp(workspace, platform){
   return [user: runnerUser, ip: runnerIP]
 }
 
-def getMachineInfo(workspace, platform){
-  def machineYaml = readYaml(file: "${workspace}/.e2e-platforms.yaml")
+def getMachineInfo(platform){
+  def machineYaml = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/.ci/.e2e-platforms.yaml")
   def machines = machineYaml['PLATFORMS']
   return machines.get(platform)
 }
@@ -436,7 +436,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     def tags = scenario.tags
       platformsValue.each { platform ->
         log(level: 'INFO', text: "Adding ${suite}:${platform}:${tags} test suite to the build execution")
-        machineInfo = getMachineInfo("${env.WORKSPACE}/${env.BASE_DIR}", platform)
+        machineInfo = getMachineInfo(platform)
         parallelTasks["${suite}_${platform}_${tags}"] = generateFunctionalTestStep(name: "${name}",
                                                                           platform: platform,
                                                                           provider: scenarioProvider,
