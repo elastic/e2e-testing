@@ -1,6 +1,25 @@
-# Running a CI Deployment
+# CI considerations
 
-## Prereqs
+## Jenkins Stages and platform support
+There are a set of YAML files, named after `.e2e-tests*.yaml`, that drive the execution of the different test scenarios and suites in the CI. These files are read by Jenkin at build time creating as many Jenkins parallel branch as items declared in the files. Ideally, each parallel branch should run a set of tests in a specific platform, i.e. the _"apm-server scenarios on Centos 8"_.
+
+### File structure
+- **PLATFORMS**: this entry will hold a YAML object will all the available platforms where the tests could be run. Each available platform will be defined as a key in the YAML object, where each object will have a key identifying the platform with a very descriptiva name (i.e. `stack` or `debian_arm64`) and the following attributes:
+  - **image**: the AWS AMI identifier, i.e. `ami-0d90bed76900e679a`. Required.
+  - **instance_type**: the AWS instance type, representing the size of the machine, i.e. `c5.4xlarge`. Required.
+  - **username**: the default user name when connecting to the machine using SSH, used by Ansible to execute commands on the remote machine. I.e. `centos`, `admin` or `ec2-user`. Required.
+- **SUITES**: this entry will hold a YAML object containing a list of suite. Each suite in the list will be represented by a YAML object with the following attributes:
+  - **suite**: the name of the suite. WIll be used to look up the root directory of the test suite, located under the `e2e/_suites` directory. Therefore, only `fleet`, `helm` and `kubernetes-autodiscover` are valid values. Required.
+  - **provider**: declares the provider type for the test suite. Valid values are `docker`, `elastic-package` and `remote`. If not present, it will use `remote` as fallback. Optional.
+  - **scenarios**: a list of YAML objects representing the test scenarios, where the tests are executed. A test scenario will basically declare how to run a set of test, using the following attributes:
+    - **name**: name of the test scenario. It will be used by Jenkins to name the parallel stage representing this scenario. Required.
+    - **provider**: declares the provider type for the test scenario. Valid values are `docker`, `elastic-package` and `remote`. If not present, it will use its parent test suite's provider. Optional.
+    - **tags**: a Gherkin expression to filter scenarios by tag. It will drive the real execution of the tests, selecting which feature files and/or Cucumber tags will be added to the current test execution. An example could be `linux_integration` or `running_on_beats`. For reference, see https://github.com/cucumber/godog#tags. Required.
+    - **platforms**: a list of platforms where the tests will be executed. Valid values are already declared under the `PLATFORMS` object, using the key of the platform as elements in the list. I.e. `["centos8_arm64", "centos8_amd64", "debian_arm64", "debian_amd64", "sles15"]`. Required.
+
+## Running a CI Deployment
+
+### Prereqs
 
 The following variables need to be exported:
 
@@ -21,7 +40,7 @@ Install python deps:
 > venv/bin/ansible-galaxy install -r .ci/ansible/requirements.yml
 ```
 
-## Deploy stack
+### Deploy stack
 
 ```
 > venv/bin/ansible-playbook .ci/ansible/playbook.yml \
@@ -34,7 +53,7 @@ Install python deps:
 
 Make note of the IP address displayed in the ansible summary.
 
-## Setup stack
+### Setup stack
 
 ```
 > venv/bin/ansible-playbook .ci/ansible/playbook.yml \
@@ -48,7 +67,7 @@ Make note of the IP address displayed in the ansible summary.
 
 **Note**: The comma at the end of the ip address is required.
 
-## Deploy test node
+### Deploy test node
 
 ```
 > venv/bin/ansible-playbook .ci/ansible/playbook.yml \
@@ -61,7 +80,7 @@ Make note of the IP address displayed in the ansible summary.
 
 Make note of the ip address displayed in the ansible summary.
 
-## Setup test node
+### Setup test node
 
 ```
 > venv/bin/ansible-playbook .ci/ansible/playbook.yml \
@@ -75,7 +94,7 @@ Make note of the ip address displayed in the ansible summary.
 
 **Note**: The comma at the end of the ip address is required.
 
-## Run a test suite
+### Run a test suite
 
 ```
 > ssh -i $HOME/.ssh/id_rsa admin@<node ip address>
