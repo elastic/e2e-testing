@@ -27,16 +27,29 @@
   with_items:
     - "export SUITE={{ lookup('env', 'SUITE') or 'fleet' }}"
     - "export PROVIDER={{ lookup('env', 'PROVIDER') or 'remote' }}"
-    - "export ELASTICSEARCH_URL=http://{{stackRunner}}:9200"
     - "export ELASTICSEARCH_PASSWORD=changeme"
     - "export KIBANA_PASSWORD=changeme"
-    - "export KIBANA_URL=http://{{stackRunner}}:5601"
-    - "export FLEET_URL=http://{{stackRunner}}:8220"
     - "export SKIP_PULL=1"
   when:
     - suite is defined
     - stackRunner is defined
     - suite == "fleet"
+
+- name: Extend environment for Remote provider
+  lineinfile:
+    state: present
+    line: "{{ item }}"
+    insertafter: EOF
+    dest: "/home/{{ ansible_user }}/e2e-testing/.env"
+    create: yes
+  with_items:
+    - "export ELASTICSEARCH_URL=http://{{ stackRunner }}:9200"
+    - "export KIBANA_URL=http://{{ stackRunner }}:5601"
+    - "export FLEET_URL=http://{{ stackRunner }}:8220"
+  when:
+    - suite is defined
+    - stackRunner is defined
+    - lookup('env', 'PROVIDER') == 'remote'
 
 - name: Extend environment for Fleet with elastic-package testing
   lineinfile:
