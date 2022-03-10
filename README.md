@@ -4,7 +4,7 @@
 
 This repository contains:
 
-1. A [CI Infrastructure](./ci/README.md) to provision VMs where the tests will be executed at CI time.
+1. A [CI Infrastructure](./.ci/README.md) to provision VMs where the tests will be executed at CI time.
 2. A [Go library](./cli/README.md) to provision services in the way of Docker containers. It will provide the services using Docker Compose files.
 3. A [test framework](./e2e/README.md) to execute e2e tests for certain Observability projects:
     - [Observability Helm charts](./e2e/_suites/helm):
