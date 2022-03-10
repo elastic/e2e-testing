@@ -650,12 +650,7 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			}).Fatal("Fleet could not be recreated")
 		}
 
-		// these values comes from the kibana.config.yml file at Fleet's profile dir
-		fleetServicePolicy := kibana.Policy{
-			ID:          "fleet-server-policy",
-			Name:        "Fleet Server Policy",
-			Description: "Fleet Server policy",
-		}
+		fleetServicePolicy := kibana.FleetServicePolicy
 
 		log.WithFields(log.Fields{
 			"id":          fleetServicePolicy.ID,
