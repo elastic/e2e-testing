@@ -116,8 +116,10 @@ func (m *podsManager) executeTemplateFor(podName string, writer io.Writer, optio
 }
 
 func (m *podsManager) configureDockerImage(podName string) error {
-	if podName != "filebeat" && podName != "heartbeat" && podName != "metricbeat" && podName != "elastic-agent" {
-		log.Debugf("Not processing custom binaries for pod: %s. Only [filebeat, heartbeat, metricbeat, elastic-agent] will be processed", podName)
+	namespace := "beats"
+
+	if podName != "filebeat" && podName != "heartbeat" && podName != "metricbeat" && podName != "elastic-agent" && podName != "elasticsearch" {
+		log.Debugf("Not processing custom binaries for pod: %s. Only [elasticsearch, filebeat, heartbeat, metricbeat, elastic-agent] will be processed", podName)
 		return nil
 	}
 
@@ -158,15 +160,16 @@ func (m *podsManager) configureDockerImage(podName string) error {
 			return err
 		}
 
-		// tag the image with the proper docker tag, including platform
+		if podName == "elasticsearch" {
+			namespace = "elasticsearch"
+		}
 		err = deploy.TagImage(
-			"docker.elastic.co/beats/"+podName+":"+downloads.GetSnapshotVersion(common.BeatVersionBase),
+			"docker.elastic.co/"+namespace+"/"+podName+":"+downloads.GetSnapshotVersion(common.BeatVersionBase),
 			"docker.elastic.co/observability-ci/"+podName+":"+beatVersion,
 		)
 		if err != nil {
 			return err
 		}
-
 		// load PR image into kind
 		err = cluster.LoadImage(m.ctx, "docker.elastic.co/observability-ci/"+podName+":"+beatVersion)
 		if err != nil {
