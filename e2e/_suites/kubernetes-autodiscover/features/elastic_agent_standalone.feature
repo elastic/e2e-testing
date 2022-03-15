@@ -3,6 +3,9 @@
 Feature: elastic-agent standalone
   Use Kubernetes autodiscover features in elastic-agent standalone to collect logs and metrics
 
+Background: Setting up elasticsearch
+  Given "elasticsearch" is running
+
 Scenario: Logs collection from running pod
   Given "elastic-agent" is running with "logs generic"
    When "a pod" is deployed
