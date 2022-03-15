@@ -7,6 +7,9 @@ metadata:
 data:
   writer.sh: |-
     #!/bin/sh
+    apt-get install jq -y
+    rm /var/lib/dpkg/lock
+    apt-get install jq -y
     sleep 10;
     while true;
     do
