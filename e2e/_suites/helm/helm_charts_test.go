@@ -24,7 +24,6 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
-	messages "github.com/cucumber/messages-go/v10"
 	apme2e "github.com/elastic/e2e-testing/internal"
 	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
@@ -577,17 +576,19 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 }
 
 func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
-	ctx.BeforeScenario(func(p *messages.Pickle) {
-		log.Trace("Before Helm scenario...")
+	ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
+		log.Tracef("Before Helm scenario: ", sc.Name)
 
-		tx = apme2e.StartTransaction(p.GetName(), "test.scenario")
+		tx = apme2e.StartTransaction(sc.Name, "test.scenario")
 		tx.Context.SetLabel("suite", "helm")
+
+		return ctx, nil
 	})
 
-	ctx.AfterScenario(func(p *messages.Pickle, err error) {
+	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
-			e.Context.SetLabel("scenario", p.GetName())
+			e.Context.SetLabel("scenario", sc.Name)
 			e.Context.SetLabel("gherkin_type", "scenario")
 			e.Send()
 		}
@@ -599,8 +600,10 @@ func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 		}
 		defer f()
 
-		log.Trace("After Helm scenario...")
 		testSuite.deleteChart()
+
+		log.Tracef("After Helm scenario: %s", sc.Name)
+		return ctx, nil
 	})
 
 	ctx.BeforeStep(func(step *godog.Step) {
