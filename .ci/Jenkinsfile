@@ -586,7 +586,11 @@ def generateFunctionalTestStep(Map args = [:]){
                 "-t destroy --extra-vars=\"nodeLabel=${platform} nodeUser=${machine.username} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
         }
         withEnv([
+          "ARCHITECTURE=${goArch}",
           "CUCUMBER_REPORTS_PATH=${BASE_DIR}/outputs/${testRunner.ip}",
+          "PLATFORM=${platform}",
+          "SUITE=${suite}",
+          "TAGS=${tags}",
         ]){
           sh ".ci/scripts/generate-cucumber-reports.sh"
         }

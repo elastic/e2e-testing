@@ -12,6 +12,11 @@ readonly DOCKER_IMAGE="docker.elastic.co/observability-ci/cucumber-html-reporter
 CUCUMBER_REPORTS_PATH="${CUCUMBER_REPORTS_PATH:-""}"
 FILES="${CUCUMBER_REPORTS_PATH}/TEST*.json"
 
+ARCHITECTURE="${ARCHITECTURE:-""}"
+PLATFORM="${PLATFORM:-""}"
+SUITE="${SUITE:-""}"
+TAGS="${TAGS:-""}"
+
 main() {
   for f in ${FILES}
   do
@@ -22,6 +27,10 @@ main() {
       -v "$(pwd)/outputs:/use/src/app/out" \
       -e "CHR_APP_jsonFile=in/${filename}" \
       -e "CHR_APP_output=out/${filename}.html" \
+      -e "CHR_APP_metadata_arch=${ARCHITECTURE}" \
+      -e "CHR_APP_metadata_platform=${PLATFORM}" \
+      -e "CHR_APP_metadata_suite=${SUITE}" \
+      -e "CHR_APP_metadata_tags=${TAGS}" \
       ${DOCKER_IMAGE}
   done
 }
