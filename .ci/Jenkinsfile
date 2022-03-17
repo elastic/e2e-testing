@@ -590,18 +590,6 @@ def generateFunctionalTestStep(Map args = [:]){
           testResults: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
         archiveArtifacts allowEmptyArchive: true,
           artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml, outputs/${testRunner.ip}/TEST-*${runId}*.json"
-        cucumber buildStatus: 'UNSTABLE',
-          reportTitle: 'BDD Test Report',
-          fileIncludePattern: "outputs/${testRunner.ip}/TEST-*${runId}*.json",
-          trendsLimit: 10,
-          classifications: [
-              [ 'key': 'Suite', 'value': "${suite}" ],
-              [ 'key': 'Tags', 'value': "${tags}" ],
-              [ 'key': 'Branch', 'value': "${BRANCH_NAME}" ],
-              [ 'key': 'Is_PR', 'value': "${isPR()}" ],
-              [ 'key': 'BuildID', 'value': "${BUILD_ID}" ],
-              [ 'key': 'GoArch', 'value': "${goArch}" ]
-          ]
       }
     }
   }
