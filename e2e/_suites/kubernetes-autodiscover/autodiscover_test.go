@@ -650,6 +650,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	})
 
 	ctx.StepContext().Before(func(ctx context.Context, step *godog.Step) (context.Context, error) {
+		log.Tracef("Before step: %s", step.Text)
 		stepSpan = tx.StartSpan(step.Text, "test.scenario.step", nil)
 		pods.ctx = apm.ContextWithSpan(scenarioCtx, stepSpan)
 
@@ -667,6 +668,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 			stepSpan.End()
 		}
 
+		log.Tracef("After step: %s", st.Text)
 		return ctx, nil
 	})
 
