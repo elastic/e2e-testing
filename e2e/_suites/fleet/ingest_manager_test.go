@@ -93,10 +93,10 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 
 		return ctx, nil
 	})
-	ctx.StepContext().After(func(ctx context.Context, st *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
+	ctx.StepContext().After(func(ctx context.Context, step *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
-			e.Context.SetLabel("step", st.Text)
+			e.Context.SetLabel("step", step.Text)
 			e.Context.SetLabel("gherkin_type", "step")
 			e.Send()
 		}
@@ -105,7 +105,7 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 			stepSpan.End()
 		}
 
-		log.Tracef("After step: %s", st.Text)
+		log.Tracef("After step: %s", step.Text)
 		return ctx, nil
 	})
 
