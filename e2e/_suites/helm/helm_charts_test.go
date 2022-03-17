@@ -7,15 +7,15 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/config"
-	"github.com/elastic/e2e-testing/e2e/steps"
 	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/compose"
 	"github.com/elastic/e2e-testing/internal/helm"
 	"github.com/elastic/e2e-testing/internal/kubectl"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -23,17 +23,12 @@ import (
 	"go.elastic.co/apm"
 
 	"github.com/cucumber/godog"
+	"github.com/cucumber/godog/colors"
 	messages "github.com/cucumber/messages-go/v10"
+	apme2e "github.com/elastic/e2e-testing/internal"
 	log "github.com/sirupsen/logrus"
+	flag "github.com/spf13/pflag"
 )
-
-// developerMode tears down the backend services (the k8s cluster)
-// after a test suite. This is the desired behavior, but when developing, we maybe want to keep
-// them running to speed up the development cycle.
-// It can be overriden by the DEVELOPER_MODE env var
-var developerMode = false
-
-var elasticAPMActive = false
 
 var helmManager helm.Manager
 
@@ -49,10 +44,6 @@ var helmChartVersion = "7.11.2"
 // kubernetesVersion represents the default version used for Kubernetes
 var kubernetesVersion = "1.18.2"
 
-// stackVersion is the version of the stack to use
-// It can be overriden by STACK_VERSION env var
-var stackVersion = "8.0.0-SNAPSHOT"
-
 var testSuite HelmChartTestSuite
 
 var tx *apm.Transaction
@@ -61,31 +52,11 @@ var stepSpan *apm.Span
 func setupSuite() {
 	config.Init()
 
-	developerMode = shell.GetEnvBool("DEVELOPER_MODE")
-	if developerMode {
-		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
-	}
-
-	elasticAPMActive = shell.GetEnvBool("ELASTIC_APM_ACTIVE")
-	if elasticAPMActive {
-		log.WithFields(log.Fields{
-			"apm-environment": shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "local"),
-		}).Info("Current execution will be instrumented 🛠")
-	}
-
 	helmVersion = shell.GetEnv("HELM_VERSION", helmVersion)
 	helmChartVersion = shell.GetEnv("HELM_CHART_VERSION", helmChartVersion)
 	kubernetesVersion = shell.GetEnv("KUBERNETES_VERSION", kubernetesVersion)
 
-	stackVersion = shell.GetEnv("STACK_VERSION", stackVersion)
-	v, err := utils.GetElasticArtifactVersion(stackVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": stackVersion,
-		}).Fatal("Failed to get stack version, aborting")
-	}
-	stackVersion = v
+	common.InitVersions()
 
 	h, err := helm.Factory(helmVersion)
 	if err != nil {
@@ -120,7 +91,7 @@ func (ts *HelmChartTestSuite) aClusterIsRunning() error {
 		log.WithField("error", err).Error("Could not check the status of the cluster.")
 	}
 	if output != ts.ClusterName {
-		return fmt.Errorf("The cluster is not running")
+		return fmt.Errorf("the cluster is not running")
 	}
 
 	log.WithFields(log.Fields{
@@ -146,7 +117,7 @@ func (ts *HelmChartTestSuite) aResourceContainsTheKey(resource string, key strin
 		return err
 	}
 	if output == "" {
-		return fmt.Errorf("There is no %s for the %s chart including %s", resource, ts.Name, key)
+		return fmt.Errorf("there is no %s for the %s chart including %s", resource, ts.Name, key)
 	}
 
 	log.WithFields(log.Fields{
@@ -165,7 +136,7 @@ func (ts *HelmChartTestSuite) aResourceManagesRBAC(resource string) error {
 		return err
 	}
 	if output == "" {
-		return fmt.Errorf("There is no %s for the %s chart", resource, ts.Name)
+		return fmt.Errorf("there is no %s for the %s chart", resource, ts.Name)
 	}
 
 	log.WithFields(log.Fields{
@@ -182,9 +153,9 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 		return err
 	}
 
-	maxTimeout := time.Duration(common.TimeoutFactor) * time.Minute
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 
-	exp := common.GetExponentialBackOff(maxTimeout)
+	exp := utils.GetExponentialBackOff(maxTimeout)
 	retryCount := 1
 
 	checkEndpointsFn := func() error {
@@ -230,7 +201,7 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 
 			retryCount++
 
-			return fmt.Errorf("Error there are no Endpoint subsets for the %s with the selector %s", resourceType, selector)
+			return fmt.Errorf("there are no Endpoint subsets for the %s with the selector %s", resourceType, selector)
 		}
 
 		log.WithFields(log.Fields{
@@ -278,7 +249,7 @@ func (ts *HelmChartTestSuite) checkResources(resourceType, selector string, min 
 
 	items := resources["items"].([]interface{})
 	if len(items) < min {
-		return nil, fmt.Errorf("Error there are not %d %s for resource %s/%s-%s with the selector %s", min, resourceType, resourceType, ts.Name, ts.Name, selector)
+		return nil, fmt.Errorf("there are not %d %s for resource %s/%s-%s with the selector %s", min, resourceType, resourceType, ts.Name, ts.Name, selector)
 	}
 
 	log.WithFields(log.Fields{
@@ -407,7 +378,7 @@ func (ts *HelmChartTestSuite) install(ctx context.Context, chart string) error {
 			"chart": ts.Name,
 		}).Info("Rancher Local Path Provisioner and local-path storage class for Elasticsearch volumes installed")
 
-		maxTimeout := common.TimeoutFactor * 100
+		maxTimeout := utils.TimeoutFactor * 100
 
 		log.Debug("Applying workaround to use Rancher's local-path storage class for Elasticsearch volumes")
 		flags = []string{"--wait", fmt.Sprintf("--timeout=%ds", maxTimeout), "--values", "https://raw.githubusercontent.com/elastic/helm-charts/master/elasticsearch/examples/kubernetes-kind/values.yaml"}
@@ -438,7 +409,7 @@ func (ts *HelmChartTestSuite) podsManagedByDaemonSet() error {
 		return err
 	}
 	if output != ts.getFullName() {
-		return fmt.Errorf("There is no DaemonSet for the %s chart. Expected: %s, Actual: %s", ts.Name, ts.getFullName(), output)
+		return fmt.Errorf("there is no DaemonSet for the %s chart. Expected: %s, Actual: %s", ts.Name, ts.getFullName(), output)
 	}
 
 	log.WithFields(log.Fields{
@@ -455,7 +426,7 @@ func (ts *HelmChartTestSuite) resourceConstraintsAreApplied(constraint string) e
 		return err
 	}
 	if output == "" {
-		return fmt.Errorf("Resource %s constraint for the %s chart is not applied. Actual: %s", constraint, ts.getFullName(), output)
+		return fmt.Errorf("resource %s constraint for the %s chart is not applied. Actual: %s", constraint, ts.getFullName(), output)
 	}
 
 	log.WithFields(log.Fields{
@@ -475,7 +446,7 @@ func (ts *HelmChartTestSuite) resourceWillManageAdditionalPodsForMetricsets(reso
 		return err
 	}
 	if output != ts.getFullName() {
-		return fmt.Errorf("There is no %s for the %s chart. Expected: %s, Actual: %s", resource, ts.Name, ts.getFullName(), output)
+		return fmt.Errorf("there is no %s for the %s chart. Expected: %s, Actual: %s", resource, ts.Name, ts.getFullName(), output)
 	}
 
 	log.WithFields(log.Fields{
@@ -504,7 +475,7 @@ func (ts *HelmChartTestSuite) strategyCanBeUsedForResourceDuringUpdates(strategy
 		return err
 	}
 	if output != strategy {
-		return fmt.Errorf("There is no %s strategy to be used for %s on updates. Actual: %s", strategy, resource, output)
+		return fmt.Errorf("there is no %s strategy to be used for %s on updates. Actual: %s", strategy, resource, output)
 	}
 
 	log.WithFields(log.Fields{
@@ -552,7 +523,7 @@ func (ts *HelmChartTestSuite) volumeMountedWithSubpath(name string, mountPath st
 
 	index := find(names, name)
 	if index == len(names) {
-		return fmt.Errorf("The mounted volume '%s' could not be found: %v", name, names)
+		return fmt.Errorf("the mounted volume '%s' could not be found: %v", name, names)
 	}
 
 	// get mounts paths
@@ -562,7 +533,7 @@ func (ts *HelmChartTestSuite) volumeMountedWithSubpath(name string, mountPath st
 	}
 
 	if mountPath != mountPaths[index] {
-		return fmt.Errorf("The mounted volume for '%s' is not %s. Actual: %s", name, mountPath, mountPaths[index])
+		return fmt.Errorf("the mounted volume for '%s' is not %s. Actual: %s", name, mountPath, mountPaths[index])
 	}
 
 	if subPath != "" {
@@ -573,7 +544,7 @@ func (ts *HelmChartTestSuite) volumeMountedWithSubpath(name string, mountPath st
 		}
 
 		if subPath != subPaths[index] {
-			return fmt.Errorf("The subPath for '%s' is not %s. Actual: %s", name, subPath, subPaths[index])
+			return fmt.Errorf("the subPath for '%s' is not %s. Actual: %s", name, subPath, subPaths[index])
 		}
 	}
 
@@ -594,7 +565,7 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 		return err
 	}
 	if output != ts.getKubeStateMetricsName() {
-		return fmt.Errorf("There is no %s Deployment for the %s chart. Expected: %s, Actual: %s", kubeStateMetrics, ts.Name, ts.getKubeStateMetricsName(), output)
+		return fmt.Errorf("there is no %s Deployment for the %s chart. Expected: %s, Actual: %s", kubeStateMetrics, ts.Name, ts.getKubeStateMetricsName(), output)
 	}
 
 	log.WithFields(log.Fields{
@@ -609,11 +580,18 @@ func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 	ctx.BeforeScenario(func(p *messages.Pickle) {
 		log.Trace("Before Helm scenario...")
 
-		tx = apm.DefaultTracer.StartTransaction(p.GetName(), "test.scenario")
+		tx = apme2e.StartTransaction(p.GetName(), "test.scenario")
 		tx.Context.SetLabel("suite", "helm")
 	})
 
-	ctx.AfterScenario(func(*messages.Pickle, error) {
+	ctx.AfterScenario(func(p *messages.Pickle, err error) {
+		if err != nil {
+			e := apm.DefaultTracer.NewError(err)
+			e.Context.SetLabel("scenario", p.GetName())
+			e.Context.SetLabel("gherkin_type", "scenario")
+			e.Send()
+		}
+
 		f := func() {
 			tx.End()
 
@@ -630,6 +608,13 @@ func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 		testSuite.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
 	})
 	ctx.AfterStep(func(st *godog.Step, err error) {
+		if err != nil {
+			e := apm.DefaultTracer.NewError(err)
+			e.Context.SetLabel("step", st.GetText())
+			e.Context.SetLabel("gherkin_type", "step")
+			e.Send()
+		}
+
 		if stepSpan != nil {
 			stepSpan.End()
 		}
@@ -664,28 +649,11 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 
 		// instrumentation
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = apm.DefaultTracer.StartTransaction("Initialise Helm", "test.suite")
+		suiteTx = apme2e.StartTransaction("Initialise Helm", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("Before Helm test suite", "test.suite.before", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
-
-		elasticAPMEnvironment := shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "ci")
-		if elasticAPMActive && elasticAPMEnvironment == "local" {
-			serviceManager := compose.NewServiceManager()
-
-			env := map[string]string{
-				"stackVersion": stackVersion,
-			}
-
-			err := serviceManager.RunCompose(suiteContext, true, []string{"helm"}, env)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"profile": "metricbeat",
-				}).Warn("Could not run the profile.")
-			}
-			steps.AddAPMServicesForInstrumentation(suiteContext, "helm", stackVersion, true, env)
-		}
 
 		err := testSuite.createCluster(suiteContext, testSuite.KubernetesVersion)
 		if err != nil {
@@ -712,27 +680,17 @@ func InitializeHelmChartTestSuite(ctx *godog.TestSuiteContext) {
 		var suiteParentSpan *apm.Span
 		var suiteContext = context.Background()
 		defer apm.DefaultTracer.Flush(nil)
-		suiteTx = apm.DefaultTracer.StartTransaction("Tear Down Helm", "test.suite")
+		suiteTx = apme2e.StartTransaction("Tear Down Helm", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("After Helm test suite", "test.suite.after", nil)
 		suiteContext = apm.ContextWithSpan(suiteContext, suiteParentSpan)
 		defer suiteParentSpan.End()
 
-		if !developerMode {
+		if !common.DeveloperMode {
 			log.Trace("After Suite...")
 			err := testSuite.destroyCluster(suiteContext)
 			if err != nil {
 				return
-			}
-
-			if elasticAPMActive {
-				serviceManager := compose.NewServiceManager()
-				err := serviceManager.StopCompose(suiteContext, true, []string{"helm"})
-				if err != nil {
-					log.WithFields(log.Fields{
-						"profile": "helm",
-					}).Error("Could not stop the profile.")
-				}
 			}
 		}
 	})
@@ -748,4 +706,32 @@ func toolsAreInstalled() {
 	}
 
 	shell.CheckInstalledSoftware(binaries...)
+}
+
+var opts = godog.Options{
+	Output: colors.Colored(os.Stdout),
+	Format: "progress", // can define default values
+}
+
+func init() {
+	godog.BindCommandLineFlags("godog.", &opts) // godog v0.11.0 (latest)
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	opts.Paths = flag.Args()
+
+	status := godog.TestSuite{
+		Name:                 "godogs",
+		TestSuiteInitializer: InitializeHelmChartTestSuite,
+		ScenarioInitializer:  InitializeHelmChartScenario,
+		Options:              &opts,
+	}.Run()
+
+	// Optional: Run `testing` package's logic besides godog.
+	if st := m.Run(); st > status {
+		status = st
+	}
+
+	os.Exit(status)
 }

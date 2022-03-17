@@ -5,9 +5,9 @@ source /usr/local/bin/bash_standard_lib.sh
 
 readonly GO_VERSION=$(cat .go-version)
 
-DOCKER_IMAGES="centos/systemd:latest
-alehaa/debian-systemd:stretch
-docker.elastic.co/beats/filebeat:7.10.1
+DOCKER_IMAGES="docker.elastic.co/observability-ci/centos-systemd:latest
+docker.elastic.co/observability-ci/debian-systemd:latest
+docker.elastic.co/beats/filebeat:7.13.0-SNAPSHOT
 docker.elastic.co/observability-ci/picklesdoc:2.20.1
 golang:${GO_VERSION}-stretch
 "

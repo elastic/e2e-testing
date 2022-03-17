@@ -12,8 +12,9 @@ readonly ELASTIC_REGISTRY="docker.elastic.co"
 readonly OBSERVABILITY_CI_REGISTRY="${ELASTIC_REGISTRY}/observability-ci"
 
 main() {
-  _build_and_push "centos-systemd"
-  _build_and_push "debian-systemd"
+  local image="${1}"
+
+  _build_and_push ${image}
 }
 
 _build_and_push() {

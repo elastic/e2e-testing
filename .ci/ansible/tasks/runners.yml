@@ -1,0 +1,65 @@
+---
+- name: "Create AWS keypair"
+  ec2_key:
+    name: "e2essh-{{runId}}"
+    key_material: "{{ lookup('file', sshPublicKey) }}"
+    region: us-east-2
+    state: present
+  tags:
+    - provision-stack
+    - start-node
+
+- name: "Create {{nodeLabel}} AWS instances"
+  ec2:
+    wait: yes
+    key_name: "e2essh-{{runId}}"
+    region: us-east-2
+    group: e2e
+    image: '{{nodeImage}}'
+    instance_type: '{{nodeInstanceType}}'
+    instance_tags:
+      BuildURL: "{{buildURL | default('Not running on CI') }}"
+      GitSHA: "{{ gitSha }}"
+      Kind: "{{nodeLabel}}"
+      Name: "e2e-{{nodeLabel}}-{{runId}}"
+      ReaperMark: "e2e-testing-vm"
+    count_tag:
+      Name: "e2e-{{nodeLabel}}-{{runId}}"
+    volumes:
+      - device_name: /dev/sda1
+        volume_type: gp3
+        volume_size: 10
+        delete_on_termination: yes
+      - device_name: /dev/xvda
+        volume_type: gp3
+        volume_size: 200
+        delete_on_termination: yes
+    ebs_optimized: yes
+  register: ec2
+  tags:
+    - provision-stack
+    - start-node
+
+- name: Add AWS host to ssh address list
+  become: no
+  lineinfile:
+    state: present
+    line: "- {{nodeUser}}@{{addr.public_ip}}"
+    insertafter: EOF
+    dest: "{{workspace}}/{{nodeLabel}}-sshhosts"
+    create: yes
+  loop: "{{ ec2.instances }}"
+  loop_control:
+    loop_var: addr
+  tags:
+    - provision-stack
+    - start-node
+
+- name: Wait for SSH to come up
+  wait_for: host={{ nodeItem.public_ip }} port=22 delay=10
+  loop: "{{ ec2.instances }}"
+  loop_control:
+    loop_var: nodeItem
+  tags:
+    - provision-stack
+    - start-node

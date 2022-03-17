@@ -37,9 +37,9 @@ notice:
 		-depsOut ""
 
 .PHONY: unit-test
-unit-test: test-report-setup unit-test-dir-cli unit-test-dir-internal unit-test-dir-e2e
+unit-test: test-report-setup unit-test-dir-cli unit-test-dir-internal unit-test-dir-pkg
 
 # See https://pkg.go.dev/gotest.tools/gotestsum/#readme-junit-xml-output
 .PHONY: unit-test-suite-%
 unit-test-dir-%:
-	cd $* && gotestsum --junitfile "$(PWD)/outputs/TEST-unit-$*.xml" --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...
+	cd $* && go run gotest.tools/gotestsum --junitfile "$(PWD)/outputs/TEST-unit-$*.xml" --format testname -- -count=1 -timeout=$(TEST_TIMEOUT) ./...

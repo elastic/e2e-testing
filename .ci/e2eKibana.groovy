@@ -7,9 +7,13 @@ pipeline {
   environment {
     REPO = 'kibana'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
+    DOCKER_REGISTRY = 'docker.elastic.co'
+    DOCKER_REGISTRY_NAMESPACE = 'observability-ci'
+    DOCKER_ELASTIC_SECRET = 'secret/observability-team/ci/docker-registry/prod'
     ELASTIC_REPO = "elastic/${env.REPO}"
     GITHUB_APP_SECRET = 'secret/observability-team/ci/github-app'
     GITHUB_CHECK_E2E_TESTS_NAME = 'E2E Tests'
+    JOB_GIT_CREDENTIALS = "2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken"
     PIPELINE_LOG_LEVEL = "INFO"
   }
   options {
@@ -43,24 +47,85 @@ pipeline {
     )
   }
   parameters {
-    string(name: 'kibana_pr', defaultValue: "master", description: "PR ID to use to build the Docker image. (e.g 10000)")
+    string(name: 'kibana_pr', defaultValue: "main", description: "PR ID to use to build the Docker image. (e.g 10000)")
   }
   stages {
-    stage('Process GitHub Event') {
-      agent { label 'ubuntu-20' }
+    stage('Initialize'){
+      agent { label 'ubuntu-20 && immutable' }
+      options { skipDefaultCheckout() }
       environment {
         HOME = "${env.WORKSPACE}/${BASE_DIR}"
-        PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
       }
-      steps {
-        checkPermissions()
-        buildKibanaDockerImage(refspec: getBranch())
-        catchError(buildResult: 'UNSTABLE', message: 'Unable to run e2e tests', stageResult: 'FAILURE') {
-          runE2ETests('fleet')
+      stages {
+        stage('Check permissions') {
+          steps {
+            checkPermissions()
+            setEnvVar('DOCKER_TAG', getDockerTagFromPayload())
+          }
+        }
+        stage('Build Linux Images') {
+          options { skipDefaultCheckout() }
+          parallel {
+            stage('AMD build') {
+              options { skipDefaultCheckout() }
+              environment {
+                HOME = "${env.WORKSPACE}/${BASE_DIR}"
+                PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
+              }
+              steps {
+                buildKibanaPlatformImage('amd64')
+              }
+            }
+            stage('ARM build') {
+              agent { label 'arm' }
+              options { skipDefaultCheckout() }
+              environment {
+                HOME = "${env.WORKSPACE}/${BASE_DIR}"
+                PATH = "${env.HOME}/bin:${env.HOME}/node_modules:${env.HOME}/node_modules/.bin:${env.PATH}"
+              }
+              steps {
+                buildKibanaPlatformImage('arm64')
+              }
+            }
+          }
+        }
+        stage('Push multiplatform manifest'){
+          options { skipDefaultCheckout() }
+          environment {
+            HOME = "${env.WORKSPACE}/${BASE_DIR}"
+          }
+          steps {
+            deleteDir()
+            dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
+            pushMultiPlatformManifest()
+          }
+        }
+        stage('Run E2E Tests') {
+          options { skipDefaultCheckout() }
+          steps {
+            catchError(buildResult: 'UNSTABLE', message: 'Unable to run e2e tests', stageResult: 'FAILURE') {
+              runE2ETests('fleet')
+            }
+          }
         }
       }
     }
   }
+}
+
+def buildKibanaPlatformImage(String platform) {
+  // the dockerImageTarget is the needed to append the platform to the multiplatform image:
+  // format: registry/namespace/image-platform:tag
+  // this is the format needed by the push multiplatform tool:
+  //     docker run --rm --mount src=$HOME/.docker,target=/docker-config,type=bind \
+  //         docker.elastic.co/infra/manifest-tool:latest --docker-cfg /docker-config \
+  //         push from-args --platforms linux/amd64,linux/arm64 \
+  //         --template docker.elastic.co/observability-ci/kibana-ARCH:pr97366 \
+  //         --target docker.elastic.co/observability-ci/kibana:pr97366
+  def dockerImageTarget = "${env.DOCKER_REGISTRY}/${env.DOCKER_REGISTRY_NAMESPACE}/kibana-" + platform
+
+  // baseDir could be used here, because there is no git repository
+  buildKibanaDockerImage(refspec: getBranch(), dockerImageTarget: dockerImageTarget, targetTag: "${env.DOCKER_TAG}", baseDir: "${env.BASE_DIR}")
 }
 
 def checkPermissions(){
@@ -79,22 +144,24 @@ def getBranch(){
   return "PR/" + getID()
 }
 
-def getID(){
-  if(env.GT_PR){
-    return "${env.GT_PR}"
-  }
-  
-  return "${params.kibana_pr}"
-}
-
-def runE2ETests(String suite) {
+def getDockerTagFromPayload() {
   // we need a second API request, as the issue_comment API does not retrieve data about the pull request
   // See https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#issue_comment
   def prID = getID()
+
+  if (!prID.isInteger()) {
+    // in the case we are triggering the job for a branch (i.e main, 7.16) we directly use branch name as Docker tag
+    setEnvVar("BASE_REF", prID)
+    return prID
+  }
+
   def token = githubAppToken(secret: "${env.GITHUB_APP_SECRET}")
 
   def pullRequest = githubApiCall(token: token, url: "https://api.github.com/repos/${env.ELASTIC_REPO}/pulls/${prID}")
   def baseRef = pullRequest?.base?.ref
+
+  setEnvVar("BASE_REF", baseRef)
+
   def headSha = pullRequest?.head?.sha
 
   // we are going to use the 'pr12345' tag as default
@@ -104,35 +171,44 @@ def runE2ETests(String suite) {
     dockerTag = headSha
   }
 
-  log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for PR-${prID} using '${dockerTag}' as Docker tag")
+  return dockerTag
+}
+
+def getID(){
+  if(env.GT_PR){
+    return "${env.GT_PR}"
+  }
+
+  return "${params.kibana_pr}"
+}
+
+def pushMultiPlatformManifest() {
+  def dockerTag = "${env.DOCKER_TAG}"
+
+  dir("${BASE_DIR}") {
+    def url = 'https://raw.githubusercontent.com/elastic/e2e-testing/main/.ci/scripts/push-multiplatform-manifest.sh'
+    retryWithSleep(retries: 3, seconds: 5, backoff: true) {
+      sh(label: 'Download script', script: "wget -q -O push-multiplatform-manifest.sh ${url}")
+      sh(label: 'Grant permissions to script', script: "chmod +x push-multiplatform-manifest.sh")
+    }
+
+    sh(label: 'Push multiplatform manifest', script: "./push-multiplatform-manifest.sh kibana ${dockerTag}")
+  }
+}
+
+def runE2ETests(String suite) {
+  def dockerTag = "${env.DOCKER_TAG}"
+
+  log(level: 'DEBUG', text: "Triggering '${suite}' E2E tests for "+getBranch()+" using '${dockerTag}' as Docker tag")
 
   // Kibana's maintenance branches follow the 7.11, 7.12 schema.
-  def branchName = "${baseRef}"
-  if (branchName != "master") {
-    branchName += ".x"
-  }
-  def e2eTestsPipeline = "e2e-tests/e2e-testing-mbp/${branchName}"
-
-  def parameters = [
-    booleanParam(name: 'forceSkipGitChecks', value: true),
-    booleanParam(name: 'forceSkipPresubmit', value: true),
-    booleanParam(name: 'notifyOnGreenBuilds', value: false),
-    booleanParam(name: 'BEATS_USE_CI_SNAPSHOTS', value: true),
-    string(name: 'runTestsSuites', value: suite),
-    string(name: 'GITHUB_CHECK_NAME', value: env.GITHUB_CHECK_E2E_TESTS_NAME),
-    string(name: 'GITHUB_CHECK_REPO', value: env.REPO),
-    string(name: 'KIBANA_VERSION', value: dockerTag),
-  ]
-
-  build(job: "${e2eTestsPipeline}",
-    parameters: parameters,
-    propagate: false,
-    wait: false
-  )
-
-/*
-  // commented out to avoid sending Github statuses to Kibana PRs
-  def notifyContext = "${env.pr_head_sha}"
-  githubNotify(context: "${notifyContext}", description: "${notifyContext} ...", status: 'PENDING', targetUrl: "${env.JENKINS_URL}search/?q=${e2eTestsPipeline.replaceAll('/','+')}")
-*/
+  runE2E(jobName: "${BASE_REF}",
+         disableGitHubCheck: true,
+         gitHubCheckName: env.GITHUB_CHECK_E2E_TESTS_NAME,
+         gitHubCheckRepo: env.REPO,
+         kibanaVersion: dockerTag,
+         notifyOnGreenBuilds: false,
+         runTestsSuites: suite,
+         propagate: true,
+         wait: true)
 }

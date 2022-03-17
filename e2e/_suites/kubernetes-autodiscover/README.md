@@ -60,7 +60,7 @@ template, such as the following ones:
 Any of these steps can be parameterized with an option that can be used to
 select different configuration blocks in the template. For example the following
 step would select the configuration block marked as `monitor annotations` in
-the template: 
+the template:
 ```shell
   `"a service" is deployed with "monitor annotations"
 ```
@@ -90,13 +90,6 @@ with the label `k8s-app`.
 There are other more specific steps. Examples for them can be found in the
 feature files.
 
-
-### Diagnosing test failures
-
-The first step in determining the exact failure is to try and reproduce the test run
-locally, ideally using the DEBUG log level to enhance the log output. Once you've
-done that, look at the output from the test run.
-
 ### Running the tests
 
 1. Clone this repository, say into a folder named `e2e-testing`.
@@ -112,7 +105,8 @@ This is an example of the optional configuration:
    ```shell
    # Depending on the versions used,
    export BEAT_VERSION=7.12.0 # version of beats to use
-   export BEATS_USE_CI_SNAPSHOTS=true # to select snapshots built by beats-ci
+   export ELASTIC_AGENT_VERSION=7.12.0 # version of Elastic Agent to use
+   export GITHUB_CHECK_SHA1=0123456789 # to select snapshots built by beats-ci
    export KUBERNETES_VERSION="1.18.2" # version of the cluster to be passed to kind
    ```
 
@@ -121,22 +115,24 @@ This is an example of the optional configuration:
    - Install Kubectl 1.18 or newer
    - Install Kind 0.10.0 or newer
    - Install Go, using the language version defined in the `.go-version` file at the root directory. We recommend using [GVM](https://github.com/andrewkroh/gvm), same as done in the CI, which will allow you to install multiple versions of Go, setting the Go environment in consequence: `eval "$(gvm 1.15.9)"`
-   - Install godog (from project's root directory): `make -C e2e install-godog`
+   - Godog and other test-related binaries will be installed in their supported versions when the project is first built, thanks to Go modules and Go build system.
 
 4. Run the tests.
    ```shell
    cd e2e/_suites/kubernetes-autodiscover
-   OP_LOG_LEVEL=DEBUG godog
+   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v
    ```
 
    Optionally, you can run only one of the feature files
    ```shell
    cd e2e/_suites/kubernetes-autodiscover
-   OP_LOG_LEVEL=DEBUG godog features/filebeat.feature
+   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@filebeat'
    ```
 
    The tests will take a few minutes to run, spinning up the Kubernetes cluster
    if needed.
+
+## Diagnosing test failures
 
 ### Problems with the environment
 
@@ -151,8 +147,8 @@ created by this suite will follow the pattern `kind-<random uuid>`.
 The temporary configuration file is logged by the suite at the info level. If a
 cluster is created by the suite, you will see something like this:
 ```shell
-INFO[0000] Kubernetes cluster not available, will start one using kind 
-INFO[0000] Using kind v0.10.0 go1.15.7 linux/amd64      
+INFO[0000] Kubernetes cluster not available, will start one using kind
+INFO[0000] Using kind v0.10.0 go1.15.7 linux/amd64
 INFO[0046] Kubeconfig in /tmp/test-252418601/kubeconfig
 ```
 

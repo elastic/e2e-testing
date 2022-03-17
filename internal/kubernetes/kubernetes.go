@@ -11,14 +11,16 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 
-	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/elastic/e2e-testing/internal/utils"
 )
 
 // Control struct for k8s cluster
@@ -67,7 +69,7 @@ func (c Control) createNamespace(ctx context.Context, namespace string) error {
 	// Wait for default account to be available, if not it is not possible to
 	// deploy pods in this namespace.
 	timeout := 60 * time.Second
-	exp := backoff.WithContext(common.GetExponentialBackOff(timeout), ctx)
+	exp := backoff.WithContext(utils.GetExponentialBackOff(timeout), ctx)
 	return backoff.Retry(func() error {
 		_, err := c.Run(ctx, "get", "serviceaccount", "default")
 		if err != nil {
@@ -104,7 +106,7 @@ func (c Control) RunWithStdin(ctx context.Context, stdin io.Reader, runArgs ...s
 		args = append(args, "--namespace", c.Namespace)
 	}
 	args = append(args, runArgs...)
-	return shell.ExecuteWithStdin(ctx, ".", stdin, "kubectl", args...)
+	return shell.ExecuteWithStdin(ctx, ".", stdin, "kubectl", map[string]string{}, args...)
 }
 
 // Cluster kind structure definition
@@ -120,13 +122,30 @@ func (c Cluster) Kubectl() Control {
 	return Control{}.WithConfig(c.kubeconfig)
 }
 
+// Name returns cluster name
+func (c Cluster) Name() string {
+	return c.kindName
+}
+
 func (c Cluster) isAvailable(ctx context.Context) error {
-	_, err := c.Kubectl().Run(ctx, "api-versions")
-	return err
+	out, err := c.Kubectl().Run(ctx, "api-versions")
+	if err != nil {
+		return err
+	}
+	if len(strings.TrimSpace(out)) == 0 {
+		return fmt.Errorf("no api versions?")
+	}
+
+	return nil
 }
 
 // Initialize detect existing cluster contexts, otherwise will create one via Kind
 func (c *Cluster) Initialize(ctx context.Context, kindConfigPath string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Initialising kubernetes cluster", "kind.cluster.initialize", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	err := c.isAvailable(ctx)
 	if err == nil {
 		return nil
@@ -154,6 +173,8 @@ func (c *Cluster) Initialize(ctx context.Context, kindConfigPath string) error {
 		"--config", kindConfigPath,
 		"--kubeconfig", c.kubeconfig,
 	}
+	span.Context.SetLabel("arguments", args)
+
 	if version, ok := os.LookupEnv("KUBERNETES_VERSION"); ok && version != "" {
 		log.Infof("Installing Kubernetes v%s", version)
 		args = append(args, "--image", "kindest/node:v"+version)
@@ -172,6 +193,11 @@ func (c *Cluster) Initialize(ctx context.Context, kindConfigPath string) error {
 
 // Cleanup deletes the kind cluster if available
 func (c *Cluster) Cleanup(ctx context.Context) {
+	span, _ := apm.StartSpanOptions(ctx, "Cleanup cluster", "kind.cluster.cleanup", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	if c.kindName != "" {
 		_, err := shell.Execute(ctx, ".", "kind", "delete", "cluster", "--name", c.kindName)
 		if err != nil {
@@ -192,6 +218,12 @@ func (c *Cluster) Cleanup(ctx context.Context) {
 // It does not check cluster availability because a pull error could be present in the pod,
 // which will need the load of the requested image, causing a chicken-egg error.
 func (c *Cluster) LoadImage(ctx context.Context, image string) error {
+	span, _ := apm.StartSpanOptions(ctx, "Loading image into cluster", "kind.image.load", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("image", image)
+	defer span.End()
+
 	shell.CheckInstalledSoftware("kind")
 
 	loadArgs := []string{"load", "docker-image", image}

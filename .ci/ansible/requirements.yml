@@ -1,0 +1,7 @@
+- src: geerlingguy.pip
+- src: geerlingguy.docker
+- src: geerlingguy.docker_arm
+- src: geerlingguy.helm
+- src: andrewrothstein.kubectl
+- src: andrewrothstein.kind
+- src: gantsign.golang

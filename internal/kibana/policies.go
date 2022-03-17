@@ -5,13 +5,25 @@
 package kibana
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
+	"github.com/Jeffail/gabs/v2"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
+
+// FleetServicePolicy these values comes from the kibana.config.yml file at Fleet's profile dir
+var FleetServicePolicy = Policy{
+	ID:                   "fleet-server-policy",
+	Name:                 "Fleet Server Policy",
+	Description:          "Fleet Server policy",
+	IsDefaultFleetServer: true,
+}
 
 // Policy represents an Ingest Manager policy.
 type Policy struct {
@@ -27,8 +39,14 @@ type Policy struct {
 }
 
 // GetDefaultPolicy gets the default policy or optionally the default fleet policy
-func (c *Client) GetDefaultPolicy(fleetServer bool) (Policy, error) {
-	policies, err := c.ListPolicies()
+// deprecated: will be removed in upcoming releases
+func (c *Client) GetDefaultPolicy(ctx context.Context, fleetServer bool) (Policy, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Getting default policy", "fleet.package-policies.get-default", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	policies, err := c.ListPolicies(ctx)
 	if err != nil {
 		return Policy{}, err
 	}
@@ -46,8 +64,13 @@ func (c *Client) GetDefaultPolicy(fleetServer bool) (Policy, error) {
 }
 
 // ListPolicies returns the list of policies
-func (c *Client) ListPolicies() ([]Policy, error) {
-	statusCode, respBody, err := c.get(fmt.Sprintf("%s/agent_policies", FleetAPI))
+func (c *Client) ListPolicies(ctx context.Context) ([]Policy, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Listing Elastic Agent policies", "fleet.agent-policies.list", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/agent_policies", FleetAPI))
 
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -76,10 +99,15 @@ func (c *Client) ListPolicies() ([]Policy, error) {
 	return resp.Items, nil
 }
 
-// DeleteAllPolicies deletes all policies
-func (c *Client) DeleteAllPolicies(except Policy) {
+// DeleteAllPolicies deletes all policies except fleet_server and system
+func (c *Client) DeleteAllPolicies(ctx context.Context) {
+	span, _ := apm.StartSpanOptions(ctx, "Deleting all agent policy", "fleet.package-policies.delete", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
 	// Cleanup all package policies
-	packagePolicies, err := c.ListPackagePolicies()
+	packagePolicies, err := c.ListPackagePolicies(ctx)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,
@@ -87,8 +115,9 @@ func (c *Client) DeleteAllPolicies(except Policy) {
 	}
 	for _, pkgPolicy := range packagePolicies {
 		// Do not remove the fleet server package integration otherwise fleet server fails to bootstrap
-		if !strings.Contains(pkgPolicy.Name, "fleet_server") && pkgPolicy.PolicyID == except.ID {
-			err = c.DeleteIntegrationFromPolicy(pkgPolicy)
+		if !strings.Contains(pkgPolicy.Name, "fleet_server") && !strings.Contains(pkgPolicy.Name, "system") {
+			log.WithField("pkgPolicy", pkgPolicy.Name).Trace("Removing package policy")
+			err = c.DeleteIntegrationFromPolicy(ctx, pkgPolicy)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"err":           err,
@@ -97,6 +126,60 @@ func (c *Client) DeleteAllPolicies(except Policy) {
 			}
 		}
 	}
+}
+
+// CreatePolicy creates a new policy for agent to utilize
+func (c *Client) CreatePolicy(ctx context.Context) (Policy, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Creating agent policy", "fleet.package-policies.create", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	policyUUID := uuid.New().String()
+
+	reqBody := `{
+		"description": "Test policy ` + policyUUID + `",
+		"namespace": "default",
+		"monitoring_enabled": ["logs", "metrics"],
+		"name": "test-policy-` + policyUUID + `"
+	}`
+
+	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/agent_policies", FleetAPI), []byte(reqBody))
+
+	jsonParsed, err := gabs.ParseJSON([]byte(respBody))
+
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":        err,
+			"responseBody": jsonParsed,
+		}).Error("Could not parse get response into JSON")
+		return Policy{}, err
+	}
+
+	log.WithFields(log.Fields{
+		"status":   statusCode,
+		"err":      err,
+		"reqBody":  reqBody,
+		"respBody": jsonParsed,
+	}).Trace("Policy creation result")
+
+	if statusCode != 200 {
+		return Policy{}, fmt.Errorf("Could not create Fleet's policy, unhandled server error (%d)", statusCode)
+	}
+
+	if err != nil {
+		return Policy{}, errors.Wrap(err, "Could not create Fleet's policy")
+	}
+
+	var resp struct {
+		Item Policy `json:"item"`
+	}
+
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return Policy{}, errors.Wrap(err, "Unable to convert list of new policy to JSON")
+	}
+
+	return resp.Item, nil
 }
 
 // Var represents a single variable at the package or
@@ -119,11 +202,12 @@ type DataStream struct {
 
 // Input represents a package-level input.
 type Input struct {
-	Type    string        `json:"type"`
-	Enabled bool          `json:"enabled"`
-	Streams []interface{} `json:"streams"`
-	Vars    Vars          `json:"vars,omitempty"`
-	Config  interface{}   `json:"config,omitempty"`
+	Type           string      `json:"type"`
+	Enabled        bool        `json:"enabled"`
+	Streams        []Stream    `json:"streams,omitempty"`
+	Vars           Vars        `json:"vars,omitempty"`
+	Config         interface{} `json:"config,omitempty"`
+	CompiledStream interface{} `json:"compiled_stream,omitempty"`
 }
 
 // PackageDataStream represents a request to add a single package's single data stream to a
@@ -140,9 +224,22 @@ type PackageDataStream struct {
 	Package     IntegrationPackage `json:"package"`
 }
 
+// Stream represents a stream for an input
+type Stream struct {
+	DS      DataStream `json:"data_stream"`
+	Enabled bool       `json:"enabled"`
+	ID      string     `json:"id"`
+	Vars    Vars       `json:"vars,omitempty"`
+}
+
 // ListPackagePolicies return list of package policies
-func (c *Client) ListPackagePolicies() ([]PackageDataStream, error) {
-	statusCode, respBody, err := c.get(fmt.Sprintf("%s/package_policies", FleetAPI))
+func (c *Client) ListPackagePolicies(ctx context.Context) ([]PackageDataStream, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Listing package policies", "fleet.package-policies.items", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/package_policies", FleetAPI))
 
 	if err != nil {
 		log.WithFields(log.Fields{

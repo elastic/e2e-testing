@@ -34,24 +34,16 @@ pipeline {
     rateLimitBuilds(throttle: [count: 60, durationName: 'hour', userBoost: true])
     quietPeriod(10)
   }
-  triggers {
-    cron('H H(4-5) * * 1-5')
-  }
   stages {
     stage('Run Tests') {
       steps {
-        build(job: "e2e-tests/e2e-testing-mbp/${env.JOB_BASE_NAME}",
-          parameters: [
-            booleanParam(name: 'forceSkipGitChecks', value: true),
-            booleanParam(name: 'forceSkipPresubmit', value: true),
-            booleanParam(name: 'notifyOnGreenBuilds', value: true),
-            booleanParam(name: 'NIGHTLY_SCENARIOS', value: true),
-            string(name: 'runTestsSuites', value: 'fleet'),
-            string(name: 'SLACK_CHANNEL', value: "elastic-agent"),
-          ],
-          propagate: false,
-          wait: false
-        )
+        runE2E(jobName: "${env.JOB_BASE_NAME}",
+               nightlyScenarios: true,
+               runTestsSuites: 'fleet',
+               slackChannel: 'elastic-agent',
+               notifyOnGreenBuilds: true,
+               propagate: true,
+               wait: true)
       }
     }
   }

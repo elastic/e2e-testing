@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -22,10 +21,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// opComposeBox the tool's static files where we will embed default Docker compose
-// files representing the services and the profiles
-var opComposeBox *packr.Box
-
 // Op the tool's configuration, read from tool's workspace
 var Op *OpConfig
 
@@ -33,7 +28,7 @@ var Op *OpConfig
 type OpConfig struct {
 	Profiles  map[string]Profile `mapstructure:"profiles"`
 	Services  map[string]Service `mapstructure:"services"`
-	Workspace string             `mapstructure:"workspace"`
+	workspace string             `mapstructure:"workspace"`
 }
 
 // GetServiceConfig configuration of a service
@@ -66,53 +61,6 @@ func AvailableProfiles() map[string]Profile {
 	return Op.Profiles
 }
 
-// FileExists checks if a configuration file exists
-func FileExists(configFile string) (bool, error) {
-	return io.Exists(configFile)
-}
-
-// GetComposeFile returns the path of the compose file, looking up the
-// tool's workdir
-func GetComposeFile(isProfile bool, composeName string, composeFileName ...string) (string, error) {
-	if isProfile || composeFileName == nil || composeFileName[0] == "" {
-		composeFileName = []string{"docker-compose.yml"}
-	}
-	serviceType := "services"
-	if isProfile {
-		serviceType = "profiles"
-	}
-
-	composeFilePath := path.Join(Op.Workspace, "compose", serviceType, composeName, composeFileName[0])
-	found, err := io.Exists(composeFilePath)
-	if found && err == nil {
-		log.WithFields(log.Fields{
-			"composeFilePath": composeFilePath,
-			"type":            serviceType,
-		}).Trace("Compose file found at workdir")
-
-		return composeFilePath, nil
-	}
-
-	log.WithFields(log.Fields{
-		"composeFilePath": composeFilePath,
-		"error":           err,
-		"type":            serviceType,
-	}).Trace("Compose file not found. Please make sure the file exists at the location")
-
-	if err != nil {
-		log.WithFields(log.Fields{
-			"composeFileName": composeFileName,
-			"error":           err,
-			"isProfile":       isProfile,
-			"type":            serviceType,
-		}).Error("Could not find compose file.")
-
-		return "", err
-	}
-
-	return composeFilePath, nil
-}
-
 // GetServiceConfig configuration of a service
 func GetServiceConfig(service string) (Service, bool) {
 	return Op.GetServiceConfig(service)
@@ -126,25 +74,15 @@ func Init() {
 
 	configureLogger()
 
-	binaries := []string{
-		"docker",
-		"docker-compose",
+	// Remote provider does not require the use of docker
+	if shell.GetEnv("PROVIDER", "docker") != "remote" {
+		binaries := []string{
+			"docker",
+			"docker-compose",
+		}
+		shell.CheckInstalledSoftware(binaries...)
 	}
-	shell.CheckInstalledSoftware(binaries...)
 
-	initConfig()
-}
-
-// initConfig initialises configuration
-func initConfig() {
-	if Op != nil {
-		return
-	}
-	newConfig(OpDir())
-}
-
-// OpDir returns the directory to copy to
-func OpDir() string {
 	home, err := homedir.Dir()
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -152,7 +90,14 @@ func OpDir() string {
 		}).Fatal("Could not get current user's HOME dir")
 	}
 
-	return filepath.Join(home, ".op")
+	workspace := filepath.Join(home, ".op")
+
+	newConfig(workspace)
+}
+
+// OpDir returns the directory to copy to
+func OpDir() string {
+	return Op.workspace
 }
 
 // PutServiceEnvironment puts the environment variables for the service, replacing "SERVICE_"
@@ -189,8 +134,8 @@ func PutServiceVariantEnvironment(env map[string]string, service string, service
 		Env []EnvVar `yaml:"variants"`
 	}
 
-	versionsPath := path.Join(
-		Op.Workspace, "compose", "services", service, "_meta", "supported-versions.yml")
+	versionsPath := filepath.Join(
+		OpDir(), "compose", "services", service, "_meta", "supported-versions.yml")
 
 	bytes, err := io.ReadFile(versionsPath)
 	if err != nil {
@@ -234,8 +179,8 @@ func checkConfigDirectory(dir string) {
 }
 
 func checkConfigDirs(workspace string) {
-	servicesPath := path.Join(workspace, "compose", "services")
-	profilesPath := path.Join(workspace, "compose", "profiles")
+	servicesPath := filepath.Join(workspace, "compose", "services")
+	profilesPath := filepath.Join(workspace, "compose", "profiles")
 
 	checkConfigDirectory(servicesPath)
 	checkConfigDirectory(profilesPath)
@@ -278,14 +223,14 @@ func newConfig(workspace string) {
 		return
 	}
 
-	checkConfigDirs(workspace)
-
 	opConfig := OpConfig{
 		Services:  map[string]Service{},
 		Profiles:  map[string]Profile{},
-		Workspace: workspace,
+		workspace: workspace,
 	}
 	Op = &opConfig
+
+	checkConfigDirs(Op.workspace)
 
 	box := packFiles(Op)
 	if box == nil {
@@ -301,8 +246,6 @@ func newConfig(workspace string) {
 	// add file system services and profiles
 	readFilesFromFileSystem("services")
 	readFilesFromFileSystem("profiles")
-
-	opComposeBox = box
 }
 
 // Extract packaged profiles and services for use with cli runner
@@ -310,7 +253,7 @@ func newConfig(workspace string) {
 // the default deployments, create a new directory and copy the existing files over.
 func extractProfileServiceConfig(op *OpConfig, box *packr.Box) error {
 	var walkFn = func(s string, file packr.File) error {
-		p := filepath.Join(op.Workspace, "compose", s)
+		p := filepath.Join(OpDir(), "compose", s)
 		dir := filepath.Dir(p)
 		if _, err := os.Stat(dir); os.IsNotExist(err) {
 			err := os.MkdirAll(dir, 0755)
@@ -352,14 +295,14 @@ func extractProfileServiceConfig(op *OpConfig, box *packr.Box) error {
 // configurations/ directory is optional and only needed if docker-compose.yml needs to reference
 // any filelike object within its parent directory
 func packFiles(op *OpConfig) *packr.Box {
-	box := packr.New("Compose Files", "./compose")
+	box := packr.New("Compose Files", "compose")
 	return box
 }
 
 // reads the docker-compose in the workspace, merging them with what it's
 // already boxed in the binary
 func readFilesFromFileSystem(serviceType string) {
-	basePath := path.Join(Op.Workspace, "compose", serviceType)
+	basePath := filepath.Join(OpDir(), "compose", serviceType)
 	files, err := io.ReadDir(basePath)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -378,7 +321,7 @@ func readFilesFromFileSystem(serviceType string) {
 				log.WithFields(log.Fields{
 					"service": name,
 					"path":    composeFilePath,
-				}).Trace("Workspace file")
+				}).Trace("workspace file")
 
 				if serviceType == "services" {
 					// add a service or a profile

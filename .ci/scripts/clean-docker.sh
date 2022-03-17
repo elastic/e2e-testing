@@ -9,9 +9,12 @@ set -euxo pipefail
 # Build and test the app using the install and test make goals.
 #
 
-readonly VERSION="8.0.0-SNAPSHOT"
+readonly VERSION="$(cat $(pwd)/.stack-version)"
 
 main() {
+  # remove running containers
+  docker container rm -fv $(docker container ls -a --quiet) || true
+
   # refresh docker images
   cat <<EOF >.tmp_images
 docker.elastic.co/beats/elastic-agent:${VERSION}

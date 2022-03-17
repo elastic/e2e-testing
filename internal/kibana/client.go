@@ -6,12 +6,18 @@ package kibana
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 
+	"github.com/Jeffail/gabs/v2"
+	"github.com/elastic/e2e-testing/internal/shell"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // Client is responsible for exporting dashboards from Kibana.
@@ -23,9 +29,9 @@ type Client struct {
 
 // NewClient creates a new instance of the client.
 func NewClient() (*Client, error) {
-	host := BaseURL
-	username := "elastic"
-	password := "changeme"
+	host := getBaseURL()
+	username := "admin"
+	password := shell.GetEnv("KIBANA_PASSWORD", "changeme")
 
 	return &Client{
 		host:     host,
@@ -34,23 +40,31 @@ func NewClient() (*Client, error) {
 	}, nil
 }
 
-func (c *Client) get(resourcePath string) (int, []byte, error) {
-	return c.sendRequest(http.MethodGet, resourcePath, nil)
+func (c *Client) get(ctx context.Context, resourcePath string) (int, []byte, error) {
+	return c.sendRequest(ctx, http.MethodGet, resourcePath, nil)
 }
 
-func (c *Client) post(resourcePath string, body []byte) (int, []byte, error) {
-	return c.sendRequest(http.MethodPost, resourcePath, body)
+func (c *Client) post(ctx context.Context, resourcePath string, body []byte) (int, []byte, error) {
+	return c.sendRequest(ctx, http.MethodPost, resourcePath, body)
 }
 
-func (c *Client) put(resourcePath string, body []byte) (int, []byte, error) {
-	return c.sendRequest(http.MethodPut, resourcePath, body)
+func (c *Client) put(ctx context.Context, resourcePath string, body []byte) (int, []byte, error) {
+	return c.sendRequest(ctx, http.MethodPut, resourcePath, body)
 }
 
-func (c *Client) delete(resourcePath string) (int, []byte, error) {
-	return c.sendRequest(http.MethodDelete, resourcePath, nil)
+func (c *Client) delete(ctx context.Context, resourcePath string) (int, []byte, error) {
+	return c.sendRequest(ctx, http.MethodDelete, resourcePath, nil)
 }
 
-func (c *Client) sendRequest(method, resourcePath string, body []byte) (int, []byte, error) {
+func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, body []byte) (int, []byte, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Sending HTTP request", "http.request."+method, apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("method", method)
+	span.Context.SetLabel("base", c.host)
+	span.Context.SetLabel("resourcePath", resourcePath)
+	defer span.End()
+
 	reqBody := bytes.NewReader(body)
 	base, err := url.Parse(c.host)
 	if err != nil {
@@ -64,9 +78,12 @@ func (c *Client) sendRequest(method, resourcePath string, body []byte) (int, []b
 
 	u := base.ResolveReference(rel)
 
+	jsonParsed, _ := gabs.ParseJSON([]byte(body))
+
 	log.WithFields(log.Fields{
 		"method": method,
 		"url":    u,
+		"body":   jsonParsed,
 	}).Trace("Kibana API Query")
 
 	req, err := http.NewRequest(method, u.String(), reqBody)
@@ -76,7 +93,7 @@ func (c *Client) sendRequest(method, resourcePath string, body []byte) (int, []b
 
 	req.SetBasicAuth(c.username, c.password)
 	req.Header.Add("content-type", "application/json")
-	req.Header.Add("kbn-xsrf", "e2e-tests")
+	req.Header.Add("kbn-xsrf", fmt.Sprintf("e2e-tests-%s", uuid.New().String()))
 
 	client := http.Client{}
 	resp, err := client.Do(req)

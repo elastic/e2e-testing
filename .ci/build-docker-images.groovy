@@ -25,7 +25,7 @@ pipeline {
     quietPeriod(10)
   }
   parameters {
-    string(name: 'BRANCH_SPECIFIER', defaultValue: 'master', description: 'It would not be defined on the first build, see JENKINS-41929.')
+    string(name: 'BRANCH_SPECIFIER', defaultValue: 'main', description: 'It would not be defined on the first build, see JENKINS-41929.')
   }
   triggers {
     cron 'H H(4-5) * * 1-5'
@@ -58,7 +58,8 @@ pipeline {
         dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
         dir("${BASE_DIR}") {
           withEnv(["ARCH=amd64"]) {
-            sh(label: 'Build AMD images', script: '.ci/scripts/build-docker-images.sh')
+            sh(label: 'Build Centos AMD images', script: '.ci/scripts/build-docker-images.sh centos-systemd')
+            sh(label: 'Build Debian AMD images', script: '.ci/scripts/build-docker-images.sh debian-systemd')
           }
         }
       }
@@ -74,7 +75,8 @@ pipeline {
         dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
         dir("${BASE_DIR}") {
           withEnv(["ARCH=arm64"]) {
-            sh(label: 'Build ARM images', script: '.ci/scripts/build-docker-images.sh')
+            sh(label: 'Build Centos ARM images', script: '.ci/scripts/build-docker-images.sh centos-systemd')
+            sh(label: 'Build Debian ARM images', script: '.ci/scripts/build-docker-images.sh debian-systemd')
           }
         }
       }
@@ -89,7 +91,8 @@ pipeline {
         unstash 'source'
         dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
         dir("${BASE_DIR}") {
-          sh(label: 'Push multiplatform manifest', script: '.ci/scripts/push-multiplatform-manifest.sh')
+          sh(label: 'Push multiplatform manifest', script: '.ci/scripts/push-multiplatform-manifest.sh centos-systemd latest')
+          sh(label: 'Push multiplatform manifest', script: '.ci/scripts/push-multiplatform-manifest.sh debian-systemd latest')
         }
       }
     }

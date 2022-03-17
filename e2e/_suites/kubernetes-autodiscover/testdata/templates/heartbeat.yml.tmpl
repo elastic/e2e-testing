@@ -41,6 +41,8 @@ data:
     output.file:
       path: /tmp
       filename: beats-events
+      rotate_every_kb: 100000
+      rotate_on_startup: false
 ---
 # Deploy singleton instance in the whole cluster for some unique data sources, like kube-state-metrics
 apiVersion: apps/v1
@@ -70,6 +72,8 @@ spec:
           "-e",
         ]
         env:
+        - name: BEAT_SETUID_AS
+          value: ""
         - name: NODE_NAME
           valueFrom:
             fieldRef:

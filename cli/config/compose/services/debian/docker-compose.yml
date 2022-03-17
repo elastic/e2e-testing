@@ -1,8 +1,0 @@
-version: '2.4'
-services:
-  debian:
-    image: debian:${debianTag:-9}
-    container_name: ${debianContainerName} 
-    entrypoint: tail -f /dev/null
-    volumes:
-      - ${debianAgentBinarySrcPath:-.}:${debianAgentBinaryTargetPath:-/tmp}

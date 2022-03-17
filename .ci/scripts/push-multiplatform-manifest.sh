@@ -11,16 +11,19 @@ readonly MANIFEST_TOOL_IMAGE="${ELASTIC_REGISTRY}/infra/manifest-tool:latest"
 readonly OBSERVABILITY_CI_REGISTRY="${ELASTIC_REGISTRY}/observability-ci"
 
 main() {
-  _push_multiplatform_manifest "centos-systemd"
-  _push_multiplatform_manifest "debian-systemd"
+  local image="${1}"
+  local tag="${2}"
+
+  _push_multiplatform_manifest ${image} ${tag}
 }
 
 _push_multiplatform_manifest() {
   local image="${1}"
+  local tag="${2}"
 
-  local fqn="${OBSERVABILITY_CI_REGISTRY}/${image}:latest"
+  local fqn="${OBSERVABILITY_CI_REGISTRY}/${image}:${tag}"
   # the '-ARCH' placeholder will be replaced with the values in the '--platforms' argument
-  local templateFqn="${OBSERVABILITY_CI_REGISTRY}/${image}-ARCH:latest"
+  local templateFqn="${OBSERVABILITY_CI_REGISTRY}/${image}-ARCH:${tag}"
 
   docker run --rm \
     --mount src=${HOME}/.docker,target=/docker-config,type=bind \

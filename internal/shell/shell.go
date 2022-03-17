@@ -7,6 +7,7 @@ package shell
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -34,7 +35,16 @@ func CheckInstalledSoftware(binaries ...string) {
 // - command: represents the name of the binary to execute
 // - args: represents the arguments to be passed to the command
 func Execute(ctx context.Context, workspace string, command string, args ...string) (string, error) {
-	return ExecuteWithStdin(ctx, workspace, nil, command, args...)
+	return ExecuteWithEnv(ctx, workspace, command, map[string]string{}, args...)
+}
+
+// ExecuteWithEnv executes a command in the machine the program is running
+// - workspace: represents the location where to execute the command
+// - command: represents the name of the binary to execute
+// - env: represents the environment variables to be passed to the command
+// - args: represents the arguments to be passed to the command
+func ExecuteWithEnv(ctx context.Context, workspace string, command string, env map[string]string, args ...string) (string, error) {
+	return ExecuteWithStdin(ctx, workspace, nil, command, env, args...)
 }
 
 // ExecuteWithStdin executes a command in the machine the program is running
@@ -42,20 +52,35 @@ func Execute(ctx context.Context, workspace string, command string, args ...stri
 // - stdin: reader to use as standard input for the command
 // - command: represents the name of the binary to execute
 // - args: represents the arguments to be passed to the command
-func ExecuteWithStdin(ctx context.Context, workspace string, stdin io.Reader, command string, args ...string) (string, error) {
+func ExecuteWithStdin(ctx context.Context, workspace string, stdin io.Reader, command string, env map[string]string, args ...string) (string, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Executing shell command", "shell.command.execute", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
+	span.Context.SetLabel("workspace", workspace)
+	span.Context.SetLabel("command", command)
+	span.Context.SetLabel("arguments", args)
+	span.Context.SetLabel("environment", env)
 	defer span.End()
 
 	log.WithFields(log.Fields{
 		"command": command,
 		"args":    args,
+		"env":     env,
 	}).Trace("Executing command")
 
 	cmd := exec.Command(command, args[0:]...)
 
 	cmd.Dir = workspace
+
+	if len(env) > 0 {
+		environment := os.Environ()
+
+		for k, v := range env {
+			environment = append(environment, fmt.Sprintf("%s=%s", k, v))
+		}
+
+		cmd.Env = environment
+	}
 
 	var out bytes.Buffer
 	var stderr bytes.Buffer
@@ -71,6 +96,7 @@ func ExecuteWithStdin(ctx context.Context, workspace string, stdin io.Reader, co
 			"baseDir": workspace,
 			"command": command,
 			"args":    args,
+			"env":     env,
 			"error":   err,
 			"stderr":  stderr.String(),
 		}).Error("Error executing command")

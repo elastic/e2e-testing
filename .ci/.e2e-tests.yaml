@@ -1,71 +1,59 @@
 ---
 SUITES:
   - suite: "helm"
-    platforms:
-      - "ubuntu-18.04"
+    provider: "docker"
     scenarios:
       - name: "APM Server"
         tags: "apm-server"
+        platforms: ["debian_amd64"]
       - name: "Filebeat"
         tags: "filebeat"
+        platforms: ["debian_amd64"]
       - name: "Metricbeat"
         tags: "metricbeat"
+        platforms: ["debian_amd64"]
   - suite: "fleet"
-    platforms:
-      - "ubuntu-18.04"
     scenarios:
       - name: "Fleet"
-        pullRequestFilter: " && ~debian"
         tags: "fleet_mode_agent"
-      - name: "Endpoint Integration"
-        pullRequestFilter: " && ~debian"
-        tags: "agent_endpoint_integration"
-      - name: "Stand-alone"
-        pullRequestFilter: " && ~ubi8"
-        tags: "stand_alone_agent"
+        platforms: ["centos8_arm64", "centos8_amd64", "debian_arm64", "debian_amd64", "sles15"]
+      - name: "Integrations"
+        tags: "integrations"
+        platforms: ["debian_arm64", "debian_amd64", "sles15"]
+      - name: "APM Integration"
+        tags: "apm_server"
+        platforms: ["debian_amd64"]
+        provider: "docker"
+      - name: "Linux Integration"
+        tags: "linux_integration"
+        platforms: ["debian_arm64", "debian_amd64", "sles15"]
+      # - name: "Permissions Output change"
+      #   tags: "permission_change"
+      #   platforms: ["debian_arm64", "debian_amd64", "sles15"]
+      # - name: "System Integration"
+      #   tags: "system_integration"
+      #   platforms: ["debian_arm64", "debian_amd64", "sles15"]
+      # - name: "Stand-alone"
+      #   tags: "stand_alone_agent"
+      #   platforms: ["fleet_elastic_pkg"]
       - name: "Backend Processes"
-        pullRequestFilter: " && ~debian"
         tags: "backend_processes"
-  - suite: "metricbeat"
-    platforms:
-      - "ubuntu-18.04"
-    scenarios:
-      - name: "ActiveMQ"
-        tags: "integrations && activeMQ"
-      - name: "Apache"
-        tags: "integrations && apache"
-      - name: "Ceph"
-        tags: "integrations && ceph"
-      - name: "Dropwizard"
-        tags: "integrations && dropwizard"
-      - name: "Envoy Proxy"
-        tags: "integrations && envoyproxy"
-      - name: "etcd"
-        tags: "integrations && etcd"
-      - name: "HAProxy"
-        tags: "integrations && haproxy"
-      - name: "Kafka"
-        tags: "integrations && kafka"
-      - name: "Metricbeat"
-        tags: "metricbeat"
-      - name: "MySQL"
-        pullRequestFilter: " && ~old_versions"
-        tags: "integrations && mysql"
-      - name: "Oracle"
-        tags: "integrations && oracle"
-      - name: "Redis"
-        tags: "integrations && redis"
-      - name: "Redis Enterprise"
-        tags: "integrations && redisenterprise"
-      - name: "vSphere"
-        tags: "integrations && vsphere"
+        platforms: ["debian_arm64", "debian_amd64", "sles15"]
+      - name: "Beats Background Processes"
+        tags: "running_on_beats"
+        platforms: ["debian_arm64", "debian_amd64", "oracle_linux8", "sles15"]
   - suite: "kubernetes-autodiscover"
-    platforms:
-      - "ubuntu-18.04"
+    provider: "docker"
     scenarios:
+      - name: "kubernetes autodiscover with elastic-agent"
+        tags: "elastic-agent"
+        platforms: ["debian_amd64"]
       - name: "kubernetes autodiscover with filebeat"
-        tags: "kubernetes-autodiscover && filebeat"
+        tags: "filebeat"
+        platforms: ["debian_amd64"]
       - name: "kubernetes autodiscover with heartbeat"
-        tags: "kubernetes-autodiscover && heartbeat"
+        tags: "heartbeat"
+        platforms: ["debian_amd64"]
       - name: "kubernetes autodiscover with metricbeat"
-        tags: "kubernetes-autodiscover && metricbeat"
+        tags: "metricbeat"
+        platforms: ["debian_amd64"]
