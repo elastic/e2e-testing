@@ -24,6 +24,9 @@ SUITES:
         tags: "apm_server"
         platforms: ["debian_amd64"]
         provider: "docker"
+      - name: "Endpoint Integration"
+        tags: "agent_endpoint_integration"
+        platforms: ["centos8_amd64", "debian_amd64"]
       - name: "Linux Integration"
         tags: "linux_integration"
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
