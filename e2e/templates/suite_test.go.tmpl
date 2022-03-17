@@ -11,10 +11,10 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
-	messages "github.com/cucumber/messages-go/v10"
+	messages "github.com/cucumber/messages-go/v16"
 	apme2e "github.com/elastic/e2e-testing/internal"
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/pflag" // godog v0.11.0 (latest)
+	"github.com/spf13/pflag" // godog v0.12.4 (latest)
 	"go.elastic.co/apm"
 )
 
@@ -35,7 +35,7 @@ var opts = godog.Options{
 }
 
 func init() {
-	godog.BindCommandLineFlags("godog.", &opts) // godog v0.11.0 (latest)
+	godog.BindCommandLineFlags("godog.", &opts) // godog v0.12.4 (latest)
 }
 
 func TestMain(m *testing.M) {
