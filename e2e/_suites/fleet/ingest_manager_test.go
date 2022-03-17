@@ -86,14 +86,16 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 		return ctx, nil
 	})
 
-	ctx.BeforeStep(func(step *godog.Step) {
-		stepSpan = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
+	ctx.StepContext().Before(func(ctx context.Context, step *godog.Step) (context.Context, error) {
+		stepSpan = tx.StartSpan(step.Text, "test.scenario.step", nil)
 		imts.Fleet.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
+
+		return ctx, nil
 	})
-	ctx.AfterStep(func(st *godog.Step, err error) {
+	ctx.StepContext().After(func(ctx context.Context, st *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
-			e.Context.SetLabel("step", st.GetText())
+			e.Context.SetLabel("step", st.Text)
 			e.Context.SetLabel("gherkin_type", "step")
 			e.Send()
 		}
@@ -101,6 +103,8 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 		if stepSpan != nil {
 			stepSpan.End()
 		}
+
+		return ctx, nil
 	})
 
 	ctx.Step(`^the "([^"]*)" process is in the "([^"]*)" state on the host$`, imts.processStateOnTheHost)
