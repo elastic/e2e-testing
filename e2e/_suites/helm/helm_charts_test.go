@@ -577,7 +577,7 @@ func (ts *HelmChartTestSuite) willRetrieveSpecificMetrics(chartName string) erro
 
 func InitializeHelmChartScenario(ctx *godog.ScenarioContext) {
 	ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
-		log.Tracef("Before Helm scenario: ", sc.Name)
+		log.Tracef("Before Helm scenario: %s", sc.Name)
 
 		tx = apme2e.StartTransaction(sc.Name, "test.scenario")
 		tx.Context.SetLabel("suite", "helm")
