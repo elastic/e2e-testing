@@ -587,7 +587,7 @@ def generateFunctionalTestStep(Map args = [:]){
         }
         withEnv([
           "ARCHITECTURE=${goArch}",
-          "CUCUMBER_REPORTS_PATH=${BASE_DIR}/outputs/${testRunner.ip}",
+          "CUCUMBER_REPORTS_PATH=outputs/${testRunner.ip}",
           "PLATFORM=${platform}",
           "SUITE=${suite}",
           "TAGS=${tags}",
