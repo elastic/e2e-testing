@@ -16,7 +16,8 @@ SUITE="${SUITE:-""}"
 TAGS="${TAGS:-""}"
 
 main() {
-  for f in "${CUCUMBER_REPORTS_PATH}/TEST*.json"
+  find "${CUCUMBER_REPORTS_PATH}" -name 'TEST*.json' -print0 |
+  while IFS= read -r -d '' f
   do
     filename="$(basename ${f})"
     echo "parsing ${filename}"

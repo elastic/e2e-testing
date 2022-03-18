@@ -593,7 +593,7 @@ def generateFunctionalTestStep(Map args = [:]){
           "TAGS=${tags}",
         ]){
           dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
-          sh ".ci/scripts/generate-cucumber-reports.sh"
+          sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
         }
         junit allowEmptyResults: true,
           keepLongStdio: true,
