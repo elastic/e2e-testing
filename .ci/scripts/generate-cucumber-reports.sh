@@ -10,15 +10,13 @@ set -euxo pipefail
 readonly DOCKER_IMAGE="docker.elastic.co/observability-ci/cucumber-html-reporter:latest"
 
 CUCUMBER_REPORTS_PATH="${CUCUMBER_REPORTS_PATH:-""}"
-FILES="${CUCUMBER_REPORTS_PATH}/TEST*.json"
-
 ARCHITECTURE="${ARCHITECTURE:-""}"
 PLATFORM="${PLATFORM:-""}"
 SUITE="${SUITE:-""}"
 TAGS="${TAGS:-""}"
 
 main() {
-  for f in ${FILES}
+  for f in "${CUCUMBER_REPORTS_PATH}/TEST*.json"
   do
     filename="$(basename ${f})"
     echo "parsing ${filename}"
