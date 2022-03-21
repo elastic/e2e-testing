@@ -573,6 +573,10 @@ def generateFunctionalTestStep(Map args = [:]){
              testRunner,
              "e2e-testing/outputs/TEST-*${runId}*.xml",
              "outputs/${testRunner.ip}/.")
+        scpr("${env.WORKSPACE}",
+             testRunner,
+             "e2e-testing/outputs/TEST-*${runId}*.json",
+             "outputs/${testRunner.ip}/.")
         sh "ls -l outputs/${testRunner.ip}"
         if (params.DEVELOPER_MODE) {
           log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunner.ip}. ")
@@ -581,11 +585,21 @@ def generateFunctionalTestStep(Map args = [:]){
                 runId,
                 "-t destroy --extra-vars=\"nodeLabel=${platform} nodeUser=${machine.username} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
         }
+        withEnv([
+          "ARCHITECTURE=${goArch}",
+          "CUCUMBER_REPORTS_PATH=outputs/${testRunner.ip}",
+          "PLATFORM=${platform}",
+          "SUITE=${suite}",
+          "TAGS=${tags}",
+        ]){
+          dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
+          sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
+        }
         junit allowEmptyResults: true,
           keepLongStdio: true,
           testResults: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
         archiveArtifacts allowEmptyArchive: true,
-          artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
+          artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml, outputs/${testRunner.ip}/TEST-*${runId}*.json, outputs/${testRunner.ip}/TEST-*${runId}*.json.html"
       }
     }
   }

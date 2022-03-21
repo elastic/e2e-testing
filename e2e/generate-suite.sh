@@ -14,6 +14,7 @@ SUITE="$1"
 
 export LOWER_SUITE=$(echo ${SUITE} | tr A-Z a-z)
 export CAPITAL_SUITE=$(echo ${LOWER_SUITE^})
+export STACK_VERSION=$(cat ../.stack-version)
 
 mkdir -p _suites/${LOWER_SUITE}
 echo "include ../../commons-test.mk" > _suites/${LOWER_SUITE}/Makefile

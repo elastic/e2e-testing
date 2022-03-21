@@ -21,7 +21,6 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
-	messages "github.com/cucumber/messages-go/v10"
 	apme2e "github.com/elastic/e2e-testing/internal"
 	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
@@ -618,22 +617,24 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 
 	var kubectl kubernetes.Control
 	var pods podsManager
-	ctx.BeforeScenario(func(p *messages.Pickle) {
-		tx = apme2e.StartTransaction(p.GetName(), "test.scenario")
+	ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
+		tx = apme2e.StartTransaction(sc.Name, "test.scenario")
 		tx.Context.SetLabel("suite", "k8s Autodiscover")
 
 		kubectl = cluster.Kubectl().WithNamespace(scenarioCtx, "")
 		if kubectl.Namespace != "" {
-			log.Debugf("Running scenario %s in namespace: %s", p.Name, kubectl.Namespace)
+			log.Debugf("Running scenario %s in namespace: %s", sc.Name, kubectl.Namespace)
 		}
 		pods.kubectl = kubectl
 		pods.ctx = scenarioCtx
 		log.DeferExitHandler(func() { kubectl.Cleanup(scenarioCtx) })
+
+		return ctx, nil
 	})
-	ctx.AfterScenario(func(p *messages.Pickle, err error) {
+	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
-			e.Context.SetLabel("scenario", p.GetName())
+			e.Context.SetLabel("scenario", sc.Name)
 			e.Context.SetLabel("gherkin_type", "scenario")
 			e.Send()
 		}
@@ -647,23 +648,32 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 
 		kubectl.Cleanup(scenarioCtx)
 		cancel()
+
+		return ctx, nil
 	})
 
-	ctx.BeforeStep(func(step *godog.Step) {
-		stepSpan = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
+	ctx.StepContext().Before(func(ctx context.Context, step *godog.Step) (context.Context, error) {
+		log.Tracef("Before step: %s", step.Text)
+		stepSpan = tx.StartSpan(step.Text, "test.scenario.step", nil)
 		pods.ctx = apm.ContextWithSpan(scenarioCtx, stepSpan)
+
+		return ctx, nil
 	})
-	ctx.AfterStep(func(st *godog.Step, err error) {
+	ctx.StepContext().After(func(ctx context.Context, step *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
-			e.Context.SetLabel("step", st.GetText())
+			e.Context.SetLabel("step", step.Text)
 			e.Context.SetLabel("gherkin_type", "step")
+			e.Context.SetLabel("step_status", status.String())
 			e.Send()
 		}
 
 		if stepSpan != nil {
 			stepSpan.End()
 		}
+
+		log.Tracef("After step (%s): %s", status.String(), step.Text)
+		return ctx, nil
 	})
 
 	ctx.Step(`^"([^"]*)" have passed$`, func(d string) error { return waitDuration(scenarioCtx, d) })
