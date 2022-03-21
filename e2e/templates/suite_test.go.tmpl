@@ -11,10 +11,10 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
-	messages "github.com/cucumber/messages-go/v10"
+	messages "github.com/cucumber/messages-go/v16"
 	apme2e "github.com/elastic/e2e-testing/internal"
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/pflag" // godog v0.11.0 (latest)
+	"github.com/spf13/pflag" // godog v0.12.4 (latest)
 	"go.elastic.co/apm"
 )
 
@@ -35,7 +35,7 @@ var opts = godog.Options{
 }
 
 func init() {
-	godog.BindCommandLineFlags("godog.", &opts) // godog v0.11.0 (latest)
+	godog.BindCommandLineFlags("godog.", &opts) // godog v0.12.4 (latest)
 }
 
 func TestMain(m *testing.M) {
@@ -58,17 +58,19 @@ func TestMain(m *testing.M) {
 }
 
 func Initialize${CAPITAL_SUITE}Scenarios(ctx *godog.ScenarioContext) {
-	ctx.BeforeScenario(func(p *messages.Pickle) {
-		log.Trace("Before ${CAPITAL_SUITE} scenario...")
+	ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
+		log.Tracef("Before ${CAPITAL_SUITE} scenario: %s", sc.Name)
 
-		tx = apme2e.StartTransaction(p.GetName(), "test.scenario")
+		tx = apme2e.StartTransaction(sc.Name, "test.scenario")
 		tx.Context.SetLabel("suite", "${CAPITAL_SUITE}")
+
+		return ctx, nil
 	})
 
-	ctx.AfterScenario(func(p *messages.Pickle, err error) {
+	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
-			e.Context.SetLabel("scenario", p.GetName())
+			e.Context.SetLabel("scenario", sc.Name)
 			e.Context.SetLabel("gherkin_type", "scenario")
 			e.Send()
 		}
@@ -80,14 +82,18 @@ func Initialize${CAPITAL_SUITE}Scenarios(ctx *godog.ScenarioContext) {
 		}
 		defer f()
 
-		log.Trace("After ${CAPITAL_SUITE} scenario...")
+		log.Tracef("After ${CAPITAL_SUITE} scenario: %s", sc.Name)
+		return ctx, nil
 	})
 
-	ctx.BeforeStep(func(step *godog.Step) {
+	ctx.StepContext().Before(func(ctx context.Context, step *godog.Step) (context.Context, error) {
+		log.Tracef("Before step: %s", step.Text)
 		stepSpan = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
 		testSuite.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
+
+		return ctx, nil
 	})
-	ctx.AfterStep(func(st *godog.Step, err error) {
+	ctx.StepContext().After(func(ctx context.Context, step *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
 			e.Context.SetLabel("step", st.GetText())
@@ -98,6 +104,9 @@ func Initialize${CAPITAL_SUITE}Scenarios(ctx *godog.ScenarioContext) {
 		if stepSpan != nil {
 			stepSpan.End()
 		}
+
+		log.Tracef("After step (%s): %s", status.String(), step.Text)
+		return ctx, nil
 	})
 }
 
