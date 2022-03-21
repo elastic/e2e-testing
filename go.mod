@@ -6,8 +6,8 @@ require (
 	github.com/Flaque/filet v0.0.0-20201012163910-45f684403088
 	github.com/Jeffail/gabs/v2 v2.6.0
 	github.com/cenkalti/backoff/v4 v4.1.1
-	github.com/cucumber/godog v0.11.0
-	github.com/cucumber/messages-go/v10 v10.0.3 // indirect
+	github.com/cucumber/godog v0.12.4
+	github.com/cucumber/messages-go/v16 v16.0.1 // indirect
 	github.com/docker/cli v20.10.11+incompatible
 	github.com/docker/docker v20.10.12+incompatible
 	github.com/elastic/elastic-package v0.36.0
@@ -28,6 +28,7 @@ require (
 	go.elastic.co/apm v1.13.0
 	go.elastic.co/apm/module/apmelasticsearch v1.10.0
 	go.elastic.co/apm/module/apmhttp v1.10.0
+	go.elastic.co/go-licence-detector v0.5.0 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/gotestsum v1.7.0

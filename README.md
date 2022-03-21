@@ -15,13 +15,8 @@ This repository contains:
     - [Fleet](./e2e/_suites/fleet)
         - Stand-Alone mode
         - Fleet mode
-<<<<<<< HEAD
-1. A [collection of utilities and helpers used in tests](../internal).
-=======
-        - and more!
-
 4. A [collection of utilities and helpers used in tests](../internal).
->>>>>>> 2ddece66 (chore: define provider for each test suite (#2213))
+        - and more!
 
 > If you want to start writing E2E tests, please jump to our quickstart guide [here](./e2e/QUICKSTART.md).
 

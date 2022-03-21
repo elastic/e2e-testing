@@ -34,4 +34,4 @@ mkdir -p outputs
 
 REPORT="$(pwd)/outputs/TEST-${GOARCH}-${SUITE}"
 
-TAGS="${TAGS}" FORMAT=junit:${REPORT}.xml GOARCH=${GOARCH} STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} ELASTIC_AGENT_VERSION=${ELASTIC_AGENT_VERSION} make --no-print-directory -C e2e/_suites/${SUITE} functional-test
+TAGS="${TAGS}" FORMAT=pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml GOARCH=${GOARCH} STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} ELASTIC_AGENT_VERSION=${ELASTIC_AGENT_VERSION} make --no-print-directory -C e2e/_suites/${SUITE} functional-test
