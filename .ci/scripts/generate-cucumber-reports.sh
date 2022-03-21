@@ -23,7 +23,7 @@ main() {
     echo "parsing ${filename}"
     docker run --rm \
       -v "$(pwd)/${CUCUMBER_REPORTS_PATH}:/use/src/app/in" \
-      -v "$(pwd)/outputs:/use/src/app/out" \
+      -v "$(pwd)/${CUCUMBER_REPORTS_PATH}:/use/src/app/out" \
       -e "CHR_APP_jsonFile=in/${filename}" \
       -e "CHR_APP_output=out/${filename}.html" \
       -e "CHR_APP_metadata_arch=${ARCHITECTURE}" \
