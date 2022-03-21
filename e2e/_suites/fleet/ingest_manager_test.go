@@ -13,7 +13,6 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
-	"github.com/cucumber/messages-go/v10"
 	"github.com/elastic/e2e-testing/cli/config"
 	apme2e "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
@@ -52,22 +51,24 @@ func setUpSuite() {
 }
 
 func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
-	ctx.BeforeScenario(func(p *messages.Pickle) {
-		log.Trace("Before Fleet scenario")
+	ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
+		log.Tracef("Before Fleet scenario: %s", sc.Name)
 
-		tx = apme2e.StartTransaction(p.GetName(), "test.scenario")
+		tx = apme2e.StartTransaction(sc.Name, "test.scenario")
 		tx.Context.SetLabel("suite", "fleet")
 
 		// context is initialised at the step hook, we are initialising it here to prevent panics
 		imts.Fleet.currentContext = context.Background()
 		imts.Fleet.beforeScenario()
+
+		return ctx, nil
 	})
 
-	ctx.AfterScenario(func(p *messages.Pickle, err error) {
-		log.Trace("After Fleet scenario")
+	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
+		log.Tracef("After Fleet scenario: %s", sc.Name)
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
-			e.Context.SetLabel("scenario", p.GetName())
+			e.Context.SetLabel("scenario", sc.Name)
 			e.Context.SetLabel("gherkin_type", "scenario")
 			e.Send()
 		}
@@ -80,23 +81,33 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 		defer f()
 
 		imts.Fleet.afterScenario()
+
+		log.Tracef("After Fleet scenario: %s", sc.Name)
+		return ctx, nil
 	})
 
-	ctx.BeforeStep(func(step *godog.Step) {
-		stepSpan = tx.StartSpan(step.GetText(), "test.scenario.step", nil)
+	ctx.StepContext().Before(func(ctx context.Context, step *godog.Step) (context.Context, error) {
+		log.Tracef("Before step: %s", step.Text)
+		stepSpan = tx.StartSpan(step.Text, "test.scenario.step", nil)
 		imts.Fleet.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
+
+		return ctx, nil
 	})
-	ctx.AfterStep(func(st *godog.Step, err error) {
+	ctx.StepContext().After(func(ctx context.Context, step *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
 		if err != nil {
 			e := apm.DefaultTracer.NewError(err)
-			e.Context.SetLabel("step", st.GetText())
+			e.Context.SetLabel("step", step.Text)
 			e.Context.SetLabel("gherkin_type", "step")
+			e.Context.SetLabel("step_status", status.String())
 			e.Send()
 		}
 
 		if stepSpan != nil {
 			stepSpan.End()
 		}
+
+		log.Tracef("After step (%s): %s", status.String(), step.Text)
+		return ctx, nil
 	})
 
 	ctx.Step(`^the "([^"]*)" process is in the "([^"]*)" state on the host$`, imts.processStateOnTheHost)
