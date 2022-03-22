@@ -602,7 +602,9 @@ def generateFunctionalTestStep(Map args = [:]){
         archiveArtifacts allowEmptyArchive: true,
           artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml, outputs/${testRunner.ip}/TEST-*${runId}*.json, ${cucumberFile}"
         // Create a GitHub check with the report
-        if (fileExists(cucumberFile)) {
+        def files = findFiles(glob: cucumberFile)
+        echo "cucumber file - ${files[0]?.name} ${files[0]?.path} ${files[0]?.directory}"
+        if (files[0]?.path?.trim() && fileExists(files[0]?.path)) {
           githubCheckNotify(githubCheckName: "${name}-${runId}-cucumber", status: 'neutral', cucumberFile: cucumberFile)
         }
       }
