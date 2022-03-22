@@ -602,10 +602,10 @@ def generateFunctionalTestStep(Map args = [:]){
         archiveArtifacts allowEmptyArchive: true,
           artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml, outputs/${testRunner.ip}/TEST-*${runId}*.json, ${cucumberFilePattern}"
         // Create a GitHub check with the report
-        def files = findFiles(glob: cucumberFilePattern)
-        log(level: 'DEBUG', text: "githubCheckNotify: cucumber file - ${files[0]?.name} ${files[0]?.path} ${files[0]?.directory}")
-        if (files[0]?.path?.trim() && fileExists(files[0]?.path)) {
-          githubCheckNotify(githubCheckName: "${name}-${runId}-cucumber", status: 'neutral', cucumberFile: files[0]?.path)
+        def cucumberFiles = findFiles(glob: cucumberFilePattern)
+        log(level: 'DEBUG', text: "githubCheckNotify: cucumber file - ${cucumberFiles[0]?.name} ${cucumberFiles[0]?.path}")
+        if (cucumberFiles[0]?.path?.trim() && fileExists(cucumberFiles[0]?.path)) {
+          githubCheckNotify(githubCheckName: "${name}-${runId}-cucumber", status: 'neutral', cucumberFile: cucumberFiles[0]?.path)
         }
       }
     }
