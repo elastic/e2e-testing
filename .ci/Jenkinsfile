@@ -603,7 +603,7 @@ def generateFunctionalTestStep(Map args = [:]){
           artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml, outputs/${testRunner.ip}/TEST-*${runId}*.json, ${cucumberFile}"
         // Create a GitHub check with the report
         if (fileExists(cucumberFile)) {
-          githubCheckNotify(name, 'neutral', cucumberFile)
+          githubCheckNotify(githubCheckName: "${name}-${runId}-cucumber", status: 'neutral', cucumberFile: cucumberFile)
         }
       }
     }
@@ -613,23 +613,23 @@ def generateFunctionalTestStep(Map args = [:]){
 /**
  Notify the GitHub check for the cucumber report
  **/
-def githubCheckNotify(name, status, cucumberFile) {
-  def description = "${name} ${status.toLowerCase()}"
-  def context = name
+def githubCheckNotify(Map args = [:]){
+  def description = "${args.githubCheckName} ${args.status.toLowerCase()}"
+  def githubCheckName = args.githubCheckName
   def url = "${env.RUN_DISPLAY_URL}"
   def repo = env.REPO
   def sha = env.GIT_BASE_COMMIT
   if (params.GITHUB_CHECK_NAME?.trim() && params.GITHUB_CHECK_REPO?.trim() && params.GITHUB_CHECK_SHA1?.trim()) {
-    context = "${params.GITHUB_CHECK_NAME}-cucumber"
-    description = "${params.GITHUB_CHECK_NAME} ${status.toLowerCase()}"
+    githubCheckName = "${params.GITHUB_CHECK_NAME}-cucumber"
+    description = "${params.GITHUB_CHECK_NAME} ${args.status.toLowerCase()}"
     sha = params.GITHUB_CHECK_SHA1
     repo = params.GITHUB_CHECK_REPO
   }
-  githubCheck(name: context,
+  githubCheck(name: githubCheckName,
               description: description,
-              body: readFile(cucumberFile),
+              body: readFile(args.cucumberFile),
               repository: repo,
               commitId: sha,
-              status: status,
+              status: args.status,
               detailsUrl: url)
 }
