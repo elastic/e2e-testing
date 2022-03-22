@@ -598,14 +598,14 @@ def generateFunctionalTestStep(Map args = [:]){
         junit allowEmptyResults: true,
           keepLongStdio: true,
           testResults: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
-        def cucumberFile = "outputs/${testRunner.ip}/TEST-*${runId}*.json.html"
+        def cucumberFilePattern = "outputs/${testRunner.ip}/TEST-*${runId}*.json.html"
         archiveArtifacts allowEmptyArchive: true,
-          artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml, outputs/${testRunner.ip}/TEST-*${runId}*.json, ${cucumberFile}"
+          artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml, outputs/${testRunner.ip}/TEST-*${runId}*.json, ${cucumberFilePattern}"
         // Create a GitHub check with the report
-        def files = findFiles(glob: cucumberFile)
-        echo "cucumber file - ${files[0]?.name} ${files[0]?.path} ${files[0]?.directory}"
+        def files = findFiles(glob: cucumberFilePattern)
+        log(level: 'DEBUG', text: "githubCheckNotify: cucumber file - ${files[0]?.name} ${files[0]?.path} ${files[0]?.directory}")
         if (files[0]?.path?.trim() && fileExists(files[0]?.path)) {
-          githubCheckNotify(githubCheckName: "${name}-${runId}-cucumber", status: 'neutral', cucumberFile: cucumberFile)
+          githubCheckNotify(githubCheckName: "${name}-${runId}-cucumber", status: 'neutral', cucumberFile: files[0]?.path)
         }
       }
     }
