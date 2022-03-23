@@ -92,18 +92,12 @@ This is an example of the optional configuration:
    export GITHUB_CHECK_REPO="beats"
    ```
 
-3. Define the proper Docker images to be used in tests (Optional).
-
-    Update the Docker compose files with the local version of the images you want to use.
-
-    >TBD: There is an initiative to automate this process to build the Docker image for a PR (or the local workspace) before running the tests, so the image is ready.
-
-4. Install dependencies.
+3. Install dependencies.
 
    - Install Go, using the language version defined in the `.go-version` file at the root directory. We recommend using [GVM](https://github.com/andrewkroh/gvm), same as done in the CI, which will allow you to install multiple versions of Go, setting the Go environment in consequence: `eval "$(gvm 1.15.9)"`
    - Godog and other test-related binaries will be installed in their supported versions when the project is first built, thanks to Go modules and Go build system.
 
-5. Run the tests.
+4. Run the tests.
 
    If you want to run the tests in Developer mode, which means reusing bakend services between test runs, please set this environment variable first:
 
@@ -152,6 +146,7 @@ https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-kibana-fleet/build?del
 1. Build kibana docker image from pull request using this job: (Custom Kibana - Deploy)[https://apm-ci.elastic.co/job/apm-shared/job/oblt-test-env/job/custom-kibana-deploy/build?delay=0sec]
    - Provide `kibana_branch` parameter to refer to your pr number e.g. `PR/100000`
    - Skip deploy_kibana step
+   - Wait for the build to finish (~1h)
 2. Set envvar to pr
 `export KIBANA_VERSION=pr100000`
 3. Run tests
