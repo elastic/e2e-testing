@@ -533,7 +533,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def stackRunner = getNodeIp("${env.WORKSPACE}/${env.BASE_DIR}", 'stack')
 
   def runId = UUID.randomUUID().toString().split('-')[0]
-
+  def githubCheckStatus = 'failure'
   return {
     withNode(labels: 'ubuntu-20.04 && gobld/machineType:e2-small', forceWorkspace: true, forceWorker: true){
       try {
@@ -563,6 +563,7 @@ def generateFunctionalTestStep(Map args = [:]){
                     """sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh "${tags}" """)
           }
         }
+        githubCheckStatus = 'success'
       } finally {
         def testRunner = getNodeIp("${env.WORKSPACE}", platform)
         sh "mkdir -p outputs/${testRunner.ip} || true"
@@ -605,7 +606,7 @@ def generateFunctionalTestStep(Map args = [:]){
         def cucumberFiles = findFiles(glob: cucumberFilePattern)
         log(level: 'DEBUG', text: "githubCheckNotify: cucumber file - ${cucumberFiles[0]?.name} ${cucumberFiles[0]?.path}")
         if (cucumberFiles[0]?.path?.trim() && fileExists(cucumberFiles[0]?.path)) {
-          githubCheckNotify(githubCheckName: "${name}-${runId}-cucumber", status: 'neutral', cucumberFile: cucumberFiles[0]?.path)
+          githubCheckNotify(githubCheckName: "${suite}_${platform}_${tags}-cucumber", status: githubCheckStatus, cucumberFile: cucumberFiles[0]?.path)
         }
       }
     }
