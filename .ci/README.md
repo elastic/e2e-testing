@@ -6,7 +6,7 @@ There are a set of YAML files, named after `.e2e-tests*.yaml`, that drive the ex
 ### Available platforms file structure
 To support multiple test suite descriptors, we are defining the available platforms in one single file: `.e2e-platforms.yaml`. The structure of the file is the following:
 
-- **PLATFORMS**: this entry will hold a YAML object will all the available platforms where the tests could be run. Each available platform will be defined as a key in the YAML object, where each object will have a key identifying the platform with a very descriptiva name (i.e. `stack` or `debian_arm64`) and the following attributes:
+- **PLATFORMS**: this entry will hold a YAML object with all the available platforms where the tests could be run. Each available platform will be defined as a key in the YAML object, where each object will have a key identifying the platform with a very descriptiva name (i.e. `stack` or `debian_arm64`) and the following attributes:
   - **description**: Description of the purpose and/or characteristics of the platform machine. Required.
   - **image**: the AWS AMI identifier, i.e. `ami-0d90bed76900e679a`. Required.
   - **instance_type**: the AWS instance type, representing the size of the machine, i.e. `c5.4xlarge`. Required.
