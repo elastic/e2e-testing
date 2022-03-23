@@ -123,57 +123,17 @@ This is an example of the optional configuration:
    OP_LOG_LEVEL=DEBUG go test -timeout 60m -v
    ```
 
-   Optionally, you can run only one of the feature files
+   Optionally, you can run the scenarios for a pull request on a given commit:
    ```shell
-   cd e2e/_suites/kubernetes-autodiscover
-   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@filebeat'
-   ```
-
-   The tests will take a few minutes to run, spinning up the Kubernetes cluster
-   if needed.
-
-### Running the tests for a PR
-
-1. Clone this repository, say into a folder named `e2e-testing`.
-
-   ``` shell
-   git clone git@github.com:elastic/e2e-testing.git
-   ```
-
-2. Configure the version of the tools you want to test (Optional).
-
-This is an example of the optional configuration:
-
-   ```shell
-   # Depending on the versions used,
-   export BEAT_VERSION=7.12.0 # version of beats to use
-   export ELASTIC_AGENT_VERSION=7.12.0 # version of Elastic Agent to use
    export GITHUB_CHECK_SHA1=0123456789 # to select snapshots built by beats-ci
-   export KUBERNETES_VERSION="1.18.2" # version of the cluster to be passed to kind
-   ```
-
-3. Install dependencies.
-
-   - Install Kubectl 1.18 or newer
-   - Install Kind 0.10.0 or newer
-   - Install Go, using the language version defined in the `.go-version` file at the root directory. We recommend using [GVM](https://github.com/andrewkroh/gvm), same as done in the CI, which will allow you to install multiple versions of Go, setting the Go environment in consequence: `eval "$(gvm 1.15.9)"`
-   - Godog and other test-related binaries will be installed in their supported versions when the project is first built, thanks to Go modules and Go build system.
-
-4. Verify that the elastic-agent or beats binaries have been published by the CI in the right GCP bucket. You can look up the bucket and identify the PR identifier (ex. *BUCKET_URI/pull-requests/PR-123*) or the commit hash of the branch that was already built by the CI (ex. *$BUCKET_URI/commits/SHA*).
-
-5. Run the tests for the commit.
-   ```shell
-   cd e2e/_suites/kubernetes-autodiscover
-   export GITHUB_CHECK_SHA=sha
    export GITHUB_CHECK_REPO=beats # or elastic-agent, depending on what you need: a beat or the elastic-agent
+   cd e2e/_suites/kubernetes-autodiscover
    OP_LOG_LEVEL=DEBUG go test -timeout 60m -v
    ```
 
    Optionally, you can run only one of the feature files
    ```shell
    cd e2e/_suites/kubernetes-autodiscover
-   export GITHUB_CHECK_SHA=sha
-   export GITHUB_CHECK_REPO=beats # or elastic-agent, depending on what you need: a beat or the elastic-agent
    OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@filebeat'
    ```
 
