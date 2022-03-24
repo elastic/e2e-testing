@@ -1655,24 +1655,22 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		return godog.ErrPending
 	}
 
+	var err error
+	var packageDS kibana.PackageDataStream
 	var kibanaInputs []kibana.Input
 	var metrics = ""
+
 	if name == "linux/metrics" {
 		metrics = "linux"
 		kibanaInputs = metricsInputs(name, set, "/linux_metrics.json", metrics)
+		packageDS, err = fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
 	} else if name == "system/metrics" || name == "logfile" || name == "log" {
-		// read inputs from the curren policy
-		currentPolicy, err := fts.kibanaClient.GetPackagePolicy(fts.currentContext, fts.Policy.Name)
-		if err != nil {
-			return err
-		}
-		kibanaInputs = currentPolicy.Inputs
 		metrics = "system"
+		packageDS, err = fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
+		kibanaInputs = packageDS.Inputs
 	}
 
 	os, _ := fts.getAgentOSData()
-
-	packageDS, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
 
 	if err != nil {
 		return err
