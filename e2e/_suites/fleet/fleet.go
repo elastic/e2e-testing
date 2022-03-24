@@ -1654,13 +1654,19 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		}).Warn("We only support system system/metrics, log, logfile and linux/metrics policy to be updated")
 		return godog.ErrPending
 	}
+
+	var kibanaInputs []kibana.Input
 	var metrics = ""
-	var file = ""
 	if name == "linux/metrics" {
-		file = "/linux_metrics.json"
 		metrics = "linux"
+		kibanaInputs = metricsInputs(name, set, "/linux_metrics.json", metrics)
 	} else if name == "system/metrics" || name == "logfile" || name == "log" {
-		file = "/metrics.json"
+		// read inputs from the curren policy
+		currentPolicy, err := fts.kibanaClient.GetPackagePolicy(fts.currentContext, fts.Policy.Name)
+		if err != nil {
+			return err
+		}
+		kibanaInputs = currentPolicy.Inputs
 		metrics = "system"
 	}
 
@@ -1680,7 +1686,7 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 
 	for _, item := range packageDS.Inputs {
 		if item.Type == name {
-			packageDS.Inputs = metricsInputs(name, set, file, metrics)
+			packageDS.Inputs = kibanaInputs
 		}
 	}
 	log.WithFields(log.Fields{
