@@ -1670,11 +1670,12 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		kibanaInputs = packageDS.Inputs
 	}
 
-	os, _ := fts.getAgentOSData()
-
 	if err != nil {
 		return err
 	}
+
+	os, _ := fts.getAgentOSData()
+
 	fts.Integration = packageDS.Package
 
 	log.WithFields(log.Fields{
