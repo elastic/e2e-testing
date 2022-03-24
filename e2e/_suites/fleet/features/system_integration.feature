@@ -2,7 +2,7 @@
 Feature: System Integration
 Scenarios for System Integration logs and metrics packages.
 
-Scenario Outline: Adding core System Integration to an Policy
+Scenario Outline: Adding <value> System Integration to an Policy
   Given an agent is deployed to Fleet with "tar" installer
     And the agent is listed in Fleet as "online"
   When the policy is updated to have "system/metrics" set to "<value>"
