@@ -1668,6 +1668,12 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		metrics = "system"
 		packageDS, err = fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
 		kibanaInputs = packageDS.Inputs
+	} else {
+		log.WithFields(log.Fields{
+			"type":    name,
+			"dataset": set,
+		}).Warn("Package Policy not supported yet")
+		return godog.ErrPending
 	}
 
 	if err != nil {
