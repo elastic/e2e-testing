@@ -1728,45 +1728,57 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 }
 
 func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) error {
-	var TimeoutFactor = 3
 	timeNow := time.Now()
 	startTime := timeNow.Unix()
+
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	retryCount := 1
+
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	os, _ := fts.getAgentOSData()
 
 	waitForDataStreams := func() error {
-		var exist = false
 		dataStreams, _ := fts.kibanaClient.GetDataStreams(fts.currentContext)
 
 		for _, item := range dataStreams.Children() {
 			if item.Path("dataset").Data().(string) == "system."+set {
 				log.WithFields(log.Fields{
-					"dataset": "system." + set,
-					"enabled": "true",
-					"type":    name,
-					"os":      os,
+					"dataset":     "system." + set,
+					"elapsedTime": exp.GetElapsedTime(),
+					"enabled":     "true",
+					"retries":     retryCount,
+					"type":        name,
+					"os":          os,
 				}).Info("The " + name + " with value system." + set + " in the metrics")
 
 				if int64(int64(item.Path("last_activity_ms").Data().(float64))) > startTime {
 					log.WithFields(log.Fields{
+						"elapsedTime":      exp.GetElapsedTime(),
 						"last_activity_ms": item.Path("last_activity_ms").Data().(float64),
+						"retries":          retryCount,
 						"startTime":        startTime,
 						"os":               os,
 					}).Info("The " + name + " with value system." + set + " in the metrics")
 				}
-				exist = true
-				break
+
+				return nil
 			}
 		}
 
-		if exist != true {
-			return errors.New("No " + name + " with value system." + set + " found in the metrics")
-		}
-		return nil
+		err := errors.New("No " + name + " with value system." + set + " found in the metrics")
 
+		log.WithFields(log.Fields{
+			"elapsedTime": exp.GetElapsedTime(),
+			"name":        name,
+			"retry":       retryCount,
+			"set":         set,
+		}).Warn(err.Error())
+
+		retryCount++
+
+		return err
 	}
-	maxTimeout := time.Duration(TimeoutFactor) * time.Minute * 2
-	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	err := backoff.Retry(waitForDataStreams, exp)
 	if err != nil {
