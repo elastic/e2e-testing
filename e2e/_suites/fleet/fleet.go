@@ -1668,6 +1668,9 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		metrics = "system"
 		packageDS, err = fts.kibanaClient.GetPackagePolicy(fts.currentContext, "system")
 		kibanaInputs = packageDS.Inputs
+		log.WithFields(log.Fields{
+			"inputs": packageDS.Inputs,
+		}).Trace("Inputs from the package policy")
 	} else {
 		log.WithFields(log.Fields{
 			"type":    name,
