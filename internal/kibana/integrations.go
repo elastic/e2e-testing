@@ -235,27 +235,27 @@ type SecurityEndpoint struct {
 }
 
 // GetPackagePolicy sends a GET request to Fleet retrieving a package policy by its name
-func (c *Client) GetPackagePolicy(ctx context.Context, name string) (*PackageDataStream, error) {
+func (c *Client) GetPackagePolicy(ctx context.Context, name string) (PackageDataStream, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Retrieving package policy", "fleet.package-policy.get", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	defer span.End()
 
-	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/package_policies/%s", FleetAPI, name))
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/package_policies?kuery=ingest-package-policies.package.name%%3A%s", FleetAPI, name)) // %%3A escapes to "%3A"
 	if err != nil {
-		return nil, errors.Wrap(err, "could not retrieve package policy")
+		return PackageDataStream{}, errors.Wrap(err, "could not retrieve package policy")
 	}
 
 	if statusCode != 200 {
-		return nil, fmt.Errorf("could not retrieve package policy; API status code = %d; response body = %s", statusCode, respBody)
+		return PackageDataStream{}, fmt.Errorf("could not retrieve package policy; API status code = %d; response body = %s", statusCode, respBody)
 	}
 
 	var packageDS *PackageDataStream
 	if err := json.Unmarshal(respBody, &packageDS); err != nil {
-		return nil, errors.Wrap(err, "Unable to convert package policy to JSON")
+		return PackageDataStream{}, errors.Wrap(err, "Unable to convert package policy to JSON")
 	}
 
-	return packageDS, nil
+	return *packageDS, nil
 }
 
 // GetMetadataFromSecurityApp sends a POST request to retrieve metadata from Security App

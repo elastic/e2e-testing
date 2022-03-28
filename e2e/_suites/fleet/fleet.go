@@ -1666,7 +1666,7 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		packageDS, err = fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
 	} else if name == "system/metrics" || name == "logfile" || name == "log" {
 		metrics = "system"
-		packageDS, err = fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
+		packageDS, err = fts.kibanaClient.GetPackagePolicy(fts.currentContext, "system")
 		kibanaInputs = packageDS.Inputs
 	} else {
 		log.WithFields(log.Fields{
