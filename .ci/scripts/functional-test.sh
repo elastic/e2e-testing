@@ -25,7 +25,7 @@ STACK_VERSION=${3:-"${BASE_VERSION}"}
 BEAT_VERSION=${4:-"${BASE_VERSION}"}
 ELASTIC_AGENT_VERSION=${5:-"${BASE_VERSION}"}
 GOARCH=${GOARCH:-"amd64"}
-REPORT_PREFIX="${SUITE}_${GOARCH}_${TAGS}"
+REPORT_PREFIX=${REPORT_PREFIX:-"${SUITE}_${GOARCH}_${TAGS}"}
 
 ## Install the required dependencies for the given SUITE
 .ci/scripts/install-test-dependencies.sh "${SUITE}"
