@@ -25,6 +25,7 @@ STACK_VERSION=${3:-"${BASE_VERSION}"}
 BEAT_VERSION=${4:-"${BASE_VERSION}"}
 ELASTIC_AGENT_VERSION=${5:-"${BASE_VERSION}"}
 GOARCH=${GOARCH:-"amd64"}
+REPORT_PREFIX="${SUITE}_${GOARCH}_${TAGS}"
 
 ## Install the required dependencies for the given SUITE
 .ci/scripts/install-test-dependencies.sh "${SUITE}"
@@ -32,6 +33,6 @@ GOARCH=${GOARCH:-"amd64"}
 rm -rf outputs || true
 mkdir -p outputs
 
-REPORT="$(pwd)/outputs/TEST-${GOARCH}-${SUITE}"
+REPORT="$(pwd)/outputs/TEST-${REPORT_PREFIX}"
 
 TAGS="${TAGS}" FORMAT=pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml GOARCH=${GOARCH} STACK_VERSION=${STACK_VERSION} BEAT_VERSION=${BEAT_VERSION} ELASTIC_AGENT_VERSION=${ELASTIC_AGENT_VERSION} make --no-print-directory -C e2e/_suites/${SUITE} functional-test
