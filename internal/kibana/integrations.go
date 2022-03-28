@@ -241,7 +241,7 @@ func (c *Client) GetPackagePolicy(ctx context.Context, name string) (PackageData
 	})
 	defer span.End()
 
-	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/package_policies?kuery=ingest-package-policies.package.name%%3A%s", FleetAPI, name)) // %%3A escapes to "%3A"
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/package_policies/%s", FleetAPI, name))
 	if err != nil {
 		return PackageDataStream{}, errors.Wrap(err, "could not retrieve package policy")
 	}
