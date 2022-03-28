@@ -193,10 +193,12 @@ pipeline {
           }
           when {
             beforeAgent true
-            anyOf {
-              expression { return env.FORCE_SKIP_GIT_CHECKS == "true" }
+            allOf {
+              anyOf {
+                expression { return env.FORCE_SKIP_GIT_CHECKS == "true" }
+                expression { return env.SKIP_TESTS == "false" }
+              }
               expression { return env.IS_FLEET_SUITE == "true" }
-              expression { return env.SKIP_TESTS == "false" }
             }
           }
           steps {
