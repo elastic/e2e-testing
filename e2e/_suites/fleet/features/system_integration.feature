@@ -68,19 +68,9 @@ Scenario Outline: Adding <value> System Integration to an Policy
     | value      |
     | filesystem |
 
-#  @deploy-logfile-for-system-auth
-#  Scenario Outline: Adding the System Integration to an Policy
-#    Given a "<os>" agent is deployed to Fleet with "tar" installer
-#    And the agent is listed in Fleet as "online"
-#    When the policy is updated to have "logfile" set to "syslog"
-#    And verify that "logfile" with "syslog" metrics in the datastreams
-#
-#    @centos
-#    Examples: Centos
-#      | os     |
-#      | centos |
-
-#    @debian
-#    Examples: Debian
-#      | os     |
-#      | debian |
+  @deploy-logfile-integration-with-syslog
+  Scenario Outline: Adding Syslog logfile Integration to a Policy
+  Given an agent is deployed to Fleet with "tar" installer
+    And the agent is listed in Fleet as "online"
+  When the policy is updated to have "logfile" set to "syslog"
+  Then "logfile" with "syslog" metrics are present in the datastreams
