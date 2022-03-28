@@ -528,6 +528,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def envContext = []
   envContext.add("PROVIDER=${provider}")
   envContext.add("SUITE=${suite}")
+  envContext.add("REPORT_PREFIX=${suite}_${platform}_${tags}")
   envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},elastic_agent_version=${env.ELASTIC_AGENT_VERSION},stack_version=${env.STACK_VERSION}")
 
   def stackRunner = getNodeIp("${env.WORKSPACE}/${env.BASE_DIR}", 'stack')
