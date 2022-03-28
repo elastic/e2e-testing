@@ -1655,21 +1655,22 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		return godog.ErrPending
 	}
 
-	var err error
-	var packageDS kibana.PackageDataStream
 	var kibanaInputs []kibana.Input
 	var metrics = ""
 
 	if name == "linux/metrics" {
 		metrics = "linux"
 		kibanaInputs = metricsInputs(name, set, "/linux_metrics.json", metrics)
-		packageDS, err = fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
 	} else if name == "system/metrics" || name == "logfile" || name == "log" {
 		metrics = "system"
-		packageDS, err = fts.kibanaClient.GetPackagePolicy(fts.currentContext, "system")
-		kibanaInputs = packageDS.Inputs
+		packagePolicy, err := fts.kibanaClient.GetPackagePolicy(fts.currentContext, "system")
+		if err != nil {
+			return err
+		}
+
+		kibanaInputs = packagePolicy.Inputs
 		log.WithFields(log.Fields{
-			"inputs": packageDS.Inputs,
+			"inputs": packagePolicy.Inputs,
 		}).Trace("Inputs from the package policy")
 	} else {
 		log.WithFields(log.Fields{
@@ -1678,6 +1679,8 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		}).Warn("Package Policy not supported yet")
 		return godog.ErrPending
 	}
+
+	packageDS, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
 
 	if err != nil {
 		return err
