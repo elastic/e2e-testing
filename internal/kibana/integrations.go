@@ -250,12 +250,12 @@ func (c *Client) GetPackagePolicy(ctx context.Context, name string) (PackageData
 		return PackageDataStream{}, fmt.Errorf("could not retrieve package policy; API status code = %d; response body = %s", statusCode, respBody)
 	}
 
-	var packageDS *PackageDataStream
-	if err := json.Unmarshal(respBody, &packageDS); err != nil {
+	var item *ItemPackageDataStream
+	if err := json.Unmarshal(respBody, &item); err != nil {
 		return PackageDataStream{}, errors.Wrap(err, "Unable to convert package policy to JSON")
 	}
 
-	return *packageDS, nil
+	return item.PackageDS, nil
 }
 
 // GetMetadataFromSecurityApp sends a POST request to retrieve metadata from Security App
