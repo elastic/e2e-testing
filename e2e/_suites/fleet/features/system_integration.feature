@@ -2,75 +2,73 @@
 Feature: System Integration
 Scenarios for System Integration logs and metrics packages.
 
-Scenario Outline: Adding <value> System Integration to an Policy
+Scenario Outline: Adding <value> <integration> Integration to a Policy
   Given an agent is deployed to Fleet with "tar" installer
     And the agent is listed in Fleet as "online"
-  When the policy is updated to have "system/metrics" set to "<value>"
-  Then "system/metrics" with "<value>" metrics are present in the datastreams
+  When the policy is updated to have "<integration>" set to "<value>"
+  Then "<integration>" with "<value>" metrics are present in the datastreams
 
   @deploy-system_integration-with-core
-  Examples: core
-    | value |
-    | core  |
+  Examples: System/metrics + core
+    | integration    | value |
+    | system/metrics | core  |
 
   @deploy-system_integration-with-cpu
-  Examples: cpu
-    | value |
-    | cpu  |
+  Examples: System/metrics + cpu
+    | integration    | value |
+    | system/metrics | cpu   |
 
   @deploy-system_integration-with-diskio
-  Examples: diskio
-    | value   |
-    | diskio  |
+  Examples: System/metrics + diskio
+    | integration    | value  |
+    | system/metrics | diskio |
 
   @deploy-system_integration-with-fsstat
-  Examples: fsstat
-    | value   |
-    | fsstat  |
+  Examples: System/metrics + fsstat
+    | integration    | value  |
+    | system/metrics | fsstat |
 
   @deploy-system_integration-with-load
-  Examples: load
-    | value |
-    | load  |
+  Examples: System/metrics + load
+    | integration    | value |
+    | system/metrics | load  |
 
   @deploy-system_integration-with-memory
-  Examples: memory
-    | value  |
-    | memory |
+  Examples: System/metrics + memory
+    | integration    | value  |
+    | system/metrics | memory |
 
   @deploy-system_integration-with-network
-  Examples: network
-    | value   |
-    | network |
+  Examples: System/metrics + network
+    | integration    | value   |
+    | system/metrics | network |
 
   @deploy-system_integration-with-process
-  Examples: process
-    | value   |
-    | process |
+  Examples: System/metrics + process
+    | integration    | value   |
+    | system/metrics | process |
 
   @deploy-system_integration-with-socket_summary
-  Examples: socket_summary
-    | value          |
-    | socket_summary |
+  Examples: System/metrics + socket_summary
+    | integration    | value          |
+    | system/metrics | socket_summary |
 
   @deploy-system_integration-with-uptime
-  Examples: uptime
-    | value  |
-    | uptime |
+  Examples: System/metrics + uptime
+    | integration    | value  |
+    | system/metrics | uptime |
 
   @deploy-system_integration-with-process_summary
-  Examples: process.summary
-    | value           |
-    | process.summary |
+  Examples: System/metrics + process.summary
+    | integration    | value           |
+    | system/metrics | process.summary |
 
   @deploy-system_integration-with-filesystem
-  Examples: filesystem
-    | value      |
-    | filesystem |
+  Examples: System/metrics + filesystem
+    | integration    | value      |
+    | system/metrics | filesystem |
 
   @deploy-logfile-integration-with-syslog
-  Scenario Outline: Adding Syslog logfile Integration to a Policy
-  Given an agent is deployed to Fleet with "tar" installer
-    And the agent is listed in Fleet as "online"
-  When the policy is updated to have "logfile" set to "syslog"
-  Then "logfile" with "syslog" metrics are present in the datastreams
+  Examples: logfile + syslog
+    | integration | value  |
+    | logfile     | syslog |
