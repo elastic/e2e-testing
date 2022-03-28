@@ -41,7 +41,6 @@ pipeline {
                nightlyScenarios: true,
                runTestsSuites: 'fleet',
                slackChannel: 'elastic-agent',
-               notifyOnGreenBuilds: true,
                propagate: true,
                wait: true)
       }
