@@ -99,6 +99,7 @@ pipeline {
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
             setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
             setEnvVar("LABELS_STRING", "buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT}")
+            setEnvVar("IS_FLEET_SUITE", isFleetSuite())
             checkSkipTests()
           }
         }
@@ -194,6 +195,7 @@ pipeline {
             beforeAgent true
             anyOf {
               expression { return env.FORCE_SKIP_GIT_CHECKS == "true" }
+              expression { return env.IS_FLEET_SUITE == "true" }
               expression { return env.SKIP_TESTS == "false" }
             }
           }
@@ -448,6 +450,14 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   }
 }
 
+/*
+ * returns if the fleet test suite must be executed, which implies the Elastic Stack node must be provisioned
+ */
+def isFleetSuite() {
+  def testsSuites = "${params.runTestsSuites}"
+
+  return ((testsSuites == '') || (testsSuites?.contains('fleet')))
+}
 /*
  * Sends out notification of the build result to Slack
  */
