@@ -19,7 +19,7 @@ main() {
   find "${CUCUMBER_REPORTS_PATH}" -name 'TEST*.json' -print0 |
   while IFS= read -r -d '' f
   do
-    filename="$(basename ${f})"
+    filename="$(basename "${f}")"
     echo "parsing ${filename}"
     docker run --rm \
       -v "$(pwd)/${CUCUMBER_REPORTS_PATH}:/use/src/app/in" \
