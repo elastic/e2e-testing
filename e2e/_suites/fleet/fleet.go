@@ -1662,23 +1662,46 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		}).Warn("We only support system system/metrics, log, logfile and linux/metrics policy to be updated")
 		return godog.ErrPending
 	}
+
+	var err error
+	var packageDS kibana.PackageDataStream
+	var kibanaInputs []kibana.Input
 	var metrics = ""
-	var file = ""
+
 	if name == "linux/metrics" {
-		file = "/linux_metrics.json"
 		metrics = "linux"
+		packageDS, err = fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
+		if err != nil {
+			return err
+		}
+
+		kibanaInputs = metricsInputs(name, set, "/linux_metrics.json", metrics)
 	} else if name == "system/metrics" || name == "logfile" || name == "log" {
-		file = "/metrics.json"
 		metrics = "system"
+		packageDS, err = fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
+		if err != nil {
+			return err
+		}
+
+		packagePolicy, errPolicy := fts.kibanaClient.GetPackagePolicy(fts.currentContext, packageDS.ID)
+		if errPolicy != nil {
+			return errPolicy
+		}
+
+		kibanaInputs = packagePolicy.Inputs
+		log.WithFields(log.Fields{
+			"inputs": packagePolicy.Inputs,
+		}).Trace("Inputs from the package policy")
+	} else {
+		log.WithFields(log.Fields{
+			"type":    name,
+			"dataset": set,
+		}).Warn("Package Policy not supported yet")
+		return godog.ErrPending
 	}
 
 	os, _ := fts.getAgentOSData()
 
-	packageDS, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
-
-	if err != nil {
-		return err
-	}
 	fts.Integration = packageDS.Package
 
 	log.WithFields(log.Fields{
@@ -1688,7 +1711,7 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 
 	for _, item := range packageDS.Inputs {
 		if item.Type == name {
-			packageDS.Inputs = metricsInputs(name, set, file, metrics)
+			packageDS.Inputs = kibanaInputs
 		}
 	}
 	log.WithFields(log.Fields{
@@ -1713,45 +1736,57 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 }
 
 func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) error {
-	var TimeoutFactor = 3
 	timeNow := time.Now()
 	startTime := timeNow.Unix()
+
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	retryCount := 1
+
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	os, _ := fts.getAgentOSData()
 
 	waitForDataStreams := func() error {
-		var exist = false
 		dataStreams, _ := fts.kibanaClient.GetDataStreams(fts.currentContext)
 
 		for _, item := range dataStreams.Children() {
 			if item.Path("dataset").Data().(string) == "system."+set {
 				log.WithFields(log.Fields{
-					"dataset": "system." + set,
-					"enabled": "true",
-					"type":    name,
-					"os":      os,
+					"dataset":     "system." + set,
+					"elapsedTime": exp.GetElapsedTime(),
+					"enabled":     "true",
+					"retries":     retryCount,
+					"type":        name,
+					"os":          os,
 				}).Info("The " + name + " with value system." + set + " in the metrics")
 
 				if int64(int64(item.Path("last_activity_ms").Data().(float64))) > startTime {
 					log.WithFields(log.Fields{
+						"elapsedTime":      exp.GetElapsedTime(),
 						"last_activity_ms": item.Path("last_activity_ms").Data().(float64),
+						"retries":          retryCount,
 						"startTime":        startTime,
 						"os":               os,
 					}).Info("The " + name + " with value system." + set + " in the metrics")
 				}
-				exist = true
-				break
+
+				return nil
 			}
 		}
 
-		if exist != true {
-			return errors.New("No " + name + " with value system." + set + " found in the metrics")
-		}
-		return nil
+		err := errors.New("No " + name + " with value system." + set + " found in the metrics")
 
+		log.WithFields(log.Fields{
+			"elapsedTime": exp.GetElapsedTime(),
+			"name":        name,
+			"retry":       retryCount,
+			"set":         set,
+		}).Warn(err.Error())
+
+		retryCount++
+
+		return err
 	}
-	maxTimeout := time.Duration(TimeoutFactor) * time.Minute * 2
-	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	err := backoff.Retry(waitForDataStreams, exp)
 	if err != nil {
