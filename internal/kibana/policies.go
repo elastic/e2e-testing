@@ -210,6 +210,11 @@ type Input struct {
 	CompiledStream interface{} `json:"compiled_stream,omitempty"`
 }
 
+// ItemPackageDataStream represents a single item for a package policy.
+type ItemPackageDataStream struct {
+	PackageDS PackageDataStream `json:"item"`
+}
+
 // PackageDataStream represents a request to add a single package's single data stream to a
 // Policy in Ingest Manager.
 type PackageDataStream struct {
