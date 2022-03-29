@@ -521,9 +521,6 @@ def generateFunctionalTestStep(Map args = [:]){
     goArch = "arm64"
   }
 
-  // Skip scenarios per platform
-  tags += " && ~@skip:${goArch}"
-
   // Setup environment for platform
   def envContext = []
   envContext.add("PROVIDER=${provider}")
