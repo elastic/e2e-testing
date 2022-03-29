@@ -12,6 +12,10 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
+
+	//"strconv"
+
 	"strings"
 	"time"
 
@@ -64,6 +68,7 @@ type FleetTestSuite struct {
 	// instrumentation
 	currentContext context.Context
 	DefaultAPIKey  string
+	AgentId        string
 }
 
 func (fts *FleetTestSuite) getDeployer() deploy.Deployment {
@@ -114,7 +119,7 @@ func (fts *FleetTestSuite) afterScenario() {
 			_ = fts.getDeployer().Logs(fts.currentContext, agentService)
 		}
 
-		err := fts.unenrollHostname()
+		err := fts.unenrollHostname(true)
 		if err != nil {
 			manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
 			log.WithFields(log.Fields{
@@ -263,8 +268,10 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	s.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
 	s.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)
+	s.Step(`^the agent is un-enrolled without revoke$`, fts.theAgentIsUnenrolledWithoutRevoke)
 	s.Step(`^the agent is re-enrolled on the host$`, fts.theAgentIsReenrolledOnTheHost)
 	s.Step(`^the enrollment token is revoked$`, fts.theEnrollmentTokenIsRevoked)
+	s.Step(`^the agent Api key invalidated "(([^"]*))"$`, fts.theAgentApiKeyIsInvalidated)
 	s.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
 	s.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	s.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
@@ -842,7 +849,6 @@ func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string
 			retryCount++
 			return err
 		}
-
 		if agentID == "" {
 			// the agent is not listed in Fleet
 			if desiredStatus == "offline" || desiredStatus == "inactive" {
@@ -1002,7 +1008,11 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 }
 
 func (fts *FleetTestSuite) theAgentIsUnenrolled() error {
-	return fts.unenrollHostname()
+	return fts.unenrollHostname(true)
+}
+
+func (fts *FleetTestSuite) theAgentIsUnenrolledWithoutRevoke() error {
+	return fts.unenrollHostname(false)
 }
 
 func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
@@ -1389,7 +1399,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 }
 
 // unenrollHostname deletes the statuses for an existing agent, filtering by hostname
-func (fts *FleetTestSuite) unenrollHostname() error {
+func (fts *FleetTestSuite) unenrollHostname(revoke bool) error {
 	span, _ := apm.StartSpanOptions(fts.currentContext, "Unenrolling hostname", "elastic-agent.hostname.unenroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(fts.currentContext).TraceContext(),
 	})
@@ -1410,7 +1420,8 @@ func (fts *FleetTestSuite) unenrollHostname() error {
 				"hostname": manifest.Hostname,
 			}).Debug("Un-enrolling agent in Fleet")
 
-			err := fts.kibanaClient.UnEnrollAgent(fts.currentContext, agent.LocalMetadata.Host.HostName)
+			fts.AgentId = agent.ID
+			err := fts.kibanaClient.UnEnrollAgent(fts.currentContext, agent.LocalMetadata.Host.HostName, revoke)
 			if err != nil {
 				return err
 			}
@@ -1785,5 +1796,48 @@ func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) er
 		return err
 	}
 
+	return nil
+}
+
+func (fts *FleetTestSuite) theAgentApiKeyIsInvalidated(invalidated string) error {
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
+	exp := utils.GetExponentialBackOff(maxTimeout)
+	retryCount := 1
+
+	invalidatedBool, _ := strconv.ParseBool(invalidated)
+	apiKeyInvalidated := func() error {
+		body, err := elasticsearch.GetSecurityApiKey()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"Error": err,
+			}).Error("Could not return Security Api Keys")
+			return err
+		}
+
+		for _, item := range body.APIKeys {
+			if item.Metadata.AgentID == fts.AgentId {
+				if item.Invalidated == invalidatedBool {
+					log.WithFields(log.Fields{
+						"agentId": fts.AgentId,
+						"Type":    item.Metadata.Type,
+					}).Info("The agent Api key invalidated: ", item.Invalidated)
+				} else {
+					log.WithFields(log.Fields{
+						"agentId": fts.AgentId,
+						"Type":    item.Metadata.Type,
+					}).Error("The agent Api key invalidated: ", item.Invalidated)
+					return errors.New("The agent Api key invalidated is should be: " + invalidated)
+				}
+			}
+		}
+		retryCount++
+
+		return nil
+	}
+
+	err := backoff.Retry(apiKeyInvalidated, exp)
+	if err != nil {
+		return err
+	}
 	return nil
 }

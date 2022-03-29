@@ -34,6 +34,27 @@ type Query struct {
 	ServiceVersion string
 }
 
+type APIKey struct {
+	APIKeys []APIKeys `json:"api_keys"`
+}
+type Metadata struct {
+	PolicyID  string `json:"policy_id, omitempty"`
+	AgentID   string `json:"agent_id, omitempty"`
+	ManagedBy string `json:"managed_by"`
+	Managed   bool   `json:"managed"`
+	Type      string `json:"type"`
+}
+
+type APIKeys struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Creation    int64    `json:"creation"`
+	Invalidated bool     `json:"invalidated"`
+	Username    string   `json:"username"`
+	Realm       string   `json:"realm"`
+	Metadata    Metadata `json:"metadata,omitempty"`
+}
+
 // SearchResult wraps a search result
 type SearchResult map[string]interface{}
 
@@ -545,4 +566,35 @@ func WaitForNumberOfHits(ctx context.Context, indexName string, query map[string
 
 	err := backoff.Retry(numberOfHits, exp)
 	return result, err
+}
+
+// GetSecurityApiKey waits for the elasticsearch SecurityApiKey to return the list of Api Keys.
+func GetSecurityApiKey() (APIKey, error) {
+	esEndpoint := GetElasticSearchEndpoint()
+	data := APIKey{}
+
+	r := curl.HTTPRequest{
+		URL:               fmt.Sprintf("%s://%s:%d/_security/api_key?", esEndpoint.Scheme, esEndpoint.Host, esEndpoint.Port),
+		BasicAuthPassword: shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"),
+		BasicAuthUser:     "elastic",
+	}
+
+	response, err := curl.Get(r)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":          err,
+			"statusEndpoint": r.URL,
+		}).Warn("The Elasticsearch Console SecurityApiKey API is not available yet")
+
+		return APIKey{}, err
+	}
+
+	log.WithFields(log.Fields{
+		"statusEndpoint": r.URL,
+		"Response":       response,
+	}).Trace("The Elasticsearch  API is available")
+
+	json.Unmarshal([]byte(response), &data)
+
+	return data, err
 }
