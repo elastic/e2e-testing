@@ -76,4 +76,4 @@ functional-test:
 	ELASTIC_APM_SERVER_URL="${APM_SERVER_URL}" \
 	BRANCH_NAME="${BRANCH_NAME}" \
 	TRACEPARENT="${TRACEPARENT}" \
-	go test -timeout 60m -v --godog.format=${FORMAT} ${FEATURES_VALUE} ${TAGS_FLAG}${TAGS_VALUE}
+	go test -timeout 60m -v --godog.format="${FORMAT}" ${FEATURES_VALUE} ${TAGS_FLAG}${TAGS_VALUE}
