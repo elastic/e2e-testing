@@ -135,9 +135,9 @@
        REPORT="${BASE_DIR}/outputs/TEST-${REPORT_PREFIX}-{{runId}}-${SEED}"
 
        TAGS="${1}" \
-         LOG_LEVEL=TRACE \
-         FORMAT=pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml \
-         STACK_VERSION=${STACK_VERSION} \
-         BEAT_VERSION=${BEAT_VERSION} \
-         ELASTIC_AGENT_VERSION=${ELASTIC_AGENT_VERSION} \
+         LOG_LEVEL="TRACE" \
+         FORMAT="pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml" \
+         STACK_VERSION="${STACK_VERSION}" \
+         BEAT_VERSION="${BEAT_VERSION}" \
+         ELASTIC_AGENT_VERSION="${ELASTIC_AGENT_VERSION}" \
          make --no-print-directory -C "${BASE_DIR}/e2e/_suites/${SUITE}" functional-test
