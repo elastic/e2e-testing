@@ -116,6 +116,23 @@ func systemCtlPostInstall(ctx context.Context, linux string, artifact string, ex
 	return nil
 }
 
+func systemCtlRestart(ctx context.Context, linux string, artifact string, execFn func(ctx context.Context, args []string) (string, error)) error {
+	cmds := systemd.RestartCmds(artifact)
+	span, _ := apm.StartSpanOptions(ctx, "Restarting "+artifact+" service", artifact+"."+linux+".restart", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	span.Context.SetLabel("artifact", artifact)
+	span.Context.SetLabel("linux", linux)
+	defer span.End()
+
+	_, err := execFn(ctx, cmds)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func systemCtlStart(ctx context.Context, linux string, artifact string, execFn func(ctx context.Context, args []string) (string, error)) error {
 	cmds := systemd.StartCmds(artifact)
 	span, _ := apm.StartSpanOptions(ctx, "Starting "+artifact+" service", artifact+"."+linux+".start", apm.SpanOptions{

@@ -36,11 +36,19 @@ git add $FILE
 echo "Update stack with version ${VERSION} in Jenkinsfile"
 FILE="./.ci/Jenkinsfile"
 ${SED} -E -e "s#(name: 'BEAT_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1${VERSION}#g" $FILE
+${SED} -E -e "s#(name: 'ELASTIC_AGENT_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1${VERSION}#g" $FILE
 ${SED} -E -e "s#(name: 'STACK_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1${VERSION}#g" $FILE
 git add $FILE
 
 echo "Update stack with version ${VERSION} in docker-compose.yml"
 find . -name 'docker-compose.yml' -path './cli/config/compose/profiles/*' -print0 |
+	while IFS= read -r -d '' FILE ; do
+		${SED} -E -e "s#(image: (\")?docker\.elastic\.co/.*):-[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1:-${VERSION}#g" $FILE
+		git add $FILE
+	done
+
+echo "Update services with version ${VERSION} in docker-compose.yml"
+find . -name 'docker-compose.yml' -path './cli/config/compose/services/*' -print0 |
 	while IFS= read -r -d '' FILE ; do
 		${SED} -E -e "s#(image: (\")?docker\.elastic\.co/.*):-[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1:-${VERSION}#g" $FILE
 		git add $FILE

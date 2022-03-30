@@ -25,39 +25,51 @@ const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 //nolint:unused
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
+// DownloadRequest struct contains download details ad path and URL
+type DownloadRequest struct {
+	URL                 string
+	DownloadPath        string
+	UnsanitizedFilePath string
+}
+
 // DownloadFile will download a url and store it in a temporary path.
 // It writes to the destination file as it downloads it, without
 // loading the entire file into memory.
-func DownloadFile(url string) (string, error) {
-	tempParentDir := filepath.Join(os.TempDir(), uuid.NewString())
-	internalio.MkdirAll(tempParentDir)
+func DownloadFile(downloadRequest *DownloadRequest) error {
+	var filePath string
+	if downloadRequest.DownloadPath == "" {
+		tempParentDir := filepath.Join(os.TempDir(), uuid.NewString())
+		internalio.MkdirAll(tempParentDir)
+		filePath = filepath.Join(tempParentDir, uuid.NewString())
+		downloadRequest.DownloadPath = filePath
+	} else {
+		filePath = filepath.Join(downloadRequest.DownloadPath, uuid.NewString())
+	}
 
-	tempFile, err := os.Create(filepath.Join(tempParentDir, uuid.NewString()))
+	tempFile, err := os.Create(filePath)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
-			"url":   url,
+			"url":   downloadRequest.URL,
 		}).Error("Error creating file")
-		return "", err
+		return err
 	}
 	defer tempFile.Close()
 
-	filepathFull := tempFile.Name()
-
+	downloadRequest.UnsanitizedFilePath = tempFile.Name()
 	exp := GetExponentialBackOff(3)
 
 	retryCount := 1
 	var fileReader io.ReadCloser
-
 	download := func() error {
-		resp, err := http.Get(url)
+		resp, err := http.Get(downloadRequest.URL)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"elapsedTime": exp.GetElapsedTime(),
 				"error":       err,
-				"path":        filepathFull,
+				"path":        downloadRequest.UnsanitizedFilePath,
 				"retry":       retryCount,
-				"url":         url,
+				"url":         downloadRequest.URL,
 			}).Warn("Could not download the file")
 
 			retryCount++
@@ -68,8 +80,8 @@ func DownloadFile(url string) (string, error) {
 		log.WithFields(log.Fields{
 			"elapsedTime": exp.GetElapsedTime(),
 			"retries":     retryCount,
-			"path":        filepathFull,
-			"url":         url,
+			"path":        downloadRequest.UnsanitizedFilePath,
+			"url":         downloadRequest.URL,
 		}).Trace("File downloaded")
 
 		fileReader = resp.Body
@@ -78,13 +90,13 @@ func DownloadFile(url string) (string, error) {
 	}
 
 	log.WithFields(log.Fields{
-		"url":  url,
-		"path": filepathFull,
+		"url":  downloadRequest.URL,
+		"path": downloadRequest.UnsanitizedFilePath,
 	}).Trace("Downloading file")
 
 	err = backoff.Retry(download, exp)
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer fileReader.Close()
 
@@ -92,16 +104,16 @@ func DownloadFile(url string) (string, error) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
-			"url":   url,
-			"path":  filepathFull,
+			"url":   downloadRequest.URL,
+			"path":  downloadRequest.UnsanitizedFilePath,
 		}).Error("Could not write file")
 
-		return filepathFull, err
+		return err
 	}
 
 	_ = os.Chmod(tempFile.Name(), 0666)
 
-	return filepathFull, nil
+	return nil
 }
 
 // IsCommit returns true if the string matches commit format

@@ -2,7 +2,7 @@
 // or more contributor license agreements. Licensed under the Elastic License;
 // you may not use this file except in compliance with the Elastic License.
 
-package internal
+package downloads
 
 import (
 	"context"
@@ -41,8 +41,13 @@ var elasticVersionsCache = map[string]string{}
 // GithubCommitSha1 represents the value of the "GITHUB_CHECK_SHA1" environment variable
 var GithubCommitSha1 string
 
+// GithubRepository represents the value of the "GITHUB_CHECK_REPO" environment variable
+// Default is "elastic-agent"
+var GithubRepository string
+
 func init() {
 	GithubCommitSha1 = shell.GetEnv("GITHUB_CHECK_SHA1", "")
+	GithubRepository = shell.GetEnv("GITHUB_CHECK_REPO", "elastic-agent")
 
 	BeatsLocalPath = shell.GetEnv("BEATS_LOCAL_PATH", BeatsLocalPath)
 	if BeatsLocalPath != "" {
@@ -82,8 +87,15 @@ func CheckPRVersion(version string, fallbackVersion string) string {
 
 // FetchElasticArtifact fetches an artifact from the right repository, returning binary name, path and error
 func FetchElasticArtifact(ctx context.Context, artifact string, version string, os string, arch string, extension string, isDocker bool, xpack bool) (string, string, error) {
+	useCISnapshots := GithubCommitSha1 != ""
+
+	return FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, os, arch, extension, isDocker, xpack)
+}
+
+// FetchElasticArtifactForSnapshots fetches an artifact from the right repository, returning binary name, path and error
+func FetchElasticArtifactForSnapshots(ctx context.Context, useCISnapshots bool, artifact string, version string, os string, arch string, extension string, isDocker bool, xpack bool) (string, string, error) {
 	binaryName := buildArtifactName(artifact, version, os, arch, extension, isDocker)
-	binaryPath, err := fetchBeatsBinary(ctx, binaryName, artifact, version, utils.TimeoutFactor, xpack)
+	binaryPath, err := FetchProjectBinaryForSnapshots(ctx, useCISnapshots, artifact, binaryName, artifact, version, utils.TimeoutFactor, xpack, "", false)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
@@ -92,7 +104,7 @@ func FetchElasticArtifact(ctx context.Context, artifact string, version string, 
 			"arch":      arch,
 			"extension": extension,
 			"error":     err,
-		}).Error("Could not download the binary for the agent")
+		}).Error("Could not download the binary for the Elastic artifact")
 		return "", "", err
 	}
 
@@ -106,10 +118,11 @@ func GetCommitVersion(version string) string {
 
 // GetElasticArtifactURL returns the URL of a released artifact, which its full name is defined in the first argument,
 // from Elastic's artifact repository, building the JSON path query based on the full name
+// It also returns the URL of the sha512 file of the released artifact.
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-$ARCH.deb", "elastic-agent", "$VERSION")
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-x86_64.rpm", "elastic-agent","$VERSION")
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-linux-$ARCH.tar.gz", "elastic-agent","$VERSION")
-func GetElasticArtifactURL(artifactName string, artifact string, version string) (string, error) {
+func GetElasticArtifactURL(artifactName string, artifact string, version string) (string, string, error) {
 	exp := utils.GetExponentialBackOff(time.Minute)
 
 	retryCount := 1
@@ -161,7 +174,7 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 
 	err := backoff.Retry(apiStatus, exp)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	jsonParsed, err := gabs.ParseJSON([]byte(body))
@@ -171,7 +184,7 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 			"artifactName": artifactName,
 			"version":      tmpVersion,
 		}).Error("Could not parse the response body for the artifact")
-		return "", err
+		return "", "", err
 	}
 
 	log.WithFields(log.Fields{
@@ -191,8 +204,9 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 	// we need to get keys with dots using Search instead of Path
 	downloadObject := packagesObject.Search(artifactName)
 	downloadURL := downloadObject.Path("url").Data().(string)
+	downloadshaURL := downloadObject.Path("sha_url").Data().(string)
 
-	return downloadURL, nil
+	return downloadURL, downloadshaURL, nil
 }
 
 // GetElasticArtifactVersion returns the current version:
@@ -311,6 +325,27 @@ func SnapshotHasCommit(s string) bool {
 	return re.MatchString(s)
 }
 
+// UseBeatsCISnapshots check if CI snapshots should be used for the Beats, where the given SHA commit
+// lives in the beats repository
+func UseBeatsCISnapshots() bool {
+	return useCISnapshots("beats")
+}
+
+// UseElasticAgentCISnapshots check if CI snapshots should be used for the Elastic Agent, where the given SHA commit
+// lives in the elastic-agent repository
+func UseElasticAgentCISnapshots() bool {
+	return useCISnapshots("elastic-agent")
+}
+
+// useCISnapshots check if CI snapshots should be used, passing a function that evaluates the repository in which
+// the given Sha commit has context. I.e. a commit in the elastic-agent repository should pass a function that
+func useCISnapshots(repository string) bool {
+	if GithubCommitSha1 != "" && strings.EqualFold(GithubRepository, repository) {
+		return true
+	}
+	return false
+}
+
 // buildArtifactName builds the artifact name from the different coordinates for the artifact
 func buildArtifactName(artifact string, artifactVersion string, OS string, arch string, extension string, isDocker bool) string {
 	dockerString := ""
@@ -347,16 +382,37 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 
 }
 
-// fetchBeatsBinary it downloads the binary and returns the location of the downloaded file
+// FetchBeatsBinary it downloads the binary and returns the location of the downloaded file
 // If the environment variable BEATS_LOCAL_PATH is set, then the artifact
 // to be used will be defined by the local snapshot produced by the local build.
 // Else, if the environment variable GITHUB_CHECK_SHA1 is set, then the artifact
 // to be downloaded will be defined by the snapshot produced by the Beats CI for that commit.
-func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool) (string, error) {
-	if BeatsLocalPath != "" {
-		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.local.fetch-binary", apm.SpanOptions{
+func FetchBeatsBinary(ctx context.Context, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFile bool) (string, error) {
+	return FetchProjectBinary(ctx, "beats", artifactName, artifact, version, timeoutFactor, xpack, downloadPath, downloadSHAFile)
+}
+
+// FetchProjectBinary it downloads the binary and returns the location of the downloaded file
+// If the environment variable BEATS_LOCAL_PATH is set, then the artifact
+// to be used will be defined by the local snapshot produced by the local build.
+// Else, if the environment variable GITHUB_CHECK_SHA1 is set, then the artifact
+// to be downloaded will be defined by the snapshot produced by the Beats CI for that commit.
+func FetchProjectBinary(ctx context.Context, project string, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFile bool) (string, error) {
+	useCISnapshots := GithubCommitSha1 != ""
+
+	return FetchProjectBinaryForSnapshots(ctx, useCISnapshots, project, artifactName, artifact, version, timeoutFactor, xpack, downloadPath, downloadSHAFile)
+}
+
+// FetchProjectBinaryForSnapshots it downloads the binary and returns the location of the downloaded file
+// If the environment variable BEATS_LOCAL_PATH is set, then the artifact
+// to be used will be defined by the local snapshot produced by the local build.
+// Else, if the useCISnapshots argument is set to true, then the artifact
+// to be downloaded will be defined by the snapshot produced by the Beats CI or Fleet CI for that commit.
+func FetchProjectBinaryForSnapshots(ctx context.Context, useCISnapshots bool, project string, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFile bool) (string, error) {
+	if BeatsLocalPath != "" && project == "beats" {
+		span, _ := apm.StartSpanOptions(ctx, "Fetching Project binary", "project.local.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
+		span.Context.SetLabel("project", project)
 		defer span.End()
 
 		distributions := path.Join(BeatsLocalPath, artifact, "build", "distributions")
@@ -376,9 +432,15 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 	}
 
 	handleDownload := func(URL string) (string, error) {
-		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.url.fetch-binary", apm.SpanOptions{
+		name := artifactName
+		downloadRequest := utils.DownloadRequest{
+			DownloadPath: downloadPath,
+			URL:          URL,
+		}
+		span, _ := apm.StartSpanOptions(ctx, "Fetching Project binary", "project.url.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
+		span.Context.SetLabel("project", project)
 		defer span.End()
 
 		if val, ok := binariesCache[URL]; ok {
@@ -389,20 +451,23 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 			return val, nil
 		}
 
-		filePathFull, err := utils.DownloadFile(URL)
+		err := utils.DownloadFile(&downloadRequest)
 		if err != nil {
-			return filePathFull, err
+			return downloadRequest.UnsanitizedFilePath, err
 		}
 
+		if strings.HasSuffix(URL, ".sha512") {
+			name = fmt.Sprintf("%s.sha512", name)
+		}
 		// use artifact name as file name to avoid having URL params in the name
-		sanitizedFilePath := filepath.Join(path.Dir(filePathFull), artifactName)
-		err = os.Rename(filePathFull, sanitizedFilePath)
+		sanitizedFilePath := filepath.Join(path.Dir(downloadRequest.UnsanitizedFilePath), name)
+		err = os.Rename(downloadRequest.UnsanitizedFilePath, sanitizedFilePath)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"fileName":          filePathFull,
+				"fileName":          downloadRequest.UnsanitizedFilePath,
 				"sanitizedFileName": sanitizedFilePath,
 			}).Warn("Could not sanitize downloaded file name. Keeping old name")
-			sanitizedFilePath = filePathFull
+			sanitizedFilePath = downloadRequest.UnsanitizedFilePath
 		}
 
 		binariesCache[URL] = sanitizedFilePath
@@ -410,10 +475,9 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 		return sanitizedFilePath, nil
 	}
 
-	var downloadURL string
+	var downloadURL, downloadShaURL string
 	var err error
 
-	useCISnapshots := GithubCommitSha1 != ""
 	if useCISnapshots {
 		span, _ := apm.StartSpanOptions(ctx, "Fetching Beats binary", "beats.gcp.fetch-binary", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -422,24 +486,63 @@ func fetchBeatsBinary(ctx context.Context, artifactName string, artifact string,
 
 		log.Debugf("Using CI snapshots for %s", artifact)
 
-		bucket, prefix, object := getGCPBucketCoordinates(artifactName, artifact)
-
 		maxTimeout := time.Duration(timeoutFactor) * time.Minute
 
-		downloadURL, err = getObjectURLFromBucket(bucket, prefix, object, maxTimeout)
+		variant := ""
+		if strings.HasSuffix(artifact, "-ubi8") {
+			variant = "ubi8"
+		}
+
+		// look up the bucket in this particular order:
+		// 1. the project layout (elastic-agent, fleet-server)
+		// 2. the new beats layout (beats)
+		// 3. the legacy Beats layout (commits/snapshots)
+		resolvers := []BucketURLResolver{
+			NewProjectURLResolver(FleetCIArtifactsBase, project, artifactName, variant),
+			NewProjectURLResolver(BeatsCIArtifactsBase, project, artifactName, variant),
+			NewBeatsURLResolver(artifact, artifactName, variant),
+			NewBeatsLegacyURLResolver(artifact, artifactName, variant),
+		}
+
+		downloadURL, err = getObjectURLFromResolvers(resolvers, maxTimeout)
 		if err != nil {
 			return "", err
 		}
+		downloadLocation, err := handleDownload(downloadURL)
 
+		// check if sha file should be downloaded, else return
+		if !downloadSHAFile {
+			return downloadLocation, err
+		}
+
+		sha512ArtifactName := fmt.Sprintf("%s.sha512", artifactName)
+
+		sha512Resolvers := []BucketURLResolver{
+			NewProjectURLResolver(FleetCIArtifactsBase, project, sha512ArtifactName, variant),
+			NewProjectURLResolver(BeatsCIArtifactsBase, project, sha512ArtifactName, variant),
+			NewBeatsURLResolver(artifact, sha512ArtifactName, variant),
+			NewBeatsLegacyURLResolver(artifact, sha512ArtifactName, variant),
+		}
+
+		downloadURL, err = getObjectURLFromResolvers(sha512Resolvers, maxTimeout)
+		if err != nil {
+			return "", err
+		}
 		return handleDownload(downloadURL)
 	}
 
-	downloadURL, err = GetElasticArtifactURL(artifactName, artifact, version)
+	downloadURL, downloadShaURL, err = GetElasticArtifactURL(artifactName, artifact, version)
 	if err != nil {
 		return "", err
 	}
-
-	return handleDownload(downloadURL)
+	downloadLocation, err := handleDownload(downloadURL)
+	if err != nil {
+		return "", err
+	}
+	if downloadSHAFile && downloadShaURL != "" {
+		downloadLocation, err = handleDownload(downloadShaURL)
+	}
+	return downloadLocation, err
 }
 
 func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
@@ -452,28 +555,29 @@ func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
 	return "&pageToken=" + nextPageToken
 }
 
-// getGCPBucketCoordinates it calculates the bucket path in GCP
-func getGCPBucketCoordinates(fileName string, artifact string) (string, string, string) {
-	bucket := "beats-ci-artifacts"
+// getObjectURLFromResolvers extracts the media URL for the desired artifact from the
+// Google Cloud Storage bucket used by the CI to push snapshots
+func getObjectURLFromResolvers(resolvers []BucketURLResolver, maxtimeout time.Duration) (string, error) {
+	for i, resolver := range resolvers {
+		bucket, prefix, object := resolver.Resolve()
 
-	if strings.HasSuffix(artifact, "-ubi8") {
-		artifact = strings.ReplaceAll(artifact, "-ubi8", "")
+		downloadURL, err := getObjectURLFromBucket(bucket, prefix, object, maxtimeout)
+		if err != nil {
+			if i < len(resolvers)-1 {
+				log.WithFields(log.Fields{
+					"resolver": resolver,
+				}).Warn("Object not found. Trying with another artifact resolver")
+				continue
+			} else {
+				log.Error("Object not found. There is no other artifact resolver")
+				return "", err
+			}
+		}
+
+		return downloadURL, nil
 	}
 
-	prefix := fmt.Sprintf("snapshots/%s", artifact)
-	object := fileName
-
-	// the commit SHA will identify univocally the artifact in the GCP storage bucket
-	if GithubCommitSha1 != "" {
-		log.WithFields(log.Fields{
-			"commit": GithubCommitSha1,
-			"file":   fileName,
-		}).Debug("Using CI snapshots for a commit")
-		prefix = fmt.Sprintf("commits/%s", GithubCommitSha1)
-		object = artifact + "/" + fileName
-	}
-
-	return bucket, prefix, object
+	return "", fmt.Errorf("the artifact was not found")
 }
 
 // getObjectURLFromBucket extracts the media URL for the desired artifact from the

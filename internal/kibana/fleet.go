@@ -65,9 +65,10 @@ func NewFleetConfig(token string) (*FleetConfig, error) {
 	}
 
 	log.WithFields(log.Fields{
-		"elasticsearch":     cfg.ElasticsearchURI,
-		"elasticsearchPort": cfg.ElasticsearchPort,
-		"token":             cfg.EnrollmentToken,
+		"elasticsearch": fmt.Sprintf("%s:%d", cfg.ElasticsearchURI, cfg.ElasticsearchPort),
+		"fleet-server":  fmt.Sprintf("%s:%d", cfg.FleetServerURI, cfg.FleetServerPort),
+		"kibana":        fmt.Sprintf("%s:%d", cfg.KibanaURI, cfg.KibanaPort),
+		"token":         cfg.EnrollmentToken,
 	}).Debug("Fleet Server config created")
 
 	return cfg, nil
@@ -76,7 +77,7 @@ func NewFleetConfig(token string) (*FleetConfig, error) {
 // Flags bootstrap flags for fleet server
 func (cfg FleetConfig) Flags() []string {
 	flags := []string{
-		"-e", "-v", "--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken,
+		"--e", "--force", "--insecure", "--enrollment-token=" + cfg.EnrollmentToken,
 		"--url", cfg.FleetServerURL(),
 	}
 

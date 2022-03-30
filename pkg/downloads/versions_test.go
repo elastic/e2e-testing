@@ -2,7 +2,7 @@
 // or more contributor license agreements. Licensed under the Elastic License;
 // you may not use this file except in compliance with the Elastic License.
 
-package internal
+package downloads
 
 import (
 	"context"
@@ -22,6 +22,8 @@ var testVersion = "BEATS_VERSION"
 var ubi8VersionPrefix = artifact + "-ubi8-" + testVersion
 var versionPrefix = artifact + "-" + testVersion
 
+var testResourcesBasePath = path.Join("..", "_testresources")
+
 const bucket = "beats-ci-artifacts"
 const commits = "commits"
 const snapshots = "snapshots"
@@ -31,19 +33,19 @@ var commitsJSON *gabs.Container
 var snapshotsJSON *gabs.Container
 
 func init() {
-	nextTokenParamContent, err := ioutil.ReadFile(path.Join("_testresources", "gcp", "nextPageParam.json"))
+	nextTokenParamContent, err := ioutil.ReadFile(path.Join(testResourcesBasePath, "gcp", "nextPageParam.json"))
 	if err != nil {
 		os.Exit(1)
 	}
 	nextTokenParamJSON, _ = gabs.ParseJSON([]byte(nextTokenParamContent))
 
-	commitsContent, err := ioutil.ReadFile(path.Join("_testresources", "gcp", "commits.json"))
+	commitsContent, err := ioutil.ReadFile(path.Join(testResourcesBasePath, "gcp", "commits.json"))
 	if err != nil {
 		os.Exit(1)
 	}
 	commitsJSON, _ = gabs.ParseJSON([]byte(commitsContent))
 
-	snapshotsContent, err := ioutil.ReadFile(path.Join("_testresources", "gcp", "snapshots.json"))
+	snapshotsContent, err := ioutil.ReadFile(path.Join(testResourcesBasePath, "gcp", "snapshots.json"))
 	if err != nil {
 		os.Exit(1)
 	}
@@ -375,7 +377,7 @@ func TestCheckPRVersion(t *testing.T) {
 
 func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 	artifact := "elastic-agent"
-	beatsDir := path.Join("_testresources", "beats")
+	beatsDir := path.Join(testResourcesBasePath, "beats")
 	distributionsDir, _ := filepath.Abs(path.Join(beatsDir, "x-pack", "elastic-agent", "build", "distributions"))
 	version := testVersion
 
@@ -385,7 +387,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		defer func() { BeatsLocalPath = "" }()
 		BeatsLocalPath = beatsDir
 
-		_, err := fetchBeatsBinary(ctx, "foo_fileName", artifact, version, utils.TimeoutFactor, true)
+		_, err := FetchBeatsBinary(ctx, "foo_fileName", artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.NotNil(t, err)
 	})
 
@@ -396,7 +398,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := versionPrefix + "-x86_64.rpm"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -407,7 +409,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := versionPrefix + "-aarch64.rpm"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -419,7 +421,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := versionPrefix + "-amd64.deb"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -430,7 +432,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := versionPrefix + "-arm64.deb"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -442,7 +444,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := versionPrefix + "-linux-amd64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -453,7 +455,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := versionPrefix + "-linux-x86_64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -464,7 +466,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := versionPrefix + "-linux-arm64.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -476,7 +478,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := versionPrefix + "-linux-amd64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -487,7 +489,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := versionPrefix + "-linux-arm64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -499,7 +501,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := ubi8VersionPrefix + "-linux-amd64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -510,7 +512,7 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		artifactName := ubi8VersionPrefix + "-linux-arm64.docker.tar.gz"
 		expectedFilePath := path.Join(distributionsDir, artifactName)
 
-		downloadedFilePath, err := fetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true)
+		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
 		assert.Nil(t, err)
 		assert.Equal(t, downloadedFilePath, expectedFilePath)
 	})
@@ -547,89 +549,6 @@ func TestGetBucketSearchNextPageParam_HasNoMorePages(t *testing.T) {
 	// this JSON file does not contain the tokken field
 	param := getBucketSearchNextPageParam(commitsJSON)
 	assert.True(t, param == "")
-}
-
-func TestGetGCPBucketCoordinates_Commits(t *testing.T) {
-	artifact := "elastic-agent"
-
-	t.Run("Fetching commits bucket for RPM package", func(t *testing.T) {
-		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
-
-		fileName := "elastic-agent-" + testVersion + "-x86_64.rpm"
-
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact)
-		assert.Equal(t, bucket, "beats-ci-artifacts")
-		assert.Equal(t, prefix, "commits/0123456789")
-		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-x86_64.rpm")
-	})
-
-	t.Run("Fetching commits bucket for DEB package", func(t *testing.T) {
-		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
-
-		fileName := "elastic-agent-" + testVersion + "-amd64.deb"
-
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact)
-		assert.Equal(t, bucket, "beats-ci-artifacts")
-		assert.Equal(t, prefix, "commits/0123456789")
-		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-amd64.deb")
-	})
-
-	t.Run("Fetching commits bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
-		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
-
-		fileName := "elastic-agent-" + testVersion + "-linux-x86_64.tar.gz"
-
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact)
-		assert.Equal(t, bucket, "beats-ci-artifacts")
-		assert.Equal(t, prefix, "commits/0123456789")
-		assert.Equal(t, object, "elastic-agent/elastic-agent-"+testVersion+"-linux-x86_64.tar.gz")
-	})
-
-	t.Run("Fetching commits bucket for ubi8 Docker image", func(t *testing.T) {
-		GithubCommitSha1 = "0123456789"
-		defer func() { GithubCommitSha1 = "" }()
-
-		fileName := "elastic-agent-ubi8-" + testVersion + "-x86_64.tar.gz"
-
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, "elastic-agent-ubi8")
-		assert.Equal(t, bucket, "beats-ci-artifacts")
-		assert.Equal(t, prefix, "commits/0123456789")
-		assert.Equal(t, object, "elastic-agent/elastic-agent-ubi8-"+testVersion+"-x86_64.tar.gz")
-	})
-}
-
-func TestGetGCPBucketCoordinates_Snapshots(t *testing.T) {
-	artifact := "elastic-agent"
-
-	t.Run("Fetching snapshots bucket for RPM package", func(t *testing.T) {
-		fileName := "elastic-agent-" + testVersion + "-x86_64.rpm"
-
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact)
-		assert.Equal(t, bucket, "beats-ci-artifacts")
-		assert.Equal(t, prefix, "snapshots/elastic-agent")
-		assert.Equal(t, object, "elastic-agent-"+testVersion+"-x86_64.rpm")
-	})
-
-	t.Run("Fetching snapshots bucket for DEB package", func(t *testing.T) {
-		fileName := "elastic-agent-" + testVersion + "-amd64.deb"
-
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact)
-		assert.Equal(t, bucket, "beats-ci-artifacts")
-		assert.Equal(t, prefix, "snapshots/elastic-agent")
-		assert.Equal(t, object, "elastic-agent-"+testVersion+"-amd64.deb")
-	})
-
-	t.Run("Fetching snapshots bucket for TAR package adds OS to fileName and object", func(t *testing.T) {
-		fileName := "elastic-agent-" + testVersion + "-linux-x86_64.tar.gz"
-
-		bucket, prefix, object := getGCPBucketCoordinates(fileName, artifact)
-		assert.Equal(t, bucket, "beats-ci-artifacts")
-		assert.Equal(t, prefix, "snapshots/elastic-agent")
-		assert.Equal(t, object, "elastic-agent-"+testVersion+"-linux-x86_64.tar.gz")
-	})
 }
 
 func Test_GetCommitVersion(t *testing.T) {

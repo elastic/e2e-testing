@@ -137,7 +137,7 @@ func getElasticsearchClient(ctx context.Context) (*es.Client, error) {
 func getElasticsearchClientFromHostPort(ctx context.Context, host string, port int, scheme string) (*es.Client, error) {
 	cfg := es.Config{
 		Addresses: []string{fmt.Sprintf("%s://%s:%d", scheme, host, port)},
-		Username:  "elastic",
+		Username:  "admin",
 		Password:  shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"),
 	}
 
@@ -158,6 +158,112 @@ func getElasticsearchClientFromHostPort(ctx context.Context, host string, port i
 	}
 
 	return esClient, nil
+}
+
+// SecurityTokenResponse wraps a security token result
+type SecurityTokenResponse struct {
+	AccessToken    string `json:"access_token"`
+	Authentication struct {
+		Realm struct {
+			Name string `json:"name"`
+			Type string `json:"type"`
+		} `json:"authentication_realm"`
+		Type        string `json:"authentication_type"`
+		Email       string `json:"email"`
+		Enabled     bool   `json:"enabled"`
+		FullName    bool   `json:"full_name"`
+		LookupRealm struct {
+			Name string `json:"name"`
+			Type string `json:"type"`
+		} `json:"lookup_realm"`
+		Metadata struct {
+			Reserved string `json:"_reserved"`
+		} `json:"lookup_realm"`
+		Roles    []string `json:"roles"`
+		Username string   `json:"username"`
+	} `json:"authentication"`
+	ExpiresIn int    `json:"expires_in"`
+	Type      string `json:"type"`
+}
+
+// SecurityTokenRequest payload for requesting a security token
+type SecurityTokenRequest struct {
+	GrantType string `json:"grant_type"`
+}
+
+// GetAPIToken retrieves an OAuth API token
+func GetAPIToken(ctx context.Context) (SecurityTokenResponse, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Get API Token", "elasticsearch.security.get-token", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	result := SecurityTokenResponse{}
+
+	esClient, err := getElasticsearchClient(ctx)
+	if err != nil {
+		return result, err
+	}
+
+	securityToken := SecurityTokenRequest{
+		GrantType: "client_credentials",
+	}
+
+	log.WithFields(log.Fields{
+		"tokenRequest": securityToken,
+	}).Debug("Retrieving Elasticsearch's API token")
+
+	var buf bytes.Buffer
+	err = json.NewEncoder(&buf).Encode(securityToken)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Error decoding Security Token struct")
+
+		return result, err
+	}
+
+	res, err := esClient.Security.GetToken(&buf)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Error retrieving security token from Elasticsearch")
+
+		return result, err
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		var e map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("Error parsing error response body from Elasticsearch")
+
+			return result, err
+		}
+
+		err := fmt.Errorf(
+			"error getting response from Elasticsearch. Status: %s, ResponseError: %v",
+			res.Status(), e)
+
+		return result, err
+	}
+
+	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Error parsing response body from Elasticsearch")
+
+		return result, err
+	}
+
+	log.WithFields(log.Fields{
+		"status": res.Status(),
+		"result": result,
+	}).Debug("API Token retrieved from Elasticsearch")
+
+	return result, nil
 }
 
 // Search provide search interface to ES
@@ -290,6 +396,60 @@ func WaitForElasticsearch(ctx context.Context, maxTimeoutMinutes time.Duration) 
 	return true, nil
 }
 
+// WaitForClusterHealth waits for the elasticsearch cluster to be healthy
+func WaitForClusterHealth(ctx context.Context) error {
+	span, _ := apm.StartSpanOptions(ctx, "ClusterHealth", "elasticsearch.cluster.health", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	esClient, err := getElasticsearchClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	exp := utils.GetExponentialBackOff(60 * time.Second)
+
+	retryCount := 1
+
+	healthFunction := func() error {
+		response, err := esClient.Cluster.Health()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":       err,
+				"retry":       retryCount,
+				"elapsedTime": exp.GetElapsedTime(),
+			}).Warn("The Elasticsearch Cluster Health API is not available yet")
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"retries":     retryCount,
+			"response":    response,
+			"elapsedTime": exp.GetElapsedTime(),
+		}).Trace("The Elasticsearch Cluster Health API is  available")
+
+		if response.StatusCode != 200 {
+			log.WithFields(log.Fields{
+				"retries":     retryCount,
+				"statusCode":  response.StatusCode,
+				"elapsedTime": exp.GetElapsedTime(),
+			}).Warn("The Elasticsearch Cluster is not healthy yet. Retrying")
+
+			retryCount++
+
+			return fmt.Errorf("the Elasticsearch Cluster is not healthy yet. Retrying")
+		}
+
+		return nil
+	}
+
+	return backoff.Retry(healthFunction, exp)
+}
+
 // WaitForIndices waits for the elasticsearch indices to return the list of indices.
 func WaitForIndices() (string, error) {
 	exp := utils.GetExponentialBackOff(60 * time.Second)
@@ -302,7 +462,7 @@ func WaitForIndices() (string, error) {
 		r := curl.HTTPRequest{
 			URL:               fmt.Sprintf("%s://%s:%d/_cat/indices?v", esEndpoint.Scheme, esEndpoint.Host, esEndpoint.Port),
 			BasicAuthPassword: shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"),
-			BasicAuthUser:     "elastic",
+			BasicAuthUser:     "admin",
 		}
 
 		response, err := curl.Get(r)

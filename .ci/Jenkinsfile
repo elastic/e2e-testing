@@ -24,8 +24,8 @@ pipeline {
     RUN_ID = UUID.randomUUID().toString()
   }
   options {
-    timeout(time: 1, unit: 'HOURS')
-    buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '20', daysToKeepStr: '30'))
+    timeout(time: 90, unit: 'MINUTES')
+    buildDiscarder(logRotator(numToKeepStr: '200', artifactNumToKeepStr: '30', daysToKeepStr: '30'))
     timestamps()
     ansiColor('xterm')
     disableResume()
@@ -38,6 +38,7 @@ pipeline {
   }
   parameters {
     booleanParam(name: 'Run_As_Main_Branch', defaultValue: false, description: 'Allow to run any steps on a PR, some steps normally only run on main branch.')
+    booleanParam(name: "DEVELOPER_MODE", defaultValue: false, description: "If checked, cloud resources won't be destroyed at the end of the pipeline. Default false")
     booleanParam(name: "SKIP_SCENARIOS", defaultValue: true, description: "If it's needed to skip those scenarios marked as @skip. Default true")
     booleanParam(name: "NIGHTLY_SCENARIOS", defaultValue: false, description: "If it's needed to include the scenarios marked as @nightly in the test execution. Default false")
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
@@ -47,18 +48,19 @@ pipeline {
     booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify to Slack with green builds.")
     string(name: 'SLACK_CHANNEL', defaultValue: 'observablt-bots', description: 'The Slack channel(s) where errors will be posted. For multiple channels, use a comma-separated list of channels')
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
-    string(name: 'BEAT_VERSION', defaultValue: '8.1.0-befff95a-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
-    string(name: 'ELASTIC_AGENT_STALE_VERSION', defaultValue: '7.15-SNAPSHOT', description: 'SemVer version of the stale stand-alone elastic-agent to be used for Fleet upgrade tests.')
-    choice(name: 'LOG_LEVEL', choices: ['DEBUG', 'TRACE', 'INFO'], description: 'Log level to be used')
+    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.2.0-dcff22d7-SNAPSHOT', description: 'SemVer version of the Elastic Agent to be used for the tests. You can use here the tag of your PR to test your changes')
+    string(name: 'BEAT_VERSION', defaultValue: '8.2.0-dcff22d7-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
+    string(name: 'ELASTIC_AGENT_STALE_VERSION', defaultValue: '7.17-SNAPSHOT', description: 'SemVer version of the stale stand-alone elastic-agent to be used for Fleet upgrade tests.')
+    choice(name: 'LOG_LEVEL', choices: ['TRACE', 'DEBUG', 'INFO'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
     string(name: 'KIBANA_VERSION', defaultValue: '', description: 'Docker tag of the kibana to be used for the tests. It will refer to an image related to a Kibana PR, under the Observability-CI namespace')
-    string(name: 'STACK_VERSION', defaultValue: '8.1.0-befff95a-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
+    string(name: 'STACK_VERSION', defaultValue: '8.2.0-dcff22d7-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
     string(name: 'HELM_CHART_VERSION', defaultValue: '7.11.2', description: 'SemVer version of Helm chart to be used.')
     string(name: 'HELM_VERSION', defaultValue: '3.5.2', description: 'SemVer version of Helm to be used.')
     string(name: 'KIND_VERSION', defaultValue: '0.10.0', description: 'SemVer version of Kind to be used.')
     string(name: 'KUBERNETES_VERSION', defaultValue: '1.18.2', description: 'SemVer version of Kubernetes to be used.')
     string(name: 'GITHUB_CHECK_NAME', defaultValue: '', description: 'Name of the GitHub check to be updated. Only if this build is triggered from another parent stream.')
-    string(name: 'GITHUB_CHECK_REPO', defaultValue: '', description: 'Name of the GitHub repo to be updated. Only if this build is triggered from another parent stream.')
+    string(name: 'GITHUB_CHECK_REPO', defaultValue: 'elastic-agent', description: 'Name of the GitHub repo to be updated. Only if this build is triggered from another parent stream.')
     string(name: 'GITHUB_CHECK_SHA1', defaultValue: '', description: 'Git SHA for the Beats upstream project (branch or PR)')
   }
   stages {
@@ -73,6 +75,7 @@ pipeline {
         SLACK_CHANNEL = "${params.SLACK_CHANNEL.trim()}"
         ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
         BEAT_VERSION = "${params.BEAT_VERSION.trim()}"
+        ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
         KIBANA_VERSION = "${params.KIBANA_VERSION.trim()}"
         STACK_VERSION = "${params.STACK_VERSION.trim()}"
         FORCE_SKIP_GIT_CHECKS = "${params.forceSkipGitChecks}"
@@ -83,6 +86,8 @@ pipeline {
         KUBERNETES_VERSION = "${params.KUBERNETES_VERSION.trim()}"
         LOG_LEVEL = "${params.LOG_LEVEL.trim()}"
         TIMEOUT_FACTOR = "${params.TIMEOUT_FACTOR.trim()}"
+        GITHUB_CHECK_REPO = "${params.GITHUB_CHECK_REPO.trim()}"
+        GITHUB_CHECK_SHA1 = "${params.GITHUB_CHECK_SHA1.trim()}"
       }
       stages {
         stage('Checkout') {
@@ -93,6 +98,7 @@ pipeline {
             githubCheckNotify('PENDING')  // we want to notify the upstream about the e2e the soonest
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
             setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
+            setEnvVar("LABELS_STRING", "buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT}")
             checkSkipTests()
           }
         }
@@ -200,18 +206,22 @@ pipeline {
                   def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
                   // Deploy the test infrastructure
                   sh "ssh-keygen -b 4096 -t rsa -f ${stackWorkspace}/e2essh -q -N \"\" "
-                  def stackMachine = getMachineInfo(stackWorkspace, 'stack')
+                  def stackMachine = getMachineInfo('stack')
 
                   ansible(stackWorkspace,
                           env.RUN_ID.split('-')[0],
-                          "-t provision-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                          "-t provision-stack --extra-vars=\"${LABELS_STRING} nodeUser=${stackMachine.username} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
                   // Must be gathered after deployment as the public IP is known at that time
                   def stackRunner = getNodeIp(stackWorkspace, 'stack')
 
-                  ansible(stackWorkspace,
-                          env.RUN_ID.split('-')[0],
-                          "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                  retryWithSleep(retries: 2, seconds: 5, backoff: true) {
+                    ansible(
+                      stackWorkspace,
+                      env.RUN_ID.split('-')[0],
+                      "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
+                    )
+                  }
 
                   // Update stash with latest changes from the stack deployment
                   stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false
@@ -263,10 +273,15 @@ pipeline {
               // Once all tests are complete we need to teardown the single instance with the deployed stack
               script {
                 def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
-                def stackMachine = getMachineInfo(stackWorkspace, 'stack')
-                ansible(stackWorkspace,
+                def stackMachine = getMachineInfo('stack')
+                if (params.DEVELOPER_MODE) {
+                  def stackRunner = getNodeIp(stackWorkspace, 'stack')
+                  log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunner.ip}")
+                } else {
+                  ansible(stackWorkspace,
                         env.RUN_ID.split('-')[0],
-                        "-t destroy --extra-vars=\"nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                        "-t destroy --extra-vars=\"nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                }
               }
             }
           }
@@ -332,6 +347,7 @@ def pyrun(command){
   def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
   def awsAuthObj = awsProps?.data
   withEnv([
+    "ANSIBLE_CONFIG=${env.WORKSPACE}/.ci/ansible/ansible.cfg",
     "ANSIBLE_HOST_KEY_CHECKING=False",
   ]){
     withVaultToken(){
@@ -339,18 +355,31 @@ def pyrun(command){
         [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
         [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
       ]) {
-        sh(script: """#!/bin/bash
-            set -eux
-            if ! test -d ${env.WORKSPACE}/.venv; then
-                python3 -m venv ${env.WORKSPACE}/.venv
-                 ${env.WORKSPACE}/.venv/bin/pip3 -q install wheel
-                 ${env.WORKSPACE}/.venv/bin/pip3 -q install ansible requests boto3 boto
-                 ${env.WORKSPACE}/.venv/bin/ansible-galaxy install -r .ci/ansible/requirements.yml
-            fi
-            ${env.WORKSPACE}/.venv/bin/${command}
-          """,
-           label: "Executing ${command.split(' ')[0]}"
-        )
+        retryWithSleep(retries: 3, seconds: 5, backoff: true){
+          sh(script: """#!/bin/bash
+              set -eux
+              if ! test -f ${env.WORKSPACE}/.venv-installed; then
+                  python3 -m venv ${env.WORKSPACE}/.venv
+                  touch ${env.WORKSPACE}/.venv-installed
+              fi
+            """,
+            label: "Creating virtualenv"
+          )
+        }
+        retryWithSleep(retries: 3, seconds: 30, backoff: true){
+          sh(script: """#!/bin/bash
+              set -eux
+              if ! test -f ${env.WORKSPACE}/.python-dependencies; then
+                ${env.WORKSPACE}/.venv/bin/pip3 -q install wheel
+                ${env.WORKSPACE}/.venv/bin/pip3 -q install -r .ci/ansible/requirements.txt
+                ${env.WORKSPACE}/.venv/bin/ansible-galaxy install -r .ci/ansible/requirements.yml
+                touch ${env.WORKSPACE}/.python-dependencies
+              fi
+            """,
+            label: "Installing dependencies"
+          )
+        }
+        sh(script: "${env.WORKSPACE}/.venv/bin/${command}", label: "Executing ${command.split(' ')[0]}")
       }
     }
   }
@@ -363,14 +392,16 @@ def getNodeIp(workspace, platform){
   return [user: runnerUser, ip: runnerIP]
 }
 
-def getMachineInfo(workspace, platform){
-  def machineYaml = readYaml(file: "${workspace}/${TEST_MATRIX_FILE}")
+def getMachineInfo(platform){
+  def machineYaml = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/.ci/.e2e-platforms.yaml")
   def machines = machineYaml['PLATFORMS']
   return machines.get(platform)
 }
 
 def ansible(workspace, run_id, args){
-     pyrun("ansible-playbook --private-key=\"${workspace}/e2essh\" --extra-vars=\"workspace=${workspace}/ runId=${run_id} sshPublicKey=${workspace}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${workspace}/.ci/ansible/playbook.yml ${args}")
+  withOtelEnv() {
+    pyrun("ansible-playbook --private-key=\"${workspace}/e2essh\" --extra-vars=\"workspace=${workspace}/ runId=${run_id} sshPublicKey=${workspace}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${workspace}/.ci/ansible/playbook.yml ${args}")
+  }
 }
 
 
@@ -378,9 +409,24 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   def suite = item.suite
   def platforms = item.platforms
 
+  // Predefine the remote provider to use the already provisioned stack VM.
+  // Each suite or scenario in the CI test suite would be able to define its own provider
+  // (i.e. docker). If empty, remote will be used as fallback
+  def suiteProvider = item.provider
+  if (!suiteProvider || suiteProvider?.trim() == '') {
+    suiteProvider = 'remote'
+  }
+
   item.scenarios.each { scenario ->
     def name = scenario.name
     def platformsValue = platforms
+
+    def scenarioProvider = scenario.provider
+    // if the scenario does not set its own provider, use suite's provider
+    if (!scenarioProvider || scenarioProvider?.trim() == '') {
+      scenarioProvider = suiteProvider
+    }
+
     def scenarioPlatforms = scenario.platforms
     if (scenarioPlatforms?.size() > 0) {
       // scenario platforms take precedence over suite platforms, overriding them
@@ -389,10 +435,11 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
     def tags = scenario.tags
       platformsValue.each { platform ->
-        log(level: 'INFO', text: "Adding ${platform}:${suite}:${tags} test suite to the build execution")
-        machineInfo = getMachineInfo("${env.WORKSPACE}/${env.BASE_DIR}", platform)
-        parallelTasks["${platform}_${tags}"] = generateFunctionalTestStep(name: "${name}",
+        log(level: 'INFO', text: "Adding ${suite}:${platform}:${tags} test suite to the build execution")
+        machineInfo = getMachineInfo(platform)
+        parallelTasks["${suite}_${platform}_${tags}"] = generateFunctionalTestStep(name: "${name}",
                                                                           platform: platform,
+                                                                          provider: scenarioProvider,
                                                                           suite: "${suite}",
                                                                           tags: "${tags}",
                                                                           pullRequestFilter: "${pullRequestFilter}",
@@ -444,6 +491,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def name = args.get('name')
   def name_normalize = name.replace(' ', '_')
   def platform = args.get('platform')
+  def provider = args.get('provider')
   def suite = args.get('suite')
   def tags = args.get('tags')
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
@@ -473,21 +521,19 @@ def generateFunctionalTestStep(Map args = [:]){
     goArch = "arm64"
   }
 
-  // Skip scenarios per platform
-  tags += " && ~@skip:${goArch}"
-
   // Setup environment for platform
   def envContext = []
-  // envContext.add("PROVIDER=${platformProvider}")
+  envContext.add("PROVIDER=${provider}")
   envContext.add("SUITE=${suite}")
-  envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},stack_version=${env.STACK_VERSION}")
+  envContext.add("REPORT_PREFIX=${suite}_${platform}_${tags}")
+  envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},elastic_agent_version=${env.ELASTIC_AGENT_VERSION},stack_version=${env.STACK_VERSION}")
 
   def stackRunner = getNodeIp("${env.WORKSPACE}/${env.BASE_DIR}", 'stack')
 
   def runId = UUID.randomUUID().toString().split('-')[0]
 
   return {
-    withNode(labels: 'ubuntu-20.04', forceWorkspace: true, forceWorker: true){
+    withNode(labels: 'ubuntu-20.04 && gobld/machineType:e2-small', forceWorkspace: true, forceWorker: true){
       try {
         deleteDir()
         unstash 'sourceEnvModified'
@@ -501,14 +547,14 @@ def generateFunctionalTestStep(Map args = [:]){
             // Start node, capture ip address
             ansible("${env.WORKSPACE}",
                     runId,
-                    "-t start-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-t start-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             def testRunner = getNodeIp("${env.WORKSPACE}", platform)
 
             // Configure node for testing
             ansible("${env.WORKSPACE}",
                     runId,
-                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"stackRunner=${stackRunner.ip} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             sshexec("${env.WORKSPACE}",
                     testRunner,
@@ -520,20 +566,38 @@ def generateFunctionalTestStep(Map args = [:]){
         sh "mkdir -p outputs/${testRunner.ip} || true"
         sshexec("${env.WORKSPACE}",
                 testRunner,
-                """sudo chown ${testRunner.user}:${testRunner.user} -R /home/${testRunner.user}/e2e-testing/outputs """)
+                """sudo chown ${testRunner.user} -R /home/${testRunner.user}/e2e-testing/outputs """)
         scpr("${env.WORKSPACE}",
              testRunner,
              "e2e-testing/outputs/TEST-*${runId}*.xml",
              "outputs/${testRunner.ip}/.")
+        scpr("${env.WORKSPACE}",
+             testRunner,
+             "e2e-testing/outputs/TEST-*${runId}*.json",
+             "outputs/${testRunner.ip}/.")
         sh "ls -l outputs/${testRunner.ip}"
-        ansible("${env.WORKSPACE}",
+        if (params.DEVELOPER_MODE) {
+          log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunner.ip}. ")
+        } else {
+          ansible("${env.WORKSPACE}",
                 runId,
-                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeUser=${machine.username} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+        }
+        withEnv([
+          "ARCHITECTURE=${goArch}",
+          "CUCUMBER_REPORTS_PATH=outputs/${testRunner.ip}",
+          "PLATFORM=${platform}",
+          "SUITE=${suite}",
+          "TAGS=${tags}",
+        ]){
+          dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
+          sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
+        }
         junit allowEmptyResults: true,
           keepLongStdio: true,
           testResults: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
         archiveArtifacts allowEmptyArchive: true,
-          artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
+          artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml, outputs/${testRunner.ip}/TEST-*${runId}*.json, outputs/${testRunner.ip}/TEST-*${runId}*.json.html"
       }
     }
   }

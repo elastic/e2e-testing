@@ -10,13 +10,13 @@ import (
 	"os"
 	"strings"
 
-	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/beats"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/types"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -109,8 +109,8 @@ func (i *elasticAgentTARPackage) Postinstall(ctx context.Context) error {
 
 // Preinstall executes operations before installing a TAR package
 func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
-	installArtifactFn := func(ctx context.Context, artifact string) error {
-		span, _ := apm.StartSpanOptions(ctx, "Pre-install operations for the Elastic Agent", "elastic-agent.tar.pre-install", apm.SpanOptions{
+	installArtifactFn := func(ctx context.Context, artifact string, version string, useCISnapshots bool) error {
+		span, _ := apm.StartSpanOptions(ctx, "Pre-install "+artifact, artifact+".tar.pre-install", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
 		defer span.End()
@@ -126,17 +126,17 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 
 		beat := beats.NewLinuxBeat(artifact, types.TarGz, common.BeatVersion)
 
-		_, binaryPath, err := beat.Download(ctx)
+		_, binaryPath, err := beat.DownloadSnapshot(ctx, useCISnapshots)
 		if err != nil {
 			return err
 		}
 
-		_, err = i.Exec(ctx, []string{"tar", "-xvf", binaryPath})
+		_, err = i.Exec(ctx, []string{"tar", "-zxf", binaryPath})
 		if err != nil {
 			return err
 		}
 
-		output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), beat.OSToString(), beat.ArchToString()), artifact})
+		output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), beat.OSToString(), beat.ArchToString()), artifact})
 		log.WithFields(log.Fields{
 			"output":   output,
 			"artifact": artifact,
@@ -147,15 +147,31 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 	for _, bp := range i.service.BackgroundProcesses {
 		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
 			// pre-install the dependant binary first
-			err := installArtifactFn(ctx, bp)
+			err := installArtifactFn(ctx, bp, common.BeatVersion, downloads.UseBeatsCISnapshots())
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	return installArtifactFn(ctx, "elastic-agent")
+	return installArtifactFn(ctx, "elastic-agent", common.ElasticAgentVersion, downloads.UseElasticAgentCISnapshots())
 
+}
+
+// Restart will restart a service
+func (i *elasticAgentTARPackage) Restart(ctx context.Context) error {
+	cmds := []string{"systemctl", "restart", "elastic-agent"}
+	span, _ := apm.StartSpanOptions(ctx, "Restarting Elastic Agent service", "elastic-agent.tar.restart", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+
+	_, err := i.Exec(ctx, cmds)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Start will start a service

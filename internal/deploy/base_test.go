@@ -47,6 +47,20 @@ func Test_New(t *testing.T) {
 	})
 }
 
+func Test_ServiceRequest(t *testing.T) {
+	t.Run("ServiceRequest as service", func(t *testing.T) {
+		srv := NewServiceRequest("foo")
+
+		assert.False(t, srv.IsContainer, "Service should not be a container")
+	})
+
+	t.Run("ServiceRequest as container", func(t *testing.T) {
+		srv := NewServiceContainerRequest("foo")
+
+		assert.True(t, srv.IsContainer, "Service should be a container")
+	})
+}
+
 func Test_ServiceRequest_GetName(t *testing.T) {
 	t.Run("ServiceRequest without flavour", func(t *testing.T) {
 		srv := NewServiceRequest("foo")

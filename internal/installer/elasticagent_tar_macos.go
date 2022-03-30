@@ -9,11 +9,11 @@ import (
 	"fmt"
 	"runtime"
 
-	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/beats"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -117,14 +117,23 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	_, err = i.Exec(ctx, []string{"tar", "-xvf", binaryPath})
+	_, err = i.Exec(ctx, []string{"tar", "-zxf", binaryPath})
 	if err != nil {
 		return err
 	}
 
-	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), beat.OSToString(), beat.ArchToString()), "/elastic-agent"})
+	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), beat.OSToString(), beat.ArchToString()), "/elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
+}
+
+// Restart will restart a service
+func (i *elasticAgentTARDarwinPackage) Restart(ctx context.Context) error {
+	err := i.Stop(ctx)
+	if err != nil {
+		return err
+	}
+	return i.Start(ctx)
 }
 
 // Start will start a service

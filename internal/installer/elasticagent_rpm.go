@@ -14,6 +14,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/types"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -133,7 +134,7 @@ func (i *elasticAgentRPMPackage) Postinstall(ctx context.Context) error {
 
 // Preinstall executes operations before installing a RPM package
 func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
-	installArtifactFn := func(ctx context.Context, artifact string) error {
+	installArtifactFn := func(ctx context.Context, artifact string, version string, useCISnapshots bool) error {
 		span, _ := apm.StartSpanOptions(ctx, "Pre-install "+artifact, artifact+".rpm.pre-install", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
 		})
@@ -141,7 +142,7 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 
 		beat := beats.NewLinuxBeat(artifact, types.Rpm, common.BeatVersion)
 
-		binaryName, binaryPath, err := beat.Download(ctx)
+		binaryName, binaryPath, err := beat.DownloadSnapshot(ctx, useCISnapshots)
 		if err != nil {
 			return err
 		}
@@ -161,15 +162,30 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 
 	for _, bp := range i.service.BackgroundProcesses {
 		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
-			// pre-install the dependant binary first
-			err := installArtifactFn(ctx, bp)
+			// pre-install the dependant binary first, using the stack version
+			err := installArtifactFn(ctx, bp, common.BeatVersion, downloads.UseBeatsCISnapshots())
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	return installArtifactFn(ctx, "elastic-agent")
+	return installArtifactFn(ctx, "elastic-agent", common.ElasticAgentVersion, downloads.UseElasticAgentCISnapshots())
+}
+
+// Restart will restart a service
+func (i *elasticAgentRPMPackage) Restart(ctx context.Context) error {
+	for _, bp := range i.service.BackgroundProcesses {
+		if strings.EqualFold(bp, "filebeat") || strings.EqualFold(bp, "metricbeat") {
+			// start the dependant binary first
+			err := systemCtlRestart(ctx, "centos", bp, i.Exec)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return systemCtlRestart(ctx, "centos", "elastic-agent", i.Exec)
 }
 
 // Start will start a service

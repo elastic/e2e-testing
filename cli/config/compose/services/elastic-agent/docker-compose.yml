@@ -1,13 +1,15 @@
 version: '2.4'
 services:
   elastic-agent:
-    image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.0.0-SNAPSHOT}"
+    image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.2.0-dcff22d7-SNAPSHOT}"
     depends_on:
       elasticsearch:
         condition: service_healthy
       kibana:
         condition: service_healthy
     environment:
+      - "ELASTICSEARCH_USERNAME=admin"
+      - "ELASTICSEARCH_PASSWORD=changeme"
       - "FLEET_SERVER_ENABLE=${fleetServerMode:-0}"
       - "FLEET_SERVER_INSECURE_HTTP=${fleetServerMode:-0}"
       - "FLEET_ENROLL=${fleetEnroll:-1}"
@@ -16,4 +18,4 @@ services:
       - "FLEET_URL=${fleetUrl:-}"
     platform: ${stackPlatform:-linux/amd64}
     ports:
-      - "127.0.0.1:${fleetServerPort:-8220}:8220"
+      - "${fleetServerPort:-8220}:8220"

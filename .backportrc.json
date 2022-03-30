@@ -7,9 +7,9 @@
     "multipleCommits": true,
     "prTitle": "{commitMessages} backport for {targetBranch}",
     "targetBranchChoices": [
+        { "name": "8.1", "checked": true },
         { "name": "8.0", "checked": true },
-        { "name": "7.17", "checked": true },
-        { "name": "7.16", "checked": true }
+        { "name": "7.17", "checked": true }
     ],
     "targetPRLabels": ["backport"],
     "upstream": "elastic/e2e-testing"

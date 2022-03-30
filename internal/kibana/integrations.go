@@ -69,7 +69,7 @@ func (c *Client) AddIntegrationToPolicy(ctx context.Context, packageDS PackageDa
 				"elapsedTime": exp.GetElapsedTime(),
 				"err":         err,
 				"statusCode":  statusCode,
-				"response":    respBody,
+				"response":    string(respBody),
 				"package":     packageDS,
 				"retry":       retryCount,
 			}).Warn("could not add package to policy because of HTTP code is not 200")
@@ -232,6 +232,30 @@ type SecurityEndpoint struct {
 			} `json:"policy"`
 		} `json:"Endpoint"`
 	} `json:"metadata"`
+}
+
+// GetPackagePolicy sends a GET request to Fleet retrieving a package policy by its name
+func (c *Client) GetPackagePolicy(ctx context.Context, name string) (PackageDataStream, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Retrieving package policy", "fleet.package-policy.get", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/package_policies/%s", FleetAPI, name))
+	if err != nil {
+		return PackageDataStream{}, errors.Wrap(err, "could not retrieve package policy")
+	}
+
+	if statusCode != 200 {
+		return PackageDataStream{}, fmt.Errorf("could not retrieve package policy; API status code = %d; response body = %s", statusCode, respBody)
+	}
+
+	var item *ItemPackageDataStream
+	if err := json.Unmarshal(respBody, &item); err != nil {
+		return PackageDataStream{}, errors.Wrap(err, "Unable to convert package policy to JSON")
+	}
+
+	return item.PackageDS, nil
 }
 
 // GetMetadataFromSecurityApp sends a POST request to retrieve metadata from Security App

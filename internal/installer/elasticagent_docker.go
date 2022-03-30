@@ -8,11 +8,11 @@ import (
 	"context"
 	"fmt"
 
-	elasticversion "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/beats"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/types"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	"go.elastic.co/apm"
 )
 
@@ -110,11 +110,27 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 
 	// we need to tag the loaded image because its tag relates to the target branch
 	return deploy.TagImage(
-		fmt.Sprintf("docker.elastic.co/beats/%s:%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersionBase)),
-		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, elasticversion.GetSnapshotVersion(common.BeatVersion), beat.ArchToString()),
+		fmt.Sprintf("docker.elastic.co/beats/%s:%s", artifact, downloads.GetSnapshotVersion(common.BeatVersionBase)),
+		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), beat.ArchToString()),
 		// tagging including git commit and snapshot
-		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, elasticversion.GetFullVersion(common.BeatVersion), beat.ArchToString()),
+		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, downloads.GetFullVersion(common.ElasticAgentVersion), beat.ArchToString()),
 	)
+}
+
+// Restart will restart a service
+func (i *elasticAgentDockerPackage) Restart(ctx context.Context) error {
+	cmds := []string{"systemctl", "restart", "elastic-agent"}
+	span, _ := apm.StartSpanOptions(ctx, "Restarting Elastic Agent service", "elastic-agent.docker.restart", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+
+	_, err := i.Exec(ctx, cmds)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Start will start a service

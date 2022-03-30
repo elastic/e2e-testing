@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"strconv"
 	"time"
 
@@ -37,27 +38,33 @@ func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocur
 		return err
 	}
 
-	return CheckProcessState(imts.Fleet.deployer, manifest.Name, process, state, count)
+	var srv deploy.ServiceRequest
+	if imts.Fleet.StandAlone {
+		srv = deploy.NewServiceContainerRequest(manifest.Name)
+	} else {
+		srv = deploy.NewServiceRequest(manifest.Name)
+	}
+
+	return CheckProcessState(imts.Fleet.currentContext, imts.Fleet.deployer, srv, process, state, count)
 }
 
 // CheckProcessState checks if a process is in the desired state in a container
 // name of the container for the service:
 // we are using the underlying deployer to run the commands in the container/service
-func CheckProcessState(deployer deploy.Deployer, service string, process string, state string, occurrences int) error {
+func CheckProcessState(ctx context.Context, deployer deploy.Deployer, service deploy.ServiceRequest, process string, state string, occurrences int) error {
 	timeout := time.Duration(utils.TimeoutFactor) * time.Minute
-	serviceRequest := deploy.NewServiceRequest(service)
 
 	actionOpts := action.ProcessAction{
 		Process:      process,
 		DesiredState: state,
 		Occurrences:  occurrences,
 		MaxTimeout:   timeout}
-	waitForProcess, err := action.Attach(imts.Fleet.currentContext, deployer, serviceRequest, action.ActionWaitForProcess, actionOpts)
+	waitForProcess, err := action.Attach(ctx, deployer, service, action.ActionWaitForProcess, actionOpts)
 	if err != nil {
 		log.WithField("error", err).Error("Unable to attach Process check action")
 	}
 
-	_, err = waitForProcess.Run(imts.Fleet.currentContext)
+	_, err = waitForProcess.Run(ctx)
 	if err != nil {
 		if state == "started" {
 			log.WithFields(log.Fields{

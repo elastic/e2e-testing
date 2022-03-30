@@ -7,8 +7,7 @@ package deploy
 import (
 	"testing"
 
-	elasticversion "github.com/elastic/e2e-testing/internal"
-
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,10 +18,40 @@ func TestGetDockerNamespaceEnvVar(t *testing.T) {
 	})
 
 	t.Run("Returns Observability CI when environment variable is set", func(t *testing.T) {
-		elasticversion.GithubCommitSha1 = "0123456789"
-		defer func() { elasticversion.GithubCommitSha1 = "" }()
+		downloads.GithubCommitSha1 = "0123456789"
+		defer func() { downloads.GithubCommitSha1 = "" }()
 
 		namespace := GetDockerNamespaceEnvVar("beats")
+		assert.True(t, namespace == "observability-ci")
+	})
+}
+
+func TestGetDockerNamespaceEnvVarForRepository(t *testing.T) {
+	t.Run("Returns fallback when environment variables are not set", func(t *testing.T) {
+		namespace := GetDockerNamespaceEnvVarForRepository("filebeat", "beats")
+		assert.True(t, namespace == "beats")
+	})
+
+	t.Run("Returns Observability CI when environment variable is set for Beats", func(t *testing.T) {
+		downloads.GithubCommitSha1 = "0123456789"
+		downloads.GithubRepository = "beats"
+		defer func() {
+			downloads.GithubCommitSha1 = ""
+			downloads.GithubRepository = "elastic-agent"
+		}()
+
+		namespace := GetDockerNamespaceEnvVarForRepository("filebeat", "beats")
+		assert.True(t, namespace == "observability-ci")
+	})
+
+	t.Run("Returns Observability CI when environment variable is set for elastic-agent", func(t *testing.T) {
+		downloads.GithubCommitSha1 = "0123456789"
+		defer func() {
+			downloads.GithubCommitSha1 = ""
+			downloads.GithubRepository = "elastic-agent"
+		}()
+
+		namespace := GetDockerNamespaceEnvVarForRepository("elastic-agent", "beats")
 		assert.True(t, namespace == "observability-ci")
 	})
 }

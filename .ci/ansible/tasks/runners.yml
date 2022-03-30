@@ -18,10 +18,18 @@
     image: '{{nodeImage}}'
     instance_type: '{{nodeInstanceType}}'
     instance_tags:
+      BuildURL: "{{buildURL | default('Not running on CI') }}"
+      GitSHA: "{{ gitSha }}"
+      Kind: "{{nodeLabel}}"
       Name: "e2e-{{nodeLabel}}-{{runId}}"
+      ReaperMark: "e2e-testing-vm"
     count_tag:
       Name: "e2e-{{nodeLabel}}-{{runId}}"
     volumes:
+      - device_name: /dev/sda1
+        volume_type: gp3
+        volume_size: 10
+        delete_on_termination: yes
       - device_name: /dev/xvda
         volume_type: gp3
         volume_size: 200
@@ -36,7 +44,7 @@
   become: no
   lineinfile:
     state: present
-    line: "- admin@{{addr.public_ip}}"
+    line: "- {{nodeUser}}@{{addr.public_ip}}"
     insertafter: EOF
     dest: "{{workspace}}/{{nodeLabel}}-sshhosts"
     create: yes
@@ -48,7 +56,7 @@
     - start-node
 
 - name: Wait for SSH to come up
-  wait_for: host={{ nodeItem.public_ip }} port=22 delay=10 timeout=60
+  wait_for: host={{ nodeItem.public_ip }} port=22 delay=10
   loop: "{{ ec2.instances }}"
   loop_control:
     loop_var: nodeItem

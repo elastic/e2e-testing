@@ -2,7 +2,7 @@
   hosts: localhost
   gather_facts: no
   vars:
-      ansible_user: admin
+    ansible_user: "{{nodeUser}}"
   tasks:
   - name: Setup nodes
     include_tasks: tasks/runners.yml
@@ -14,7 +14,7 @@
   hosts: localhost
   gather_facts: no
   vars:
-      ansible_user: admin
+    ansible_user: "{{nodeUser}}"
   tasks:
   - name: Teardown Test Runners (AWS)
     include_tasks: tasks/teardown.yml
@@ -27,6 +27,10 @@
   become: True
   tags:
     - setup-stack
+  pre_tasks:
+    - name: Update apt cache.
+      apt: update_cache=yes cache_valid_time=600
+      when: ansible_pkg_mgr == 'apt'
   roles:
     - role: geerlingguy.docker
       docker_daemon_options:
@@ -35,12 +39,10 @@
     - role: andrewrothstein.kind
     - role: gantsign.golang
       vars:
-        golang_version: 1.16.3
+        golang_version: 1.17
   vars:
-    ansible_user: admin
-    ansible_python_interpreter: /usr/bin/python3
-  pre_tasks:
-    - apt: {update_cache: yes}
+    ansible_user: "{{nodeUser}}"
+    ansible_python_interpreter: "auto"
   tasks:
   - name: Install deps
     include_tasks: tasks/install_deps.yml
@@ -63,12 +65,32 @@
     tags:
       - setup-stack
 
-  - name: Start stack
-    shell: |
-      sed -i '' -e 's,http://elasticsearch,http://{{inventory_hostname}},g' /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml
-      sed -i '' -e 's,http://fleet-server,http://{{inventory_hostname}},g' /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml
-      sed -i '' -e 's,http://package-registry:8080,https://epr-staging.elastic.co,g' /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml
-      sudo docker-compose -f /home/{{ansible_user}}/e2e-testing/cli/config/compose/profiles/fleet/docker-compose.yml up -d
+  - name: Configure test script
+    include_tasks: tasks/setup_test_script.yml
+    tags:
+      - setup-stack
+
+  - name: Add SSH keys to stack
+    include_tasks: tasks/install_ssh_keys.yml
+    tags:
+      - setup-stack
+
+  - name: Configure stack files
+    ansible.builtin.replace:
+      path: '{{ item.path }}'
+      regexp: '{{ item.old }}'
+      replace: '{{ item.new }}'
+    loop:
+      - { old: 'http://elasticsearch', new: 'http://{{ inventory_hostname }}', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml" }
+      - { old: 'http://fleet-server', new: 'http://{{ inventory_hostname }}', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml" }
+      - { old: 'http://kibana', new: 'http://{{ inventory_hostname }}', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/services/elastic-agent/fleet-server/docker-compose.yml" }
+      - { old: 'http://package-registry:8080', new: 'https://epr-staging.elastic.co', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml" }
+    tags:
+      - setup-stack
+
+  - name: Start stack without any tag to spin up the stack using Fleet's bootstrapping code
+    become: true
+    shell: "/home/{{ ansible_user }}/e2e-testing/.ci/scripts/functional-test.sh 'non-existing-tag'"
     tags:
       - setup-stack
 
@@ -78,25 +100,30 @@
   become: True
   tags:
     - setup-node
+  pre_tasks:
+    - name: Update apt cache.
+      apt: update_cache=yes cache_valid_time=600
+      when: ansible_pkg_mgr == 'apt'
   roles:
     - role: geerlingguy.docker
       docker_daemon_options:
         default-ulimit: ["nofile=1024000:1024000"]
-      when: "'kubernetes_autodiscover' in nodeLabel or 'helm' in nodeLabel or 'fleet_amd64' in nodeLabel or 'fleet_elastic_pkg' in nodeLabel"
+      when:
+        - '"arm64" not in nodeLabel'
+        - 'ansible_os_family not in ["Suse"]'
     - role: andrewrothstein.kubectl
-      when: "'kubernetes_autodiscover' in nodeLabel or 'helm' in nodeLabel"
+      when: suite in ["kubernetes-autodiscover", "helm"]
     - role: andrewrothstein.kind
-      when: "'kubernetes_autodiscover' in nodeLabel or 'helm' in nodeLabel"
+      when: suite in ["kubernetes-autodiscover", "helm"]
     - role: geerlingguy.helm
-      when: "'kubernetes_autodiscover' in nodeLabel or 'helm' in nodeLabel"
+      when: suite in ["kubernetes-autodiscover", "helm"]
     - role: gantsign.golang
       vars:
-        golang_version: 1.16.3
+        golang_version: 1.17
   vars:
-    ansible_user: admin
-    ansible_python_interpreter: /usr/bin/python3
-  pre_tasks:
-    - apt: {update_cache: yes}
+    ansible_python_interpreter: "auto"
+    ansible_user: "{{nodeUser}}"
+    pip_package: "python3-pip"
   tasks:
   - name: Install deps
     include_tasks: tasks/install_deps.yml
@@ -108,6 +135,11 @@
     tags:
       - setup-node
       - copy-source
+
+  - name: Add SSH keys to runner instances
+    include_tasks: tasks/install_ssh_keys.yml
+    tags:
+      - setup-node
 
   - name: Configure test script
     include_tasks: tasks/setup_test_script.yml

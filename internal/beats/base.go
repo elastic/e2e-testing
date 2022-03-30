@@ -7,8 +7,8 @@ package beats
 import (
 	"context"
 
-	"github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/types"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -110,7 +110,7 @@ func (b *Beat) Download(ctx context.Context) (string, string, error) {
 	span.Context.SetLabel("package", osPackage)
 	defer span.End()
 
-	binaryName, binaryPath, err := internal.FetchElasticArtifact(ctx, artifact, b.Version, os, arch, osPackage, b.Docker, b.XPack)
+	binaryName, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, b.Version, os, arch, osPackage, b.Docker, b.XPack)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact": artifact,
@@ -120,6 +120,38 @@ func (b *Beat) Download(ctx context.Context) (string, string, error) {
 			"package":  osPackage,
 			"error":    err,
 		}).Error("Could not download the binary")
+		return "", "", err
+	}
+
+	return binaryName, binaryPath, nil
+}
+
+// DownloadSnapshot downloads the beat as a snapshot
+func (b *Beat) DownloadSnapshot(ctx context.Context, useCISnapshots bool) (string, string, error) {
+	arch := types.Architectures[b.Arch]
+	artifact := b.Name
+	os := types.OperativeSystems[b.OS]
+	osPackage := types.InstallationPackages[b.InstallationPackage]
+
+	span, _ := apm.StartSpanOptions(ctx, "Download "+artifact, artifact+".download", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("architecture", arch)
+	span.Context.SetLabel("artifact", artifact)
+	span.Context.SetLabel("os", os)
+	span.Context.SetLabel("package", osPackage)
+	defer span.End()
+
+	binaryName, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, b.Version, os, arch, osPackage, b.Docker, b.XPack)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"artifact": artifact,
+			"version":  b.Version,
+			"os":       os,
+			"arch":     arch,
+			"package":  osPackage,
+			"error":    err,
+		}).Error("Could not download the snapshot binary")
 		return "", "", err
 	}
 

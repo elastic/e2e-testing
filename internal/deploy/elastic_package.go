@@ -41,12 +41,12 @@ func newElasticPackage() Deployer {
 
 // Add adds services deployment: the first service in the list must be the profile in which to deploy the service
 func (ep *EPServiceManager) Add(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error {
-	version := common.BeatVersion
+	version := common.ElasticAgentVersion
 
 	span, _ := apm.StartSpanOptions(ctx, "Adding elastic-agent to Elastic-Package deployment", "elastic-package.elastic-agent.add", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
-	span.Context.SetLabel("beatVersion", version)
+	span.Context.SetLabel("elasticAgentVersion", version)
 	span.Context.SetLabel("profile", profile)
 	span.Context.SetLabel("services", services)
 	defer span.End()
