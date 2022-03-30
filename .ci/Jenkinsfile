@@ -22,6 +22,7 @@ pipeline {
     AWS_PROVISIONER_SECRET = 'secret/observability-team/ci/elastic-observability-aws-account-auth'
     TEST_MATRIX_FILE = "${params.testMatrixFile}"
     RUN_ID = UUID.randomUUID().toString()
+    JUNIT_2_OTLP = "true"
   }
   options {
     timeout(time: 90, unit: 'MINUTES')
@@ -150,7 +151,11 @@ pipeline {
               }
               post {
                 always {
-                  junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-unit-*.xml")
+                  withEnv([
+                      "JUNIT_OTEL_TRACE_NAME=junit-unit-tests"
+                  ]){
+                    junit2otel(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-unit-*.xml")
+                  }
                   archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-unit-*.xml"
                 }
               }
@@ -593,9 +598,13 @@ def generateFunctionalTestStep(Map args = [:]){
           dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
           sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
         }
-        junit allowEmptyResults: true,
-          keepLongStdio: true,
-          testResults: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
+        withEnv([
+            "JUNIT_OTEL_TRACE_NAME=junit-e2e-tests"
+        ]){
+          junit2otel allowEmptyResults: true,
+            keepLongStdio: true,
+            testResults: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
+        }
         archiveArtifacts allowEmptyArchive: true,
           artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml, outputs/${testRunner.ip}/TEST-*${runId}*.json, outputs/${testRunner.ip}/TEST-*${runId}*.json.html"
       }
