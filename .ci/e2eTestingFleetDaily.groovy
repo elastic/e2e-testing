@@ -25,7 +25,7 @@ pipeline {
     PIPELINE_LOG_LEVEL='INFO'
   }
   options {
-    timeout(time: 1, unit: 'HOURS')
+    timeout(time: 90, unit: 'MINUTES')
     buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '20'))
     timestamps()
     ansiColor('xterm')
@@ -39,6 +39,7 @@ pipeline {
       steps {
         runE2E(jobName: "${env.JOB_BASE_NAME}",
                nightlyScenarios: true,
+               notifyOnGreenBuilds: 'false',
                runTestsSuites: 'fleet',
                slackChannel: 'elastic-agent',
                propagate: true,
