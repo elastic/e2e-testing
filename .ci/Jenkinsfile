@@ -439,7 +439,15 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
  * Sends out notification of the build result to Slack
  */
 def doNotifyBuildResult(boolean slackNotify) {
-  githubCheckNotify(currentBuild.currentResult == 'SUCCESS' ? 'SUCCESS' : 'FAILURE')
+  def doSlackNotify = true // always try to notify on failures
+  def githubCheckStatus = 'FAILURE'
+  if (currentBuild.currentResult == 'SUCCESS') {
+    githubCheckStatus = 'SUCCESS'
+    doSlackNotify = slackNotify // if the build status is success, read the parameter
+  }
+
+  githubCheckNotify(githubCheckStatus)
+
 
   def testsSuites = "${params.runTestsSuites}"
   if (testsSuites?.trim() == "") {
@@ -458,7 +466,7 @@ def doNotifyBuildResult(boolean slackNotify) {
                     slackHeader: header,
                     slackChannel: "${channels}",
                     slackComment: true,
-                    slackNotify: slackNotify)
+                    slackNotify: doSlackNotify)
 }
 
 /**
