@@ -7,10 +7,9 @@ require (
 	github.com/Jeffail/gabs/v2 v2.6.0
 	github.com/cenkalti/backoff/v4 v4.1.1
 	github.com/cucumber/godog v0.12.4
-	github.com/cucumber/messages-go/v16 v16.0.1 // indirect
 	github.com/docker/cli v20.10.11+incompatible
 	github.com/docker/docker v20.10.12+incompatible
-	github.com/elastic/elastic-package v0.36.0
+	github.com/elastic/elastic-package v0.46.0
 	github.com/elastic/go-elasticsearch/v8 v8.0.0-20210317102009-a9d74cec0186
 	github.com/elastic/go-windows v1.0.1 // indirect
 	github.com/gobuffalo/packr/v2 v2.8.1
@@ -21,14 +20,13 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/shirou/gopsutil/v3 v3.21.10
 	github.com/sirupsen/logrus v1.8.1
-	github.com/spf13/cobra v1.3.0
+	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	github.com/testcontainers/testcontainers-go v0.11.0
 	go.elastic.co/apm v1.13.0
 	go.elastic.co/apm/module/apmelasticsearch v1.10.0
 	go.elastic.co/apm/module/apmhttp v1.10.0
-	go.elastic.co/go-licence-detector v0.5.0 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/gotestsum v1.7.0
