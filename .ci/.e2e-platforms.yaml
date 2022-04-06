@@ -40,3 +40,8 @@ PLATFORMS:
     image: "ami-0d90bed76900e679a"
     instance_type: "c5.4xlarge"
     username: admin
+  macos12:
+    description: "Mac OS 12 platform"
+    image: "ami-094dfaad20f351cb7"
+    instance_type: "c5.4xlarge"
+    username: ec2-user
