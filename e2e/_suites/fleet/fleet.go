@@ -16,7 +16,9 @@ import (
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
+	"github.com/docker/go-connections/nat"
 	"github.com/google/uuid"
+	"github.com/testcontainers/testcontainers-go/wait"
 	"go.elastic.co/apm"
 
 	"github.com/cenkalti/backoff/v4"
@@ -669,9 +671,17 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 		for k, v := range env {
 			fleetServerEnv[k] = v
 		}
+
+		fleetServerPort, err := nat.NewPort("tcp", "8220")
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Fatal("Could not get create TCP port for fleet-server")
+		}
+
 		fleetServerEnv["elasticAgentTag"] = common.ElasticAgentVersion
 		fleetServerEnv["fleetServerMode"] = "1"
-		fleetServerEnv["fleetServerPort"] = "8220"
+		fleetServerEnv["fleetServerPort"] = fleetServerPort.Port()
 		fleetServerEnv["fleetInsecure"] = "1"
 		fleetServerEnv["fleetServerServiceToken"] = serviceToken.AccessToken
 		fleetServerEnv["fleetServerPolicyId"] = fleetServicePolicy.ID
@@ -679,6 +689,13 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 		fleetServerSrv := deploy.ServiceRequest{
 			Name:    common.ElasticAgentServiceName,
 			Flavour: "fleet-server",
+			WaitStrategies: []deploy.WaitForServiceRequest{
+				{
+					Service:  "fleet-server-1", // there is only one fleet-server container, so the scale ID is 1
+					Port:     fleetServerPort.Int(),
+					Strategy: wait.ForListeningPort(fleetServerPort),
+				},
+			},
 		}
 
 		err = deployer.Add(ctx, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{fleetServerSrv}, fleetServerEnv)
