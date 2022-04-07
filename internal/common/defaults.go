@@ -33,7 +33,7 @@ const FleetServerAgentServiceName = "fleet-server"
 
 // AgentStaleVersion is the version of the agent to use as a base during upgrade
 // It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var AgentStaleVersion = "7.17.1-SNAPSHOT"
+var AgentStaleVersion = "7.17.2-SNAPSHOT"
 
 // BeatVersionBase is the base version of the Beat to use
 var BeatVersionBase = "7.17.3-60b577ee-SNAPSHOT"
