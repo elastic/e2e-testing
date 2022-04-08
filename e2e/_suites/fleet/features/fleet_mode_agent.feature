@@ -29,8 +29,7 @@ Scenario Outline: Deploying the agent
 # | os     |
 # | debian |
 
-# @upgrade-agent
-@nightly
+@upgrade-agent
 Scenario Outline: Upgrading an installed agent from <stale-version>
   Given a "<stale-version>" stale agent is deployed to Fleet with "tar" installer
     And certs are installed
