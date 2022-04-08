@@ -257,7 +257,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	s.Step(`^an agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
 	s.Step(`^an agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
-	s.Step(`^an agent "([^"]*)" is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
+	s.Step(`^a stale agent is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
 	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
 	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
@@ -342,7 +342,7 @@ func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredSt
 	return nil
 }
 
-func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(version, installerType string) error {
+func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(installerType string) error {
 	agentVersionBackup := fts.Version
 	defer func() { fts.Version = agentVersionBackup }()
 
@@ -362,16 +362,7 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(version, i
 		common.AgentStaleVersion += "-SNAPSHOT"
 	}
 
-	switch version {
-	case "stale":
-		version = common.AgentStaleVersion
-	case "latest":
-		version = common.ElasticAgentVersion
-	default:
-		version = common.AgentStaleVersion
-	}
-
-	fts.Version = version
+	fts.Version = common.AgentStaleVersion
 
 	log.Tracef("The stale version is %s", fts.Version)
 
