@@ -343,7 +343,7 @@ func (ep *EPServiceManager) Stop(ctx context.Context, service ServiceRequest) er
 
 func buildElasticAgentRequest(srv ServiceRequest, env map[string]string) tc.ContainerRequest {
 	privileged := false
-	var bindMounts map[string]string
+	var containerMounts []tc.ContainerMount
 	var entrypoint []string
 	imageNamespace := fmt.Sprintf("elastic-agent%s", env["elasticAgentDockerImageSuffix"])
 	img := fmt.Sprintf("docker.elastic.co/%s/%s:%s", env["elasticAgentDockerNamespace"], imageNamespace, env["elasticAgentTag"])
@@ -353,13 +353,18 @@ func buildElasticAgentRequest(srv ServiceRequest, env map[string]string) tc.Cont
 		// use observability's systemd base images to install the elastic-agent on them
 		img = "docker.elastic.co/observability-ci/" + srv.Flavour + "-systemd:latest"
 		entrypoint = []string{"/sbin/init"}
-		bindMounts = map[string]string{
-			"/sys/fs/cgroup": "/sys/fs/cgroup",
+		containerMounts = []tc.ContainerMount{
+			{
+				Source: tc.GenericBindMountSource{
+					HostPath: "/sys/fs/cgroup",
+				},
+				Target: "/sys/fs/cgroup",
+			},
 		}
 		privileged = true
 	} else if srv.Flavour == "cloud" {
-		bindMounts = map[string]string{
-			env["apmVolume"]: "/apm-legacy",
+		containerMounts = []tc.ContainerMount{
+			{Source: tc.GenericVolumeMountSource{Name: "apmVolume"}, Target: "/apm-legacy"},
 		}
 		env["FLEET_SERVER_ENABLE"] = "1"
 		env["FLEET_SERVER_INSECURE_HTTP"] = "1"
@@ -380,9 +385,9 @@ func buildElasticAgentRequest(srv ServiceRequest, env map[string]string) tc.Cont
 	}
 
 	req := tc.ContainerRequest{
-		BindMounts: bindMounts,
-		Env:        env,
-		Image:      img,
+		Mounts: containerMounts,
+		Env:    env,
+		Image:  img,
 		Labels: map[string]string{
 			"name":                       srv.Name, //label is important to handle Inspect,
 			"com.docker.compose.project": "elastic-package-stack",
