@@ -660,49 +660,80 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			"description": fleetServicePolicy.Description,
 		}).Info("Fleet Server Policy retrieved")
 
-		serviceToken, err := elasticsearch.GetAPIToken(ctx)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Fatal("Could not get API Token from Elasticsearch")
-		}
+		maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+		exp := utils.GetExponentialBackOff(maxTimeout)
+		retryCount := 1
 
-		fleetServerEnv := make(map[string]string)
-		for k, v := range env {
-			fleetServerEnv[k] = v
-		}
+		fleetServerBootstrapFn := func() error {
+			serviceToken, err := elasticsearch.GetAPIToken(ctx)
+			if err != nil {
+				retryCount++
+				log.WithFields(log.Fields{
+					"error":       err,
+					"retries":     retryCount,
+					"elapsedTime": exp.GetElapsedTime(),
+				}).Warn("Could not get API Token from Elasticsearch.")
+				return err
+			}
 
-		fleetServerPort, err := nat.NewPort("tcp", "8220")
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Fatal("Could not get create TCP port for fleet-server")
-		}
+			fleetServerEnv := make(map[string]string)
+			for k, v := range env {
+				fleetServerEnv[k] = v
+			}
 
-		fleetServerEnv["elasticAgentTag"] = common.ElasticAgentVersion
-		fleetServerEnv["fleetServerMode"] = "1"
-		fleetServerEnv["fleetServerPort"] = fleetServerPort.Port()
-		fleetServerEnv["fleetInsecure"] = "1"
-		fleetServerEnv["fleetServerServiceToken"] = serviceToken.AccessToken
-		fleetServerEnv["fleetServerPolicyId"] = fleetServicePolicy.ID
+			fleetServerPort, err := nat.NewPort("tcp", "8220")
+			if err != nil {
+				retryCount++
+				log.WithFields(log.Fields{
+					"error":       err,
+					"retries":     retryCount,
+					"elapsedTime": exp.GetElapsedTime(),
+				}).Warn("Could not create TCP port for fleet-server")
+				return err
+			}
 
-		fleetServerSrv := deploy.ServiceRequest{
-			Name:    common.ElasticAgentServiceName,
-			Flavour: "fleet-server",
-			WaitStrategies: []deploy.WaitForServiceRequest{
-				{
-					Service:  "fleet-server-1", // there is only one fleet-server container, so the scale ID is 1
-					Port:     fleetServerPort.Int(),
-					Strategy: wait.ForLog("Fleet Server - Running on policy with Fleet Server integration: fleet-server-policy"),
+			fleetServerEnv["elasticAgentTag"] = common.ElasticAgentVersion
+			fleetServerEnv["fleetServerMode"] = "1"
+			fleetServerEnv["fleetServerPort"] = fleetServerPort.Port()
+			fleetServerEnv["fleetInsecure"] = "1"
+			fleetServerEnv["fleetServerServiceToken"] = serviceToken.AccessToken
+			fleetServerEnv["fleetServerPolicyId"] = fleetServicePolicy.ID
+
+			fleetServerSrv := deploy.ServiceRequest{
+				Name:    common.ElasticAgentServiceName,
+				Flavour: "fleet-server",
+				WaitStrategies: []deploy.WaitForServiceRequest{
+					{
+						Service:  "fleet-server-1", // there is only one fleet-server container, so the scale ID is 1
+						Port:     fleetServerPort.Int(),
+						Strategy: wait.ForLog("Fleet Server - Running on policy with Fleet Server integration: fleet-server-policy"),
+					},
 				},
-			},
+			}
+
+			err = deployer.Add(ctx, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{fleetServerSrv}, fleetServerEnv)
+			if err != nil {
+				retryCount++
+				log.WithFields(log.Fields{
+					"error":       err,
+					"retries":     retryCount,
+					"elapsedTime": exp.GetElapsedTime(),
+					"env":         fleetServerEnv,
+				}).Warn("Fleet Server could not be started. Retrying")
+				return err
+			}
+
+			log.WithFields(log.Fields{
+				"retries":     retryCount,
+				"elapsedTime": exp.GetElapsedTime(),
+			}).Info("Fleet Server was started")
+			return nil
 		}
 
-		err = deployer.Add(ctx, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{fleetServerSrv}, fleetServerEnv)
+		err = backoff.Retry(fleetServerBootstrapFn, exp)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
-				"env":   fleetServerEnv,
 			}).Fatal("Fleet Server could not be started")
 		}
 
