@@ -714,7 +714,7 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 					{
 						Service:  "fleet-server-1", // there is only one fleet-server container, so the scale ID is 1
 						Port:     fleetServerPort.Int(),
-						Strategy: wait.ForLog("Fleet Server - Running on policy with Fleet Server integration: fleet-server-policy"),
+						Strategy: wait.ForLog("Fleet Server - Running on policy with Fleet Server integration"),
 					},
 				},
 			}
