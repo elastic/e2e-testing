@@ -373,6 +373,8 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(version, i
 
 	fts.Version = version
 
+	log.Tracef("The stale version is %s", fts.Version)
+
 	return fts.anAgentIsDeployedToFleetWithInstaller(installerType)
 }
 
@@ -396,6 +398,7 @@ func (fts *FleetTestSuite) installCerts() error {
 }
 
 func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
+	log.Tracef("Desired version is %s. Current version: %s", desiredVersion, fts.Version)
 	switch desiredVersion {
 	case "stale":
 		desiredVersion = common.AgentStaleVersion
@@ -411,6 +414,8 @@ func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
 }
 
 func (fts *FleetTestSuite) agentInVersion(version string) error {
+	log.Tracef("Checking if agent is in version %s. Current version: %s", version, fts.Version)
+
 	switch version {
 	case "stale":
 		version = common.AgentStaleVersion
