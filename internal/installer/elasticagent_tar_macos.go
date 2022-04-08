@@ -117,11 +117,11 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 	}
 	extension := "tar.gz"
 
-	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, common.ElasticAgentVersion, os, arch, extension, false, true)
+	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, i.service.Version, os, arch, extension, false, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
-			"version":   common.ElasticAgentVersion,
+			"version":   i.service.Version,
 			"os":        os,
 			"arch":      arch,
 			"extension": extension,

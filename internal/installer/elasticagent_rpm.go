@@ -182,7 +182,7 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 		}
 	}
 
-	return installArtifactFn(ctx, "elastic-agent", common.ElasticAgentVersion, downloads.UseElasticAgentCISnapshots())
+	return installArtifactFn(ctx, "elastic-agent", i.service.Version, downloads.UseElasticAgentCISnapshots())
 }
 
 // Restart will restart a service

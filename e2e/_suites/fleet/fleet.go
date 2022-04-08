@@ -28,7 +28,6 @@ import (
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
-	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 	"github.com/elastic/e2e-testing/pkg/downloads"
 
@@ -257,9 +256,9 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	s.Step(`^an agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
 	s.Step(`^an agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
-	s.Step(`^a stale agent is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
-	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
-	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
+	s.Step(`^a "([^"]*)" stale agent is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
+	s.Step(`^agent is in "([^"]*)" version$`, fts.agentInVersion)
+	s.Step(`^agent is upgraded to "([^"]*) version"$`, fts.anAgentIsUpgradedToVersion)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
 	s.Step(`^the default API key has "([^"]*)"$`, fts.verifyDefaultAPIKey)
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
@@ -342,27 +341,26 @@ func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredSt
 	return nil
 }
 
-func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(installerType string) error {
+func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(staleVersion string, installerType string) error {
 	agentVersionBackup := fts.Version
 	defer func() { fts.Version = agentVersionBackup }()
 
-	common.AgentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", common.AgentStaleVersion)
 	// check if stale version is an alias
-	v, err := downloads.GetElasticArtifactVersion(common.AgentStaleVersion)
+	v, err := downloads.GetElasticArtifactVersion(staleVersion)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
-			"version": common.AgentStaleVersion,
+			"version": staleVersion,
 		}).Error("Failed to get stale version")
 		return err
 	}
-	common.AgentStaleVersion = v
+	staleVersion = v
 
-	if downloads.UseElasticAgentCISnapshots() && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
-		common.AgentStaleVersion += "-SNAPSHOT"
+	if downloads.UseElasticAgentCISnapshots() && !strings.HasSuffix(staleVersion, "-SNAPSHOT") {
+		staleVersion += "-SNAPSHOT"
 	}
 
-	fts.Version = common.AgentStaleVersion
+	fts.Version = staleVersion
 
 	log.Tracef("The stale version is %s", fts.Version)
 
@@ -377,7 +375,7 @@ func (fts *FleetTestSuite) installCerts() error {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"agentVersion":      common.ElasticAgentVersion,
-			"agentStaleVersion": common.AgentStaleVersion,
+			"agentStaleVersion": fts.Version,
 			"error":             err,
 			"installer":         agentInstaller,
 			"version":           fts.Version,
@@ -388,16 +386,12 @@ func (fts *FleetTestSuite) installCerts() error {
 	return nil
 }
 
-func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
-	log.Tracef("Desired version is %s. Current version: %s", desiredVersion, fts.Version)
+func (fts *FleetTestSuite) anAgentIsUpgradedToVersion(desiredVersion string) error {
 	switch desiredVersion {
-	case "stale":
-		desiredVersion = common.AgentStaleVersion
 	case "latest":
 		desiredVersion = common.ElasticAgentVersion
-	default:
-		desiredVersion = common.ElasticAgentVersion
 	}
+	log.Tracef("Desired version is %s. Current version: %s", desiredVersion, fts.Version)
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
@@ -405,14 +399,11 @@ func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
 }
 
 func (fts *FleetTestSuite) agentInVersion(version string) error {
-	log.Tracef("Checking if agent is in version %s. Current version: %s", version, fts.Version)
-
 	switch version {
-	case "stale":
-		version = common.AgentStaleVersion
 	case "latest":
 		version = downloads.GetSnapshotVersion(common.ElasticAgentVersion)
 	}
+	log.Tracef("Checking if agent is in version %s. Current version: %s", version, fts.Version)
 
 	agentInVersionFn := func() error {
 		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
@@ -534,7 +525,10 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 
 	fts.InstallerType = installerType
 
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithScale(deployedAgentsCount)
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).
+		WithScale(deployedAgentsCount).
+		WithVersion(fts.Version)
+
 	if fts.BeatsProcess != "" {
 		agentService = agentService.WithBackgroundProcess(fts.BeatsProcess)
 	}

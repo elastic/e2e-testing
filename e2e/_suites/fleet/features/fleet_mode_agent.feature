@@ -31,12 +31,19 @@ Scenario Outline: Deploying the agent
 
 # @upgrade-agent
 @nightly
-Scenario Outline: Upgrading the installed agent
-  Given a stale agent is deployed to Fleet with "tar" installer
+Scenario Outline: Upgrading an installed agent from <stale-version>
+  Given a "<stale-version>" stale agent is deployed to Fleet with "tar" installer
     And certs are installed
     And the "elastic-agent" process is "restarted" on the host
-  When agent is upgraded to version "latest"
-  Then agent is in version "latest"
+  When agent is upgraded to "latest" version
+  Then agent is in "latest" version
+Examples: Stale versions
+| stale-version |
+| 8.2.0 |
+| 8.1.2 |
+| 8.1.1 |
+| 8.1.0 |
+| 7.17-SNAPSHOT |
 
 
 @restart-agent

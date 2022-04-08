@@ -110,11 +110,11 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 	arch := "x86_64"
 	extension := "zip"
 
-	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, common.ElasticAgentVersion, os, arch, extension, false, true)
+	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, i.service.Version, os, arch, extension, false, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
-			"version":   common.ElasticAgentVersion,
+			"version":   i.service.Version,
 			"os":        os,
 			"arch":      arch,
 			"extension": extension,
