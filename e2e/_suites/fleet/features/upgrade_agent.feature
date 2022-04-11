@@ -2,7 +2,6 @@
 Feature: Upgrade Agent
   Scenarios for upgrading the Agent from past releases.
 
-@nightly
 Scenario Outline: Upgrading an installed agent from <stale-version>
   Given a "<stale-version>" stale agent is deployed to Fleet with "tar" installer
     And certs are installed
