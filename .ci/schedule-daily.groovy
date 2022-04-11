@@ -20,7 +20,7 @@ pipeline {
   stages {
     stage('Nighly e2e builds') {
       steps {
-        runBuilds(quietPeriodFactor: 100, branches: ['main', '8.<minor>', '8.<next-patch>', '8.<minor-1>', '7.<minor>'])
+        runBuilds(quietPeriodFactor: 100, branches: ['main', '8.<minor>', '8.<next-patch>', '8.<next-minor>', '8.<minor-1>', '7.<minor>'])
       }
     }
   }
