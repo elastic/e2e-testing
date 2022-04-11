@@ -406,7 +406,7 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	log.Tracef("Checking if agent is in version %s. Current version: %s", version, fts.Version)
 
 	retryCount := 0
-	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	agentInVersionFn := func() error {
@@ -713,7 +713,7 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 				Flavour: "fleet-server",
 				WaitStrategies: []deploy.WaitForServiceRequest{
 					{
-						Service:  "fleet-server-1", // there is only one fleet-server container, so the scale ID is 1
+						Service:  "fleet-server_1", // there is only one fleet-server container, so the scale ID is 1
 						Port:     fleetServerPort.Int(),
 						Strategy: wait.ForLog("Fleet Server - Running on policy with Fleet Server integration: fleet-server-policy"),
 					},
