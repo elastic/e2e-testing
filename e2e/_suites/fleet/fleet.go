@@ -378,11 +378,16 @@ func (fts *FleetTestSuite) installCerts() error {
 			"agentStaleVersion": fts.Version,
 			"error":             err,
 			"installer":         agentInstaller,
-			"version":           fts.Version,
 		}).Error("Could not install the certificates")
 		return err
 	}
 
+	log.WithFields(log.Fields{
+		"agentVersion":      common.ElasticAgentVersion,
+		"agentStaleVersion": fts.Version,
+		"error":             err,
+		"installer":         agentInstaller,
+	}).Tracef("Certs were installed")
 	return nil
 }
 
