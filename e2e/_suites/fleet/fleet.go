@@ -447,9 +447,6 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 		return nil
 	}
 
-	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
-	exp := utils.GetExponentialBackOff(maxTimeout)
-
 	return backoff.Retry(agentInVersionFn, exp)
 }
 
