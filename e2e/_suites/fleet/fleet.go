@@ -405,11 +405,24 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	}
 	log.Tracef("Checking if agent is in version %s. Current version: %s", version, fts.Version)
 
+	retryCount := 0
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	exp := utils.GetExponentialBackOff(maxTimeout)
+
 	agentInVersionFn := func() error {
+		retryCount++
 		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 		manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
 		agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
 		if err != nil {
+			log.WithFields(log.Fields{
+				"agent":       agent,
+				"error":       err,
+				"maxTimeout":  maxTimeout,
+				"elapsedTime": exp.GetElapsedTime(),
+				"retries":     retryCount,
+				"version":     version,
+			}).Warn("Could not get agent by hostname")
 			return err
 		}
 
@@ -419,7 +432,16 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 		}
 
 		if retrievedVersion != version {
-			return fmt.Errorf("version mismatch required '%s' retrieved '%s'", version, retrievedVersion)
+			err := fmt.Errorf("version mismatch required '%s' retrieved '%s'", version, retrievedVersion)
+			log.WithFields(log.Fields{
+				"elapsedTime":      exp.GetElapsedTime(),
+				"error":            err,
+				"maxTimeout":       maxTimeout,
+				"retries":          retryCount,
+				"retrievedVersion": retrievedVersion,
+				"version":          version,
+			}).Warn("Version mismatch")
+			return err
 		}
 
 		return nil
