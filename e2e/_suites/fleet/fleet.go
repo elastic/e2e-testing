@@ -342,9 +342,6 @@ func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredSt
 }
 
 func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(staleVersion string, installerType string) error {
-	agentVersionBackup := fts.Version
-	defer func() { fts.Version = agentVersionBackup }()
-
 	// check if stale version is an alias
 	v, err := downloads.GetElasticArtifactVersion(staleVersion)
 	if err != nil {
