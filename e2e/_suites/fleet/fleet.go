@@ -1632,7 +1632,7 @@ func (fts *FleetTestSuite) getAgentDefaultAPIKey() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return agent.DefaultApiKey, nil
+	return agent.DefaultAPIKey, nil
 }
 
 func metricsInputs(integration string, set string, file string, metrics string) []kibana.Input {
