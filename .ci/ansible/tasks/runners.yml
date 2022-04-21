@@ -9,7 +9,7 @@
       branch: "{{branch | default('Not running on CI')}}"
       build: "{{build | default('Not running on CI')}}"
       created_date: "{{ansible_date_time.epoch}}"
-      environment: "{{environment | default('Not running on CI')}}"
+      environment: "{{type | default('Not running on CI')}}"
       repo: "{{repo | default('Not running on CI')}}"
   tags:
     - provision-stack
