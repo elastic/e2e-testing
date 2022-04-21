@@ -6,7 +6,7 @@ The first step in determining the exact failure is to try and reproduce the test
 Each test suite's documentation should contain the specifics to run the tests, but it's summarises to executing `go test` or `godog` in the right directory.
 
 ### SSH into the Cloud machines
-On CI, we are running the Elastic Stack and all test suites in AWS instances, so whenever a build failed we would need to access those machines and inspect the state of the machine: logs, files, containers... For that, we are enabling SSH access to those ephemeral machines, which will be kept for debugging purpose if and only if the DEVELOPER_MODE environment variable is set at the Jenkinsfile. In the UI of Jenkins, you can enable it using the DEVELOPMENT_MODE input argument, checking it to true (default is false). After the build finishes, the cloud instances won't be destroyed.
+On CI, we are running the Elastic Stack and all test suites in AWS instances, so whenever a build failed we would need to access those machines and inspect the state of the machine: logs, files, containers... For that, we are enabling SSH access to those ephemeral machines, which will be kept for debugging purpose if and only if the DEVELOPER_MODE environment variable is set at the Jenkinsfile. In the UI of Jenkins, you can enable it using the DEVELOPER_MODE input argument, checking it to true (default is false). After the build finishes, the cloud instances won't be destroyed.
 
 But you must first understand that there are two types of Cloud machines: 1) the VM running the stack, and 2) the VMs where the Elastic Agent will be installed and enrolled into the stack.
 
