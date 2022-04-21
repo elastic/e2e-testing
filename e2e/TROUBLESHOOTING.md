@@ -34,7 +34,7 @@ There different VM flavours that you can use to run the Elastic Agent and enrol 
 In these VMs, the test framework will download a binary to install the Elastic Agent (TAR files, DEB/RPM packages...), and will execute the different agent commands to install, enrol, uninstall, etc.
 
 #### Getting SSH access to the VMs
-To access the machines, you must be allowed to do so first, and for that, please submit a PR adding your Github username in alphabetical order to [this file](../.ci/ansible/github-ssh-keys), keeping a blank line as file ending. The user to access each EC2 used on the tests can be found [here](https://github.com/elastic/e2e-testing/blob/main/.ci/.e2e-platforms.yaml).
+To access the machines, you must be allowed to do so first, and for that, please submit a PR adding your Github username in alphabetical order to [this file](../.ci/ansible/github-ssh-keys), keeping a blank line as file ending. The user to access each EC2 used on the tests can be found [here](https://github.com/elastic/e2e-testing/blob/main/.ci/.e2e-platforms.yaml). When submitting the pul request with your user, please remember to add the right backport labels (ex. `backport-v8.2.0`) so that you will be able to SSH into the supported maintenance branches.
 
 ### Tests fail because the product could not be configured or run correctly
 This type of failure usually indicates that code for these tests itself needs to be changed. See the sections on how to run the tests locally in the specific test suite.
