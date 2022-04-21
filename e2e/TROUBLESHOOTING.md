@@ -8,7 +8,9 @@ Each test suite's documentation should contain the specifics to run the tests, b
 ### Running the tests on the Cloud machines
 On CI, we are running the Elastic Stack and all test suites in AWS instances, so whenever a build failed we would need to access those machines and inspect the state of the machine: logs, files, containers... For that, we are enabling SSH access to those ephemeral machines, which will be kept for debugging purpose if and only if the `DEVELOPER_MODE` environment variable is set at the Jenkinsfile. In the UI of Jenkins, you can enable it using the `DEVELOPER_MODE` input argument, checking it to true (default is false). After the build finishes, the cloud instances won't be destroyed.
 
-But you must first understand that there are two types of Cloud machines: 1) the VM running the stack, and 2) the VMs where the Elastic Agent will be installed and enrolled into the stack.
+But you must first understand that there are two types of Cloud machines: 
+1) the VM running the stack, and 
+2) the VMs where the Elastic Agent will be installed and enrolled into the stack.
 
 #### The Stack VM
 This specialised VM starts Elasticsearch, Kibana and Fleet Server using Docker Compose, but instead of invoking the compose file directly, it uses the test framework to do it. Why? Because we need to wait for Elasticsearch to be ready and request an API Token to be passed to the Fleet Server container. And [we do this with code](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/e2e/_suites/fleet/fleet.go#L631-L748).
@@ -47,7 +49,9 @@ The IP address of that VM is `3.144.74.102`.
 
 For the agent VMs it's exactly the same, but looking up the **parallel stages** right after the Test Infra. Again, look for any Ansible task containing an IP address, as shown above.
 
-Once you have both IP addresses, one for the stack and one for the agent in the OS/Arch you are interested in, please open two terminals, one for each. Then SSH into the machines using: 1) the public SSH key you have in your Github account, and 2) the right user for the machine, as described [here](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/.ci/.e2e-platforms.yaml#L2-L42).
+Once you have both IP addresses, one for the stack and one for the agent in the OS/Arch you are interested in, please open two terminals, one for each. Then SSH into the machines using: 
+1) the public SSH key you have in your Github account, and 
+2) the right user for the machine, as described [here](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/.ci/.e2e-platforms.yaml#L2-L42).
 
 An example of how to SSH in the machine, having multiple SSH keys under the `.ssh` directory, and connecting with the `admin` user because it's a Debian machine:
 
