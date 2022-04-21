@@ -55,6 +55,39 @@ An example of how to SSH in the machine, having multiple SSH keys under the `.ss
 ssh -i ~/.ssh/id_rsa_elastic.pub -vvvv admin@18.188.242.30
 ```
 
+#### Running the tests for the Elastic Agent
+Once you have SSH'ed into the right agent VM (ex. CentOS 8 ARM), and checked that the stack is in a valid state (the API token of the Fleet Server has not expired, otherwise you must recreate the entire stack), you can run the tests with a simple command, but you must first set the environment so that the agent is able to connect to the remote stack, which lives in another VM. Just source the `.env` file that the test framework created:
+
+```shell
+# log in as root
+sudo su -
+# move to the project directory
+cd /home/${USER}/e2e-testing
+# load the environment
+source .env
+# verify variables
+env
+```
+
+The env should contain those variables needed for enroling the agent, such as `ELASTICSEARCH_URL` and `FLEET_SERVER_URL`, among others.
+
+Now you can run the tests, specifying the tags you are interested. Please use the tags in the feature files, where the test framework defines one at the top level, for running an entire feature file, and per scenario, so that it's possible to tell the test runner to run one or multiple scenarios. More about Cucumber tags in [here](https://github.com/cucumber/godog#tags).
+
+```shell
+# log in as root
+sudo su -
+# move to the project directory
+cd /home/${USER}/e2e-testing
+TAGS="deploy-system_integration-with-diskio" TIMEOUT_FACTOR=5 LOG_LEVEL=TRACE PROVIDER=remote make -C e2e/_suites/fleet functional-test
+```
+
+- TAGS: it uses a tag from the `system_integration.feature` file, because we want to run just one scenario.
+- LOG_LEVEL: keep it as TRACE to see everything.
+- TIMEOUT_FACTOR: this number will multiply the default timeouts when waiting for states, such as waiting for an agent to be online. Default is 3 minutes.
+- PROVIDER: use `REMOTE` so that it will connect to the remote stack you already provisioned.
+
+More about the environment variables affecting the build [here](https://github.com/elastic/e2e-testing/tree/main/e2e#environment-variables-affecting-the-build), specially if you are debugging a pull-request, where you may need to pass `GITHUB_CHECK_SHA1` and `GITHUB_CHECK_REPO`.
+
 ### Tests fail because the product could not be configured or run correctly
 This type of failure usually indicates that code for these tests itself needs to be changed. See the sections on how to run the tests locally in the specific test suite.
 
