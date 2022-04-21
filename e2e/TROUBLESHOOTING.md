@@ -36,7 +36,24 @@ In these VMs, the test framework will download a binary to install the Elastic A
 #### Getting SSH access to the VMs
 To access the machines, you must be allowed to do so first, and for that, please submit a PR adding your Github username in alphabetical order to [this file](../.ci/ansible/github-ssh-keys), keeping a blank line as file ending. The user to access each EC2 used on the tests can be found [here](https://github.com/elastic/e2e-testing/blob/main/.ci/.e2e-platforms.yaml). When submitting the pul request with your user, please remember to add the right backport labels (ex. `backport-v8.2.0`) so that you will be able to SSH into the supported maintenance branches.
 
-To get the IP address of the VMs, please go to the Jenkins UI of the job you manually triggered with `DEVELOPER_MODE=true`
+To get the IP address of the VMs, please go to the Jenkins'm BlueOcean UI of the job you manually triggered with `DEVELOPER_MODE=true`, and look up the **Deploy Test Infra** stage. Under its steps, you will see different Ansible executions to provision the VM. Please open any of them and look for any log entry containing an IP address:
+
+```shell
+[2022-04-21T05:20:27.133Z] TASK [Gathering Facts] *********************************************************
+[2022-04-21T05:20:29.541Z] ok: [3.144.74.102]
+```
+
+The IP address of that VM is `3.144.74.102`.
+
+For the agent VMs it's exactly the same, but looking up the **parallel stages** right after the Test Infra. Again, look for any Ansible task containing an IP address, as shown above.
+
+Once you have both IP addresses, one for the stack and one for the agent in the OS/Arch you are interested in, please open two terminals, one for each. Then SSH into the machines using: 1) the public SSH key you have in your Github account, and 2) the right user for the machine, as described [here](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/.ci/.e2e-platforms.yaml#L2-L42).
+
+An example of how to SSH in the machine, having multiple SSH keys under the `.ssh` directory, and connecting with the `admin` user because it's a Debian machine:
+
+```shell
+ssh -i ~/.ssh/id_rsa_elastic.pub -vvvv admin@18.188.242.30
+```
 
 ### Tests fail because the product could not be configured or run correctly
 This type of failure usually indicates that code for these tests itself needs to be changed. See the sections on how to run the tests locally in the specific test suite.
