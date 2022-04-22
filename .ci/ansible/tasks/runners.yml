@@ -8,8 +8,10 @@
     tags:
       branch: "{{branch | default('Not running on CI')}}"
       build: "{{build | default('Not running on CI')}}"
+      build_url: "{{buildURL | default('Not running on CI') }}"
       created_date: "{{ansible_date_time.epoch}}"
       environment: "{{type | default('Not running on CI')}}"
+      git_sha: "{{ gitSha }}"
       repo: "{{repo | default('Not running on CI')}}"
   tags:
     - provision-stack
@@ -24,15 +26,15 @@
     image: '{{nodeImage}}'
     instance_type: '{{nodeInstanceType}}'
     instance_tags:
-      BuildURL: "{{buildURL | default('Not running on CI') }}"
-      GitSHA: "{{ gitSha }}"
-      Kind: "{{nodeLabel}}"
-      Name: "e2e-{{nodeLabel}}-{{runId}}"
-      ReaperMark: "e2e-testing-vm"
       branch: "{{branch | default('Not running on CI')}}"
       build: "{{build | default('Not running on CI')}}"
+      build_url: "{{buildURL | default('Not running on CI') }}"
       created_date: "{{ansible_date_time.epoch}}"
-      environment: "{{environment | default('Not running on CI')}}"
+      environment: "{{type | default('Not running on CI')}}"
+      git_sha: "{{ gitSha }}"
+      kind: "{{nodeLabel}}"
+      name: "e2e-{{nodeLabel}}-{{runId}}"
+      reaper_mark: "e2e-testing-vm"
       repo: "{{repo | default('Not running on CI')}}"
     count_tag:
       Name: "e2e-{{nodeLabel}}-{{runId}}"
