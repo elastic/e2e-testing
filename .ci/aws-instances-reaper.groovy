@@ -11,7 +11,7 @@ pipeline {
     JOB_GIT_CREDENTIALS = "f6c7695a-671e-4f4f-a331-acdce44ff9ba"
     AWS_PROVISIONER_SECRET = 'secret/observability-team/ci/elastic-observability-aws-account-auth'
     AWS_DEFAULT_REGION = 'us-east-2'
-    AWS_EC2_INSTANCES_TAG_NAME= 'ReaperMark'
+    AWS_EC2_INSTANCES_TAG_NAME= 'reaper_mark'
     AWS_EC2_INSTANCES_TAG_VALUE= 'e2e-testing-vm'
   }
   options {
