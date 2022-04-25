@@ -33,12 +33,12 @@ TAGS="non-existing-tag" TIMEOUT_FACTOR=3 LOG_LEVEL=TRACE DEVELOPER_MODE=true mak
 #### The Agent VMs
 There different VM flavours that you can use to run the Elastic Agent and enrol it into the Stack: Debian, CentOS, SLES15, Oracle Linux... using AMD and ARM as architecture. You can find the full reference of the platform support [here](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/.ci/.e2e-platforms.yaml#L2-L42).
 
-In these VMs, the test framework will download a binary to install the Elastic Agent (TAR files, DEB/RPM packages...), and will execute the different agent commands to install, enrol, uninstall, etc.
+In these VMs, the test framework will download a binary to install the Elastic Agent (TAR files, DEB/RPM packages...), and will execute the different agent commands to install, enroll, uninstall, etc.
 
 #### Getting SSH access to the VMs
-To access the machines, you must be allowed to do so first, and for that, please submit a PR adding your Github username in alphabetical order to [this file](../.ci/ansible/github-ssh-keys), keeping a blank line as file ending. The user to access each EC2 used on the tests can be found [here](https://github.com/elastic/e2e-testing/blob/main/.ci/.e2e-platforms.yaml). When submitting the pul request with your user, please remember to add the right backport labels (ex. `backport-v8.2.0`) so that you will be able to SSH into the supported maintenance branches.
+To access the machines, you must be allowed to do so first, and for that, please submit a PR adding your Github username in alphabetical order to [this file](../.ci/ansible/github-ssh-keys), keeping a blank line as file ending. The user to access each EC2 used on the tests can be found [here](https://github.com/elastic/e2e-testing/blob/main/.ci/.e2e-platforms.yaml). When submitting the pull request with your user, please remember to add the right backport labels (ex. `backport-v8.2.0`) so that you will be able to SSH into the supported maintenance branches.
 
-To get the IP address of the VMs, please go to the Jenkins'm BlueOcean UI of the job you manually triggered with `DEVELOPER_MODE=true`, and look up the **Deploy Test Infra** stage. Under its steps, you will see different Ansible executions to provision the VM. Please open any of them and look for any log entry containing an IP address:
+To get the IP address of the VMs, please go to the Jenkins BlueOcean UI of the job you manually triggered with `DEVELOPER_MODE=true`, and look up the **Deploy Test Infra** stage. Under its steps, you will see different Ansible executions to provision the VM. Please open any of them and look for any log entry containing an IP address:
 
 ```shell
 [2022-04-21T05:20:27.133Z] TASK [Gathering Facts] *********************************************************
@@ -73,7 +73,7 @@ source .env
 env
 ```
 
-The env should contain those variables needed for enroling the agent, such as `ELASTICSEARCH_URL` and `FLEET_SERVER_URL`, among others.
+The env should contain those variables needed for enrolling the agent, such as `ELASTICSEARCH_URL` and `FLEET_SERVER_URL`, among others.
 
 Now you can run the tests, specifying the tags you are interested. Please use the tags in the feature files, where the test framework defines one at the top level, for running an entire feature file, and per scenario, so that it's possible to tell the test runner to run one or multiple scenarios. More about Cucumber tags in [here](https://github.com/cucumber/godog#tags).
 
