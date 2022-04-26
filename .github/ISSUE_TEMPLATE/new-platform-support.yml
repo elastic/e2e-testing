@@ -8,12 +8,12 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!
+        Thanks for taking the time to fill out this platform request!
   - type: input
     id: platform-id
     attributes:
       label: Platform ID
-      description: Unique identifier for the platform. It should describe as much as possible the basic characteristics of the platform, as OS version and architecture.
+      description: Unique identifier for the platform. It should describe as much as possible the basic characteristics of the platform, such as the OS version and architecture.
       placeholder: ex. debian10_arm64
     validations:
       required: true
