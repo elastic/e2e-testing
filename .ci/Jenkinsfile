@@ -98,7 +98,7 @@ pipeline {
             githubCheckNotify('PENDING')  // we want to notify the upstream about the e2e the soonest
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
             setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
-            setEnvVar("LABELS_STRING", "buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT}")
+            setEnvVar("LABELS_STRING", "buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT} build=${env.BUILD_ID} repo=${env.REPO} branch=${env.BRANCH_NAME.toLowerCase().replaceAll('[^a-z0-9-]', '-')} type=ci")
             checkSkipTests()
           }
         }
