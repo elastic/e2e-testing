@@ -1,6 +1,6 @@
 - name: Create test environment
   hosts: localhost
-  gather_facts: no
+  gather_facts: yes
   vars:
     ansible_user: "{{nodeUser}}"
   tasks:
