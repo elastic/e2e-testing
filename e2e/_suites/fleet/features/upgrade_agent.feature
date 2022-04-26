@@ -10,7 +10,7 @@ Scenario Outline: Upgrading an installed agent from <stale-version>
   Then agent is in "latest" version
 Examples: Stale versions
 | stale-version |
-| 8.2.0 |
+| latest |
 | 8.1.2 |
 | 8.1.1 |
 | 8.1.0 |
