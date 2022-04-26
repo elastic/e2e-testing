@@ -337,7 +337,7 @@ def sshexec(workspace, connection, cmd){
 }
 
 def scpr(workspace, connection, remote_src, local_dst){
-  retryWithSleep(retries: 3, seconds: 5, backoff: true){ 
+  retryWithSleep(retries: 3, seconds: 5, backoff: true){
     sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${workspace}/e2essh ${connection.user}@${connection.ip}:${remote_src} ${local_dst}"
   }
 }
