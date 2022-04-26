@@ -172,3 +172,18 @@ func (i *elasticAgentZIPPackage) Uninstall(ctx context.Context) error {
 	}
 	return nil
 }
+
+// Upgrade upgrades a EXE package
+func (i *elasticAgentZIPPackage) Upgrade(ctx context.Context, version string) error {
+	cmds := []string{"C:\\Program Files\\Elastic\\Agent\\elastic-agent.exe", "uninstall", version, "-v"}
+	span, _ := apm.StartSpanOptions(ctx, "Upgrading Elastic Agent", "elastic-agent.zip.upgrade", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+	_, err := i.Exec(ctx, cmds)
+	if err != nil {
+		return fmt.Errorf("failed to upgrade the agent with subcommand: %v", err)
+	}
+	return nil
+}

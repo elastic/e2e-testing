@@ -245,3 +245,19 @@ func (i *elasticAgentRPMPackage) Uninstall(ctx context.Context) error {
 	}
 	return nil
 }
+
+// Upgrade upgrades a RPM package
+func (i *elasticAgentRPMPackage) Upgrade(ctx context.Context, version string) error {
+	cmds := []string{"elastic-agent", "upgrade", version, "-v"}
+	span, _ := apm.StartSpanOptions(ctx, "Upgrading Elastic Agent", "elastic-agent.rpm.upgrade", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	defer span.End()
+
+	_, err := i.Exec(ctx, cmds)
+	if err != nil {
+		return fmt.Errorf("failed to upgrade the agent with subcommand: %v", err)
+	}
+	return nil
+}

@@ -44,6 +44,7 @@ type ServiceOperator interface {
 	Start(ctx context.Context) error   // will start a service
 	Stop(ctx context.Context) error    // will stop a service
 	Uninstall(ctx context.Context) error
+	Upgrade(ctx context.Context, version string) error
 }
 
 // ServiceOperation represents an action that can be run within a ServiceOperator

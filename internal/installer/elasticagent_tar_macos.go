@@ -198,3 +198,19 @@ func (i *elasticAgentTARDarwinPackage) Uninstall(ctx context.Context) error {
 	}
 	return nil
 }
+
+// Upgrade upgrades a TAR package
+func (i *elasticAgentTARDarwinPackage) Upgrade(ctx context.Context, version string) error {
+	cmds := []string{"elastic-agent", "upgrade", version, "-v"}
+	span, _ := apm.StartSpanOptions(ctx, "Upgrading Elastic Agent", "elastic-agent.tar.upgrade", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	span.Context.SetLabel("runtime", runtime.GOOS)
+	defer span.End()
+	_, err := i.Exec(ctx, cmds)
+	if err != nil {
+		return fmt.Errorf("failed to upgrade the agent with subcommand: %v", err)
+	}
+	return nil
+}
