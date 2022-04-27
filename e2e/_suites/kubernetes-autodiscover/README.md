@@ -123,6 +123,14 @@ This is an example of the optional configuration:
    OP_LOG_LEVEL=DEBUG go test -timeout 60m -v
    ```
 
+   Optionally, you can run the scenarios for a pull request on a given commit:
+   ```shell
+   export GITHUB_CHECK_SHA1=0123456789 # to select snapshots built by beats-ci
+   export GITHUB_CHECK_REPO=beats # or elastic-agent, depending on what you need: a beat or the elastic-agent
+   cd e2e/_suites/kubernetes-autodiscover
+   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v
+   ```
+
    Optionally, you can run only one of the feature files
    ```shell
    cd e2e/_suites/kubernetes-autodiscover
