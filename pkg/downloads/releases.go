@@ -128,3 +128,27 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 
 	return downloadURL, downloadshaURL, nil
 }
+
+// DownloadURLResolver type to resolve the URL of downloads that are currently published in elastic.co/downloads
+type DownloadURLResolver struct {
+	Project  string
+	FullName string
+	Name     string
+}
+
+// NewDownloadURLResolver creates a new resolver for downloads that are currently published in elastic.co/downloads
+func NewDownloadURLResolver(project string, fullName string, name string) *DownloadURLResolver {
+	return &DownloadURLResolver{
+		FullName: fullName,
+		Name:     name,
+		Project:  project,
+	}
+}
+
+// Resolve resolves the URL of a download, which is located in the elastic
+func (r *DownloadURLResolver) Resolve() (string, string, error) {
+	url := fmt.Sprintf("https://artifacts.elastic.co/downloads/%s/%s/%s", r.Project, r.Name, r.FullName)
+	shaURL := fmt.Sprintf("%s.sha512", url)
+
+	return url, shaURL, nil
+}
