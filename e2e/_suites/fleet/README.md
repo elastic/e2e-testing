@@ -137,8 +137,6 @@ Background: Setting up kibana instance with default profile
 ```
 3. Run the tests! Kibana will be recreated with the profile configuration in those scenarios using the new step.
 
-<<<<<<< HEAD
-=======
 ### Fleet UI e2e tests CI job
 
 https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-kibana-fleet/build?delay=0sec
@@ -164,7 +162,6 @@ export FLEET_URL=http://localhost:8220
 ```
 2. Run tests
 
->>>>>>> f6c062c7 (docs: revamp (#2266))
 ### Need help?
 
 Please open an issue here: https://github.com/elastic/e2e-testing/issues/new
