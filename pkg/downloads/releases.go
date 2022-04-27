@@ -145,10 +145,48 @@ func NewReleaseURLResolver(project string, fullName string, name string) *Releas
 	}
 }
 
-// Resolve resolves the URL of a download, which is located in the elastic
+// Resolve resolves the URL of a download, which is located in the Elastic. It will use a HEAD request
+// and if it returns a 200 OK it will return the URL of both file and its SHA512 file
 func (r *ReleaseURLResolver) Resolve() (string, string, error) {
 	url := fmt.Sprintf("https://artifacts.elastic.co/downloads/%s/%s/%s", r.Project, r.Name, r.FullName)
 	shaURL := fmt.Sprintf("%s.sha512", url)
+
+	exp := utils.GetExponentialBackOff(time.Minute)
+	retryCount := 1
+
+	apiStatus := func() error {
+		r := curl.HTTPRequest{
+			URL: url,
+		}
+
+		_, err := curl.Head(r)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"resolver":       r,
+				"error":          err,
+				"retry":          retryCount,
+				"statusEndpoint": r.URL,
+				"elapsedTime":    exp.GetElapsedTime(),
+			}).Warn("The Elastic downloads API is not available yet")
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"retries":        retryCount,
+			"statusEndpoint": r.URL,
+			"elapsedTime":    exp.GetElapsedTime(),
+		}).Debug("The Elastic downloads API is available")
+
+		return nil
+	}
+
+	err := backoff.Retry(apiStatus, exp)
+	if err != nil {
+		return "", "", err
+	}
 
 	return url, shaURL, nil
 }
