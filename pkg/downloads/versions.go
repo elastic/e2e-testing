@@ -450,7 +450,12 @@ func FetchProjectBinaryForSnapshots(ctx context.Context, useCISnapshots bool, pr
 		return handleDownload(downloadURL)
 	}
 
-	downloadURL, downloadShaURL, err = GetElasticArtifactURL(artifactName, artifact, version)
+	// look up the binaries, first checking releases, then artifacts
+	downloadURLResolvers := []DownloadURLResolver{
+		NewReleaseURLResolver(project, artifactName, artifact),
+		NewArtifactURLResolver(artifactName, artifact, version),
+	}
+	downloadURL, downloadShaURL, err = getDownloadURLFromResolvers(downloadURLResolvers)
 	if err != nil {
 		return "", err
 	}
@@ -472,6 +477,28 @@ func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
 
 	nextPageToken := token.Data().(string)
 	return "&pageToken=" + nextPageToken
+}
+
+// getDownloadURLFromResolvers returns the URL for the desired artifacts
+func getDownloadURLFromResolvers(resolvers []DownloadURLResolver) (string, string, error) {
+	for i, resolver := range resolvers {
+		url, shaURL, err := resolver.Resolve()
+		if err != nil {
+			if i < len(resolvers)-1 {
+				log.WithFields(log.Fields{
+					"resolver": resolver,
+				}).Warn("Object not found. Trying with another download resolver")
+				continue
+			} else {
+				log.Error("Object not found. There is no other download resolver")
+				return "", "", err
+			}
+		}
+
+		return url, shaURL, nil
+	}
+
+	return "", "", fmt.Errorf("the artifact was not found")
 }
 
 // getObjectURLFromResolvers extracts the media URL for the desired artifact from the

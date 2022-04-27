@@ -15,8 +15,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// ReleaseURLResolver interface to resolve URLs for release artifacts
-type ReleaseURLResolver interface {
+// DownloadURLResolver interface to resolve URLs for downloadable artifacts
+type DownloadURLResolver interface {
 	Resolve() (url string, shaURL string, err error)
 }
 
@@ -129,16 +129,16 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 	return downloadURL, downloadshaURL, nil
 }
 
-// DownloadURLResolver type to resolve the URL of downloads that are currently published in elastic.co/downloads
-type DownloadURLResolver struct {
+// ReleaseURLResolver type to resolve the URL of downloads that are currently published in elastic.co/downloads
+type ReleaseURLResolver struct {
 	Project  string
 	FullName string
 	Name     string
 }
 
-// NewDownloadURLResolver creates a new resolver for downloads that are currently published in elastic.co/downloads
-func NewDownloadURLResolver(project string, fullName string, name string) *DownloadURLResolver {
-	return &DownloadURLResolver{
+// NewReleaseURLResolver creates a new resolver for downloads that are currently published in elastic.co/downloads
+func NewReleaseURLResolver(project string, fullName string, name string) *ReleaseURLResolver {
+	return &ReleaseURLResolver{
 		FullName: fullName,
 		Name:     name,
 		Project:  project,
@@ -146,7 +146,7 @@ func NewDownloadURLResolver(project string, fullName string, name string) *Downl
 }
 
 // Resolve resolves the URL of a download, which is located in the elastic
-func (r *DownloadURLResolver) Resolve() (string, string, error) {
+func (r *ReleaseURLResolver) Resolve() (string, string, error) {
 	url := fmt.Sprintf("https://artifacts.elastic.co/downloads/%s/%s/%s", r.Project, r.Name, r.FullName)
 	shaURL := fmt.Sprintf("%s.sha512", url)
 
