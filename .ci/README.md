@@ -1,12 +1,12 @@
 # CI considerations
 
 ## Jenkins Stages and platform support
-There are a set of YAML files, named after `.e2e-tests*.yaml`, that drive the execution of the different test scenarios and suites in the CI. These files are read by Jenkins at build time creating as many Jenkins parallel branch as items declared in the files. Ideally, each parallel branch should run a set of tests in a specific platform, i.e. the _"apm-server scenarios on Centos 8"_.
+There are a set of YAML files, named after `.e2e-tests*.yaml`, that drive the execution of the different test scenarios and suites in the CI. These files are read by Jenkins at build time creating as many Jenkins parallel branches as items declared in the files. Ideally, each parallel branch should run a set of tests in a specific platform, i.e. the _"apm-server scenarios on Centos 8"_.
 
 ### Available platforms file structure
 To support multiple test suite descriptors, we are defining the available platforms in one single file: `.e2e-platforms.yaml`. The structure of the file is the following:
 
-- **PLATFORMS**: this entry will hold a YAML object will all the available platforms where the tests could be run. Each available platform will be defined as a key in the YAML object, where each object will have a key identifying the platform with a very descriptiva name (i.e. `stack` or `debian_arm64`) and the following attributes:
+- **PLATFORMS**: this entry will hold a YAML object with all the available platforms where the tests could be run. Each available platform will be defined as a key in the YAML object, where each object will have a key identifying the platform with a very descriptive name (i.e. `stack` or `debian_arm64`) and the following attributes:
   - **description**: Description of the purpose and/or characteristics of the platform machine. Required.
   - **image**: the AWS AMI identifier, i.e. `ami-0d90bed76900e679a`. Required.
   - **instance_type**: the AWS instance type, representing the size of the machine, i.e. `c5.4xlarge`. Required.
@@ -18,7 +18,7 @@ In order to configure each platform, there is an `Ansible` script that installs 
 It's possible that a consumer of the e2e tests would need to define a specific layout for the test execution, adding or removing suites and/or scenarios. That's the case for Beats or the Elastic Agent, which triggers the E2E tests with a different layout than for the own development of the test framework: while in Beats or the Elastic Agent we are more interested in running the test for Fleet only, when developing the project we want to verify all the test suites at a time. The structure of these files is the following:
 
 - **SUITES**: this entry will hold a YAML object containing a list of suite. Each suite in the list will be represented by a YAML object with the following attributes:
-  - **suite**: the name of the suite. WIll be used to look up the root directory of the test suite, located under the `e2e/_suites` directory. Therefore, only `fleet`, `helm` and `kubernetes-autodiscover` are valid values. Required.
+  - **suite**: the name of the suite. Will be used to look up the root directory of the test suite, located under the `e2e/_suites` directory. Therefore, only `fleet`, `helm` and `kubernetes-autodiscover` are valid values. Required.
   - **provider**: declares the provider type for the test suite. Valid values are `docker`, `elastic-package` and `remote`. If not present, it will use `remote` as fallback. Optional.
   - **scenarios**: a list of YAML objects representing the test scenarios, where the tests are executed. A test scenario will basically declare how to run a set of test, using the following attributes:
     - **name**: name of the test scenario. It will be used by Jenkins to name the parallel stage representing this scenario. Required.
