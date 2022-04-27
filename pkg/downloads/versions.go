@@ -123,90 +123,9 @@ func GetCommitVersion(version string) string {
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-x86_64.rpm", "elastic-agent","$VERSION")
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-linux-$ARCH.tar.gz", "elastic-agent","$VERSION")
 func GetElasticArtifactURL(artifactName string, artifact string, version string) (string, string, error) {
-	exp := utils.GetExponentialBackOff(time.Minute)
+	resolver := NewArtifactURLResolver(artifactName, artifact, version)
 
-	retryCount := 1
-
-	body := ""
-
-	tmpVersion := version
-	hasCommit := SnapshotHasCommit(version)
-	if hasCommit {
-		log.WithFields(log.Fields{
-			"version": version,
-		}).Trace("Removing SNAPSHOT from version including commit")
-
-		// remove the SNAPSHOT from the VERSION as the artifacts API supports commits in the version, but without the snapshot suffix
-		tmpVersion = GetCommitVersion(version)
-	}
-
-	apiStatus := func() error {
-		r := curl.HTTPRequest{
-			URL: fmt.Sprintf("https://artifacts-api.elastic.co/v1/search/%s/%s?x-elastic-no-kpi=true", tmpVersion, artifact),
-		}
-
-		response, err := curl.Get(r)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"artifact":       artifact,
-				"artifactName":   artifactName,
-				"version":        tmpVersion,
-				"error":          err,
-				"retry":          retryCount,
-				"statusEndpoint": r.URL,
-				"elapsedTime":    exp.GetElapsedTime(),
-			}).Warn("The Elastic artifacts API is not available yet")
-
-			retryCount++
-
-			return err
-		}
-
-		log.WithFields(log.Fields{
-			"retries":        retryCount,
-			"statusEndpoint": r.URL,
-			"elapsedTime":    exp.GetElapsedTime(),
-		}).Debug("The Elastic artifacts API is available")
-
-		body = response
-		return nil
-	}
-
-	err := backoff.Retry(apiStatus, exp)
-	if err != nil {
-		return "", "", err
-	}
-
-	jsonParsed, err := gabs.ParseJSON([]byte(body))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"artifact":     artifact,
-			"artifactName": artifactName,
-			"version":      tmpVersion,
-		}).Error("Could not parse the response body for the artifact")
-		return "", "", err
-	}
-
-	log.WithFields(log.Fields{
-		"retries":      retryCount,
-		"artifact":     artifact,
-		"artifactName": artifactName,
-		"elapsedTime":  exp.GetElapsedTime(),
-		"version":      tmpVersion,
-	}).Trace("Artifact found")
-
-	if hasCommit {
-		// remove commit from the artifact as it comes like this: elastic-agent-8.0.0-abcdef-SNAPSHOT-darwin-x86_64.tar.gz
-		artifactName = RemoveCommitFromSnapshot(artifactName)
-	}
-
-	packagesObject := jsonParsed.Path("packages")
-	// we need to get keys with dots using Search instead of Path
-	downloadObject := packagesObject.Search(artifactName)
-	downloadURL := downloadObject.Path("url").Data().(string)
-	downloadshaURL := downloadObject.Path("sha_url").Data().(string)
-
-	return downloadURL, downloadshaURL, nil
+	return resolver.Resolve()
 }
 
 // GetElasticArtifactVersion returns the current version:
