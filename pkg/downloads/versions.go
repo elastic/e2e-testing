@@ -450,9 +450,14 @@ func FetchProjectBinaryForSnapshots(ctx context.Context, useCISnapshots bool, pr
 		return handleDownload(downloadURL)
 	}
 
+	elasticAgentNamespace := project
+	if strings.EqualFold(elasticAgentNamespace, "elastic-agent") {
+		elasticAgentNamespace = "beats"
+	}
+
 	// look up the binaries, first checking releases, then artifacts
 	downloadURLResolvers := []DownloadURLResolver{
-		NewReleaseURLResolver(project, artifactName, artifact),
+		NewReleaseURLResolver(elasticAgentNamespace, artifactName, artifact),
 		NewArtifactURLResolver(artifactName, artifact, version),
 	}
 	downloadURL, downloadShaURL, err = getDownloadURLFromResolvers(downloadURLResolvers)
