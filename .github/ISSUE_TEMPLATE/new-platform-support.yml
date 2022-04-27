@@ -1,0 +1,59 @@
+name: Platform support
+description: Request the addition of a new supported platform to run the e2e tests on it
+title: "[Platform Support]: "
+labels: ["enhancement"]
+assignees:
+  - observablt-robots
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this platform request!
+  - type: input
+    id: platform-id
+    attributes:
+      label: Platform ID
+      description: Unique identifier for the platform. It should describe as much as possible the basic characteristics of the platform, such as the OS version and architecture.
+      placeholder: ex. debian10_arm64
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Description of the purpose and/or characteristics of the platform machine.
+      placeholder: Tell us about the new platform
+    validations:
+      required: true
+  - type: input
+    id: aws-ami-id
+    attributes:
+      label: AWS AMI identifier
+      description: the AWS AMI identifier.
+      placeholder: ex. ami-0d90bed76900e679a
+    validations:
+      required: true
+  - type: input
+    id: instance-type
+    attributes:
+      label: Instance Type
+      description: the AWS instance type, representing the size of the machine.
+      placeholder: ex. c5.4xlarge
+    validations:
+      required: true
+  - type: input
+    id: instance-root-user
+    attributes:
+      label: Root user
+      description: the default user name when connecting to the machine using SSH, used by Ansible to execute commands on the remote machine.
+      placeholder: ex. centos, admin, ec2-user
+    validations:
+      required: true
+  - type: textarea
+    id: scenarios
+    attributes:
+      label: What scenarios should be run using this platform?
+      description: Take a look at the ".ci/.e2e-tests.yaml" file and add here a comma-separated of names of the scenarios in a suite that will be run with this new platform.
+      render: Markdown
+    validations:
+      required: true
