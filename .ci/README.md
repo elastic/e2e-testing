@@ -67,7 +67,7 @@ Make note of the IP address displayed in the ansible summary.
 ```
 > venv/bin/ansible-playbook .ci/ansible/playbook.yml \
     --private-key="$HOME/.ssh/id_rsa" \
-    --extra-vars "nodeLabel=stack nodeImage=ami-0d90bed76900e679a nodeInstanceType=c5.4xlarge" \
+    --extra-vars "nodeLabel=stack nodeImage=ami-0d90bed76900e679a nodeInstanceType=c5.4xlarge nodeUser=admin" \
     --extra-vars "runId=$RUN_ID workspace=$HOME/Projects/e2e-testing/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
     --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
     -t setup-stack \
