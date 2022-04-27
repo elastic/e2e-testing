@@ -6,6 +6,7 @@ package downloads
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
@@ -153,6 +154,7 @@ func (r *ReleaseURLResolver) Resolve() (string, string, error) {
 
 	exp := utils.GetExponentialBackOff(time.Minute)
 	retryCount := 1
+	found := false
 
 	apiStatus := func() error {
 		r := curl.HTTPRequest{
@@ -161,6 +163,17 @@ func (r *ReleaseURLResolver) Resolve() (string, string, error) {
 
 		_, err := curl.Head(r)
 		if err != nil {
+			if strings.EqualFold(err.Error(), "HEAD request failed with 404") {
+				log.WithFields(log.Fields{
+					"resolver":       r,
+					"error":          err,
+					"retry":          retryCount,
+					"statusEndpoint": r.URL,
+					"elapsedTime":    exp.GetElapsedTime(),
+				}).Warn("Download could not be found at the Elastic downloads API")
+				return nil
+			}
+
 			log.WithFields(log.Fields{
 				"resolver":       r,
 				"error":          err,
@@ -174,11 +187,12 @@ func (r *ReleaseURLResolver) Resolve() (string, string, error) {
 			return err
 		}
 
+		found = true
 		log.WithFields(log.Fields{
 			"retries":        retryCount,
 			"statusEndpoint": r.URL,
 			"elapsedTime":    exp.GetElapsedTime(),
-		}).Debug("The Elastic downloads API is available")
+		}).Debug("Download was found in the Elastic downloads API")
 
 		return nil
 	}
@@ -186,6 +200,10 @@ func (r *ReleaseURLResolver) Resolve() (string, string, error) {
 	err := backoff.Retry(apiStatus, exp)
 	if err != nil {
 		return "", "", err
+	}
+
+	if !found {
+		return "", "", fmt.Errorf("download could not be found at the Elastic downloads API")
 	}
 
 	return url, shaURL, nil
