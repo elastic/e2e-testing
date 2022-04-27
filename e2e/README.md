@@ -50,7 +50,7 @@ We have received contributions from multiple teams in different aspects of the e
   - Julia Bardi and Nicolas Chaulet, from Fleet team, frontend engineers, have contributed a few scenarios for Fleet
   - Eric Davis, QA engineer, has helped in the definition of the scenarios for Fleet
   - Igor Guz, from Security team, QA engineer, has contributed scenarios for the security-related integrations, such as Endpoint, Linux and System
-  - Christos Markou and Jaime Soriano, from Beats, have contributed and currently maintain the entire k8s-autodiscover test suite
+  - Christos Markou and Jaime Soriano have contributed to the k8s-autodiscover test suite, which is maintained by @elastic/obs-cloudnative-monitoring.
   - Julien Lind, from Fleet, has helped in defining the support matrix in terms of what OSs and architectures need to be run for Fleet test suite
   - Julien Mailleret, from Infra, has contributed to the Helm charts test suite.
   - Anderson Queiroz, from Elastic Agent, is currently working on the MacOS support for running the tests on real Apple machines.
