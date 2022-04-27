@@ -11,7 +11,7 @@
       build_url: "{{buildURL | default('Not running on CI') }}"
       created_date: "{{ansible_date_time.epoch}}"
       environment: "{{type | default('Not running on CI')}}"
-      git_sha: "{{ gitSha }}"
+      git_sha: "{{ gitSha | default('Not running on CI')}}"
       repo: "{{repo | default('Not running on CI')}}"
   tags:
     - provision-stack
@@ -31,7 +31,7 @@
       build_url: "{{buildURL | default('Not running on CI') }}"
       created_date: "{{ansible_date_time.epoch}}"
       environment: "{{type | default('Not running on CI')}}"
-      git_sha: "{{ gitSha }}"
+      git_sha: "{{ gitSha | default('Not running on CI')}}"
       kind: "{{nodeLabel}}"
       name: "e2e-{{nodeLabel}}-{{runId}}"
       reaper_mark: "e2e-testing-vm"
