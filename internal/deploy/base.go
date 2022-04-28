@@ -76,7 +76,6 @@ type ServiceInstallerMetadata struct {
 	FileExtension string
 	Os            string
 	PackageType   string
-	Version       string
 	XPack         bool
 }
 

@@ -110,12 +110,10 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, i.service.Version, metadata.Os, metadata.Arch, metadata.FileExtension, metadata.Docker, metadata.XPack)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"artifact":  artifact,
-			"version":   i.service.Version,
-			"os":        metadata.Os,
-			"arch":      metadata.Arch,
-			"extension": metadata.FileExtension,
-			"error":     err,
+			"artifact":        artifact,
+			"version":         i.service.Version,
+			"packageMetadata": metadata,
+			"error":           err,
 		}).Error("Could not download the binary for the agent")
 		return err
 	}

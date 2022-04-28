@@ -152,12 +152,10 @@ func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
 		binaryName, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, metadata.Os, metadata.Arch, metadata.FileExtension, metadata.Docker, metadata.XPack)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"artifact":  artifact,
-				"version":   version,
-				"os":        metadata.Os,
-				"arch":      metadata.Arch,
-				"extension": metadata.FileExtension,
-				"error":     err,
+				"artifact":        artifact,
+				"version":         version,
+				"packageMetadata": metadata,
+				"error":           err,
 			}).Error("Could not download the binary for the agent")
 			return err
 		}

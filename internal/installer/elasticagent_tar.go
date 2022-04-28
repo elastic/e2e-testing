@@ -142,12 +142,10 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 		_, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, metadata.Os, metadata.Arch, metadata.FileExtension, false, true)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"artifact":  artifact,
-				"version":   version,
-				"os":        metadata.Os,
-				"arch":      metadata.Arch,
-				"extension": metadata.FileExtension,
-				"error":     err,
+				"artifact":        artifact,
+				"version":         version,
+				"packageMetadata": metadata,
+				"error":           err,
 			}).Error("Could not download the binary")
 			return err
 		}

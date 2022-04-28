@@ -75,22 +75,17 @@ func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.Servic
 func doUpgrade(ctx context.Context, so deploy.ServiceOperator) error {
 	pkgMetadata := so.PkgMetadata()
 
-	version := pkgMetadata.Version
-	if version == "" {
-		version = common.ElasticAgentVersion
-	}
-
 	// downloading target release for the upgrade
+	version := common.ElasticAgentVersion
+
 	artifact := common.ElasticAgentServiceName
 	_, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, false, artifact, version, pkgMetadata.Os, pkgMetadata.Arch, pkgMetadata.FileExtension, pkgMetadata.Docker, pkgMetadata.XPack)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"artifact":  artifact,
-			"version":   version,
-			"os":        pkgMetadata.Os,
-			"arch":      pkgMetadata.Arch,
-			"extension": pkgMetadata.FileExtension,
-			"error":     err,
+			"artifact":        artifact,
+			"version":         version,
+			"packageMetadata": pkgMetadata,
+			"error":           err,
 		}).Error("Could not download the binary for the agent")
 		return err
 	}
