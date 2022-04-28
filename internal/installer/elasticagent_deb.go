@@ -24,17 +24,19 @@ type elasticAgentDEBPackage struct {
 }
 
 // AttachElasticAgentDEBPackage creates an instance for the DEB installer
-func AttachElasticAgentDEBPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentDEBPackage(d deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentDEBPackage{
 		elasticAgentPackage{
-			service:       service,
-			deploy:        deploy,
-			packageType:   "deb",
-			os:            "linux",
-			arch:          utils.GetArchitecture(),
-			fileExtension: "deb",
-			xPack:         true,
-			docker:        false,
+			service: service,
+			deploy:  d,
+			metadata: deploy.ServiceInstallerMetadata{
+				PackageType:   "deb",
+				Os:            "linux",
+				Arch:          utils.GetArchitecture(),
+				FileExtension: "deb",
+				XPack:         true,
+				Docker:        false,
+			},
 		},
 	}
 }
@@ -145,14 +147,16 @@ func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
 		})
 		defer span.End()
 
-		binaryName, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, i.os, i.arch, i.fileExtension, i.docker, i.xPack)
+		metadata := i.metadata
+
+		binaryName, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, metadata.Os, metadata.Arch, metadata.FileExtension, metadata.Docker, metadata.XPack)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"artifact":  artifact,
 				"version":   version,
-				"os":        i.os,
-				"arch":      i.arch,
-				"extension": i.fileExtension,
+				"os":        metadata.Os,
+				"arch":      metadata.Arch,
+				"extension": metadata.FileExtension,
 				"error":     err,
 			}).Error("Could not download the binary for the agent")
 			return err
@@ -248,5 +252,5 @@ func (i *elasticAgentDEBPackage) Uninstall(ctx context.Context) error {
 
 // Upgrade upgrade a DEB package
 func (i *elasticAgentDEBPackage) Upgrade(ctx context.Context, version string) error {
-	return doUpgrade(ctx, i, version)
+	return doUpgrade(ctx, i)
 }

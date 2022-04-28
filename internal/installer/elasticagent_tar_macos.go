@@ -24,7 +24,7 @@ type elasticAgentTARDarwinPackage struct {
 }
 
 // AttachElasticAgentTARDarwinPackage creates an instance for the TAR installer
-func AttachElasticAgentTARDarwinPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentTARDarwinPackage(d deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
 	arch := "x86_64"
 	if utils.GetArchitecture() == "arm64" {
 		arch = "arm64"
@@ -32,14 +32,16 @@ func AttachElasticAgentTARDarwinPackage(deploy deploy.Deployment, service deploy
 
 	return &elasticAgentTARDarwinPackage{
 		elasticAgentPackage{
-			service:       service,
-			deploy:        deploy,
-			packageType:   "tar",
-			os:            "darwin",
-			arch:          arch,
-			fileExtension: "tar.gz",
-			xPack:         true,
-			docker:        false,
+			service: service,
+			deploy:  d,
+			metadata: deploy.ServiceInstallerMetadata{
+				PackageType:   "tar",
+				Os:            "darwin",
+				Arch:          arch,
+				FileExtension: "tar.gz",
+				XPack:         true,
+				Docker:        false,
+			},
 		},
 	}
 }
@@ -123,14 +125,16 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 
 	artifact := "elastic-agent"
 
-	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, i.service.Version, i.os, i.arch, i.fileExtension, false, true)
+	metadata := i.metadata
+
+	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, i.service.Version, metadata.Os, metadata.Arch, metadata.FileExtension, false, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
 			"version":   i.service.Version,
-			"os":        i.os,
-			"arch":      i.arch,
-			"extension": i.fileExtension,
+			"os":        metadata.Os,
+			"arch":      metadata.Arch,
+			"extension": metadata.FileExtension,
 			"error":     err,
 		}).Error("Could not download the binary for the agent")
 		return err
@@ -141,7 +145,7 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), i.os, i.arch), "/elastic-agent"})
+	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), metadata.Os, metadata.Arch), "/elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
@@ -207,5 +211,5 @@ func (i *elasticAgentTARDarwinPackage) Uninstall(ctx context.Context) error {
 
 // Upgrade upgrades a TAR package
 func (i *elasticAgentTARDarwinPackage) Upgrade(ctx context.Context, version string) error {
-	return doUpgrade(ctx, i, version)
+	return doUpgrade(ctx, i)
 }

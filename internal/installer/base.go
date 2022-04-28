@@ -19,19 +19,14 @@ import (
 )
 
 type elasticAgentPackage struct {
-	service       deploy.ServiceRequest
-	deploy        deploy.Deployment
-	packageType   string
-	os            string
-	arch          string
-	fileExtension string
-	xPack         bool
-	docker        bool
+	service  deploy.ServiceRequest
+	deploy   deploy.Deployment
+	metadata deploy.ServiceInstallerMetadata
 }
 
-// Type returns the type of the package
-func (p *elasticAgentPackage) Type() string {
-	return p.packageType
+// Metadata returns the type of the package
+func (p *elasticAgentPackage) PkgMetadata() deploy.ServiceInstallerMetadata {
+	return p.metadata
 }
 
 // Attach will attach a installer to a deployment allowing
@@ -77,24 +72,47 @@ func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.Servic
 }
 
 // doUpgrade upgrade an elastic-agent package using the 'upgrade' command
-func doUpgrade(ctx context.Context, so deploy.ServiceOperator, version string) error {
+func doUpgrade(ctx context.Context, so deploy.ServiceOperator) error {
+	pkgMetadata := so.PkgMetadata()
+
+	version := pkgMetadata.Version
+	if version == "" {
+		version = common.ElasticAgentVersion
+	}
+
+	// downloading target release for the upgrade
+	artifact := common.ElasticAgentServiceName
+	_, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, false, artifact, version, pkgMetadata.Os, pkgMetadata.Arch, pkgMetadata.FileExtension, pkgMetadata.Docker, pkgMetadata.XPack)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"artifact":  artifact,
+			"version":   version,
+			"os":        pkgMetadata.Os,
+			"arch":      pkgMetadata.Arch,
+			"extension": pkgMetadata.FileExtension,
+			"error":     err,
+		}).Error("Could not download the binary for the agent")
+		return err
+	}
+
 	if downloads.SnapshotHasCommit(version) {
 		version = downloads.RemoveCommitFromSnapshot(version)
 	}
 
 	cmds := []string{"elastic-agent", "upgrade", version, "-v"}
-	if so.Type() == "zip" {
+	if pkgMetadata.PackageType == "zip" {
 		cmds = []string{"C:\\Program Files\\Elastic\\Agent\\elastic-agent.exe", "uninstall", version, "-v"}
 	}
+	cmds = append(cmds, "--source-uri", "file://"+binaryPath)
 
-	span, _ := apm.StartSpanOptions(ctx, "Upgrading Elastic Agent", "elastic-agent."+so.Type()+".upgrade", apm.SpanOptions{
+	span, _ := apm.StartSpanOptions(ctx, "Upgrading Elastic Agent", "elastic-agent."+pkgMetadata.PackageType+".upgrade", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
 	span.Context.SetLabel("arguments", cmds)
 	span.Context.SetLabel("runtime", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH))
 	defer span.End()
 
-	_, err := so.Exec(ctx, cmds)
+	_, err = so.Exec(ctx, cmds)
 	if err != nil {
 		return fmt.Errorf("failed to upgrade the agent with subcommand: %v", err)
 	}

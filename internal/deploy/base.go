@@ -40,10 +40,10 @@ type ServiceOperator interface {
 	Logs(ctx context.Context) error
 	Postinstall(ctx context.Context) error
 	Preinstall(ctx context.Context) error
-	Restart(ctx context.Context) error // will restart a service
-	Start(ctx context.Context) error   // will start a service
-	Stop(ctx context.Context) error    // will stop a service
-	Type() string                      // return the package type
+	Restart(ctx context.Context) error     // will restart a service
+	Start(ctx context.Context) error       // will start a service
+	Stop(ctx context.Context) error        // will stop a service
+	PkgMetadata() ServiceInstallerMetadata // return the package
 	Uninstall(ctx context.Context) error
 	Upgrade(ctx context.Context, version string) error
 }
@@ -67,6 +67,17 @@ type ServiceManifest struct {
 	Alias      string // container network aliases
 	Hostname   string
 	Platform   string // running in linux, macos, windows
+}
+
+// ServiceInstallerMetadata information about the installer
+type ServiceInstallerMetadata struct {
+	Arch          string
+	Docker        bool
+	FileExtension string
+	Os            string
+	PackageType   string
+	Version       string
+	XPack         bool
 }
 
 // WaitForServiceRequest list of wait strategies for a service, including host, port and the strategy itself

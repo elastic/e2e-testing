@@ -26,7 +26,7 @@ type elasticAgentTARPackage struct {
 }
 
 // AttachElasticAgentTARPackage creates an instance for the RPM installer
-func AttachElasticAgentTARPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentTARPackage(d deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
 	arch := "x86_64"
 	if utils.GetArchitecture() == "arm64" {
 		arch = "arm64"
@@ -34,14 +34,16 @@ func AttachElasticAgentTARPackage(deploy deploy.Deployment, service deploy.Servi
 
 	return &elasticAgentTARPackage{
 		elasticAgentPackage{
-			service:       service,
-			deploy:        deploy,
-			packageType:   "tar",
-			os:            "linux",
-			arch:          arch,
-			fileExtension: "tar.gz",
-			xPack:         true,
-			docker:        false,
+			service: service,
+			deploy:  d,
+			metadata: deploy.ServiceInstallerMetadata{
+				PackageType:   "tar",
+				Os:            "linux",
+				Arch:          arch,
+				FileExtension: "tar.gz",
+				XPack:         true,
+				Docker:        false,
+			},
 		},
 	}
 }
@@ -134,14 +136,17 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 			}
 			log.Trace("Cleared previously downloaded artifacts")
 		}
-		_, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, i.os, i.arch, i.fileExtension, false, true)
+
+		metadata := i.metadata
+
+		_, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, metadata.Os, metadata.Arch, metadata.FileExtension, false, true)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"artifact":  artifact,
 				"version":   version,
-				"os":        i.os,
-				"arch":      i.arch,
-				"extension": i.fileExtension,
+				"os":        metadata.Os,
+				"arch":      metadata.Arch,
+				"extension": metadata.FileExtension,
 				"error":     err,
 			}).Error("Could not download the binary")
 			return err
@@ -152,7 +157,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 			return err
 		}
 
-		output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), i.os, i.arch), artifact})
+		output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), metadata.Os, metadata.Arch), artifact})
 		log.WithFields(log.Fields{
 			"output":   output,
 			"artifact": artifact,
@@ -239,5 +244,5 @@ func (i *elasticAgentTARPackage) Uninstall(ctx context.Context) error {
 
 // Upgrade upgrades a TAR package
 func (i *elasticAgentTARPackage) Upgrade(ctx context.Context, version string) error {
-	return doUpgrade(ctx, i, version)
+	return doUpgrade(ctx, i)
 }
