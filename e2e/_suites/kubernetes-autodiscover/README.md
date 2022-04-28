@@ -131,10 +131,17 @@ This is an example of the optional configuration:
    OP_LOG_LEVEL=DEBUG go test -timeout 60m -v
    ```
 
-   Optionally, you can run only one of the feature files
+   Optionally, you can run only one of the feature files using tags
    ```shell
    cd e2e/_suites/kubernetes-autodiscover
    OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@filebeat'
+   ```
+
+   Furthermore, similarly to how we used the `@filebeat` tag in filebeat.feature file to run all scenarios in a feature, you can decide to run a single scenario by tagging only that scenario
+
+   ```shell
+   cd e2e/_suites/kubernetes-autodiscover
+   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@autodiscover-redis'
    ```
 
    The tests will take a few minutes to run, spinning up the Kubernetes cluster
