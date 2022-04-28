@@ -43,5 +43,5 @@ PLATFORMS:
   macos12:
     description: "Mac OS 12 platform"
     image: "ami-094dfaad20f351cb7"
-    instance_type: "c5.4xlarge"
+    instance_type: "c6g.4xlarge"
     username: ec2-user
