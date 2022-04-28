@@ -25,9 +25,14 @@ type elasticAgentDockerPackage struct {
 func AttachElasticAgentDockerPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentDockerPackage{
 		elasticAgentPackage{
-			service:     service,
-			deploy:      deploy,
-			packageType: "docker",
+			service:       service,
+			deploy:        deploy,
+			packageType:   "docker",
+			os:            "linux",
+			arch:          utils.GetArchitecture(),
+			fileExtension: "tar.gz",
+			xPack:         true,
+			docker:        true,
 		},
 	}
 }
@@ -97,18 +102,15 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 
 	// handle ubi8 images
 	artifact := "elastic-agent" + common.ProfileEnv["elasticAgentDockerImageSuffix"]
-	os := "linux"
-	arch := utils.GetArchitecture()
-	extension := "tar.gz"
 
-	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, i.service.Version, os, arch, extension, true, true)
+	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, i.service.Version, i.os, i.arch, i.fileExtension, i.docker, i.xPack)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
 			"version":   i.service.Version,
-			"os":        os,
-			"arch":      arch,
-			"extension": extension,
+			"os":        i.os,
+			"arch":      i.arch,
+			"extension": i.fileExtension,
 			"error":     err,
 		}).Error("Could not download the binary for the agent")
 		return err
@@ -122,9 +124,9 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 	// we need to tag the loaded image because its tag relates to the target branch
 	return deploy.TagImage(
 		fmt.Sprintf("docker.elastic.co/beats/%s:%s", artifact, downloads.GetSnapshotVersion(common.BeatVersionBase)),
-		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), arch),
+		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), i.arch),
 		// tagging including git commit and snapshot
-		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, downloads.GetFullVersion(common.ElasticAgentVersion), arch),
+		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, downloads.GetFullVersion(common.ElasticAgentVersion), i.arch),
 	)
 }
 

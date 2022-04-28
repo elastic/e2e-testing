@@ -25,11 +25,21 @@ type elasticAgentTARDarwinPackage struct {
 
 // AttachElasticAgentTARDarwinPackage creates an instance for the TAR installer
 func AttachElasticAgentTARDarwinPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+	arch := "x86_64"
+	if utils.GetArchitecture() == "arm64" {
+		arch = "arm64"
+	}
+
 	return &elasticAgentTARDarwinPackage{
 		elasticAgentPackage{
-			service:     service,
-			deploy:      deploy,
-			packageType: "tar",
+			service:       service,
+			deploy:        deploy,
+			packageType:   "tar",
+			os:            "darwin",
+			arch:          arch,
+			fileExtension: "tar.gz",
+			xPack:         true,
+			docker:        false,
 		},
 	}
 }
@@ -112,21 +122,15 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 	defer span.End()
 
 	artifact := "elastic-agent"
-	os := "darwin"
-	arch := "x86_64"
-	if utils.GetArchitecture() == "arm64" {
-		arch = "arm64"
-	}
-	extension := "tar.gz"
 
-	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, i.service.Version, os, arch, extension, false, true)
+	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, i.service.Version, i.os, i.arch, i.fileExtension, false, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
 			"version":   i.service.Version,
-			"os":        os,
-			"arch":      arch,
-			"extension": extension,
+			"os":        i.os,
+			"arch":      i.arch,
+			"extension": i.fileExtension,
 			"error":     err,
 		}).Error("Could not download the binary for the agent")
 		return err
@@ -137,7 +141,7 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), os, arch), "/elastic-agent"})
+	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), i.os, i.arch), "/elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }

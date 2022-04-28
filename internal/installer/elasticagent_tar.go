@@ -27,11 +27,21 @@ type elasticAgentTARPackage struct {
 
 // AttachElasticAgentTARPackage creates an instance for the RPM installer
 func AttachElasticAgentTARPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+	arch := "x86_64"
+	if utils.GetArchitecture() == "arm64" {
+		arch = "arm64"
+	}
+
 	return &elasticAgentTARPackage{
 		elasticAgentPackage{
-			service:     service,
-			deploy:      deploy,
-			packageType: "tar",
+			service:       service,
+			deploy:        deploy,
+			packageType:   "tar",
+			os:            "linux",
+			arch:          arch,
+			fileExtension: "tar.gz",
+			xPack:         true,
+			docker:        false,
 		},
 	}
 }
@@ -116,13 +126,6 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 		})
 		defer span.End()
 
-		runningOS := "linux"
-		arch := "x86_64"
-		if utils.GetArchitecture() == "arm64" {
-			arch = "arm64"
-		}
-		extension := "tar.gz"
-
 		found, err := io.Exists(artifact)
 		if found && err == nil {
 			err = os.RemoveAll(artifact)
@@ -131,14 +134,14 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 			}
 			log.Trace("Cleared previously downloaded artifacts")
 		}
-		_, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, runningOS, arch, extension, false, true)
+		_, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, i.os, i.arch, i.fileExtension, false, true)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"artifact":  artifact,
 				"version":   version,
-				"os":        runningOS,
-				"arch":      arch,
-				"extension": extension,
+				"os":        i.os,
+				"arch":      i.arch,
+				"extension": i.fileExtension,
 				"error":     err,
 			}).Error("Could not download the binary")
 			return err
@@ -149,7 +152,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 			return err
 		}
 
-		output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), runningOS, arch), artifact})
+		output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), i.os, i.arch), artifact})
 		log.WithFields(log.Fields{
 			"output":   output,
 			"artifact": artifact,

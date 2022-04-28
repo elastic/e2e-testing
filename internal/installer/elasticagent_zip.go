@@ -26,9 +26,14 @@ type elasticAgentZIPPackage struct {
 func AttachElasticAgentZIPPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentZIPPackage{
 		elasticAgentPackage{
-			service:     service,
-			deploy:      deploy,
-			packageType: "zip",
+			service:       service,
+			deploy:        deploy,
+			packageType:   "zip",
+			os:            "windows",
+			arch:          "x86_64",
+			fileExtension: "zip",
+			xPack:         true,
+			docker:        false,
 		},
 	}
 }
@@ -108,18 +113,15 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 	defer span.End()
 
 	artifact := "elastic-agent"
-	os := "windows"
-	arch := "x86_64"
-	extension := "zip"
 
-	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, i.service.Version, os, arch, extension, false, true)
+	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, i.service.Version, i.os, i.arch, i.fileExtension, false, true)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"artifact":  artifact,
 			"version":   i.service.Version,
-			"os":        os,
-			"arch":      arch,
-			"extension": extension,
+			"os":        i.os,
+			"arch":      i.arch,
+			"extension": i.fileExtension,
 			"error":     err,
 		}).Error("Could not download the binary for the agent")
 		return err
@@ -137,7 +139,7 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 			return err
 		}
 
-		output, _ := i.Exec(ctx, []string{"powershell.exe", "Move-Item", "-Force", "-Path", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), os, arch), "-Destination", "C:\\elastic-agent"})
+		output, _ := i.Exec(ctx, []string{"powershell.exe", "Move-Item", "-Force", "-Path", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), i.os, i.arch), "-Destination", "C:\\elastic-agent"})
 		log.WithField("output", output).Trace("Moved elastic-agent")
 		return nil
 	}

@@ -18,9 +18,14 @@ import (
 )
 
 type elasticAgentPackage struct {
-	service     deploy.ServiceRequest
-	deploy      deploy.Deployment
-	packageType string
+	service       deploy.ServiceRequest
+	deploy        deploy.Deployment
+	packageType   string
+	os            string
+	arch          string
+	fileExtension string
+	xPack         bool
+	docker        bool
 }
 
 // Type returns the type of the package

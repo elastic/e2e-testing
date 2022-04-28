@@ -27,9 +27,14 @@ type elasticAgentDEBPackage struct {
 func AttachElasticAgentDEBPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentDEBPackage{
 		elasticAgentPackage{
-			service:     service,
-			deploy:      deploy,
-			packageType: "deb",
+			service:       service,
+			deploy:        deploy,
+			packageType:   "deb",
+			os:            "linux",
+			arch:          utils.GetArchitecture(),
+			fileExtension: "deb",
+			xPack:         true,
+			docker:        false,
 		},
 	}
 }
@@ -140,18 +145,14 @@ func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
 		})
 		defer span.End()
 
-		os := "linux"
-		arch := utils.GetArchitecture()
-		extension := "deb"
-
-		binaryName, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, os, arch, extension, false, true)
+		binaryName, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, i.os, i.arch, i.fileExtension, i.docker, i.xPack)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"artifact":  artifact,
 				"version":   version,
-				"os":        os,
-				"arch":      arch,
-				"extension": extension,
+				"os":        i.os,
+				"arch":      i.arch,
+				"extension": i.fileExtension,
 				"error":     err,
 			}).Error("Could not download the binary for the agent")
 			return err

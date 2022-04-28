@@ -25,11 +25,21 @@ type elasticAgentRPMPackage struct {
 
 // AttachElasticAgentRPMPackage creates an instance for the RPM installer
 func AttachElasticAgentRPMPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+	arch := "x86_64"
+	if utils.GetArchitecture() == "arm64" {
+		arch = "aarch64"
+	}
+
 	return &elasticAgentRPMPackage{
 		elasticAgentPackage{
-			service:     service,
-			deploy:      deploy,
-			packageType: "rpm",
+			service:       service,
+			deploy:        deploy,
+			packageType:   "rpm",
+			os:            "linux",
+			arch:          arch,
+			fileExtension: "rpm",
+			xPack:         true,
+			docker:        false,
 		},
 	}
 }
@@ -141,21 +151,14 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 		})
 		defer span.End()
 
-		os := "linux"
-		arch := "x86_64"
-		if utils.GetArchitecture() == "arm64" {
-			arch = "aarch64"
-		}
-		extension := "rpm"
-
-		binaryName, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, os, arch, extension, false, true)
+		binaryName, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, i.os, i.arch, i.fileExtension, false, true)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"artifact":  artifact,
 				"version":   version,
-				"os":        os,
-				"arch":      arch,
-				"extension": extension,
+				"os":        i.os,
+				"arch":      i.arch,
+				"extension": i.fileExtension,
 				"error":     err,
 			}).Error("Could not download the binary")
 			return err
