@@ -43,6 +43,7 @@ type ServiceOperator interface {
 	Restart(ctx context.Context) error // will restart a service
 	Start(ctx context.Context) error   // will start a service
 	Stop(ctx context.Context) error    // will stop a service
+	Type() string                      // return the package type
 	Uninstall(ctx context.Context) error
 	Upgrade(ctx context.Context, version string) error
 }

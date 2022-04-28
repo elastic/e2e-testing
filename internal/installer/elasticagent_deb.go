@@ -20,15 +20,17 @@ import (
 
 // elasticAgentDEBPackage implements operations for a DEB installer
 type elasticAgentDEBPackage struct {
-	service deploy.ServiceRequest
-	deploy  deploy.Deployment
+	elasticAgentPackage
 }
 
 // AttachElasticAgentDEBPackage creates an instance for the DEB installer
 func AttachElasticAgentDEBPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentDEBPackage{
-		service: service,
-		deploy:  deploy,
+		elasticAgentPackage{
+			service:     service,
+			deploy:      deploy,
+			packageType: "deb",
+		},
 	}
 }
 
@@ -245,16 +247,5 @@ func (i *elasticAgentDEBPackage) Uninstall(ctx context.Context) error {
 
 // Upgrade upgrade a DEB package
 func (i *elasticAgentDEBPackage) Upgrade(ctx context.Context, version string) error {
-	cmds := []string{"elastic-agent", "upgrade", version, "-v"}
-	span, _ := apm.StartSpanOptions(ctx, "Upgrading Elastic Agent", "elastic-agent.debian.upgrade", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	span.Context.SetLabel("arguments", cmds)
-	defer span.End()
-
-	_, err := i.Exec(ctx, cmds)
-	if err != nil {
-		return fmt.Errorf("failed to upgrade the agent with subcommand: %v", err)
-	}
-	return nil
+	return doUpgrade(ctx, i, version)
 }

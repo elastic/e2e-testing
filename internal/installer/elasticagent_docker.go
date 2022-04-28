@@ -18,15 +18,17 @@ import (
 
 // elasticAgentDockerPackage implements operations for a docker installer
 type elasticAgentDockerPackage struct {
-	service deploy.ServiceRequest
-	deploy  deploy.Deployment
+	elasticAgentPackage
 }
 
 // AttachElasticAgentDockerPackage creates an instance for the docker installer
 func AttachElasticAgentDockerPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentDockerPackage{
-		service: service,
-		deploy:  deploy,
+		elasticAgentPackage{
+			service:     service,
+			deploy:      deploy,
+			packageType: "docker",
+		},
 	}
 }
 
@@ -192,16 +194,5 @@ func (i *elasticAgentDockerPackage) Uninstall(ctx context.Context) error {
 
 // Upgrade upgrades a Docker package
 func (i *elasticAgentDockerPackage) Upgrade(ctx context.Context, version string) error {
-	cmds := []string{"elastic-agent", "upgrade", version, "-v"}
-	span, _ := apm.StartSpanOptions(ctx, "Upgrading Elastic Agent", "elastic-agent.docker.upgrade", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	span.Context.SetLabel("arguments", cmds)
-	defer span.End()
-
-	_, err := i.Exec(ctx, cmds)
-	if err != nil {
-		return fmt.Errorf("failed to upgrade the agent with subcommand: %v", err)
-	}
-	return nil
+	return doUpgrade(ctx, i, version)
 }

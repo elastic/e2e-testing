@@ -17,6 +17,17 @@ import (
 	"go.elastic.co/apm"
 )
 
+type elasticAgentPackage struct {
+	service     deploy.ServiceRequest
+	deploy      deploy.Deployment
+	packageType string
+}
+
+// Type returns the type of the package
+func (p *elasticAgentPackage) Type() string {
+	return p.packageType
+}
+
 // Attach will attach a installer to a deployment allowing
 // the installation of a package to be transparently configured no matter the backend
 func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.ServiceRequest, installType string) (deploy.ServiceOperator, error) {
@@ -57,6 +68,27 @@ func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.Servic
 	}
 
 	return nil, nil
+}
+
+// doUpgrade upgrade an elastic-agent package using the 'upgrade' command
+func doUpgrade(ctx context.Context, so deploy.ServiceOperator, version string) error {
+	cmds := []string{"elastic-agent", "upgrade", version, "-v"}
+	if so.Type() == "zip" {
+		cmds = []string{"C:\\Program Files\\Elastic\\Agent\\elastic-agent.exe", "uninstall", version, "-v"}
+	}
+
+	span, _ := apm.StartSpanOptions(ctx, "Upgrading Elastic Agent", "elastic-agent."+so.Type()+".upgrade", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	span.Context.SetLabel("runtime", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH))
+	defer span.End()
+
+	_, err := so.Exec(ctx, cmds)
+	if err != nil {
+		return fmt.Errorf("failed to upgrade the agent with subcommand: %v", err)
+	}
+	return nil
 }
 
 func systemCtlLog(ctx context.Context, OS string, execFn func(ctx context.Context, args []string) (string, error)) error {
