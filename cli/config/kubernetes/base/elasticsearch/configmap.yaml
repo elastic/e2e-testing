@@ -4,7 +4,7 @@ metadata:
   name: elasticsearch-config
 data:
   ES_JAVA_OPTS: "-Xms1g -Xmx1g"
-  network.host: ""
+  network.host: "0.0.0.0"
   transport.host: "127.0.0.1"
   http.host: "0.0.0.0"
   indices.id_field_data.enabled: 'true'
