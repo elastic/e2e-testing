@@ -13,6 +13,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/systemd"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
@@ -77,6 +78,10 @@ func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.Servic
 
 // doUpgrade upgrade an elastic-agent package using the 'upgrade' command
 func doUpgrade(ctx context.Context, so deploy.ServiceOperator, version string) error {
+	if downloads.SnapshotHasCommit(version) {
+		version = downloads.RemoveCommitFromSnapshot(version)
+	}
+
 	cmds := []string{"elastic-agent", "upgrade", version, "-v"}
 	if so.Type() == "zip" {
 		cmds = []string{"C:\\Program Files\\Elastic\\Agent\\elastic-agent.exe", "uninstall", version, "-v"}
