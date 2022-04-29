@@ -46,7 +46,8 @@ It will create a `.runID` under the `.ci` directory. It will contain an unique i
 ### Deploy stack
 
 ```shell
-SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" make -C .ci provision-stack
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci provision-stack
 ```
 
 Make note of the IP address displayed in the ansible summary, as you'll need it for the next commands.
@@ -54,13 +55,17 @@ Make note of the IP address displayed in the ansible summary, as you'll need it 
 ### Setup stack
 
 ```shell
-SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" STACK_IP_ADDRESS="<ip address above>" make -C .ci setup-stack
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+export STACK_IP_ADDRESS="<ip address above>"
+make -C .ci setup-stack
 ```
 
 ### Deploy test node
 
 ```shell
-SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" STACK_IP_ADDRESS="<ip address above>" make -C .ci provision-node
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+export STACK_IP_ADDRESS="<ip address above>"
+make -C .ci provision-node
 ```
 
 It's possible to configure the test node (OS, architecture), using the values that are already present in [the platforms descriptor](.e2e-platforms.yaml):
@@ -78,7 +83,10 @@ Make note of the ip address displayed in the ansible summary.
 ### Setup test node
 
 ```shell
-SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" STACK_IP_ADDRESS="<stack ip address>" NODE_IP_ADDRESS="<ip address above>" make -C .ci setup-node
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+export STACK_IP_ADDRESS="<stack ip address>"
+export NODE_IP_ADDRESS="<ip address above>"
+make -C .ci setup-node
 ```
 
 ### Run a test suite
