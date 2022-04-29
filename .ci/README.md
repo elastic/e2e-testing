@@ -92,8 +92,9 @@ Please remember to [destroy the node](#destroying-the-stack-and-the-test-node) o
 ### Run a test suite
 
 ```shell
-ssh -i $HOME/.ssh/id_rsa admin@<node ip address>
-node> sudo bash e2e-testing/.ci/scripts/functional-test.sh "fleet_mode_agent"
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+export TAGS="fleet_mode_agent" # please check the feature files
+make -C .ci run-tests
 ```
 
 ### Destroying the stack and the test node

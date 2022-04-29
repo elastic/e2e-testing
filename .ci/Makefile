@@ -21,6 +21,8 @@ NODE_IP_ADDRESS ?= $(shell cat $(PROJECT_DIR)/.ci/.node-host-ip)
 
 # Suite to run
 SUITE ?= fleet
+# Tags to run. Please check out the feature files
+TAGS ?= fleet_mode_agent
 
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
@@ -128,3 +130,8 @@ destroy-node:
 .PHONY: recreate-stack
 recreate-stack:
 	ssh -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo bash /home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh "non-existent-tag"'
+
+.PHONY: run-tests
+run-tests:
+	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) -t \
+		"cd /home/$(NODE_USER)/e2e-testing; sudo TAGS='$(TAGS)' TIMEOUT_FACTOR=5 LOG_LEVEL=TRACE PROVIDER=remote make -C e2e/_suites/fleet functional-test"
