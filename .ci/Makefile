@@ -118,3 +118,7 @@ destroy-node:
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t destroy
 	rm -fr $(PROJECT_DIR)/.ci/node-host-ip
+
+.PHONY: recreate-stack
+recreate-stack:
+	ssh -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo bash /home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh "non-existent-tag"'
