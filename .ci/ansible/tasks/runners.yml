@@ -13,6 +13,7 @@
       environment: "{{type | default('Not running on CI')}}"
       git_sha: "{{ gitSha | default('Not running on CI')}}"
       repo: "{{repo | default('Not running on CI')}}"
+      run_id: "{{runId | default('Not running on CI')}}"
   tags:
     - provision-stack
     - provision-node
@@ -36,6 +37,7 @@
       name: "e2e-{{nodeLabel}}-{{runId}}"
       reaper_mark: "e2e-testing-vm"
       repo: "{{repo | default('Not running on CI')}}"
+      run_id: "{{runId | default('Not running on CI')}}"
     count_tag:
       name: "e2e-{{nodeLabel}}-{{runId}}"
     volumes:
