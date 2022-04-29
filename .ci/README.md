@@ -50,7 +50,7 @@ export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
 make -C .ci provision-stack
 ```
 
-Make note of the IP address displayed in the ansible summary, as you'll need it for the next commands.
+A `stack-sshhosts` file will be created in the root directory of the project. Check the IP address of the stack instance from there, or make note of the IP address displayed in the ansible summary, as you'll need it for the next commands.
 
 ### Setup stack
 
@@ -78,7 +78,7 @@ export NODE_LABEL="centos8_arm64"
 export NODE_USER="centos"
 ```
 
-Make note of the ip address displayed in the ansible summary.
+A `${NODE_LABEL}-sshhosts` file will be created in the root directory of the project (default is `debian_amd64`). Check the IP address of the test node instance from there, or make note of the IP address displayed in the ansible summary.
 
 ### Setup test node
 
