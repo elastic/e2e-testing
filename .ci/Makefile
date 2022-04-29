@@ -40,7 +40,7 @@ __check_defined = \
 
 # Create the run id if it does not exist
 .runID:
-	echo "RUN_ID=$(shell uuidgen|cut -d'-' -f1)" > $(RUN_ID_FILE)
+	echo "$(shell uuidgen|cut -d'-' -f1)" > $(RUN_ID_FILE)
 
 .PHONY: setup-env
 setup-env:
