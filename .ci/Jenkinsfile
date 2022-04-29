@@ -557,7 +557,7 @@ def generateFunctionalTestStep(Map args = [:]){
             // Start node, capture ip address
             ansible("${env.WORKSPACE}",
                     runId,
-                    "-t start-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-t provision-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             def testRunner = getNodeIp("${env.WORKSPACE}", platform)
 

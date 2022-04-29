@@ -15,7 +15,7 @@
       repo: "{{repo | default('Not running on CI')}}"
   tags:
     - provision-stack
-    - start-node
+    - provision-node
 
 - name: "Create {{nodeLabel}} AWS instances"
   ec2:
@@ -51,7 +51,7 @@
   register: ec2
   tags:
     - provision-stack
-    - start-node
+    - provision-node
 
 - name: Add AWS host to ssh address list
   become: no
@@ -66,7 +66,7 @@
     loop_var: addr
   tags:
     - provision-stack
-    - start-node
+    - provision-node
 
 - name: Wait for SSH to come up
   wait_for: host={{ nodeItem.public_ip }} port=22 delay=10
@@ -75,4 +75,4 @@
     loop_var: nodeItem
   tags:
     - provision-stack
-    - start-node
+    - provision-node

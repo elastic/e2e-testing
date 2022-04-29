@@ -8,7 +8,7 @@
     include_tasks: tasks/runners.yml
     tags:
       - provision-stack
-      - start-node
+      - provision-node
 
 - name: Teardown environment
   hosts: localhost

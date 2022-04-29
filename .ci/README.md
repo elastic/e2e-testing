@@ -84,7 +84,7 @@ Make note of the IP address displayed in the ansible summary.
     --extra-vars "stackRunner=<ip address from above> nodeLabel=debian_amd64 nodeImage=ami-0d90bed76900e679a nodeInstanceType=c5.4xlarge nodeUser=admin" \
     --extra-vars "runId=$RUN_ID workspace=$HOME/Projects/e2e-testing/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
     --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
-    -t setup-stack
+    -t provision-node
 ```
 
 Make note of the ip address displayed in the ansible summary.
