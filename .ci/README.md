@@ -32,59 +32,45 @@ It's possible that a consumer of the e2e tests would need to define a specific l
 
 The following variables need to be exported:
 
-- *RUN_ID*: This is a unique identifying ID for the current run. It can be an arbitrary name or something like this:
-
-```shell
-export RUN_ID=$(uuidgen|cut -d'-' -f1)
-```
-
 - *AWS_SECRET_ACCESS_KEY*: AWS secret access key
 - *AWS_ACCESS_KEY_ID*: AWS access key id
 
 Install python deps:
 
 ```shell
-python3 -mvenv .venv
-.venv/bin/pip3 install ansible requests boto3 boto
-.venv/bin/ansible-galaxy install -r .ci/ansible/requirements.yml
+make -C .ci setup-env
 ```
+
+It will create a `.runID` under the `.ci` directory. It will contain an unique identifier for your machines, which will be added as a VM tag.
 
 ### Deploy stack
 
 ```shell
-.venv/bin/ansible-playbook .ci/ansible/playbook.yml \
-    --private-key="$HOME/.ssh/id_rsa" \
-    --extra-vars "nodeLabel=stack nodeImage=ami-0d90bed76900e679a nodeInstanceType=c5.4xlarge nodeUser=admin" \
-    --extra-vars "runId=$RUN_ID workspace=$(pwd)/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
-    --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
-    -t provision-stack
+SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" make -C .ci provision-stack
 ```
 
-Make note of the IP address displayed in the ansible summary.
+Make note of the IP address displayed in the ansible summary, as you'll need it for the next commands.
 
 ### Setup stack
 
 ```shell
-.venv/bin/ansible-playbook .ci/ansible/playbook.yml \
-    --private-key="$HOME/.ssh/id_rsa" \
-    --extra-vars "nodeLabel=stack nodeImage=ami-0d90bed76900e679a nodeInstanceType=c5.4xlarge nodeUser=admin" \
-    --extra-vars "runId=$RUN_ID workspace=$(pwd)/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
-    --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
-    -t setup-stack \
-    -i <ip address above>,
+SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" STACK_IP_ADDRESS="<ip address above>" make -C .ci setup-stack
 ```
-
-**Note**: The comma at the end of the ip address is required.
 
 ### Deploy test node
 
 ```shell
-.venv/bin/ansible-playbook .ci/ansible/playbook.yml \
-    --private-key="$HOME/.ssh/id_rsa" \
-    --extra-vars "stackRunner=<ip address from above> nodeLabel=debian_amd64 nodeImage=ami-0d90bed76900e679a nodeInstanceType=c5.4xlarge nodeUser=admin" \
-    --extra-vars "runId=$RUN_ID workspace=$(pwd)/  sshPublicKey=$HOME/.ssh/id_rsa.pub" \
-    --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
-    -t provision-node
+SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" STACK_IP_ADDRESS="<ip address above>" make -C .ci provision-node
+```
+
+It's possible to configure the test node (OS, architecture), using the values that are already present in [the platforms descriptor](.e2e-platforms.yaml):
+
+```shell
+# example for Centos 8 ARM 64
+export NODE_IMAGE="ami-01cdc9e8306344fe0"
+export NODE_INSTANCE_TYPE="a1.larg"
+export NODE_LABEL="centos8_arm64"
+export NODE_USER="centos"
 ```
 
 Make note of the ip address displayed in the ansible summary.
@@ -92,16 +78,8 @@ Make note of the ip address displayed in the ansible summary.
 ### Setup test node
 
 ```shell
-.venv/bin/ansible-playbook .ci/ansible/playbook.yml \
-    --private-key="$HOME/.ssh/id_rsa" \
-    --extra-vars "stackRunner=<ip address from above> nodeLabel=debian_amd64 nodeImage=ami-0d90bed76900e679a nodeInstanceType=c5.4xlarge nodeUser=admin" \
-    --extra-vars "runId=$RUN_ID workspace=$(pwd)/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
-    --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
-    -t setup-node \
-    -i <ip address of node from above>,
+SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" STACK_IP_ADDRESS="<stack ip address>" NODE_IP_ADDRESS="<ip address above>" make -C .ci setup-node
 ```
-
-**Note**: The comma at the end of the ip address is required.
 
 ### Run a test suite
 
