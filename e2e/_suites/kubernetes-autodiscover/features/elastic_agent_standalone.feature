@@ -30,6 +30,8 @@ Scenario: Logs collection from failing pod
    When "a failing pod" is deployed
    Then "elastic-agent" collects events with "kubernetes.pod.name:a-failing-pod"
 
+# Example of a tag to run tests for a single scenario. Uncomment next line and read the Readme, if you want to run tests for a single scenario
+# @autodiscover-redis
 Scenario: Metrics collection configured from targeted Redis Pod
   Given "elastic-agent" is running with "redis info"
    When "redis" is running
