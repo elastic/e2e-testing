@@ -70,6 +70,30 @@
     - provision-stack
     - provision-node
 
+- name: Add stack AWS host to ssh address list
+  become: no
+  copy:
+    dest: "{{workspace}}/.ci/.stack-host-ip"
+    content: "{{addr.public_ip}}"
+    force: true
+  loop: "{{ ec2.instances }}"
+  loop_control:
+    loop_var: addr
+  tags:
+    - provision-stack
+
+- name: Add node AWS host to ssh address list
+  become: no
+  copy:
+    dest: "{{workspace}}/.ci/.node-host-ip"
+    content: "{{addr.public_ip}}"
+    force: true
+  loop: "{{ ec2.instances }}"
+  loop_control:
+    loop_var: addr
+  tags:
+    - provision-node
+
 - name: Wait for SSH to come up
   wait_for: host={{ nodeItem.public_ip }} port=22 delay=10
   loop: "{{ ec2.instances }}"

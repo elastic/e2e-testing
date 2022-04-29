@@ -50,13 +50,14 @@ export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
 make -C .ci provision-stack
 ```
 
-A `stack-sshhosts` file will be created in the root directory of the project. Check the IP address of the stack instance from there, or make note of the IP address displayed in the ansible summary, as you'll need it for the next commands.
+A `.stack-host-ip` file will be created in the `.ci` directory of the project including the IP address of the stack instance. Check it out from that file, or make a note of the IP address displayed in the ansible summary, as you'll probably need it to connect your browser to open Kibana, or to SSH into it for troubleshooting.
+
+> The IP address of the stack in that file will be used by the automation.
 
 ### Setup stack
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
-export STACK_IP_ADDRESS="<ip address above>"
 make -C .ci setup-stack
 ```
 
@@ -64,7 +65,6 @@ make -C .ci setup-stack
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
-export STACK_IP_ADDRESS="<ip address above>"
 make -C .ci provision-node
 ```
 
@@ -78,14 +78,14 @@ export NODE_LABEL="centos8_arm64"
 export NODE_USER="centos"
 ```
 
-A `${NODE_LABEL}-sshhosts` file will be created in the root directory of the project (default is `debian_amd64`). Check the IP address of the test node instance from there, or make note of the IP address displayed in the ansible summary.
+A `.node-host-ip` file will be created in the `.ci` directory of the project including the IP address of the node instance. Check it out from that file, or make a note of the IP address displayed in the ansible summary, as you'll probably need it to SSH into it for troubleshooting.
+
+> The IP address of the node in that file will be used by the automation.
 
 ### Setup test node
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
-export STACK_IP_ADDRESS="<stack ip address>"
-export NODE_IP_ADDRESS="<ip address above>"
 make -C .ci setup-node
 ```
 
