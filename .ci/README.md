@@ -43,32 +43,20 @@ make -C .ci setup-env
 
 It will create a `.runID` under the `.ci` directory. It will contain an unique identifier for your machines, which will be added as a VM tag.
 
-### Deploy stack
+### Create and configure the stack VM
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
-make -C .ci provision-stack
+make -C .ci create-stack
 ```
 
 A `.stack-host-ip` file will be created in the `.ci` directory of the project including the IP address of the stack instance. Check it out from that file, or make a note of the IP address displayed in the ansible summary, as you'll probably need it to connect your browser to open Kibana, or to SSH into it for troubleshooting.
 
-> The IP address of the stack in that file will be used by the automation.
+> The IP address of the stack in the `.stack-host-ip` file will be used by the automation.
 
 Please remember to [destroy the stack](#destroying-the-stack-and-the-test-node) once you finished your testing.
 
-### Setup stack
-
-```shell
-export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
-make -C .ci setup-stack
-```
-
-### Deploy test node
-
-```shell
-export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
-make -C .ci provision-node
-```
+### Create and configure test node
 
 It's possible to configure the test node (OS, architecture), using the values that are already present in [the platforms descriptor](.e2e-platforms.yaml):
 
@@ -80,15 +68,7 @@ export NODE_LABEL="centos8_arm64"
 export NODE_USER="centos"
 ```
 
-A `.node-host-ip` file will be created in the `.ci` directory of the project including the IP address of the node instance. Check it out from that file, or make a note of the IP address displayed in the ansible summary, as you'll probably need it to SSH into it for troubleshooting.
-
-> The IP address of the node in that file will be used by the automation.
-
-Please remember to [destroy the node](#destroying-the-stack-and-the-test-node) once you finished your testing.
-
-### Setup test node
-
-It's possible to configure the test node for the different test suites that are present in the test framework: `fleet`, `helm` and `kubernetes-autodiscover`. Please configure the test node setting the suite, being `fleet` the default:
+Besides that, it's possible to configure the test node for the different test suites that are present in the test framework: `fleet`, `helm` and `kubernetes-autodiscover`. Please configure the test node setting the suite, being `fleet` the default:
 
 ```shell
 # example for Centos 8 ARM 64
@@ -100,8 +80,14 @@ export SUITE="kubernetes-autodiscover"
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
 export SUITE="fleet"
-make -C .ci setup-node
+make -C .ci create-node
 ```
+
+A `.node-host-ip` file will be created in the `.ci` directory of the project including the IP address of the node instance. Check it out from that file, or make a note of the IP address displayed in the ansible summary, as you'll probably need it to SSH into it for troubleshooting.
+
+> The IP address of the node in that file will be used by the automation.
+
+Please remember to [destroy the node](#destroying-the-stack-and-the-test-node) once you finished your testing.
 
 ### Run a test suite
 

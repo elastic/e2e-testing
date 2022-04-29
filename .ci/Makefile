@@ -75,6 +75,9 @@ setup-stack: .runID
 		-t setup-stack \
 		-i $(STACK_IP_ADDRESS),
 
+.PHONY: create-stack
+create: provision-stack setup-stack
+
 .PHONY: destroy-stack
 destroy-stack:
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
@@ -108,6 +111,9 @@ setup-node: .runID
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t setup-node \
 		-i $(NODE_IP_ADDRESS),
+
+.PHONY: create-node
+create: provision-node setup-node
 
 .PHONY: destroy-node
 destroy-node:
