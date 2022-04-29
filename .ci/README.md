@@ -54,6 +54,8 @@ A `.stack-host-ip` file will be created in the `.ci` directory of the project in
 
 > The IP address of the stack in that file will be used by the automation.
 
+Please remember to [destroy the stack](#destroying-the-stack-and-the-test-node) once you finished your testing.
+
 ### Setup stack
 
 ```shell
@@ -82,6 +84,8 @@ A `.node-host-ip` file will be created in the `.ci` directory of the project inc
 
 > The IP address of the node in that file will be used by the automation.
 
+Please remember to [destroy the node](#destroying-the-stack-and-the-test-node) once you finished your testing.
+
 ### Setup test node
 
 It's possible to configure the test node for the different test suites that are present in the test framework: `fleet`, `helm` and `kubernetes-autodiscover`. Please configure the test node setting the suite, being `fleet` the default:
@@ -104,4 +108,14 @@ make -C .ci setup-node
 ```shell
 ssh -i $HOME/.ssh/id_rsa admin@<node ip address>
 node> sudo bash e2e-testing/.ci/scripts/functional-test.sh "fleet_mode_agent"
+```
+
+### Destroying the stack and the test node
+
+Do not forget to destroy the stack and nodes you use!
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci destroy-stack
+make -C .ci destroy-node
 ```
