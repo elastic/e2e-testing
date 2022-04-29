@@ -84,8 +84,18 @@ A `.node-host-ip` file will be created in the `.ci` directory of the project inc
 
 ### Setup test node
 
+It's possible to configure the test node for the different test suites that are present in the test framework: `fleet`, `helm` and `kubernetes-autodiscover`. Please configure the test node setting the suite, being `fleet` the default:
+
+```shell
+# example for Centos 8 ARM 64
+export SUITE="fleet"
+export SUITE="helm"
+export SUITE="kubernetes-autodiscover"
+```
+
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+export SUITE="fleet"
 make -C .ci setup-node
 ```
 
