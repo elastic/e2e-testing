@@ -69,7 +69,7 @@ setup-stack: .runID
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack)
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
-		--extra-vars "nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_IMAGE)" \
+		--extra-vars "nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
 		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t setup-stack \
@@ -83,6 +83,7 @@ destroy-stack:
 		--extra-vars="runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t destroy
+	rm -fr $(PROJECT_DIR)/.ci/stack-host-ip
 
 .PHONY: provision-node
 provision-node: .runID
@@ -116,3 +117,4 @@ destroy-node:
 		--extra-vars="runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC) \
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t destroy
+	rm -fr $(PROJECT_DIR)/.ci/node-host-ip
