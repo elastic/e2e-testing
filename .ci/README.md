@@ -110,6 +110,16 @@ export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
 make -C .ci run-tests
 ```
 
+### SSH into a remote VM
+
+Once you have created and set up the remote machines with the above instructions, you can SSH into both the stack and the test node machines, simply using the following commads:
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci ssh-stack
+make -C .ci ssh-node
+```
+
 ### Destroying the stack and the test node
 
 Do not forget to destroy the stack and nodes you use!

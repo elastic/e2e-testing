@@ -90,6 +90,10 @@ destroy-stack:
 		-t destroy
 	rm -fr $(PROJECT_DIR)/.ci/stack-host-ip
 
+.PHONY: ssh-stack
+ssh-stack:
+	ssh -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) -vvv
+
 .PHONY: provision-node
 provision-node: .runID
 	@:$(call check_defined, RUN_ID, You need to an unique RUN_ID. To create it please run 'make .runID' goal)
@@ -126,6 +130,10 @@ destroy-node:
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t destroy
 	rm -fr $(PROJECT_DIR)/.ci/node-host-ip
+
+.PHONY: ssh-node
+ssh-node:
+	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) -vvv
 
 .PHONY: recreate-stack
 recreate-stack:
