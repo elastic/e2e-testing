@@ -120,7 +120,7 @@ make -C .ci ssh-stack
 make -C .ci ssh-node
 ```
 
-### Destroying the stack and the test node
+### Destroying the stack and the test nodes
 
 Do not forget to destroy the stack and nodes you use!
 
