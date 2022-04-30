@@ -90,7 +90,7 @@
 
   - name: Start stack without any tag to spin up the stack using Fleet's bootstrapping code
     become: true
-    shell: "/home/{{ ansible_user }}/e2e-testing/.ci/scripts/functional-test.sh 'non-existing-tag'"
+    shell: "TAGS='non-existing-tag' /home/{{ ansible_user }}/e2e-testing/.ci/scripts/functional-test.sh"
     tags:
       - setup-stack
 
@@ -152,3 +152,4 @@
     tags:
       - setup-node
       - copy-source
+      - scripts

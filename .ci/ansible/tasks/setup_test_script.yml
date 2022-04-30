@@ -16,6 +16,8 @@
     - "export KIBANA_VERSION=\"{{ lookup('env', 'KIBANA_VERSION') or lookup('file', '{{ workspace }}/.stack-version') }}\""
     - "export ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('file', '{{ workspace }}/.stack-version') }}\""
   when: "'stack' == nodeLabel"
+  tags:
+    - scripts
 
 - name: Extend environment for Fleet testing
   lineinfile:
@@ -34,6 +36,8 @@
     - suite is defined
     - stackRunner is defined
     - suite == "fleet"
+  tags:
+    - scripts
 
 - name: Extend environment for Remote provider
   lineinfile:
@@ -50,6 +54,8 @@
     - suite is defined
     - stackRunner is defined
     - lookup('env', 'PROVIDER') == 'remote'
+  tags:
+    - scripts
 
 - name: Extend environment for Fleet with elastic-package testing
   lineinfile:
@@ -62,7 +68,8 @@
     - "export SUITE=\"{{ lookup('env', 'SUITE') or 'fleet' }}\""
     - "export PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'elastic-package' }}\""
   when: "'fleet_elastic_pkg' in nodeLabel"
-
+  tags:
+    - scripts
 
 - name: Extend environment for Kubernetes Autodiscover testing
   lineinfile:
@@ -79,6 +86,8 @@
   when:
     - suite is defined
     - suite == "kubernetes-autodiscover"
+  tags:
+    - scripts
 
 - name: Extend environment for Helm testing
   lineinfile:
@@ -97,6 +106,8 @@
   when:
     - suite is defined
     - suite == "helm"
+  tags:
+    - scripts
 
 - name: Extend environment
   lineinfile:
@@ -106,6 +117,7 @@
     dest: "/home/{{ansible_user}}/e2e-testing/.env"
     create: yes
   with_items:
+    - "export TAGS=\"{{ lookup('env', 'TAGS') }}\""
     - "export STACK_VERSION=\"{{ lookup('file', '{{workspace}}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
     - "export BEAT_VERSION=\"{{ lookup('file', '{{workspace}}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
     - "export ELASTIC_AGENT_VERSION=\"{{ lookup('file', '{{workspace}}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
@@ -115,6 +127,8 @@
     - "export LOG_LEVEL=\"TRACE\""
     - "export REPORT_PREFIX=\"{{ lookup('env', 'REPORT_PREFIX') }}\""
     - "export PATH=\"$PATH:/opt/go/{{golang_version}}/bin:/usr/local/bin\""
+  tags:
+    - scripts
 
 - name: Create Fleet test script file
   become: no
@@ -134,10 +148,12 @@
        SEED="$(date +%Y-%m-%d-%H:%M:%S)"
        REPORT="${BASE_DIR}/outputs/TEST-${REPORT_PREFIX}-{{runId}}-${SEED}"
 
-       TAGS="${1}" \
+       TAGS="${TAGS}" \
          LOG_LEVEL="TRACE" \
          FORMAT="pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml" \
          STACK_VERSION="${STACK_VERSION}" \
          BEAT_VERSION="${BEAT_VERSION}" \
          ELASTIC_AGENT_VERSION="${ELASTIC_AGENT_VERSION}" \
          make --no-print-directory -C "${BASE_DIR}/e2e/_suites/${SUITE}" functional-test
+  tags:
+    - scripts
