@@ -208,11 +208,9 @@ pipeline {
                   sh "ssh-keygen -b 4096 -t rsa -f ${stackWorkspace}/e2essh -q -N \"\" "
                   def stackMachine = getMachineInfo('stack')
 
-                  withEnv(["TAGS=non-existing-tag"]) {
-                    ansible(stackWorkspace,
-                          env.RUN_ID.split('-')[0],
-                          "-t provision-stack --extra-vars=\"${LABELS_STRING} nodeUser=${stackMachine.username} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
-                  }
+                  ansible(stackWorkspace,
+                        env.RUN_ID.split('-')[0],
+                        "-t provision-stack --extra-vars=\"${LABELS_STRING} nodeUser=${stackMachine.username} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
                   // Must be gathered after deployment as the public IP is known at that time
                   def stackRunner = getNodeIp(stackWorkspace, 'stack')

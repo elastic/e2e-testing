@@ -8,6 +8,7 @@
     create: yes
   with_items:
     - "export SUITE=\"fleet\""
+    - "export TAGS=\"non-existing-tag\""
     - "export PROVIDER=\"docker\""
     - "export DEVELOPER_MODE=\"true\""
     - "export SKIP_PULL=\"1\""
