@@ -216,11 +216,13 @@ pipeline {
                   def stackRunner = getNodeIp(stackWorkspace, 'stack')
 
                   retryWithSleep(retries: 2, seconds: 5, backoff: true) {
-                    ansible(
-                      stackWorkspace,
-                      env.RUN_ID.split('-')[0],
-                      "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
-                    )
+                    withEnv(["TAGS=non-existing-tag"]) {
+                      ansible(
+                        stackWorkspace,
+                        env.RUN_ID.split('-')[0],
+                        "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
+                      )
+                    }
                   }
 
                   // Update stash with latest changes from the stack deployment
