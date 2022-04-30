@@ -120,6 +120,16 @@ make -C .ci ssh-stack
 make -C .ci ssh-node
 ```
 
+### Destroying the Elastic Stack and recreating fleet-server
+
+Sometimes you need to tear down the Elastic Stack, or recreate the fleet-server, mostly in the case the API Token used for Fleet Server [expired after 1 hour](https://www.elastic.co/guide/en/elasticsearch/reference/current/security-settings.html#token-service-settings).
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci destroy-elastic-stack
+make -C .ci recreate-fleet-server
+```
+
 ### Destroying the stack and the test nodes
 
 Do not forget to destroy the stack and nodes you use!
