@@ -71,11 +71,13 @@ export NODE_USER="centos"
 Besides that, it's possible to configure the test node for the different test suites that are present in the test framework: `fleet`, `helm` and `kubernetes-autodiscover`. Please configure the test node setting the suite, being `fleet` the default:
 
 ```shell
-# example for Centos 8 ARM 64
+# all possible suites
 export SUITE="fleet"
 export SUITE="helm"
 export SUITE="kubernetes-autodiscover"
 ```
+
+Finally, please create the test node:
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
@@ -91,9 +93,20 @@ Please remember to [destroy the node](#destroying-the-stack-and-the-test-node) o
 
 ### Run a test suite
 
+You can select the specific tags that you want to include in the test execution. Please look for the different tags in the existing feature files for the suite you are interested in running:
+
+```shell
+# example tags
+export TAGS="fleet_mode_agent"
+export TAGS="system_integration"
+export TAGS="apm-server"
+export TAGS="kubernetes-autodiscover && elastic-agent"
+```
+
+Finally, run the tests:
+
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
-export TAGS="fleet_mode_agent" # please check the feature files
 make -C .ci run-tests
 ```
 
