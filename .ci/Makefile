@@ -129,9 +129,24 @@ destroy-node:
 
 .PHONY: recreate-stack
 recreate-stack:
-	ssh -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo bash /home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh "non-existent-tag"'
+	PROVIDER="remote" SUITE="$(SUITE)" TAGS="non-existent-tag" \
+	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+		--private-key="$(SSH_KEY)" \
+		--extra-vars "nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
+		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
+		-t scripts \
+		-i $(STACK_IP_ADDRESS),
+	ssh -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo bash /home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh'
 
 .PHONY: run-tests
 run-tests:
-	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) -t \
-		"cd /home/$(NODE_USER)/e2e-testing; sudo TAGS='$(TAGS)' TIMEOUT_FACTOR=5 LOG_LEVEL=TRACE PROVIDER=remote make -C e2e/_suites/fleet functional-test"
+	PROVIDER="remote" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$(NODE_LABEL)_$(TAGS)" \
+	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+		--private-key="$(SSH_KEY)" \
+		--extra-vars "stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeInstanceType=$(NODE_INSTANCE_TYPE) nodeUser=$(NODE_USER)" \
+		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
+		-t scripts \
+		-i $(NODE_IP_ADDRESS),
+	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'source /home/$(NODE_USER)/e2e-testing/.env; sudo -preserve-env bash /home/$(NODE_USER)/e2e-testing/.ci/scripts/functional-test.sh "$(TAGS)"'
