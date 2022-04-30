@@ -135,12 +135,12 @@ destroy-node:
 ssh-node:
 	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) -vvv
 
-.PHONY: destroy-stack
-destroy-stack:
+.PHONY: destroy-elastic-stack
+destroy-elastic-stack:
 	ssh -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo docker-compose -f /root/.op/compose/profiles/fleet/docker-compose.yml down --remove-orphans'
 
-.PHONY: recreate-stack
-recreate-stack:
+.PHONY: recreate-fleet-server
+recreate-fleet-server:
 	PROVIDER="remote" SUITE="$(SUITE)" TAGS="non-existent-tag" \
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
