@@ -43,7 +43,17 @@ make -C .ci setup-env
 
 It will create a `.runID` under the `.ci` directory. It will contain an unique identifier for your machines, which will be added as a VM tag.
 
+We are able to run the Elastic Stack and all the test suites in AWS instances, so whenever a build failed we will be able to recreate the same machine and access it to inspect its state: logs, files, containers... For that, we are enabling SSH access to those ephemeral machines, which can be created following this guide.
+
+But you must first understand that there are two types of Cloud machines: 
+1) the VM running the stack, and 
+2) the VMs where the Elastic Agent will be installed and enrolled into the stack.
+
 ### Create and configure the stack VM
+
+This specialised VM starts Elasticsearch, Kibana and Fleet Server using Docker Compose, but instead of invoking the compose file directly, it uses the test framework to do it. Why? Because we need to wait for Elasticsearch to be ready and request an API Token to be passed to the Fleet Server container. And [we do this with code](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/e2e/_suites/fleet/fleet.go#L631-L748).
+
+The VM is a Debian AMD64 machine, as described [here](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/.ci/.e2e-platforms.yaml#L3-L7).
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
@@ -57,6 +67,10 @@ A `.stack-host-ip` file will be created in the `.ci` directory of the project in
 Please remember to [destroy the stack](#destroying-the-stack-and-the-test-node) once you finished your testing.
 
 ### Create and configure test node
+
+There are different VM flavours that you can use to run the Elastic Agent and enrol it into the Stack: Debian, CentOS, SLES15, Oracle Linux... using AMD and ARM as architecture. You can find the full reference of the platform support [here](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/.ci/.e2e-platforms.yaml#L2-L42).
+
+In these VMs, the test framework will download a binary to install the Elastic Agent (TAR files, DEB/RPM packages...), and will execute the different agent commands to install, enroll, uninstall, etc.
 
 It's possible to configure the test node (OS, architecture), using the values that are already present in [the platforms descriptor](.e2e-platforms.yaml):
 
@@ -112,7 +126,11 @@ make -C .ci run-tests
 
 ### SSH into a remote VM
 
-Once you have created and set up the remote machines with the above instructions, you can SSH into both the stack and the test node machines, simply using the following commads:
+Once you have created and set up the remote machines with the above instructions, you can SSH into both the stack and the test node machines. In order to do so, you must be allowed to do so first, and for that, please add your Github username in alphabetical order to [this file](../.ci/ansible/github-ssh-keys), keeping a blank line as file ending. For the CI to work, the file including your user must be merged into the project, but for local development you can keep the file in the local state.
+
+> When submitting the pull request with your user to enable the SSH access, please remember to add the right backport labels (ex. `backport-v8.2.0`) so that you will be able to SSH into the CI machines for all supported maintenance branches.
+
+To SSH into the machines, please use the following commads:
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
