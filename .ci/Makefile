@@ -67,8 +67,8 @@ provision-stack: .runID
 
 .PHONY: setup-stack
 setup-stack: .runID
-	@:$(call check_defined, RUN_ID, You need to an unique RUN_ID. To create it please run 'make .runID' goal)
-	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack)
+	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
+	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
@@ -92,12 +92,12 @@ destroy-stack:
 
 .PHONY: ssh-stack
 ssh-stack:
-	ssh -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) -vvv
+	ssh -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS)
 
 .PHONY: provision-node
 provision-node: .runID
-	@:$(call check_defined, RUN_ID, You need to an unique RUN_ID. To create it please run 'make .runID' goal)
-	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack)
+	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
+	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeInstanceType=$(NODE_INSTANCE_TYPE) nodeUser=$(NODE_USER)" \
@@ -107,9 +107,9 @@ provision-node: .runID
 
 .PHONY: setup-node
 setup-node: .runID
-	@:$(call check_defined, RUN_ID, You need to an unique RUN_ID. To create it please run 'make .runID' goal)
-	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack)
-	@:$(call check_defined, NODE_IP_ADDRESS, IP address of the test node)
+	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
+	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
+	@:$(call check_defined, NODE_IP_ADDRESS, IP address of the test node not defined)
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeInstanceType=$(NODE_INSTANCE_TYPE) nodeUser=$(NODE_USER)" \
@@ -133,7 +133,7 @@ destroy-node:
 
 .PHONY: ssh-node
 ssh-node:
-	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) -vvv
+	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS)
 
 .PHONY: destroy-elastic-stack
 destroy-elastic-stack:

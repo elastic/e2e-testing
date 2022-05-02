@@ -47,7 +47,7 @@ We are able to run the Elastic Stack and all the test suites in AWS instances, s
 
 But you must first understand that there are two types of Cloud machines: 
 1) the VM running the stack, and 
-2) the VMs where the Elastic Agent will be installed and enrolled into the stack.
+2) the VMs running the actual tests, where the Elastic Agent will be installed and enrolled into the stack.
 
 ### Create and configure the stack VM
 
@@ -56,7 +56,7 @@ This specialised VM starts Elasticsearch, Kibana and Fleet Server using Docker C
 The VM is a Debian AMD64 machine, as described [here](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/.ci/.e2e-platforms.yaml#L3-L7).
 
 ```shell
-export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" # optional, defaults to $(HOME)/.ssh/id_rsa
 make -C .ci create-stack
 ```
 
@@ -66,9 +66,9 @@ A `.stack-host-ip` file will be created in the `.ci` directory of the project in
 
 Please remember to [destroy the stack](#destroying-the-stack-and-the-test-node) once you finished your testing.
 
-### Create and configure test node
+### Create and configure the test node
 
-There are different VM flavours that you can use to run the Elastic Agent and enrol it into the Stack: Debian, CentOS, SLES15, Oracle Linux... using AMD and ARM as architecture. You can find the full reference of the platform support [here](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/.ci/.e2e-platforms.yaml#L2-L42).
+There are different VM flavours that you can use to run the Elastic Agent and enroll it into the Stack: Debian, CentOS, SLES15, Oracle Linux... using AMD and ARM as architecture. You can find the full reference of the platform support [here](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/.ci/.e2e-platforms.yaml#L2-L42).
 
 In these VMs, the test framework will download a binary to install the Elastic Agent (TAR files, DEB/RPM packages...), and will execute the different agent commands to install, enroll, uninstall, etc.
 
@@ -77,7 +77,7 @@ It's possible to configure the test node (OS, architecture), using the values th
 ```shell
 # example for Centos 8 ARM 64
 export NODE_IMAGE="ami-01cdc9e8306344fe0"
-export NODE_INSTANCE_TYPE="a1.larg"
+export NODE_INSTANCE_TYPE="a1.large"
 export NODE_LABEL="centos8_arm64"
 export NODE_USER="centos"
 ```
@@ -103,7 +103,7 @@ A `.node-host-ip` file will be created in the `.ci` directory of the project inc
 
 > The IP address of the node in that file will be used by the automation.
 
-Please remember to [destroy the node](#destroying-the-stack-and-the-test-node) once you finished your testing.
+Please remember to [destroy the node](#destroying-the-stack-and-the-test-node) once you have finished your testing.
 
 ### Run a test suite
 
@@ -150,7 +150,7 @@ make -C .ci recreate-fleet-server
 
 ### Destroying the stack and the test nodes
 
-Do not forget to destroy the stack and nodes you use!
+Do not forget to destroy the stack and nodes once you're done with your tests!
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
