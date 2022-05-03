@@ -87,9 +87,10 @@ func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, b
 	jsonParsed, _ := gabs.ParseJSON([]byte(body))
 
 	log.WithFields(log.Fields{
-		"method": method,
-		"url":    u,
-		"body":   jsonParsed,
+		"method":  method,
+		"url":     u,
+		"body":    jsonParsed,
+		"headers": headers,
 	}).Trace("Kibana API Query")
 
 	req, err := http.NewRequest(method, u.String(), reqBody)
