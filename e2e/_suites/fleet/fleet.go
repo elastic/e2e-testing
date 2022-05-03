@@ -401,16 +401,17 @@ func (fts *FleetTestSuite) anAgentIsUpgradedToVersion(desiredVersion string) err
 	log.Tracef("Desired version is %s. Current version: %s", desiredVersion, fts.Version)
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
-
-	log.Tracef("Upgrading agent from %s to %s with 'upgrade' command.", desiredVersion, fts.Version)
-	return agentInstaller.Upgrade(fts.currentContext, desiredVersion)
 
 	/*
-		// kibana upgrades deprecated
-		manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
-		return fts.kibanaClient.UpgradeAgent(fts.currentContext, manifest.Hostname, desiredVersion)
+		// upgrading using the command is needed for stand-alone mode, only
+		agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
+
+		log.Tracef("Upgrading agent from %s to %s with 'upgrade' command.", desiredVersion, fts.Version)
+		return agentInstaller.Upgrade(fts.currentContext, desiredVersion)
 	*/
+
+	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	return fts.kibanaClient.UpgradeAgent(fts.currentContext, manifest.Hostname, desiredVersion)
 }
 
 func (fts *FleetTestSuite) agentInVersion(version string) error {
