@@ -410,10 +410,12 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 	exp := utils.GetExponentialBackOff(maxTimeout)
 
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+
 	agentInVersionFn := func() error {
 		retryCount++
-		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+
 		agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
 		if err != nil {
 			log.WithFields(log.Fields{
