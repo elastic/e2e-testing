@@ -82,6 +82,7 @@ create: provision-stack setup-stack
 
 .PHONY: destroy-stack
 destroy-stack:
+	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars="nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeUser=$(STACK_IMAGE)" \
@@ -123,6 +124,7 @@ create: provision-node setup-node
 
 .PHONY: destroy-node
 destroy-node:
+	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars="nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeUser=$(NODE_USER)" \
@@ -141,6 +143,7 @@ destroy-elastic-stack:
 
 .PHONY: recreate-fleet-server
 recreate-fleet-server:
+	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	PROVIDER="remote" SUITE="$(SUITE)" TAGS="non-existent-tag" \
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
@@ -153,6 +156,7 @@ recreate-fleet-server:
 
 .PHONY: run-tests
 run-tests:
+	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	PROVIDER="remote" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$(NODE_LABEL)_$(TAGS)" \
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
