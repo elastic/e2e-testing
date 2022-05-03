@@ -76,3 +76,10 @@
   tags:
     - provision-stack
     - start-node
+
+- name: Wait for Windows' SSH system to become reachable
+  wait_for_connection:
+    timeout: 60
+  when: "'windows2019' in nodeLabel"
+  tags:
+    - start-node
