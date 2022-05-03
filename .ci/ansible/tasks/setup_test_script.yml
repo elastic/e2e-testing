@@ -120,8 +120,8 @@
   with_items:
     - "export TAGS=\"{{ lookup('env', 'TAGS') }}\""
     - "export STACK_VERSION=\"{{ lookup('file', '{{workspace}}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
-    - "export BEAT_VERSION=\"{{ lookup('file', '{{workspace}}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
-    - "export ELASTIC_AGENT_VERSION=\"{{ lookup('file', '{{workspace}}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
+    - "export BEAT_VERSION=\"{{ lookup('env', 'BEAT_VERSION') or lookup('file', '{{ workspace }}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
+    - "export ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('file', '{{ workspace }}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
     - "export GITHUB_CHECK_SHA1=\"{{ lookup('env', 'GITHUB_CHECK_SHA1') }}\""
     - "export GITHUB_CHECK_REPO=\"{{ lookup('env', 'GITHUB_CHECK_REPO') }}\""
     - "export ELASTIC_APM_GLOBAL_LABELS=\"{{ lookup('env', 'ELASTIC_APM_GLOBAL_LABELS') }}\""
