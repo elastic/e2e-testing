@@ -88,7 +88,7 @@ destroy-stack:
 		--extra-vars="runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t destroy
-	rm -fr $(PROJECT_DIR)/.ci/stack-host-ip
+	rm -fr $(PROJECT_DIR)/.ci/.stack-host-ip
 
 .PHONY: ssh-stack
 ssh-stack:
@@ -129,7 +129,7 @@ destroy-node:
 		--extra-vars="runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC) \
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t destroy
-	rm -fr $(PROJECT_DIR)/.ci/node-host-ip
+	rm -fr $(PROJECT_DIR)/.ci/.node-host-ip
 
 .PHONY: ssh-node
 ssh-node:
