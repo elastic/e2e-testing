@@ -347,21 +347,6 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(staleVersi
 		staleVersion = common.ElasticAgentVersion
 	}
 
-	// check if stale version is an alias
-	v, err := downloads.GetElasticArtifactVersion(staleVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": staleVersion,
-		}).Error("Failed to get stale version")
-		return err
-	}
-	staleVersion = v
-
-	if downloads.UseElasticAgentCISnapshots() && !strings.HasSuffix(staleVersion, "-SNAPSHOT") {
-		staleVersion += "-SNAPSHOT"
-	}
-
 	fts.Version = staleVersion
 
 	log.Tracef("The stale version is %s", fts.Version)
