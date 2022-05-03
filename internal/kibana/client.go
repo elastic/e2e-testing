@@ -47,19 +47,19 @@ func NewClient() (*Client, error) {
 }
 
 func (c *Client) get(ctx context.Context, resourcePath string, headers ...HTTPHeader) (int, []byte, error) {
-	return c.sendRequest(ctx, http.MethodGet, resourcePath, nil)
+	return c.sendRequest(ctx, http.MethodGet, resourcePath, nil, headers...)
 }
 
 func (c *Client) post(ctx context.Context, resourcePath string, body []byte, headers ...HTTPHeader) (int, []byte, error) {
-	return c.sendRequest(ctx, http.MethodPost, resourcePath, body)
+	return c.sendRequest(ctx, http.MethodPost, resourcePath, body, headers...)
 }
 
 func (c *Client) put(ctx context.Context, resourcePath string, body []byte, headers ...HTTPHeader) (int, []byte, error) {
-	return c.sendRequest(ctx, http.MethodPut, resourcePath, body)
+	return c.sendRequest(ctx, http.MethodPut, resourcePath, body, headers...)
 }
 
 func (c *Client) delete(ctx context.Context, resourcePath string, headers ...HTTPHeader) (int, []byte, error) {
-	return c.sendRequest(ctx, http.MethodDelete, resourcePath, nil)
+	return c.sendRequest(ctx, http.MethodDelete, resourcePath, nil, headers...)
 }
 
 func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, body []byte, headers ...HTTPHeader) (int, []byte, error) {
