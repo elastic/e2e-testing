@@ -107,7 +107,7 @@ Please remember to [destroy the node](#destroying-the-stack-and-the-test-node) o
 
 ### Run a test suite
 
-You can select the specific tags that you want to include in the test execution. Please look for the different tags in the existing feature files for the suite you are interested in running:
+You can select the specific tags that you want to include in the test execution. Please look for the different tags in the existing feature files for the suite you are interested in running. For that, please check out the tags/annotations that are present in those feature files (`*.feature`), which live in the `features` directory under your test suite. In example, for `fleet` test suite, you can find them [here](../e2e/_suites/fleet/features/).
 
 ```shell
 # example tags
