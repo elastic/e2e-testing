@@ -128,7 +128,7 @@ setup-node: .runID
 		-i $(NODE_IP_ADDRESS),
 
 .PHONY: create-node
-create: provision-node setup-node
+create-node: provision-node setup-node
 
 .PHONY: destroy-node
 destroy-node:
