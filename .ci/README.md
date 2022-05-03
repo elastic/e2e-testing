@@ -124,6 +124,15 @@ export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
 make -C .ci run-tests
 ```
 
+### Showing current nodes configuration
+
+If you want to check the current IP address, instance types, SSH user of the nodes you are working with, please run the following commands:
+
+```shell
+make -C .ci show-stack
+make -C .ci show-node
+```
+
 ### SSH into a remote VM
 
 Once you have created and set up the remote machines with the above instructions, you can SSH into both the stack and the test node machines. In order to do so, you must be allowed to do so first, and for that, please add your Github username in alphabetical order to [this file](../.ci/ansible/github-ssh-keys), keeping a blank line as file ending. For the CI to work, the file including your user must be merged into the project, but for local development you can keep the file in the local state.

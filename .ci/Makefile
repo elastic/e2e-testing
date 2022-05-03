@@ -9,6 +9,7 @@ SSH_KEY_PUBLIC = $(SSH_KEY).pub
 # Debian 10 AMD (see .e2e-platforms.yaml)
 STACK_IMAGE=ami-0d90bed76900e679a
 STACK_INSTANCE_TYPE=c5.4xlarge
+STACK_LABEL=debian_amd64
 STACK_USER=admin
 STACK_IP_ADDRESS ?= $(shell cat $(PROJECT_DIR)/.ci/.stack-host-ip)
 
@@ -95,6 +96,13 @@ destroy-stack:
 ssh-stack:
 	ssh -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS)
 
+.PHONY: show-stack
+show-stack:
+	@echo "Stack IP address    : $(STACK_IP_ADDRESS)"
+	@echo "Stack type          : $(STACK_LABEL)"
+	@echo "Stack instance type : $(STACK_INSTANCE_TYPE)"
+	@echo "Stack SSH user      : $(STACK_USER)"
+
 .PHONY: provision-node
 provision-node: .runID
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
@@ -136,6 +144,13 @@ destroy-node:
 .PHONY: ssh-node
 ssh-node:
 	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS)
+
+.PHONY: show-node
+show-node:
+	@echo "Node IP            : $(NODE_IP_ADDRESS)"
+	@echo "Node type          : $(NODE_LABEL)"
+	@echo "Node instance type : $(NODE_INSTANCE_TYPE)"
+	@echo "Node SSH user      : $(NODE_USER)"
 
 .PHONY: destroy-elastic-stack
 destroy-elastic-stack:
