@@ -277,7 +277,12 @@ func (c *Client) UpgradeAgent(ctx context.Context, hostname string, version stri
 	}
 
 	reqBody := `{"version":"` + version + `"}`
-	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/agents/%s/upgrade", FleetAPI, agentID), []byte(reqBody))
+	versionHeader := HTTPHeader{
+		key:   "kbn-version",
+		value: version,
+	}
+
+	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/agents/%s/upgrade", FleetAPI, agentID), []byte(reqBody), versionHeader)
 	if statusCode != 200 {
 		log.WithFields(log.Fields{
 			"body":       respBody,
