@@ -42,7 +42,12 @@ func NewArtifactURLResolver(fullName string, name string, version string) *Artif
 func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 	artifactName := r.FullName
 	artifact := r.Name
-	version := r.Version
+
+	// resolve version alias
+	version, err := GetElasticArtifactVersion(r.Version)
+	if err != nil {
+		return "", "", err
+	}
 
 	exp := utils.GetExponentialBackOff(time.Minute)
 
@@ -93,7 +98,7 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 		return nil
 	}
 
-	err := backoff.Retry(apiStatus, exp)
+	err = backoff.Retry(apiStatus, exp)
 	if err != nil {
 		return "", "", err
 	}
