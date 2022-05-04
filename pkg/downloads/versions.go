@@ -487,6 +487,10 @@ func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
 // getDownloadURLFromResolvers returns the URL for the desired artifacts
 func getDownloadURLFromResolvers(resolvers []DownloadURLResolver) (string, string, error) {
 	for i, resolver := range resolvers {
+		if resolver == nil {
+			continue
+		}
+
 		url, shaURL, err := resolver.Resolve()
 		if err != nil {
 			if i < len(resolvers)-1 {

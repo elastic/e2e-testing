@@ -30,10 +30,18 @@ type ArtifactURLResolver struct {
 
 // NewArtifactURLResolver creates a new resolver for artifacts that are currently in development, from the artifacts API
 func NewArtifactURLResolver(fullName string, name string, version string) *ArtifactURLResolver {
+	// resolve version alias
+	resolvedVersion, err := GetElasticArtifactVersion(version)
+	if err != nil {
+		return nil
+	}
+
+	fullName = strings.ReplaceAll(fullName, version, resolvedVersion)
+
 	return &ArtifactURLResolver{
 		FullName: fullName,
 		Name:     name,
-		Version:  version,
+		Version:  resolvedVersion,
 	}
 }
 
@@ -42,12 +50,7 @@ func NewArtifactURLResolver(fullName string, name string, version string) *Artif
 func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 	artifactName := r.FullName
 	artifact := r.Name
-
-	// resolve version alias
-	version, err := GetElasticArtifactVersion(r.Version)
-	if err != nil {
-		return "", "", err
-	}
+	version := r.Version
 
 	exp := utils.GetExponentialBackOff(time.Minute)
 
@@ -98,7 +101,7 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 		return nil
 	}
 
-	err = backoff.Retry(apiStatus, exp)
+	err := backoff.Retry(apiStatus, exp)
 	if err != nil {
 		return "", "", err
 	}
