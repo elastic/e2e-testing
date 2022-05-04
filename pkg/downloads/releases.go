@@ -124,6 +124,15 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 	packagesObject := jsonParsed.Path("packages")
 	// we need to get keys with dots using Search instead of Path
 	downloadObject := packagesObject.Search(artifactName)
+	if downloadObject == nil {
+		log.WithFields(log.Fields{
+			"artifact": artifact,
+			"name":     artifactName,
+			"version":  version,
+		}).Error("object not found in Artifact API")
+		return "", "", fmt.Errorf("object not found in Artifact API")
+	}
+
 	downloadURL := downloadObject.Path("url").Data().(string)
 	downloadshaURL := downloadObject.Path("sha_url").Data().(string)
 
