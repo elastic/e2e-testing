@@ -79,7 +79,7 @@ setup-stack: .runID
 		-i $(STACK_IP_ADDRESS),
 
 .PHONY: create-stack
-create: provision-stack setup-stack
+create-stack: provision-stack setup-stack
 
 .PHONY: destroy-stack
 destroy-stack:
