@@ -709,16 +709,6 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			fleetServerSrv := deploy.ServiceRequest{
 				Name:    common.ElasticAgentServiceName,
 				Flavour: "fleet-server",
-<<<<<<< HEAD
-				WaitStrategies: []deploy.WaitForServiceRequest{
-					{
-						Service:  "fleet-server-1", // there is only one fleet-server container, so the scale ID is 1
-						Port:     fleetServerPort.Int(),
-						Strategy: wait.ForLog("Fleet Server - Running on policy with Fleet Server integration"),
-					},
-				},
-=======
->>>>>>> 0995a834 (docs: refactor docs to enable the local development (#2454))
 			}
 
 			err = deployer.Add(ctx, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{fleetServerSrv}, fleetServerEnv)
