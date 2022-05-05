@@ -67,6 +67,7 @@ provision-stack: .runID
 		-t provision-stack
 
 .PHONY: setup-stack
+setup-stack: export TAGS = non-existing-tag
 setup-stack: .runID
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
