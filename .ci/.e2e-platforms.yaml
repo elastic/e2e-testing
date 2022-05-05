@@ -3,7 +3,7 @@ PLATFORMS:
   stack:
     description: "Debian 10 AMD64, used specifically for running the stack"
     image: "ami-0d90bed76900e679a"
-    instance_type: "c5.4xlarge"
+    instance_type: "t4g.xlarge"
     username: admin
   centos8_arm64:
     description: "CentOS Stream 8 aarch64"
