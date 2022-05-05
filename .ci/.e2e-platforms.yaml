@@ -13,7 +13,7 @@ PLATFORMS:
   centos8_amd64:
     description: "CentOS Stream 8 x86_64"
     image: "ami-045b0a05944af45c1"
-    instance_type: "c5.4xlarge"
+    instance_type: "t4g.xlarge"
     username: centos
   debian_arm64:
     description: "Debian 10 ARM64"
@@ -23,7 +23,7 @@ PLATFORMS:
   debian_amd64:
     description: "Debian 10 AMD64"
     image: "ami-0d90bed76900e679a"
-    instance_type: "c5.4xlarge"
+    instance_type: "t4g.xlarge"
     username: admin
   oracle_linux8:
     description: "Oracle Linux 8 update 3 for x86_64 HVM"
@@ -33,10 +33,10 @@ PLATFORMS:
   sles15:
     description: "SUSE Linux Enterprise Server 15 SP3 (HVM), SSD Volume Type -  64bit ARM"
     image: "ami-0f7cb53c916a75006"
-    instance_type: "c5.4xlarge"
+    instance_type: "t4g.xlarge"
     username: ec2-user
   fleet_elastic_pkg:
     description: "Debian 10 AMD64"
     image: "ami-0d90bed76900e679a"
-    instance_type: "c5.4xlarge"
+    instance_type: "t4g.xlarge"
     username: admin
