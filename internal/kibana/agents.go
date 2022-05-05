@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
@@ -279,7 +280,7 @@ func (c *Client) UpgradeAgent(ctx context.Context, hostname string, version stri
 	reqBody := `{"version":"` + version + `"}`
 	versionHeader := HTTPHeader{
 		key:   "kbn-version",
-		value: version,
+		value: downloads.RemoveCommitFromSnapshot(version), // kibana does not accept hashed snapshots in this header
 	}
 
 	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/agents/%s/upgrade", FleetAPI, agentID), []byte(reqBody), versionHeader)
