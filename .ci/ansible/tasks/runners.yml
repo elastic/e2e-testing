@@ -11,11 +11,12 @@
       build_url: "{{buildURL | default('Not running on CI') }}"
       created_date: "{{ansible_date_time.epoch}}"
       environment: "{{type | default('Not running on CI')}}"
-      git_sha: "{{ gitSha }}"
+      git_sha: "{{ gitSha | default('Not running on CI')}}"
       repo: "{{repo | default('Not running on CI')}}"
+      run_id: "{{runId | default('Not running on CI')}}"
   tags:
     - provision-stack
-    - start-node
+    - provision-node
 
 - name: "Create {{nodeLabel}} AWS instances"
   ec2:
@@ -31,11 +32,12 @@
       build_url: "{{buildURL | default('Not running on CI') }}"
       created_date: "{{ansible_date_time.epoch}}"
       environment: "{{type | default('Not running on CI')}}"
-      git_sha: "{{ gitSha }}"
+      git_sha: "{{ gitSha | default('Not running on CI')}}"
       kind: "{{nodeLabel}}"
       name: "e2e-{{nodeLabel}}-{{runId}}"
       reaper_mark: "e2e-testing-vm"
       repo: "{{repo | default('Not running on CI')}}"
+      run_id: "{{runId | default('Not running on CI')}}"
     count_tag:
       name: "e2e-{{nodeLabel}}-{{runId}}"
     volumes:
@@ -51,7 +53,7 @@
   register: ec2
   tags:
     - provision-stack
-    - start-node
+    - provision-node
 
 - name: Add AWS host to ssh address list
   become: no
@@ -66,7 +68,31 @@
     loop_var: addr
   tags:
     - provision-stack
-    - start-node
+    - provision-node
+
+- name: Add stack AWS host to ssh address list
+  become: no
+  copy:
+    dest: "{{workspace}}/.ci/.stack-host-ip"
+    content: "{{addr.public_ip}}"
+    force: true
+  loop: "{{ ec2.instances }}"
+  loop_control:
+    loop_var: addr
+  tags:
+    - provision-stack
+
+- name: Add node AWS host to ssh address list
+  become: no
+  copy:
+    dest: "{{workspace}}/.ci/.node-host-ip"
+    content: "{{addr.public_ip}}"
+    force: true
+  loop: "{{ ec2.instances }}"
+  loop_control:
+    loop_var: addr
+  tags:
+    - provision-node
 
 - name: Wait for SSH to come up
   wait_for: host={{ nodeItem.public_ip }} port=22 delay=10
@@ -75,4 +101,4 @@
     loop_var: nodeItem
   tags:
     - provision-stack
-    - start-node
+    - provision-node
