@@ -68,6 +68,8 @@ The above variables need to be accessible by the tests, if running the stack beh
 
 ### Running the tests
 
+> DISCLAIMER: A more specialised version of how to reproduce a cloud deployment can be found [here](../../../.ci/README.md#running-a-ci-deployment). Although the information here is valid for certain local scenarios, we recommend following the more recent guide to troubleshoot a test error.
+
 1. Clone this repository, say into a folder named `e2e-testing`.
 
    ``` shell
