@@ -117,11 +117,13 @@ export TAGS="apm-server"
 export TAGS="kubernetes-autodiscover && elastic-agent"
 ```
 
+It's important that you consider reading about [the environment variables affecting the build](../e2e/README.md#environment-variables-affecting-the-build), as you could pass them to Make to run the tests with different options, such as a Github commit sha and repo (for testing a PR), the elastic-agent version, for testing a previous version of the agent, to name a few.
+
 Finally, run the tests:
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
-make -C .ci run-tests
+make -C .ci run-tests TAGS="fleet_mode_agent && install"
 ```
 
 ### Showing current nodes configuration
