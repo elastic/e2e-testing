@@ -8,14 +8,14 @@ SSH_KEY_PUBLIC = $(SSH_KEY).pub
 
 # Debian 10 AMD (see .e2e-platforms.yaml)
 STACK_IMAGE=ami-0d90bed76900e679a
-STACK_INSTANCE_TYPE=c5.4xlarge
+STACK_INSTANCE_TYPE=t3.xlarge
 STACK_LABEL=debian_amd64
 STACK_USER=admin
 STACK_IP_ADDRESS ?= $(shell cat $(PROJECT_DIR)/.ci/.stack-host-ip)
 
 # Debian 10 AMD (see .e2e-platforms.yaml)
 NODE_IMAGE ?= ami-0d90bed76900e679a
-NODE_INSTANCE_TYPE ?= c5.4xlarge
+NODE_INSTANCE_TYPE ?= t3.xlarge
 NODE_LABEL ?= debian_amd64
 NODE_USER ?= admin
 NODE_IP_ADDRESS ?= $(shell cat $(PROJECT_DIR)/.ci/.node-host-ip)
