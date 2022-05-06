@@ -208,7 +208,7 @@ pipeline {
                   sh "ssh-keygen -b 4096 -t rsa -f ${stackWorkspace}/e2essh -q -N \"\" "
 
                   withEnv([
-                    "SSKH_KEY=${stackWorkspace}/e2essh"
+                    "SSH_KEY=${stackWorkspace}/e2essh"
                   ]) {
                     def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
                     def awsAuthObj = awsProps?.data
