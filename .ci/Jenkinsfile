@@ -325,8 +325,8 @@ def checkSkipTests() {
 }
 
 
-def sshexec(connection, cmd){
-  sh "ssh -tt -o TCPKeepAlive=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${E2E_SSH_KEY} ${connection.user}@${connection.ip} -- '${cmd}'"
+def sshexec(userAtIP, cmd){
+  sh "ssh -tt -o TCPKeepAlive=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${E2E_SSH_KEY} ${userAtIP} -- '${cmd}'"
 }
 
 def scpr(connection, remote_src, local_dst){
@@ -592,8 +592,9 @@ def generateFunctionalTestStep(Map args = [:]){
         }
       } finally {
         def testRunnerIP = getNodeIp("node")
+        def userAtIP = "${machine.username}@${testRunnerIP}"
         sh "mkdir -p outputs/${testRunnerIP} || true"
-        sshexec(testRunner,
+        sshexec(userAtIP,
                 """sudo chown ${machine.username} -R /home/${machine.username}/e2e-testing/outputs """)
         scpr(testRunner,
              "e2e-testing/outputs/TEST-*${runId}*.xml",
