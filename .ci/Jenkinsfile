@@ -21,6 +21,8 @@ pipeline {
     GCP_PROVISIONER_SECRET = 'secret/observability-team/ci/service-account/jenkins-gce-provisioner'
     AWS_PROVISIONER_SECRET = 'secret/observability-team/ci/elastic-observability-aws-account-auth'
     TEST_MATRIX_FILE = "${params.testMatrixFile}"
+    E2E_SSH_KEY = "${env.BASE_DIR}/e2essh"
+    E2E_SSH_KEY_PUB = "${env.E2E_SSH_KEY}.pub"
     RUN_ID = UUID.randomUUID().toString()
   }
   options {
@@ -205,10 +207,10 @@ pipeline {
                 script {
                   def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
                   // Deploy the test infrastructure
-                  sh "ssh-keygen -b 4096 -t rsa -f ${stackWorkspace}/e2essh -q -N \"\" "
+                  sh "ssh-keygen -b 4096 -t rsa -f ${E2E_SSH_KEY} -q -N \"\" "
 
                   withEnv([
-                    "SSH_KEY=${stackWorkspace}/e2essh"
+                    "SSH_KEY=${E2E_SSH_KEY}"
                   ]) {
                     def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
                     def awsAuthObj = awsProps?.data
@@ -342,12 +344,12 @@ def checkSkipTests() {
 
 
 def sshexec(workspace, connection, cmd){
-  sh "ssh -tt -o TCPKeepAlive=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${workspace}/e2essh ${connection.user}@${connection.ip} -- '${cmd}'"
+  sh "ssh -tt -o TCPKeepAlive=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${E2E_SSH_KEY} ${connection.user}@${connection.ip} -- '${cmd}'"
 }
 
 def scpr(workspace, connection, remote_src, local_dst){
   retryWithSleep(retries: 3, seconds: 5, backoff: true){
-    sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${workspace}/e2essh ${connection.user}@${connection.ip}:${remote_src} ${local_dst}"
+    sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${E2E_SSH_KEY} ${connection.user}@${connection.ip}:${remote_src} ${local_dst}"
   }
 }
 
@@ -460,7 +462,7 @@ def getMachineInfo(platform){
 
 def ansible(workspace, run_id, args){
   withOtelEnv() {
-    pyrun("ansible-playbook --private-key=\"${workspace}/e2essh\" --extra-vars=\"workspace=${workspace}/ runId=${run_id} sshPublicKey=${workspace}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${workspace}/.ci/ansible/playbook.yml ${args}")
+    pyrun("ansible-playbook --private-key=\"${E2E_SSH_KEY}\" --extra-vars=\"workspace=${workspace}/ runId=${run_id} sshPublicKey=${E2E_SSH_KEY_PUB}\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${workspace}/.ci/ansible/playbook.yml ${args}")
   }
 }
 
