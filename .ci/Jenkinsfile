@@ -347,7 +347,7 @@ def sshexec(connection, cmd){
   sh "ssh -tt -o TCPKeepAlive=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${E2E_SSH_KEY} ${connection.user}@${connection.ip} -- '${cmd}'"
 }
 
-def scpr(workspace, connection, remote_src, local_dst){
+def scpr(connection, remote_src, local_dst){
   retryWithSleep(retries: 3, seconds: 5, backoff: true){
     sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${E2E_SSH_KEY} ${connection.user}@${connection.ip}:${remote_src} ${local_dst}"
   }
@@ -636,12 +636,10 @@ def generateFunctionalTestStep(Map args = [:]){
         sh "mkdir -p outputs/${testRunner.ip} || true"
         sshexec(testRunner,
                 """sudo chown ${testRunner.user} -R /home/${testRunner.user}/e2e-testing/outputs """)
-        scpr("${env.WORKSPACE}",
-             testRunner,
+        scpr(testRunner,
              "e2e-testing/outputs/TEST-*${runId}*.xml",
              "outputs/${testRunner.ip}/.")
-        scpr("${env.WORKSPACE}",
-             testRunner,
+        scpr(testRunner,
              "e2e-testing/outputs/TEST-*${runId}*.json",
              "outputs/${testRunner.ip}/.")
         sh "ls -l outputs/${testRunner.ip}"
