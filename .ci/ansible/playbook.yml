@@ -94,6 +94,19 @@
     tags:
       - setup-stack
 
+  - name: Wait for Elasticsearch to come up
+    wait_for: host={{ inventory_hostname }} port=9200 delay=10
+    tags:
+      - setup-stack
+  - name: Wait for Kibana to come up
+    wait_for: host={{ inventory_hostname }} port=5601 delay=10
+    tags:
+      - setup-stack
+  - name: Wait for Fleet Server to come up
+    wait_for: host={{ inventory_hostname }} port=8220 delay=10
+    tags:
+      - setup-stack
+
 - name: Manage runner instances
   hosts: all
   connection: ssh
