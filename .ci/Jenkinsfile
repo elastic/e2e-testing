@@ -343,7 +343,7 @@ def checkSkipTests() {
 }
 
 
-def sshexec(workspace, connection, cmd){
+def sshexec(connection, cmd){
   sh "ssh -tt -o TCPKeepAlive=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${E2E_SSH_KEY} ${connection.user}@${connection.ip} -- '${cmd}'"
 }
 
@@ -627,16 +627,14 @@ def generateFunctionalTestStep(Map args = [:]){
                     runId,
                     "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
-            sshexec("${env.WORKSPACE}",
-                    testRunner,
+            sshexec(testRunner,
                     "sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh")
           }
         }
       } finally {
         def testRunner = getNodeIp("${env.WORKSPACE}", platform)
         sh "mkdir -p outputs/${testRunner.ip} || true"
-        sshexec("${env.WORKSPACE}",
-                testRunner,
+        sshexec(testRunner,
                 """sudo chown ${testRunner.user} -R /home/${testRunner.user}/e2e-testing/outputs """)
         scpr("${env.WORKSPACE}",
              testRunner,
