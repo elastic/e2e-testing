@@ -21,7 +21,7 @@ pipeline {
     GCP_PROVISIONER_SECRET = 'secret/observability-team/ci/service-account/jenkins-gce-provisioner'
     AWS_PROVISIONER_SECRET = 'secret/observability-team/ci/elastic-observability-aws-account-auth'
     TEST_MATRIX_FILE = "${params.testMatrixFile}"
-    E2E_SSH_KEY = "${env.BASE_DIR}/e2essh"
+    E2E_SSH_KEY = "${env.WORKSPACE}/${env.BASE_DIR}/e2essh"
     E2E_SSH_KEY_PUB = "${env.E2E_SSH_KEY}.pub"
     RUN_ID = UUID.randomUUID().toString()
   }
