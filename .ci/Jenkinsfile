@@ -209,29 +209,8 @@ pipeline {
                   // Deploy the test infrastructure
                   sh "ssh-keygen -b 4096 -t rsa -f ${E2E_SSH_KEY} -q -N \"\" "
 
-                  withEnv([
-                    "SSH_KEY=${E2E_SSH_KEY}"
-                  ]) {
-                    def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
-                    def awsAuthObj = awsProps?.data
-                    withEnv([
-                      "ANSIBLE_CONFIG=${env.WORKSPACE}/.ci/ansible/ansible.cfg",
-                      "ANSIBLE_HOST_KEY_CHECKING=False",
-                    ]){
-                      withVaultToken(){
-                        withEnvMask(vars: [
-                          [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
-                          [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
-                        ]) {
-                          retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                            withOtelEnv() {
-                              sh("make -C .ci setup-env")
-                              sh("make -C .ci create-stack")
-                            }
-                          }
-                        }
-                      }
-                    }
+                  ciBuild() {
+                      sh("make -C .ci create-stack")
                   }
 
                   // Update stash with latest changes from the stack deployment
@@ -354,49 +333,30 @@ def scpr(connection, remote_src, local_dst){
 }
 
 /*
- * Runs the Make build at the CI
+ * Runs the Make build at the CI, executing the closure in the context of Ansible + AWS
  */
-def ciBuild(Map args = [:]){
-  def goal = args.goal
-  def env = args.sshkey
-
-  def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
-  def awsAuthObj = awsProps?.data
+def ciBuild(Closure body){
   withEnv([
-    "ANSIBLE_CONFIG=${env.WORKSPACE}/.ci/ansible/ansible.cfg",
-    "ANSIBLE_HOST_KEY_CHECKING=False",
-    "SSH_KEY=${sshkey}",
-  ]){
-    withVaultToken(){
-      withEnvMask(vars: [
-        [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
-        [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
-      ]) {
-        retryWithSleep(retries: 3, seconds: 5, backoff: true){
-          sh(script: """#!/bin/bash
-              set -eux
-              if ! test -f ${env.WORKSPACE}/.venv-installed; then
-                  python3 -m venv ${env.WORKSPACE}/.venv
-                  touch ${env.WORKSPACE}/.venv-installed
-              fi
-            """,
-            label: "Creating virtualenv"
-          )
+    "SSH_KEY=${E2E_SSH_KEY}"
+  ]) {
+    def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
+    def awsAuthObj = awsProps?.data
+    withEnv([
+      "ANSIBLE_CONFIG=${env.WORKSPACE}/.ci/ansible/ansible.cfg",
+      "ANSIBLE_HOST_KEY_CHECKING=False",
+    ]){
+      withVaultToken(){
+        withEnvMask(vars: [
+          [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
+          [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
+        ]) {
+          retryWithSleep(retries: 3, seconds: 5, backoff: true){
+            withOtelEnv() {
+              sh("make -C .ci setup-env") // make sure the environment is created
+              body()
+            }
+          }
         }
-        retryWithSleep(retries: 3, seconds: 30, backoff: true){
-          sh(script: """#!/bin/bash
-              set -eux
-              if ! test -f ${env.WORKSPACE}/.python-dependencies; then
-                ${env.WORKSPACE}/.venv/bin/pip3 -q install wheel
-                ${env.WORKSPACE}/.venv/bin/pip3 -q install -r .ci/ansible/requirements.txt
-                ${env.WORKSPACE}/.venv/bin/ansible-galaxy install -r .ci/ansible/requirements.yml
-                touch ${env.WORKSPACE}/.python-dependencies
-              fi
-            """,
-            label: "Installing dependencies"
-          )
-        }
-        sh(script: "make -C .ci ${goal}", label: "Executing make ${goal.split(' ')[0]}")
       }
     }
   }
