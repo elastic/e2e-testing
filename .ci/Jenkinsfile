@@ -268,8 +268,8 @@ pipeline {
                 def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
                 def stackMachine = getMachineInfo('stack')
                 if (params.DEVELOPER_MODE) {
-                  def stackRunner = getNodeIp(stackWorkspace, 'stack')
-                  log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunner.ip}")
+                  def stackRunnerIP = getNodeIp('stack')
+                  log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunnerIP}")
                 } else {
                   ansible(stackWorkspace,
                         env.RUN_ID.split('-')[0],
@@ -410,11 +410,8 @@ def pyrun(command){
   }
 }
 
-def getNodeIp(workspace, platform){
-  def runners = readYaml(file: "${workspace}/${platform}-sshhosts")
-  def runnerUser = runners[0].split('@')[0]
-  def runnerIP = runners[0].split('@')[1]
-  return [user: runnerUser, ip: runnerIP]
+def getNodeIp(nodeType){
+  return sh(label: "Get IP address of the ${nodeType}", script: "cat ${BASE_DIR}/.ci/.${nodeType}-host-ip", returnStdout: true)
 }
 
 def getMachineInfo(platform){
@@ -594,19 +591,19 @@ def generateFunctionalTestStep(Map args = [:]){
           }
         }
       } finally {
-        def testRunner = getNodeIp("${env.WORKSPACE}", platform)
-        sh "mkdir -p outputs/${testRunner.ip} || true"
+        def testRunnerIP = getNodeIp("node")
+        sh "mkdir -p outputs/${testRunnerIP} || true"
         sshexec(testRunner,
                 """sudo chown ${machine.username} -R /home/${machine.username}/e2e-testing/outputs """)
         scpr(testRunner,
              "e2e-testing/outputs/TEST-*${runId}*.xml",
-             "outputs/${testRunner.ip}/.")
+             "outputs/${testRunnerIP}/.")
         scpr(testRunner,
              "e2e-testing/outputs/TEST-*${runId}*.json",
-             "outputs/${testRunner.ip}/.")
-        sh "ls -l outputs/${testRunner.ip}"
+             "outputs/${testRunnerIP}/.")
+        sh "ls -l outputs/${testRunnerIP}"
         if (params.DEVELOPER_MODE) {
-          log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunner.ip}. ")
+          log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunnerIP}. ")
         } else {
           ansible("${env.WORKSPACE}",
                 runId,
@@ -614,7 +611,7 @@ def generateFunctionalTestStep(Map args = [:]){
         }
         withEnv([
           "ARCHITECTURE=${goArch}",
-          "CUCUMBER_REPORTS_PATH=outputs/${testRunner.ip}",
+          "CUCUMBER_REPORTS_PATH=outputs/${testRunnerIP}",
           "PLATFORM=${platform}",
           "SUITE=${suite}",
           "TAGS=${tags}",
@@ -622,9 +619,9 @@ def generateFunctionalTestStep(Map args = [:]){
           dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
           sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
         }
-        junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunner.ip}/TEST-*${runId}*.xml")
+        junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunnerIP}/TEST-*${runId}*.xml")
         archiveArtifacts allowEmptyArchive: true,
-          artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml, outputs/${testRunner.ip}/TEST-*${runId}*.json, outputs/${testRunner.ip}/TEST-*${runId}*.json.html"
+          artifacts: "outputs/${testRunnerIP}/TEST-*${runId}*.xml, outputs/${testRunnerIP}/TEST-*${runId}*.json, outputs/${testRunnerIP}/TEST-*${runId}*.json.html"
       }
     }
   }
