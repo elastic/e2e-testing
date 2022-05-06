@@ -206,22 +206,29 @@ pipeline {
                   def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
                   // Deploy the test infrastructure
                   sh "ssh-keygen -b 4096 -t rsa -f ${stackWorkspace}/e2essh -q -N \"\" "
-                  def stackMachine = getMachineInfo('stack')
 
-                  ansible(stackWorkspace,
-                        env.RUN_ID.split('-')[0],
-                        "-t provision-stack --extra-vars=\"${LABELS_STRING} nodeUser=${stackMachine.username} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
-
-                  // Must be gathered after deployment as the public IP is known at that time
-                  def stackRunner = getNodeIp(stackWorkspace, 'stack')
-
-                  retryWithSleep(retries: 2, seconds: 5, backoff: true) {
-                    withEnv(["TAGS=non-existing-tag"]) {
-                      ansible(
-                        stackWorkspace,
-                        env.RUN_ID.split('-')[0],
-                        "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
-                      )
+                  withEnv([
+                    "SSKH_KEY=${stackWorkspace}/e2essh"
+                  ]) {
+                    def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
+                    def awsAuthObj = awsProps?.data
+                    withEnv([
+                      "ANSIBLE_CONFIG=${env.WORKSPACE}/.ci/ansible/ansible.cfg",
+                      "ANSIBLE_HOST_KEY_CHECKING=False",
+                    ]){
+                      withVaultToken(){
+                        withEnvMask(vars: [
+                          [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
+                          [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
+                        ]) {
+                          retryWithSleep(retries: 3, seconds: 5, backoff: true){
+                            withOtelEnv() {
+                              sh("make -C .ci setup-env")
+                              sh("make -C .ci create-stack")
+                            }
+                          }
+                        }
+                      }
                     }
                   }
 
@@ -341,6 +348,55 @@ def sshexec(workspace, connection, cmd){
 def scpr(workspace, connection, remote_src, local_dst){
   retryWithSleep(retries: 3, seconds: 5, backoff: true){
     sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${workspace}/e2essh ${connection.user}@${connection.ip}:${remote_src} ${local_dst}"
+  }
+}
+
+/*
+ * Runs the Make build at the CI
+ */
+def ciBuild(Map args = [:]){
+  def goal = args.goal
+  def env = args.sshkey
+
+  def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
+  def awsAuthObj = awsProps?.data
+  withEnv([
+    "ANSIBLE_CONFIG=${env.WORKSPACE}/.ci/ansible/ansible.cfg",
+    "ANSIBLE_HOST_KEY_CHECKING=False",
+    "SSH_KEY=${sshkey}",
+  ]){
+    withVaultToken(){
+      withEnvMask(vars: [
+        [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
+        [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
+      ]) {
+        retryWithSleep(retries: 3, seconds: 5, backoff: true){
+          sh(script: """#!/bin/bash
+              set -eux
+              if ! test -f ${env.WORKSPACE}/.venv-installed; then
+                  python3 -m venv ${env.WORKSPACE}/.venv
+                  touch ${env.WORKSPACE}/.venv-installed
+              fi
+            """,
+            label: "Creating virtualenv"
+          )
+        }
+        retryWithSleep(retries: 3, seconds: 30, backoff: true){
+          sh(script: """#!/bin/bash
+              set -eux
+              if ! test -f ${env.WORKSPACE}/.python-dependencies; then
+                ${env.WORKSPACE}/.venv/bin/pip3 -q install wheel
+                ${env.WORKSPACE}/.venv/bin/pip3 -q install -r .ci/ansible/requirements.txt
+                ${env.WORKSPACE}/.venv/bin/ansible-galaxy install -r .ci/ansible/requirements.yml
+                touch ${env.WORKSPACE}/.python-dependencies
+              fi
+            """,
+            label: "Installing dependencies"
+          )
+        }
+        sh(script: "make -C .ci ${goal}", label: "Executing make ${goal.split(' ')[0]}")
+      }
+    }
   }
 }
 
