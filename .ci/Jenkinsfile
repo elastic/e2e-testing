@@ -571,22 +571,24 @@ def generateFunctionalTestStep(Map args = [:]){
       try {
         deleteDir()
         unstash 'sourceEnvModified'
-        withEnv(envContext) {
-          // This step will help to send the APM traces to the
-          // withOtelEnv is the one that uses the APM service defined by the Otel Jenkins plugin.
-          // withAPMEnv uses Vault to prepare the context.
-          // IMPORTANT: withAPMEnv is now the one in used since withOtelEnv uses a specific Opentelemetry Collector at the moment.
-          // TODO: This will need to be integrated into the provisioned VMs
-          withAPMEnv() {
-            // we are separating the different test phases to avoid recreating
-            ciBuild() {
-                sh(label: 'Start node', script: "make -C .ci provision-node")
-            }
-            ciBuild() {
-                sh(label: 'Configure node for testing', script: "make -C .ci setup-node")
-            }
-            ciBuild() {
-                sh(label: 'Run tests in the node', script: "make -C .ci run-tests")
+        dir("${env.BASE_DIR}") {
+          withEnv(envContext) {
+            // This step will help to send the APM traces to the
+            // withOtelEnv is the one that uses the APM service defined by the Otel Jenkins plugin.
+            // withAPMEnv uses Vault to prepare the context.
+            // IMPORTANT: withAPMEnv is now the one in used since withOtelEnv uses a specific Opentelemetry Collector at the moment.
+            // TODO: This will need to be integrated into the provisioned VMs
+            withAPMEnv() {
+              // we are separating the different test phases to avoid recreating
+              ciBuild() {
+                  sh(label: 'Start node', script: "make -C .ci provision-node")
+              }
+              ciBuild() {
+                  sh(label: 'Configure node for testing', script: "make -C .ci setup-node")
+              }
+              ciBuild() {
+                  sh(label: 'Run tests in the node', script: "make -C .ci run-tests")
+              }
             }
           }
         }
