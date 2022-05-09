@@ -111,7 +111,7 @@ You can select the specific tags that you want to include in the test execution.
 
 ```shell
 # example tags
-export TAGS="fleet_mode_agent"
+export TAGS="fleet_mode"
 export TAGS="system_integration"
 export TAGS="apm-server"
 export TAGS="kubernetes-autodiscover && elastic-agent"
@@ -123,7 +123,7 @@ Finally, run the tests:
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
-make -C .ci run-tests TAGS="fleet_mode_agent && install"
+make -C .ci run-tests TAGS="fleet_mode && install"
 ```
 
 ### Showing current nodes configuration
