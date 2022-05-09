@@ -1,7 +1,7 @@
 PROJECT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))/..
 VENV_DIR=$(PROJECT_DIR)/.venv
 RUN_ID_FILE=$(PROJECT_DIR)/.ci/.runID
-RUN_ID:=$(shell cat $(RUN_ID_FILE))
+RUN_ID ?= $(shell cat $(RUN_ID_FILE))
 
 SSH_KEY ?= $(HOME)/.ssh/id_rsa
 SSH_KEY_PUBLIC = $(SSH_KEY).pub
