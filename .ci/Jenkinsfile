@@ -203,21 +203,19 @@ pipeline {
             withGithubNotify(context: 'Deploy Stack', tab: 'tests') {
               deleteDir()
               unstash 'source'
-              dir("${BASE_DIR}") {
-                script {
-                  // Deploy the test infrastructure
-                  sh "ssh-keygen -b 4096 -t rsa -f ${E2E_SSH_KEY} -q -N \"\" "
+              script {
+                // Deploy the test infrastructure
+                sh "ssh-keygen -b 4096 -t rsa -f ${E2E_SSH_KEY} -q -N \"\" "
 
-                  ciBuild() {
-                      sh(label: 'Start Stack node', script: "make -C .ci provision-stack")
-                  }
-                  ciBuild() {
-                      sh(label: 'Setup Stack node', script: "make -C .ci setup-stack")
-                  }
-
-                  // Update stash with latest changes from the stack deployment
-                  stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false
+                ciBuild() {
+                    sh(label: 'Start Stack node', script: "make -C .ci provision-stack")
                 }
+                ciBuild() {
+                    sh(label: 'Setup Stack node', script: "make -C .ci setup-stack")
+                }
+
+                // Update stash with latest changes from the stack deployment
+                stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false
               }
             }
           }
@@ -269,10 +267,8 @@ pipeline {
                   def stackRunnerIP = getNodeIp('stack')
                   log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunnerIP}")
                 } else {
-                  dir("${env.BASE_DIR}") {
-                    ciBuild() {
-                        sh(label: 'Destroy stack node', script: "make -C .ci destroy-stack")
-                    }
+                  ciBuild() {
+                    sh(label: 'Destroy stack node', script: "make -C .ci destroy-stack")
                   }
                 }
               }
@@ -344,9 +340,11 @@ def ciBuild(Closure body){
         ]) {
           retryWithSleep(retries: 3, seconds: 5, backoff: true){
             withOtelEnv() {
-              sh("make -C .ci setup-env") // make sure the environment is created
-              sh (label: 'Check state of Python env', script: "ls -l ${env.WORKSPACE}/${env.BASE_DIR}/.venv/bin/")
-              body()
+              dir("${env.BASE_DIR}") {
+                sh("make -C .ci setup-env") // make sure the environment is created
+                sh (label: 'Check state of Python env', script: "ls -l ${env.WORKSPACE}/${env.BASE_DIR}/.venv/bin/")
+                body()
+              }
             }
           }
         }
@@ -509,43 +507,37 @@ def generateFunctionalTestStep(Map args = [:]){
       try {
         deleteDir()
         unstash 'sourceEnvModified'
-        dir("${env.BASE_DIR}") {
-          withEnv(envContext) {
-            // This step will help to send the APM traces to the
-            // withOtelEnv is the one that uses the APM service defined by the Otel Jenkins plugin.
-            // withAPMEnv uses Vault to prepare the context.
-            // IMPORTANT: withAPMEnv is now the one in used since withOtelEnv uses a specific Opentelemetry Collector at the moment.
-            // TODO: This will need to be integrated into the provisioned VMs
-            withAPMEnv() {
-              // we are separating the different test phases to avoid recreating
-              ciBuild() {
-                  sh(label: 'Start node', script: "make -C .ci provision-node")
-              }
-              ciBuild() {
-                  sh(label: 'Configure node for testing', script: "make -C .ci setup-node")
-              }
-              ciBuild() {
-                  sh(label: 'Run tests in the node', script: "make -C .ci run-tests")
-              }
+        withEnv(envContext) {
+          // This step will help to send the APM traces to the
+          // withOtelEnv is the one that uses the APM service defined by the Otel Jenkins plugin.
+          // withAPMEnv uses Vault to prepare the context.
+          // IMPORTANT: withAPMEnv is now the one in used since withOtelEnv uses a specific Opentelemetry Collector at the moment.
+          // TODO: This will need to be integrated into the provisioned VMs
+          withAPMEnv() {
+            // we are separating the different test phases to avoid recreating
+            ciBuild() {
+                sh(label: 'Start node', script: "make -C .ci provision-node")
+            }
+            ciBuild() {
+                sh(label: 'Configure node for testing', script: "make -C .ci setup-node")
+            }
+            ciBuild() {
+                sh(label: 'Run tests in the node', script: "make -C .ci run-tests")
             }
           }
         }
       } finally {
         def testRunnerIP = getNodeIp("node")
         sh "mkdir -p outputs/${testRunnerIP} || true"
-        dir("${env.BASE_DIR}") {
-          ciBuild() {
-              sh(label: 'Fetch tests reports from node', script: "make -C .ci fetch-test-reports")
-          }
+        ciBuild() {
+          sh(label: 'Fetch tests reports from node', script: "make -C .ci fetch-test-reports")
         }
         sh "ls -l outputs/${testRunnerIP}"
         if (params.DEVELOPER_MODE) {
           log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunnerIP}. ")
         } else {
-          dir("${env.BASE_DIR}") {
-            ciBuild() {
-                sh(label: 'Destroy node', script: "make -C .ci destroy-node")
-            }
+          ciBuild() {
+              sh(label: 'Destroy node', script: "make -C .ci destroy-node")
           }
         }
         withEnv([
