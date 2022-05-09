@@ -1,5 +1,5 @@
-@agent_endpoint_integration
-Feature: Agent Endpoint Integration
+@endpoint_integration
+Feature: Endpoint Integration
   Scenarios for Agent to deploy Endpoint and sending data to Fleet and Elasticsearch.
 
 Scenario Outline: Adding the Endpoint Integration to an Agent makes the host to show in Security App
