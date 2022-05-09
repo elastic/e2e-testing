@@ -14,5 +14,3 @@ Examples: Beats
 | beats-process |
 | filebeat      |
 | metricbeat    |
-| filebeat      |
-| metricbeat    |
