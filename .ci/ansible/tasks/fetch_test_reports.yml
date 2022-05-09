@@ -1,0 +1,31 @@
+---
+- name: Find the Test reports to copy/fetch
+  ansible.builtin.find: 
+    paths: "/home/{{ ansible_user }}/e2e-testing/outputs"
+    file_type: file
+    use_regex: yes   
+    patterns:
+      - '^TEST.*json$'
+      - '^TEST.*xml$'
+  register: files_2_fetch
+  tags:
+      - fetch-reports
+
+- name: Create local directory
+  become: no
+  ansible.builtin.file:
+    path: "{{ playbook_dir }}/../../outputs/{{ inventory_hostname }}"
+    state: directory
+  delegate_to: localhost
+  tags:
+      - fetch-reports
+
+- name: Fetch the Test reports
+  ansible.builtin.fetch:
+    src: "{{ item.path }}"
+    dest: "{{ playbook_dir }}/../../outputs/{{ inventory_hostname }}/"
+    flat: yes
+    fail_on_missing: no
+  with_items: "{{ files_2_fetch.files }}"
+  tags:
+      - fetch-reports

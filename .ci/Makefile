@@ -148,6 +148,19 @@ destroy-node:
 		-t destroy
 	rm -fr $(PROJECT_DIR)/.ci/.node-host-ip
 
+.PHONY: fetch-test-reports
+fetch-test-reports: .runID
+	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
+	@:$(call check_defined, NODE_IP_ADDRESS, IP address of the test node not defined)
+	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+		--private-key="$(SSH_KEY)" \
+		--extra-vars "$(LABELS_STRING) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeInstanceType=$(NODE_INSTANCE_TYPE) nodeUser=$(NODE_USER)" \
+		--extra-vars "nodeIP=$(NODE_IP_ADDRESS)" \
+		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
+		-t fetch-reports \
+		-i $(NODE_IP_ADDRESS),
+
 .PHONY: ssh-node
 ssh-node:
 	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS)

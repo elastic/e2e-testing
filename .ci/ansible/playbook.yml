@@ -153,3 +153,8 @@
       - setup-node
       - copy-source
       - scripts
+
+  - name: Fetch test reports
+    include_tasks: tasks/fetch_test_reports.yml
+    tags:
+      - fetch-reports
