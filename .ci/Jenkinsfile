@@ -345,7 +345,6 @@ def ciBuild(Closure body){
               dir("${env.BASE_DIR}") {
                 sh (label: 'Check state of Python env', script: "pwd")
                 sh("make -C .ci setup-env") // make sure the environment is created
-                sh (label: 'Check state of Python env', script: "ls -l ${env.WORKSPACE}/${env.BASE_DIR}/.venv/bin/")
                 body()
               }
             }
