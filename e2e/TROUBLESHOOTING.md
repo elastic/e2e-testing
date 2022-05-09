@@ -85,7 +85,7 @@ Now you can run the tests, specifying the tags you are interested. Please use th
 sudo su -
 # move to the project directory
 cd /home/${USER}/e2e-testing
-TAGS="deploy-system_integration-with-diskio" TIMEOUT_FACTOR=5 LOG_LEVEL=TRACE PROVIDER=remote make -C e2e/_suites/fleet functional-test
+TAGS="system_integration && diskio" TIMEOUT_FACTOR=5 LOG_LEVEL=TRACE PROVIDER=remote make -C e2e/_suites/fleet functional-test
 ```
 
 - TAGS: it uses a tag from the `system_integration.feature` file, because we want to run just one scenario.
