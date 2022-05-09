@@ -123,7 +123,7 @@ In the following example, we will run the Fleet tests for the 8.0.0-SNAPSHOT sta
 # Use the proper branch
 git checkout main
 # Run the tests for a specific branch
-TAGS="fleet_mode_agent" \
+TAGS="fleet_mode" \
     TIMEOUT_FACTOR=3 LOG_LEVEL=TRACE \
     BEAT_VERSION="7.10.1" \
     ELASTIC_AGENT_VERSION="7.10.1" \
@@ -133,7 +133,7 @@ Or running by feature file:
 ```shell
 # Use the proper branch
 git checkout main
-FEATURES="fleet_mode_agent.feature" \
+FEATURES="fleet_mode.feature" \
     TIMEOUT_FACTOR=3 LOG_LEVEL=TRACE \
     BEAT_VERSION="7.10.1" \
     ELASTIC_AGENT_VERSION="7.10.1" \

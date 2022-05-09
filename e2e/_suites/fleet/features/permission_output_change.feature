@@ -2,7 +2,7 @@
 Feature: Permission output change
 Scenarios for Permission Change
 
-@adding-integration-change-permission
+@add-linux-integration
 Scenario Outline: Adding the Linux Integration to an Agent changing Default API key
   Given a agent is deployed to Fleet with "tar" installer
     And the agent is listed in Fleet as "online"
@@ -10,7 +10,7 @@ Scenario Outline: Adding the Linux Integration to an Agent changing Default API 
   Then a Linux data stream exists with some data
     And the default API key has "changed"
 
-@updating-integration-do-not-change-permission
+@update-system-metrics-integration
 Scenario Outline: Updating the Integration on an Agent not changing Default API key
   Given an agent is deployed to Fleet with "tar" installer
     And the agent is listed in Fleet as "online"
