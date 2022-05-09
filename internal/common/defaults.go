@@ -86,7 +86,7 @@ func init() {
 		}).Info("Current execution will be instrumented 🛠")
 	}
 
-	versionRegex = regexp.MustCompile("^([0-9]+)(\\.[0-9]+)(-SNAPSHOT)?$")
+	versionRegex = regexp.MustCompile(`^([0-9]+)(\.[0-9]+)(-SNAPSHOT)?$`)
 }
 
 // InitVersions initialise default versions. We do not want to do it in the init phase
