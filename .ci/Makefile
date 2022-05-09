@@ -1,5 +1,10 @@
 PROJECT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))/..
 VENV_DIR=$(PROJECT_DIR)/.venv
+VENV_BIN_DIR=$(VENV_DIR)/bin
+ANSIBLE_GALAXY=$(VENV_BIN_DIR)/ansible-galaxy
+ANSIBLE_PLAYBOOK=$(VENV_BIN_DIR)/ansible-playbook
+PIP3=$(VENV_BIN_DIR)/pip3
+
 RUN_ID_FILE=$(PROJECT_DIR)/.ci/.runID
 RUN_ID ?= $(shell cat $(RUN_ID_FILE))
 
@@ -55,9 +60,9 @@ __check_defined = \
 setup-env:
 	$(MAKE) .runID
 	python3 -mvenv $(VENV_DIR)
-	$(VENV_DIR)/bin/pip3 -q install wheel
-	$(VENV_DIR)/bin/pip3 install ansible requests boto3 boto
-	$(VENV_DIR)/bin/ansible-galaxy install -r $(PROJECT_DIR)/.ci/ansible/requirements.yml
+	$(PIP3) -q install wheel
+	$(PIP3) install ansible requests boto3 boto
+	$(ANSIBLE_GALAXY) install -r $(PROJECT_DIR)/.ci/ansible/requirements.yml
 
 .PHONY: destroy-env
 destroy-env:
@@ -66,7 +71,7 @@ destroy-env:
 .PHONY: provision-stack
 provision-stack: .runID
 	@:$(call check_defined, RUN_ID, You need to an unique RUN_ID. To create it please run 'make .runID' goal)
-	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
 		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
@@ -78,7 +83,7 @@ setup-stack: export TAGS = non-existing-tag
 setup-stack: .runID
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
-	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
 		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
@@ -92,7 +97,7 @@ create-stack: provision-stack setup-stack
 .PHONY: destroy-stack
 destroy-stack:
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
-	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars="$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeUser=$(STACK_IMAGE)" \
 		--extra-vars="runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
@@ -115,7 +120,7 @@ show-stack:
 provision-node: .runID
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
-	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeInstanceType=$(NODE_INSTANCE_TYPE) nodeUser=$(NODE_USER)" \
 		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
@@ -127,7 +132,7 @@ setup-node: .runID
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
 	@:$(call check_defined, NODE_IP_ADDRESS, IP address of the test node not defined)
-	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeInstanceType=$(NODE_INSTANCE_TYPE) nodeUser=$(NODE_USER)" \
 		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
@@ -141,7 +146,7 @@ create-node: provision-node setup-node
 .PHONY: destroy-node
 destroy-node:
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
-	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars="$(LABELS_STRING) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeUser=$(NODE_USER)" \
 		--extra-vars="runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
@@ -153,7 +158,7 @@ destroy-node:
 fetch-test-reports: .runID
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, NODE_IP_ADDRESS, IP address of the test node not defined)
-	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeInstanceType=$(NODE_INSTANCE_TYPE) nodeUser=$(NODE_USER)" \
 		--extra-vars "nodeIP=$(NODE_IP_ADDRESS)" \
@@ -181,7 +186,7 @@ destroy-elastic-stack:
 recreate-fleet-server:
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	PROVIDER="remote" SUITE="$(SUITE)" TAGS="non-existent-tag" \
-	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
 		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
@@ -194,7 +199,7 @@ recreate-fleet-server:
 run-tests:
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$(NODE_LABEL)_$(TAGS)" \
-	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeInstanceType=$(NODE_INSTANCE_TYPE) nodeUser=$(NODE_USER)" \
 		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
