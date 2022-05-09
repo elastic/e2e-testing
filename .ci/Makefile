@@ -55,6 +55,7 @@ __check_defined = \
 setup-env:
 	$(MAKE) .runID
 	python3 -mvenv $(VENV_DIR)
+	$(VENV_DIR)/bin/pip3 -q install wheel
 	$(VENV_DIR)/bin/pip3 install ansible requests boto3 boto
 	$(VENV_DIR)/bin/ansible-galaxy install -r $(PROJECT_DIR)/.ci/ansible/requirements.yml
 
