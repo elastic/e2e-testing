@@ -205,7 +205,6 @@ pipeline {
               unstash 'source'
               dir("${BASE_DIR}") {
                 script {
-                  def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
                   // Deploy the test infrastructure
                   sh "ssh-keygen -b 4096 -t rsa -f ${E2E_SSH_KEY} -q -N \"\" "
 
@@ -265,7 +264,6 @@ pipeline {
             cleanup {
               // Once all tests are complete we need to teardown the single instance with the deployed stack
               script {
-                def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
                 def stackMachine = getMachineInfo('stack')
                 if (params.DEVELOPER_MODE) {
                   def stackRunnerIP = getNodeIp('stack')
