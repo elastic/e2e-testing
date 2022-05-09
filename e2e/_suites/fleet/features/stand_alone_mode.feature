@@ -1,8 +1,6 @@
 @stand_alone_mode
 Feature: Stand-alone Mode
-  Scenarios for a standalone mode Elastic Agent in Fleet, where an Elasticseach
-  and a Kibana instances are already provisioned, so that the Agent is able to communicate
-  with them
+  Scenarios for a the Elastic Agent running in stand-alone mode
 
 @start-agent
 Scenario Outline: Starting the <image> agent starts backend processes
