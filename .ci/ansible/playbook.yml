@@ -95,7 +95,7 @@
       - setup-stack
 
   - name: Wait for the stack to come up
-    wait_for: host={{ inventory_hostname }} port={{ item.port }} delay=10
+    wait_for: host={{ inventory_hostname }} port={{ item.port }} delay=10 timeout=60
     loop:
       - { service: 'elasticsearch', port: "9200" }
       - { service: 'kibana', port: "5601" }
