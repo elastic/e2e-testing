@@ -7,6 +7,7 @@ pipeline {
   environment {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
+    REAL_BASE_DIR = "${env.WORKSPACE}/${env.BASE_DIR}"
     ELASTIC_APM_ACTIVE="true"
     ELASTIC_APM_ENVIRONMENT="ci"
     ELASTIC_APM_LOG_FILE="stderr"
@@ -21,7 +22,7 @@ pipeline {
     GCP_PROVISIONER_SECRET = 'secret/observability-team/ci/service-account/jenkins-gce-provisioner'
     AWS_PROVISIONER_SECRET = 'secret/observability-team/ci/elastic-observability-aws-account-auth'
     TEST_MATRIX_FILE = "${params.testMatrixFile}"
-    E2E_SSH_KEY = "${env.WORKSPACE}/${env.BASE_DIR}/e2essh"
+    E2E_SSH_KEY = "${env.REAL_BASE_DIR}/e2essh"
     E2E_SSH_KEY_PUB = "${env.E2E_SSH_KEY}.pub"
     RUN_ID = UUID.randomUUID().toString()
   }
@@ -70,7 +71,7 @@ pipeline {
       options { skipDefaultCheckout() }
       environment {
         HOME = "${env.WORKSPACE}"
-        PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
+        PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.REAL_BASE_DIR}/.ci/scripts"
         GO111MODULE = 'on'
         SKIP_SCENARIOS = "${params.SKIP_SCENARIOS}"
         NIGHTLY_SCENARIOS = "${params.NIGHTLY_SCENARIOS}"
@@ -99,7 +100,7 @@ pipeline {
             gitCheckout(basedir: BASE_DIR, githubNotifyFirstTimeContributor: true)
             githubCheckNotify('PENDING')  // we want to notify the upstream about the e2e the soonest
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
-            setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
+            setEnvVar("GO_VERSION", readFile("${env.REAL_BASE_DIR}/.go-version").trim())
             setEnvVar("LABELS_STRING", "buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT} build=${env.BUILD_ID} repo=${env.REPO} branch=${env.BRANCH_NAME.toLowerCase().replaceAll('[^a-z0-9-]', '-')} type=ci")
             checkSkipTests()
           }
@@ -113,7 +114,7 @@ pipeline {
             stage('Sanity checks') {
               agent { label 'ubuntu-20.04 && immutable && docker' }
               environment {
-                PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.PATH}"
+                PATH = "${env.REAL_BASE_DIR}/bin:${env.PATH}"
                 GO111MODULE = 'auto'
               }
               options { skipDefaultCheckout() }
@@ -190,7 +191,7 @@ pipeline {
           options { skipDefaultCheckout() }
           environment {
             GO111MODULE = 'on'
-            PATH = "${env.HOME}/bin:${env.WORKSPACE}/${env.BASE_DIR}/bin:${HOME}/go/bin:${env.PATH}"
+            PATH = "${env.HOME}/bin:${env.REAL_BASE_DIR}/bin:${HOME}/go/bin:${env.PATH}"
           }
           when {
             beforeAgent true
@@ -228,7 +229,7 @@ pipeline {
           options { skipDefaultCheckout() }
           environment {
             GO111MODULE = 'on'
-            PATH = "${env.HOME}/bin:${env.WORKSPACE}/${env.BASE_DIR}/bin:${HOME}/go/bin:${env.PATH}"
+            PATH = "${env.HOME}/bin:${env.REAL_BASE_DIR}/bin:${HOME}/go/bin:${env.PATH}"
           }
           when {
             beforeAgent true
@@ -241,7 +242,7 @@ pipeline {
             withGithubNotify(context: 'E2E Tests', tab: 'tests') {
               script {
                 def suitesParam = params.runTestsSuites
-                def existingSuites = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE}")
+                def existingSuites = readYaml(file: "${env.REAL_BASE_DIR}/${TEST_MATRIX_FILE}")
                 def parallelTasks = [:]
                 if (suitesParam == "") {
                   log(level: 'DEBUG', text: "Iterate through existing test suites")
@@ -332,7 +333,7 @@ def ciBuild(Closure body){
     def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
     def awsAuthObj = awsProps?.data
     withEnv([
-      "ANSIBLE_CONFIG=${env.WORKSPACE}/${env.BASE_DIR}/.ci/ansible/ansible.cfg",
+      "ANSIBLE_CONFIG=${env.REAL_BASE_DIR}/.ci/ansible/ansible.cfg",
       "ANSIBLE_HOST_KEY_CHECKING=False",
     ]){
       withVaultToken(){
@@ -342,8 +343,8 @@ def ciBuild(Closure body){
         ]) {
           retryWithSleep(retries: 3, seconds: 5, backoff: true){
             withOtelEnv() {
-              dir("${env.BASE_DIR}") {
-                sh (label: 'Check state of Python env', script: "pwd")
+              dir("${env.REAL_BASE_DIR}") {
+                sh (label: 'Print current dir', script: "pwd")
                 sh("make -C .ci setup-env") // make sure the environment is created
                 body()
               }
@@ -360,7 +361,7 @@ def getNodeIp(nodeType){
 }
 
 def getMachineInfo(platform){
-  def machineYaml = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/.ci/.e2e-platforms.yaml")
+  def machineYaml = readYaml(file: "${env.REAL_BASE_DIR}/.ci/.e2e-platforms.yaml")
   def machines = machineYaml['PLATFORMS']
   return machines.get(platform)
 }
