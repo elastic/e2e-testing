@@ -346,6 +346,7 @@ def ciBuild(Closure body){
         ]) {
           retryWithSleep(retries: 3, seconds: 5, backoff: true){
             withOtelEnv() {
+              sh (label: 'Check state of Python env', script: 'ls -l ${env.WORKSPACE}/${env.BASE_DIR}/.venv/bin/')
               sh("make -C .ci setup-env") // make sure the environment is created
               body()
             }
