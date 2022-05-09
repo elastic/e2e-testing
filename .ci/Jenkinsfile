@@ -356,51 +356,6 @@ def ciBuild(Closure body){
   }
 }
 
-/*
- * Runs python in venv
- */
-def pyrun(command){
-  def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
-  def awsAuthObj = awsProps?.data
-  withEnv([
-    "ANSIBLE_CONFIG=${env.WORKSPACE}/.ci/ansible/ansible.cfg",
-    "ANSIBLE_HOST_KEY_CHECKING=False",
-  ]){
-    withVaultToken(){
-      withEnvMask(vars: [
-        [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
-        [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
-      ]) {
-        retryWithSleep(retries: 3, seconds: 5, backoff: true){
-          sh(script: """#!/bin/bash
-              set -eux
-              if ! test -f ${env.WORKSPACE}/.venv-installed; then
-                  python3 -m venv ${env.WORKSPACE}/.venv
-                  touch ${env.WORKSPACE}/.venv-installed
-              fi
-            """,
-            label: "Creating virtualenv"
-          )
-        }
-        retryWithSleep(retries: 3, seconds: 30, backoff: true){
-          sh(script: """#!/bin/bash
-              set -eux
-              if ! test -f ${env.WORKSPACE}/.python-dependencies; then
-                ${env.WORKSPACE}/.venv/bin/pip3 -q install wheel
-                ${env.WORKSPACE}/.venv/bin/pip3 -q install -r .ci/ansible/requirements.txt
-                ${env.WORKSPACE}/.venv/bin/ansible-galaxy install -r .ci/ansible/requirements.yml
-                touch ${env.WORKSPACE}/.python-dependencies
-              fi
-            """,
-            label: "Installing dependencies"
-          )
-        }
-        sh(script: "${env.WORKSPACE}/.venv/bin/${command}", label: "Executing ${command.split(' ')[0]}")
-      }
-    }
-  }
-}
-
 def getNodeIp(nodeType){
   return sh(label: "Get IP address of the ${nodeType}", script: "cat ${BASE_DIR}/.ci/.${nodeType}-host-ip", returnStdout: true)
 }
@@ -410,13 +365,6 @@ def getMachineInfo(platform){
   def machines = machineYaml['PLATFORMS']
   return machines.get(platform)
 }
-
-def ansible(workspace, run_id, args){
-  withOtelEnv() {
-    pyrun("ansible-playbook --private-key=\"${E2E_SSH_KEY}\" --extra-vars=\"workspace=${workspace}/ runId=${run_id} sshPublicKey=${E2E_SSH_KEY_PUB}\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${workspace}/.ci/ansible/playbook.yml ${args}")
-  }
-}
-
 
 def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   def suite = item.suite
@@ -585,7 +533,6 @@ def generateFunctionalTestStep(Map args = [:]){
         }
       } finally {
         def testRunnerIP = getNodeIp("node")
-        def userAtIP = "${machine.username}@${testRunnerIP}"
         sh "mkdir -p outputs/${testRunnerIP} || true"
         dir("${env.BASE_DIR}") {
           ciBuild() {
