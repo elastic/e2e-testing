@@ -355,7 +355,7 @@ def ciBuild(Closure body){
 }
 
 def getNodeIp(nodeType){
-  return sh(label: "Get IP address of the ${nodeType}", script: "cat ${BASE_DIR}/.ci/.${nodeType}-host-ip", returnStdout: true)
+  return sh(label: "Get IP address of the ${nodeType}", script: "cat ${REAL_BASE_DIR}/.ci/.${nodeType}-host-ip", returnStdout: true)
 }
 
 def getMachineInfo(platform){
