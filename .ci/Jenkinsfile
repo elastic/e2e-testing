@@ -271,9 +271,11 @@ pipeline {
                   def stackRunnerIP = getNodeIp('stack')
                   log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunnerIP}")
                 } else {
-                  ansible(stackWorkspace,
-                        env.RUN_ID.split('-')[0],
-                        "-t destroy --extra-vars=\"nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                  dir("${env.BASE_DIR}") {
+                    ciBuild() {
+                        sh(label: 'Destroy stack node', script: "make -C .ci destroy-stack")
+                    }
+                  }
                 }
               }
             }
