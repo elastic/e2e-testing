@@ -594,9 +594,11 @@ def generateFunctionalTestStep(Map args = [:]){
         if (params.DEVELOPER_MODE) {
           log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunnerIP}. ")
         } else {
-          ansible("${env.WORKSPACE}",
-                runId,
-                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeUser=${machine.username} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+          dir("${env.BASE_DIR}") {
+            ciBuild() {
+                sh(label: 'Destroy node', script: "make -C .ci destroy-node")
+            }
+          }
         }
         withEnv([
           "ARCHITECTURE=${goArch}",
