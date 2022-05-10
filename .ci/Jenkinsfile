@@ -509,6 +509,7 @@ def generateFunctionalTestStep(Map args = [:]){
     withNode(labels: 'ubuntu-20.04 && gobld/machineType:e2-small', forceWorkspace: true, forceWorker: true){
       try {
         deleteDir()
+        sh (label: 'Print current dir', script: "pwd")
         unstash 'sourceEnvModified'
         withEnv(envContext) {
           // This step will help to send the APM traces to the
