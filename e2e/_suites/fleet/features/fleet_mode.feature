@@ -1,5 +1,5 @@
-@fleet_mode_agent
-Feature: Fleet Mode Agent
+@fleet_mode
+Feature: Fleet Mode
   Scenarios for the Agent in Fleet mode connecting to Fleet application.
 
 Background: Setting up kibana instance with the default profile
