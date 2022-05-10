@@ -34,7 +34,7 @@ PROVIDER ?= remote
 # Suite to run
 SUITE ?= fleet
 # Tags to run. Please check out the feature files
-TAGS ?= fleet_mode_agent
+TAGS ?= fleet_mode
 
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
