@@ -10,7 +10,7 @@
       - '^TEST.*xml$'
   register: files_2_fetch
   tags:
-      - fetch-reports
+    - fetch-reports
 
 - name: Create local directory
   become: yes
@@ -19,7 +19,7 @@
     state: directory
   delegate_to: localhost
   tags:
-      - fetch-reports
+    - fetch-reports
 
 - name: Fetch the Test reports
   become: yes
@@ -30,4 +30,4 @@
     fail_on_missing: no
   with_items: "{{ files_2_fetch.files }}"
   tags:
-      - fetch-reports
+    - fetch-reports
