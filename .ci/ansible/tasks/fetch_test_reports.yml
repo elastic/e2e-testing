@@ -1,5 +1,6 @@
 ---
 - name: Find the Test reports to copy/fetch
+  become: yes
   ansible.builtin.find: 
     paths: "/home/{{ ansible_user }}/e2e-testing/outputs"
     file_type: file
@@ -12,7 +13,7 @@
       - fetch-reports
 
 - name: Create local directory
-  become: no
+  become: yes
   ansible.builtin.file:
     path: "{{ playbook_dir }}/../../outputs/{{ inventory_hostname }}"
     state: directory
@@ -21,6 +22,7 @@
       - fetch-reports
 
 - name: Fetch the Test reports
+  become: yes
   ansible.builtin.fetch:
     src: "{{ item.path }}"
     dest: "{{ playbook_dir }}/../../outputs/{{ inventory_hostname }}/"
