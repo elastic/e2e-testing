@@ -208,17 +208,17 @@ pipeline {
                 // Deploy the test infrastructure
                 sh "ssh-keygen -b 4096 -t rsa -f ${E2E_SSH_KEY} -q -N \"\" "
 
-                ciBuild() {
-                    sh(label: 'Start Stack node', script: "make -C .ci provision-stack")
-                }
-                ciBuild() {
-                    sh(label: 'Setup Stack node', script: "make -C .ci setup-stack")
+                dir("${env.REAL_BASE_DIR}") {
+                  ciBuild() {
+                      sh(label: 'Start Stack node', script: "make -C .ci provision-stack")
+                  }
+                  ciBuild() {
+                      sh(label: 'Setup Stack node', script: "make -C .ci setup-stack")
+                  }
                 }
 
-                dir("${env.REAL_BASE_DIR}") {
-                  // Update stash with latest changes from the stack deployment
-                  stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false, excludes: '.ansible'
-                }
+                // Update stash with latest changes from the stack deployment
+                stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false, excludes: '.ansible'
               }
             }
           }
@@ -270,8 +270,10 @@ pipeline {
                   def stackRunnerIP = getNodeIp('stack')
                   log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunnerIP}")
                 } else {
-                  ciBuild() {
-                    sh(label: 'Destroy stack node', script: "make -C .ci destroy-stack")
+                  dir("${env.REAL_BASE_DIR}") {
+                    ciBuild() {
+                      sh(label: 'Destroy stack node', script: "make -C .ci destroy-stack")
+                    }
                   }
                 }
               }
@@ -343,11 +345,9 @@ def ciBuild(Closure body){
         ]) {
           retryWithSleep(retries: 3, seconds: 5, backoff: true){
             withOtelEnv() {
-              dir("${env.REAL_BASE_DIR}") {
-                sh (label: 'Print current dir', script: "pwd")
-                sh("make -C .ci setup-env") // make sure the environment is created
-                body()
-              }
+              sh (label: 'Print current dir', script: "pwd")
+              sh("make -C .ci setup-env") // make sure the environment is created
+              body()
             }
           }
         }
@@ -517,45 +517,49 @@ def generateFunctionalTestStep(Map args = [:]){
           // IMPORTANT: withAPMEnv is now the one in used since withOtelEnv uses a specific Opentelemetry Collector at the moment.
           // TODO: This will need to be integrated into the provisioned VMs
           withAPMEnv() {
-            // we are separating the different test phases to avoid recreating
-            ciBuild() {
-                sh(label: 'Start node', script: "make -C .ci provision-node")
-            }
-            ciBuild() {
-                sh(label: 'Configure node for testing', script: "make -C .ci setup-node")
-            }
-            ciBuild() {
-                sh(label: 'Run tests in the node', script: "make -C .ci run-tests")
+            dir("${env.REAL_BASE_DIR}") {
+              // we are separating the different test phases to avoid recreating
+              ciBuild() {
+                  sh(label: 'Start node', script: "make -C .ci provision-node")
+              }
+              ciBuild() {
+                  sh(label: 'Configure node for testing', script: "make -C .ci setup-node")
+              }
+              ciBuild() {
+                  sh(label: 'Run tests in the node', script: "make -C .ci run-tests")
+              }
             }
           }
         }
       } finally {
-        def testRunnerIP = getNodeIp("node")
-        sh "mkdir -p outputs/${testRunnerIP} || true"
-        ciBuild() {
-          sh(label: 'Fetch tests reports from node', script: "make -C .ci fetch-test-reports")
-        }
-        sh "ls -l outputs/${testRunnerIP}"
-        if (params.DEVELOPER_MODE) {
-          log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunnerIP}. ")
-        } else {
+        dir("${env.REAL_BASE_DIR}") {
+          def testRunnerIP = getNodeIp("node")
+          sh "mkdir -p outputs/${testRunnerIP} || true"
           ciBuild() {
-              sh(label: 'Destroy node', script: "make -C .ci destroy-node")
+            sh(label: 'Fetch tests reports from node', script: "make -C .ci fetch-test-reports")
           }
+          sh "ls -l outputs/${testRunnerIP}"
+          if (params.DEVELOPER_MODE) {
+            log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunnerIP}. ")
+          } else {
+            ciBuild() {
+                sh(label: 'Destroy node', script: "make -C .ci destroy-node")
+            }
+          }
+          withEnv([
+            "ARCHITECTURE=${goArch}",
+            "CUCUMBER_REPORTS_PATH=outputs/${testRunnerIP}",
+            "PLATFORM=${platform}",
+            "SUITE=${suite}",
+            "TAGS=${tags}",
+          ]){
+            dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
+            sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
+          }
+          junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunnerIP}/TEST-*${runId}*.xml")
+          archiveArtifacts allowEmptyArchive: true,
+            artifacts: "outputs/${testRunnerIP}/TEST-*${runId}*.xml, outputs/${testRunnerIP}/TEST-*${runId}*.json, outputs/${testRunnerIP}/TEST-*${runId}*.json.html"
         }
-        withEnv([
-          "ARCHITECTURE=${goArch}",
-          "CUCUMBER_REPORTS_PATH=outputs/${testRunnerIP}",
-          "PLATFORM=${platform}",
-          "SUITE=${suite}",
-          "TAGS=${tags}",
-        ]){
-          dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
-          sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
-        }
-        junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunnerIP}/TEST-*${runId}*.xml")
-        archiveArtifacts allowEmptyArchive: true,
-          artifacts: "outputs/${testRunnerIP}/TEST-*${runId}*.xml, outputs/${testRunnerIP}/TEST-*${runId}*.json, outputs/${testRunnerIP}/TEST-*${runId}*.json.html"
       }
     }
   }
