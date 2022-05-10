@@ -215,10 +215,10 @@ pipeline {
                   ciBuild() {
                       sh(label: 'Setup Stack node', script: "make -C .ci setup-stack")
                   }
-                }
 
-                // Update stash with latest changes from the stack deployment
-                stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false, excludes: '.ansible'
+                  // Update stash with latest changes from the stack deployment
+                  stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false, excludes: '.ansible'
+                }
               }
             }
           }
