@@ -539,7 +539,7 @@ def generateFunctionalTestStep(Map args = [:]){
           ciBuild() {
             sh(label: 'Fetch tests reports from node', script: "make -C .ci fetch-test-reports")
           }
-          sh "ls -l outputs/${testRunnerIP}"
+          sh "ls -l ${env.REAL_BASE_DIR}/outputs/${testRunnerIP}"
           if (params.DEVELOPER_MODE) {
             log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunnerIP}. ")
           } else {
