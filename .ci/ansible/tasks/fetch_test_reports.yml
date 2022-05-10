@@ -15,7 +15,7 @@
 - name: Create local directory
   become: yes
   ansible.builtin.file:
-    path: "{{ playbook_dir }}/../../outputs/{{ inventory_hostname }}"
+    path: "{{ workspace }}outputs/{{ inventory_hostname }}"
     state: directory
   delegate_to: localhost
   tags:
@@ -25,7 +25,7 @@
   become: yes
   ansible.builtin.fetch:
     src: "{{ item.path }}"
-    dest: "{{ playbook_dir }}/../../outputs/{{ inventory_hostname }}/"
+    dest: "{{ workspace }}outputs/{{ inventory_hostname }}/"
     flat: yes
     fail_on_missing: no
   with_items: "{{ files_2_fetch.files }}"

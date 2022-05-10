@@ -1,4 +1,4 @@
-PROJECT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))/..
+PROJECT_DIR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../)
 VENV_DIR=$(PROJECT_DIR)/.venv
 VENV_BIN_DIR=$(VENV_DIR)/bin
 ANSIBLE_GALAXY=$(VENV_BIN_DIR)/ansible-galaxy
