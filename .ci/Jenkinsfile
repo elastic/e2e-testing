@@ -557,9 +557,9 @@ def generateFunctionalTestStep(Map args = [:]){
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
             sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
           }
-          junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunnerIP}/TEST-*${runId}*.xml")
+          junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*${runId}*.xml")
           archiveArtifacts allowEmptyArchive: true,
-            artifacts: "outputs/${testRunnerIP}/TEST-*${runId}*.xml, outputs/${testRunnerIP}/TEST-*${runId}*.json, outputs/${testRunnerIP}/TEST-*${runId}*.json.html"
+            artifacts: "${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*${runId}*.xml, ${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*${runId}*.json, ${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*${runId}*.json.html"
         }
       }
     }
