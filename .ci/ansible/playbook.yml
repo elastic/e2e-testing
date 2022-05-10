@@ -8,7 +8,7 @@
     include_tasks: tasks/runners.yml
     tags:
       - provision-stack
-      - start-node
+      - provision-node
 
 - name: Teardown environment
   hosts: localhost
@@ -90,7 +90,16 @@
 
   - name: Start stack without any tag to spin up the stack using Fleet's bootstrapping code
     become: true
-    shell: "/home/{{ ansible_user }}/e2e-testing/.ci/scripts/functional-test.sh 'non-existing-tag'"
+    shell: "TAGS='non-existing-tag' /home/{{ ansible_user }}/e2e-testing/.ci/scripts/functional-test.sh"
+    tags:
+      - setup-stack
+
+  - name: Wait for the stack to come up
+    wait_for: host={{ inventory_hostname }} port={{ item.port }} delay=10
+    loop:
+      - { service: 'elasticsearch', port: "9200" }
+      - { service: 'kibana', port: "5601" }
+      - { service: 'fleet-server', port: "8220" }
     tags:
       - setup-stack
 
@@ -112,11 +121,17 @@
         - '"arm64" not in nodeLabel'
         - 'ansible_os_family not in ["Suse"]'
     - role: andrewrothstein.kubectl
-      when: suite in ["kubernetes-autodiscover", "helm"]
+      when:
+        - suite is defined
+        - suite in ["kubernetes-autodiscover", "helm"]
     - role: andrewrothstein.kind
-      when: suite in ["kubernetes-autodiscover", "helm"]
+      when:
+        - suite is defined
+        - suite in ["kubernetes-autodiscover", "helm"]
     - role: geerlingguy.helm
-      when: suite in ["kubernetes-autodiscover", "helm"]
+      when:
+        - suite is defined
+        - suite in ["kubernetes-autodiscover", "helm"]
     - role: gantsign.golang
       vars:
         golang_version: 1.17
@@ -146,3 +161,4 @@
     tags:
       - setup-node
       - copy-source
+      - scripts

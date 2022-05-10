@@ -32,80 +32,139 @@ It's possible that a consumer of the e2e tests would need to define a specific l
 
 The following variables need to be exported:
 
-- *RUN_ID*: This is a unique identifying ID for the current run. It can be an arbitrary name or something like this:
-
-```
-export RUN_ID=$(uuidgen|cut -d'-' -f1)
-```
-
 - *AWS_SECRET_ACCESS_KEY*: AWS secret access key
 - *AWS_ACCESS_KEY_ID*: AWS access key id
 
 Install python deps:
 
-```
-> python3 -mvenv venv
-> venv/bin/pip3 install ansible requests boto3 boto
-> venv/bin/ansible-galaxy install -r .ci/ansible/requirements.yml
+```shell
+make -C .ci setup-env
 ```
 
-### Deploy stack
+It will create a `.runID` under the `.ci` directory. It will contain an unique identifier for your machines, which will be added as a VM tag.
 
-```
-> venv/bin/ansible-playbook .ci/ansible/playbook.yml \
-    --private-key="$HOME/.ssh/id_rsa" \
-    --extra-vars "nodeLabel=stack nodeImage=ami-0d90bed76900e679a nodeInstanceType=c5.4xlarge" \
-    --extra-vars "runId=$RUN_ID workspace=$HOME/Projects/e2e-testing/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
-    --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
-    -t provision-stack
-```
+We are able to run the Elastic Stack and all the test suites in AWS instances, so whenever a build failed we will be able to recreate the same machine and access it to inspect its state: logs, files, containers... For that, we are enabling SSH access to those ephemeral machines, which can be created following this guide.
 
-Make note of the IP address displayed in the ansible summary.
+But you must first understand that there are two types of Cloud machines: 
+1) the VM running the stack, and 
+2) the VMs running the actual tests, where the Elastic Agent will be installed and enrolled into the stack.
 
-### Setup stack
+### Create and configure the stack VM
 
-```
-> venv/bin/ansible-playbook .ci/ansible/playbook.yml \
-    --private-key="$HOME/.ssh/id_rsa" \
-    --extra-vars "nodeLabel=stack nodeImage=ami-0d90bed76900e679a nodeInstanceType=c5.4xlarge" \
-    --extra-vars "runId=$RUN_ID workspace=$HOME/Projects/e2e-testing/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
-    --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
-    -t setup-stack \
-    -i <ip address above>,
+This specialised VM starts Elasticsearch, Kibana and Fleet Server using Docker Compose, but instead of invoking the compose file directly, it uses the test framework to do it. Why? Because we need to wait for Elasticsearch to be ready and request an API Token to be passed to the Fleet Server container. And [we do this with code](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/e2e/_suites/fleet/fleet.go#L631-L748).
+
+The VM is a Debian AMD64 machine, as described [here](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/.ci/.e2e-platforms.yaml#L3-L7).
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" # optional, defaults to $(HOME)/.ssh/id_rsa
+make -C .ci create-stack
 ```
 
-**Note**: The comma at the end of the ip address is required.
+A `.stack-host-ip` file will be created in the `.ci` directory of the project including the IP address of the stack instance. Check it out from that file, or make a note of the IP address displayed in the ansible summary, as you'll probably need it to connect your browser to open Kibana, or to SSH into it for troubleshooting.
 
-### Deploy test node
+> The IP address of the stack in the `.stack-host-ip` file will be used by the automation.
 
-```
-> venv/bin/ansible-playbook .ci/ansible/playbook.yml \
-    --private-key="$HOME/.ssh/id_rsa" \
-    --extra-vars "stackRunner=<ip address from above> nodeLabel=fleet_amd64 nodeImage=ami-0d90bed76900e679a nodeInstanceType=c5.4xlarge" \
-    --extra-vars "runId=$RUN_ID workspace=$HOME/Projects/e2e-testing/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
-    --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
-    -t setup-stack
-```
+Please remember to [destroy the stack](#destroying-the-stack-and-the-test-node) once you finished your testing.
 
-Make note of the ip address displayed in the ansible summary.
+### Create and configure the test node
 
-### Setup test node
+There are different VM flavours that you can use to run the Elastic Agent and enroll it into the Stack: Debian, CentOS, SLES15, Oracle Linux... using AMD and ARM as architecture. You can find the full reference of the platform support [here](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/.ci/.e2e-platforms.yaml#L2-L42).
 
-```
-> venv/bin/ansible-playbook .ci/ansible/playbook.yml \
-    --private-key="$HOME/.ssh/id_rsa" \
-    --extra-vars "stackRunner=<ip address from above> nodeLabel=fleet_amd64 nodeImage=ami-0d90bed76900e679a nodeInstanceType=c5.4xlarge" \
-    --extra-vars "runId=$RUN_ID workspace=$HOME/Projects/e2e-testing/ sshPublicKey=$HOME/.ssh/id_rsa.pub" \
-    --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
-    -t setup-node \
-    -i <ip address of node from above>,
+In these VMs, the test framework will download a binary to install the Elastic Agent (TAR files, DEB/RPM packages...), and will execute the different agent commands to install, enroll, uninstall, etc.
+
+It's possible to configure the test node (OS, architecture), using the values that are already present in [the platforms descriptor](.e2e-platforms.yaml):
+
+```shell
+# example for Centos 8 ARM 64
+export NODE_IMAGE="ami-01cdc9e8306344fe0"
+export NODE_INSTANCE_TYPE="a1.large"
+export NODE_LABEL="centos8_arm64"
+export NODE_USER="centos"
 ```
 
-**Note**: The comma at the end of the ip address is required.
+Besides that, it's possible to configure the test node for the different test suites that are present in the test framework: `fleet`, `helm` and `kubernetes-autodiscover`. Please configure the test node setting the suite, being `fleet` the default:
+
+```shell
+# all possible suites
+export SUITE="fleet"
+export SUITE="helm"
+export SUITE="kubernetes-autodiscover"
+```
+
+Finally, please create the test node:
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+export SUITE="fleet"
+make -C .ci create-node
+```
+
+A `.node-host-ip` file will be created in the `.ci` directory of the project including the IP address of the node instance. Check it out from that file, or make a note of the IP address displayed in the ansible summary, as you'll probably need it to SSH into it for troubleshooting.
+
+> The IP address of the node in that file will be used by the automation.
+
+Please remember to [destroy the node](#destroying-the-stack-and-the-test-node) once you have finished your testing.
 
 ### Run a test suite
 
+You can select the specific tags that you want to include in the test execution. Please look for the different tags in the existing feature files for the suite you are interested in running. For that, please check out the tags/annotations that are present in those feature files (`*.feature`), which live in the `features` directory under your test suite. In example, for `fleet` test suite, you can find them [here](../e2e/_suites/fleet/features/).
+
+```shell
+# example tags
+export TAGS="fleet_mode"
+export TAGS="system_integration"
+export TAGS="apm-server"
+export TAGS="kubernetes-autodiscover && elastic-agent"
 ```
-> ssh -i $HOME/.ssh/id_rsa admin@<node ip address>
-node> sudo bash e2e-testing/.ci/scripts/functional-test.sh "fleet_mode_agent"
+
+It's important that you consider reading about [the environment variables affecting the build](../e2e/README.md#environment-variables-affecting-the-build), as you could pass them to Make to run the tests with different options, such as a Github commit sha and repo (for testing a PR), the elastic-agent version, for testing a previous version of the agent, to name a few.
+
+Finally, run the tests:
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci run-tests TAGS="fleet_mode && install"
+```
+
+### Showing current nodes configuration
+
+If you want to check the current IP address, instance types, SSH user of the nodes you are working with, please run the following commands:
+
+```shell
+make -C .ci show-stack
+make -C .ci show-node
+```
+
+### SSH into a remote VM
+
+Once you have created and set up the remote machines with the above instructions, you can SSH into both the stack and the test node machines. In order to do so, you must be allowed to do so first, and for that, please add your Github username in alphabetical order to [this file](../.ci/ansible/github-ssh-keys), keeping a blank line as file ending. For the CI to work, the file including your user must be merged into the project, but for local development you can keep the file in the local state.
+
+> When submitting the pull request with your user to enable the SSH access, please remember to add the right backport labels (ex. `backport-v8.2.0`) so that you will be able to SSH into the CI machines for all supported maintenance branches.
+
+To SSH into the machines, please use the following commads:
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci ssh-stack
+make -C .ci ssh-node
+```
+
+### Destroying the Elastic Stack and recreating fleet-server
+
+Sometimes you need to tear down the Elastic Stack, or recreate the fleet-server, mostly in the case the API Token used for Fleet Server [expired after 1 hour](https://www.elastic.co/guide/en/elasticsearch/reference/current/security-settings.html#token-service-settings).
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci destroy-elastic-stack
+make -C .ci recreate-fleet-server
+```
+
+### Destroying the stack and the test nodes
+
+Do not forget to destroy the stack and nodes once you're done with your tests!
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci destroy-stack
+make -C .ci destroy-node
 ```

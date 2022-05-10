@@ -11,8 +11,8 @@ Scenario Outline: Deploying a <image> stand-alone agent with the Elastic APM int
 
 @default
 Examples: default
-  | image   |
-  | default |
+| image   |
+| default |
 
 @ubi8
 Examples: Ubi8
