@@ -13,7 +13,5 @@ Examples: Stale versions
 | stale-version |
 | latest |
 | 8.2.0 |
-| 8.1.2 |
-| 8.1.1 |
 | 8.1.0 |
 | 7.17-SNAPSHOT |
