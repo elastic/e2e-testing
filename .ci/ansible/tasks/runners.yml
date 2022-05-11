@@ -31,6 +31,8 @@
       build: "{{build | default('Not running on CI')}}"
       build_url: "{{buildURL | default('Not running on CI') }}"
       created_date: "{{ansible_date_time.epoch}}"
+      e2e_suite: "{{ lookup('env', 'SUITE') or 'Not running on CI' }}"
+      e2e_tags: "{{ lookup('env', 'TAGS') or 'Not running on CI' }}"
       environment: "{{type | default('Not running on CI')}}"
       git_sha: "{{ gitSha | default('Not running on CI')}}"
       kind: "{{nodeLabel}}"
