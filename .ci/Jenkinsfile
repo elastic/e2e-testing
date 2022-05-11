@@ -549,7 +549,7 @@ def generateFunctionalTestStep(Map args = [:]){
                 sh(label: 'Fetch tests reports from node', script: "make -C .ci fetch-test-reports")
               }
             }
-            sh "ls -l ${env.REAL_BASE_DIR}/outputs/${testRunnerIP}"
+            sh "ls -l outputs/${testRunnerIP}"
             if (params.DEVELOPER_MODE) {
               log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunnerIP}. ")
             } else {
@@ -569,9 +569,9 @@ def generateFunctionalTestStep(Map args = [:]){
               dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
               sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
             }
-            junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*.xml")
+            junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunnerIP}/TEST-*.xml")
             archiveArtifacts allowEmptyArchive: true,
-              artifacts: "${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*.xml, ${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*.json, ${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*.json.html"
+              artifacts: "outputs/${testRunnerIP}/TEST-*.xml, outputs/${testRunnerIP}/TEST-*.json, outputs/${testRunnerIP}/TEST-*.json.html"
           }
         }
       }
