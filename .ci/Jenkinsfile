@@ -213,7 +213,9 @@ pipeline {
                       sh(label: 'Start Stack node', script: "make -C .ci provision-stack")
                   }
                   ciBuild() {
+                    retryWithSleep(retries: 3, seconds: 5, backoff: true){
                       sh(label: 'Setup Stack node', script: "make -C .ci setup-stack")
+                    }
                   }
 
                   // Update stash with latest changes from the stack deployment
@@ -272,7 +274,9 @@ pipeline {
                 } else {
                   dir("${env.REAL_BASE_DIR}") {
                     ciBuild() {
-                      sh(label: 'Destroy stack node', script: "make -C .ci destroy-stack")
+                      retryWithSleep(retries: 3, seconds: 5, backoff: true){
+                        sh(label: 'Destroy stack node', script: "make -C .ci destroy-stack")
+                      }
                     }
                   }
                 }
@@ -343,12 +347,10 @@ def ciBuild(Closure body){
           [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
           [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
         ]) {
-          retryWithSleep(retries: 3, seconds: 5, backoff: true){
-            withOtelEnv() {
-              sh (label: 'Print current dir', script: "pwd")
-              sh("make -C .ci setup-env") // make sure the environment is created
-              body()
-            }
+          withOtelEnv() {
+            sh (label: 'Print current dir', script: "pwd")
+            sh("make -C .ci setup-env") // make sure the environment is created
+            body()
           }
         }
       }
@@ -522,7 +524,9 @@ def generateFunctionalTestStep(Map args = [:]){
                   sh(label: 'Start node', script: "make -C .ci provision-node")
               }
               ciBuild() {
+                retryWithSleep(retries: 3, seconds: 5, backoff: true){
                   sh(label: 'Configure node for testing', script: "make -C .ci setup-node")
+                }
               }
               ciBuild() {
                   sh(label: 'Run tests in the node', script: "make -C .ci run-tests")
@@ -536,14 +540,18 @@ def generateFunctionalTestStep(Map args = [:]){
             def testRunnerIP = getNodeIp("node")
             sh "mkdir -p outputs/${testRunnerIP} || true"
             ciBuild() {
-              sh(label: 'Fetch tests reports from node', script: "make -C .ci fetch-test-reports")
+              retryWithSleep(retries: 3, seconds: 5, backoff: true){
+                sh(label: 'Fetch tests reports from node', script: "make -C .ci fetch-test-reports")
+              }
             }
             sh "ls -l ${env.REAL_BASE_DIR}/outputs/${testRunnerIP}"
             if (params.DEVELOPER_MODE) {
               log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunnerIP}. ")
             } else {
               ciBuild() {
+                retryWithSleep(retries: 3, seconds: 5, backoff: true){
                   sh(label: 'Destroy node', script: "make -C .ci destroy-node")
+                }
               }
             }
             withEnv([
