@@ -33,6 +33,7 @@ REPORT_PREFIX=${REPORT_PREFIX:-"${SUITE}_${GOARCH}_${TAGS}"}
 rm -rf outputs || true
 mkdir -p outputs
 
+REPORT_PREFIX=$(echo "$REPORT_PREFIX" | sed -r 's/[ @~]+//g')
 REPORT="$(pwd)/outputs/TEST-${REPORT_PREFIX}"
 
 TAGS="${TAGS}" FORMAT="pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml" GOARCH="${GOARCH}" STACK_VERSION="${STACK_VERSION}" BEAT_VERSION="${BEAT_VERSION}" ELASTIC_AGENT_VERSION="${ELASTIC_AGENT_VERSION}" make --no-print-directory -C e2e/_suites/${SUITE} functional-test

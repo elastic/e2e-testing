@@ -146,6 +146,7 @@
 
        "${BASE_DIR}/.ci/scripts/install-test-dependencies.sh" "${SUITE}"
 
+       REPORT_PREFIX=$(echo "$REPORT_PREFIX" | sed -r 's/[ @~]+//g')
        SEED="$(date +%Y-%m-%d-%H:%M:%S)"
        REPORT="${BASE_DIR}/outputs/TEST-${REPORT_PREFIX}-{{runId}}-${SEED}"
 
