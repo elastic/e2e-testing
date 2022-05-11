@@ -155,6 +155,18 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 			return err
 		}
 
+		if downloads.IsAlias(version) {
+			v, err := downloads.GetElasticArtifactVersion(version)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"error":   err,
+					"version": version,
+				}).Warn("Failed to get the version, keeping current version")
+			} else {
+				version = v
+			}
+		}
+
 		output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), metadata.Os, metadata.Arch), artifact})
 		log.WithFields(log.Fields{
 			"output":   output,

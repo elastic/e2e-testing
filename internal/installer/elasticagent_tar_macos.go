@@ -143,7 +143,20 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), metadata.Os, metadata.Arch), "/elastic-agent"})
+	version := common.ElasticAgentVersion
+	if downloads.IsAlias(version) {
+		v, err := downloads.GetElasticArtifactVersion(version)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"version": version,
+			}).Warn("Failed to get the version, keeping current version")
+		} else {
+			version = v
+		}
+	}
+
+	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), metadata.Os, metadata.Arch), "/elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
