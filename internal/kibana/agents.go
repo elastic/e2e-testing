@@ -313,10 +313,11 @@ func (c *Client) UpgradeAgent(ctx context.Context, hostname string, version stri
 		return err
 	}
 
+	version = downloads.RemoveCommitFromSnapshot(version)
 	reqBody := `{"version":"` + version + `"}`
 	versionHeader := HTTPHeader{
 		key:   "kbn-version",
-		value: downloads.RemoveCommitFromSnapshot(version), // kibana does not accept hashed snapshots in this header
+		value: version, // kibana does not accept hashed snapshots in this header
 	}
 
 	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/agents/%s/upgrade", FleetAPI, agentID), []byte(reqBody), versionHeader)
