@@ -62,7 +62,7 @@ setup-env:
 	$(MAKE) .runID
 	python3 -mvenv $(VENV_DIR)
 	$(PIP3) -q install wheel
-	$(PIP3) install ansible requests boto3 boto
+	$(PIP3) install -r $(PROJECT_DIR)/.ci/ansible/requirements.txt
 	$(ANSIBLE_GALAXY) install -r $(PROJECT_DIR)/.ci/ansible/requirements.yml
 
 .PHONY: destroy-env
