@@ -503,8 +503,6 @@ def generateFunctionalTestStep(Map args = [:]){
   envContext.add("NODE_INSTANCE_TYPE=${machine.instance_type}")
   envContext.add("NODE_USER=${machine.username}")
 
-  def runId = UUID.randomUUID().toString().split('-')[0]
-
   return {
     withNode(labels: 'ubuntu-20.04 && gobld/machineType:e2-small', forceWorkspace: true, forceWorker: true){
       try {
@@ -557,9 +555,9 @@ def generateFunctionalTestStep(Map args = [:]){
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
             sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
           }
-          junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*${runId}*.xml")
+          junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*.xml")
           archiveArtifacts allowEmptyArchive: true,
-            artifacts: "${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*${runId}*.xml, ${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*${runId}*.json, ${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*${runId}*.json.html"
+            artifacts: "${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*.xml, ${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*.json, ${env.REAL_BASE_DIR}/outputs/${testRunnerIP}/TEST-*.json.html"
         }
       }
     }
