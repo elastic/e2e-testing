@@ -415,7 +415,7 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	agentInVersionFn := func() error {
 		retryCount++
 
-		agent, err := fts.kibanaClient.GetAgentByHostnameFromList(fts.currentContext, manifest.Hostname)
+		agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"agent":       agent,

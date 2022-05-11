@@ -118,6 +118,42 @@ func (c *Client) GetAgentStatusByHostname(ctx context.Context, hostname string) 
 	return resp.Item.Status, nil
 }
 
+// GetAgentByHostname gets agent version by hostname
+func (c *Client) GetAgentByHostname(ctx context.Context, hostname string) (Agent, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Getting Elastic Agent status by hostname", "fleet.agent.get-status-by-hostname", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	agentID, err := c.GetAgentIDByHostname(ctx, hostname)
+	if err != nil {
+		return Agent{}, err
+	}
+
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/agents/%s", FleetAPI, agentID))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":       respBody,
+			"error":      err,
+			"statusCode": statusCode,
+		}).Error("Could not get agent response")
+		return Agent{}, err
+	}
+
+	var resp struct {
+		Item Agent `json:"item"`
+	}
+
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return Agent{}, errors.Wrap(err, "could not convert agent (response) to JSON")
+	}
+
+	log.WithFields(log.Fields{
+		"agentStatus": resp.Item.Status,
+	}).Trace("Agent Status found")
+	return resp.Item, nil
+}
+
 // GetAgentEvents get events of agent
 func (c *Client) GetAgentEvents(ctx context.Context, applicationName string, agentID string, packagePolicyID string, updatedAt string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Getting agent events", "fleet.elastic-agent.get-events", apm.SpanOptions{
