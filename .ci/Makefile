@@ -167,7 +167,7 @@ fetch-test-reports: .runID
 		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t fetch-reports \
-		-i $(NODE_IP_ADDRESS),
+		-i $(NODE_IP_ADDRESS), -vvvv
 
 .PHONY: ssh-node
 ssh-node:
