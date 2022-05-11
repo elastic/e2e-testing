@@ -45,6 +45,10 @@ var GithubCommitSha1 string
 // Default is "elastic-agent"
 var GithubRepository string
 
+// The compiled version of the regex created at init() is cached here so it
+// only needs to be created once.
+var versionAliasRegex *regexp.Regexp
+
 func init() {
 	GithubCommitSha1 = shell.GetEnv("GITHUB_CHECK_SHA1", "")
 	GithubRepository = shell.GetEnv("GITHUB_CHECK_REPO", "elastic-agent")
@@ -53,6 +57,8 @@ func init() {
 	if BeatsLocalPath != "" {
 		log.Infof(`Beats local path will be used for artifacts. Please make sure all binaries are properly built in their "build/distributions" folder: %s`, BeatsLocalPath)
 	}
+
+	versionAliasRegex = regexp.MustCompile(`^([0-9]+)(\.[0-9]+)(-SNAPSHOT)?$`)
 }
 
 // elasticVersion represents a version
@@ -64,6 +70,23 @@ type elasticVersion struct {
 }
 
 func newElasticVersion(version string) *elasticVersion {
+	aliasMatch := versionAliasRegex.FindStringSubmatch(version)
+	if aliasMatch != nil {
+		v, err := GetElasticArtifactVersion(version)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"version": version,
+			}).Error("Failed to get version")
+			return nil
+		}
+		version = v
+	} else {
+		log.WithFields(log.Fields{
+			"version": version,
+		}).Trace("Version is not an alias.")
+	}
+
 	versionWithoutCommit := RemoveCommitFromSnapshot(version)
 	versionWithoutSnapshot := strings.ReplaceAll(version, "-SNAPSHOT", "")
 	versionWithoutCommitAndSnapshot := strings.ReplaceAll(versionWithoutCommit, "-SNAPSHOT", "")
@@ -226,6 +249,12 @@ func GetSnapshotVersion(version string) string {
 // GetVersion returns a version without snapshot or commit
 func GetVersion(version string) string {
 	return newElasticVersion(version).Version
+}
+
+// IsAlias checks if the passed version is an alias: ex. 8.2-SNAPSHOT
+func IsAlias(version string) bool {
+	aliasMatch := versionAliasRegex.FindStringSubmatch(version)
+	return aliasMatch != nil
 }
 
 // RemoveCommitFromSnapshot removes the commit from a version including commit and SNAPSHOT
