@@ -103,7 +103,7 @@ A `.node-host-ip` file will be created in the `.ci` directory of the project inc
 
 > The IP address of the node in that file will be used by the automation.
 
-Please remember to [destroy the node](#destroying-the-stack-and-the-test-node) once you have finished your testing.
+Please remember to [destroy the node](#destroying-the-stack-and-the-test-nodes) once you have finished your testing.
 
 ### Run a test suite
 
