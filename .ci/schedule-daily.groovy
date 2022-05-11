@@ -1,4 +1,4 @@
-@Library('apm@main') _
+@Library('apm@current') _
 
 pipeline {
   agent none
