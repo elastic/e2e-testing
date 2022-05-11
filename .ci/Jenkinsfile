@@ -206,12 +206,17 @@ pipeline {
                 sh "ssh-keygen -b 4096 -t rsa -f ${E2E_SSH_KEY} -q -N \"\" "
 
                 dir("${env.REAL_BASE_DIR}") {
-                  ciBuild() {
+                  withEnv([
+                    "SUITE=fleet",
+                    "TAGS=non-existing-tag"
+                  ]) {
+                    ciBuild() {
                       sh(label: 'Start Stack node', script: "make -C .ci provision-stack")
-                  }
-                  ciBuild() {
-                    retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                      sh(label: 'Setup Stack node', script: "make -C .ci setup-stack")
+                    }
+                    ciBuild() {
+                      retryWithSleep(retries: 3, seconds: 5, backoff: true){
+                        sh(label: 'Setup Stack node', script: "make -C .ci setup-stack")
+                      }
                     }
                   }
 
