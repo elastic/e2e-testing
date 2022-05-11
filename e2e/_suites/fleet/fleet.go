@@ -415,7 +415,7 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	agentInVersionFn := func() error {
 		retryCount++
 
-		agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
+		agent, err := fts.kibanaClient.GetAgentByHostnameFromList(fts.currentContext, manifest.Hostname)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"agent":       agent,
@@ -474,7 +474,7 @@ func (fts *FleetTestSuite) agentRunPolicy(policyName string) error {
 			return fmt.Errorf("Policy not found '%s'", policyName)
 		}
 
-		agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
+		agent, err := fts.kibanaClient.GetAgentByHostnameFromList(fts.currentContext, manifest.Hostname)
 		if err != nil {
 			return err
 		}
@@ -1611,7 +1611,7 @@ func inputs(integration string) []kibana.Input {
 func (fts *FleetTestSuite) getAgentOSData() (string, error) {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
-	agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
+	agent, err := fts.kibanaClient.GetAgentByHostnameFromList(fts.currentContext, manifest.Hostname)
 	if err != nil {
 		return "", err
 	}
@@ -1621,7 +1621,7 @@ func (fts *FleetTestSuite) getAgentOSData() (string, error) {
 func (fts *FleetTestSuite) getAgentDefaultAPIKey() (string, error) {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
-	agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
+	agent, err := fts.kibanaClient.GetAgentByHostnameFromList(fts.currentContext, manifest.Hostname)
 	if err != nil {
 		return "", err
 	}

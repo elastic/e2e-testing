@@ -43,8 +43,8 @@ type Agent struct {
 	Status string `json:"status"`
 }
 
-// GetAgentByHostname get an agent by the local_metadata.host.name property
-func (c *Client) GetAgentByHostname(ctx context.Context, hostname string) (Agent, error) {
+// GetAgentByHostnameFromList get an agent by the local_metadata.host.name property, reading from the agents list
+func (c *Client) GetAgentByHostnameFromList(ctx context.Context, hostname string) (Agent, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Getting Elastic Agent by hostname", "fleet.agent.get-by-hostname", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -71,7 +71,7 @@ func (c *Client) GetAgentByHostname(ctx context.Context, hostname string) (Agent
 
 // GetAgentIDByHostname gets agent id by hostname
 func (c *Client) GetAgentIDByHostname(ctx context.Context, hostname string) (string, error) {
-	agent, err := c.GetAgentByHostname(ctx, hostname)
+	agent, err := c.GetAgentByHostnameFromList(ctx, hostname)
 	if err != nil {
 		return "", err
 	}
