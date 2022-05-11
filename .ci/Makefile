@@ -10,7 +10,7 @@ RUN_ID ?= $(shell cat $(RUN_ID_FILE))
 
 SSH_KEY ?= $(HOME)/.ssh/id_rsa
 SSH_KEY_PUBLIC = $(SSH_KEY).pub
-SSH_OPTS=-tt -o TCPKeepAlive=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+SSH_OPTS=-o TCPKeepAlive=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
 
 # Debian 10 AMD (see .e2e-platforms.yaml)
 STACK_IMAGE=ami-0d90bed76900e679a
@@ -194,7 +194,7 @@ recreate-fleet-server:
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t scripts \
 		-i $(STACK_IP_ADDRESS),
-	ssh $(SSH_OPTS) -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo bash /home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh'
+	ssh -tt $(SSH_OPTS) -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo bash /home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh'
 
 .PHONY: run-tests
 run-tests:
@@ -207,4 +207,4 @@ run-tests:
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t scripts \
 		-i $(NODE_IP_ADDRESS),
-	ssh $(SSH_OPTS) -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'source /home/$(NODE_USER)/e2e-testing/.env; sudo -preserve-env bash /home/$(NODE_USER)/e2e-testing/.ci/scripts/functional-test.sh "$(TAGS)"'
+	ssh -tt $(SSH_OPTS) -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'source /home/$(NODE_USER)/e2e-testing/.env; sudo -preserve-env bash /home/$(NODE_USER)/e2e-testing/.ci/scripts/functional-test.sh "$(TAGS)"'
