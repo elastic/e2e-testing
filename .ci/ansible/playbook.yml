@@ -112,7 +112,9 @@
   pre_tasks:
     - name: Update apt cache.
       apt: update_cache=yes cache_valid_time=600
-      when: ansible_pkg_mgr == 'apt'
+      when: 
+        - ansible_facts['os_family'] != "Windows"
+        - ansible_pkg_mgr == 'apt'
   roles:
     - role: geerlingguy.docker
       docker_daemon_options:
