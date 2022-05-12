@@ -29,6 +29,7 @@
     - setup-stack
   pre_tasks:
     - name: Update apt cache.
+      become: True
       apt: update_cache=yes cache_valid_time=600
       when: ansible_pkg_mgr == 'apt'
   roles:
@@ -112,6 +113,7 @@
   pre_tasks:
     - name: Update apt cache.
       apt: update_cache=yes cache_valid_time=600
+      become: True
       when: 
         - ansible_facts['os_family'] != "Windows"
         - ansible_pkg_mgr == 'apt'
