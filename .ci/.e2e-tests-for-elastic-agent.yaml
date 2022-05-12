@@ -3,7 +3,7 @@ SUITES:
   - suite: "fleet"
     scenarios:
       - name: "Fleet"
-        tags: "fleet_mode_agent"
+        tags: "fleet_mode"
         platforms: ["centos8_arm64", "centos8_amd64", "debian_arm64", "debian_amd64", "sles15", "windows2019"]
       - name: "Integrations"
         tags: "integrations"
@@ -21,7 +21,7 @@ SUITES:
         tags: "system_integration"
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
       # - name: "Stand-alone"
-      #   tags: "stand_alone_agent"
+      #   tags: "stand_alone_mode"
       #   platforms: ["fleet_elastic_pkg"]
       - name: "Backend Processes"
         tags: "backend_processes"

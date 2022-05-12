@@ -25,7 +25,7 @@ pipeline {
     quietPeriod(10)
   }
   triggers {
-    cron '0 0 * * 0'
+    cron '30 1 * * *'
   }
   stages {
     stage('Reap AWS instances'){
