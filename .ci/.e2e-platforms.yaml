@@ -42,6 +42,6 @@ PLATFORMS:
     username: ogc
   fleet_elastic_pkg:
     description: "Debian 10 AMD64"
-    image: "ami-0d90bed76900e679a"
+    image: "ami-038f1e4512905b02e"
     instance_type: "t3.xlarge"
     username: admin
