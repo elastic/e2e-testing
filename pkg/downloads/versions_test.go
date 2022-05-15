@@ -518,6 +518,16 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 	})
 }
 
+func Test_IsAlias(t *testing.T) {
+	t.Run("From not an alias", func(t *testing.T) {
+		assert.False(t, IsAlias("1.2.3-SNAPSHOT"), "Version should not be an alias")
+	})
+
+	t.Run("From an alias", func(t *testing.T) {
+		assert.True(t, IsAlias("1.2-SNAPSHOT"), "Version should be an alias")
+	})
+}
+
 func Test_NewElasticVersion(t *testing.T) {
 	t.Run("newElasticVersion without git commit", func(t *testing.T) {
 		v := newElasticVersion("1.2.3-SNAPSHOT")
