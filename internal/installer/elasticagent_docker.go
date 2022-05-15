@@ -18,15 +18,24 @@ import (
 
 // elasticAgentDockerPackage implements operations for a docker installer
 type elasticAgentDockerPackage struct {
-	service deploy.ServiceRequest
-	deploy  deploy.Deployment
+	elasticAgentPackage
 }
 
 // AttachElasticAgentDockerPackage creates an instance for the docker installer
-func AttachElasticAgentDockerPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentDockerPackage(d deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentDockerPackage{
-		service: service,
-		deploy:  deploy,
+		elasticAgentPackage{
+			service: service,
+			deploy:  d,
+			metadata: deploy.ServiceInstallerMetadata{
+				PackageType:   "docker",
+				Os:            "linux",
+				Arch:          utils.GetArchitecture(),
+				FileExtension: "tar.gz",
+				XPack:         true,
+				Docker:        true,
+			},
+		},
 	}
 }
 
@@ -95,19 +104,16 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 
 	// handle ubi8 images
 	artifact := "elastic-agent" + common.ProfileEnv["elasticAgentDockerImageSuffix"]
-	os := "linux"
-	arch := utils.GetArchitecture()
-	extension := "tar.gz"
 
-	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, common.ElasticAgentVersion, os, arch, extension, true, true)
+	metadata := i.metadata
+
+	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, i.service.Version, metadata.Os, metadata.Arch, metadata.FileExtension, metadata.Docker, metadata.XPack)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"artifact":  artifact,
-			"version":   common.ElasticAgentVersion,
-			"os":        os,
-			"arch":      arch,
-			"extension": extension,
-			"error":     err,
+			"artifact":        artifact,
+			"version":         i.service.Version,
+			"packageMetadata": metadata,
+			"error":           err,
 		}).Error("Could not download the binary for the agent")
 		return err
 	}
@@ -120,9 +126,9 @@ func (i *elasticAgentDockerPackage) Preinstall(ctx context.Context) error {
 	// we need to tag the loaded image because its tag relates to the target branch
 	return deploy.TagImage(
 		fmt.Sprintf("docker.elastic.co/beats/%s:%s", artifact, downloads.GetSnapshotVersion(common.BeatVersionBase)),
-		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), arch),
+		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), metadata.Arch),
 		// tagging including git commit and snapshot
-		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, downloads.GetFullVersion(common.ElasticAgentVersion), arch),
+		fmt.Sprintf("docker.elastic.co/observability-ci/%s:%s-%s", artifact, downloads.GetFullVersion(common.ElasticAgentVersion), metadata.Arch),
 	)
 }
 
@@ -188,4 +194,9 @@ func (i *elasticAgentDockerPackage) Uninstall(ctx context.Context) error {
 		return fmt.Errorf("failed to uninstall the agent with subcommand: %v", err)
 	}
 	return nil
+}
+
+// Upgrade upgrades a Docker package
+func (i *elasticAgentDockerPackage) Upgrade(ctx context.Context, version string) error {
+	return doUpgrade(ctx, i)
 }

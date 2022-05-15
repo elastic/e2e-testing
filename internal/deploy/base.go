@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
@@ -39,10 +40,12 @@ type ServiceOperator interface {
 	Logs(ctx context.Context) error
 	Postinstall(ctx context.Context) error
 	Preinstall(ctx context.Context) error
-	Restart(ctx context.Context) error // will restart a service
-	Start(ctx context.Context) error   // will start a service
-	Stop(ctx context.Context) error    // will stop a service
+	Restart(ctx context.Context) error     // will restart a service
+	Start(ctx context.Context) error       // will start a service
+	Stop(ctx context.Context) error        // will stop a service
+	PkgMetadata() ServiceInstallerMetadata // return the package
 	Uninstall(ctx context.Context) error
+	Upgrade(ctx context.Context, version string) error
 }
 
 // ServiceOperation represents an action that can be run within a ServiceOperator
@@ -66,6 +69,16 @@ type ServiceManifest struct {
 	Platform   string // running in linux, macos, windows
 }
 
+// ServiceInstallerMetadata information about the installer
+type ServiceInstallerMetadata struct {
+	Arch          string
+	Docker        bool
+	FileExtension string
+	Os            string
+	PackageType   string
+	XPack         bool
+}
+
 // WaitForServiceRequest list of wait strategies for a service, including host, port and the strategy itself
 type WaitForServiceRequest struct {
 	Service  string
@@ -76,10 +89,11 @@ type WaitForServiceRequest struct {
 // ServiceRequest represents the service to be created using the provider
 type ServiceRequest struct {
 	Name                string
-	BackgroundProcesses []string                // optional, configured using builder method to add processes that must be installed in the service
-	Flavour             string                  // optional, configured using builder method
-	IsContainer         bool                    // optional, set to true when the service is backed by a container
-	Scale               int                     // default: 1
+	BackgroundProcesses []string // optional, configured using builder method to add processes that must be installed in the service
+	Flavour             string   // optional, configured using builder method
+	IsContainer         bool     // optional, set to true when the service is backed by a container
+	Scale               int      // default: 1
+	Version             string
 	WaitStrategies      []WaitForServiceRequest // wait strategies for the service
 }
 
@@ -89,6 +103,7 @@ func NewServiceRequest(n string) ServiceRequest {
 		Name:                n,
 		BackgroundProcesses: []string{},
 		Scale:               1,
+		Version:             common.ElasticAgentVersion,
 		WaitStrategies:      []WaitForServiceRequest{},
 	}
 }
@@ -133,6 +148,12 @@ func (sr ServiceRequest) WithScale(s int) ServiceRequest {
 	}
 
 	sr.Scale = s
+	return sr
+}
+
+// WithVersion adds a version for the service
+func (sr ServiceRequest) WithVersion(v string) ServiceRequest {
+	sr.Version = v
 	return sr
 }
 
