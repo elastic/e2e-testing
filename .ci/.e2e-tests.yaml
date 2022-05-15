@@ -41,6 +41,9 @@ SUITES:
       - name: "Beats Background Processes"
         tags: "running_on_beats"
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
+      - name: "Upgrade Agent"
+        tags: "upgrade_agent"
+        platforms: ["debian_arm64", "debian_amd64", "sles15"]
   - suite: "kubernetes-autodiscover"
     provider: "docker"
     scenarios:
