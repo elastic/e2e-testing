@@ -40,6 +40,12 @@ SUITES:
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
       - name: "Beats Background Processes"
         tags: "running_on_beats"
+<<<<<<< HEAD
+=======
+        platforms: ["debian_arm64", "debian_amd64", "oracle_linux8", "sles15"]
+      - name: "Upgrade Agent"
+        tags: "upgrade_agent"
+>>>>>>> 724340dd (fix: install stale agent properly (#2354))
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
   - suite: "kubernetes-autodiscover"
     provider: "docker"
