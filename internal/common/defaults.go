@@ -5,8 +5,6 @@
 package common
 
 import (
-	"regexp"
-
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
@@ -32,10 +30,6 @@ const FleetProfileName = "fleet"
 
 // FleetServerAgentServiceName the name of the service for the Elastic Agent
 const FleetServerAgentServiceName = "fleet-server"
-
-// AgentStaleVersion is the version of the agent to use as a base during upgrade
-// It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var AgentStaleVersion = "7.17-SNAPSHOT"
 
 // BeatVersionBase is the base version of the Beat to use
 var BeatVersionBase = "8.2.1-91d7a53f-SNAPSHOT"
@@ -66,10 +60,6 @@ var Provider = "docker"
 // It can be overriden by STACK_VERSION env var
 var StackVersion = BeatVersionBase
 
-// The compiled version of the regex created at init() is cached here so it
-// only needs to be created once.
-var versionRegex *regexp.Regexp
-
 func init() {
 	DeveloperMode = shell.GetEnvBool("DEVELOPER_MODE")
 	if DeveloperMode {
@@ -85,8 +75,6 @@ func init() {
 			"apm-environment": shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "local"),
 		}).Info("Current execution will be instrumented 🛠")
 	}
-
-	versionRegex = regexp.MustCompile(`^([0-9]+)(\.[0-9]+)(-SNAPSHOT)?$`)
 }
 
 // InitVersions initialise default versions. We do not want to do it in the init phase
@@ -106,8 +94,7 @@ func InitVersions() {
 
 	// check if version is an alias. For compatibility versions let's
 	// support aliases in the format major.minor
-	m := versionRegex.FindStringSubmatch(BeatVersion)
-	if m != nil {
+	if downloads.IsAlias(BeatVersion) {
 		v, err = downloads.GetElasticArtifactVersion(BeatVersion)
 		if err != nil {
 			log.WithFields(log.Fields{
