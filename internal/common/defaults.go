@@ -31,13 +31,6 @@ const FleetProfileName = "fleet"
 // FleetServerAgentServiceName the name of the service for the Elastic Agent
 const FleetServerAgentServiceName = "fleet-server"
 
-<<<<<<< HEAD
-// AgentStaleVersion is the version of the agent to use as a base during upgrade
-// It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var AgentStaleVersion = "7.17.3-SNAPSHOT"
-
-=======
->>>>>>> 724340dd (fix: install stale agent properly (#2354))
 // BeatVersionBase is the base version of the Beat to use
 var BeatVersionBase = "7.17.4-153c53bf-SNAPSHOT"
 
