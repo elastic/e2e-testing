@@ -161,21 +161,12 @@ Because we are able to parameterize a CI job, it's possible to run regression te
 To do so:
 
 1. Navigate to Jenkins: https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-mbp/
-<<<<<<< HEAD
-1. Login as a user
-1. Select the base branch for the test code: main (for 8.0.0-SNAPSHOT), 7.17, or any other maintenance branch.
-1. In the left menu, click on `Buid with Parameters`.
-1. In the input parameters form, set the stack version (for Fleet) using the specific variables for the test suite.
-1. (Optional) Set the product version (Fleet or Helm charts) using the specific variables for the test suite if you want to consume a different artifact.
-1. Click the `Build` button at the bottom of the parameters form.
-=======
 2. Login as a user
 3. Select the base branch for the test code: main (for 8.0.0-SNAPSHOT), 7.16, or any other maintenance branch.
 4. In the left menu, click on `Buid with Parameters`.
 5. In the input parameters form, set the stack version (for Fleet) using the specific variables for the test suite.
 6. (Optional) Set the product version (Fleet or Helm charts) using the specific variables for the test suite if you want to consume a different artifact.
 7. Click the `Build` button at the bottom of the parameters form.
->>>>>>> 33862532 (chore: use a nightly profile (#2531))
 
 Here you have a video reproducing the same steps:
 ![](./regression-testing.gif)

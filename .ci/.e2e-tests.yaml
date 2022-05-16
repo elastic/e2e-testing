@@ -40,14 +40,7 @@ SUITES:
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
       - name: "Beats Background Processes"
         tags: "running_on_beats"
-<<<<<<< HEAD
-        platforms: ["debian_arm64", "debian_amd64", "sles15"]
-      - name: "Upgrade Agent"
-        tags: "upgrade_agent"
-        platforms: ["debian_arm64", "debian_amd64", "sles15"]
-=======
         platforms: ["debian_arm64", "debian_amd64", "oracle_linux8", "sles15"]
->>>>>>> 33862532 (chore: use a nightly profile (#2531))
   - suite: "kubernetes-autodiscover"
     provider: "docker"
     scenarios:
