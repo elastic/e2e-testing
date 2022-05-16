@@ -137,6 +137,18 @@
     ansible_user: "{{nodeUser}}"
     pip_package: "python3-pip"
   tasks:
+
+  - name: Install Kubernetes using Role
+    include_role:
+      name: "{{ item }}"
+    with_items:
+      - andrewrothstein.kubectl
+      - andrewrothstein.kind
+    when:
+      - ansible_facts['os_family'] != "Windows"
+      - suite is defined
+      - suite in ["kubernetes-autodiscover", "helm"]
+
   - name: Install deps
     include_tasks: tasks/install_deps.yml
     tags:
