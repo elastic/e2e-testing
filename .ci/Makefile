@@ -172,7 +172,7 @@ recreate-fleet-server:
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t scripts \
 		-i $(STACK_IP_ADDRESS),
-	ssh -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo bash /home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh'
+	ssh -t -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'bash --login -c /home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh'
 
 .PHONY: run-tests
 run-tests:
