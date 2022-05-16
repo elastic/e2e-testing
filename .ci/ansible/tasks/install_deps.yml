@@ -80,9 +80,13 @@
   when: ansible_distribution in ["OracleLinux"]
 
 - name: Install ssh-import-id python package to copy public SSH keys from Github accounts
-  become: True
   pip:
     name: ssh-import-id
+  when: ansible_distribution not in ["Windows"]
+
+- name: Install ssh-import-id python package on Windows
+  ansible.windows.win_shell: pip install ssh-import-id
+  when: ansible_distribution in ["Windows"]
 
 - name: Set sshd configuration for client alive settings
   become: True
