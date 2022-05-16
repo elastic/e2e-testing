@@ -26,15 +26,9 @@ SUITES:
       - name: "Linux Integration"
         tags: "linux_integration"
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
-      # - name: "Permissions Output change"
-      #   tags: "permission_change"
-      #   platforms: ["debian_arm64", "debian_amd64", "sles15"]
       - name: "System Integration"
         tags: "system_integration"
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
-      # - name: "Stand-alone"
-      #   tags: "stand_alone_mode"
-      #   platforms: ["fleet_elastic_pkg"]
       - name: "Backend Processes"
         tags: "backend_processes"
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
