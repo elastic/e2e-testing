@@ -123,17 +123,10 @@
         default-ulimit: ["nofile=1024000:1024000"]
       when:
         - '"arm64" not in nodeLabel'
-        - 'ansible_os_family not in ["Suse"]'
-    - role: andrewrothstein.kubectl
-      when:
-        - suite is defined
-        - suite in ["kubernetes-autodiscover", "helm"]
-    - role: andrewrothstein.kind
-      when:
-        - suite is defined
-        - suite in ["kubernetes-autodiscover", "helm"]
+        - 'ansible_os_family not in ["Suse", "Windows"]'
     - role: geerlingguy.helm
       when:
+        - ansible_facts['os_family'] != "Windows"
         - suite is defined
         - suite in ["kubernetes-autodiscover", "helm"]
     - role: mdelapenya.go

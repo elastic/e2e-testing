@@ -12,7 +12,9 @@
   register: package_install_res
   retries: 5
   until: package_install_res is success
-  when: ansible_pkg_mgr == 'apt'
+  when:
+    - ansible_os_family not in ["Windows"]
+    - ansible_pkg_mgr == 'apt'
 
 - name: Install dependencies (SUSE)
   become: True
@@ -31,7 +33,9 @@
       - rsync
       - wget
     state: present
-  when: ansible_pkg_mgr == 'zypper' or ansible_os_family == "Suse"
+  when:
+    - ansible_facts['os_family'] != "Windows"
+    - ansible_os_family == "Suse" or ansible_pkg_mgr == 'zypper'
 
 - name: Install dependencies (CentOS)
   become: True
