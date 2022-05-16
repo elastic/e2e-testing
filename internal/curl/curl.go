@@ -48,6 +48,13 @@ func Delete(r HTTPRequest) (string, error) {
 	return request(r)
 }
 
+// Head executes a HEAD request
+func Head(r HTTPRequest) (string, error) {
+	r.method = "HEAD"
+
+	return request(r)
+}
+
 // Get executes a GET request
 func Get(r HTTPRequest) (string, error) {
 	r.method = "GET"
