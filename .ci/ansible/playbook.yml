@@ -52,6 +52,16 @@
     include_tasks: tasks/install_deps.yml
     tags:
       - setup-node
+  
+  - name: "Adding user {{ ansible_user }} to the Docker group"
+    become: yes
+    ansible.builtin.user:
+      name: "{{ ansible_user }}"
+      groups: docker
+      append: True
+    tags:
+      - setup-stack
+
   - name: Create environment file
     local_action:
       module: copy
