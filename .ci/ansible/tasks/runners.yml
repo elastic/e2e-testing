@@ -56,7 +56,6 @@
     - provision-node
 
 - name: Add AWS host to ssh address list
-  become: no
   lineinfile:
     state: present
     line: "- {{ nodeUser }}@{{addr.public_ip}}"
@@ -71,7 +70,6 @@
     - provision-node
 
 - name: Add stack AWS host to ssh address list
-  become: no
   copy:
     dest: "{{workspace}}/.ci/.stack-host-ip"
     content: "{{addr.public_ip}}"
@@ -83,7 +81,6 @@
     - provision-stack
 
 - name: Add node AWS host to ssh address list
-  become: no
   copy:
     dest: "{{workspace}}/.ci/.node-host-ip"
     content: "{{addr.public_ip}}"

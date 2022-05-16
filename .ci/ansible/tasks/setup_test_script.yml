@@ -132,7 +132,6 @@
     - scripts
 
 - name: Create Fleet test script file
-  become: no
   copy:
     owner: "{{ansible_user}}"
     mode: '0777'

@@ -1,5 +1,4 @@
 ---
 - name: Install SSH keys
-  become: false
   shell: |
     /home/{{ansible_user}}/{{ e2e_project_name }}/.ci/scripts/import-ssh-keys.sh

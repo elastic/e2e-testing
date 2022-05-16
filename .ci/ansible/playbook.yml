@@ -24,7 +24,6 @@
 - name: Manage stack instance
   hosts: all
   connection: ssh
-  become: True
   vars_files:
     - vars/main.yml
   tags:
@@ -54,7 +53,6 @@
     tags:
       - setup-node
   - name: Create environment file
-    become: no
     local_action:
       module: copy
       dest: "{{workspace}}/.env"
@@ -94,7 +92,6 @@
       - setup-stack
 
   - name: Start stack without any tag to spin up the stack using Fleet's bootstrapping code
-    become: true
     shell: "TAGS='non-existing-tag' /home/{{ ansible_user }}/{{ e2e_project_name }}/.ci/scripts/functional-test.sh"
     tags:
       - setup-stack
@@ -111,7 +108,6 @@
 - name: Manage runner instances
   hosts: all
   connection: ssh
-  become: False
   vars_files:
     - vars/main.yml
   tags:
