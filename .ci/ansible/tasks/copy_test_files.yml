@@ -2,11 +2,18 @@
 - name: Create outputs dir
   become: no
   ansible.builtin.file:
-    path: "/home/{{ansible_user}}/e2e-testing/outputs"
+    path: "{{ e2e_base_dir }}outputs"
     state: directory
     mode: '0755'
-    owner: "{{ansible_user}}"
+    owner: "{{ ansible_user }}"
+  when: ansible_os_family not in ["Windows"]
+
+- name: Create outputs dir on Windows
+  ansible.windows.win_file:
+    path: "{{ e2e_base_dir }}outputs"
+    state: directory
+  when: ansible_os_family in ["Windows"]
 
 - name: Copy source code
   become: no
-  local_action: ansible.builtin.command rsync --exclude='.venv' --exclude='.git' -e 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ansible_ssh_private_key_file}}' -aW {{ workspace }} {{ ansible_user }}@{{ inventory_hostname }}:e2e-testing/.
+  local_action: ansible.builtin.command rsync --exclude='.venv' --exclude='.git' -e 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ansible_ssh_private_key_file}}' -aW {{ workspace }} {{ ansible_user }}@{{ inventory_hostname }}:{{ e2e_project_name }}/.

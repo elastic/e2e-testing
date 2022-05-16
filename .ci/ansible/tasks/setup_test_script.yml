@@ -4,7 +4,7 @@
     state: present
     line: "{{ item }}"
     insertafter: EOF
-    dest: "/home/{{ ansible_user }}/e2e-testing/.env"
+    dest: "/home/{{ ansible_user }}/{{ e2e_project_name }}/.env"
     create: yes
   with_items:
     - "export SUITE=\"fleet\""
@@ -25,7 +25,7 @@
     state: present
     line: "{{item}}"
     insertafter: EOF
-    dest: "/home/{{ansible_user}}/e2e-testing/.env"
+    dest: "/home/{{ansible_user}}/{{ e2e_project_name }}/.env"
     create: yes
   with_items:
     - "export SUITE=\"{{ lookup('env', 'SUITE') or 'fleet' }}\""
@@ -45,7 +45,7 @@
     state: present
     line: "{{ item }}"
     insertafter: EOF
-    dest: "/home/{{ ansible_user }}/e2e-testing/.env"
+    dest: "/home/{{ ansible_user }}/{{ e2e_project_name }}/.env"
     create: yes
   with_items:
     - "export ELASTICSEARCH_URL=\"http://{{ stackRunner }}:9200\""
@@ -63,7 +63,7 @@
     state: present
     line: "{{item}}"
     insertafter: EOF
-    dest: "/home/{{ansible_user}}/e2e-testing/.env"
+    dest: "/home/{{ansible_user}}/{{ e2e_project_name }}/.env"
     create: yes
   with_items:
     - "export SUITE=\"{{ lookup('env', 'SUITE') or 'fleet' }}\""
@@ -77,7 +77,7 @@
     state: present
     line: "{{item}}"
     insertafter: EOF
-    dest: "/home/{{ansible_user}}/e2e-testing/.env"
+    dest: "/home/{{ansible_user}}/{{ e2e_project_name }}/.env"
     create: yes
   with_items:
     - "export SUITE=\"{{ lookup('env', 'SUITE') or 'kubernetes-autodiscover' }}\""
@@ -95,7 +95,7 @@
     state: present
     line: "{{item}}"
     insertafter: EOF
-    dest: "/home/{{ansible_user}}/e2e-testing/.env"
+    dest: "/home/{{ansible_user}}/{{ e2e_project_name }}/.env"
     create: yes
   with_items:
     - "export SUITE=\"{{ lookup('env', 'SUITE') or 'helm' }}\""
@@ -115,7 +115,7 @@
     state: present
     line: "{{item}}"
     insertafter: EOF
-    dest: "/home/{{ansible_user}}/e2e-testing/.env"
+    dest: "/home/{{ansible_user}}/{{ e2e_project_name }}/.env"
     create: yes
   with_items:
     - "export TAGS=\"{{ lookup('env', 'TAGS') }}\""
@@ -136,12 +136,12 @@
   copy:
     owner: "{{ansible_user}}"
     mode: '0777'
-    dest: "/home/{{ansible_user}}/e2e-testing/.ci/scripts/functional-test.sh"
+    dest: "/home/{{ansible_user}}/{{ e2e_project_name }}/.ci/scripts/functional-test.sh"
     content: |
        #!/usr/bin/env bash
        set -euxo pipefail
 
-       BASE_DIR="/home/{{ansible_user}}/e2e-testing"
+       BASE_DIR="/home/{{ansible_user}}/{{ e2e_project_name }}"
        source "${BASE_DIR}/.env"
 
        "${BASE_DIR}/.ci/scripts/install-test-dependencies.sh" "${SUITE}"

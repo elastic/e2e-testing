@@ -3,3 +3,5 @@ ansible_connection: "ssh"
 ansible_distribution: "Windows"
 ansible_shell_type: "cmd"
 ansible_python_interpreter: "C:\Python310\\python.exe"
+
+e2e_base_dir: "C:\\Users\\{{ ansible_user }}\\{{ e2e_project_name }}\\"

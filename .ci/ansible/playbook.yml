@@ -82,16 +82,16 @@
       regexp: '{{ item.old }}'
       replace: '{{ item.new }}'
     loop:
-      - { old: 'http://elasticsearch', new: 'http://{{ inventory_hostname }}', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml" }
-      - { old: 'http://fleet-server', new: 'http://{{ inventory_hostname }}', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml" }
-      - { old: 'http://kibana', new: 'http://{{ inventory_hostname }}', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/services/elastic-agent/fleet-server/docker-compose.yml" }
-      - { old: 'http://package-registry:8080', new: 'https://epr-staging.elastic.co', path: "/home/{{ ansible_user }}/e2e-testing/cli/config/compose/profiles/fleet/default/kibana.config.yml" }
+      - { old: 'http://elasticsearch', new: 'http://{{ inventory_hostname }}', path: "/home/{{ ansible_user }}/{{ e2e_project_name }}/cli/config/compose/profiles/fleet/default/kibana.config.yml" }
+      - { old: 'http://fleet-server', new: 'http://{{ inventory_hostname }}', path: "/home/{{ ansible_user }}/{{ e2e_project_name }}/cli/config/compose/profiles/fleet/default/kibana.config.yml" }
+      - { old: 'http://kibana', new: 'http://{{ inventory_hostname }}', path: "/home/{{ ansible_user }}/{{ e2e_project_name }}/cli/config/compose/services/elastic-agent/fleet-server/docker-compose.yml" }
+      - { old: 'http://package-registry:8080', new: 'https://epr-staging.elastic.co', path: "/home/{{ ansible_user }}/{{ e2e_project_name }}/cli/config/compose/profiles/fleet/default/kibana.config.yml" }
     tags:
       - setup-stack
 
   - name: Start stack without any tag to spin up the stack using Fleet's bootstrapping code
     become: true
-    shell: "TAGS='non-existing-tag' /home/{{ ansible_user }}/e2e-testing/.ci/scripts/functional-test.sh"
+    shell: "TAGS='non-existing-tag' /home/{{ ansible_user }}/{{ e2e_project_name }}/.ci/scripts/functional-test.sh"
     tags:
       - setup-stack
 
@@ -108,6 +108,8 @@
   hosts: all
   connection: ssh
   become: False
+  vars_files:
+    - vars/main.yml
   tags:
     - setup-node
   pre_tasks:
