@@ -39,6 +39,7 @@ pipeline {
       steps {
         runE2E(jobName: "${env.JOB_BASE_NAME}",
                nightlyScenarios: true,
+               testMatrixFile: '.ci/.e2e-tests-nightly.yaml',
                notifyOnGreenBuilds: 'false',
                runTestsSuites: 'fleet',
                slackChannel: 'elastic-agent',
