@@ -40,6 +40,8 @@
       become: True
       docker_daemon_options:
         default-ulimit: ["nofile=1024000:1024000"]
+      docker_users:
+        - "{{ ansible_user }}"
     - role: andrewrothstein.kubectl
     - role: andrewrothstein.kind
     - role: mdelapenya.go
@@ -54,15 +56,6 @@
     include_tasks: tasks/install_deps.yml
     tags:
       - setup-node
-  
-  - name: "Adding user {{ ansible_user }} to the Docker group"
-    become: yes
-    ansible.builtin.user:
-      name: "{{ ansible_user }}"
-      groups: docker
-      append: True
-    tags:
-      - setup-stack
 
   - name: Create environment file
     local_action:
@@ -145,6 +138,8 @@
       become: True
       docker_daemon_options:
         default-ulimit: ["nofile=1024000:1024000"]
+      docker_users:
+        - "{{ ansible_user }}"
       when:
         - '"arm64" not in nodeLabel'
         - 'ansible_os_family not in ["Suse", "Windows"]'
@@ -178,16 +173,6 @@
   - name: Install deps
     include_tasks: tasks/install_deps.yml
     tags:
-      - setup-node
-
-  - name: "Adding user {{ ansible_user }} to the Docker group"
-    become: yes
-    ansible.builtin.user:
-      name: "{{ ansible_user }}"
-      groups: docker
-      append: True
-    tags:
-      - ansible_facts['os_family'] != "Windows"
       - setup-node
 
   - name: Setup source code
