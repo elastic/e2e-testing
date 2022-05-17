@@ -37,11 +37,13 @@
       when: ansible_pkg_mgr == 'apt'
   roles:
     - role: geerlingguy.docker
+      become: True
       docker_daemon_options:
         default-ulimit: ["nofile=1024000:1024000"]
     - role: andrewrothstein.kubectl
     - role: andrewrothstein.kind
     - role: mdelapenya.go
+      become: True
       vars:
         go_version: 1.17
   vars:
@@ -140,6 +142,7 @@
         - ansible_pkg_mgr == 'apt'
   roles:
     - role: geerlingguy.docker
+      become: True
       docker_daemon_options:
         default-ulimit: ["nofile=1024000:1024000"]
       when:
@@ -151,6 +154,7 @@
         - suite is defined
         - suite in ["kubernetes-autodiscover", "helm"]
     - role: mdelapenya.go
+      become: True
       vars:
         go_version: 1.17
   vars:
