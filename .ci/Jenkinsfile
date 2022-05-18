@@ -11,7 +11,6 @@ pipeline {
     ELASTIC_APM_ENVIRONMENT="ci"
     ELASTIC_APM_LOG_FILE="stderr"
     ELASTIC_APM_LOG_LEVEL="debug"
-    NIGHTLY_TAG="@nightly"
     NOTIFY_TO = credentials('notify-to')
     JOB_GCS_BUCKET = credentials('gcs-bucket')
     JOB_GIT_CREDENTIALS = "2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken"
@@ -40,7 +39,7 @@ pipeline {
     booleanParam(name: 'Run_As_Main_Branch', defaultValue: false, description: 'Allow to run any steps on a PR, some steps normally only run on main branch.')
     booleanParam(name: "DEVELOPER_MODE", defaultValue: false, description: "If checked, cloud resources won't be destroyed at the end of the pipeline. Default false")
     booleanParam(name: "SKIP_SCENARIOS", defaultValue: true, description: "If it's needed to skip those scenarios marked as @skip. Default true")
-    booleanParam(name: "NIGHTLY_SCENARIOS", defaultValue: false, description: "If it's needed to include the scenarios marked as @nightly in the test execution. Default false")
+    booleanParam(name: "NIGHTLY_SCENARIOS", defaultValue: false, description: "Deprecated. Not used in this pipeline any more. Please refer to the 'testMatrixFile' param, which defines what scenarios to run")
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
     string(name: 'testMatrixFile', defaultValue: '.ci/.e2e-tests.yaml', description: 'The file with the test suite and scenarios to be tested.')
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
@@ -70,7 +69,6 @@ pipeline {
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
         GO111MODULE = 'on'
         SKIP_SCENARIOS = "${params.SKIP_SCENARIOS}"
-        NIGHTLY_SCENARIOS = "${params.NIGHTLY_SCENARIOS}"
         SLACK_CHANNEL = "${params.SLACK_CHANNEL.trim()}"
         ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
         BEAT_VERSION = "${params.BEAT_VERSION.trim()}"
@@ -507,15 +505,6 @@ def generateFunctionalTestStep(Map args = [:]){
   def tags = args.get('tags')
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
   def machine = args.get('machine')
-
-  // We will decide whether to include the nightly tests in the execution at CI time, only.
-  // On the other hand, the developers can use the TAGS environment variable locally.
-  // Finally, we positively know that tags are not empty, so we can use AND operator.
-  def excludeNightlyTag = " && ~${NIGHTLY_TAG}"
-  if ("${NIGHTLY_SCENARIOS}" == "true") {
-    excludeNightlyTag = ""
-  }
-  tags += excludeNightlyTag
 
   // TODO: Is this still relevant?
   if (isPR() || isUpstreamTrigger(filter: 'PR-')) {

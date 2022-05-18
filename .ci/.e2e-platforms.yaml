@@ -25,11 +25,6 @@ PLATFORMS:
     image: "ami-0d90bed76900e679a"
     instance_type: "t3.xlarge"
     username: admin
-  oracle_linux8:
-    description: "Oracle Linux 8 update 3 for x86_64 HVM"
-    image: "ami-00371eeb8fd8e0e16"
-    instance_type: "t3.xlarge"
-    username: ec2-user
   sles15:
     description: "SUSE Linux Enterprise Server 15 SP3 (HVM), SSD Volume Type -  64bit ARM"
     image: "ami-0f7cb53c916a75006"
