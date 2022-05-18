@@ -195,7 +195,7 @@ recreate-fleet-server:
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t scripts \
 		-i $(STACK_IP_ADDRESS),
-	ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo bash /home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh'
+	ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo bash --login -c /home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh'
 
 .PHONY: run-tests
 run-tests:
@@ -208,4 +208,4 @@ run-tests:
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t scripts \
 		-i $(NODE_IP_ADDRESS),
-	ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'source /home/$(NODE_USER)/e2e-testing/.env; sudo -preserve-env bash /home/$(NODE_USER)/e2e-testing/.ci/scripts/functional-test.sh "$(TAGS)"'
+	ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'source /home/$(NODE_USER)/e2e-testing/.env; sudo -preserve-env bash --login -c /home/$(NODE_USER)/e2e-testing/.ci/scripts/functional-test.sh "$(TAGS)"'
