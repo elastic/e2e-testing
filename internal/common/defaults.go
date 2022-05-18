@@ -31,12 +31,8 @@ const FleetProfileName = "fleet"
 // FleetServerAgentServiceName the name of the service for the Elastic Agent
 const FleetServerAgentServiceName = "fleet-server"
 
-// AgentStaleVersion is the version of the agent to use as a base during upgrade
-// It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var AgentStaleVersion = "7.17-SNAPSHOT"
-
 // BeatVersionBase is the base version of the Beat to use
-var BeatVersionBase = "8.3.0-5c1ff35f-SNAPSHOT"
+var BeatVersionBase = "8.3.0-e4aa1f83-SNAPSHOT"
 
 // BeatVersion is the version of the Beat to use
 // It can be overriden by BEAT_VERSION env var
@@ -96,15 +92,22 @@ func InitVersions() {
 
 	BeatVersion = shell.GetEnv("BEAT_VERSION", BeatVersionBase)
 
-	// check if version is an alias
-	v, err = downloads.GetElasticArtifactVersion(BeatVersion)
-	if err != nil {
+	// check if version is an alias. For compatibility versions let's
+	// support aliases in the format major.minor
+	if downloads.IsAlias(BeatVersion) {
+		v, err = downloads.GetElasticArtifactVersion(BeatVersion)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"version": BeatVersion,
+			}).Fatal("Failed to get Beat version, aborting")
+		}
+		BeatVersion = v
+	} else {
 		log.WithFields(log.Fields{
-			"error":   err,
 			"version": BeatVersion,
-		}).Fatal("Failed to get Beat version, aborting")
+		}).Trace("Version is not an alias.")
 	}
-	BeatVersion = v
 
 	// detects if the BeatVersion is set by the GITHUB_CHECK_SHA1 variable
 	fallbackVersion := BeatVersionBase

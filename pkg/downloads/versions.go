@@ -45,6 +45,10 @@ var GithubCommitSha1 string
 // Default is "elastic-agent"
 var GithubRepository string
 
+// The compiled version of the regex created at init() is cached here so it
+// only needs to be created once.
+var versionAliasRegex *regexp.Regexp
+
 func init() {
 	GithubCommitSha1 = shell.GetEnv("GITHUB_CHECK_SHA1", "")
 	GithubRepository = shell.GetEnv("GITHUB_CHECK_REPO", "elastic-agent")
@@ -53,6 +57,8 @@ func init() {
 	if BeatsLocalPath != "" {
 		log.Infof(`Beats local path will be used for artifacts. Please make sure all binaries are properly built in their "build/distributions" folder: %s`, BeatsLocalPath)
 	}
+
+	versionAliasRegex = regexp.MustCompile(`^([0-9]+)(\.[0-9]+)(-SNAPSHOT)?$`)
 }
 
 // elasticVersion represents a version
@@ -64,6 +70,23 @@ type elasticVersion struct {
 }
 
 func newElasticVersion(version string) *elasticVersion {
+	aliasMatch := versionAliasRegex.FindStringSubmatch(version)
+	if aliasMatch != nil {
+		v, err := GetElasticArtifactVersion(version)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"version": version,
+			}).Error("Failed to get version")
+			return nil
+		}
+		version = v
+	} else {
+		log.WithFields(log.Fields{
+			"version": version,
+		}).Trace("Version is not an alias.")
+	}
+
 	versionWithoutCommit := RemoveCommitFromSnapshot(version)
 	versionWithoutSnapshot := strings.ReplaceAll(version, "-SNAPSHOT", "")
 	versionWithoutCommitAndSnapshot := strings.ReplaceAll(versionWithoutCommit, "-SNAPSHOT", "")
@@ -123,90 +146,9 @@ func GetCommitVersion(version string) string {
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-x86_64.rpm", "elastic-agent","$VERSION")
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-linux-$ARCH.tar.gz", "elastic-agent","$VERSION")
 func GetElasticArtifactURL(artifactName string, artifact string, version string) (string, string, error) {
-	exp := utils.GetExponentialBackOff(time.Minute)
+	resolver := NewArtifactURLResolver(artifactName, artifact, version)
 
-	retryCount := 1
-
-	body := ""
-
-	tmpVersion := version
-	hasCommit := SnapshotHasCommit(version)
-	if hasCommit {
-		log.WithFields(log.Fields{
-			"version": version,
-		}).Trace("Removing SNAPSHOT from version including commit")
-
-		// remove the SNAPSHOT from the VERSION as the artifacts API supports commits in the version, but without the snapshot suffix
-		tmpVersion = GetCommitVersion(version)
-	}
-
-	apiStatus := func() error {
-		r := curl.HTTPRequest{
-			URL: fmt.Sprintf("https://artifacts-api.elastic.co/v1/search/%s/%s?x-elastic-no-kpi=true", tmpVersion, artifact),
-		}
-
-		response, err := curl.Get(r)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"artifact":       artifact,
-				"artifactName":   artifactName,
-				"version":        tmpVersion,
-				"error":          err,
-				"retry":          retryCount,
-				"statusEndpoint": r.URL,
-				"elapsedTime":    exp.GetElapsedTime(),
-			}).Warn("The Elastic artifacts API is not available yet")
-
-			retryCount++
-
-			return err
-		}
-
-		log.WithFields(log.Fields{
-			"retries":        retryCount,
-			"statusEndpoint": r.URL,
-			"elapsedTime":    exp.GetElapsedTime(),
-		}).Debug("The Elastic artifacts API is available")
-
-		body = response
-		return nil
-	}
-
-	err := backoff.Retry(apiStatus, exp)
-	if err != nil {
-		return "", "", err
-	}
-
-	jsonParsed, err := gabs.ParseJSON([]byte(body))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"artifact":     artifact,
-			"artifactName": artifactName,
-			"version":      tmpVersion,
-		}).Error("Could not parse the response body for the artifact")
-		return "", "", err
-	}
-
-	log.WithFields(log.Fields{
-		"retries":      retryCount,
-		"artifact":     artifact,
-		"artifactName": artifactName,
-		"elapsedTime":  exp.GetElapsedTime(),
-		"version":      tmpVersion,
-	}).Trace("Artifact found")
-
-	if hasCommit {
-		// remove commit from the artifact as it comes like this: elastic-agent-8.0.0-abcdef-SNAPSHOT-darwin-x86_64.tar.gz
-		artifactName = RemoveCommitFromSnapshot(artifactName)
-	}
-
-	packagesObject := jsonParsed.Path("packages")
-	// we need to get keys with dots using Search instead of Path
-	downloadObject := packagesObject.Search(artifactName)
-	downloadURL := downloadObject.Path("url").Data().(string)
-	downloadshaURL := downloadObject.Path("sha_url").Data().(string)
-
-	return downloadURL, downloadshaURL, nil
+	return resolver.Resolve()
 }
 
 // GetElasticArtifactVersion returns the current version:
@@ -307,6 +249,12 @@ func GetSnapshotVersion(version string) string {
 // GetVersion returns a version without snapshot or commit
 func GetVersion(version string) string {
 	return newElasticVersion(version).Version
+}
+
+// IsAlias checks if the passed version is an alias: ex. 8.2-SNAPSHOT
+func IsAlias(version string) bool {
+	aliasMatch := versionAliasRegex.FindStringSubmatch(version)
+	return aliasMatch != nil
 }
 
 // RemoveCommitFromSnapshot removes the commit from a version including commit and SNAPSHOT
@@ -531,7 +479,17 @@ func FetchProjectBinaryForSnapshots(ctx context.Context, useCISnapshots bool, pr
 		return handleDownload(downloadURL)
 	}
 
-	downloadURL, downloadShaURL, err = GetElasticArtifactURL(artifactName, artifact, version)
+	elasticAgentNamespace := project
+	if strings.EqualFold(elasticAgentNamespace, "elastic-agent") {
+		elasticAgentNamespace = "beats"
+	}
+
+	// look up the binaries, first checking releases, then artifacts
+	downloadURLResolvers := []DownloadURLResolver{
+		NewReleaseURLResolver(elasticAgentNamespace, artifactName, artifact),
+		NewArtifactURLResolver(artifactName, artifact, version),
+	}
+	downloadURL, downloadShaURL, err = getDownloadURLFromResolvers(downloadURLResolvers)
 	if err != nil {
 		return "", err
 	}
@@ -553,6 +511,32 @@ func getBucketSearchNextPageParam(jsonParsed *gabs.Container) string {
 
 	nextPageToken := token.Data().(string)
 	return "&pageToken=" + nextPageToken
+}
+
+// getDownloadURLFromResolvers returns the URL for the desired artifacts
+func getDownloadURLFromResolvers(resolvers []DownloadURLResolver) (string, string, error) {
+	for i, resolver := range resolvers {
+		if resolver == nil {
+			continue
+		}
+
+		url, shaURL, err := resolver.Resolve()
+		if err != nil {
+			if i < len(resolvers)-1 {
+				log.WithFields(log.Fields{
+					"resolver": resolver,
+				}).Warn("Object not found. Trying with another download resolver")
+				continue
+			} else {
+				log.Error("Object not found. There is no other download resolver")
+				return "", "", err
+			}
+		}
+
+		return url, shaURL, nil
+	}
+
+	return "", "", fmt.Errorf("the artifact was not found")
 }
 
 // getObjectURLFromResolvers extracts the media URL for the desired artifact from the

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
@@ -21,7 +22,7 @@ type Agent struct {
 	ID             string `json:"id"`
 	PolicyID       string `json:"policy_id"`
 	PolicyRevision int    `json:"policy_revision,omitempty"`
-	DefaultApiKey  string `json:"default_api_key"`
+	DefaultAPIKey  string `json:"default_api_key"`
 	LocalMetadata  struct {
 		Host struct {
 			Name     string `json:"name"`
@@ -42,8 +43,8 @@ type Agent struct {
 	Status string `json:"status"`
 }
 
-// GetAgentByHostname get an agent by the local_metadata.host.name property
-func (c *Client) GetAgentByHostname(ctx context.Context, hostname string) (Agent, error) {
+// GetAgentByHostnameFromList get an agent by the local_metadata.host.name property, reading from the agents list
+func (c *Client) GetAgentByHostnameFromList(ctx context.Context, hostname string) (Agent, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Getting Elastic Agent by hostname", "fleet.agent.get-by-hostname", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -70,7 +71,7 @@ func (c *Client) GetAgentByHostname(ctx context.Context, hostname string) (Agent
 
 // GetAgentIDByHostname gets agent id by hostname
 func (c *Client) GetAgentIDByHostname(ctx context.Context, hostname string) (string, error) {
-	agent, err := c.GetAgentByHostname(ctx, hostname)
+	agent, err := c.GetAgentByHostnameFromList(ctx, hostname)
 	if err != nil {
 		return "", err
 	}
@@ -115,6 +116,42 @@ func (c *Client) GetAgentStatusByHostname(ctx context.Context, hostname string) 
 		"agentStatus": resp.Item.Status,
 	}).Trace("Agent Status found")
 	return resp.Item.Status, nil
+}
+
+// GetAgentByHostname gets agent version by hostname
+func (c *Client) GetAgentByHostname(ctx context.Context, hostname string) (Agent, error) {
+	span, _ := apm.StartSpanOptions(ctx, "Getting Elastic Agent status by hostname", "fleet.agent.get-status-by-hostname", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	defer span.End()
+
+	agentID, err := c.GetAgentIDByHostname(ctx, hostname)
+	if err != nil {
+		return Agent{}, err
+	}
+
+	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/agents/%s", FleetAPI, agentID))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"body":       respBody,
+			"error":      err,
+			"statusCode": statusCode,
+		}).Error("Could not get agent response")
+		return Agent{}, err
+	}
+
+	var resp struct {
+		Item Agent `json:"item"`
+	}
+
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return Agent{}, errors.Wrap(err, "could not convert agent (response) to JSON")
+	}
+
+	log.WithFields(log.Fields{
+		"agentStatus": resp.Item.Status,
+	}).Trace("Agent Status found")
+	return resp.Item, nil
 }
 
 // GetAgentEvents get events of agent
@@ -276,11 +313,13 @@ func (c *Client) UpgradeAgent(ctx context.Context, hostname string, version stri
 		return err
 	}
 
-	reqBody := `{"version":"` + version + `", "force": true}`
+	version = downloads.RemoveCommitFromSnapshot(version)
+	reqBody := `{"version":"` + version + `"}`
+
 	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/agents/%s/upgrade", FleetAPI, agentID), []byte(reqBody))
 	if statusCode != 200 {
 		log.WithFields(log.Fields{
-			"body":       respBody,
+			"body":       string(respBody),
 			"error":      err,
 			"statusCode": statusCode,
 		}).Error("Could not upgrade agent")

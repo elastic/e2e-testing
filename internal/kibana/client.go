@@ -27,6 +27,12 @@ type Client struct {
 	password string
 }
 
+// HTTPHeader representation of a key-value pair to be passed as a HTTP header
+type HTTPHeader struct {
+	key   string
+	value string
+}
+
 // NewClient creates a new instance of the client.
 func NewClient() (*Client, error) {
 	host := getBaseURL()
@@ -40,23 +46,23 @@ func NewClient() (*Client, error) {
 	}, nil
 }
 
-func (c *Client) get(ctx context.Context, resourcePath string) (int, []byte, error) {
-	return c.sendRequest(ctx, http.MethodGet, resourcePath, nil)
+func (c *Client) get(ctx context.Context, resourcePath string, headers ...HTTPHeader) (int, []byte, error) {
+	return c.sendRequest(ctx, http.MethodGet, resourcePath, nil, headers...)
 }
 
-func (c *Client) post(ctx context.Context, resourcePath string, body []byte) (int, []byte, error) {
-	return c.sendRequest(ctx, http.MethodPost, resourcePath, body)
+func (c *Client) post(ctx context.Context, resourcePath string, body []byte, headers ...HTTPHeader) (int, []byte, error) {
+	return c.sendRequest(ctx, http.MethodPost, resourcePath, body, headers...)
 }
 
-func (c *Client) put(ctx context.Context, resourcePath string, body []byte) (int, []byte, error) {
-	return c.sendRequest(ctx, http.MethodPut, resourcePath, body)
+func (c *Client) put(ctx context.Context, resourcePath string, body []byte, headers ...HTTPHeader) (int, []byte, error) {
+	return c.sendRequest(ctx, http.MethodPut, resourcePath, body, headers...)
 }
 
-func (c *Client) delete(ctx context.Context, resourcePath string) (int, []byte, error) {
-	return c.sendRequest(ctx, http.MethodDelete, resourcePath, nil)
+func (c *Client) delete(ctx context.Context, resourcePath string, headers ...HTTPHeader) (int, []byte, error) {
+	return c.sendRequest(ctx, http.MethodDelete, resourcePath, nil, headers...)
 }
 
-func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, body []byte) (int, []byte, error) {
+func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, body []byte, headers ...HTTPHeader) (int, []byte, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Sending HTTP request", "http.request."+method, apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -81,9 +87,10 @@ func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, b
 	jsonParsed, _ := gabs.ParseJSON([]byte(body))
 
 	log.WithFields(log.Fields{
-		"method": method,
-		"url":    u,
-		"body":   jsonParsed,
+		"method":  method,
+		"url":     u,
+		"body":    jsonParsed,
+		"headers": headers,
 	}).Trace("Kibana API Query")
 
 	req, err := http.NewRequest(method, u.String(), reqBody)
@@ -94,6 +101,10 @@ func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, b
 	req.SetBasicAuth(c.username, c.password)
 	req.Header.Add("content-type", "application/json")
 	req.Header.Add("kbn-xsrf", fmt.Sprintf("e2e-tests-%s", uuid.New().String()))
+
+	for _, header := range headers {
+		req.Header.Add(header.key, header.value)
+	}
 
 	client := http.Client{}
 	resp, err := client.Do(req)

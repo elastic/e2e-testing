@@ -13,9 +13,21 @@ import (
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/systemd"
+	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
+
+type elasticAgentPackage struct {
+	service  deploy.ServiceRequest
+	deploy   deploy.Deployment
+	metadata deploy.ServiceInstallerMetadata
+}
+
+// Metadata returns the type of the package
+func (p *elasticAgentPackage) PkgMetadata() deploy.ServiceInstallerMetadata {
+	return p.metadata
+}
 
 // Attach will attach a installer to a deployment allowing
 // the installation of a package to be transparently configured no matter the backend
@@ -57,6 +69,49 @@ func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.Servic
 	}
 
 	return nil, nil
+}
+
+// doUpgrade upgrade an elastic-agent package using the 'upgrade' command
+func doUpgrade(ctx context.Context, so deploy.ServiceOperator) error {
+	pkgMetadata := so.PkgMetadata()
+
+	// downloading target release for the upgrade
+	version := common.ElasticAgentVersion
+
+	artifact := common.ElasticAgentServiceName
+	_, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, false, artifact, version, pkgMetadata.Os, pkgMetadata.Arch, pkgMetadata.FileExtension, pkgMetadata.Docker, pkgMetadata.XPack)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"artifact":        artifact,
+			"version":         version,
+			"packageMetadata": pkgMetadata,
+			"error":           err,
+		}).Error("Could not download the binary for the agent")
+		return err
+	}
+
+	if downloads.SnapshotHasCommit(version) {
+		version = downloads.RemoveCommitFromSnapshot(version)
+	}
+
+	cmds := []string{"elastic-agent", "upgrade", version, "-v"}
+	if pkgMetadata.PackageType == "zip" {
+		cmds = []string{"C:\\Program Files\\Elastic\\Agent\\elastic-agent.exe", "uninstall", version, "-v"}
+	}
+	cmds = append(cmds, "--source-uri", "file://"+binaryPath)
+
+	span, _ := apm.StartSpanOptions(ctx, "Upgrading Elastic Agent", "elastic-agent."+pkgMetadata.PackageType+".upgrade", apm.SpanOptions{
+		Parent: apm.SpanFromContext(ctx).TraceContext(),
+	})
+	span.Context.SetLabel("arguments", cmds)
+	span.Context.SetLabel("runtime", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH))
+	defer span.End()
+
+	_, err = so.Exec(ctx, cmds)
+	if err != nil {
+		return fmt.Errorf("failed to upgrade the agent with subcommand: %v", err)
+	}
+	return nil
 }
 
 func systemCtlLog(ctx context.Context, OS string, execFn func(ctx context.Context, args []string) (string, error)) error {
