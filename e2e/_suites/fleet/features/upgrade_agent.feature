@@ -1,5 +1,4 @@
 @upgrade_agent
-@nightly
 Feature: Upgrade Agent
   Scenarios for upgrading the Agent from past releases.
 

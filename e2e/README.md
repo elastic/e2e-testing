@@ -158,17 +158,15 @@ make clean-docker
 ### Running regressions on CI
 Because we are able to parameterize a CI job, it's possible to run regression testing with different versions of the stack and the products under test. To achieve it we must navigate to Jenkins and run the tests with different combinations for each product.
 
-> Note, as of this PR: https://github.com/elastic/e2e-testing/pull/669/files we have implemented a mechanism to NOT run tests marked as `@nightly` during PR CI test runs, if they, for any reason, are not capable of successfully finishing for a given reason.  The foremost example is the Agent upgrade tests which do not run on PR CI due to the lack of proper signing for the binaries needed.  The tag is implemented basically as a "nightly only" citation.
-
 To do so:
 
 1. Navigate to Jenkins: https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-mbp/
-1. Login as a user
-1. Select the base branch for the test code: main (for 8.0.0-SNAPSHOT), 7.16, or any other maintenance branch.
-1. In the left menu, click on `Buid with Parameters`.
-1. In the input parameters form, set the stack version (for Fleet) using the specific variables for the test suite.
-1. (Optional) Set the product version (Fleet or Helm charts) using the specific variables for the test suite if you want to consume a different artifact.
-1. Click the `Build` button at the bottom of the parameters form.
+2. Login as a user
+3. Select the base branch for the test code: main (for 8.0.0-SNAPSHOT), 7.16, or any other maintenance branch.
+4. In the left menu, click on `Buid with Parameters`.
+5. In the input parameters form, set the stack version (for Fleet) using the specific variables for the test suite.
+6. (Optional) Set the product version (Fleet or Helm charts) using the specific variables for the test suite if you want to consume a different artifact.
+7. Click the `Build` button at the bottom of the parameters form.
 
 Here you have a video reproducing the same steps:
 ![](./regression-testing.gif)
