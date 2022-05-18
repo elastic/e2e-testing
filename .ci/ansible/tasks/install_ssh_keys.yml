@@ -1,8 +1,8 @@
 ---
 - name: Install SSH keys
-  shell: "bash --login -c /home/{{ansible_user}}/{{ e2e_project_name }}/.ci/scripts/import-ssh-keys.sh"
+  shell: "bash --login -c {{e2e_base_dir}}.ci/scripts/import-ssh-keys.sh"
   when: ansible_os_family not in ["Windows"]
 
 - name: Install SSH keys (Windows)
-  ansible.windows.win_shell: "{{ e2e_base_dir }}\\.ci\\scripts\\import-ssh-keys.ps1"
+  ansible.windows.win_shell: "{{ e2e_base_dir }}.ci\\scripts\\import-ssh-keys.ps1"
   when: ansible_os_family in ["Windows"]
