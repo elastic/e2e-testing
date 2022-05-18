@@ -1,2 +1,2 @@
-ClientAliveInterval 60
+ClientAliveInterval 300
 ClientAliveCountMax 10
