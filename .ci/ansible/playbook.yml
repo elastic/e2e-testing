@@ -45,6 +45,7 @@
     - role: andrewrothstein.kubectl
     - role: andrewrothstein.kind
     - role: mdelapenya.go
+      become: True
       vars:
         go_version: 1.17
   vars:
@@ -148,6 +149,7 @@
         - suite is defined
         - suite in ["kubernetes-autodiscover", "helm"]
     - role: mdelapenya.go
+      become: True
       vars:
         go_version: 1.17
   vars:
