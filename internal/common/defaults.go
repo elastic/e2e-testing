@@ -7,6 +7,7 @@ package common
 import (
 	"regexp"
 
+	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
@@ -71,6 +72,8 @@ var StackVersion = BeatVersionBase
 var versionRegex *regexp.Regexp
 
 func init() {
+	config.Init()
+
 	DeveloperMode = shell.GetEnvBool("DEVELOPER_MODE")
 	if DeveloperMode {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
