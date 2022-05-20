@@ -2,5 +2,3 @@
 ansible_connection: "ssh"
 ansible_shell_type: "sh"
 ansible_python_interpreter: "auto"
-
-e2e_base_dir: "/home/{{ ansible_user }}/{{ e2e_project_name }}/"
