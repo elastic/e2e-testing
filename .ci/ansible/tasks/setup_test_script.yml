@@ -4,18 +4,18 @@
     state: present
     line: "{{ item }}"
     insertafter: EOF
-    dest: "/home/{{ ansible_user }}/{{ e2e_project_name }}/.env"
+    dest: "{{ e2e_home_dir }}.env"
     create: yes
   with_items:
-    - "export SUITE=\"fleet\""
-    - "export TAGS=\"non-existing-tag\""
-    - "export PROVIDER=\"docker\""
-    - "export DEVELOPER_MODE=\"true\""
-    - "export SKIP_PULL=\"1\""
-    - "export LOG_LEVEL=\"TRACE\""
-    - "export STACK_VERSION=\"{{ lookup('env', 'STACK_VERSION') or lookup('file', '{{workspace}}/.stack-version') }}\""
-    - "export KIBANA_VERSION=\"{{ lookup('env', 'KIBANA_VERSION') or lookup('file', '{{ workspace }}/.stack-version') }}\""
-    - "export ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('file', '{{ workspace }}/.stack-version') }}\""
+    - "SUITE=\"fleet\""
+    - "TAGS=\"non-existing-tag\""
+    - "PROVIDER=\"docker\""
+    - "DEVELOPER_MODE=\"true\""
+    - "SKIP_PULL=\"1\""
+    - "LOG_LEVEL=\"TRACE\""
+    - "STACK_VERSION=\"{{ lookup('env', 'STACK_VERSION') or lookup('file', '{{workspace}}/.stack-version') }}\""
+    - "KIBANA_VERSION=\"{{ lookup('env', 'KIBANA_VERSION') or lookup('file', '{{ workspace }}/.stack-version') }}\""
+    - "ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('file', '{{ workspace }}/.stack-version') }}\""
   when: "'stack' == nodeLabel"
   tags:
     - scripts
@@ -25,14 +25,14 @@
     state: present
     line: "{{item}}"
     insertafter: EOF
-    dest: "{{ e2e_base_dir }}.env"
+    dest: "{{ e2e_home_dir }}.env"
     create: yes
   with_items:
-    - "export SUITE=\"{{ lookup('env', 'SUITE') or 'fleet' }}\""
-    - "export PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'remote' }}\""
-    - "export ELASTICSEARCH_PASSWORD=\"changeme\""
-    - "export KIBANA_PASSWORD=\"changeme\""
-    - "export SKIP_PULL=\"1\""
+    - "SUITE=\"{{ lookup('env', 'SUITE') or 'fleet' }}\""
+    - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'remote' }}\""
+    - "ELASTICSEARCH_PASSWORD=\"changeme\""
+    - "KIBANA_PASSWORD=\"changeme\""
+    - "SKIP_PULL=\"1\""
   when:
     - suite is defined
     - stackRunner is defined
@@ -45,12 +45,12 @@
     state: present
     line: "{{ item }}"
     insertafter: EOF
-    dest: "{{ e2e_base_dir }}.env"
+    dest: "{{ e2e_home_dir }}.env"
     create: yes
   with_items:
-    - "export ELASTICSEARCH_URL=\"http://{{ stackRunner }}:9200\""
-    - "export KIBANA_URL=\"http://{{ stackRunner }}:5601\""
-    - "export FLEET_URL=\"http://{{ stackRunner }}:8220\""
+    - "ELASTICSEARCH_URL=\"http://{{ stackRunner }}:9200\""
+    - "KIBANA_URL=\"http://{{ stackRunner }}:5601\""
+    - "FLEET_URL=\"http://{{ stackRunner }}:8220\""
   when:
     - suite is defined
     - stackRunner is defined
@@ -63,11 +63,11 @@
     state: present
     line: "{{item}}"
     insertafter: EOF
-    dest: "{{ e2e_base_dir }}.env"
+    dest: "{{ e2e_home_dir }}.env"
     create: yes
   with_items:
-    - "export SUITE=\"{{ lookup('env', 'SUITE') or 'fleet' }}\""
-    - "export PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'elastic-package' }}\""
+    - "SUITE=\"{{ lookup('env', 'SUITE') or 'fleet' }}\""
+    - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'elastic-package' }}\""
   when: "'fleet_elastic_pkg' in nodeLabel"
   tags:
     - scripts
@@ -77,13 +77,13 @@
     state: present
     line: "{{item}}"
     insertafter: EOF
-    dest: "{{ e2e_base_dir }}.env"
+    dest: "{{ e2e_home_dir }}.env"
     create: yes
   with_items:
-    - "export SUITE=\"{{ lookup('env', 'SUITE') or 'kubernetes-autodiscover' }}\""
-    - "export PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'docker' }}\""
-    - "export KIND_VERSION=\"{{ lookup('env', 'KIND_VERSION') }}\""
-    - "export KUBERNETES_VERSION=\"{{ lookup('env', 'KUBERNETES_VERSION') }}\""
+    - "SUITE=\"{{ lookup('env', 'SUITE') or 'kubernetes-autodiscover' }}\""
+    - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'docker' }}\""
+    - "KIND_VERSION=\"{{ lookup('env', 'KIND_VERSION') }}\""
+    - "KUBERNETES_VERSION=\"{{ lookup('env', 'KUBERNETES_VERSION') }}\""
   when:
     - suite is defined
     - suite == "kubernetes-autodiscover"
@@ -95,15 +95,15 @@
     state: present
     line: "{{item}}"
     insertafter: EOF
-    dest: "{{ e2e_base_dir }}.env"
+    dest: "{{ e2e_home_dir }}.env"
     create: yes
   with_items:
-    - "export SUITE=\"{{ lookup('env', 'SUITE') or 'helm' }}\""
-    - "export PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'docker' }}\""
-    - "export HELM_CHART_VERSION=\"{{ lookup('env', 'HELM_CHART_VERSION') }}\""
-    - "export HELM_VERSION=\"{{ lookup('env', 'HELM_VERSION') }}\""
-    - "export KIND_VERSION=\"{{ lookup('env', 'KIND_VERSION') }}\""
-    - "export KUBERNETES_VERSION=\"{{ lookup('env', 'KUBERNETES_VERSION') }}\""
+    - "SUITE=\"{{ lookup('env', 'SUITE') or 'helm' }}\""
+    - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'docker' }}\""
+    - "HELM_CHART_VERSION=\"{{ lookup('env', 'HELM_CHART_VERSION') }}\""
+    - "HELM_VERSION=\"{{ lookup('env', 'HELM_VERSION') }}\""
+    - "KIND_VERSION=\"{{ lookup('env', 'KIND_VERSION') }}\""
+    - "KUBERNETES_VERSION=\"{{ lookup('env', 'KUBERNETES_VERSION') }}\""
   when:
     - suite is defined
     - suite == "helm"
@@ -115,19 +115,20 @@
     state: present
     line: "{{item}}"
     insertafter: EOF
-    dest: "{{ e2e_base_dir }}.env"
+    dest: "{{ e2e_home_dir }}.env"
     create: yes
   with_items:
-    - "export TAGS=\"{{ lookup('env', 'TAGS') }}\""
-    - "export STACK_VERSION=\"{{ lookup('file', '{{workspace}}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
-    - "export BEAT_VERSION=\"{{ lookup('env', 'BEAT_VERSION') or lookup('file', '{{ workspace }}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
-    - "export ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('file', '{{ workspace }}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
-    - "export GITHUB_CHECK_SHA1=\"{{ lookup('env', 'GITHUB_CHECK_SHA1') }}\""
-    - "export GITHUB_CHECK_REPO=\"{{ lookup('env', 'GITHUB_CHECK_REPO') }}\""
-    - "export ELASTIC_APM_GLOBAL_LABELS=\"{{ lookup('env', 'ELASTIC_APM_GLOBAL_LABELS') }}\""
-    - "export LOG_LEVEL=\"TRACE\""
-    - "export REPORT_PREFIX=\"{{ lookup('env', 'REPORT_PREFIX') }}\""
-    - "export PATH=\"$PATH:/opt/go/{{go_version}}/bin:/usr/local/bin\""
+    - "TAGS=\"{{ lookup('env', 'TAGS') }}\""
+    - "STACK_VERSION=\"{{ lookup('file', '{{workspace}}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
+    - "BEAT_VERSION=\"{{ lookup('env', 'BEAT_VERSION') or lookup('file', '{{ workspace }}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
+    - "ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('file', '{{ workspace }}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
+    - "GITHUB_CHECK_SHA1=\"{{ lookup('env', 'GITHUB_CHECK_SHA1') }}\""
+    - "GITHUB_CHECK_REPO=\"{{ lookup('env', 'GITHUB_CHECK_REPO') }}\""
+    - "ELASTIC_APM_GLOBAL_LABELS=\"{{ lookup('env', 'ELASTIC_APM_GLOBAL_LABELS') }}\""
+    - "LOG_LEVEL=\"TRACE\""
+    - "OP_LOG_LEVEL=\"TRACE\""
+    - "TIMEOUT_FACTOR=7"
+    - "REPORT_PREFIX=\"{{ lookup('env', 'REPORT_PREFIX') }}\""
   tags:
     - scripts
 
@@ -140,20 +141,15 @@
        #!/usr/bin/env bash
        set -euxo pipefail
 
-       BASE_DIR="{{ e2e_base_dir }}"
-       source "${BASE_DIR}/.env"
+       SUITE="{{ lookup('env', 'SUITE') }}"
+       REPORT_PREFIX="{{ lookup('env', 'REPORT_PREFIX') }}"
 
-       "${BASE_DIR}.ci/scripts/install-test-dependencies.sh" "${SUITE}"
+       "{{ e2e_base_dir }}.ci/scripts/install-test-dependencies.sh" "${SUITE}"
 
        SEED="$(date +%Y-%m-%d-%H:%M:%S)"
-       REPORT="${BASE_DIR}outputs/TEST-${REPORT_PREFIX}-{{runId}}-${SEED}"
+       echo "REPORT='{{ e2e_base_dir }}outputs/TEST-${REPORT_PREFIX}-{{runId}}-${SEED}'" >> {{ e2e_home_dir }}.env
 
-       TAGS="${TAGS}" \
-         LOG_LEVEL="TRACE" \
-         FORMAT="pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml" \
-         STACK_VERSION="${STACK_VERSION}" \
-         BEAT_VERSION="${BEAT_VERSION}" \
-         ELASTIC_AGENT_VERSION="${ELASTIC_AGENT_VERSION}" \
-         make --no-print-directory -C "${BASE_DIR}e2e/_suites/${SUITE}" functional-test
+       TAGS="{{ lookup('env', 'TAGS') }}" \
+         make --no-print-directory -C "{{ e2e_base_dir }}e2e/_suites/${SUITE}" functional-test
   tags:
     - scripts

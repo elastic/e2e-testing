@@ -57,16 +57,19 @@
     tags:
       - setup-node
 
-  - name: Create environment file
-    local_action:
-      module: copy
-      dest: "{{workspace}}/.env"
-      content: |
-        export OP_LOG_LEVEL=TRACE
-        export LOG_LEVEL=TRACE
-        export TIMEOUT_FACTOR=7
-    tags:
-      - setup-stack
+  - name: Create home dir
+    ansible.builtin.file:
+      path: "{{ e2e_home_dir }}"
+      state: directory
+      mode: '0755'
+      owner: "{{ ansible_user }}"
+    when: ansible_os_family not in ["Windows"]
+
+  - name: Create home dir on Windows
+    ansible.windows.win_file:
+      path: "{{ e2e_home_dir }}"
+      state: directory
+    when: ansible_os_family in ["Windows"]
 
   - name: Setup source code
     include_tasks: tasks/copy_test_files.yml
@@ -113,6 +116,7 @@
 - name: Manage runner instances
   hosts: all
   connection: ssh
+  gather_facts: True
   vars_files:
     - vars/main.yml
   tags:
@@ -125,6 +129,7 @@
           files:
             - '{{ ansible_distribution }}.yml'
             - '{{ ansible_os_family }}.yml'
+            - '{{ ansible_system }}.yml'
           paths:
             - 'group_vars'
     - name: Update apt cache.
