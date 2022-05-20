@@ -143,10 +143,10 @@
        BASE_DIR="{{ e2e_base_dir }}"
        source "${BASE_DIR}/.env"
 
-       "${BASE_DIR}/.ci/scripts/install-test-dependencies.sh" "${SUITE}"
+       "${BASE_DIR}.ci/scripts/install-test-dependencies.sh" "${SUITE}"
 
        SEED="$(date +%Y-%m-%d-%H:%M:%S)"
-       REPORT="${BASE_DIR}/outputs/TEST-${REPORT_PREFIX}-{{runId}}-${SEED}"
+       REPORT="${BASE_DIR}outputs/TEST-${REPORT_PREFIX}-{{runId}}-${SEED}"
 
        TAGS="${TAGS}" \
          LOG_LEVEL="TRACE" \
@@ -154,6 +154,6 @@
          STACK_VERSION="${STACK_VERSION}" \
          BEAT_VERSION="${BEAT_VERSION}" \
          ELASTIC_AGENT_VERSION="${ELASTIC_AGENT_VERSION}" \
-         make --no-print-directory -C "${BASE_DIR}/e2e/_suites/${SUITE}" functional-test
+         make --no-print-directory -C "${BASE_DIR}e2e/_suites/${SUITE}" functional-test
   tags:
     - scripts
