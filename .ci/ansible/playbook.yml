@@ -63,13 +63,6 @@
       state: directory
       mode: '0755'
       owner: "{{ ansible_user }}"
-    when: ansible_os_family not in ["Windows"]
-
-  - name: Create home dir on Windows
-    ansible.windows.win_file:
-      path: "{{ e2e_home_dir }}"
-      state: directory
-    when: ansible_os_family in ["Windows"]
 
   - name: Setup source code
     include_tasks: tasks/copy_test_files.yml
@@ -190,6 +183,28 @@
     include_tasks: tasks/install_ssh_keys.yml
     tags:
       - setup-node
+
+  - name: Create home dir
+    ansible.builtin.file:
+      path: "{{ e2e_home_dir }}"
+      state: directory
+      mode: '0755'
+      owner: "{{ ansible_user }}"
+    tags:
+      - setup-node
+      - copy-source
+      - scripts
+    when: ansible_os_family not in ["Windows"]
+
+  - name: Create home dir on Windows
+    ansible.windows.win_file:
+      path: "{{ e2e_home_dir }}"
+      state: directory
+    tags:
+      - setup-node
+      - copy-source
+      - scripts
+    when: ansible_os_family in ["Windows"]
 
   - name: Configure test script
     include_tasks: tasks/setup_test_script.yml
