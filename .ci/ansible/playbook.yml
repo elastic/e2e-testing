@@ -147,7 +147,6 @@
         - suite is defined
         - suite in ["kubernetes-autodiscover", "helm"]
     - role: mdelapenya.go
-      become: True
       vars:
         go_version: 1.17
   vars:
@@ -212,3 +211,14 @@
       - setup-node
       - copy-source
       - scripts
+    when:
+      - ansible_facts['os_family'] != "Windows"
+
+  - name: Configure test script (Windows)
+    include_tasks: tasks/setup_test_script_windows.yml
+    tags:
+      - setup-node
+      - copy-source
+      - scripts
+    when:
+      - ansible_facts['os_family'] == "Windows"

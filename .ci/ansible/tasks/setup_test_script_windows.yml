@@ -1,0 +1,128 @@
+---
+- name: Extend environment for Fleet testing (Windows)
+  community.windows.win_lineinfile:
+    state: present
+    line: "{{item}}"
+    insertafter: EOF
+    dest: "{{ e2e_home_dir }}.env"
+    create: yes
+  with_items:
+    - "SUITE=\"{{ lookup('env', 'SUITE') or 'fleet' }}\""
+    - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'remote' }}\""
+    - "ELASTICSEARCH_PASSWORD=\"changeme\""
+    - "KIBANA_PASSWORD=\"changeme\""
+    - "SKIP_PULL=\"1\""
+  when:
+    - suite is defined
+    - stackRunner is defined
+    - suite == "fleet"
+  tags:
+    - scripts
+
+- name: Extend environment for Remote provider (Windows)
+  community.windows.win_lineinfile:
+    state: present
+    line: "{{ item }}"
+    insertafter: EOF
+    dest: "{{ e2e_home_dir }}.env"
+    create: yes
+  with_items:
+    - "ELASTICSEARCH_URL=\"http://{{ stackRunner }}:9200\""
+    - "KIBANA_URL=\"http://{{ stackRunner }}:5601\""
+    - "FLEET_URL=\"http://{{ stackRunner }}:8220\""
+  when:
+    - suite is defined
+    - stackRunner is defined
+    - lookup('env', 'PROVIDER') == 'remote'
+  tags:
+    - scripts
+
+- name: Extend environment for Fleet with elastic-package testing (Windows)
+  community.windows.win_lineinfile:
+    state: present
+    line: "{{item}}"
+    insertafter: EOF
+    dest: "{{ e2e_home_dir }}.env"
+    create: yes
+  with_items:
+    - "SUITE=\"{{ lookup('env', 'SUITE') or 'fleet' }}\""
+    - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'elastic-package' }}\""
+  when: "'fleet_elastic_pkg' in nodeLabel"
+  tags:
+    - scripts
+
+- name: Extend environment for Kubernetes Autodiscover testing (Windows)
+  community.windows.win_lineinfile:
+    state: present
+    line: "{{item}}"
+    insertafter: EOF
+    dest: "{{ e2e_home_dir }}.env"
+    create: yes
+  with_items:
+    - "SUITE=\"{{ lookup('env', 'SUITE') or 'kubernetes-autodiscover' }}\""
+    - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'docker' }}\""
+    - "KIND_VERSION=\"{{ lookup('env', 'KIND_VERSION') }}\""
+    - "KUBERNETES_VERSION=\"{{ lookup('env', 'KUBERNETES_VERSION') }}\""
+  when:
+    - suite is defined
+    - suite == "kubernetes-autodiscover"
+  tags:
+    - scripts
+
+- name: Extend environment for Helm testing (Windows)
+  community.windows.win_lineinfile:
+    state: present
+    line: "{{item}}"
+    insertafter: EOF
+    dest: "{{ e2e_home_dir }}.env"
+    create: yes
+  with_items:
+    - "SUITE=\"{{ lookup('env', 'SUITE') or 'helm' }}\""
+    - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'docker' }}\""
+    - "HELM_CHART_VERSION=\"{{ lookup('env', 'HELM_CHART_VERSION') }}\""
+    - "HELM_VERSION=\"{{ lookup('env', 'HELM_VERSION') }}\""
+    - "KIND_VERSION=\"{{ lookup('env', 'KIND_VERSION') }}\""
+    - "KUBERNETES_VERSION=\"{{ lookup('env', 'KUBERNETES_VERSION') }}\""
+  when:
+    - suite is defined
+    - suite == "helm"
+  tags:
+    - scripts
+
+- name: Extend environment (Windows)
+  community.windows.win_lineinfile:
+    state: present
+    line: "{{item}}"
+    insertafter: EOF
+    dest: "{{ e2e_home_dir }}.env"
+    create: yes
+  with_items:
+    - "TAGS=\"{{ lookup('env', 'TAGS') }}\""
+    - "STACK_VERSION=\"{{ lookup('file', '{{workspace}}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
+    - "BEAT_VERSION=\"{{ lookup('env', 'BEAT_VERSION') or lookup('file', '{{ workspace }}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
+    - "ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('file', '{{ workspace }}/.stack-version') or '8.0.0-SNAPSHOT' }}\""
+    - "GITHUB_CHECK_SHA1=\"{{ lookup('env', 'GITHUB_CHECK_SHA1') }}\""
+    - "GITHUB_CHECK_REPO=\"{{ lookup('env', 'GITHUB_CHECK_REPO') }}\""
+    - "ELASTIC_APM_GLOBAL_LABELS=\"{{ lookup('env', 'ELASTIC_APM_GLOBAL_LABELS') }}\""
+    - "LOG_LEVEL=\"TRACE\""
+    - "OP_LOG_LEVEL=\"TRACE\""
+    - "TIMEOUT_FACTOR=7"
+    - "REPORT_PREFIX=\"{{ lookup('env', 'REPORT_PREFIX') }}\""
+  tags:
+    - scripts
+
+- name: Create Fleet test script file (Windows)
+  ansible.windows.win_copy:
+    owner: "{{ansible_user}}"
+    dest: "{{ e2e_base_dir }}.ci/scripts/functional-test.ps1"
+    content: |
+       $SUITE = "{{ lookup('env', 'SUITE') }}"
+       $REPORT_PREFIX = "{{ lookup('env', 'REPORT_PREFIX') }}"
+
+       $SEED = "$(date +%Y-%m-%d-%H:%M:%S)"
+       echo "REPORT='{{ e2e_base_dir }}outputs/TEST-${REPORT_PREFIX}-{{runId}}-${SEED}'" >> {{ e2e_home_dir }}.env
+
+       TAGS="{{ lookup('env', 'TAGS') }}" `
+         make --no-print-directory -C "{{ e2e_base_dir }}e2e/_suites/${SUITE}" functional-test
+  tags:
+    - scripts
