@@ -73,7 +73,7 @@ func (i *elasticAgentTARPackage) Exec(ctx context.Context, args []string) (strin
 
 // Enroll will enroll the agent into fleet
 func (i *elasticAgentTARPackage) Enroll(ctx context.Context, token string) error {
-	cmds := []string{"./elastic-agent/elastic-agent", "install"}
+	cmds := []string{"sudo", common.GetElasticAgentWorkingPath("elastic-agent", "elastic-agent"), "install"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.tar.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -142,12 +142,13 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 			return err
 		}
 
-		_, err = i.Exec(ctx, []string{"tar", "-zxf", binaryPath})
+		_, err = i.Exec(ctx, []string{"tar", "-zxf", binaryPath, "-C", common.GetElasticAgentWorkingPath()})
 		if err != nil {
 			return err
 		}
 
-		output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), runningOS, arch), artifact})
+		srcPath := common.GetElasticAgentWorkingPath(fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), runningOS, arch))
+		output, _ := i.Exec(ctx, []string{"mv", srcPath, common.GetElasticAgentWorkingPath(artifact)})
 		log.WithFields(log.Fields{
 			"output":   output,
 			"artifact": artifact,
@@ -171,7 +172,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 
 // Restart will restart a service
 func (i *elasticAgentTARPackage) Restart(ctx context.Context) error {
-	cmds := []string{"systemctl", "restart", "elastic-agent"}
+	cmds := []string{"sudo", "systemctl", "restart", "elastic-agent"}
 	span, _ := apm.StartSpanOptions(ctx, "Restarting Elastic Agent service", "elastic-agent.tar.restart", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -187,7 +188,7 @@ func (i *elasticAgentTARPackage) Restart(ctx context.Context) error {
 
 // Start will start a service
 func (i *elasticAgentTARPackage) Start(ctx context.Context) error {
-	cmds := []string{"systemctl", "start", "elastic-agent"}
+	cmds := []string{"sudo", "systemctl", "start", "elastic-agent"}
 	span, _ := apm.StartSpanOptions(ctx, "Starting Elastic Agent service", "elastic-agent.tar.start", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -203,7 +204,7 @@ func (i *elasticAgentTARPackage) Start(ctx context.Context) error {
 
 // Stop will start a service
 func (i *elasticAgentTARPackage) Stop(ctx context.Context) error {
-	cmds := []string{"systemctl", "stop", "elastic-agent"}
+	cmds := []string{"sudo", "systemctl", "stop", "elastic-agent"}
 	span, _ := apm.StartSpanOptions(ctx, "Stopping Elastic Agent service", "elastic-agent.tar.stop", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -219,7 +220,7 @@ func (i *elasticAgentTARPackage) Stop(ctx context.Context) error {
 
 // Uninstall uninstalls a TAR package
 func (i *elasticAgentTARPackage) Uninstall(ctx context.Context) error {
-	cmds := []string{"elastic-agent", "uninstall", "-f"}
+	cmds := []string{"sudo", "elastic-agent", "uninstall", "-f"}
 	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.tar.uninstall", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
