@@ -5,9 +5,11 @@
 package common
 
 import (
+	"path/filepath"
 	"regexp"
 
 	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
@@ -67,12 +69,19 @@ var Provider = "docker"
 // It can be overriden by STACK_VERSION env var
 var StackVersion = BeatVersionBase
 
+// elasticAgentWorkingDir is the working directory for temporary operations, such as
+// downloading and extracting the agent
+var elasticAgentWorkingDir string
+
 // The compiled version of the regex created at init() is cached here so it
 // only needs to be created once.
 var versionRegex *regexp.Regexp
 
 func init() {
 	config.Init()
+
+	elasticAgentWorkingDir = filepath.Join(config.OpDir(), ElasticAgentServiceName)
+	io.MkdirAll(elasticAgentWorkingDir)
 
 	DeveloperMode = shell.GetEnvBool("DEVELOPER_MODE")
 	if DeveloperMode {
@@ -90,6 +99,19 @@ func init() {
 	}
 
 	versionRegex = regexp.MustCompile(`^([0-9]+)(\.[0-9]+)(-SNAPSHOT)?$`)
+}
+
+// GetElasticAgentWorkingPath retrieve the path to the elastic-agent dir
+// under the tool's working directory, at current user's home
+func GetElasticAgentWorkingPath(paths ...string) string {
+	elements := []string{elasticAgentWorkingDir}
+	elements = append(elements, paths...)
+	p := filepath.Join(elements...)
+
+	// create dirs up to the last parent
+	io.MkdirAll(filepath.Dir(p))
+
+	return p
 }
 
 // InitVersions initialise default versions. We do not want to do it in the init phase
