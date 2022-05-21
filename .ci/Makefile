@@ -185,4 +185,4 @@ run-tests:
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t scripts \
 		-i $(NODE_IP_ADDRESS),
-	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'source /home/$(NODE_USER)/e2e-testing/.env; sudo -preserve-env bash /home/$(NODE_USER)/e2e-testing/.ci/scripts/functional-test.sh "$(TAGS)"'
+	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'bash --login -c /home/$(NODE_USER)/e2e-testing/.ci/scripts/functional-test.sh "$(TAGS)"'
