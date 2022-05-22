@@ -93,7 +93,7 @@
       - setup-stack
 
   - name: Start stack without any tag to spin up the stack using Fleet's bootstrapping code
-    local_action: "shell ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ ansible_ssh_private_key_file }} {{ ansible_user }}@{{ inventory_hostname }} 'bash --login -c TAGS=non-existing-tag {{ e2e_base_dir }}/.ci/scripts/functional-test.sh'"
+    shell: "bash --login -c TAGS='non-existing-tag' {{ e2e_base_dir }}.ci/scripts/functional-test.sh"
     tags:
       - setup-stack
 
