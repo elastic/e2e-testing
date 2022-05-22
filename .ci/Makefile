@@ -165,12 +165,12 @@ destroy-elastic-stack:
 recreate-fleet-server:
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	PROVIDER="remote" SUITE="$(SUITE)" TAGS="non-existent-tag" \
-	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/fleet-server.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
 		--extra-vars "runId=$(RUN_ID) nodeShellType=$(NODE_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
-		-t scripts \
+		-t fleet-server \
 		-i $(STACK_IP_ADDRESS),
 	ssh -t -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'bash --login -c /home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh'
 
