@@ -203,6 +203,7 @@ pipeline {
                   def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
                   // Deploy the test infrastructure
                   sh "ssh-keygen -b 4096 -t rsa -f ${stackWorkspace}/e2essh -q -N \"\" "
+                  sh "chmod 400 ${stackWorkspace}/e2essh"
                   def stackMachine = getMachineInfo('stack')
 
                   ansible(stackWorkspace,
