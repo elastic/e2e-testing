@@ -119,10 +119,9 @@
        $SUITE = "{{ lookup('env', 'SUITE') }}"
        $REPORT_PREFIX = "{{ lookup('env', 'REPORT_PREFIX') }}"
 
-       $SEED = "$(date +%Y-%m-%d-%H:%M:%S)"
-       echo "REPORT='{{ e2e_base_dir }}outputs/TEST-${REPORT_PREFIX}-{{runId}}-${SEED}'" >> {{ e2e_home_dir }}.env
+       $SEED = Get-Date -Format o | ForEach-Object { $_ -replace ":", "." }
+       Add-Content C:\Users\ogc\.op\.env  "REPORT='C:\Users\ogc\e2e-testing\outputs\TEST-${REPORT_PREFIX}-85CC22CF-${SEED}'"
 
-       TAGS="{{ lookup('env', 'TAGS') }}" `
-         make --no-print-directory -C "{{ e2e_base_dir }}e2e/_suites/${SUITE}" functional-test
+       $env:TAGS="{{ lookup('env', 'TAGS') }}"; make --no-print-directory -C "{{ e2e_base_dir }}e2e/_suites/${SUITE}" functional-test-win
   tags:
     - scripts
