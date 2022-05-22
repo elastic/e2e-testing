@@ -116,8 +116,8 @@
     owner: "{{ansible_user}}"
     dest: "{{ e2e_base_dir }}.ci/scripts/functional-test.ps1"
     content: |
-       $SUITE = "{{ lookup('env', 'SUITE') }}"
-       $REPORT_PREFIX = "{{ lookup('env', 'REPORT_PREFIX') }}"
+       $SUITE = "{{ lookup('env', 'SUITE') or 'fleet' }}"
+       $REPORT_PREFIX = "{{ lookup('env', 'REPORT_PREFIX') or 'junit' }}"
 
        $SEED = [Math]::Round((Get-Date).ToFileTime() / 10000000 - 11644473600)
        $REPORT="C:\Users\ogc\e2e-testing\outputs\TEST-${REPORT_PREFIX}-85CC22CF-${SEED}"

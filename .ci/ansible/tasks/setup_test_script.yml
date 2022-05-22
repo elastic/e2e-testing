@@ -141,8 +141,8 @@
        #!/usr/bin/env bash
        set -euxo pipefail
 
-       SUITE="{{ lookup('env', 'SUITE') }}"
-       REPORT_PREFIX="{{ lookup('env', 'REPORT_PREFIX') }}"
+       SUITE="{{ lookup('env', 'SUITE') or 'fleet' }}"
+       REPORT_PREFIX="{{ lookup('env', 'REPORT_PREFIX') or 'junit' }}"
 
        "{{ e2e_base_dir }}.ci/scripts/install-test-dependencies.sh" "${SUITE}"
 
