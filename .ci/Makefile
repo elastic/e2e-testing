@@ -178,11 +178,11 @@ recreate-fleet-server:
 run-tests:
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$(NODE_LABEL)_$(TAGS)" \
-	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/run-tests.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeInstanceType=$(NODE_INSTANCE_TYPE) nodeUser=$(NODE_USER)" \
 		--extra-vars "runId=$(RUN_ID) nodeShellType=$(NODE_SHELL_TYPE) workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
-		-t scripts \
+		-t run-tests \
 		-i $(NODE_IP_ADDRESS),
 	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'bash --login -c /home/$(NODE_USER)/e2e-testing/.ci/scripts/functional-test.sh "$(TAGS)"'
