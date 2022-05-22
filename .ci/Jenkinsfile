@@ -574,7 +574,6 @@ def generateFunctionalTestStep(Map args = [:]){
           }
         }
       } finally {
-        def testRunner = getNodeIp("${env.WORKSPACE}", platform)
         sh "mkdir -p outputs/${testRunner.ip} || true"
 
         if (!platform.contains("windows")) {
