@@ -545,6 +545,13 @@ def generateFunctionalTestStep(Map args = [:]){
 
   def runId = UUID.randomUUID().toString().split('-')[0]
 
+  def testRunner = getNodeIp("${env.WORKSPACE}", platform)
+
+  def remoteBasePath = "/home/${testRunner.user}/e2e-testing/"
+  if (platform.contains("windows")) {
+    remoteBasePath = "C:\\Users\\${testRunner.user}\\e2e-testing\\"
+  }
+
   return {
     withNode(labels: 'ubuntu-20.04 && gobld/machineType:e2-small', forceWorkspace: true, forceWorker: true){
       try {
@@ -560,34 +567,42 @@ def generateFunctionalTestStep(Map args = [:]){
             // Start node, capture ip address
             ansible("${env.WORKSPACE}",
                     runId,
-                    "-t provision-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
-
-            def testRunner = getNodeIp("${env.WORKSPACE}", platform)
+                    "-t provision-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             // Configure node for testing
             ansible("${env.WORKSPACE}",
                     runId,
                     "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
-            sshexec("${env.WORKSPACE}",
-                    testRunner,
-                    "sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh")
+            if (platform.contains("windows")) {
+              sshexec("${env.WORKSPACE}",
+                      testRunner,
+                      "powershell ${remoteBasePath}.ci\\scripts\\functional-test.ps1")
+            } else {
+              sshexec("${env.WORKSPACE}",
+                      testRunner,
+                      "bash --login -c ${remoteBasePath}.ci/scripts/functional-test.sh")
+            }
           }
         }
       } finally {
         def testRunner = getNodeIp("${env.WORKSPACE}", platform)
         sh "mkdir -p outputs/${testRunner.ip} || true"
-        sshexec("${env.WORKSPACE}",
-                testRunner,
-                """sudo chown ${testRunner.user} -R /home/${testRunner.user}/e2e-testing/outputs """)
-        scpr("${env.WORKSPACE}",
-             testRunner,
-             "e2e-testing/outputs/TEST-*${runId}*.xml",
-             "outputs/${testRunner.ip}/.")
-        scpr("${env.WORKSPACE}",
-             testRunner,
-             "e2e-testing/outputs/TEST-*${runId}*.json",
-             "outputs/${testRunner.ip}/.")
+
+        if (!platform.contains("windows")) {
+          sshexec("${env.WORKSPACE}",
+                  testRunner,
+                  """sudo chown ${testRunner.user} -R ${remoteBasePath}outputs """)
+          scpr("${env.WORKSPACE}",
+              testRunner,
+              "e2e-testing/outputs/TEST-*${runId}*.xml",
+              "outputs/${testRunner.ip}/.")
+          scpr("${env.WORKSPACE}",
+              testRunner,
+              "e2e-testing/outputs/TEST-*${runId}*.json",
+              "outputs/${testRunner.ip}/.")
+        }
+
         sh "ls -l outputs/${testRunner.ip}"
         if (params.DEVELOPER_MODE) {
           log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunner.ip}. ")
