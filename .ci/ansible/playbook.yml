@@ -147,6 +147,15 @@
         - suite is defined
         - suite in ["kubernetes-autodiscover", "helm"]
     - role: mdelapenya.go
+      become: True
+      when: ansible_facts['os_family'] != "Windows"
+      vars:
+        go_version: 1.17
+    - role: mdelapenya.go
+      when: ansible_facts['os_family'] == "Windows"
+      become: True
+      become_user: "{{ ansible_user }}"
+      become_method: "runas"
       vars:
         go_version: 1.17
   vars:
