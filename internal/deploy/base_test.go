@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -94,5 +95,31 @@ func Test_ServiceRequest_WithScale(t *testing.T) {
 		srv := NewServiceRequest("foo").WithScale(6)
 
 		assert.Equal(t, 6, srv.Scale, "Service scale is 6")
+	})
+}
+
+func Test_ServiceRequest_GetVersion(t *testing.T) {
+	originalElasticAgentVersion := common.ElasticAgentVersion
+
+	t.Run("ServiceRequest without version", func(t *testing.T) {
+		common.ElasticAgentVersion = "1.2.3"
+		defer func() {
+			common.ElasticAgentVersion = originalElasticAgentVersion
+		}()
+
+		srv := NewServiceRequest("foo")
+
+		assert.Equal(t, "1.2.3", srv.Version, "Service has default version")
+	})
+
+	t.Run("ServiceRequest including version", func(t *testing.T) {
+		common.ElasticAgentVersion = "1.2.3"
+		defer func() {
+			common.ElasticAgentVersion = originalElasticAgentVersion
+		}()
+
+		srv := NewServiceRequest("foo").WithVersion("4.5.6")
+
+		assert.Equal(t, "4.5.6", srv.Version, "Service has version")
 	})
 }

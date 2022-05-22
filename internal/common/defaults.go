@@ -6,7 +6,6 @@ package common
 
 import (
 	"path/filepath"
-	"regexp"
 
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/io"
@@ -36,12 +35,8 @@ const FleetProfileName = "fleet"
 // FleetServerAgentServiceName the name of the service for the Elastic Agent
 const FleetServerAgentServiceName = "fleet-server"
 
-// AgentStaleVersion is the version of the agent to use as a base during upgrade
-// It can be overriden by ELASTIC_AGENT_STALE_VERSION env var. Using latest GA as a default.
-var AgentStaleVersion = "7.17-SNAPSHOT"
-
 // BeatVersionBase is the base version of the Beat to use
-var BeatVersionBase = "8.3.0-8ee1196f-SNAPSHOT"
+var BeatVersionBase = "8.3.0-e4aa1f83-SNAPSHOT"
 
 // BeatVersion is the version of the Beat to use
 // It can be overriden by BEAT_VERSION env var
@@ -73,10 +68,6 @@ var StackVersion = BeatVersionBase
 // downloading and extracting the agent
 var elasticAgentWorkingDir string
 
-// The compiled version of the regex created at init() is cached here so it
-// only needs to be created once.
-var versionRegex *regexp.Regexp
-
 func init() {
 	config.Init()
 
@@ -97,8 +88,6 @@ func init() {
 			"apm-environment": shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "local"),
 		}).Info("Current execution will be instrumented 🛠")
 	}
-
-	versionRegex = regexp.MustCompile(`^([0-9]+)(\.[0-9]+)(-SNAPSHOT)?$`)
 }
 
 // GetElasticAgentWorkingPath retrieve the path to the elastic-agent dir
@@ -131,8 +120,7 @@ func InitVersions() {
 
 	// check if version is an alias. For compatibility versions let's
 	// support aliases in the format major.minor
-	m := versionRegex.FindStringSubmatch(BeatVersion)
-	if m != nil {
+	if downloads.IsAlias(BeatVersion) {
 		v, err = downloads.GetElasticArtifactVersion(BeatVersion)
 		if err != nil {
 			log.WithFields(log.Fields{
