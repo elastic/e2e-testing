@@ -119,9 +119,11 @@
        $SUITE = "{{ lookup('env', 'SUITE') }}"
        $REPORT_PREFIX = "{{ lookup('env', 'REPORT_PREFIX') }}"
 
-       $SEED = Get-Date -Format o | ForEach-Object { $_ -replace ":", "." }
-       Add-Content C:\Users\ogc\.op\.env  "REPORT='C:\Users\ogc\e2e-testing\outputs\TEST-${REPORT_PREFIX}-85CC22CF-${SEED}'"
+       $SEED = [Math]::Round((Get-Date).ToFileTime() / 10000000 - 11644473600)
+       $REPORT="C:\Users\ogc\e2e-testing\outputs\TEST-${REPORT_PREFIX}-85CC22CF-${SEED}"
 
-       $env:TAGS="{{ lookup('env', 'TAGS') }}"; make --no-print-directory -C "{{ e2e_base_dir }}e2e/_suites/${SUITE}" functional-test-win
+       Add-Content C:\Users\ogc\.op\.env  "${REPORT}"
+
+       $env:TAGS="{{ lookup('env', 'TAGS') }}"; $env:FORMAT="pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml"; make --no-print-directory -C "{{ e2e_base_dir }}e2e/_suites/${SUITE}" functional-test-win
   tags:
     - scripts
