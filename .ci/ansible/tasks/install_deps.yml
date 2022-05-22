@@ -105,3 +105,9 @@
   when:
     - ansible_distribution in ["Debian", "Ubuntu"]
     - '"arm64" in nodeLabel'
+
+- name: Install make on Windows
+  chocolatey.chocolatey.win_chocolatey:
+    name: make
+    state: present
+  when: ansible_distribution in ["Windows"]
