@@ -394,6 +394,14 @@ def getNodeIp(workspace, platform){
   return [user: runnerUser, ip: runnerIP]
 }
 
+def getRemoteE2EPath(testRunner, platform) {
+  if (platform.contains("windows")) {
+    return "C:\\Users\\${testRunner.user}\\e2e-testing\\"
+  }
+
+  return "/home/${testRunner.user}/e2e-testing/"
+}
+
 def getMachineInfo(platform){
   def machineYaml = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/.ci/.e2e-platforms.yaml")
   def machines = machineYaml['PLATFORMS']
@@ -534,13 +542,6 @@ def generateFunctionalTestStep(Map args = [:]){
 
   def runId = UUID.randomUUID().toString().split('-')[0]
 
-  def testRunner = getNodeIp("${env.WORKSPACE}", platform)
-
-  def remoteBasePath = "/home/${testRunner.user}/e2e-testing/"
-  if (platform.contains("windows")) {
-    remoteBasePath = "C:\\Users\\${testRunner.user}\\e2e-testing\\"
-  }
-
   return {
     withNode(labels: 'ubuntu-20.04 && gobld/machineType:e2-small', forceWorkspace: true, forceWorker: true){
       try {
@@ -557,6 +558,10 @@ def generateFunctionalTestStep(Map args = [:]){
             ansible("${env.WORKSPACE}",
                     runId,
                     "-t provision-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+
+            def testRunner = getNodeIp("${env.WORKSPACE}", platform)
+
+            def remoteBasePath = getRemoteE2EPath(testRunner, platform)
 
             // Configure node for testing
             ansible("${env.WORKSPACE}",
@@ -575,6 +580,10 @@ def generateFunctionalTestStep(Map args = [:]){
           }
         }
       } finally {
+        def testRunner = getNodeIp("${env.WORKSPACE}", platform)
+
+        def remoteBasePath = getRemoteE2EPath(testRunner, platform)
+
         sh "mkdir -p outputs/${testRunner.ip} || true"
 
         if (!platform.contains("windows")) {
