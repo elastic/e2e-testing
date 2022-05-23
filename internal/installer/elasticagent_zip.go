@@ -19,15 +19,24 @@ import (
 
 // elasticAgentZIPPackage implements operations for a ZIP installer
 type elasticAgentZIPPackage struct {
-	service deploy.ServiceRequest
-	deploy  deploy.Deployment
+	elasticAgentPackage
 }
 
 // AttachElasticAgentZIPPackage creates an instance for the ZIP installer
-func AttachElasticAgentZIPPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentZIPPackage(d deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentZIPPackage{
-		service: service,
-		deploy:  deploy,
+		elasticAgentPackage{
+			service: service,
+			deploy:  d,
+			metadata: deploy.ServiceInstallerMetadata{
+				PackageType:   "zip",
+				Os:            "windows",
+				Arch:          "x86_64",
+				FileExtension: "zip",
+				XPack:         true,
+				Docker:        false,
+			},
+		},
 	}
 }
 
@@ -63,7 +72,7 @@ func (i *elasticAgentZIPPackage) Exec(ctx context.Context, args []string) (strin
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string) error {
+func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
 	cmds := []string{"C:\\elastic-agent\\elastic-agent.exe", "install"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.zip.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -73,6 +82,9 @@ func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string) error
 
 	cfg, _ := kibana.NewFleetConfig(token)
 	cmds = append(cmds, cfg.Flags()...)
+	if extraFlags != "" {
+		cmds = append(cmds, extraFlags)
+	}
 
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
@@ -106,19 +118,15 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 	defer span.End()
 
 	artifact := "elastic-agent"
-	os := "windows"
-	arch := "x86_64"
-	extension := "zip"
+	metadata := i.metadata
 
-	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, common.ElasticAgentVersion, os, arch, extension, false, true)
+	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, i.service.Version, metadata.Os, metadata.Arch, metadata.FileExtension, false, true)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"artifact":  artifact,
-			"version":   common.ElasticAgentVersion,
-			"os":        os,
-			"arch":      arch,
-			"extension": extension,
-			"error":     err,
+			"artifact":        artifact,
+			"version":         i.service.Version,
+			"packageMetadata": metadata,
+			"error":           err,
 		}).Error("Could not download the binary for the agent")
 		return err
 	}
@@ -135,7 +143,7 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 			return err
 		}
 
-		output, _ := i.Exec(ctx, []string{"powershell.exe", "Move-Item", "-Force", "-Path", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), os, arch), "-Destination", "C:\\elastic-agent"})
+		output, _ := i.Exec(ctx, []string{"powershell.exe", "Move-Item", "-Force", "-Path", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), metadata.Os, metadata.Arch), "-Destination", "C:\\elastic-agent"})
 		log.WithField("output", output).Trace("Moved elastic-agent")
 		return nil
 	}
@@ -171,4 +179,9 @@ func (i *elasticAgentZIPPackage) Uninstall(ctx context.Context) error {
 		return fmt.Errorf("failed to uninstall the agent with subcommand: %v", err)
 	}
 	return nil
+}
+
+// Upgrade upgrades a EXE package
+func (i *elasticAgentZIPPackage) Upgrade(ctx context.Context, version string) error {
+	return doUpgrade(ctx, i)
 }

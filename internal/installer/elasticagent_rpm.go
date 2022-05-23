@@ -20,15 +20,29 @@ import (
 
 // elasticAgentRPMPackage implements operations for a RPM installer
 type elasticAgentRPMPackage struct {
-	service deploy.ServiceRequest
-	deploy  deploy.Deployment
+	elasticAgentPackage
 }
 
 // AttachElasticAgentRPMPackage creates an instance for the RPM installer
-func AttachElasticAgentRPMPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentRPMPackage(d deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+	arch := "x86_64"
+	if utils.GetArchitecture() == "arm64" {
+		arch = "aarch64"
+	}
+
 	return &elasticAgentRPMPackage{
-		service: service,
-		deploy:  deploy,
+		elasticAgentPackage{
+			service: service,
+			deploy:  d,
+			metadata: deploy.ServiceInstallerMetadata{
+				PackageType:   "rpm",
+				Os:            "linux",
+				Arch:          arch,
+				FileExtension: "rpm",
+				XPack:         true,
+				Docker:        false,
+			},
+		},
 	}
 }
 
@@ -70,7 +84,7 @@ func (i *elasticAgentRPMPackage) Exec(ctx context.Context, args []string) (strin
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentRPMPackage) Enroll(ctx context.Context, token string) error {
+func (i *elasticAgentRPMPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
 	cmds := []string{"elastic-agent", "enroll"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.rpm.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -80,6 +94,9 @@ func (i *elasticAgentRPMPackage) Enroll(ctx context.Context, token string) error
 
 	cfg, _ := kibana.NewFleetConfig(token)
 	cmds = append(cmds, cfg.Flags()...)
+	if extraFlags != "" {
+		cmds = append(cmds, extraFlags)
+	}
 
 	output, err := i.Exec(ctx, cmds)
 	log.Trace(output)
@@ -139,22 +156,15 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 		})
 		defer span.End()
 
-		os := "linux"
-		arch := "x86_64"
-		if utils.GetArchitecture() == "arm64" {
-			arch = "aarch64"
-		}
-		extension := "rpm"
+		metadata := i.metadata
 
-		binaryName, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, os, arch, extension, false, true)
+		binaryName, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, metadata.Os, metadata.Arch, metadata.FileExtension, metadata.Docker, metadata.XPack)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"artifact":  artifact,
-				"version":   version,
-				"os":        os,
-				"arch":      arch,
-				"extension": extension,
-				"error":     err,
+				"artifact":        artifact,
+				"version":         version,
+				"packageMetadata": metadata,
+				"error":           err,
 			}).Error("Could not download the binary")
 			return err
 		}
@@ -182,7 +192,7 @@ func (i *elasticAgentRPMPackage) Preinstall(ctx context.Context) error {
 		}
 	}
 
-	return installArtifactFn(ctx, "elastic-agent", common.ElasticAgentVersion, downloads.UseElasticAgentCISnapshots())
+	return installArtifactFn(ctx, "elastic-agent", i.service.Version, downloads.UseElasticAgentCISnapshots())
 }
 
 // Restart will restart a service
@@ -244,4 +254,9 @@ func (i *elasticAgentRPMPackage) Uninstall(ctx context.Context) error {
 		return fmt.Errorf("failed to uninstall the agent with subcommand: %v", err)
 	}
 	return nil
+}
+
+// Upgrade upgrades a RPM package
+func (i *elasticAgentRPMPackage) Upgrade(ctx context.Context, version string) error {
+	return doUpgrade(ctx, i)
 }

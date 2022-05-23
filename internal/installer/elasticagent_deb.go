@@ -20,15 +20,24 @@ import (
 
 // elasticAgentDEBPackage implements operations for a DEB installer
 type elasticAgentDEBPackage struct {
-	service deploy.ServiceRequest
-	deploy  deploy.Deployment
+	elasticAgentPackage
 }
 
 // AttachElasticAgentDEBPackage creates an instance for the DEB installer
-func AttachElasticAgentDEBPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentDEBPackage(d deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
 	return &elasticAgentDEBPackage{
-		service: service,
-		deploy:  deploy,
+		elasticAgentPackage{
+			service: service,
+			deploy:  d,
+			metadata: deploy.ServiceInstallerMetadata{
+				PackageType:   "deb",
+				Os:            "linux",
+				Arch:          utils.GetArchitecture(),
+				FileExtension: "deb",
+				XPack:         true,
+				Docker:        false,
+			},
+		},
 	}
 }
 
@@ -141,19 +150,15 @@ func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
 		})
 		defer span.End()
 
-		os := "linux"
-		arch := utils.GetArchitecture()
-		extension := "deb"
+		metadata := i.metadata
 
-		binaryName, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, os, arch, extension, false, true)
+		binaryName, binaryPath, err := downloads.FetchElasticArtifactForSnapshots(ctx, useCISnapshots, artifact, version, metadata.Os, metadata.Arch, metadata.FileExtension, metadata.Docker, metadata.XPack)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"artifact":  artifact,
-				"version":   version,
-				"os":        os,
-				"arch":      arch,
-				"extension": extension,
-				"error":     err,
+				"artifact":        artifact,
+				"version":         version,
+				"packageMetadata": metadata,
+				"error":           err,
 			}).Error("Could not download the binary for the agent")
 			return err
 		}
@@ -181,7 +186,7 @@ func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
 		}
 	}
 
-	return installArtifactFn(ctx, "elastic-agent", common.ElasticAgentVersion, downloads.UseElasticAgentCISnapshots())
+	return installArtifactFn(ctx, "elastic-agent", i.service.Version, downloads.UseElasticAgentCISnapshots())
 }
 
 // Restart will restart a service
@@ -244,4 +249,9 @@ func (i *elasticAgentDEBPackage) Uninstall(ctx context.Context) error {
 		return fmt.Errorf("failed to uninstall the agent with subcommand: %v", err)
 	}
 	return nil
+}
+
+// Upgrade upgrade a DEB package
+func (i *elasticAgentDEBPackage) Upgrade(ctx context.Context, version string) error {
+	return doUpgrade(ctx, i)
 }

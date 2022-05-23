@@ -27,7 +27,6 @@ import (
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
-	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 	"github.com/elastic/e2e-testing/pkg/downloads"
 
@@ -63,8 +62,8 @@ type FleetTestSuite struct {
 	AgentStoppedDate             time.Time
 	RuntimeDependenciesStartDate time.Time
 	// instrumentation
-	currentContext context.Context
-	DefaultAPIKey  string
+	currentContext    context.Context
+	DefaultAPIKey     string
 	ElasticAgentFlags string
 }
 
@@ -259,9 +258,9 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^an agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
 	s.Step(`^an agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
 	s.Step(`^an agent is deployed to Fleet with "([^"]*)" installer and "([^"]*)" flags$`, fts.anAgentIsDeployedToFleetWithInstallerAndTags)
-	s.Step(`^an agent "([^"]*)" is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
-	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
-	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
+	s.Step(`^a "([^"]*)" stale agent is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
+	s.Step(`^agent is in "([^"]*)" version$`, fts.agentInVersion)
+	s.Step(`^agent is upgraded to "([^"]*)" version$`, fts.anAgentIsUpgradedToVersion)
 	s.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
 	s.Step(`^the default API key has "([^"]*)"$`, fts.verifyDefaultAPIKey)
 	s.Step(`^the host is restarted$`, fts.theHostIsRestarted)
@@ -347,36 +346,15 @@ func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredSt
 	return nil
 }
 
-func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(version, installerType string) error {
-	agentVersionBackup := fts.Version
-	defer func() { fts.Version = agentVersionBackup }()
-
-	common.AgentStaleVersion = shell.GetEnv("ELASTIC_AGENT_STALE_VERSION", common.AgentStaleVersion)
-	// check if stale version is an alias
-	v, err := downloads.GetElasticArtifactVersion(common.AgentStaleVersion)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": common.AgentStaleVersion,
-		}).Error("Failed to get stale version")
-		return err
-	}
-	common.AgentStaleVersion = v
-
-	if downloads.UseElasticAgentCISnapshots() && !strings.HasSuffix(common.AgentStaleVersion, "-SNAPSHOT") {
-		common.AgentStaleVersion += "-SNAPSHOT"
-	}
-
-	switch version {
-	case "stale":
-		version = common.AgentStaleVersion
+func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(staleVersion string, installerType string) error {
+	switch staleVersion {
 	case "latest":
-		version = common.ElasticAgentVersion
-	default:
-		version = common.AgentStaleVersion
+		staleVersion = common.ElasticAgentVersion
 	}
 
-	fts.Version = version
+	fts.Version = staleVersion
+
+	log.Tracef("The stale version is %s", fts.Version)
 
 	return fts.anAgentIsDeployedToFleetWithInstaller(installerType)
 }
@@ -389,45 +367,70 @@ func (fts *FleetTestSuite) installCerts() error {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"agentVersion":      common.ElasticAgentVersion,
-			"agentStaleVersion": common.AgentStaleVersion,
+			"agentStaleVersion": fts.Version,
 			"error":             err,
 			"installer":         agentInstaller,
-			"version":           fts.Version,
 		}).Error("Could not install the certificates")
 		return err
 	}
 
+	log.WithFields(log.Fields{
+		"agentVersion":      common.ElasticAgentVersion,
+		"agentStaleVersion": fts.Version,
+		"error":             err,
+		"installer":         agentInstaller,
+	}).Tracef("Certs were installed")
 	return nil
 }
 
-func (fts *FleetTestSuite) anAgentIsUpgraded(desiredVersion string) error {
+func (fts *FleetTestSuite) anAgentIsUpgradedToVersion(desiredVersion string) error {
 	switch desiredVersion {
-	case "stale":
-		desiredVersion = common.AgentStaleVersion
 	case "latest":
 		desiredVersion = common.ElasticAgentVersion
-	default:
-		desiredVersion = common.ElasticAgentVersion
 	}
+	log.Tracef("Desired version is %s. Current version: %s", desiredVersion, fts.Version)
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+
+	/*
+		// upgrading using the command is needed for stand-alone mode, only
+		agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
+
+		log.Tracef("Upgrading agent from %s to %s with 'upgrade' command.", desiredVersion, fts.Version)
+		return agentInstaller.Upgrade(fts.currentContext, desiredVersion)
+	*/
+
 	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
 	return fts.kibanaClient.UpgradeAgent(fts.currentContext, manifest.Hostname, desiredVersion)
 }
 
 func (fts *FleetTestSuite) agentInVersion(version string) error {
 	switch version {
-	case "stale":
-		version = common.AgentStaleVersion
 	case "latest":
 		version = downloads.GetSnapshotVersion(common.ElasticAgentVersion)
 	}
+	log.Tracef("Checking if agent is in version %s. Current version: %s", version, fts.Version)
+
+	retryCount := 0
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
+	exp := utils.GetExponentialBackOff(maxTimeout)
+
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
 
 	agentInVersionFn := func() error {
-		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+		retryCount++
+
 		agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
 		if err != nil {
+			log.WithFields(log.Fields{
+				"agent":       agent,
+				"error":       err,
+				"maxTimeout":  maxTimeout,
+				"elapsedTime": exp.GetElapsedTime(),
+				"retries":     retryCount,
+				"version":     version,
+			}).Warn("Could not get agent by hostname")
 			return err
 		}
 
@@ -437,14 +440,20 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 		}
 
 		if retrievedVersion != version {
-			return fmt.Errorf("version mismatch required '%s' retrieved '%s'", version, retrievedVersion)
+			err := fmt.Errorf("version mismatch required '%s' retrieved '%s'", version, retrievedVersion)
+			log.WithFields(log.Fields{
+				"elapsedTime":      exp.GetElapsedTime(),
+				"error":            err,
+				"maxTimeout":       maxTimeout,
+				"retries":          retryCount,
+				"retrievedVersion": retrievedVersion,
+				"version":          version,
+			}).Warn("Version mismatch")
+			return err
 		}
 
 		return nil
 	}
-
-	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
-	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	return backoff.Retry(agentInVersionFn, exp)
 }
@@ -471,7 +480,7 @@ func (fts *FleetTestSuite) agentRunPolicy(policyName string) error {
 			return fmt.Errorf("Policy not found '%s'", policyName)
 		}
 
-		agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
+		agent, err := fts.kibanaClient.GetAgentByHostnameFromList(fts.currentContext, manifest.Hostname)
 		if err != nil {
 			return err
 		}
@@ -548,8 +557,34 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndTags(installe
 }
 
 func (fts *FleetTestSuite) tagsAreInTheElasticAgentIndex() error {
-elasticsearch.Search()
-	return godog.ErrPending
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must": []interface{}{
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"tags": "linux",
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"tags": "production",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	indexName := ".fleet-agents"
+
+	_, err := elasticsearch.WaitForNumberOfHits(context.Background(), indexName, query, 1, 3*time.Minute)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Warn(elasticsearch.WaitForIndices())
+	}
+	return err
 }
 
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType string) error {
@@ -561,7 +596,10 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 
 	fts.InstallerType = installerType
 
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithScale(deployedAgentsCount)
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).
+		WithScale(deployedAgentsCount).
+		WithVersion(fts.Version)
+
 	if fts.BeatsProcess != "" {
 		agentService = agentService.WithBackgroundProcess(fts.BeatsProcess)
 	}
@@ -1075,7 +1113,7 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
 
-	err := agentInstaller.Enroll(fts.currentContext, fts.CurrentToken)
+	err := agentInstaller.Enroll(fts.currentContext, fts.CurrentToken, fts.ElasticAgentFlags)
 	if err != nil {
 		return err
 	}
@@ -1427,7 +1465,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	}
 
 	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
-	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken)
+	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken, fts.ElasticAgentFlags)
 
 	if err == nil {
 		err = fmt.Errorf("the agent was enrolled although the token was previously revoked")
@@ -1623,7 +1661,7 @@ func inputs(integration string) []kibana.Input {
 func (fts *FleetTestSuite) getAgentOSData() (string, error) {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
-	agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
+	agent, err := fts.kibanaClient.GetAgentByHostnameFromList(fts.currentContext, manifest.Hostname)
 	if err != nil {
 		return "", err
 	}
@@ -1633,11 +1671,11 @@ func (fts *FleetTestSuite) getAgentOSData() (string, error) {
 func (fts *FleetTestSuite) getAgentDefaultAPIKey() (string, error) {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
-	agent, err := fts.kibanaClient.GetAgentByHostname(fts.currentContext, manifest.Hostname)
+	agent, err := fts.kibanaClient.GetAgentByHostnameFromList(fts.currentContext, manifest.Hostname)
 	if err != nil {
 		return "", err
 	}
-	return agent.DefaultApiKey, nil
+	return agent.DefaultAPIKey, nil
 }
 
 func metricsInputs(integration string, set string, file string, metrics string) []kibana.Input {

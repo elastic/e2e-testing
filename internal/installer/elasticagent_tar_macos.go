@@ -20,15 +20,29 @@ import (
 
 // elasticAgentTARDarwinPackage implements operations for a TAR installer
 type elasticAgentTARDarwinPackage struct {
-	service deploy.ServiceRequest
-	deploy  deploy.Deployment
+	elasticAgentPackage
 }
 
 // AttachElasticAgentTARDarwinPackage creates an instance for the TAR installer
-func AttachElasticAgentTARDarwinPackage(deploy deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+func AttachElasticAgentTARDarwinPackage(d deploy.Deployment, service deploy.ServiceRequest) deploy.ServiceOperator {
+	arch := "x86_64"
+	if utils.GetArchitecture() == "arm64" {
+		arch = "arm64"
+	}
+
 	return &elasticAgentTARDarwinPackage{
-		service: service,
-		deploy:  deploy,
+		elasticAgentPackage{
+			service: service,
+			deploy:  d,
+			metadata: deploy.ServiceInstallerMetadata{
+				PackageType:   "tar",
+				Os:            "darwin",
+				Arch:          arch,
+				FileExtension: "tar.gz",
+				XPack:         true,
+				Docker:        false,
+			},
+		},
 	}
 }
 
@@ -65,7 +79,7 @@ func (i *elasticAgentTARDarwinPackage) Exec(ctx context.Context, args []string) 
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string) error {
+func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
 	cmds := []string{"/elastic-agent/elastic-agent", "install"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.tar.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -76,6 +90,9 @@ func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string)
 
 	cfg, _ := kibana.NewFleetConfig(token)
 	cmds = append(cmds, cfg.Flags()...)
+	if extraFlags != "" {
+		cmds = append(cmds, extraFlags)
+	}
 
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
@@ -110,22 +127,16 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 	defer span.End()
 
 	artifact := "elastic-agent"
-	os := "darwin"
-	arch := "x86_64"
-	if utils.GetArchitecture() == "arm64" {
-		arch = "arm64"
-	}
-	extension := "tar.gz"
 
-	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, common.ElasticAgentVersion, os, arch, extension, false, true)
+	metadata := i.metadata
+
+	_, binaryPath, err := downloads.FetchElasticArtifact(ctx, artifact, i.service.Version, metadata.Os, metadata.Arch, metadata.FileExtension, false, true)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"artifact":  artifact,
-			"version":   common.ElasticAgentVersion,
-			"os":        os,
-			"arch":      arch,
-			"extension": extension,
-			"error":     err,
+			"artifact":        artifact,
+			"version":         i.service.Version,
+			"packageMetadata": metadata,
+			"error":           err,
 		}).Error("Could not download the binary for the agent")
 		return err
 	}
@@ -135,7 +146,20 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), os, arch), "/elastic-agent"})
+	version := common.ElasticAgentVersion
+	if downloads.IsAlias(version) {
+		v, err := downloads.GetElasticArtifactVersion(version)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"version": version,
+			}).Warn("Failed to get the version, keeping current version")
+		} else {
+			version = v
+		}
+	}
+
+	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), metadata.Os, metadata.Arch), "/elastic-agent"})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
@@ -197,4 +221,9 @@ func (i *elasticAgentTARDarwinPackage) Uninstall(ctx context.Context) error {
 		return fmt.Errorf("failed to uninstall the agent with subcommand: %v", err)
 	}
 	return nil
+}
+
+// Upgrade upgrades a TAR package
+func (i *elasticAgentTARDarwinPackage) Upgrade(ctx context.Context, version string) error {
+	return doUpgrade(ctx, i)
 }
