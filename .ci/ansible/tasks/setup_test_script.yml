@@ -163,6 +163,7 @@
        export PATH="$PATH:/usr/local/go/bin"
 
        TAGS="{{ lookup('env', 'TAGS') }}" \
+         FORMAT="pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml" \
          make --no-print-directory -C "{{ e2e_base_dir }}e2e/_suites/${SUITE}" functional-test
   tags:
     - scripts
