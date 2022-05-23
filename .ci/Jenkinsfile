@@ -575,7 +575,7 @@ def generateFunctionalTestStep(Map args = [:]){
             } else {
               sshexec("${env.WORKSPACE}",
                       testRunner,
-                      "bash --login -c '${remoteBasePath}.ci/scripts/functional-test.sh'")
+                      "sudo bash '${remoteBasePath}.ci/scripts/functional-test.sh'")
             }
           }
         }

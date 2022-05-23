@@ -80,7 +80,7 @@ func (i *elasticAgentTARDarwinPackage) Exec(ctx context.Context, args []string) 
 
 // Enroll will enroll the agent into fleet
 func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string) error {
-	cmds := []string{"sudo", common.GetElasticAgentWorkingPath("elastic-agent"), "install"}
+	cmds := []string{common.GetElasticAgentWorkingPath("elastic-agent"), "install"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.tar.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -173,7 +173,7 @@ func (i *elasticAgentTARDarwinPackage) Restart(ctx context.Context) error {
 
 // Start will start a service
 func (i *elasticAgentTARDarwinPackage) Start(ctx context.Context) error {
-	cmds := []string{"sudo", "launchctl", "start", "elastic-agent"}
+	cmds := []string{"launchctl", "start", "elastic-agent"}
 	span, _ := apm.StartSpanOptions(ctx, "Starting Elastic Agent service", "elastic-agent.tar.start", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -190,7 +190,7 @@ func (i *elasticAgentTARDarwinPackage) Start(ctx context.Context) error {
 
 // Stop will start a service
 func (i *elasticAgentTARDarwinPackage) Stop(ctx context.Context) error {
-	cmds := []string{"sudo", "launchctl", "stop", "elastic-agent"}
+	cmds := []string{"launchctl", "stop", "elastic-agent"}
 	span, _ := apm.StartSpanOptions(ctx, "Stopping Elastic Agent service", "elastic-agent.tar.stop", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -207,7 +207,7 @@ func (i *elasticAgentTARDarwinPackage) Stop(ctx context.Context) error {
 
 // Uninstall uninstalls a TAR package
 func (i *elasticAgentTARDarwinPackage) Uninstall(ctx context.Context) error {
-	cmds := []string{"sudo", "elastic-agent", "uninstall", "-f"}
+	cmds := []string{"elastic-agent", "uninstall", "-f"}
 	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.tar.uninstall", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
