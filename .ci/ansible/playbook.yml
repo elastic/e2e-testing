@@ -63,6 +63,17 @@
       state: directory
       mode: '0755'
       owner: "{{ ansible_user }}"
+    tags:
+      - setup-stack
+
+  - name: Create home dir for root
+    ansible.builtin.file:
+      path: "/root/.op"
+      state: directory
+      mode: '0755'
+      owner: "root"
+    tags:
+      - setup-stack
 
   - name: Setup source code
     include_tasks: tasks/copy_test_files.yml
@@ -199,6 +210,18 @@
       state: directory
       mode: '0755'
       owner: "{{ ansible_user }}"
+    tags:
+      - setup-node
+      - copy-source
+      - scripts
+    when: ansible_os_family not in ["Windows"]
+
+  - name: Create home dir for root
+    ansible.builtin.file:
+      path: "/root/.op"
+      state: directory
+      mode: '0755'
+      owner: "root"
     tags:
       - setup-node
       - copy-source
