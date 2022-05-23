@@ -135,7 +135,8 @@
 - name: Copy env file to root
   become: True
   ansible.builtin.copy:
-    remote_src: "{{ e2e_home_dir }}.env"
+    remote_src: True
+    src: "{{ e2e_home_dir }}.env"
     dest: "/root/.op/.env"
     owner: root
     group: root
