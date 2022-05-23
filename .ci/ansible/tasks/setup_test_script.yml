@@ -158,7 +158,8 @@
        "{{ e2e_base_dir }}.ci/scripts/install-test-dependencies.sh" "{{ e2e_base_dir }}" "${SUITE}"
 
        SEED="$(date +%Y-%m-%d-%H:%M:%S)"
-       echo "REPORT='{{ e2e_base_dir }}outputs/TEST-${REPORT_PREFIX}-{{runId}}-${SEED}'" >> {{ e2e_home_dir }}.env
+       REPORT="{{ e2e_base_dir }}outputs/TEST-${REPORT_PREFIX}-{{runId}}-${SEED}"
+       echo "REPORT=\"${REPORT}"\" >> {{ e2e_home_dir }}.env
 
        export PATH="$PATH:/usr/local/go/bin"
 
