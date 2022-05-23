@@ -571,11 +571,11 @@ def generateFunctionalTestStep(Map args = [:]){
             if (platform.contains("windows")) {
               sshexec("${env.WORKSPACE}",
                       testRunner,
-                      "powershell ${remoteBasePath}.ci\\scripts\\functional-test.ps1")
+                      "powershell '${remoteBasePath}.ci\\scripts\\functional-test.ps1'")
             } else {
               sshexec("${env.WORKSPACE}",
                       testRunner,
-                      "bash --login -c ${remoteBasePath}.ci/scripts/functional-test.sh")
+                      "bash --login -c '${remoteBasePath}.ci/scripts/functional-test.sh'")
             }
           }
         }

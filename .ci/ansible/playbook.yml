@@ -93,7 +93,7 @@
       - setup-stack
 
   - name: Start stack without any tag to spin up the stack using Fleet's bootstrapping code
-    shell: "bash --login -c TAGS='non-existing-tag' {{ e2e_base_dir }}.ci/scripts/functional-test.sh"
+    shell: "bash --login -c \"TAGS='non-existing-tag' {{ e2e_base_dir }}.ci/scripts/functional-test.sh\""
     tags:
       - setup-stack
 

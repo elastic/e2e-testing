@@ -172,7 +172,7 @@ recreate-fleet-server:
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t fleet-server \
 		-i $(STACK_IP_ADDRESS),
-	ssh -t -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'bash --login -c /home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh'
+	ssh -t -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'bash --login -c "/home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh"'
 
 .PHONY: run-tests
 run-tests:
@@ -185,7 +185,7 @@ run-tests:
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t run-tests \
 		-i $(NODE_IP_ADDRESS),
-	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'bash --login -c /home/$(NODE_USER)/e2e-testing/.ci/scripts/functional-test.sh "$(TAGS)"'
+	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'bash --login -c "/home/$(NODE_USER)/e2e-testing/.ci/scripts/functional-test.sh \"$(TAGS)\""'
 
 .PHONY: run-tests-win
 run-tests-win:
@@ -198,4 +198,4 @@ run-tests-win:
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t run-tests \
 		-i $(NODE_IP_ADDRESS),
-	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'powershell C:\Users\$(NODE_USER)\e2e-testing\.ci\scripts\functional-test.ps1'
+	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'powershell "C:\Users\$(NODE_USER)\e2e-testing\.ci\scripts\functional-test.ps1"'
