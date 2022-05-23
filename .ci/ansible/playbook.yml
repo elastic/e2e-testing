@@ -93,9 +93,9 @@
       - setup-stack
 
   - name: Start stack without any tag to spin up the stack using Fleet's bootstrapping code
-    shell: "bash --login -c \"TAGS='non-existing-tag' {{ e2e_base_dir }}.ci/scripts/functional-test.sh\""
-    tags:
-      - setup-stack
+    ansible.builtin.shell:
+    args:
+      cmd: "/bin/bash --login -c \"TAGS='non-existing-tag' {{ e2e_base_dir }}.ci/scripts/functional-test.sh\""
 
   - name: Wait for the stack to come up
     wait_for: host={{ inventory_hostname }} port={{ item.port }} delay=10
