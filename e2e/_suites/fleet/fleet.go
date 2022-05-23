@@ -65,6 +65,7 @@ type FleetTestSuite struct {
 	// instrumentation
 	currentContext context.Context
 	DefaultAPIKey  string
+	ElasticAgentFlags string
 }
 
 func (fts *FleetTestSuite) getDeployer() deploy.Deployment {
@@ -149,6 +150,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	fts.Image = ""
 	fts.StandAlone = false
 	fts.BeatsProcess = ""
+	fts.ElasticAgentFlags = ""
 }
 
 // beforeScenario creates the state needed by a scenario
@@ -256,6 +258,7 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	s.Step(`^an agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
 	s.Step(`^an agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
+	s.Step(`^an agent is deployed to Fleet with "([^"]*)" installer and "([^"]*)" flags$`, fts.anAgentIsDeployedToFleetWithInstallerAndTags)
 	s.Step(`^an agent "([^"]*)" is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
 	s.Step(`^agent is in version "([^"]*)"$`, fts.agentInVersion)
 	s.Step(`^agent is upgraded to version "([^"]*)"$`, fts.anAgentIsUpgraded)
@@ -272,6 +275,9 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^certs are installed$`, fts.installCerts)
 	s.Step(`^a Linux data stream exists with some data$`, fts.checkDataStream)
 	s.Step(`^the agent is enrolled into "([^"]*)" policy$`, fts.agentRunPolicy)
+
+	//flags steps
+	s.Step(`^the elastic agent index contains the tags$`, fts.tagsAreInTheElasticAgentIndex)
 
 	// endpoint steps
 	s.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)
@@ -528,6 +534,24 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(installerType s
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType)
 }
 
+// supported installers: tar, rpm, deb
+func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndTags(installerType string, flags string) error {
+	fts.BeatsProcess = ""
+
+	// FIXME: We need to cleanup the steps to support different operating systems
+	// for now we will force the zip installer type when the agent is running on windows
+	if runtime.GOOS == "windows" && common.Provider == "remote" {
+		installerType = "zip"
+	}
+	fts.ElasticAgentFlags = flags
+	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType)
+}
+
+func (fts *FleetTestSuite) tagsAreInTheElasticAgentIndex() error {
+elasticsearch.Search()
+	return godog.ErrPending
+}
+
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType string) error {
 	log.WithFields(log.Fields{
 		"installer": installerType,
@@ -552,7 +576,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	}
 
 	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, installerType)
-	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken)
+	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken, fts.ElasticAgentFlags)
 	if err != nil {
 		return err
 	}
@@ -1534,7 +1558,7 @@ func (fts *FleetTestSuite) checkDataStream() error {
 	return err
 }
 
-func deployAgentToFleet(ctx context.Context, agentInstaller deploy.ServiceOperator, token string) error {
+func deployAgentToFleet(ctx context.Context, agentInstaller deploy.ServiceOperator, token string, flags string) error {
 	err := agentInstaller.Preinstall(ctx)
 	if err != nil {
 		return err
@@ -1545,7 +1569,7 @@ func deployAgentToFleet(ctx context.Context, agentInstaller deploy.ServiceOperat
 		return err
 	}
 
-	err = agentInstaller.Enroll(ctx, token)
+	err = agentInstaller.Enroll(ctx, token, flags)
 	if err != nil {
 		return err
 	}
