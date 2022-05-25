@@ -16,7 +16,7 @@ set -euxo pipefail
 MSG="parameter missing."
 HOME=${HOME:?$MSG}
 
-KIND_VERSION="v${KIND_VERSION:-"0.10.0"}"
+KIND_VERSION="v${KIND_VERSION:-"0.12.0"}"
 KUBERNETES_VERSION="${KUBERNETES_VERSION:-"1.23.4"}"
 
 KUBECTL_CMD="${HOME}/bin/kubectl"
