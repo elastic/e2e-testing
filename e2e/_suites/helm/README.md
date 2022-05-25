@@ -29,14 +29,14 @@ This is an example of the optional configuration:
 
    ```shell
    # Depending on the versions used,
-   export HELM_VERSION="3.5.2"        # Helm version: for Helm v2.x.x we have to initialise Tiller right after the k8s cluster
+   export HELM_VERSION="3.9.0"        # Helm version: for Helm v2.x.x we have to initialise Tiller right after the k8s cluster
    export HELM_CHART_VERSION="7.17.3"  # version of the Elastic's Observability Helm charts
    export KUBERNETES_VERSION="1.23.4" # version of the cluster to be passed to kind
    ```
 
 3. Install dependencies.
 
-   - Install Helm 3.5.2
+   - Install Helm 3.9.0
    - Install Kind 0.12.0
    - Install Go, using the language version defined in the `.go-version` file at the root directory. We recommend using [GVM](https://github.com/andrewkroh/gvm), same as done in the CI, which will allow you to install multiple versions of Go, setting the Go environment in consequence: `eval "$(gvm 1.15.9)"`
    - Godog and other test-related binaries will be installed in their supported versions when the project is first built, thanks to Go modules and Go build system.
