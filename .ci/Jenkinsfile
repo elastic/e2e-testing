@@ -355,7 +355,7 @@ def getPythonPath(version) {
     }
 
     sh(script: "pyenv global ${version}", label: "Configure python with pyenv")
-    return sh(script: 'echo $(pyenv root)/shims', label: "Gather python path", returnStout: true)
+    return sh(script: 'echo $(pyenv root)/shims', label: "Gather python path", returnStdout: true)
   }
 }
 
