@@ -400,6 +400,12 @@ def pyrun(command){
             label: "Installing dependencies"
           )
         }
+        sh(script: """#!/bin/bash
+          python --version
+          ${env.WORKSPACE}/.venv/bin/${command} --version
+          ls -l ${env.WORKSPACE}/.venv/bin
+          pyenv versions
+          """, label: 'debug versions', returnStatus: true)
         sh(script: "${env.WORKSPACE}/.venv/bin/${command}", label: "Executing ${command.split(' ')[0]}")
       }
     }
