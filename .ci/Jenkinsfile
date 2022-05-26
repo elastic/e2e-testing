@@ -347,7 +347,7 @@ def scpr(workspace, connection, remote_src, local_dst){
 def getPythonPath(version) {
   sh(script: "curl https://pyenv.run | bash", label: "Install pyenv", returnStatus: true)
   withEnv(["PATH+PYENV=${WORKSPACE}/.pyenv/bin"]){
-    sh(script: "pyenv install ${version}", label: "Install python with pyenv")
+    sh(script: "pyenv install ${version}", label: "Install python with pyenv", returnStatus: true)
     sh(script: "pyenv global ${version}", label: "Configure python with pyenv")
     return sh(script: 'echo $(pyenv root)/shims', label: "Gather python path", returnStout: true)
   }
