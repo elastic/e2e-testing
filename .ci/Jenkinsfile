@@ -344,15 +344,23 @@ def scpr(workspace, connection, remote_src, local_dst){
   }
 }
 
+def getPythonPath(version) {
+  sh(script: "pyenv install ${version}", label: "Install python with pyenv")
+  sh(script: "pyenv global ${version}", label: "Configure python with pyenv")
+  return sh(script: 'echo $(pyenv root)/shims', label: "Gather python path", returnStout: true)
+}
+
 /*
  * Runs python in venv
  */
 def pyrun(command){
   def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
   def awsAuthObj = awsProps?.data
+  def pythonPath = getPythonPath('3.9.12')
   withEnv([
     "ANSIBLE_CONFIG=${env.WORKSPACE}/.ci/ansible/ansible.cfg",
     "ANSIBLE_HOST_KEY_CHECKING=False",
+    "PATH+PYTHON=${pythonPath}"
   ]){
     withVaultToken(){
       withEnvMask(vars: [
