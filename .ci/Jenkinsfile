@@ -345,11 +345,11 @@ def scpr(workspace, connection, remote_src, local_dst){
 }
 
 def getPythonPath(version) {
-  if (!isInstalled(tool: 'pyenv', flag: '--version') || !fileExists('${WORKSPACE}/.pyenv')) {
+  if (!isInstalled(tool: 'pyenv', flag: '--version') || !fileExists('${HOME}/.pyenv')) {
     sh(script: "curl https://pyenv.run | bash", label: "Install pyenv", returnStatus: true)
   }
 
-  withEnv(["PATH+PYENV=${WORKSPACE}/.pyenv/bin"]){
+  withEnv(["PATH+PYENV=${HOME}/.pyenv/bin"]){
     if (!isInstalled(tool: 'python3', flag: '--version', version: version)) {
       sh(script: "pyenv install ${version}", label: "Install python with pyenv", returnStatus: true)
     }
