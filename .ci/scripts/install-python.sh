@@ -10,9 +10,12 @@ set -euxo pipefail
 # Install python using pyenv manager
 #
 
-curl https://pyenv.run | bash
+PYENV_ROOT="${HOME}/.pyenv"
+PYTHON_VERSION=${PYTHON_VERSION:-"3.9.12"}
 
-export PATH="${PATH}:${HOME}/.pyenv/bin"
+export PATH="${PATH}:${PYENV_ROOT}/bin"
 
-pyenv install "${PYTHON_VERSION}"
+[[ -d "${PYENV_ROOT}" ]] || curl https://pyenv.run | bash
+
+pyenv install "${PYTHON_VERSION}" -f
 pyenv global "${PYTHON_VERSION}"

@@ -53,7 +53,7 @@ __check_defined = \
 # Installs python using pyenv manager
 .PHONY: python
 python:
-	@$(PROJECT_DIR)/.ci/scripts/install-python.sh
+	@PYTHON_VERSION="$(PYTHON_VERSION)" $(PROJECT_DIR)/.ci/scripts/install-python.sh
 
 .PHONY: setup-env
 setup-env:
