@@ -402,7 +402,7 @@ def pyrun(command){
         }
         sh(script: """#!/bin/bash
           python --version
-          ${env.WORKSPACE}/.venv/bin/${command} --version
+          ${env.WORKSPACE}/.venv/bin/${command.split(' ')[0]} --version
           ls -l ${env.WORKSPACE}/.venv/bin
           pyenv versions
           """, label: 'debug versions', returnStatus: true)
