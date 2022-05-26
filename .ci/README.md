@@ -30,6 +30,12 @@ It's possible that a consumer of the e2e tests would need to define a specific l
 
 ### Prereqs
 
+First, you need to have the required version of Python: `3.9.12`, which you can install it with the following command:
+
+```shell
+make -C .ci python
+```
+
 The following variables need to be exported:
 
 - *AWS_SECRET_ACCESS_KEY*: AWS secret access key

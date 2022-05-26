@@ -1,4 +1,6 @@
 PROJECT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))/..
+PYTHON_VERSION ?= 3.9.12
+
 VENV_DIR=$(PROJECT_DIR)/.venv
 RUN_ID_FILE=$(PROJECT_DIR)/.ci/.runID
 RUN_ID:=$(shell cat $(RUN_ID_FILE))
@@ -47,6 +49,11 @@ __check_defined = \
 # Create the run id if it does not exist
 .runID:
 	echo "$(shell uuidgen|cut -d'-' -f1)" > $(RUN_ID_FILE)
+
+# Installs python using pyenv manager
+.PHONY: python
+python:
+	@$(PROJECT_DIR)/.ci/scripts/install-python.sh
 
 .PHONY: setup-env
 setup-env:
