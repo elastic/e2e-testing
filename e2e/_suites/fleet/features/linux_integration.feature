@@ -2,7 +2,6 @@
 Feature: Linux Integration
   Scenarios for Linux integration
 
-@ingest
 Scenario Outline: Adding the Linux Integration to an Agent ...
   Given an agent is deployed to Fleet with "tar" installer
     And the agent is listed in Fleet as "online"
