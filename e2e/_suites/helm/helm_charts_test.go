@@ -157,6 +157,9 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 	exp := utils.GetExponentialBackOff(maxTimeout)
 	retryCount := 1
 
+	// select by app label
+	selector = "app=" + selector
+
 	checkEndpointsFn := func() error {
 		output, err := kubectlClient.GetStringResourcesBySelector(ts.currentContext, "endpoints", selector)
 		if err != nil {

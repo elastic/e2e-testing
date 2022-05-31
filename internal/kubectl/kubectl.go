@@ -47,7 +47,7 @@ func (k *Kubectl) GetStringResourcesBySelector(ctx context.Context, resourceType
 	})
 	defer span.End()
 
-	output, err := k.Run(ctx, "get", resourceType, "--selector", selector, "-o", "json")
+	output, err := k.Run(ctx, "get", resourceType, "--selector="+selector, "-o", "json")
 	if err != nil {
 		return "", err
 	}
