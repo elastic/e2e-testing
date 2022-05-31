@@ -152,6 +152,7 @@
        #!/usr/bin/env bash
        set -euxo pipefail
 
+       BASE_DIR="/home/{{ansible_user}}/e2e-testing"
        SUITE="{{ lookup('env', 'SUITE') or 'fleet' }}"
        REPORT_PREFIX="{{ lookup('env', 'REPORT_PREFIX') or 'junit' }}"
 
