@@ -62,7 +62,7 @@ func (k *Kubectl) GetResourcesBySelector(ctx context.Context, resourceType, sele
 	})
 	defer span.End()
 
-	output, err := k.Run(ctx, "get", resourceType, "--selector", selector, "-o", "json")
+	output, err := k.Run(ctx, "get", resourceType, "--selector="+selector, "-o", "json")
 	if err != nil {
 		return nil, err
 	}
@@ -91,23 +91,12 @@ func (k *Kubectl) GetResourceSelector(ctx context.Context, resourceType, resourc
 	})
 	defer span.End()
 
-	output, err := k.GetResourceJSONPath(ctx, resourceType, resource, "{.metadata.selfLink}")
+	output, err := k.GetResourceJSONPath(ctx, resourceType, resource, "{.metadata.labels.app}")
 	if err != nil {
 		return "", err
 	}
 
-	output, err = k.Run(ctx, "get", "--raw", strings.ReplaceAll(output, "'", "")+"/scale")
-	if err != nil {
-		return "", err
-	}
-
-	jsonObj, err := jsonToObj(output)
-	if err != nil {
-		return "", err
-	}
-
-	status := jsonObj["status"].(map[string]interface{})
-	return status["selector"].(string), nil
+	return strings.ReplaceAll(output, "'", ""), nil
 }
 
 // Run a kubectl command and return the output

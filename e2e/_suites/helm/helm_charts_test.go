@@ -227,6 +227,9 @@ func (ts *HelmChartTestSuite) aResourceWillManagePods(resourceType string) error
 		return err
 	}
 
+	// select by app label
+	selector = "app=" + selector
+
 	resources, err := ts.checkResources(resourceType, selector, 1)
 	if err != nil {
 		return err
