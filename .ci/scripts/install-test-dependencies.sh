@@ -12,20 +12,20 @@ set -euxo pipefail
 #   - SUITE - that's the name of the test suite to install the dependencies for.
 #
 
-WORKSPACE=${1:?WORKSPACE is not set}
-SUITE=${2:?SUITE is not set}
+BASE_DIR="${BASE_DIR:-$(pwd)}"
+SUITE=${1:?SUITE is not set}
 
 # execute specific test dependencies if it exists
-if [ -f "${WORKSPACE}/.ci/scripts/install-${SUITE}-test-dependencies.sh" ]
+if [ -f "${BASE_DIR}/.ci/scripts/install-${SUITE}-test-dependencies.sh" ]
 then
     ## Install the required dependencies with some retry
     CI_UTILS=/usr/local/bin/bash_standard_lib.sh
     if [ -e "${CI_UTILS}" ] ; then
         # shellcheck disable=SC1090
         source "${CI_UTILS}"
-        retry 3 source ${WORKSPACE}/.ci/scripts/install-${SUITE}-test-dependencies.sh
+        retry 3 source ${BASE_DIR}/.ci/scripts/install-${SUITE}-test-dependencies.sh
     else
-        source ${WORKSPACE}/.ci/scripts/install-${SUITE}-test-dependencies.sh
+        source ${BASE_DIR}/.ci/scripts/install-${SUITE}-test-dependencies.sh
     fi
 else
     echo "Not installing test dependencies for ${SUITE}"

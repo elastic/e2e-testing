@@ -155,7 +155,7 @@
        SUITE="{{ lookup('env', 'SUITE') or 'fleet' }}"
        REPORT_PREFIX="{{ lookup('env', 'REPORT_PREFIX') or 'junit' }}"
 
-       "{{ e2e_base_dir }}.ci/scripts/install-test-dependencies.sh" "{{ e2e_base_dir }}" "${SUITE}"
+       BASE_DIR=${BASE_DIR} "${BASE_DIR}/.ci/scripts/install-test-dependencies.sh" "${SUITE}"
 
        SEED="$(date +%Y-%m-%d-%H:%M:%S)"
        REPORT="{{ e2e_base_dir }}outputs/TEST-${REPORT_PREFIX}-{{runId}}-${SEED}"
