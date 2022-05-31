@@ -71,5 +71,5 @@ Scenario Outline: Un-enrolling Elastic Agent stops Elastic Endpoint
 @deploy-endpoint-then-remove-it-from-policy
 Scenario Outline: Removing Endpoint from Agent policy stops the connected Endpoint
   Given an "Endpoint" is successfully deployed with an Agent using "tar" installer
-  When the "Endpoint and Cloud Security" integration is "removed" in the policy
+  When the "Endpoint Security" integration is "removed" in the policy
   Then the "elastic-endpoint" process is in the "stopped" state on the host
