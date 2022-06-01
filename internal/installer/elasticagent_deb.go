@@ -30,6 +30,7 @@ func AttachElasticAgentDEBPackage(d deploy.Deployment, service deploy.ServiceReq
 			service: service,
 			deploy:  d,
 			metadata: deploy.ServiceInstallerMetadata{
+				AgentPath:     "/var/lib/elastic-agent",
 				PackageType:   "deb",
 				Os:            "linux",
 				Arch:          utils.GetArchitecture(),
@@ -55,7 +56,7 @@ func (i *elasticAgentDEBPackage) AddFiles(ctx context.Context, files []string) e
 // Inspect returns info on package
 func (i *elasticAgentDEBPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
 	return deploy.ServiceOperatorManifest{
-		WorkDir:    "/var/lib/elastic-agent",
+		WorkDir:    i.metadata.AgentPath,
 		CommitFile: "/etc/elastic-agent/.elastic-agent.active.commit",
 	}, nil
 }

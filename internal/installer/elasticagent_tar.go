@@ -37,6 +37,7 @@ func AttachElasticAgentTARPackage(d deploy.Deployment, service deploy.ServiceReq
 			service: service,
 			deploy:  d,
 			metadata: deploy.ServiceInstallerMetadata{
+				AgentPath:     "/opt/Elastic/Agent",
 				PackageType:   "tar",
 				Os:            "linux",
 				Arch:          arch,
@@ -62,7 +63,7 @@ func (i *elasticAgentTARPackage) AddFiles(ctx context.Context, files []string) e
 // Inspect returns info on package
 func (i *elasticAgentTARPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
 	return deploy.ServiceOperatorManifest{
-		WorkDir:    "/opt/Elastic/Agent",
+		WorkDir:    i.metadata.AgentPath,
 		CommitFile: "elastic-agent/.elastic-agent.active.commit",
 	}, nil
 }
