@@ -81,10 +81,10 @@ func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string, extra
 	defer span.End()
 
 	cfg, _ := kibana.NewFleetConfig(token)
-	cmds = append(cmds, cfg.Flags()...)
 	if extraFlags != "" {
 		cmds = append(cmds, extraFlags)
 	}
+	cmds = append(cmds, cfg.Flags()...)
 
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
