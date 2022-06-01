@@ -56,7 +56,7 @@ In the case you are running the scripts outside the "Elastic Observability" AWS 
 1. Use `us-east-2` (Ohio) as your default AWS region. All the community AMIs that we use are hosted there.
 2. Create a "Security Group" named `e2e`. This security group will allow remote access to certain ports in the remote instances we are creating. In this security group please use `0.0.0.0/0` as the Source for the following ports:
    - HTTP 80
-   - HTTPS443
+   - HTTPS 443
    - SSH 22
    - Elasticsearch 9200
    - Kibana 5601
