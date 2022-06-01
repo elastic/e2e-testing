@@ -142,6 +142,11 @@ func (i *elasticAgentDEBPackage) Postinstall(ctx context.Context) error {
 
 // Preinstall executes operations before installing a DEB package
 func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
+	err := createAgentDirectories(ctx, i, []string{"sudo", "chown", "-R", "root:root", i.metadata.AgentPath})
+	if err != nil {
+		return err
+	}
+
 	installArtifactFn := func(ctx context.Context, artifact string, version string, useCISnapshots bool) error {
 		span, _ := apm.StartSpanOptions(ctx, "Pre-install "+artifact, artifact+".debian.pre-install", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),
