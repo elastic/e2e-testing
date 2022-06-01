@@ -49,6 +49,19 @@ But you must first understand that there are two types of Cloud machines:
 1) the VM running the stack, and 
 2) the VMs running the actual tests, where the Elastic Agent will be installed and enrolled into the stack.
 
+#### Running the build scripts outside the Elastic Observability AWS account
+
+In the case you are running the scripts outside the "Elastic Observability" AWS account, please fulfill this requirements before you start creating the instances:
+
+1. Use `us-east-2` (Ohio) as your default AWS region. All the community AMIs that we use are hosted there.
+2. Create a "Security Group" named `e2e`. This security group will allow remote access to certain ports in the remote instances we are creating. In this security group please use `0.0.0.0/0` as the Source for the following ports:
+   - HTTP 80
+   - HTTPS443
+   - SSH 22
+   - Elasticsearch 9200
+   - Kibana 5601
+   - Fleet Server 8220
+
 ### Create and configure the stack VM
 
 This specialised VM starts Elasticsearch, Kibana and Fleet Server using Docker Compose, but instead of invoking the compose file directly, it uses the test framework to do it. Why? Because we need to wait for Elasticsearch to be ready and request an API Token to be passed to the Fleet Server container. And [we do this with code](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/e2e/_suites/fleet/fleet.go#L631-L748).
