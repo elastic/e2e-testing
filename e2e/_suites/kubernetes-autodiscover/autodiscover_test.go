@@ -251,41 +251,21 @@ func (m *podsManager) resourceIs(podName string, state string, options ...string
 	}
 }
 
-// This only works as JSON, not as YAML.
-// From https://kubernetes.io/docs/concepts/workloads/pods/ephemeral-containers/#ephemeral-containers-api
-const ephemeralContainerTemplate = `
-{
-    "apiVersion": "v1",
-    "kind": "EphemeralContainers",
-    "metadata": {
-        "name": "{{ .podName }}"
-    },
-    "ephemeralContainers": [{
-        "name": "ephemeral-container",
-        "command": [
-          "/bin/sh", "-c",
-          "while true; do echo Hi from an ephemeral container; sleep 1; done"
-        ],
-        "image": "busybox",
-        "imagePullPolicy": "IfNotPresent",
-        "stdin": true,
-        "tty": true,
-        "terminationMessagePolicy": "File"
-    }]
-}
-`
-
 func (m *podsManager) startEphemeralContainerIn(podName string) error {
 	podName = sanitizeName(podName)
-	t := template.Must(template.New("ephemeral-container").Parse(ephemeralContainerTemplate))
-	var buf bytes.Buffer
-	err := t.Execute(&buf, map[string]string{"podName": podName})
-	if err != nil {
-		return fmt.Errorf("executing ephemeral-container template: %w", err)
-	}
-
-	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/ephemeralcontainers", m.kubectl.Namespace, podName)
-	_, err = m.kubectl.RunWithStdin(m.ctx, &buf, "replace", "--raw", path, "-f", "-")
+	// https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/#ephemeral-container-example
+	// example: kubectl debug -it #{podName} -c ephemeral-container --image=busybox:1.28 -- /bin/sh -c "echo Hi from an ephemeral container"
+	_, err := m.kubectl.Run(
+		m.ctx,
+		"debug",
+		"-it",
+		podName,
+		"-c",
+		"ephemeral-container",
+		"--image=busybox:1.28",
+		"--",
+		"/bin/sh", "-c",
+		"echo Hi from an ephemeral container")
 	if err != nil {
 		return fmt.Errorf("failed to create ephemeral container: %w. Is EphemeralContainers feature flag enabled in the cluster?", err)
 	}
