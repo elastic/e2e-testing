@@ -552,25 +552,37 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndTags(installe
 	if runtime.GOOS == "windows" && common.Provider == "remote" {
 		installerType = "zip"
 	}
-	fts.ElasticAgentFlags = flags
+	fts.ElasticAgentFlags = "'" + flags + "'"
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType)
 }
 
 func (fts *FleetTestSuite) tagsAreInTheElasticAgentIndex() error {
+	var tagsArray []string
+	//ex of flags  "--tag production,linux" or "--tag=production,linux"
+	if fts.ElasticAgentFlags != "" {
+		tags := strings.TrimPrefix(fts.ElasticAgentFlags, "--tag")
+		tags = strings.TrimPrefix(tags, "=")
+		tags = strings.TrimPrefix(tags, " ")
+		tagsArray = strings.Split(tags, ",")
+	}
+	if len(tagsArray) == 0 {
+		return errors.Errorf("no tags were found, ElasticAgentFlags value %s", fts.ElasticAgentFlags)
+	}
+
+	var tagTerms []map[string]interface{}
+	for _, tag := range tagsArray {
+		tagTerms = append(tagTerms, map[string]interface{}{
+			"term": map[string]interface{}{
+				"tags": tag,
+			},
+		})
+	}
+
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{
 				"must": []interface{}{
-					map[string]interface{}{
-						"term": map[string]interface{}{
-							"tags": "linux",
-						},
-					},
-					map[string]interface{}{
-						"term": map[string]interface{}{
-							"tags": "production",
-						},
-					},
+					tagTerms,
 				},
 			},
 		},
