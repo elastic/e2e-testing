@@ -12,6 +12,7 @@ import (
 
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
+	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/systemd"
 	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
@@ -111,6 +112,28 @@ func doUpgrade(ctx context.Context, so deploy.ServiceOperator) error {
 	if err != nil {
 		return fmt.Errorf("failed to upgrade the agent with subcommand: %v", err)
 	}
+	return nil
+}
+
+// createAgentDirectories makes sure the agent directories belong to the root user
+func createAgentDirectories(ctx context.Context, i deploy.ServiceOperator, osArgs []string) error {
+	agentPath := i.PkgMetadata().AgentPath
+
+	err := io.MkdirAll(agentPath)
+	if err != nil {
+		return err
+	}
+
+	output, err := i.Exec(ctx, osArgs)
+	if err != nil {
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"args":   osArgs,
+		"output": output,
+		"path":   agentPath,
+	}).Debug("Agent directories will belong to root")
 	return nil
 }
 
