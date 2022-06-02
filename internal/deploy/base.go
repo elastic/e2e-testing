@@ -71,6 +71,7 @@ type ServiceManifest struct {
 
 // ServiceInstallerMetadata information about the installer
 type ServiceInstallerMetadata struct {
+	AgentPath     string
 	Arch          string
 	Docker        bool
 	FileExtension string

@@ -29,6 +29,7 @@ func AttachElasticAgentZIPPackage(d deploy.Deployment, service deploy.ServiceReq
 			service: service,
 			deploy:  d,
 			metadata: deploy.ServiceInstallerMetadata{
+				AgentPath:     "C:\\Program Files\\Elastic\\Agent",
 				PackageType:   "zip",
 				Os:            "windows",
 				Arch:          "x86_64",
@@ -48,7 +49,7 @@ func (i *elasticAgentZIPPackage) AddFiles(ctx context.Context, files []string) e
 // Inspect returns info on package
 func (i *elasticAgentZIPPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
 	return deploy.ServiceOperatorManifest{
-		WorkDir:    "C:\\Program Files\\Elastic\\Agent",
+		WorkDir:    i.metadata.AgentPath,
 		CommitFile: "C:\\elastic-agent\\.elastic-agent.active.commit",
 	}, nil
 }

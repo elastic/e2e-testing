@@ -35,6 +35,7 @@ func AttachElasticAgentTARDarwinPackage(d deploy.Deployment, service deploy.Serv
 			service: service,
 			deploy:  d,
 			metadata: deploy.ServiceInstallerMetadata{
+				AgentPath:     "/opt/Elastic/Agent",
 				PackageType:   "tar",
 				Os:            "darwin",
 				Arch:          arch,
@@ -54,7 +55,7 @@ func (i *elasticAgentTARDarwinPackage) AddFiles(ctx context.Context, files []str
 // Inspect returns info on package
 func (i *elasticAgentTARDarwinPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
 	return deploy.ServiceOperatorManifest{
-		WorkDir:    "/opt/Elastic/Agent",
+		WorkDir:    i.metadata.AgentPath,
 		CommitFile: "/elastic-agent/.elastic-agent.active.commit",
 	}, nil
 }
@@ -125,6 +126,11 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 	})
 	span.Context.SetLabel("runtime", runtime.GOOS)
 	defer span.End()
+
+	err := createAgentDirectories(ctx, i, []string{"sudo", "chown", "-R", "root:root", i.metadata.AgentPath})
+	if err != nil {
+		return err
+	}
 
 	artifact := "elastic-agent"
 
