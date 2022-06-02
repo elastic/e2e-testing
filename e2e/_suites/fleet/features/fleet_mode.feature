@@ -14,7 +14,7 @@ Scenario Outline: Deploying the agent
 
 @install-including-tags
 Scenario Outline: Deploying the agent including command line --tag for tags
-  When an agent is deployed to Fleet with "tar" installer and "--tag production,linux" flags
+  When an agent is deployed to Fleet with "tar" installer and "--tag=production,linux" flags
   Then the agent is listed in Fleet as "online"
     And the elastic agent index contains the tags
 

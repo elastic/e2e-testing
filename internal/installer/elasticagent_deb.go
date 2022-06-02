@@ -88,10 +88,10 @@ func (i *elasticAgentDEBPackage) Enroll(ctx context.Context, token string, extra
 	defer span.End()
 
 	cfg, _ := kibana.NewFleetConfig(token)
+	cmds = append(cmds, cfg.Flags()...)
 	if extraFlags != "" {
 		cmds = append(cmds, extraFlags)
 	}
-	cmds = append(cmds, cfg.Flags()...)
 
 	output, err := i.Exec(ctx, cmds)
 	log.Trace(output)

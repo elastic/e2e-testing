@@ -552,7 +552,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndTags(installe
 	if runtime.GOOS == "windows" && common.Provider == "remote" {
 		installerType = "zip"
 	}
-	fts.ElasticAgentFlags = "'" + flags + "'"
+	fts.ElasticAgentFlags = flags
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType)
 }
 
@@ -581,9 +581,7 @@ func (fts *FleetTestSuite) tagsAreInTheElasticAgentIndex() error {
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{
-				"must": []interface{}{
-					tagTerms,
-				},
+				"must": tagTerms,
 			},
 		},
 	}
