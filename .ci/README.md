@@ -40,7 +40,7 @@ You could be insterested in adding a new operative system in a specific architec
 
 > It's very likely that the new platform is already covered, as there are tasks for Debian/Ubuntu, CentOS (Fedora, RedHat), and Oracle Linux.
 
-5. Add the new supported platform to the test execution, as described above: open the [test descriptor](./.e2e-tests.yaml) and add your new platform to the scenarios you are interested in, as a new platform in the `platforms` array.
+5. Add the new supported platform to the test execution, as described above: open all the test descriptors (i.e. `./.e2e-tests-*.yaml`) and add your new platform to the scenarios you are interested in, as a new platform in the `platforms` array.
 
 ## Running a CI Deployment
 
