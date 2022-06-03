@@ -32,9 +32,6 @@ SUITES:
   - suite: "kubernetes-autodiscover"
     provider: "docker"
     scenarios:
-      - name: "kubernetes autodiscover with elastic-agent"
-        tags: "elastic-agent"
-        platforms: ["debian_amd64"]
       - name: "kubernetes autodiscover with filebeat"
         tags: "filebeat"
         platforms: ["debian_amd64"]
