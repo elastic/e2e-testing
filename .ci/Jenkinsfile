@@ -249,7 +249,6 @@ pipeline {
               script {
                 def suitesParam = params.runTestsSuites
                 def existingSuites = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE}")
-                log(level: 'DEBUG', text: "${existingSuites}")
                 def parallelTasks = [:]
                 if (suitesParam == "") {
                   log(level: 'DEBUG', text: "Iterate through existing test suites")
