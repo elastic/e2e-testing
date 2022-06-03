@@ -26,6 +26,22 @@ It's possible that a consumer of the e2e tests would need to define a specific l
     - **tags**: a Gherkin expression to filter scenarios by tag. It will drive the real execution of the tests, selecting which feature files and/or Cucumber tags will be added to the current test execution. An example could be `linux_integration` or `running_on_beats`. For reference, see https://github.com/cucumber/godog#tags. Required.
     - **platforms**: a list of platforms where the tests will be executed. Valid values are already declared under the `PLATFORMS` object, using the key of the platform as elements in the list. I.e. `["centos8_arm64", "centos8_amd64", "debian_arm64", "debian_amd64", "sles15"]`. Required.
 
+### Adding a new supported platform
+
+You could be insterested in adding a new operative system in a specific architecture (AMD/ARM)
+
+1. Look up AWS community AMIs in the Ohio (`us-east-2`) region. Take a note on its AMI ID and the default use, as you'll need them later on.
+2. Add a new entry in the `.e2e-platforms.yaml` file, following the same structure, as described above. The default user of the instance is very important, as it's used to log in in the remote machine once created by the tests.
+3. Select an AWS machine type for the new platform, using the existing platforms file as a reference. Our team is actively checking how much cloud resources are consumed by the tests, so please consider using a machine type that already exists.
+ 
+> If you need a machine type that is bigger or powerful, please open a discussion with us so we can understand your needs.
+
+4. Make sure you install the required software dependencies using Ansible. Please take a look at [this file](./ansible/tasks/install_deps.yml). You will find in it the package manager commands and specific filters for the different OS families that are supported by Ansible.
+
+> It's very likely that the new platform is already covered, as there are tasks for Debian/Ubuntu, CentOS (Fedora, RedHat), and Oracle Linux.
+
+5. Add the new supported platform to the test execution, as described above: open the [test descriptor](./.e2e-tests.yaml) and add your new platform to the scenarios you are interested in, as a new platform in the `platforms` array.
+
 ## Running a CI Deployment
 
 ### Prereqs
