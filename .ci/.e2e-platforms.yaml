@@ -40,12 +40,12 @@ PLATFORMS:
     image: "ami-0d90bed76900e679a"
     instance_type: "t3.xlarge"
     username: admin
- debian_11_amd64:
+  debian_11_amd64:
     description: "Debian 11 AMD64"
     image: "ami-0c6acff4e66eba1f1"
     instance_type: "t3.xlarge"
     username: admin
- ubuntu_22.04:
+  ubuntu_22.04:
     description: "Ubuntu 22.04"
     image: "ami-0672b5f41af818f25"
     instance_type: "t3.xlarge"
