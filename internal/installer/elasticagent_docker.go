@@ -28,6 +28,7 @@ func AttachElasticAgentDockerPackage(d deploy.Deployment, service deploy.Service
 			service: service,
 			deploy:  d,
 			metadata: deploy.ServiceInstallerMetadata{
+				AgentPath:     "/usr/share/elastic-agent",
 				PackageType:   "docker",
 				Os:            "linux",
 				Arch:          utils.GetArchitecture(),
@@ -53,7 +54,7 @@ func (i *elasticAgentDockerPackage) AddFiles(ctx context.Context, files []string
 // Inspect returns info on package
 func (i *elasticAgentDockerPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
 	return deploy.ServiceOperatorManifest{
-		WorkDir:    "/usr/share/elastic-agent",
+		WorkDir:    i.metadata.AgentPath,
 		CommitFile: "/usr/share/elastic-agent/.elastic-agent.active.commit",
 	}, nil
 }
@@ -76,7 +77,7 @@ func (i *elasticAgentDockerPackage) Exec(ctx context.Context, args []string) (st
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentDockerPackage) Enroll(ctx context.Context, token string) error {
+func (i *elasticAgentDockerPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
 	return nil
 }
 
