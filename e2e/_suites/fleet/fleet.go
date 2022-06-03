@@ -562,7 +562,7 @@ func (fts *FleetTestSuite) tagsAreInTheElasticAgentIndex() error {
 	if fts.ElasticAgentFlags != "" {
 		tags := strings.TrimPrefix(fts.ElasticAgentFlags, "--tag")
 		tags = strings.TrimPrefix(tags, "=")
-		tags = strings.TrimPrefix(tags, " ")
+		tags = strings.ReplaceAll(tags, " ", "")
 		tagsArray = strings.Split(tags, ",")
 	}
 	if len(tagsArray) == 0 {
