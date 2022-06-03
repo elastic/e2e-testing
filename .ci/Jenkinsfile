@@ -248,6 +248,7 @@ pipeline {
             withGithubNotify(context: 'E2E Tests', tab: 'tests') {
               script {
                 def suitesParam = params.runTestsSuites
+                log(level: 'DEBUG', text: "Reading ${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE} matrix file")
                 def existingSuites = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE}")
                 log(level: 'DEBUG', text: "${existingSuites}")
                 def parallelTasks = [:]
