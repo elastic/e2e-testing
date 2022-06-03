@@ -141,7 +141,7 @@ Once you have created and set up the remote machines with the above instructions
 
 > When submitting the pull request with your user to enable the SSH access, please remember to add the right backport labels (ex. `backport-v8.2.0`) so that you will be able to SSH into the CI machines for all supported maintenance branches.
 
-To SSH into the machines, please use the following commads:
+To SSH into the machines, please use the following commands:
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"

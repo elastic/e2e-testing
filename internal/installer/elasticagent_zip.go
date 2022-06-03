@@ -73,7 +73,7 @@ func (i *elasticAgentZIPPackage) Exec(ctx context.Context, args []string) (strin
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string) error {
+func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
 	cmds := []string{"C:\\elastic-agent\\elastic-agent.exe", "install"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.zip.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -83,6 +83,9 @@ func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string) error
 
 	cfg, _ := kibana.NewFleetConfig(token)
 	cmds = append(cmds, cfg.Flags()...)
+	if extraFlags != "" {
+		cmds = append(cmds, extraFlags)
+	}
 
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
