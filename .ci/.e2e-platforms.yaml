@@ -15,12 +15,12 @@ PLATFORMS:
     image: "ami-045b0a05944af45c1"
     instance_type: "t3.xlarge"
     username: centos
-  debian_arm64:
+  debian_10_arm64:
     description: "Debian 10 ARM64"
     image: "ami-06dac44ad759182bd"
     instance_type: "a1.large"
     username: admin
-  debian_amd64:
+  debian_10_amd64:
     description: "Debian 10 AMD64"
     image: "ami-0d90bed76900e679a"
     instance_type: "t3.xlarge"
