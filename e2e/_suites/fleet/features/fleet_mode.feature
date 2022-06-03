@@ -12,6 +12,12 @@ Scenario Outline: Deploying the agent
   Then the agent is listed in Fleet as "online"
     And system package dashboards are listed in Fleet
 
+@install-including-tags
+Scenario Outline: Deploying the agent including command line --tag for tags
+  When an agent is deployed to Fleet with "tar" installer and "--tag=production,linux" flags
+  Then the agent is listed in Fleet as "online"
+    And the elastic agent index contains the tags
+
 # @enroll
 # Scenario Outline: Deploying the agent with enroll and then run on rpm and deb
 #   Given an agent is deployed to Fleet
