@@ -46,7 +46,7 @@ PLATFORMS:
     instance_type: "t3.xlarge"
     username: admin
   ubuntu_22.04:
-    description: "Ubuntu 22.04"
+    description: "Ubuntu 22.04 AMD64"
     image: "ami-0672b5f41af818f25"
     instance_type: "t3.xlarge"
     username: admin
