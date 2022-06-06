@@ -37,6 +37,7 @@ func AttachElasticAgentTARPackage(d deploy.Deployment, service deploy.ServiceReq
 			service: service,
 			deploy:  d,
 			metadata: deploy.ServiceInstallerMetadata{
+				AgentPath:     "/opt/Elastic/Agent",
 				PackageType:   "tar",
 				Os:            "linux",
 				Arch:          arch,
@@ -62,7 +63,7 @@ func (i *elasticAgentTARPackage) AddFiles(ctx context.Context, files []string) e
 // Inspect returns info on package
 func (i *elasticAgentTARPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
 	return deploy.ServiceOperatorManifest{
-		WorkDir:    "/opt/Elastic/Agent",
+		WorkDir:    i.metadata.AgentPath,
 		CommitFile: "elastic-agent/.elastic-agent.active.commit",
 	}, nil
 }
@@ -86,7 +87,7 @@ func (i *elasticAgentTARPackage) Exec(ctx context.Context, args []string) (strin
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentTARPackage) Enroll(ctx context.Context, token string) error {
+func (i *elasticAgentTARPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
 	cmds := []string{"./elastic-agent/elastic-agent", "install"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.tar.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -96,6 +97,9 @@ func (i *elasticAgentTARPackage) Enroll(ctx context.Context, token string) error
 
 	cfg, _ := kibana.NewFleetConfig(token)
 	cmds = append(cmds, cfg.Flags()...)
+	if extraFlags != "" {
+		cmds = append(cmds, extraFlags)
+	}
 
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
@@ -122,6 +126,11 @@ func (i *elasticAgentTARPackage) Postinstall(ctx context.Context) error {
 
 // Preinstall executes operations before installing a TAR package
 func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
+	err := createAgentDirectories(ctx, i, []string{"sudo", "chown", "-R", "root:root", i.metadata.AgentPath})
+	if err != nil {
+		return err
+	}
+
 	installArtifactFn := func(ctx context.Context, artifact string, version string, useCISnapshots bool) error {
 		span, _ := apm.StartSpanOptions(ctx, "Pre-install "+artifact, artifact+".tar.pre-install", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),

@@ -31,10 +31,10 @@ type Deployment interface {
 
 // ServiceOperator represents the operations that can be performed by a service
 type ServiceOperator interface {
-	AddFiles(ctx context.Context, files []string) error      // adds files to service environment
-	Enroll(ctx context.Context, token string) error          // handle any enrollment/registering of service
-	Exec(ctx context.Context, args []string) (string, error) // exec arbitrary commands in service environment
-	Inspect() (ServiceOperatorManifest, error)               // returns manifest for package
+	AddFiles(ctx context.Context, files []string) error                // adds files to service environment
+	Enroll(ctx context.Context, token string, extraFlags string) error // handle any enrollment/registering of service
+	Exec(ctx context.Context, args []string) (string, error)           // exec arbitrary commands in service environment
+	Inspect() (ServiceOperatorManifest, error)                         // returns manifest for package
 	Install(ctx context.Context) error
 	InstallCerts(ctx context.Context) error
 	Logs(ctx context.Context) error
@@ -71,6 +71,7 @@ type ServiceManifest struct {
 
 // ServiceInstallerMetadata information about the installer
 type ServiceInstallerMetadata struct {
+	AgentPath     string
 	Arch          string
 	Docker        bool
 	FileExtension string
