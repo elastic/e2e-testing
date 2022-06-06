@@ -77,7 +77,7 @@ func (i *elasticAgentDockerPackage) Exec(ctx context.Context, args []string) (st
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentDockerPackage) Enroll(ctx context.Context, token string) error {
+func (i *elasticAgentDockerPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
 	return nil
 }
 

@@ -85,7 +85,7 @@ func (i *elasticAgentRPMPackage) Exec(ctx context.Context, args []string) (strin
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentRPMPackage) Enroll(ctx context.Context, token string) error {
+func (i *elasticAgentRPMPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
 	cmds := []string{"elastic-agent", "enroll"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.rpm.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -95,6 +95,9 @@ func (i *elasticAgentRPMPackage) Enroll(ctx context.Context, token string) error
 
 	cfg, _ := kibana.NewFleetConfig(token)
 	cmds = append(cmds, cfg.Flags()...)
+	if extraFlags != "" {
+		cmds = append(cmds, extraFlags)
+	}
 
 	output, err := i.Exec(ctx, cmds)
 	log.Trace(output)
