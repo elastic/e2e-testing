@@ -24,7 +24,7 @@
     key_name: "e2essh-{{runId}}"
     region: us-east-2
     security_group: e2e
-    image: '{{nodeImage}}'
+    image_id: '{{nodeImage}}'
     instance_type: '{{nodeInstanceType}}'
     tags:
       branch: "{{branch | default('Not running on CI')}}"
