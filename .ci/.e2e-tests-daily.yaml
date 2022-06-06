@@ -43,7 +43,7 @@ SUITES:
     scenarios:
       - name: "kubernetes autodiscover with elastic-agent"
         tags: "elastic-agent"
-        platforms: ["debian_10_amd64", "debian_11_amd64", "ubuntu_22_04_amd64"]
+        platforms: ["debian_10_amd64"]
       - name: "kubernetes autodiscover with filebeat"
         tags: "filebeat"
         platforms: ["debian_10_amd64"]
