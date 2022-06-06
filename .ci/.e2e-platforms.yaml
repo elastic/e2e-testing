@@ -42,7 +42,7 @@ PLATFORMS:
     username: admin
   debian_11_amd64:
     description: "Debian 11 AMD64"
-    image: "ami-0c6acff4e66eba1f1"
+    image: "ami-0c7c4e3c6b4941f0f"
     instance_type: "t3.xlarge"
     username: admin
   ubuntu_22_04_amd64:
