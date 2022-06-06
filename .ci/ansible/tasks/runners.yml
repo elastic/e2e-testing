@@ -19,14 +19,14 @@
     - provision-node
 
 - name: "Create {{nodeLabel}} AWS instances"
-  ec2:
+  amazon.aws.ec2_instance:
     wait: yes
     key_name: "e2essh-{{runId}}"
     region: us-east-2
-    group: e2e
+    security_group: e2e
     image: '{{nodeImage}}'
     instance_type: '{{nodeInstanceType}}'
-    instance_tags:
+    tags:
       branch: "{{branch | default('Not running on CI')}}"
       build: "{{build | default('Not running on CI')}}"
       build_url: "{{buildURL | default('Not running on CI') }}"
@@ -38,8 +38,8 @@
       reaper_mark: "e2e-testing-vm"
       repo: "{{repo | default('Not running on CI')}}"
       run_id: "{{runId | default('Not running on CI')}}"
-    count_tag:
-      name: "e2e-{{nodeLabel}}-{{runId}}"
+    exact_count: 1
+    name: "e2e-{{nodeLabel}}-{{runId}}"
     volumes:
       - device_name: /dev/sda1
         volume_type: gp3

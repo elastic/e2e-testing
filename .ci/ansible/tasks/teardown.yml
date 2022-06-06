@@ -1,15 +1,16 @@
 ---
 - name: "Destroy environment"
-  ec2:
+  amazon.aws.ec2_instance:
     key_name: "e2essh-{{runId}}"
     region: us-east-2
-    group: e2e
+    security_group: e2e
     image: '{{nodeImage}}'
-    instance_tags:
+    tags:
       name: "e2e-{{nodeLabel}}-{{runId}}"
     exact_count: 0
-    count_tag:
-      name: "e2e-{{nodeLabel}}-{{runId}}"
+    stage: absent
+    filters:
+      instance-id: "e2e-{{nodeLabel}}-{{runId}}"
   tags:
     - destroy
   async: 45
