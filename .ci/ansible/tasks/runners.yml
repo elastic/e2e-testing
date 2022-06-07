@@ -42,13 +42,15 @@
     name: "e2e-{{nodeLabel}}-{{runId}}"
     volumes:
       - device_name: /dev/sda1
-        volume_type: gp3
-        volume_size: 10
-        delete_on_termination: yes
+        ebs:
+          volume_type: gp3
+          volume_size: 10
+          delete_on_termination: true
       - device_name: /dev/xvda
-        volume_type: gp3
-        volume_size: 200
-        delete_on_termination: yes
+        ebs:
+          volume_type: gp3
+          volume_size: 200
+          delete_on_termination: true
     ebs_optimized: yes
   register: ec2
   tags:
