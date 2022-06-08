@@ -127,7 +127,7 @@ pipeline {
   }
   post {
     cleanup {
-      doNotifyBuildResult(params.notifyOnGreenBuilds)
+      notifyBuildResult()
     }
   }
 }
