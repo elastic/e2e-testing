@@ -1,7 +1,7 @@
 @Library('apm@main') _
 
 pipeline {
-  agent none
+  agent { label 'ubuntu-20 && immutable' }
   environment {
     NOTIFY_TO = credentials('notify-to')
     PIPELINE_LOG_LEVEL = 'INFO'
@@ -36,10 +36,22 @@ def runBuilds(Map args = [:]) {
 
   def quietPeriod = 0
   branches.each { branch ->
+    if (isBranchAvailable(branch)) {
     build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-fleet-daily-mbp/${branch}", wait: false, propagate: false)
-    build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-helm-daily-mbp/${branch}", wait: false, propagate: false)
-    build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-k8s-autodiscovery-daily-mbp/${branch}", wait: false, propagate: false)
-    // Increate the quiet period for the next iteration
-    quietPeriod += args.quietPeriodFactor
+      build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-helm-daily-mbp/${branch}", wait: false, propagate: false)
+      build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-k8s-autodiscovery-daily-mbp/${branch}", wait: false, propagate: false)
+      // Increate the quiet period for the next iteration
+      quietPeriod += args.quietPeriodFactor
+    }
   }
+}
+
+def isBranchAvailable(String branch) {
+  if (branch != 'main') {
+    def isBranch = sh(script: "curl https://artifacts-api.elastic.co/v1/versions/${branch} --output /dev/null --fail -s", returnStatus: true, label: 'validate branch in artifacts-api')
+    if (isBranch > 0) {
+      return false
+    }
+  }
+  return true
 }
