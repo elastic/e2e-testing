@@ -57,6 +57,8 @@
     - provision-stack
     - provision-node
 
+- debug: var=ec2
+
 - name: Add AWS host to ssh address list
   become: no
   lineinfile:
