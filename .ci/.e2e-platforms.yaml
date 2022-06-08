@@ -48,7 +48,7 @@ PLATFORMS:
   macos12:
     description: "Mac OS 12 platform"
     image: "ami-094dfaad20f351cb7"
-    instance_type: "c6g.4xlarge"
+    instance_type: "mac1.metal"
     username: ec2-user
   ubuntu_22_04_amd64:
     description: "Ubuntu 22.04 AMD64"
