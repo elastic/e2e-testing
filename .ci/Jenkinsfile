@@ -144,13 +144,17 @@ pipeline {
 
 def createCluster() {
   withVaultEnv(){
-    sh ".ci/scripts/deployment.sh 'create'"
+    dir("${BASE_DIR}") {
+      sh ".ci/scripts/deployment.sh 'create'"
+    }
   }
 }
 
 def destroyCluster() {
   withVaultEnv(){
-    sh ".ci/scripts/deployment.sh 'destroy'"
+    dir("${BASE_DIR}") {
+      sh ".ci/scripts/deployment.sh 'destroy'"
+    }
   }
 }
 
