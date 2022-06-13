@@ -7,6 +7,7 @@ package installer
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
@@ -137,7 +138,19 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 		"error":  err,
 	}).Trace("Checking for existence of elastic-agent installation directory")
 
-	_, err = i.Exec(ctx, []string{"powershell.exe", "Expand-Archive", "-LiteralPath", binaryPath, "-DestinationPath", `C:\`, "-Force"})
+	if !strings.EqualFold(strings.TrimSpace(output), "false") {
+		_, err = i.Exec(ctx, []string{"powershell.exe", "Remove-Item", `C:\elastic-agent`, "-Recurse", "-Force"})
+		if err != nil {
+			return err
+		}
+		log.WithFields(log.Fields{
+			"output": output,
+			"error":  err,
+		}).Trace("Elastic-agent installation directory existed: was removed")
+	}
+
+	// using -Path instead of -LiteralPath because the second needs an absolute URL, and the file is downloaded at the current dir
+	_, err = i.Exec(ctx, []string{"powershell.exe", "Expand-Archive", "-Path", binaryPath, "-DestinationPath", `C:\`, "-Force"})
 	if err != nil {
 		return err
 	}
@@ -147,7 +160,7 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	log.WithField("output", output).Trace("Moved elastic-agent")
+	log.WithField("output", output).Trace(`Moved elastic-agent to C:\elastic-agent`)
 	return nil
 }
 
