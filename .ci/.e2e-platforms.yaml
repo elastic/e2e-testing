@@ -18,17 +18,22 @@ PLATFORMS:
     instance_type: "t3.xlarge"
     shell_type: sh
     username: centos
-  debian_arm64:
+  debian_10_arm64:
     description: "Debian 10 ARM64"
     image: "ami-06dac44ad759182bd"
     instance_type: "a1.large"
     shell_type: sh
     username: admin
-  debian_amd64:
+  debian_10_amd64:
     description: "Debian 10 AMD64"
     image: "ami-0d90bed76900e679a"
     instance_type: "t3.xlarge"
     shell_type: sh
+    username: admin
+  debian_11_amd64:
+    description: "Debian 11 AMD64"
+    image: "ami-0c7c4e3c6b4941f0f"
+    instance_type: "t3.xlarge"
     username: admin
   oracle_linux8:
     description: "Oracle Linux 8 update 3 for x86_64 HVM"
@@ -54,3 +59,8 @@ PLATFORMS:
     instance_type: "t3.xlarge"
     shell_type: sh
     username: admin
+  ubuntu_22_04_amd64:
+    description: "Ubuntu 22.04 AMD64"
+    image: "ami-0aeb7c931a5a61206"
+    instance_type: "t3.xlarge"
+    username: ubuntu
