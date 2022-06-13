@@ -102,8 +102,10 @@
     - ansible_distribution in ["Debian", "Ubuntu"]
     - '"arm64" in nodeLabel'
 
-- name: Install make on Windows
+- name: Install dependencies on Windows
   chocolatey.chocolatey.win_chocolatey:
-    name: make
+    name:
+      - make
+      - rsync
     state: present
   when: ansible_distribution in ["Windows"]
