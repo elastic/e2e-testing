@@ -124,7 +124,8 @@
 
        Add-Content C:\Users\ogc\.op\.env  "${REPORT}"
 
-       $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") 
+       $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine")
+       cd "{{ e2e_base_dir }}\e2e\_suites\${SUITE}"
        go test -timeout 60m -v --godog.format="pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml" --godog.tags="{{ lookup('env', 'TAGS') }}"
   tags:
     - scripts
