@@ -101,6 +101,23 @@ There are different VM flavours that you can use to run the Elastic Agent and en
 
 In these VMs, the test framework will download a binary to install the Elastic Agent (TAR files, DEB/RPM packages...), and will execute the different agent commands to install, enroll, uninstall, etc.
 
+
+In order to list all the supported platforms, please run this command:
+
+```shell
+make -C .ci list-platforms 
+- stack
+- centos8_arm64
+- centos8_amd64
+- debian_10_arm64
+- debian_10_amd64
+- debian_11_amd64
+- oracle_linux8
+- sles15
+- fleet_elastic_pkg
+- ubuntu_22_04_amd64
+```
+
 It's possible to configure the test node (OS, architecture), using the values that are already present in [the platforms descriptor](.e2e-platforms.yaml):
 
 ```shell
@@ -111,7 +128,7 @@ export NODE_LABEL="centos8_arm64"
 export NODE_USER="centos"
 ```
 
-You can also use the build script to load the environment variables for one platform:
+Or, you can also use the build script to load the environment variables for one platform:
 
 ```shell
 # all possible platforms
