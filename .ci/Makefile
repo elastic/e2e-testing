@@ -185,7 +185,7 @@ run-tests:
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t run-tests \
 		-i $(NODE_IP_ADDRESS),
-	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'sudo bash "/home/$(NODE_USER)/e2e-testing/.ci/scripts/functional-test.sh \"$(TAGS)\""'
+	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'sudo bash /home/$(NODE_USER)/e2e-testing/.ci/scripts/functional-test.sh \"$(TAGS)\"'
 
 .PHONY: run-tests-win
 run-tests-win:
