@@ -101,6 +101,23 @@ There are different VM flavours that you can use to run the Elastic Agent and en
 
 In these VMs, the test framework will download a binary to install the Elastic Agent (TAR files, DEB/RPM packages...), and will execute the different agent commands to install, enroll, uninstall, etc.
 
+
+In order to list all the supported platforms, please run this command:
+
+```shell
+make -C .ci list-platforms 
+- stack
+- centos8_arm64
+- centos8_amd64
+- debian_10_arm64
+- debian_10_amd64
+- debian_11_amd64
+- oracle_linux8
+- sles15
+- fleet_elastic_pkg
+- ubuntu_22_04_amd64
+```
+
 It's possible to configure the test node (OS, architecture), using the values that are already present in [the platforms descriptor](.e2e-platforms.yaml):
 
 ```shell
@@ -109,6 +126,38 @@ export NODE_IMAGE="ami-01cdc9e8306344fe0"
 export NODE_INSTANCE_TYPE="a1.large"
 export NODE_LABEL="centos8_arm64"
 export NODE_USER="centos"
+```
+
+Or, you can also use the build script to load the environment variables for one platform:
+
+```shell
+# all possible platforms
+make -C .ci set-env-centos8_amd64
+make -C .ci set-env-centos8_arm64
+make -C .ci set-env-debian_10_amd64
+make -C .ci set-env-debian_10_arm64
+make -C .ci set-env-debian_11_amd64
+make -C .ci set-env-debian_11_arm64
+make -C .ci set-env-oracle_linux8
+make -C .ci set-env-sles15
+make -C .ci set-env-ubuntu_22_04_amd64
+```
+
+The above command will create a `.node-${PLATFORM}-env` file (i.e. `.node-centos8_arm64-env`) that you must source into your shell before interacting with a test node, so that the environment variables are present for each build command and you do not need to repeat them again and again:
+
+```shell
+source .ci/.node-centos8_arm64-env
+```
+
+Please check that the environments where loaded with `env | grep NODE`:
+
+```shell
+$ env | grep NODE
+NODE_SHELL_TYPE=sh
+NODE_INSTANCE_TYPE=a1.large
+NODE_LABEL=centos8_arm64
+NODE_IMAGE=ami-01cdc9e8306344fe0
+NODE_USER=centos
 ```
 
 Besides that, it's possible to configure the test node for the different test suites that are present in the test framework: `fleet`, `helm` and `kubernetes-autodiscover`. Please configure the test node setting the suite, being `fleet` the default:

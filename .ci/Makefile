@@ -59,6 +59,18 @@ setup-env:
 destroy-env:
 	rm -fr $(VENV_DIR)
 
+.PHONY: list-platforms
+list-platforms:
+	@docker run --rm -i -w "/workdir" -v $(PROJECT_DIR)/.ci:/workdir mikefarah/yq:4 ".PLATFORMS | keys" .e2e-platforms.yaml
+
+.PHONY: set-env-%
+set-env-%:
+	@$(PROJECT_DIR)/.ci/scripts/yq.sh "$*"
+
+.PHONY: set-env-stack
+set-env-stack:
+	@$(PROJECT_DIR)/.ci/scripts/yq.sh "stack"
+
 .PHONY: provision-stack
 provision-stack: .runID
 	@:$(call check_defined, RUN_ID, You need to an unique RUN_ID. To create it please run 'make .runID' goal)
