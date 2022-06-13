@@ -145,7 +145,9 @@ pipeline {
 def createCluster() {
   withVaultEnv(){
     dir("${BASE_DIR}") {
-      sh ".ci/scripts/deployment.sh 'create'"
+      sshagent(credentials: ["f6c7695a-671e-4f4f-a331-acdce44ff9ba"]) {
+        sh ".ci/scripts/deployment.sh 'create'"
+      }
     }
   }
 }
@@ -153,7 +155,9 @@ def createCluster() {
 def destroyCluster() {
   withVaultEnv(){
     dir("${BASE_DIR}") {
-      sh ".ci/scripts/deployment.sh 'destroy'"
+      sshagent(credentials: ["f6c7695a-671e-4f4f-a331-acdce44ff9ba"]) {
+        sh ".ci/scripts/deployment.sh 'destroy'"
+      }
     }
   }
 }
