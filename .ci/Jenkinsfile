@@ -21,6 +21,8 @@ pipeline {
     AWS_PROVISIONER_SECRET = 'secret/observability-team/ci/elastic-observability-aws-account-auth'
     TEST_MATRIX_FILE = "${params.testMatrixFile}"
     RUN_ID = UUID.randomUUID().toString()
+    ELASTIC_STACK_VERSION = '8.4.0-SNAPSHOT'
+    CLUSTER_NAME = "${REPO}-${BUILD_ID}-${BRANCH_NAME}-${ELASTIC_STACK_VERSION}"
   }
   options {
     timeout(time: 90, unit: 'MINUTES')
@@ -96,21 +98,33 @@ pipeline {
             setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
           }
         }
+        stage('Create cluster') {
+          options { skipDefaultCheckout() }
+          environment {
+            STAGE_NAME = "Create cluster|${STACK_VERSION}|${OS_VERSION}"
+          }
+          steps {
+            createCluster()
+          }
+        }
         stage('Functional Test') {
+          options { skipDefaultCheckout() }
           steps {
             withGithubNotify(context: 'Functional Test', tab: 'tests') {
               deleteDir()
               unstash 'source'
               withGoEnv(version: "${GO_VERSION}"){
-                sh '''
-                 TAGS="fleet_mode" \
-                 LOG_LEVEL="TRACE" \
-                 FORMAT="pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml" \
-                 STACK_VERSION="${STACK_VERSION}" \
-                 BEAT_VERSION="${BEAT_VERSION}" \
-                 ELASTIC_AGENT_VERSION="${ELASTIC_AGENT_VERSION}" \
-                 make --no-print-directory -C "${BASE_DIR}/e2e/_suites/fleet" functional-test
-                '''
+                withCloudEnv(cluster: env.CLUSTER_NAME, fleet: true, kibana: true, elasticsearch: true) {
+                  sh(label: 'run fleet', script: '''
+                   TAGS="fleet_mode" \
+                   LOG_LEVEL="TRACE" \
+                   FORMAT="pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml" \
+                   STACK_VERSION="${STACK_VERSION}" \
+                   BEAT_VERSION="${BEAT_VERSION}" \
+                   ELASTIC_AGENT_VERSION="${ELASTIC_AGENT_VERSION}" \
+                   make --no-print-directory -C "${BASE_DIR}/e2e/_suites/fleet" functional-test
+                  ''')
+                }
               }
             }
           }
@@ -119,8 +133,37 @@ pipeline {
     }
   }
   post {
+    always {
+      destroyCluster()
+    }
     cleanup {
       notifyBuildResult()
+    }
+  }
+}
+
+def createCluster() {
+  withVaultEnv(){
+    sh ".ci/scripts/deployment.sh 'create'"
+  }
+}
+
+def destroyCluster() {
+  withVaultEnv(){
+    sh ".ci/scripts/deployment.sh 'destroy'"
+  }
+}
+
+def withVaultEnv(Closure body){
+  getVaultSecret.readSecretWrapper {
+    withEnvMask(vars: [
+      [var: 'VAULT_ADDR', password: env.VAULT_ADDR],
+      [var: 'VAULT_ROLE_ID', password: env.VAULT_ROLE_ID],
+      [var: 'VAULT_SECRET_ID', password: env.VAULT_SECRET_ID],
+      [var: 'VAULT_AUTH_METHOD', password: 'approle'],
+      [var: 'VAULT_AUTHTYPE', password: 'approle']
+    ]){
+      body()
     }
   }
 }
