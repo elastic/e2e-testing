@@ -1,4 +1,9 @@
 ---
+- name: Initialize env file
+  ansible.windows.win_file:
+    path: "{{ e2e_home_dir }}.env"
+    state: absent
+
 - name: Extend environment for Fleet testing (Windows)
   community.windows.win_lineinfile:
     state: present

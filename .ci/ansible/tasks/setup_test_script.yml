@@ -1,4 +1,9 @@
 ---
+- name: Initialize env file
+  ansible.builtin.file:
+    path: "{{ e2e_home_dir }}.env"
+    state: absent
+
 - name: Extend environment for Stack Bootstrapping
   lineinfile:
     state: present
