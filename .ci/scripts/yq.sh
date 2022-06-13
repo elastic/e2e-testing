@@ -31,4 +31,7 @@ echo "export ${ENV_PREFIX}_LABEL=${PLATFORM}" >> "${FILE_ENV}"
 echo "export ${ENV_PREFIX}_SHELL_TYPE="${SHELL_TYPE} >> "${FILE_ENV}"
 echo "export ${ENV_PREFIX}_USER="$(docker run --rm -i  -w "/workdir" -v "${PWD}":/workdir ${YQ_IMAGE} ".${PLATFORM}.username" < yml.tmp) >> "${FILE_ENV}"
 
+echo ">>> Please source the generated file in order to use it while running the tests:"
+echo "source ${PWD}/${FILE_ENV}"
+
 rm -f ${PWD}/yml.tmp
