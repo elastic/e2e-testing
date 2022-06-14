@@ -5,7 +5,9 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 if [ -d .obs ] ; then
     rm -rf .obs
 fi
-git clone git@github.com:elastic/observability-test-environments.git .obs
+git clone \
+    --branch feature/remove-docker \
+    git@github.com:elastic/observability-test-environments.git .obs
 
 cd .obs
 
