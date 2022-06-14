@@ -14,7 +14,6 @@ import (
 
 func Test_ExtractZip(t *testing.T) {
 	src := filepath.Join("..", "_testresources", "sample.zip")
-	//src := filepath.Join("/tmp", "elastic-agent-8.4.0-SNAPSHOT-windows-x86_64.zip")
 	tmp := t.TempDir()
 	target := filepath.Join(tmp, "sample")
 
