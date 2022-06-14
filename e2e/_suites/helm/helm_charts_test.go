@@ -12,8 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Jeffail/gabs/v2"
-	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/helm"
@@ -41,7 +39,7 @@ var helmVersion = "3.x"
 var helmChartVersion = "7.17.3"
 
 // kubernetesVersion represents the default version used for Kubernetes
-var kubernetesVersion = "1.23.4"
+var kubernetesVersion = "1.24.0"
 
 var testSuite HelmChartTestSuite
 
