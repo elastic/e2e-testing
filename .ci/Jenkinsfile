@@ -100,9 +100,6 @@ pipeline {
         }
         stage('Create cluster') {
           options { skipDefaultCheckout() }
-          environment {
-            STAGE_NAME = "Create cluster|${STACK_VERSION}|${OS_VERSION}"
-          }
           steps {
             createCluster()
           }
