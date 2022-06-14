@@ -5,8 +5,12 @@
 package installer
 
 import (
+	"archive/zip"
 	"context"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/elastic/e2e-testing/internal/common"
@@ -149,9 +153,11 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 		}).Trace("Elastic-agent installation directory existed: was removed")
 	}
 
-	// using -Path instead of -LiteralPath because the second needs an absolute URL, and the file is downloaded at the current dir
-	_, err = i.Exec(ctx, []string{"powershell.exe", "Expand-Archive", "-Path", binaryPath, "-DestinationPath", `C:\`, "-Force"})
+	err = extractZIPFile(binaryPath, `C:\`)
 	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Could not extract zip file")
 		return err
 	}
 
@@ -197,4 +203,54 @@ func (i *elasticAgentZIPPackage) Uninstall(ctx context.Context) error {
 // Upgrade upgrades a EXE package
 func (i *elasticAgentZIPPackage) Upgrade(ctx context.Context, version string) error {
 	return doUpgrade(ctx, i)
+}
+
+func extractZIPFile(src string, target string) error {
+	src, err := filepath.Abs(src)
+	if err != nil {
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"src":    src,
+		"target": target,
+	}).Trace("Extracting zip file")
+
+	reader, err := zip.OpenReader(src)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	for _, f := range reader.File {
+		filePath := filepath.Join(target, f.Name)
+
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(filePath, os.ModePerm)
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+			return err
+		}
+
+		dstFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return err
+		}
+
+		fileInArchive, err := f.Open()
+		if err != nil {
+			return err
+		}
+
+		if _, err := io.Copy(dstFile, fileInArchive); err != nil {
+			return err
+		}
+
+		dstFile.Close()
+		fileInArchive.Close()
+	}
+
+	return nil
 }
