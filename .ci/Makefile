@@ -78,7 +78,7 @@ provision-stack: .runID
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
-		--extra-vars "runId=$(RUN_ID) nodeShellType=$(NODE_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--extra-vars "runId=$(RUN_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t provision-stack
 
@@ -90,7 +90,7 @@ setup-stack: .runID
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
-		--extra-vars "runId=$(RUN_ID) nodeShellType=$(NODE_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--extra-vars "runId=$(RUN_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t setup-stack \
 		-i $(STACK_IP_ADDRESS),
@@ -104,7 +104,7 @@ destroy-stack:
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars="nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeUser=$(STACK_IMAGE)" \
-		--extra-vars="runId=$(RUN_ID) nodeShellType=$(NODE_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--extra-vars="runId=$(RUN_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t destroy
 	rm -fr $(PROJECT_DIR)/.ci/.stack-host-ip
@@ -119,6 +119,7 @@ show-stack:
 	@echo "Stack type          : $(STACK_LABEL)"
 	@echo "Stack instance type : $(STACK_INSTANCE_TYPE)"
 	@echo "Stack SSH user      : $(STACK_USER)"
+	@echo "Stack Shell         : $(STACK_SHELL_TYPE)"
 
 .PHONY: provision-node
 provision-node: .runID
@@ -168,6 +169,7 @@ show-node:
 	@echo "Node type          : $(NODE_LABEL)"
 	@echo "Node instance type : $(NODE_INSTANCE_TYPE)"
 	@echo "Node SSH user      : $(NODE_USER)"
+	@echo "Node Shell         : $(NODE_SHELL_TYPE)"
 
 .PHONY: destroy-elastic-stack
 destroy-elastic-stack:
@@ -180,7 +182,7 @@ recreate-fleet-server:
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/fleet-server.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
-		--extra-vars "runId=$(RUN_ID) nodeShellType=$(NODE_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--extra-vars "runId=$(RUN_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
 		-t fleet-server \
 		-i $(STACK_IP_ADDRESS),
