@@ -565,8 +565,8 @@ def generateFunctionalTestStep(Map args = [:]){
 
             if (platform.contains("windows")) {
               // Ansible wait_for module is not enough to mitigate the timeout
-              log(level: 'DEBUG', text: "Sleeping 120 seconds on Windows so that SSH is accessible in the remote instance.")
-              sleep(120)
+              log(level: 'DEBUG', text: "Sleeping 300 seconds on Windows so that SSH is accessible in the remote instance.")
+              sleep(300)
             }
 
             // Configure node for testing
