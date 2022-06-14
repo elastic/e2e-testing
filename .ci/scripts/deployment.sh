@@ -11,10 +11,11 @@ git clone \
 
 cd $FOLDER
 
-CONFIG_FILE=$SCRIPT_DIR/$FOLDER/tests/environments/elastic_cloud_tf_gcp.yml
+CLUSTER_CONFIG_FILE=$SCRIPT_DIR/$FOLDER/tests/environments/elastic_cloud_tf_gcp.yml
+export CLUSTER_CONFIG_FILE
 
 if [ $1 == "destroy" ] ; then
-    CLUSTER_CONFIG_FILE=$CONFIG_FILE make -C ansible destroy-cluster
+    make -C ansible destroy-cluster
 else
-    CLUSTER_CONFIG_FILE=$CONFIG_FILE make -C ansible create-cluster
+    make -C ansible create-cluster
 fi
