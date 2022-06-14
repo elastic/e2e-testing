@@ -59,6 +59,9 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 
 	processStatus := func() error {
 		processes, err := process.Processes()
+		if err != nil {
+			return err
+		}
 
 		desiredStatePids := []int32{}
 
