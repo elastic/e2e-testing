@@ -21,8 +21,7 @@ pipeline {
     AWS_PROVISIONER_SECRET = 'secret/observability-team/ci/elastic-observability-aws-account-auth'
     TEST_MATRIX_FILE = "${params.testMatrixFile}"
     RUN_ID = UUID.randomUUID().toString()
-    ELASTIC_STACK_VERSION = '8.4.0-SNAPSHOT'
-    CLUSTER_NAME = "${REPO}-${BUILD_ID}-${BRANCH_NAME}-${ELASTIC_STACK_VERSION}"
+    STACK_VERSION = '8.4.0-SNAPSHOT'
   }
   options {
     timeout(time: 90, unit: 'MINUTES')
