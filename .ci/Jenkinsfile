@@ -610,20 +610,20 @@ def generateFunctionalTestStep(Map args = [:]){
                   """sudo chown ${testRunner.user} -R ${remoteBasePath}outputs """)
           scpr("${env.WORKSPACE}",
               testRunner,
-              "e2e-testing/outputs/TEST-*${runId}*.xml",
+              "e2e-testing/outputs/TEST-*.xml",
               "outputs/${testRunner.ip}/.")
           scpr("${env.WORKSPACE}",
               testRunner,
-              "e2e-testing/outputs/TEST-*${runId}*.json",
+              "e2e-testing/outputs/TEST-*.json",
               "outputs/${testRunner.ip}/.")
         } else {
           scpr("${env.WORKSPACE}",
               testRunner,
-              "C:/Users/${testRunner.user}/e2e-testing/outputs/TEST-*${runId}*.xml",
+              "C:/Users/${testRunner.user}/e2e-testing/outputs/TEST-*.xml",
               "outputs/${testRunner.ip}/.")
           scpr("${env.WORKSPACE}",
               testRunner,
-              "C:/Users/${testRunner.user}/e2e-testing/outputs/TEST-*${runId}*.json",
+              "C:/Users/${testRunner.user}/e2e-testing/outputs/TEST-*.json",
               "outputs/${testRunner.ip}/.")
         }
 
