@@ -81,7 +81,10 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 					// for that reason we are only checking that the process is running
 					isRunning, _ := p.IsRunning()
 
-					return isRunning
+					if a.opts.DesiredState == "started" {
+						return isRunning
+					}
+					return !isRunning
 				}
 
 				return strings.EqualFold(status[0], pidState)
