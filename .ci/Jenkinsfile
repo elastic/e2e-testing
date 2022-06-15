@@ -592,11 +592,11 @@ def generateFunctionalTestStep(Map args = [:]){
               // and sshexec adds single quotes to the command
               sshexec("${env.WORKSPACE}",
                       testRunner,
-                      "powershell 'C:\\\\Users\\\\${testRunner.user}\\\\e2e-testing\\\\.ci\\\\scripts\\\\functional-test.ps1'")
+                      "powershell C:\\\\Users\\\\${testRunner.user}\\\\e2e-testing\\\\.ci\\\\scripts\\\\functional-test.ps1")
             } else {
               sshexec("${env.WORKSPACE}",
                       testRunner,
-                      "sudo bash '${remoteBasePath}.ci/scripts/functional-test.sh'")
+                      "sudo bash ${remoteBasePath}.ci/scripts/functional-test.sh")
             }
           }
         }
