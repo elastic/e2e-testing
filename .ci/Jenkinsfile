@@ -118,7 +118,7 @@ pipeline {
                      dscacheutil -q group -a name staff || true
                      dscacheutil -q group -a name wheel || true
                      dscacheutil -q group -a name root || true
-                     sudo dseditgroup -o edit -a admin -t user wheel
+                     sudo dseditgroup -o edit -a admin -t user root
                      dscacheutil -q group -a name staff || true
                      dscacheutil -q group -a name wheel || true
                      dscacheutil -q group -a name root || true
