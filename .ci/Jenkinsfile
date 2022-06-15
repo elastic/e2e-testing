@@ -586,13 +586,10 @@ def generateFunctionalTestStep(Map args = [:]){
                     "-i \"${testRunner.ip},\" -t run-tests --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${machine.shell_type} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             if (platform.contains("windows")) {
-              // sh "echo '${cmd}'" does work differently without ', producing different output
-              // sh "echo '${cmd}'"   c:Usersogce2e-testing.ciscriptsfunctional-test.ps1
-              // sh "echo ${cmd}"     c:\Users\ogc\e2e-testing\.ci\scripts\functional-test.ps1
-              // and sshexec adds single quotes to the command
+              // using unix slashes on windows: https://www.ibm.com/docs/en/zvse/6.2?topic=SSB27H_6.2.0/fa2ad_use_forward_or_backward_slashes_under_windows.html
               sshexec("${env.WORKSPACE}",
                       testRunner,
-                      "powershell C:\\\\Users\\\\${testRunner.user}\\\\e2e-testing\\\\.ci\\\\scripts\\\\functional-test.ps1")
+                      "powershell C:/Users/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.ps1")
             } else {
               sshexec("${env.WORKSPACE}",
                       testRunner,
