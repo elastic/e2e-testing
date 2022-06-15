@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Jeffail/gabs/v2"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/helm"
