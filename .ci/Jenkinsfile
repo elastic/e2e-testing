@@ -616,6 +616,15 @@ def generateFunctionalTestStep(Map args = [:]){
               testRunner,
               "e2e-testing/outputs/TEST-*${runId}*.json",
               "outputs/${testRunner.ip}/.")
+        } else {
+          scpr("${env.WORKSPACE}",
+              testRunner,
+              "C:/Users/${testRunner.user}/e2e-testing/outputs/TEST-*${runId}*.xml",
+              "outputs/${testRunner.ip}/.")
+          scpr("${env.WORKSPACE}",
+              testRunner,
+              "C:/Users/${testRunner.user}/e2e-testing/outputs/TEST-*${runId}*.json",
+              "outputs/${testRunner.ip}/.")
         }
 
         sh "ls -l outputs/${testRunner.ip}"
