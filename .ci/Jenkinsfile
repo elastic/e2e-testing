@@ -207,6 +207,7 @@ pipeline {
                   def stackMachine = getMachineInfo('stack')
 
                   ansible(stackWorkspace,
+                        "playbook.yml",
                         env.RUN_ID.split('-')[0],
                         "-t provision-stack --extra-vars=\"${LABELS_STRING} nodeUser=${stackMachine.username} ansible_user=${stackMachine.username} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
@@ -217,6 +218,7 @@ pipeline {
                     withEnv(["TAGS=non-existing-tag"]) {
                       ansible(
                         stackWorkspace,
+                        "playbook.yml",
                         env.RUN_ID.split('-')[0],
                         "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeLabel=stack nodeUser=${stackMachine.username} ansible_user=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
                       )
@@ -279,6 +281,7 @@ pipeline {
                   log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunner.ip}")
                 } else {
                   ansible(stackWorkspace,
+                        "playbook.yml",
                         env.RUN_ID.split('-')[0],
                         "-t destroy --extra-vars=\"nodeLabel=stack nodeUser=${stackMachine.username} ansible_user=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
                 }
@@ -408,9 +411,9 @@ def getMachineInfo(platform){
   return machines.get(platform)
 }
 
-def ansible(workspace, run_id, args){
+def ansible(workspace, playbook, run_id, args){
   withOtelEnv() {
-    pyrun("ansible-playbook --private-key=\"${workspace}/e2essh\" --extra-vars=\"workspace=${workspace}/ runId=${run_id} sshPublicKey=${workspace}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${workspace}/.ci/ansible/playbook.yml ${args}")
+    pyrun("ansible-playbook --private-key=\"${workspace}/e2essh\" --extra-vars=\"workspace=${workspace}/ runId=${run_id} sshPublicKey=${workspace}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${workspace}/.ci/ansible/${playbook} ${args}")
   }
 }
 
@@ -556,6 +559,7 @@ def generateFunctionalTestStep(Map args = [:]){
           withAPMEnv() {
             // Start node, capture ip address
             ansible("${env.WORKSPACE}",
+                    "playbook.yml",
                     runId,
                     "-t provision-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${machine.shell_type} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
@@ -573,8 +577,15 @@ def generateFunctionalTestStep(Map args = [:]){
 
             // Configure node for testing
             ansible("${env.WORKSPACE}",
+                    "playbook.yml",
                     runId,
                     "-i \"${testRunner.ip},\" -t setup-node ${verbosity} --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${machine.shell_type} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+
+            // Configure test scripts
+            ansible("${env.WORKSPACE}",
+                    "run-tests.yml",
+                    runId,
+                    "-i \"${testRunner.ip},\" -t run-tests ${verbosity} --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${machine.shell_type} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             if (platform.contains("windows")) {
               sshexec("${env.WORKSPACE}",
@@ -613,6 +624,7 @@ def generateFunctionalTestStep(Map args = [:]){
           log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunner.ip}. ")
         } else {
           ansible("${env.WORKSPACE}",
+                "playbook.yml",
                 runId,
                 "-t destroy --extra-vars=\"nodeLabel=${platform} nodeUser=${machine.username} ansible_user=${machine.username} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
         }
