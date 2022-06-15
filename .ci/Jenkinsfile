@@ -114,6 +114,8 @@ pipeline {
               withGoEnv(version: "${GO_VERSION}"){
                 withCloudEnv2(cluster: env.CLUSTER_NAME, fleet: true, kibana: true, elasticsearch: true) {
                   sh(label: 'run fleet', script: '''
+                   echo 'to be moved to the vm itseld'
+                   sudo dseditgroup -o edit -a admin -t user wheel
                    TAGS="fleet_mode" \
                    LOG_LEVEL="TRACE" \
                    FORMAT="pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml" \
