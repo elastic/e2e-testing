@@ -60,7 +60,7 @@
     state: present
     line: "- {{ nodeUser }}@{{addr.public_ip}}"
     insertafter: EOF
-    dest: "{{workspace}}/{{nodeLabel}}-sshhosts"
+    dest: "{{ workspace }}{{nodeLabel}}-sshhosts"
     create: yes
   loop: "{{ ec2.instances }}"
   loop_control:
@@ -71,7 +71,7 @@
 
 - name: Add stack AWS host to ssh address list
   copy:
-    dest: "{{workspace}}/.ci/.stack-host-ip"
+    dest: "{{ workspace }}.ci/.stack-host-ip"
     content: "{{addr.public_ip}}"
     force: true
   loop: "{{ ec2.instances }}"
@@ -82,7 +82,7 @@
 
 - name: Add node AWS host to ssh address list
   copy:
-    dest: "{{workspace}}/.ci/.node-host-ip"
+    dest: "{{ workspace }}.ci/.node-host-ip"
     content: "{{addr.public_ip}}"
     force: true
   loop: "{{ ec2.instances }}"
