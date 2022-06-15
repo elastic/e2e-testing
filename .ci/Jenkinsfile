@@ -22,6 +22,7 @@ pipeline {
     TEST_MATRIX_FILE = "${params.testMatrixFile}"
     RUN_ID = UUID.randomUUID().toString()
     STACK_VERSION = '8.4.0-SNAPSHOT'
+    CLUSTER_NAME = "e2e-testing-${BUILD_ID}-${BRANCH_NAME}-${STACK_VERSION.replaceAll('.', '-')}"
   }
   options {
     timeout(time: 90, unit: 'MINUTES')
