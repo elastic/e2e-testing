@@ -1,3 +1,5 @@
+Set-PSDebug -Trace 1
+
 $authorizedKeys = "C:\Users\ogc\.ssh\authorized_keys"
 $githubUsers = "C:\Users\ogc\e2e-testing\.ci\ansible\github-ssh-keys" 
 

@@ -121,6 +121,7 @@
     owner: "{{ansible_user}}"
     dest: "{{ e2e_base_dir }}.ci/scripts/functional-test.ps1"
     content: |
+       Set-PSDebug -Trace 1
        $SUITE = "{{ lookup('env', 'SUITE') or 'fleet' }}"
        $REPORT_PREFIX = "{{ lookup('env', 'REPORT_PREFIX') or 'junit' }}"
 
