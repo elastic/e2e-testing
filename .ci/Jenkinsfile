@@ -118,11 +118,12 @@ pipeline {
                      dscacheutil -q group -a name staff || true
                      dscacheutil -q group -a name wheel || true
                      dscacheutil -q group -a name root || true
-                     sudo dseditgroup -o edit -a admin -t user root
+                     sudo dseditgroup -o edit -a admin -t user wheel
                      dscacheutil -q group -a name staff || true
                      dscacheutil -q group -a name wheel || true
                      dscacheutil -q group -a name root || true
                      ls -ltra /opt
+                     sudo chmod 775 /opt
                      mkdir /opt/Elastic
                      ls -ltra /opt
                     ''')
