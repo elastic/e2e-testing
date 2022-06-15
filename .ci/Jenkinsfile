@@ -111,7 +111,7 @@ pipeline {
               deleteDir()
               unstash 'source'
               withGoEnv(version: "${GO_VERSION}"){
-                withCloudEnv(cluster: env.CLUSTER_NAME, fleet: true, kibana: true, elasticsearch: true) {
+                withCloudEnv2(cluster: env.CLUSTER_NAME, fleet: true, kibana: true, elasticsearch: true) {
                   sh(label: 'run fleet', script: '''
                    TAGS="fleet_mode" \
                    LOG_LEVEL="TRACE" \
@@ -170,5 +170,64 @@ def withVaultEnv(Closure body){
     ]){
       body()
     }
+  }
+}
+
+def withCloudEnv2(Map args = [:], Closure body) {
+  withElasticsearchDeploymentEnv() {
+    withKibanaDeploymentEnv() {
+      withFleetDeploymentEnv() {
+        body()
+      }
+    }
+  }
+}
+
+def getSecret(secret) {
+  def props = getVaultSecret(secret: secret)
+  if (props?.errors) {
+    error "getSecret: Unable to get credentials from the vault: ${props.errors.toString()}"
+  }
+  return props?.data.value
+}
+
+// TODO: this will be implicitely done in withCloudEnv
+def withElasticsearchDeploymentEnv(Map args = [:], Closure body) {
+  def data = toJSON(getSecret("secret/observability-team/ci/test-clusters/${env.CLUSTER_NAME}/k8s-elasticsearch"))
+  def es_url = data.url
+  def username = data.username
+  def password = data.password
+  withEnvMask(vars: [
+    [var: 'ELASTICSEARCH_URL', password: es_url],
+    [var: 'ELASTICSEARCH_USERNAME', password: username],
+    [var: 'ELASTICSEARCH_PASSWORD', password: password]
+  ]){
+    body()
+  }
+}
+
+// TODO: this will be implicitely done in withCloudEnv
+def withKibanaDeploymentEnv(Map args = [:], Closure body) {
+  def data = toJSON(getSecret("secret/observability-team/ci/test-clusters/${env.CLUSTER_NAME}/k8s-kibana"))
+  def kibana_url = data.url
+  def username = data.username
+  def password = data.password
+  withEnvMask(vars: [
+    [var: 'KIBANA_URL', password: kibana_url],
+    [var: 'KIBANA_USERNAME', password: username],
+    [var: 'KIBANA_PASSWORD', password: password]
+  ]){
+    body()
+  }
+}
+
+// TODO: this will be implicitely done in withCloudEnv
+def withFleetDeploymentEnv(Map args = [:], Closure body) {
+  def data = toJSON(getSecret("secret/observability-team/ci/test-clusters/${env.CLUSTER_NAME}/k8s-apm"))
+  def fleet_url = data.fleet_url
+  withEnvMask(vars: [
+    [var: 'FLEET_URL', password: fleet_url]
+  ]){
+    body()
   }
 }
