@@ -126,7 +126,7 @@
        $REPORT_PREFIX = "{{ lookup('env', 'REPORT_PREFIX') or 'junit' }}"
 
        $SEED = [Math]::Round((Get-Date).ToFileTime() / 10000000 - 11644473600)
-       $REPORT="C:\Users\ogc\e2e-testing\outputs\TEST-${REPORT_PREFIX}-85CC22CF-${SEED}"
+       $REPORT="C:\Users\ogc\e2e-testing\outputs\TEST-${REPORT_PREFIX}-{{ runId }}-${SEED}"
 
        Add-Content C:\Users\ogc\.op\.env  "${REPORT}"
 
