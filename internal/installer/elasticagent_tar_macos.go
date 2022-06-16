@@ -56,7 +56,7 @@ func (i *elasticAgentTARDarwinPackage) AddFiles(ctx context.Context, files []str
 func (i *elasticAgentTARDarwinPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
 	return deploy.ServiceOperatorManifest{
 		WorkDir:    i.metadata.AgentPath,
-		CommitFile: "/elastic-agent/.elastic-agent.active.commit",
+		CommitFile: "elastic-agent/.elastic-agent.active.commit",
 	}, nil
 }
 
@@ -81,7 +81,7 @@ func (i *elasticAgentTARDarwinPackage) Exec(ctx context.Context, args []string) 
 
 // Enroll will enroll the agent into fleet
 func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
-	cmds := []string{"/elastic-agent/elastic-agent", "install"}
+	cmds := []string{"./elastic-agent/elastic-agent", "install"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.tar.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
