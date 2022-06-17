@@ -28,7 +28,7 @@ GOARCH=${GOARCH:-"amd64"}
 REPORT_PREFIX=${REPORT_PREFIX:-"${SUITE}_${GOARCH}_${TAGS}"}
 
 ## Install the required dependencies for the given SUITE
-.ci/scripts/install-test-dependencies.sh "${SUITE}"
+.ci/scripts/install-test-dependencies.sh "$(pwd)" "${SUITE}"
 
 rm -rf outputs || true
 mkdir -p outputs

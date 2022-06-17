@@ -7,6 +7,7 @@ package action
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"strings"
 	"time"
 
@@ -59,6 +60,9 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 
 	processStatus := func() error {
 		processes, err := process.Processes()
+		if err != nil {
+			return err
+		}
 
 		desiredStatePids := []int32{}
 
@@ -69,7 +73,24 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 			ppid, _ := p.Ppid()
 			cmd, _ := p.Cmdline()
 
-			if strings.EqualFold(processName, a.opts.Process) && strings.EqualFold(status[0], pidState) {
+			checkFunction := func() bool {
+				if runtime.GOOS == "windows" {
+					// Windows status is not supported at this moment by the library
+					// - https://github.com/shirou/gopsutil#process-class
+					// - https://github.com/shirou/gopsutil/issues/1016
+					// for that reason we are only checking that the process is running
+					isRunning, _ := p.IsRunning()
+
+					if a.opts.DesiredState == "started" {
+						return isRunning
+					}
+					return !isRunning
+				}
+
+				return strings.EqualFold(status[0], pidState)
+			}
+
+			if strings.EqualFold(processName, a.opts.Process) && checkFunction() {
 				desiredStatePids = append(desiredStatePids, pid)
 				log.WithFields(log.Fields{
 					"name":               processName,
