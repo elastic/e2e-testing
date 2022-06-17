@@ -1,0 +1,44 @@
+---
+- name: Run Tests
+  hosts: all
+  connection: ssh
+  gather_facts: True
+  vars_files:
+    - vars/main.yml
+  tags:
+    - run-tests
+  pre_tasks:
+    - name: Load a variable file based on the OS type
+      include_vars: "{{ lookup('first_found', params) }}"
+      vars:
+        params:
+          files:
+            - '{{ ansible_distribution }}.yml'
+            - '{{ ansible_os_family }}.yml'
+            - '{{ ansible_system }}.yml'
+          paths:
+            - 'group_vars'
+  vars:
+    ansible_python_interpreter: "auto"
+    ansible_shell_type: "{{ nodeShellType | default('sh') }}"
+    ansible_user: "{{ nodeUser }}"
+    pip_package: "python3-pip"
+  tasks:
+  - name: Setup source code
+    include_tasks: tasks/copy_test_files.yml
+    tags:
+      - run-tests
+
+  - name: Configure test script
+    include_tasks: tasks/setup_test_script.yml
+    tags:
+      - run-tests
+    when:
+      - ansible_facts['os_family'] != "Windows"
+
+  - name: Configure test script (Windows)
+    include_tasks: tasks/setup_test_script_windows.yml
+    tags:
+      - run-tests
+    when:
+      - ansible_facts['os_family'] == "Windows"
