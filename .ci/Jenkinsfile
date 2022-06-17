@@ -203,11 +203,13 @@ pipeline {
                   def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
                   // Deploy the test infrastructure
                   sh "ssh-keygen -b 4096 -t rsa -f ${stackWorkspace}/e2essh -q -N \"\" "
+                  sh "chmod 400 ${stackWorkspace}/e2essh*"
                   def stackMachine = getMachineInfo('stack')
 
                   ansible(stackWorkspace,
+                        "playbook.yml",
                         env.RUN_ID.split('-')[0],
-                        "-t provision-stack --extra-vars=\"${LABELS_STRING} nodeUser=${stackMachine.username} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                        "-t provision-stack --extra-vars=\"${LABELS_STRING} nodeUser=${stackMachine.username} ansible_user=${stackMachine.username} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
 
                   // Must be gathered after deployment as the public IP is known at that time
                   def stackRunner = getNodeIp(stackWorkspace, 'stack')
@@ -216,8 +218,9 @@ pipeline {
                     withEnv(["TAGS=non-existing-tag"]) {
                       ansible(
                         stackWorkspace,
+                        "playbook.yml",
                         env.RUN_ID.split('-')[0],
-                        "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
+                        "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeLabel=stack nodeUser=${stackMachine.username} ansible_user=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
                       )
                     }
                   }
@@ -278,8 +281,9 @@ pipeline {
                   log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunner.ip}")
                 } else {
                   ansible(stackWorkspace,
+                        "playbook.yml",
                         env.RUN_ID.split('-')[0],
-                        "-t destroy --extra-vars=\"nodeLabel=stack nodeUser=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                        "-t destroy --extra-vars=\"nodeLabel=stack nodeUser=${stackMachine.username} ansible_user=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
                 }
               }
             }
@@ -332,7 +336,7 @@ def checkSkipTests() {
 
 
 def sshexec(workspace, connection, cmd){
-  sh "ssh -tt -o TCPKeepAlive=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${workspace}/e2essh ${connection.user}@${connection.ip} -- '${cmd}'"
+  sh "ssh -o TCPKeepAlive=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${workspace}/e2essh ${connection.user}@${connection.ip} -- '${cmd}'"
 }
 
 def scpr(workspace, connection, remote_src, local_dst){
@@ -393,15 +397,23 @@ def getNodeIp(workspace, platform){
   return [user: runnerUser, ip: runnerIP]
 }
 
+def getRemoteE2EPath(testRunner, platform) {
+  if (platform.contains("windows")) {
+    return "C:\\Users\\${testRunner.user}\\e2e-testing\\"
+  }
+
+  return "/home/${testRunner.user}/e2e-testing/"
+}
+
 def getMachineInfo(platform){
   def machineYaml = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/.ci/.e2e-platforms.yaml")
   def machines = machineYaml['PLATFORMS']
   return machines.get(platform)
 }
 
-def ansible(workspace, run_id, args){
+def ansible(workspace, playbook, run_id, args){
   withOtelEnv() {
-    pyrun("ansible-playbook --private-key=\"${workspace}/e2essh\" --extra-vars=\"workspace=${workspace}/ runId=${run_id} sshPublicKey=${workspace}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${workspace}/.ci/ansible/playbook.yml ${args}")
+    pyrun("ansible-playbook --private-key=\"${workspace}/e2essh\" --extra-vars=\"workspace=${workspace}/ runId=${run_id} sshPublicKey=${workspace}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${workspace}/.ci/ansible/${playbook} ${args}")
   }
 }
 
@@ -547,42 +559,82 @@ def generateFunctionalTestStep(Map args = [:]){
           withAPMEnv() {
             // Start node, capture ip address
             ansible("${env.WORKSPACE}",
+                    "playbook.yml",
                     runId,
-                    "-t provision-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-t provision-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${machine.shell_type} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             def testRunner = getNodeIp("${env.WORKSPACE}", platform)
 
+            def remoteBasePath = getRemoteE2EPath(testRunner, platform)
+
+            if (platform.contains("windows")) {
+              // Ansible wait_for module is not enough to mitigate the timeout
+              log(level: 'DEBUG', text: "Sleeping 300 seconds on Windows so that SSH is accessible in the remote instance.")
+              sleep(300)
+            }
+
             // Configure node for testing
             ansible("${env.WORKSPACE}",
+                    "playbook.yml",
                     runId,
-                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeUser=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${machine.shell_type} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
-            sshexec("${env.WORKSPACE}",
-                    testRunner,
-                    "sudo bash /home/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.sh")
+            // Configure test scripts
+            ansible("${env.WORKSPACE}",
+                    "run-tests.yml",
+                    runId,
+                    "-i \"${testRunner.ip},\" -t run-tests --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${machine.shell_type} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+
+            if (platform.contains("windows")) {
+              // using unix slashes on windows: https://www.ibm.com/docs/en/zvse/6.2?topic=SSB27H_6.2.0/fa2ad_use_forward_or_backward_slashes_under_windows.html
+              sshexec("${env.WORKSPACE}",
+                      testRunner,
+                      "powershell C:/Users/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.ps1")
+            } else {
+              sshexec("${env.WORKSPACE}",
+                      testRunner,
+                      "sudo bash ${remoteBasePath}.ci/scripts/functional-test.sh")
+            }
           }
         }
       } finally {
         def testRunner = getNodeIp("${env.WORKSPACE}", platform)
+
+        def remoteBasePath = getRemoteE2EPath(testRunner, platform)
+
         sh "mkdir -p outputs/${testRunner.ip} || true"
-        sshexec("${env.WORKSPACE}",
-                testRunner,
-                """sudo chown ${testRunner.user} -R /home/${testRunner.user}/e2e-testing/outputs """)
-        scpr("${env.WORKSPACE}",
-             testRunner,
-             "e2e-testing/outputs/TEST-*${runId}*.xml",
-             "outputs/${testRunner.ip}/.")
-        scpr("${env.WORKSPACE}",
-             testRunner,
-             "e2e-testing/outputs/TEST-*${runId}*.json",
-             "outputs/${testRunner.ip}/.")
+
+        if (!platform.contains("windows")) {
+          sshexec("${env.WORKSPACE}",
+                  testRunner,
+                  """sudo chown ${testRunner.user} -R ${remoteBasePath}outputs """)
+          scpr("${env.WORKSPACE}",
+              testRunner,
+              "e2e-testing/outputs/TEST-*.xml",
+              "outputs/${testRunner.ip}/.")
+          scpr("${env.WORKSPACE}",
+              testRunner,
+              "e2e-testing/outputs/TEST-*.json",
+              "outputs/${testRunner.ip}/.")
+        } else {
+          scpr("${env.WORKSPACE}",
+              testRunner,
+              "C:/Users/${testRunner.user}/e2e-testing/outputs/TEST-*.xml",
+              "outputs/${testRunner.ip}/.")
+          scpr("${env.WORKSPACE}",
+              testRunner,
+              "C:/Users/${testRunner.user}/e2e-testing/outputs/TEST-*.json",
+              "outputs/${testRunner.ip}/.")
+        }
+
         sh "ls -l outputs/${testRunner.ip}"
         if (params.DEVELOPER_MODE) {
           log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunner.ip}. ")
         } else {
           ansible("${env.WORKSPACE}",
+                "playbook.yml",
                 runId,
-                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeUser=${machine.username} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeUser=${machine.username} ansible_user=${machine.username} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
         }
         withEnv([
           "ARCHITECTURE=${goArch}",
@@ -594,11 +646,9 @@ def generateFunctionalTestStep(Map args = [:]){
           dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
           sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
         }
-        junit allowEmptyResults: true,
-          keepLongStdio: true,
-          testResults: "outputs/${testRunner.ip}/TEST-*${runId}*.xml"
+        junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunner.ip}/TEST-*.xml")
         archiveArtifacts allowEmptyArchive: true,
-          artifacts: "outputs/${testRunner.ip}/TEST-*${runId}*.xml, outputs/${testRunner.ip}/TEST-*${runId}*.json, outputs/${testRunner.ip}/TEST-*${runId}*.json.html"
+          artifacts: "outputs/${testRunner.ip}/TEST-*.xml, outputs/${testRunner.ip}/TEST-*.json, outputs/${testRunner.ip}/TEST-*.json.html"
       }
     }
   }

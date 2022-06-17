@@ -11,6 +11,7 @@ set -euxo pipefail
 # Parameters:
 #   - SUITE - that's the name of the test suite to install the dependencies for.
 #
+
 BASE_DIR="${BASE_DIR:-$(pwd)}"
 SUITE=${1:?SUITE is not set}
 
