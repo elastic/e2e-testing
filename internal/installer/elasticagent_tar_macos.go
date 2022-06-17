@@ -81,7 +81,7 @@ func (i *elasticAgentTARDarwinPackage) Exec(ctx context.Context, args []string) 
 
 // Enroll will enroll the agent into fleet
 func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
-	cmds := []string{"sudo", "./elastic-agent/elastic-agent", "install"}
+	cmds := []string{"sudo", common.GetElasticAgentWorkingPath("elastic-agent"), "install"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.tar.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -147,7 +147,7 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	_, err = i.Exec(ctx, []string{"tar", "-zxf", binaryPath})
+	_, err = i.Exec(ctx, []string{"tar", "-zxf", binaryPath, "-C", common.GetElasticAgentWorkingPath()})
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,8 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		}
 	}
 
-	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("./%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), metadata.Os, metadata.Arch), "./elastic-agent"})
+	srcPath := common.GetElasticAgentWorkingPath(fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), metadata.Os, metadata.Arch))
+	output, _ := i.Exec(ctx, []string{"mv", srcPath, common.GetElasticAgentWorkingPath("elastic-agent")})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }

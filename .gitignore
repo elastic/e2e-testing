@@ -2,6 +2,7 @@ bin
 outputs
 dist/
 *.bck
+.*-env
 .*-host-ip
 .env
 .runID
