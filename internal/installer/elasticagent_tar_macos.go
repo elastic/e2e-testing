@@ -166,34 +166,8 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 	}
 
 	srcPath := common.GetElasticAgentWorkingPath(fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), metadata.Os, metadata.Arch))
-	outputList, err := i.Exec(ctx, []string{"ls", "-l", srcPath})
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Warn("Failed to list files")
-	} else {
-		log.WithFields(log.Fields{
-			"list": outputList,
-		}).Trace("List files")
-	}
-	outputList1, err := i.Exec(ctx, []string{"ls", "-l", common.GetElasticAgentWorkingPath("elastic-agent")})
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Warn("Failed to list files")
-	} else {
-		log.WithFields(log.Fields{
-			"list": outputList1,
-		}).Trace("List files")
-	}
-	output, err := i.Exec(ctx, []string{"mv", srcPath, common.GetElasticAgentWorkingPath("elastic-agent")})
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Warn("Failed to elastic-agent")
-	} else {
-		log.WithField("output", output).Trace("Moved elastic-agent")
-	}
+	output, _ := i.Exec(ctx, []string{"mv", srcPath, common.GetElasticAgentWorkingPath("elastic-agent")})
+	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
 
