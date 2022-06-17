@@ -5,8 +5,12 @@
 package installer
 
 import (
+	"archive/zip"
 	"context"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/elastic/e2e-testing/internal/common"
@@ -29,6 +33,10 @@ func AttachElasticAgentZIPPackage(d deploy.Deployment, service deploy.ServiceReq
 			service: service,
 			deploy:  d,
 			metadata: deploy.ServiceInstallerMetadata{
+<<<<<<< HEAD
+=======
+				AgentPath:     `C:\Program Files\Elastic\Agent`,
+>>>>>>> d085cf60 (feat: run tests on windows 2019 (#2468))
 				PackageType:   "zip",
 				Os:            "windows",
 				Arch:          "x86_64",
@@ -48,8 +56,13 @@ func (i *elasticAgentZIPPackage) AddFiles(ctx context.Context, files []string) e
 // Inspect returns info on package
 func (i *elasticAgentZIPPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
 	return deploy.ServiceOperatorManifest{
+<<<<<<< HEAD
 		WorkDir:    "C:\\Program Files\\Elastic\\Agent",
 		CommitFile: "C:\\elastic-agent\\.elastic-agent.active.commit",
+=======
+		WorkDir:    i.metadata.AgentPath,
+		CommitFile: `C:\elastic-agent\.elastic-agent.active.commit`,
+>>>>>>> d085cf60 (feat: run tests on windows 2019 (#2468))
 	}, nil
 }
 
@@ -72,8 +85,13 @@ func (i *elasticAgentZIPPackage) Exec(ctx context.Context, args []string) (strin
 }
 
 // Enroll will enroll the agent into fleet
+<<<<<<< HEAD
 func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string) error {
 	cmds := []string{"C:\\elastic-agent\\elastic-agent.exe", "install"}
+=======
+func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
+	cmds := []string{`C:\elastic-agent\elastic-agent.exe`, "install"}
+>>>>>>> d085cf60 (feat: run tests on windows 2019 (#2468))
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.zip.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -128,24 +146,41 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	output, err := i.Exec(ctx, []string{"powershell.exe", "Test-Path", "C:\\elastic-agent"})
+	output, err := i.Exec(ctx, []string{"powershell.exe", "Test-Path", `C:\elastic-agent`})
 	log.WithFields(log.Fields{
 		"output": output,
 		"error":  err,
 	}).Trace("Checking for existence of elastic-agent installation directory")
 
-	if strings.EqualFold(strings.TrimSpace(output), "false") {
-		_, err = i.Exec(ctx, []string{"powershell.exe", "Expand-Archive", "-LiteralPath", binaryPath, "-DestinationPath", "C:\\", "-Force"})
+	if !strings.EqualFold(strings.TrimSpace(output), "false") {
+		_, err = i.Exec(ctx, []string{"powershell.exe", "Remove-Item", `C:\elastic-agent`, "-Recurse", "-Force"})
 		if err != nil {
 			return err
 		}
-
-		output, _ := i.Exec(ctx, []string{"powershell.exe", "Move-Item", "-Force", "-Path", fmt.Sprintf("C:\\%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), metadata.Os, metadata.Arch), "-Destination", "C:\\elastic-agent"})
-		log.WithField("output", output).Trace("Moved elastic-agent")
-		return nil
+		log.WithFields(log.Fields{
+			"output": output,
+			"error":  err,
+		}).Trace("Elastic-agent installation directory existed: was removed")
 	}
 
+	err = extractZIPFile(binaryPath, `C:\`)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Could not extract zip file")
+		return err
+	}
+
+<<<<<<< HEAD
 	log.Trace("C:\\elastic-agent already exists, will not attempt to overwrite")
+=======
+	output, err = i.Exec(ctx, []string{"powershell.exe", "Move-Item", "-Force", "-Path", fmt.Sprintf(`C:\%s-%s-%s-%s`, artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), metadata.Os, metadata.Arch), "-Destination", `C:\elastic-agent`})
+	if err != nil {
+		return err
+	}
+
+	log.WithField("output", output).Trace(`Moved elastic-agent to C:\elastic-agent`)
+>>>>>>> d085cf60 (feat: run tests on windows 2019 (#2468))
 	return nil
 }
 
@@ -166,7 +201,7 @@ func (i *elasticAgentZIPPackage) Stop(ctx context.Context) error {
 
 // Uninstall uninstalls a EXE package
 func (i *elasticAgentZIPPackage) Uninstall(ctx context.Context) error {
-	cmds := []string{"C:\\Program Files\\Elastic\\Agent\\elastic-agent.exe", "uninstall", "-f"}
+	cmds := []string{`C:\Program Files\Elastic\Agent\elastic-agent.exe`, "uninstall", "-f"}
 	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.zip.uninstall", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -182,4 +217,54 @@ func (i *elasticAgentZIPPackage) Uninstall(ctx context.Context) error {
 // Upgrade upgrades a EXE package
 func (i *elasticAgentZIPPackage) Upgrade(ctx context.Context, version string) error {
 	return doUpgrade(ctx, i)
+}
+
+func extractZIPFile(src string, target string) error {
+	src, err := filepath.Abs(src)
+	if err != nil {
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"src":    src,
+		"target": target,
+	}).Trace("Extracting zip file")
+
+	reader, err := zip.OpenReader(src)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	for _, f := range reader.File {
+		filePath := filepath.Join(target, f.Name)
+
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(filePath, os.ModePerm)
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+			return err
+		}
+
+		dstFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return err
+		}
+
+		fileInArchive, err := f.Open()
+		if err != nil {
+			return err
+		}
+
+		if _, err := io.Copy(dstFile, fileInArchive); err != nil {
+			return err
+		}
+
+		dstFile.Close()
+		fileInArchive.Close()
+	}
+
+	return nil
 }

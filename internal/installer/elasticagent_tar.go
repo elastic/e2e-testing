@@ -86,8 +86,13 @@ func (i *elasticAgentTARPackage) Exec(ctx context.Context, args []string) (strin
 }
 
 // Enroll will enroll the agent into fleet
+<<<<<<< HEAD
 func (i *elasticAgentTARPackage) Enroll(ctx context.Context, token string) error {
 	cmds := []string{"./elastic-agent/elastic-agent", "install"}
+=======
+func (i *elasticAgentTARPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
+	cmds := []string{common.GetElasticAgentWorkingPath("elastic-agent", "elastic-agent"), "install"}
+>>>>>>> d085cf60 (feat: run tests on windows 2019 (#2468))
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.tar.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -150,7 +155,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 			return err
 		}
 
-		_, err = i.Exec(ctx, []string{"tar", "-zxf", binaryPath})
+		_, err = i.Exec(ctx, []string{"tar", "-zxf", binaryPath, "-C", common.GetElasticAgentWorkingPath()})
 		if err != nil {
 			return err
 		}
@@ -167,7 +172,8 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 			}
 		}
 
-		output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), metadata.Os, metadata.Arch), artifact})
+		srcPath := common.GetElasticAgentWorkingPath(fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), metadata.Os, metadata.Arch))
+		output, _ := i.Exec(ctx, []string{"mv", srcPath, common.GetElasticAgentWorkingPath(artifact)})
 		log.WithFields(log.Fields{
 			"output":   output,
 			"artifact": artifact,
