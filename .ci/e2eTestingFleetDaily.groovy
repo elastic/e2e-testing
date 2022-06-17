@@ -25,7 +25,7 @@ pipeline {
     PIPELINE_LOG_LEVEL='INFO'
   }
   options {
-    timeout(time: 90, unit: 'MINUTES')
+    timeout(time: 120, unit: 'MINUTES')
     buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '20'))
     timestamps()
     ansiColor('xterm')
