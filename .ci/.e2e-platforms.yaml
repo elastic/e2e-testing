@@ -30,15 +30,6 @@ PLATFORMS:
     instance_type: "t3.xlarge"
     shell_type: sh
     username: admin
-<<<<<<< HEAD
-=======
-  debian_11_amd64:
-    description: "Debian 11 AMD64"
-    image: "ami-0c7c4e3c6b4941f0f"
-    instance_type: "t3.xlarge"
-    shell_type: sh
-    username: admin
->>>>>>> d085cf60 (feat: run tests on windows 2019 (#2468))
   oracle_linux8:
     description: "Oracle Linux 8 update 3 for x86_64 HVM"
     image: "ami-00371eeb8fd8e0e16"
@@ -63,12 +54,3 @@ PLATFORMS:
     instance_type: "t3.xlarge"
     shell_type: sh
     username: admin
-<<<<<<< HEAD
-=======
-  ubuntu_22_04_amd64:
-    description: "Ubuntu 22.04 AMD64"
-    image: "ami-0aeb7c931a5a61206"
-    instance_type: "t3.xlarge"
-    shell_type: sh
-    username: ubuntu
->>>>>>> d085cf60 (feat: run tests on windows 2019 (#2468))
