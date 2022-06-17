@@ -1,6 +1,6 @@
 #!/usr/bin/env groovy
 
-@Library('apm@current') _
+@Library('apm@test/fleet-cloud') _
 
 pipeline {
   agent { label 'darwin && orka && x86_64' }
@@ -112,7 +112,7 @@ pipeline {
               deleteDir()
               unstash 'source'
               withGoEnv(version: "${GO_VERSION}"){
-                withCloudEnv2(cluster: env.CLUSTER_NAME, fleet: true, kibana: true, elasticsearch: true) {
+                withClusterEnv(cluster: env.CLUSTER_NAME, fleet: true, kibana: true, elasticsearch: true) {
                   sh(label: 'debug purposes', script: '''
                      echo 'to be moved to the vm itseld'
                      sudo dseditgroup -o edit -a admin -t user wheel
@@ -182,38 +182,5 @@ def withVaultEnv(Closure body){
     ]){
       body()
     }
-  }
-}
-
-def withCloudEnv2(Map args = [:], Closure body) {
-  withCloudEnv(args) {
-    withEnvMask(vars: [
-      [var: 'ELASTICSEARCH_URL', password: env.ES_URL],
-      [var: 'ELASTICSEARCH_USERNAME', password: env.ES_USERNAME],
-      [var: 'ELASTICSEARCH_PASSWORD', password: env.ES_PASSWORD]
-    ]){
-      withFleetDeploymentEnv() {
-        body()
-      }
-    }
-  }
-}
-
-def getSecret(secret) {
-  def props = getVaultSecret(secret: secret)
-  if (props?.errors) {
-    error "getSecret: Unable to get credentials from the vault: ${props.errors.toString()}"
-  }
-  return props?.data.value
-}
-
-// TODO: this will be implicitely done in withCloudEnv
-def withFleetDeploymentEnv(Map args = [:], Closure body) {
-  def data = toJSON(getSecret("secret/observability-team/ci/test-clusters/${env.CLUSTER_NAME}/k8s-apm"))
-  def fleet_url = data.fleet_url
-  withEnvMask(vars: [
-    [var: 'FLEET_URL', password: fleet_url]
-  ]){
-    body()
   }
 }
