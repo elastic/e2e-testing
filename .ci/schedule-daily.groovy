@@ -1,13 +1,13 @@
 @Library('apm@main') _
 
 pipeline {
-  agent none
+  agent { label 'ubuntu-20 && immutable' }
   environment {
     NOTIFY_TO = credentials('notify-to')
     PIPELINE_LOG_LEVEL = 'INFO'
   }
   options {
-    timeout(time: 1, unit: 'HOURS')
+    timeout(time: 120, unit: 'MINUTES')
     buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '20'))
     timestamps()
     ansiColor('xterm')
@@ -36,10 +36,12 @@ def runBuilds(Map args = [:]) {
 
   def quietPeriod = 0
   branches.each { branch ->
+    if (isBranchUnifiedReleaseAvailable(branch)) {
     build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-fleet-daily-mbp/${branch}", wait: false, propagate: false)
-    build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-helm-daily-mbp/${branch}", wait: false, propagate: false)
-    build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-k8s-autodiscovery-daily-mbp/${branch}", wait: false, propagate: false)
-    // Increate the quiet period for the next iteration
-    quietPeriod += args.quietPeriodFactor
+      build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-helm-daily-mbp/${branch}", wait: false, propagate: false)
+      build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-k8s-autodiscovery-daily-mbp/${branch}", wait: false, propagate: false)
+      // Increate the quiet period for the next iteration
+      quietPeriod += args.quietPeriodFactor
+    }
   }
 }

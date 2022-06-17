@@ -1,12 +1,29 @@
 ---
 - name: Create outputs dir
-  become: no
   ansible.builtin.file:
-    path: "/home/{{ansible_user}}/e2e-testing/outputs"
+    path: "{{ e2e_base_dir }}outputs"
     state: directory
     mode: '0755'
-    owner: "{{ansible_user}}"
+    owner: "{{ ansible_user }}"
+  when: ansible_os_family not in ["Windows"]
+
+- name: Create outputs dir on Windows
+  ansible.windows.win_file:
+    path: "{{ e2e_base_dir }}outputs"
+    state: directory
+  when: ansible_os_family in ["Windows"]
+
+- name: Write and execute access on Windows
+  ansible.windows.win_acl:
+    user: "{{ ansible_user }}"
+    path: "{{ e2e_base_dir }}outputs"
+    type: "allow"
+    rights: Read,Write,Modify,FullControl,Delete
+    state: present
+  when: ansible_os_family in ["Windows"]
 
 - name: Copy source code
-  become: no
-  local_action: ansible.builtin.command rsync --exclude='.venv' --exclude='.git' -e 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ansible_ssh_private_key_file}}' -aW {{ workspace }} {{ ansible_user }}@{{ inventory_hostname }}:e2e-testing/.
+  shell: "rsync --verbose -e 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ ansible_ssh_private_key_file }}' -az {{ workspace }} --exclude='.git*' --exclude='.venv' {{ ansible_user }}@{{ inventory_hostname }}:{{ e2e_project_name }}"
+  delegate_to: "localhost"
+  vars:
+    ansible_shell_type: "sh" # because the rsync is executed locally, we need to use the current 

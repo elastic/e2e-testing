@@ -13,6 +13,7 @@ import (
 
 	io "github.com/elastic/e2e-testing/internal/io"
 	shell "github.com/elastic/e2e-testing/internal/shell"
+	"github.com/joho/godotenv"
 
 	packr "github.com/gobuffalo/packr/v2"
 	homedir "github.com/mitchellh/go-homedir"
@@ -72,6 +73,17 @@ func Init() {
 		return
 	}
 
+	home, err := homedir.Dir()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Fatal("Could not get current user's HOME dir")
+	}
+
+	workspace := filepath.Join(home, ".op")
+
+	configureEnv(workspace)
+
 	configureLogger()
 
 	// Remote provider does not require the use of docker
@@ -82,15 +94,6 @@ func Init() {
 		}
 		shell.CheckInstalledSoftware(binaries...)
 	}
-
-	home, err := homedir.Dir()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Fatal("Could not get current user's HOME dir")
-	}
-
-	workspace := filepath.Join(home, ".op")
 
 	newConfig(workspace)
 }
@@ -189,6 +192,17 @@ func checkConfigDirs(workspace string) {
 		"servicesPath": servicesPath,
 		"profilesPath": profilesPath,
 	}).Trace("'op' workdirs created.")
+}
+
+func configureEnv(workspace string) {
+	homeDirEnv := filepath.Join(workspace, ".env")
+
+	err := godotenv.Overload(homeDirEnv)
+	if err != nil {
+		log.Tracef("No .env file found at %s", homeDirEnv)
+	} else {
+		log.Infof("🧰 Loading .env file from %s!", homeDirEnv)
+	}
 }
 
 func configureLogger() {

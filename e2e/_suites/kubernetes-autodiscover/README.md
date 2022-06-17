@@ -107,13 +107,13 @@ This is an example of the optional configuration:
    export BEAT_VERSION=7.12.0 # version of beats to use
    export ELASTIC_AGENT_VERSION=7.12.0 # version of Elastic Agent to use
    export GITHUB_CHECK_SHA1=0123456789 # to select snapshots built by beats-ci
-   export KUBERNETES_VERSION="1.18.2" # version of the cluster to be passed to kind
+   export KUBERNETES_VERSION="1.24.0" # version of the cluster to be passed to kind
    ```
 
 3. Install dependencies.
 
    - Install Kubectl 1.18 or newer
-   - Install Kind 0.10.0 or newer
+   - Install Kind 0.14.0 or newer
    - Install Go, using the language version defined in the `.go-version` file at the root directory. We recommend using [GVM](https://github.com/andrewkroh/gvm), same as done in the CI, which will allow you to install multiple versions of Go, setting the Go environment in consequence: `eval "$(gvm 1.15.9)"`
    - Godog and other test-related binaries will be installed in their supported versions when the project is first built, thanks to Go modules and Go build system.
 
@@ -163,7 +163,7 @@ The temporary configuration file is logged by the suite at the info level. If a
 cluster is created by the suite, you will see something like this:
 ```shell
 INFO[0000] Kubernetes cluster not available, will start one using kind
-INFO[0000] Using kind v0.10.0 go1.15.7 linux/amd64
+INFO[0000] Using kind v0.14.0 go1.15.7 linux/amd64
 INFO[0046] Kubeconfig in /tmp/test-252418601/kubeconfig
 ```
 

@@ -5,6 +5,10 @@
 package common
 
 import (
+	"path/filepath"
+
+	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
@@ -32,7 +36,7 @@ const FleetProfileName = "fleet"
 const FleetServerAgentServiceName = "fleet-server"
 
 // BeatVersionBase is the base version of the Beat to use
-var BeatVersionBase = "8.3.0-19aba912-SNAPSHOT"
+var BeatVersionBase = "8.4.0-42ce0eef-SNAPSHOT"
 
 // BeatVersion is the version of the Beat to use
 // It can be overriden by BEAT_VERSION env var
@@ -60,7 +64,16 @@ var Provider = "docker"
 // It can be overriden by STACK_VERSION env var
 var StackVersion = BeatVersionBase
 
+// elasticAgentWorkingDir is the working directory for temporary operations, such as
+// downloading and extracting the agent
+var elasticAgentWorkingDir string
+
 func init() {
+	config.Init()
+
+	elasticAgentWorkingDir = filepath.Join(config.OpDir(), ElasticAgentServiceName)
+	io.MkdirAll(elasticAgentWorkingDir)
+
 	DeveloperMode = shell.GetEnvBool("DEVELOPER_MODE")
 	if DeveloperMode {
 		log.Info("Running in Developer mode 💻: runtime dependencies between different test runs will be reused to speed up dev cycle")
@@ -75,6 +88,19 @@ func init() {
 			"apm-environment": shell.GetEnv("ELASTIC_APM_ENVIRONMENT", "local"),
 		}).Info("Current execution will be instrumented 🛠")
 	}
+}
+
+// GetElasticAgentWorkingPath retrieve the path to the elastic-agent dir
+// under the tool's working directory, at current user's home
+func GetElasticAgentWorkingPath(paths ...string) string {
+	elements := []string{elasticAgentWorkingDir}
+	elements = append(elements, paths...)
+	p := filepath.Join(elements...)
+
+	// create dirs up to the last parent
+	io.MkdirAll(filepath.Dir(p))
+
+	return p
 }
 
 // InitVersions initialise default versions. We do not want to do it in the init phase

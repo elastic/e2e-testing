@@ -24,6 +24,7 @@ STACK_IP_ADDRESS ?= $(shell cat $(PROJECT_DIR)/.ci/.stack-host-ip)
 NODE_IMAGE ?= ami-0d90bed76900e679a
 NODE_INSTANCE_TYPE ?= t3.xlarge
 NODE_LABEL ?= debian_amd64
+NODE_SHELL_TYPE ?= sh
 NODE_USER ?= admin
 NODE_IP_ADDRESS ?= $(shell cat $(PROJECT_DIR)/.ci/.node-host-ip)
 
@@ -70,13 +71,25 @@ setup-env:
 destroy-env:
 	rm -fr $(VENV_DIR)
 
+.PHONY: list-platforms
+list-platforms:
+	@docker run --rm -i -w "/workdir" -v $(PROJECT_DIR)/.ci:/workdir mikefarah/yq:4 ".PLATFORMS | keys" .e2e-platforms.yaml
+
+.PHONY: set-env-%
+set-env-%:
+	@$(PROJECT_DIR)/.ci/scripts/yq.sh "$*"
+
+.PHONY: set-env-stack
+set-env-stack:
+	@$(PROJECT_DIR)/.ci/scripts/yq.sh "stack"
+
 .PHONY: provision-stack
 provision-stack: .runID
 	@:$(call check_defined, RUN_ID, You need to an unique RUN_ID. To create it please run 'make .runID' goal)
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
-		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--extra-vars "runId=$(RUN_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t provision-stack
 
@@ -88,7 +101,7 @@ setup-stack: .runID
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
-		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--extra-vars "runId=$(RUN_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t setup-stack \
 		-i $(STACK_IP_ADDRESS),
@@ -102,7 +115,7 @@ destroy-stack:
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars="$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeUser=$(STACK_IMAGE)" \
-		--extra-vars="runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--extra-vars="runId=$(RUN_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t destroy
 	rm -fr $(PROJECT_DIR)/.ci/.stack-host-ip
@@ -117,6 +130,7 @@ show-stack:
 	@echo "Stack type          : $(STACK_LABEL)"
 	@echo "Stack instance type : $(STACK_INSTANCE_TYPE)"
 	@echo "Stack SSH user      : $(STACK_USER)"
+	@echo "Stack Shell         : $(STACK_SHELL_TYPE)"
 
 .PHONY: provision-node
 provision-node: .runID
@@ -125,7 +139,7 @@ provision-node: .runID
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeInstanceType=$(NODE_INSTANCE_TYPE) nodeUser=$(NODE_USER)" \
-		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--extra-vars "runId=$(RUN_ID) nodeShellType=$(NODE_SHELL_TYPE) workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t provision-node
 
@@ -137,8 +151,8 @@ setup-node: .runID
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeInstanceType=$(NODE_INSTANCE_TYPE) nodeUser=$(NODE_USER)" \
-		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
-		--ssh-common-args='$(SSH_OPTS)' \
+		--extra-vars "runId=$(RUN_ID) nodeShellType=$(NODE_SHELL_TYPE) workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--ssh-common-args='-o ConnectTimeout=180s $(SSH_OPTS)' \
 		-t setup-node \
 		-i $(NODE_IP_ADDRESS),
 
@@ -151,7 +165,7 @@ destroy-node:
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars="$(LABELS_STRING) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeUser=$(NODE_USER)" \
-		--extra-vars="runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--extra-vars="runId=$(RUN_ID) nodeShellType=$(NODE_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t destroy
 	rm -fr $(PROJECT_DIR)/.ci/.node-host-ip
@@ -179,6 +193,7 @@ show-node:
 	@echo "Node type          : $(NODE_LABEL)"
 	@echo "Node instance type : $(NODE_INSTANCE_TYPE)"
 	@echo "Node SSH user      : $(NODE_USER)"
+	@echo "Node Shell         : $(NODE_SHELL_TYPE)"
 
 .PHONY: destroy-elastic-stack
 destroy-elastic-stack:
@@ -188,24 +203,37 @@ destroy-elastic-stack:
 recreate-fleet-server:
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	PROVIDER="remote" SUITE="$(SUITE)" TAGS="non-existent-tag" \
-	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/fleet-server.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
-		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--extra-vars "runId=$(RUN_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
-		-t scripts \
+		-t fleet-server \
 		-i $(STACK_IP_ADDRESS),
-	ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo bash --login -c /home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh'
+	ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo bash "/home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh"'
 
 .PHONY: run-tests
 run-tests:
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$(NODE_LABEL)_$(TAGS)" \
-	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/run-tests.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeInstanceType=$(NODE_INSTANCE_TYPE) nodeUser=$(NODE_USER)" \
-		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--extra-vars "runId=$(RUN_ID) nodeShellType=$(NODE_SHELL_TYPE) workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
-		-t scripts \
+		-t run-tests \
 		-i $(NODE_IP_ADDRESS),
-	ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'source /home/$(NODE_USER)/e2e-testing/.env; sudo -preserve-env bash --login -c /home/$(NODE_USER)/e2e-testing/.ci/scripts/functional-test.sh "$(TAGS)"'
+	ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'sudo bash /home/$(NODE_USER)/e2e-testing/.ci/scripts/functional-test.sh \"$(TAGS)\"'
+
+.PHONY: run-tests-win
+run-tests-win:
+	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
+	PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$(NODE_LABEL)_$(TAGS)" \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/run-tests.yml \
+		--private-key="$(SSH_KEY)" \
+		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeInstanceType=$(NODE_INSTANCE_TYPE) nodeUser=$(NODE_USER)" \
+		--extra-vars "runId=$(RUN_ID) nodeShellType=$(NODE_SHELL_TYPE) workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--ssh-common-args='$(SSH_OPTS)' \
+		-t run-tests \
+		-i $(NODE_IP_ADDRESS),
+	ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'powershell "C:\Users\$(NODE_USER)\e2e-testing\.ci\scripts\functional-test.ps1"'

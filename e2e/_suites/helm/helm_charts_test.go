@@ -38,10 +38,10 @@ var kubectlClient kubectl.Kubectl
 var helmVersion = "3.x"
 
 // helmChartVersion represents the default version used for the Elastic Helm charts
-var helmChartVersion = "7.11.2"
+var helmChartVersion = "7.17.3"
 
 // kubernetesVersion represents the default version used for Kubernetes
-var kubernetesVersion = "1.18.2"
+var kubernetesVersion = "1.24.0"
 
 var testSuite HelmChartTestSuite
 
@@ -157,6 +157,9 @@ func (ts *HelmChartTestSuite) aResourceWillExposePods(resourceType string) error
 	exp := utils.GetExponentialBackOff(maxTimeout)
 	retryCount := 1
 
+	// select by app label
+	selector = "app=" + selector
+
 	checkEndpointsFn := func() error {
 		output, err := kubectlClient.GetStringResourcesBySelector(ts.currentContext, "endpoints", selector)
 		if err != nil {
@@ -226,6 +229,9 @@ func (ts *HelmChartTestSuite) aResourceWillManagePods(resourceType string) error
 	if err != nil {
 		return err
 	}
+
+	// select by app label
+	selector = "app=" + selector
 
 	resources, err := ts.checkResources(resourceType, selector, 1)
 	if err != nil {

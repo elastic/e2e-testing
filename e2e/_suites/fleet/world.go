@@ -6,6 +6,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -54,6 +56,10 @@ func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocur
 func CheckProcessState(ctx context.Context, deployer deploy.Deployment, service deploy.ServiceRequest, process string, state string, occurrences int) error {
 	timeout := time.Duration(utils.TimeoutFactor) * time.Minute
 
+	if runtime.GOOS == "windows" {
+		process = fmt.Sprintf("%s.exe", process)
+	}
+
 	actionOpts := action.ProcessAction{
 		Process:      process,
 		DesiredState: state,
@@ -70,13 +76,15 @@ func CheckProcessState(ctx context.Context, deployer deploy.Deployment, service 
 			log.WithFields(log.Fields{
 				"service ": service,
 				"error":    err,
+				"process ": process,
 				"timeout":  timeout,
 			}).Error("The process was not found but should be present")
 		} else {
 			log.WithFields(log.Fields{
-				"service": service,
-				"error":   err,
-				"timeout": timeout,
+				"service":  service,
+				"error":    err,
+				"process ": process,
+				"timeout":  timeout,
 			}).Error("The process was found but shouldn't be present")
 		}
 

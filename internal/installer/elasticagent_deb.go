@@ -30,6 +30,7 @@ func AttachElasticAgentDEBPackage(d deploy.Deployment, service deploy.ServiceReq
 			service: service,
 			deploy:  d,
 			metadata: deploy.ServiceInstallerMetadata{
+				AgentPath:     "/var/lib/elastic-agent",
 				PackageType:   "deb",
 				Os:            "linux",
 				Arch:          utils.GetArchitecture(),
@@ -55,7 +56,7 @@ func (i *elasticAgentDEBPackage) AddFiles(ctx context.Context, files []string) e
 // Inspect returns info on package
 func (i *elasticAgentDEBPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
 	return deploy.ServiceOperatorManifest{
-		WorkDir:    "/var/lib/elastic-agent",
+		WorkDir:    i.metadata.AgentPath,
 		CommitFile: "/etc/elastic-agent/.elastic-agent.active.commit",
 	}, nil
 }
@@ -79,7 +80,7 @@ func (i *elasticAgentDEBPackage) Exec(ctx context.Context, args []string) (strin
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentDEBPackage) Enroll(ctx context.Context, token string) error {
+func (i *elasticAgentDEBPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
 	cmds := []string{"elastic-agent", "enroll"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.debian.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
@@ -89,6 +90,9 @@ func (i *elasticAgentDEBPackage) Enroll(ctx context.Context, token string) error
 
 	cfg, _ := kibana.NewFleetConfig(token)
 	cmds = append(cmds, cfg.Flags()...)
+	if extraFlags != "" {
+		cmds = append(cmds, extraFlags)
+	}
 
 	output, err := i.Exec(ctx, cmds)
 	log.Trace(output)
@@ -141,6 +145,11 @@ func (i *elasticAgentDEBPackage) Postinstall(ctx context.Context) error {
 
 // Preinstall executes operations before installing a DEB package
 func (i *elasticAgentDEBPackage) Preinstall(ctx context.Context) error {
+	err := createAgentDirectories(ctx, i, []string{"sudo", "chown", "-R", "root:root", i.metadata.AgentPath})
+	if err != nil {
+		return err
+	}
+
 	installArtifactFn := func(ctx context.Context, artifact string, version string, useCISnapshots bool) error {
 		span, _ := apm.StartSpanOptions(ctx, "Pre-install "+artifact, artifact+".debian.pre-install", apm.SpanOptions{
 			Parent: apm.SpanFromContext(ctx).TraceContext(),

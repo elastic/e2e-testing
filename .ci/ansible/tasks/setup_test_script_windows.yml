@@ -1,32 +1,11 @@
 ---
 - name: Initialize env file
-  ansible.builtin.file:
+  ansible.windows.win_file:
     path: "{{ e2e_home_dir }}.env"
     state: absent
 
-- name: Extend environment for Stack Bootstrapping
-  lineinfile:
-    state: present
-    line: "{{ item }}"
-    insertafter: EOF
-    dest: "{{ e2e_home_dir }}.env"
-    create: yes
-  with_items:
-    - "SUITE=\"fleet\""
-    - "TAGS=\"non-existing-tag\""
-    - "PROVIDER=\"docker\""
-    - "DEVELOPER_MODE=\"true\""
-    - "SKIP_PULL=\"1\""
-    - "LOG_LEVEL=\"TRACE\""
-    - "STACK_VERSION=\"{{ lookup('env', 'STACK_VERSION') or lookup('file', '{{ workspace }}.stack-version') }}\""
-    - "KIBANA_VERSION=\"{{ lookup('env', 'KIBANA_VERSION') or lookup('file', '{{ workspace }}.stack-version') }}\""
-    - "ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('file', '{{ workspace }}.stack-version') }}\""
-  when: "'stack' == nodeLabel"
-  tags:
-    - scripts
-
-- name: Extend environment for Fleet testing
-  lineinfile:
+- name: Extend environment for Fleet testing (Windows)
+  community.windows.win_lineinfile:
     state: present
     line: "{{item}}"
     insertafter: EOF
@@ -45,8 +24,8 @@
   tags:
     - scripts
 
-- name: Extend environment for Remote provider
-  lineinfile:
+- name: Extend environment for Remote provider (Windows)
+  community.windows.win_lineinfile:
     state: present
     line: "{{ item }}"
     insertafter: EOF
@@ -63,8 +42,8 @@
   tags:
     - scripts
 
-- name: Extend environment for Fleet with elastic-package testing
-  lineinfile:
+- name: Extend environment for Fleet with elastic-package testing (Windows)
+  community.windows.win_lineinfile:
     state: present
     line: "{{item}}"
     insertafter: EOF
@@ -77,8 +56,8 @@
   tags:
     - scripts
 
-- name: Extend environment for Kubernetes Autodiscover testing
-  lineinfile:
+- name: Extend environment for Kubernetes Autodiscover testing (Windows)
+  community.windows.win_lineinfile:
     state: present
     line: "{{item}}"
     insertafter: EOF
@@ -95,8 +74,8 @@
   tags:
     - scripts
 
-- name: Extend environment for Helm testing
-  lineinfile:
+- name: Extend environment for Helm testing (Windows)
+  community.windows.win_lineinfile:
     state: present
     line: "{{item}}"
     insertafter: EOF
@@ -115,8 +94,8 @@
   tags:
     - scripts
 
-- name: Extend environment
-  lineinfile:
+- name: Extend environment (Windows)
+  community.windows.win_lineinfile:
     state: present
     line: "{{item}}"
     insertafter: EOF
@@ -137,41 +116,22 @@
   tags:
     - scripts
 
-- name: Copy env file to root
-  become: True
-  ansible.builtin.copy:
-    remote_src: True
-    src: "{{ e2e_home_dir }}.env"
-    dest: "/root/.op/.env"
-    owner: root
-    group: root
-  tags:
-    - scripts
-
-- name: Create Fleet test script file
-  copy:
+- name: Create Fleet test script file (Windows)
+  ansible.windows.win_copy:
     owner: "{{ansible_user}}"
-    mode: '0777'
-    dest: "{{ e2e_base_dir }}.ci/scripts/functional-test.sh"
+    dest: "{{ e2e_base_dir }}.ci/scripts/functional-test.ps1"
     content: |
-       #!/usr/bin/env bash
-       set -euxo pipefail
+       Set-PSDebug -Trace 1
+       $SUITE = "{{ lookup('env', 'SUITE') or 'fleet' }}"
+       $REPORT_PREFIX = "{{ lookup('env', 'REPORT_PREFIX') or 'junit' }}"
 
-       BASE_DIR="/home/{{ansible_user}}/e2e-testing"
-       SUITE="{{ lookup('env', 'SUITE') or 'fleet' }}"
-       REPORT_PREFIX="{{ lookup('env', 'REPORT_PREFIX') or 'junit' }}"
+       $SEED = [Math]::Round((Get-Date).ToFileTime() / 10000000 - 11644473600)
+       $REPORT="C:\Users\ogc\e2e-testing\outputs\TEST-${REPORT_PREFIX}-{{ runId }}-${SEED}"
 
-       export PATH="$PATH:/usr/local/go/bin"
+       Add-Content C:\Users\ogc\.op\.env  "${REPORT}"
 
-       BASE_DIR=${BASE_DIR} "${BASE_DIR}/.ci/scripts/install-test-dependencies.sh" "${SUITE}"
-
-       REPORT_PREFIX=$(echo "$REPORT_PREFIX" | sed -r 's/[ @~]+//g')
-       SEED="$(date +%Y-%m-%d-%H:%M:%S)"
-       REPORT="{{ e2e_base_dir }}outputs/TEST-${REPORT_PREFIX}-{{ runId }}-${SEED}"
-       echo "REPORT=\"${REPORT}"\" >> {{ e2e_home_dir }}.env
-
-       TAGS="{{ lookup('env', 'TAGS') }}" \
-         FORMAT="pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml" \
-         make --no-print-directory -C "{{ e2e_base_dir }}e2e/_suites/${SUITE}" functional-test
+       $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine")
+       cd "{{ e2e_base_dir }}\e2e\_suites\${SUITE}"
+       go test -timeout 60m -v --godog.format="pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml" --godog.tags="{{ lookup('env', 'TAGS') }}"
   tags:
     - scripts

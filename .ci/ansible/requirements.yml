@@ -4,4 +4,4 @@
 - src: geerlingguy.helm
 - src: andrewrothstein.kubectl
 - src: andrewrothstein.kind
-- src: gantsign.golang
+- src: mdelapenya.go

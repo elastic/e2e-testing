@@ -35,6 +35,7 @@ func AttachElasticAgentTARDarwinPackage(d deploy.Deployment, service deploy.Serv
 			service: service,
 			deploy:  d,
 			metadata: deploy.ServiceInstallerMetadata{
+				AgentPath:     "/opt/Elastic/Agent",
 				PackageType:   "tar",
 				Os:            "darwin",
 				Arch:          arch,
@@ -54,7 +55,7 @@ func (i *elasticAgentTARDarwinPackage) AddFiles(ctx context.Context, files []str
 // Inspect returns info on package
 func (i *elasticAgentTARDarwinPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
 	return deploy.ServiceOperatorManifest{
-		WorkDir:    "/opt/Elastic/Agent",
+		WorkDir:    i.metadata.AgentPath,
 		CommitFile: "/elastic-agent/.elastic-agent.active.commit",
 	}, nil
 }
@@ -79,8 +80,8 @@ func (i *elasticAgentTARDarwinPackage) Exec(ctx context.Context, args []string) 
 }
 
 // Enroll will enroll the agent into fleet
-func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string) error {
-	cmds := []string{"/elastic-agent/elastic-agent", "install"}
+func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
+	cmds := []string{common.GetElasticAgentWorkingPath("elastic-agent"), "install"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.tar.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -90,6 +91,9 @@ func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string)
 
 	cfg, _ := kibana.NewFleetConfig(token)
 	cmds = append(cmds, cfg.Flags()...)
+	if extraFlags != "" {
+		cmds = append(cmds, extraFlags)
+	}
 
 	_, err := i.Exec(ctx, cmds)
 	if err != nil {
@@ -123,6 +127,11 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 	span.Context.SetLabel("runtime", runtime.GOOS)
 	defer span.End()
 
+	err := createAgentDirectories(ctx, i, []string{"sudo", "chown", "-R", "root:root", i.metadata.AgentPath})
+	if err != nil {
+		return err
+	}
+
 	artifact := "elastic-agent"
 
 	metadata := i.metadata
@@ -138,7 +147,7 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-	_, err = i.Exec(ctx, []string{"tar", "-zxf", binaryPath})
+	_, err = i.Exec(ctx, []string{"tar", "-zxf", binaryPath, "-C", common.GetElasticAgentWorkingPath()})
 	if err != nil {
 		return err
 	}
@@ -156,7 +165,8 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		}
 	}
 
-	output, _ := i.Exec(ctx, []string{"mv", fmt.Sprintf("/%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), metadata.Os, metadata.Arch), "/elastic-agent"})
+	srcPath := common.GetElasticAgentWorkingPath(fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), metadata.Os, metadata.Arch))
+	output, _ := i.Exec(ctx, []string{"mv", srcPath, common.GetElasticAgentWorkingPath("elastic-agent")})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
