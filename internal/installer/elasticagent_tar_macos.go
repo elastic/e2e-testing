@@ -81,7 +81,7 @@ func (i *elasticAgentTARDarwinPackage) Exec(ctx context.Context, args []string) 
 
 // Enroll will enroll the agent into fleet
 func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
-	cmds := []string{"./elastic-agent/elastic-agent", "install"}
+	cmds := []string{"sudo", "./elastic-agent/elastic-agent", "install"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.tar.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -215,7 +215,7 @@ func (i *elasticAgentTARDarwinPackage) Stop(ctx context.Context) error {
 
 // Uninstall uninstalls a TAR package
 func (i *elasticAgentTARDarwinPackage) Uninstall(ctx context.Context) error {
-	cmds := []string{"elastic-agent", "uninstall", "-f"}
+	cmds := []string{"sudo", "elastic-agent", "uninstall", "-f"}
 	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.tar.uninstall", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
