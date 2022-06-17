@@ -97,7 +97,7 @@ func doUpgrade(ctx context.Context, so deploy.ServiceOperator) error {
 
 	cmds := []string{"elastic-agent", "upgrade", version, "-v"}
 	if pkgMetadata.PackageType == "zip" {
-		cmds = []string{"C:\\Program Files\\Elastic\\Agent\\elastic-agent.exe", "uninstall", version, "-v"}
+		cmds = []string{`C:\Program Files\Elastic\Agent\elastic-agent.exe`, "uninstall", version, "-v"}
 	}
 	cmds = append(cmds, "--source-uri", "file://"+binaryPath)
 

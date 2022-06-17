@@ -15,6 +15,7 @@ require (
 	github.com/elastic/go-windows v1.0.1 // indirect
 	github.com/gobuffalo/packr/v2 v2.8.1
 	github.com/google/uuid v1.3.0
+	github.com/joho/godotenv v1.4.0 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
