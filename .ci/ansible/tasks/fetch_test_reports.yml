@@ -2,7 +2,7 @@
 - name: Find the Test reports to copy/fetch
   become: no
   ansible.builtin.find: 
-    paths: "/home/{{ ansible_user }}/e2e-testing/outputs"
+    paths: "{{ e2e_base_dir }}outputs"
     file_type: file
     use_regex: yes   
     patterns:
