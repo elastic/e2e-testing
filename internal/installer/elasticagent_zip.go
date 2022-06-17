@@ -33,10 +33,6 @@ func AttachElasticAgentZIPPackage(d deploy.Deployment, service deploy.ServiceReq
 			service: service,
 			deploy:  d,
 			metadata: deploy.ServiceInstallerMetadata{
-<<<<<<< HEAD
-=======
-				AgentPath:     `C:\Program Files\Elastic\Agent`,
->>>>>>> d085cf60 (feat: run tests on windows 2019 (#2468))
 				PackageType:   "zip",
 				Os:            "windows",
 				Arch:          "x86_64",
@@ -56,13 +52,8 @@ func (i *elasticAgentZIPPackage) AddFiles(ctx context.Context, files []string) e
 // Inspect returns info on package
 func (i *elasticAgentZIPPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
 	return deploy.ServiceOperatorManifest{
-<<<<<<< HEAD
-		WorkDir:    "C:\\Program Files\\Elastic\\Agent",
-		CommitFile: "C:\\elastic-agent\\.elastic-agent.active.commit",
-=======
-		WorkDir:    i.metadata.AgentPath,
+		WorkDir:    `C:\Program Files\Elastic\Agent`,
 		CommitFile: `C:\elastic-agent\.elastic-agent.active.commit`,
->>>>>>> d085cf60 (feat: run tests on windows 2019 (#2468))
 	}, nil
 }
 
@@ -85,13 +76,8 @@ func (i *elasticAgentZIPPackage) Exec(ctx context.Context, args []string) (strin
 }
 
 // Enroll will enroll the agent into fleet
-<<<<<<< HEAD
 func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string) error {
-	cmds := []string{"C:\\elastic-agent\\elastic-agent.exe", "install"}
-=======
-func (i *elasticAgentZIPPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
 	cmds := []string{`C:\elastic-agent\elastic-agent.exe`, "install"}
->>>>>>> d085cf60 (feat: run tests on windows 2019 (#2468))
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.zip.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -171,16 +157,12 @@ func (i *elasticAgentZIPPackage) Preinstall(ctx context.Context) error {
 		return err
 	}
 
-<<<<<<< HEAD
-	log.Trace("C:\\elastic-agent already exists, will not attempt to overwrite")
-=======
 	output, err = i.Exec(ctx, []string{"powershell.exe", "Move-Item", "-Force", "-Path", fmt.Sprintf(`C:\%s-%s-%s-%s`, artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), metadata.Os, metadata.Arch), "-Destination", `C:\elastic-agent`})
 	if err != nil {
 		return err
 	}
 
 	log.WithField("output", output).Trace(`Moved elastic-agent to C:\elastic-agent`)
->>>>>>> d085cf60 (feat: run tests on windows 2019 (#2468))
 	return nil
 }
 
