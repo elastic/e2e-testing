@@ -115,15 +115,12 @@ pipeline {
                 withCloudEnv2(cluster: env.CLUSTER_NAME, fleet: true, kibana: true, elasticsearch: true) {
                   sh(label: 'debug purposes', script: '''
                      echo 'to be moved to the vm itseld'
-                     dscacheutil -q group -a name staff || true
-                     dscacheutil -q group -a name wheel || true
-                     dscacheutil -q group -a name root || true
                      sudo dseditgroup -o edit -a admin -t user wheel
-                     dscacheutil -q group -a name staff || true
                      dscacheutil -q group -a name wheel || true
-                     dscacheutil -q group -a name root || true
                      ls -ltra /opt
                      sudo chmod 775 /opt
+                     ls -ltra /
+                     ls -ltra /opt
                      mkdir /opt/Elastic
                      ls -ltra /opt
                     ''')
