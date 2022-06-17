@@ -86,13 +86,8 @@ func (i *elasticAgentTARPackage) Exec(ctx context.Context, args []string) (strin
 }
 
 // Enroll will enroll the agent into fleet
-<<<<<<< HEAD
 func (i *elasticAgentTARPackage) Enroll(ctx context.Context, token string) error {
-	cmds := []string{"./elastic-agent/elastic-agent", "install"}
-=======
-func (i *elasticAgentTARPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
 	cmds := []string{common.GetElasticAgentWorkingPath("elastic-agent", "elastic-agent"), "install"}
->>>>>>> d085cf60 (feat: run tests on windows 2019 (#2468))
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.tar.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
