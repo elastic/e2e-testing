@@ -174,7 +174,7 @@ destroy-node:
 fetch-test-reports: .runID
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, NODE_IP_ADDRESS, IP address of the test node not defined)
-	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/fetch-test-reports.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) nodeLabel=$(NODE_LABEL) nodeImage=$(NODE_IMAGE) nodeInstanceType=$(NODE_INSTANCE_TYPE) nodeUser=$(NODE_USER)" \
 		--extra-vars "nodeIP=$(NODE_IP_ADDRESS) task=fetch-reports" \
