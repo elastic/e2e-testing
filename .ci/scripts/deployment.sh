@@ -7,7 +7,6 @@ if [ -d $FOLDER ] ; then
     rm -rf $FOLDER
 fi
 git clone \
-    --branch feature/remove-docker \
     git@github.com:elastic/observability-test-environments.git $FOLDER
 
 cd $FOLDER
