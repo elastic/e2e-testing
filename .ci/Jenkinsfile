@@ -75,8 +75,9 @@ pipeline {
       }
       post {
         always {
+          sh(label: 'debug folder structure fleet', script: 'ls -ltra ${BASE_DIR} && ls -ltra "${BASE_DIR}/e2e/_suites/fleet" && ls -ltrah .')
           junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-          archiveArtifacts(allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-*.xml")
+          archiveArtifacts(allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/*.xml,${BASE_DIR}/*.xml,*.xml,outputs/*.xml")
         }
       }
     }
