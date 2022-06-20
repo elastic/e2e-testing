@@ -116,6 +116,7 @@ make -C .ci list-platforms
 - sles15
 - fleet_elastic_pkg
 - ubuntu_22_04_amd64
+- windows2019
 ```
 
 It's possible to configure the test node (OS, architecture), using the values that are already present in [the platforms descriptor](.e2e-platforms.yaml):
@@ -141,6 +142,7 @@ make -C .ci set-env-debian_11_arm64
 make -C .ci set-env-oracle_linux8
 make -C .ci set-env-sles15
 make -C .ci set-env-ubuntu_22_04_amd64
+make -C .ci set-env-windows2019
 ```
 
 The above command will create a `.node-${PLATFORM}-env` file (i.e. `.node-centos8_arm64-env`) that you must source into your shell before interacting with a test node, so that the environment variables are present for each build command and you do not need to repeat them again and again:
