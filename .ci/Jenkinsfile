@@ -16,7 +16,6 @@ pipeline {
     BEAT_VERSION = "${params.BEAT_VERSION.trim()}"
     ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
     ELASTIC_STACK_VERSION = "${params.ELASTIC_STACK_VERSION.trim()}"
-    STACK_VERSION = "${params.ELASTIC_STACK_VERSION.trim()}"
     //CLUSTER_NAME = "e2e-testing-${BUILD_ID}-${BRANCH_NAME}-${ELASTIC_STACK_VERSION.replaceAll('.', '-')}"
     CLUSTER_NAME = "e2e-testing-${BRANCH_NAME}-${ELASTIC_STACK_VERSION}"
     LOG_LEVEL = "${params.LOG_LEVEL}"
@@ -64,6 +63,7 @@ pipeline {
         E2E_SUITES = "e2e/_suites"
         TAGS = "fleet_mode"
         FORMAT = "pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml"
+        STACK_VERSION = "${env.ELASTIC_STACK_VERSION}"
       }
       steps {
         withGithubNotify(context: 'Functional Test', tab: 'tests') {
