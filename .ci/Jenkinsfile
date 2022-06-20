@@ -61,7 +61,7 @@ pipeline {
       options { skipDefaultCheckout() }
       environment {
         E2E_SUITES = "e2e/_suites"
-        TAGS = "fleet_mode"
+        TAGS = "fleet_mode && install"
         FORMAT = "pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml"
         STACK_VERSION = "${env.ELASTIC_STACK_VERSION}"
       }
