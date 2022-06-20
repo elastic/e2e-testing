@@ -135,7 +135,7 @@ export NODE_LABEL=ubuntu_22_04_amd64
 export NODE_LABEL=windows2019
 ```
 
-The build will create a `.node-${PLATFORM}-env` file (i.e. `.node-centos8_arm64-env`) that will be automatically sourced into your shell before interacting with a test node, so that the environment variables are present for each build command and you do not need to repeat them again and again.
+The build will create a `.env-${PLATFORM}` file (i.e. `.env-centos8_arm64`) that will be automatically sourced into your shell before interacting with a test node, so that the environment variables are present for each build command and you do not need to repeat them again and again.
 
 > Important: when running any of the commands below, please check that the `NODE_LABEL` variable is properly set:
 
