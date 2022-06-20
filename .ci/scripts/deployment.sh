@@ -19,8 +19,17 @@ if [ ! -e "$CONFIG_FILE" ] ; then
   exit 1
 fi
 
+CALLBACKS_ENABLED="profile_tasks,dense,minimal,yaml"
+
 if [ "$1" == "destroy" ] ; then
-    CLUSTER_CONFIG_FILE=$CONFIG_FILE make -C ansible destroy-cluster
+    ANSIBLE_CALLBACKS_ENABLED=$CALLBACKS_ENABLED \
+    CLUSTER_CONFIG_FILE=$CONFIG_FILE \
+    make -C ansible destroy-cluster
+elif [ "$1" == "create" ] ; then
+    ANSIBLE_CALLBACKS_ENABLED=$CALLBACKS_ENABLED \
+    CLUSTER_CONFIG_FILE=$CONFIG_FILE \
+    make -C ansible create-cluster
 else
-    CLUSTER_CONFIG_FILE=$CONFIG_FILE make -C ansible create-cluster
+  echo "Unknown action"
+  exit 1
 fi
