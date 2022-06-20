@@ -1,0 +1,33 @@
+---
+- name: Fetch test reports
+  hosts: all
+  connection: ssh
+  gather_facts: True
+  vars_files:
+    - vars/main.yml
+  tags:
+    - fetch-reports
+  pre_tasks:
+    - name: Load a variable file based on the OS type
+      include_vars: "{{ lookup('first_found', params) }}"
+      vars:
+        params:
+          files:
+            - '{{ ansible_distribution }}.yml'
+            - '{{ ansible_os_family }}.yml'
+            - '{{ ansible_system }}.yml'
+          paths:
+            - 'group_vars'
+  vars:
+    ansible_python_interpreter: "auto"
+    ansible_shell_type: "{{ nodeShellType | default('sh') }}"
+    ansible_user: "{{ nodeUser }}"
+    pip_package: "python3-pip"
+  tasks:
+  - name: Fetch test reports
+    include_tasks: tasks/fetch_test_reports.yml
+    when:
+      - task is defined
+      - task == "fetch-reports"
+    tags:
+      - fetch-reports
