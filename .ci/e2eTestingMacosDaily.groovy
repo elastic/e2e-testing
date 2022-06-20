@@ -53,9 +53,9 @@ pipeline {
     }
   }
   post {
-		always {
-			echo 'TBD: destroy cluster'
-		}
+    always {
+      echo 'TBD: destroy cluster'
+    }
     cleanup {
       notifyBuildResult()
     }
