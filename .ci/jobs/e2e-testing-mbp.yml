@@ -43,7 +43,7 @@
             disable: false
             recursive: true
             parent-credentials: true
-            timeout: 100
+            timeout: 120
           timeout: '15'
           use-author: true
           wipe-workspace: 'True'

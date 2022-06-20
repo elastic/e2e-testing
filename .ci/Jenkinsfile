@@ -22,7 +22,7 @@ pipeline {
     GO111MODULE = 'on'
   }
   options {
-    timeout(time: 90, unit: 'MINUTES')
+    timeout(time: 120, unit: 'MINUTES')
     buildDiscarder(logRotator(numToKeepStr: '200', artifactNumToKeepStr: '30', daysToKeepStr: '30'))
     timestamps()
     ansiColor('xterm')

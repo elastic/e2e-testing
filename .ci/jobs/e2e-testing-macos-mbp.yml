@@ -1,15 +1,15 @@
 ---
 - job:
-    name: e2e-tests/e2e-testing-helm-daily-mbp
-    display-name: End-2-End tests for Observability Helm charts Pipeline
-    description: Run E2E Helm Charts test suite daily, including maintenance branches
+    name: e2e-tests/e2e-testing-macos-daily-mbp
+    display-name: End-2-End tests for Observability MacOS Pipeline
+    description: Run E2E MacOS test suite daily, including maintenance branches
     view: E2E
     project-type: multibranch
-    script-path: .ci/e2eTestingHelmDaily.groovy
+    script-path: .ci/e2eTestingMacosDaily.groovy
     scm:
       - github:
           branch-discovery: no-pr
-          head-filter-regex: '(main|8\.\d|7\.17)'
+          head-filter-regex: '(main|8\.\d|7\.17|PR-2626)'
           discover-pr-forks-strategy: merge-current
           discover-pr-forks-trust: permission
           discover-pr-origin: merge-current
@@ -39,9 +39,7 @@
             disable: false
             recursive: true
             parent-credentials: true
-            timeout: 120
+            timeout: 100
           timeout: '15'
           use-author: true
-          wipe-workspace: 'True'
-    triggers:
-      - timed: 'H H(4-5) * * 1-5'
+          wipe-workspace: true
