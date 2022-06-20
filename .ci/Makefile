@@ -177,7 +177,7 @@ fetch-test-reports: .runID set-env-$(NODE_LABEL)
 	source $(PROJECT_DIR)/.ci/.node-$(NODE_LABEL)-env && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/fetch-test-reports.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
-		--extra-vars "nodeIP=$(NODE_IP_ADDRESS) task=fetch-reports" \
+		--extra-vars "nodeIP=$(NODE_IP_ADDRESS)" \
 		--extra-vars "runId=$(RUN_ID) workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t fetch-reports \

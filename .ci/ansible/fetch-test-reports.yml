@@ -26,8 +26,5 @@
   tasks:
   - name: Fetch test reports
     include_tasks: tasks/fetch_test_reports.yml
-    when:
-      - task is defined
-      - task == "fetch-reports"
     tags:
       - fetch-reports
