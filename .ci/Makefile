@@ -75,13 +75,10 @@ destroy-env:
 list-platforms:
 	@docker run --rm -i -w "/workdir" -v $(PROJECT_DIR)/.ci:/workdir mikefarah/yq:4 ".PLATFORMS | keys" .e2e-platforms.yaml
 
+# Create the env file for the target platform
 .PHONY: set-env-%
 set-env-%:
 	@$(PROJECT_DIR)/.ci/scripts/yq.sh "$*"
-
-.PHONY: set-env-stack
-set-env-stack:
-	@$(PROJECT_DIR)/.ci/scripts/yq.sh "stack"
 
 .PHONY: provision-stack
 provision-stack: .runID
