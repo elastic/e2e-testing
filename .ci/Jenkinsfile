@@ -19,8 +19,12 @@ pipeline {
     BEAT_VERSION = "${params.BEAT_VERSION.trim()}"
     ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
     ELASTIC_STACK_VERSION = "${params.ELASTIC_STACK_VERSION.trim()}"
+    STACK_VERSION = "${params.ELASTIC_STACK_VERSION.trim()}"
     //CLUSTER_NAME = "e2e-testing-${BUILD_ID}-${BRANCH_NAME}-${ELASTIC_STACK_VERSION.replaceAll('.', '-')}"
     CLUSTER_NAME = "e2e-testing-${BRANCH_NAME}-${ELASTIC_STACK_VERSION}"
+    LOG_LEVEL = "${params.LOG_LEVEL}"
+    TAGS = "fleet_mode"
+    FORMAT = "pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml"
     HOME = "${env.WORKSPACE}"
     PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
     GO111MODULE = 'on'
@@ -69,15 +73,7 @@ pipeline {
           unstash 'source'
           withGoEnv(version: "${GO_VERSION}"){
             withClusterEnv(cluster: env.CLUSTER_NAME, fleet: true, kibana: true, elasticsearch: true) {
-              sh(label: 'run fleet', script: '''
-               TAGS="fleet_mode" \
-               LOG_LEVEL="TRACE" \
-               FORMAT="pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml" \
-               STACK_VERSION="${ELASTIC_STACK_VERSION}" \
-               BEAT_VERSION="${BEAT_VERSION}" \
-               ELASTIC_AGENT_VERSION="${ELASTIC_AGENT_VERSION}" \
-               make --no-print-directory -C "${BASE_DIR}/e2e/_suites/fleet" functional-test
-              ''')
+              sh(label: 'run fleet', script: 'make --no-print-directory -C "${BASE_DIR}/e2e/_suites/fleet" functional-test')
             }
           }
         }
