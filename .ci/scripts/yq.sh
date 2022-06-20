@@ -10,11 +10,10 @@ BASEDIR=$(dirname "$0")
 YQ_IMAGE="mikefarah/yq:4"
 
 PLATFORM="${1:-}"
-FILE_ENV=".node-${PLATFORM}-env"
+FILE_ENV=".env-${PLATFORM}"
 ENV_PREFIX="NODE"
 
 if [ "${PLATFORM}" == "stack" ]; then
-  FILE_ENV=".stack-env"
   ENV_PREFIX="STACK"
 fi
 
