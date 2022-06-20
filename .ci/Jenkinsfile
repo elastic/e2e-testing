@@ -58,6 +58,7 @@ pipeline {
       options { skipDefaultCheckout() }
       steps {
         echo "CLUSTER_NAME=${env.CLUSTER_NAME}"
+        destroyCluster()
         createCluster()
       }
     }
