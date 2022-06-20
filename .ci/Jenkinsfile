@@ -22,8 +22,6 @@ pipeline {
     LOG_LEVEL = "${params.LOG_LEVEL}"
     TAGS = "fleet_mode"
     FORMAT = "pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml"
-    HOME = "${env.WORKSPACE}"
-    PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
     GO111MODULE = 'on'
   }
   options {
