@@ -73,7 +73,7 @@ pipeline {
                TAGS="fleet_mode" \
                LOG_LEVEL="TRACE" \
                FORMAT="pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml" \
-               STACK_VERSION="${STACK_VERSION}" \
+               STACK_VERSION="${ELASTIC_STACK_VERSION}" \
                BEAT_VERSION="${BEAT_VERSION}" \
                ELASTIC_AGENT_VERSION="${ELASTIC_AGENT_VERSION}" \
                make --no-print-directory -C "${BASE_DIR}/e2e/_suites/fleet" functional-test
