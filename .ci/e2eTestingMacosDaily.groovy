@@ -68,7 +68,9 @@ pipeline {
         withGithubNotify(context: 'Functional Test', tab: 'tests') {
           withGoEnv(version: "${GO_VERSION}"){
             withClusterEnv(cluster: env.CLUSTER_NAME, fleet: true, kibana: true, elasticsearch: true) {
-              sh(label: 'run fleet', script: 'make --no-print-directory -C "${BASE_DIR}/${E2E_SUITES}/fleet" functional-test')
+              withOtelEnv() {
+                sh(label: 'run fleet', script: 'make --no-print-directory -C "${BASE_DIR}/${E2E_SUITES}/fleet" functional-test')
+              }
             }
           }
         }
