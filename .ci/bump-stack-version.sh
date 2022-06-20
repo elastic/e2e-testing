@@ -24,6 +24,10 @@ else
 	SED="sed -i"
 fi
 
+MAJOR=$(echo $VERSION | cut -d. -f1)
+MINOR=$(echo $VERSION | cut -d. -f2)
+PATCH=$(echo $VERSION | cut -d. -f3)
+
 echo "Update stack with version ${VERSION} in .stack-version"
 echo "${VERSION}-SNAPSHOT" > .stack-version
 git add .stack-version
@@ -40,11 +44,11 @@ ${SED} -E -e "s#(name: 'ELASTIC_AGENT_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.
 ${SED} -E -e "s#(name: 'STACK_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1${VERSION}#g" $FILE
 git add $FILE
 
-echo "Update stack with version ${VERSION} in Jenkinsfile"
+echo "Update stack with version ${MAJOR}.${MINOR}.${PATCH} in e2eTestingMacosDaily"
 FILE=".ci/e2eTestingMacosDaily.groovy"
-${SED} -E -e "s#(name: 'ELASTIC_AGENT_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1${VERSION}#g" $FILE
-${SED} -E -e "s#(name: 'ELASTIC_STACK_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1${VERSION}#g" $FILE
-${SED} -E -e "s#(name: 'BEAT_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.[0-9]+(-[a-f0-9]{8})?#\1${VERSION}#g" $FILE
+${SED} -E -e "s#(name: 'ELASTIC_AGENT_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.[0-9]+#\1${MAJOR}.${MINOR}.${PATCH}#g" $FILE
+${SED} -E -e "s#(name: 'ELASTIC_STACK_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.[0-9]+#\1${MAJOR}.${MINOR}.${PATCH}#g" $FILE
+${SED} -E -e "s#(name: 'BEAT_VERSION', defaultValue: ')[0-9]+\.[0-9]+\.[0-9]+#\1${MAJOR}.${MINOR}.${PATCH}#g" $FILE
 git add $FILE
 
 echo "Update stack with version ${VERSION} in docker-compose.yml"
