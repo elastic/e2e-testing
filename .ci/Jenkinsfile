@@ -556,9 +556,7 @@ def generateFunctionalTestStep(Map args = [:]){
             def testRunnerIP = getNodeIp("node")
             sh "mkdir -p outputs/${testRunnerIP} || true"
             ciBuild() {
-              retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                sh(label: 'Fetch tests reports from node', script: "make -C .ci fetch-test-reports")
-              }
+              sh(label: 'Fetch tests reports from node', script: "make -C .ci fetch-test-reports")
             }
             sh "ls -l outputs/${testRunnerIP}"
             if (params.DEVELOPER_MODE) {
