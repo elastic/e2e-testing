@@ -33,9 +33,9 @@ pipeline {
   parameters {
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
     string(name: 'testMatrixFile', defaultValue: '.ci/.e2e-tests.yaml', description: 'The file with the test suite and scenarios to be tested.')
-    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.4.0-42ce0eef-SNAPSHOT', description: 'SemVer version of the Elastic Agent to be used for the tests. You can use here the tag of your PR to test your changes')
-    string(name: 'ELASTIC_STACK_VERSION', defaultValue: '8.4.0-42ce0eef-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
-    string(name: 'BEAT_VERSION', defaultValue: '8.4.0-42ce0eef-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
+    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.4.0-SNAPSHOT', description: 'SemVer version of the Elastic Agent to be used for the tests. You can use here the tag of your PR to test your changes')
+    string(name: 'ELASTIC_STACK_VERSION', defaultValue: '8.4.0-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
+    string(name: 'BEAT_VERSION', defaultValue: '8.4.0-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
     choice(name: 'LOG_LEVEL', choices: ['TRACE', 'DEBUG', 'INFO'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
   }
