@@ -20,8 +20,6 @@ pipeline {
     //CLUSTER_NAME = "e2e-testing-${BUILD_ID}-${BRANCH_NAME}-${ELASTIC_STACK_VERSION.replaceAll('.', '-')}"
     CLUSTER_NAME = "e2e-testing-${BRANCH_NAME}-${ELASTIC_STACK_VERSION}"
     LOG_LEVEL = "${params.LOG_LEVEL}"
-    TAGS = "fleet_mode"
-    FORMAT = "pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml"
     GO111MODULE = 'on'
   }
   options {
@@ -62,22 +60,24 @@ pipeline {
     }
     stage('Functional Test') {
       options { skipDefaultCheckout() }
+      environment {
+        E2E_SUITES = "e2e/_suites"
+        TAGS = "fleet_mode"
+        FORMAT = "pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml"
+      }
       steps {
         withGithubNotify(context: 'Functional Test', tab: 'tests') {
-          deleteDir()
-          unstash 'source'
           withGoEnv(version: "${GO_VERSION}"){
             withClusterEnv(cluster: env.CLUSTER_NAME, fleet: true, kibana: true, elasticsearch: true) {
-              sh(label: 'run fleet', script: 'make --no-print-directory -C "${BASE_DIR}/e2e/_suites/fleet" functional-test')
+              sh(label: 'run fleet', script: 'make --no-print-directory -C "${BASE_DIR}/${E2E_SUITES}/fleet" functional-test')
             }
           }
         }
       }
       post {
         always {
-          sh(label: 'debug folder structure fleet', script: 'ls -ltra ${BASE_DIR} && ls -ltra "${BASE_DIR}/e2e/_suites/fleet" && ls -ltrah .')
-          junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-*.xml")
-          archiveArtifacts(allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/*.xml,${BASE_DIR}/*.xml,*.xml,outputs/*.xml")
+          junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/${E2E_SUITES}/**/*.xml")
+          archiveArtifacts(allowEmptyArchive: true, artifacts: "${BASE_DIR}/${E2E_SUITES}/**/*.xml")
         }
       }
     }
