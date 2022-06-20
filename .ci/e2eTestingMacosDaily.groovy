@@ -16,7 +16,7 @@ pipeline {
     BEAT_VERSION = "${params.BEAT_VERSION.trim()}"
     ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
     ELASTIC_STACK_VERSION = "${params.ELASTIC_STACK_VERSION.trim()}"
-    CLUSTER_NAME = "e2e-testing-${BUILD_ID}-${BRANCH_NAME}-${ELASTIC_STACK_VERSION.replaceAll('.', '-')}"
+    CLUSTER_NAME = "e2e-testing-${BUILD_ID}-${BRANCH_NAME}-${ELASTIC_STACK_VERSION.replaceAll('\\.', '-')}"
     LOG_LEVEL = "${params.LOG_LEVEL}"
     GO111MODULE = 'on'
   }
