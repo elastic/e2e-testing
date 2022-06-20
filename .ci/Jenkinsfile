@@ -69,17 +69,6 @@ pipeline {
           unstash 'source'
           withGoEnv(version: "${GO_VERSION}"){
             withClusterEnv(cluster: env.CLUSTER_NAME, fleet: true, kibana: true, elasticsearch: true) {
-              sh(label: 'debug purposes', script: '''
-                 echo 'to be moved to the vm itseld'
-                 sudo dseditgroup -o edit -a admin -t user wheel
-                 dscacheutil -q group -a name wheel || true
-                 ls -ltra /opt
-                 sudo chmod 775 /opt
-                 ls -ltra /
-                 ls -ltra /opt
-                 mkdir /opt/Elastic
-                 ls -ltra /opt
-                ''')
               sh(label: 'run fleet', script: '''
                TAGS="fleet_mode" \
                LOG_LEVEL="TRACE" \
