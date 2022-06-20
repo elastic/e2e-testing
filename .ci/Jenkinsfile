@@ -15,11 +15,12 @@ pipeline {
     JOB_GCS_BUCKET = credentials('gcs-bucket')
     JOB_GIT_CREDENTIALS = "2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken"
     DOCKER_REGISTRY = 'docker.elastic.co'
-    CLUSTER_NAME = "e2e-testing-${BUILD_ID}-${BRANCH_NAME}-${STACK_VERSION.replaceAll('.', '-')}"
     PROVIDER = 'remote'
     BEAT_VERSION = "${params.BEAT_VERSION.trim()}"
     ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
     STACK_VERSION = "${params.STACK_VERSION.trim()}"
+    //CLUSTER_NAME = "e2e-testing-${BUILD_ID}-${BRANCH_NAME}-${STACK_VERSION.replaceAll('.', '-')}"
+    CLUSTER_NAME = "e2e-testing-${BRANCH_NAME}-${STACK_VERSION}"
     HOME = "${env.WORKSPACE}"
     PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
     GO111MODULE = 'on'
@@ -56,6 +57,7 @@ pipeline {
     stage('Create cluster') {
       options { skipDefaultCheckout() }
       steps {
+        echo "CLUSTER_NAME=${env.CLUSTER_NAME}"
         createCluster()
       }
     }
@@ -94,9 +96,9 @@ pipeline {
     }
   }
   post {
-    always {
+    /*always {
       destroyCluster()
-    }
+    }*/
     cleanup {
       notifyBuildResult()
     }
