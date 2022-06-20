@@ -7,14 +7,11 @@ pipeline {
   environment {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
-    ELASTIC_APM_ACTIVE="true"
-    ELASTIC_APM_ENVIRONMENT="ci"
-    ELASTIC_APM_LOG_FILE="stderr"
-    ELASTIC_APM_LOG_LEVEL="debug"
+    ELASTIC_APM_ACTIVE = "true"
+    ELASTIC_APM_ENVIRONMENT = "ci"
+    ELASTIC_APM_LOG_FILE = "stderr"
+    ELASTIC_APM_LOG_LEVEL = "debug"
     NOTIFY_TO = credentials('notify-to')
-    JOB_GCS_BUCKET = credentials('gcs-bucket')
-    JOB_GIT_CREDENTIALS = "2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken"
-    DOCKER_REGISTRY = 'docker.elastic.co'
     PROVIDER = 'remote'
     BEAT_VERSION = "${params.BEAT_VERSION.trim()}"
     ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
