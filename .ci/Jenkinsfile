@@ -530,7 +530,11 @@ def generateFunctionalTestStep(Map args = [:]){
                   sh(label: 'Start node', script: "make -C .ci provision-node")
               }
 
+              // make goal to run the tests, which is platform-dependant
+              def runCommand = "run-tests"
+
               if (platform.contains("windows")) {
+                runCommand = "run-tests-win"
                 // Ansible wait_for module is not enough to mitigate the timeout
                 log(level: 'DEBUG', text: "Sleeping 300 seconds on Windows so that SSH is accessible in the remote instance.")
                 sleep(300)
@@ -542,12 +546,7 @@ def generateFunctionalTestStep(Map args = [:]){
                 }
               }
               ciBuild() {
-                if (platform.contains("windows")) {
-                  sh(label: 'Run tests in the node', script: "make -C .ci run-tests-win")
-                }
-                else {
-                  sh(label: 'Run tests in the node', script: "make -C .ci run-tests")
-                }
+                sh(label: 'Run tests in the node', script: "make -C .ci ${runCommand}")
               }
             }
           }
