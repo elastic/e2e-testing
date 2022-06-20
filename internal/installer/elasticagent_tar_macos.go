@@ -7,10 +7,12 @@ package installer
 import (
 	"context"
 	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
+	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	"github.com/elastic/e2e-testing/pkg/downloads"
@@ -130,6 +132,16 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 	err := createAgentDirectories(ctx, i, []string{"sudo", "chown", "-R", "root:wheel", i.metadata.AgentPath})
 	if err != nil {
 		return err
+	}
+
+	// Idempotence: so no previous executions interfers with the current execution
+	found, err := io.Exists(common.GetElasticAgentWorkingPath("elastic-agent"))
+	if found && err == nil {
+		err = os.RemoveAll(common.GetElasticAgentWorkingPath("elastic-agent"))
+		if err != nil {
+			log.Fatal("Could not remove elastic-agent.")
+		}
+		log.Trace("Cleared previously elastic-agent dir")
 	}
 
 	artifact := "elastic-agent"
