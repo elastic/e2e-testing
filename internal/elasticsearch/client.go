@@ -91,7 +91,7 @@ type Endpoint struct {
 
 // GetElasticSearchEndpoint - Query environment for correct endpoint information
 func GetElasticSearchEndpoint() *Endpoint {
-	creds := fmt.Sprintf("elastic:%s", shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"))
+	creds := fmt.Sprintf("%s:%s", shell.GetEnv("ELASTICSEARCH_USERNAME", "elastic"), shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"))
 	remoteESHost := shell.GetEnv("ELASTICSEARCH_URL", "")
 	if remoteESHost != "" {
 		remoteESHost = utils.RemoveQuotes(remoteESHost)
@@ -137,7 +137,7 @@ func getElasticsearchClient(ctx context.Context) (*es.Client, error) {
 func getElasticsearchClientFromHostPort(ctx context.Context, host string, port int, scheme string) (*es.Client, error) {
 	cfg := es.Config{
 		Addresses: []string{fmt.Sprintf("%s://%s:%d", scheme, host, port)},
-		Username:  "admin",
+		Username:  shell.GetEnv("ELASTICSEARCH_USERNAME", "admin"),
 		Password:  shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"),
 	}
 
@@ -462,7 +462,7 @@ func WaitForIndices() (string, error) {
 		r := curl.HTTPRequest{
 			URL:               fmt.Sprintf("%s://%s:%d/_cat/indices?v", esEndpoint.Scheme, esEndpoint.Host, esEndpoint.Port),
 			BasicAuthPassword: shell.GetEnv("ELASTICSEARCH_PASSWORD", "changeme"),
-			BasicAuthUser:     "admin",
+			BasicAuthUser:     shell.GetEnv("ELASTICSEARCH_USERNAME", "admin"),
 		}
 
 		response, err := curl.Get(r)
