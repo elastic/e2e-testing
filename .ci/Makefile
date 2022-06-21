@@ -11,7 +11,7 @@ RUN_ID ?= $(shell cat $(RUN_ID_FILE))
 SSH_KEY ?= $(HOME)/.ssh/id_rsa
 SSH_KEY_PUBLIC = $(SSH_KEY).pub
 SSH_OPTS=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-SSH_OPTS_EXTENDED=-o TCPKeepAlive=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=100 $(SSH_OPTS)
+SSH_OPTS_EXTENDED=-o TCPKeepAlive=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=100 $(SSH_OPTS) -vvv
 
 # Debian 10 AMD (see .e2e-platforms.yaml)
 STACK_IMAGE=ami-0d90bed76900e679a
