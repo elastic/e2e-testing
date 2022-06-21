@@ -10,3 +10,4 @@ dist/
 hosts
 *-sshhosts
 .idea
+.obs
