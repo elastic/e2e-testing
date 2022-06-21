@@ -23,7 +23,7 @@
     patterns:
       - '^TEST.*json$'
       - '^TEST.*xml$'
-  register: files_2_fetch
+  register: files_2_fetch_win
   tags:
     - fetch-reports
   when:
@@ -48,5 +48,16 @@
     flat: yes
     fail_on_missing: no
   with_items: "{{ files_2_fetch.files }}"
+  tags:
+    - fetch-reports
+
+- name: Fetch the Test reports (Windows)
+  become: no
+  ansible.builtin.fetch:
+    src: "{{ item.path }}"
+    dest: "{{ workspace }}outputs/{{ inventory_hostname }}/"
+    flat: yes
+    fail_on_missing: no
+  with_items: "{{ files_2_fetch_win.files }}"
   tags:
     - fetch-reports
