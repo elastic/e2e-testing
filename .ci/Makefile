@@ -133,7 +133,7 @@ show-stack:
 provision-node: .runID set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
-	source $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
 		--extra-vars "runId=$(RUN_ID) nodeShellType=$${NODE_SHELL_TYPE} workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
@@ -145,7 +145,7 @@ setup-node: .runID set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
 	@:$(call check_defined, NODE_IP_ADDRESS, IP address of the test node not defined)
-	source $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
 		--extra-vars "runId=$(RUN_ID) nodeShellType=$${NODE_SHELL_TYPE} workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
@@ -159,7 +159,7 @@ create-node: provision-node setup-node
 .PHONY: destroy-node
 destroy-node: set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
-	source $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars="$(LABELS_STRING) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeUser=$${NODE_USER}" \
 		--extra-vars="runId=$(RUN_ID) nodeShellType=$${NODE_SHELL_TYPE} workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
@@ -171,7 +171,7 @@ destroy-node: set-env-$(NODE_LABEL)
 fetch-test-reports: .runID set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, NODE_IP_ADDRESS, IP address of the test node not defined)
-	source $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/fetch-test-reports.yml \
+	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/fetch-test-reports.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
 		--extra-vars "runId=$(RUN_ID) nodeShellType=$${NODE_SHELL_TYPE} workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
@@ -181,11 +181,11 @@ fetch-test-reports: .runID set-env-$(NODE_LABEL)
 
 .PHONY: ssh-node
 ssh-node: set-env-$(NODE_LABEL)
-	source $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && ssh -i $(SSH_KEY) $${NODE_USER}@$(NODE_IP_ADDRESS)
+	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && ssh -i $(SSH_KEY) $${NODE_USER}@$(NODE_IP_ADDRESS)
 
 .PHONY: show-node
 show-node: set-env-$(NODE_LABEL)
-	@source $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && \
+	@. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && \
 		echo "Node IP            : $(NODE_IP_ADDRESS)" && \
 		echo "Node type          : $${NODE_LABEL}" && \
 		echo "Node instance type : $${NODE_INSTANCE_TYPE}" && \
@@ -212,7 +212,7 @@ recreate-fleet-server:
 .PHONY: run-tests
 run-tests: set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
-	source $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$${NODE_LABEL}_$(TAGS)" \
+	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$${NODE_LABEL}_$(TAGS)" \
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/run-tests.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
@@ -220,12 +220,12 @@ run-tests: set-env-$(NODE_LABEL)
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t run-tests \
 		-i $(NODE_IP_ADDRESS),
-	source $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $${NODE_USER}@$(NODE_IP_ADDRESS) "sudo bash /home/$${NODE_USER}/e2e-testing/.ci/scripts/functional-test.sh \"$(TAGS)\""
+	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $${NODE_USER}@$(NODE_IP_ADDRESS) "sudo bash /home/$${NODE_USER}/e2e-testing/.ci/scripts/functional-test.sh \"$(TAGS)\""
 
 .PHONY: run-tests-win
 run-tests-win: set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
-	source $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$${NODE_LABEL}_$(TAGS)" \
+	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$${NODE_LABEL}_$(TAGS)" \
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/run-tests.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
@@ -233,4 +233,4 @@ run-tests-win: set-env-$(NODE_LABEL)
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t run-tests \
 		-i $(NODE_IP_ADDRESS),
-	source $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $${NODE_USER}@$(NODE_IP_ADDRESS) "powershell \"C:/Users/$${NODE_USER}/e2e-testing/.ci/scripts/functional-test.ps1\""
+	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $${NODE_USER}@$(NODE_IP_ADDRESS) "powershell \"C:/Users/$${NODE_USER}/e2e-testing/.ci/scripts/functional-test.ps1\""
