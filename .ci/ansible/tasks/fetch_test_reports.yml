@@ -50,6 +50,8 @@
   with_items: "{{ files_2_fetch.files }}"
   tags:
     - fetch-reports
+  when:
+    - ansible_facts['os_family'] != "Windows"
 
 - name: Fetch the Test reports (Windows)
   become: no
@@ -61,3 +63,5 @@
   with_items: "{{ files_2_fetch_win.files }}"
   tags:
     - fetch-reports
+  when:
+    - ansible_facts['os_family'] == "Windows"
