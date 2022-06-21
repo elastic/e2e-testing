@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -e
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 FOLDER=.obs
 if [ -d $FOLDER ] ; then
@@ -11,7 +10,7 @@ git clone \
 
 cd $FOLDER
 
-CONFIG_FILE=$SCRIPT_DIR/../elastic_cloud_tf_gcp.yml
+CONFIG_FILE=tests/environments/elastic_cloud_tf_gcp.yml
 
 if [ ! -e "$CONFIG_FILE" ] ; then
   echo "$CONFIG_FILE does not exist"
