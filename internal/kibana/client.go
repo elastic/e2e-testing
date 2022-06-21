@@ -36,7 +36,7 @@ type HTTPHeader struct {
 // NewClient creates a new instance of the client.
 func NewClient() (*Client, error) {
 	host := getBaseURL()
-	username := "admin"
+	username := shell.GetEnv("KIBANA_USERNAME", "admin")
 	password := shell.GetEnv("KIBANA_PASSWORD", "changeme")
 
 	return &Client{
