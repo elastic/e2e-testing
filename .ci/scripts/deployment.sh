@@ -10,7 +10,7 @@ git clone \
 
 cd $FOLDER
 
-CONFIG_FILE=tests/environments/elastic_cloud_tf_gcp.yml
+CONFIG_FILE=$(pwd)/tests/environments/elastic_cloud_tf_gcp.yml
 
 if [ ! -e "$CONFIG_FILE" ] ; then
   echo "$CONFIG_FILE does not exist"
