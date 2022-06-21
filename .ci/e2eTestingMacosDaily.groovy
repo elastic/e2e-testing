@@ -63,7 +63,7 @@ pipeline {
         STACK_VERSION = "${env.ELASTIC_STACK_VERSION}"
       }
       steps {
-        withGithubNotify(context: 'Functional Test', tab: 'tests') {
+        withGithubNotify(context: 'Functional Test - MacOS', tab: 'tests') {
           withGoEnv(version: "${GO_VERSION}"){
             withClusterEnv(cluster: env.CLUSTER_NAME, fleet: true, kibana: true, elasticsearch: true) {
               withOtelEnv() {
