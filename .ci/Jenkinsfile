@@ -516,7 +516,6 @@ def generateFunctionalTestStep(Map args = [:]){
       try {
         deleteDir()
         dir("${env.REAL_BASE_DIR}") {
-          sh (label: 'Print current dir', script: "pwd")
           unstash 'sourceEnvModified'
           withEnv(envContext) {
             // This step will help to send the APM traces to the
