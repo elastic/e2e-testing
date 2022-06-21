@@ -125,11 +125,6 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 	span.Context.SetLabel("runtime", runtime.GOOS)
 	defer span.End()
 
-	err := createAgentDirectories(ctx, i, []string{"sudo", "chown", "-R", "root:wheel", i.metadata.AgentPath})
-	if err != nil {
-		return err
-	}
-
 	// Idempotence: so no previous executions interfers with the current execution
 	found, err := io.Exists(common.GetElasticAgentWorkingPath("elastic-agent"))
 	if found && err == nil {
