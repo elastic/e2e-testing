@@ -56,13 +56,8 @@ func (i *elasticAgentTARDarwinPackage) AddFiles(ctx context.Context, files []str
 // Inspect returns info on package
 func (i *elasticAgentTARDarwinPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
 	return deploy.ServiceOperatorManifest{
-<<<<<<< HEAD
 		WorkDir:    "/opt/Elastic/Agent",
-		CommitFile: "/elastic-agent/.elastic-agent.active.commit",
-=======
-		WorkDir:    i.metadata.AgentPath,
 		CommitFile: "elastic-agent/.elastic-agent.active.commit",
->>>>>>> 892e951c (Use Orka ephemeral workers to run the fleet testing (#2626))
 	}, nil
 }
 
@@ -86,13 +81,8 @@ func (i *elasticAgentTARDarwinPackage) Exec(ctx context.Context, args []string) 
 }
 
 // Enroll will enroll the agent into fleet
-<<<<<<< HEAD
 func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string) error {
-	cmds := []string{common.GetElasticAgentWorkingPath("elastic-agent"), "install"}
-=======
-func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string, extraFlags string) error {
 	cmds := []string{"sudo", common.GetElasticAgentWorkingPath("elastic-agent", "elastic-agent"), "install"}
->>>>>>> 892e951c (Use Orka ephemeral workers to run the fleet testing (#2626))
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.tar.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -135,8 +125,6 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 	span.Context.SetLabel("runtime", runtime.GOOS)
 	defer span.End()
 
-<<<<<<< HEAD
-=======
 	err := createAgentDirectories(ctx, i, []string{"sudo", "chown", "-R", "root:wheel", i.metadata.AgentPath})
 	if err != nil {
 		return err
@@ -152,7 +140,6 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		log.Trace("Cleared previously elastic-agent dir")
 	}
 
->>>>>>> 892e951c (Use Orka ephemeral workers to run the fleet testing (#2626))
 	artifact := "elastic-agent"
 
 	metadata := i.metadata

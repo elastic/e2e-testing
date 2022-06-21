@@ -9,8 +9,5 @@ dist/
 .venv
 hosts
 *-sshhosts
-<<<<<<< HEAD
-=======
 .idea
 .obs
->>>>>>> 892e951c (Use Orka ephemeral workers to run the fleet testing (#2626))
