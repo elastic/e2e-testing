@@ -104,7 +104,7 @@ setup-stack: .runID
 		-i $(STACK_IP_ADDRESS),
 
 .PHONY: create-stack
-create-stack: provision-stack setup-stack
+create-stack: provision-stack setup-stack start-elastic-stack
 
 .PHONY: destroy-stack
 destroy-stack:
