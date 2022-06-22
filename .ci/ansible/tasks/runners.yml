@@ -60,13 +60,13 @@
 - name: Add AWS host to ssh address list
   lineinfile:
     state: present
-    line: "- {{ nodeUser }}@{{instance.public_ip_address}}"
+    line: "- {{ nodeUser }}@{{addr.public_ip_address}}"
     insertafter: EOF
     dest: "{{ workspace }}{{nodeLabel}}-sshhosts"
     create: yes
   loop: "{{ ec2.instances }}"
   loop_control:
-    loop_var: instance
+    loop_var: addr
   tags:
     - provision-stack
     - provision-node
@@ -74,30 +74,30 @@
 - name: Add stack AWS host to ssh address list
   copy:
     dest: "{{ workspace }}.ci/.stack-host-ip"
-    content: "{{instance.public_ip_address}}"
+    content: "{{addr.public_ip_address}}"
     force: true
   loop: "{{ ec2.instances }}"
   loop_control:
-    loop_var: instance
+    loop_var: addr
   tags:
     - provision-stack
 
 - name: Add node AWS host to ssh address list
   copy:
     dest: "{{ workspace }}.ci/.node-host-ip"
-    content: "{{instance.public_ip_address}}"
+    content: "{{addr.public_ip_address}}"
     force: true
   loop: "{{ ec2.instances }}"
   loop_control:
-    loop_var: instance
+    loop_var: addr
   tags:
     - provision-node
 
 - name: Wait for SSH to come up
-  wait_for: host={{ instance.public_ip_address }} port=22 delay=10
+  wait_for: host={{ nodeItem.public_ip_address }} port=22 delay=10
   loop: "{{ ec2.instances }}"
   loop_control:
-    loop_var: instance
+    loop_var: nodeItem
   tags:
     - provision-stack
     - provision-node
