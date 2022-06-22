@@ -196,18 +196,23 @@ show-node: set-env-$(NODE_LABEL)
 destroy-elastic-stack:
 	ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo docker-compose -f /root/.op/compose/profiles/fleet/docker-compose.yml down --remove-orphans'
 
-.PHONY: recreate-fleet-server
-recreate-fleet-server:
+.PHONY: start-elastic-stack
+start-elastic-stack:
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	PROVIDER="remote" SUITE="$(SUITE)" TAGS="non-existent-tag" \
-	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/fleet-server.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/elastic-stack.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
 		--extra-vars "runId=$(RUN_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
-		-t fleet-server \
+		-t elastic-stack \
 		-i $(STACK_IP_ADDRESS),
 	ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo bash "/home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh"'
+
+.PHONY: recreate-fleet-server
+recreate-fleet-server:
+	@echo "This command has been deprecated. Please use 'start-elastic-stack' instead"
+	$(MAKE) start-elastic-stack
 
 .PHONY: run-tests
 run-tests: set-env-$(NODE_LABEL)
