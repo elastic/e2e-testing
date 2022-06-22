@@ -214,7 +214,7 @@ pipeline {
                       sh(label: 'Start Stack node', script: "make -C .ci provision-stack")
                     }
                     ciBuild() {
-                      retryWithSleep(retries: 3, seconds: 5, backoff: true){
+                      retryWithSleep(retries: 6, seconds: 10, backoff: true){
                         sh(label: 'Setup Stack node', script: "make -C .ci setup-stack")
                       }
                     }
