@@ -9,3 +9,5 @@ dist/
 .venv
 hosts
 *-sshhosts
+.idea
+.obs

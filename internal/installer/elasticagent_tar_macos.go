@@ -7,10 +7,12 @@ package installer
 import (
 	"context"
 	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
+	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	"github.com/elastic/e2e-testing/pkg/downloads"
@@ -55,7 +57,7 @@ func (i *elasticAgentTARDarwinPackage) AddFiles(ctx context.Context, files []str
 func (i *elasticAgentTARDarwinPackage) Inspect() (deploy.ServiceOperatorManifest, error) {
 	return deploy.ServiceOperatorManifest{
 		WorkDir:    "/opt/Elastic/Agent",
-		CommitFile: "/elastic-agent/.elastic-agent.active.commit",
+		CommitFile: "elastic-agent/.elastic-agent.active.commit",
 	}, nil
 }
 
@@ -80,7 +82,7 @@ func (i *elasticAgentTARDarwinPackage) Exec(ctx context.Context, args []string) 
 
 // Enroll will enroll the agent into fleet
 func (i *elasticAgentTARDarwinPackage) Enroll(ctx context.Context, token string) error {
-	cmds := []string{common.GetElasticAgentWorkingPath("elastic-agent"), "install"}
+	cmds := []string{"sudo", common.GetElasticAgentWorkingPath("elastic-agent", "elastic-agent"), "install"}
 	span, _ := apm.StartSpanOptions(ctx, "Enrolling Elastic Agent with token", "elastic-agent.tar.enroll", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -122,6 +124,16 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 	})
 	span.Context.SetLabel("runtime", runtime.GOOS)
 	defer span.End()
+
+	// Idempotence: so no previous executions interfers with the current execution
+	found, err := io.Exists(common.GetElasticAgentWorkingPath("elastic-agent"))
+	if found && err == nil {
+		err = os.RemoveAll(common.GetElasticAgentWorkingPath("elastic-agent"))
+		if err != nil {
+			log.Fatal("Could not remove elastic-agent.")
+		}
+		log.Trace("Cleared previously elastic-agent dir")
+	}
 
 	artifact := "elastic-agent"
 
@@ -207,7 +219,7 @@ func (i *elasticAgentTARDarwinPackage) Stop(ctx context.Context) error {
 
 // Uninstall uninstalls a TAR package
 func (i *elasticAgentTARDarwinPackage) Uninstall(ctx context.Context) error {
-	cmds := []string{"elastic-agent", "uninstall", "-f"}
+	cmds := []string{"sudo", "elastic-agent", "uninstall", "-f"}
 	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.tar.uninstall", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
