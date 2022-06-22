@@ -153,7 +153,7 @@ export SUITE="helm"
 export SUITE="kubernetes-autodiscover"
 ```
 
-Finally, please create the test node:
+Next, create the test node:
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
@@ -166,6 +166,18 @@ A `.node-host-ip` file will be created in the `.ci` directory of the project inc
 > The IP address of the node in that file will be used by the automation.
 
 Please remember to [destroy the node](#destroying-the-stack-and-the-test-nodes) once you have finished your testing.
+
+Finally, start the stack:
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+export SUITE="fleet"
+make -C .ci start-elastic-stack
+```
+
+> You probably need to run this command twice: the Fleet Server could try to start faster than Kibana and die. Running the command again will recreate the container for Fleet Server.
+
+> The `recreate-fleet-server` command has been deprecated, and calls the `start-elastic-stack` command instead.
 
 ### Run a test suite
 
@@ -211,14 +223,19 @@ make -C .ci ssh-stack
 make -C .ci ssh-node
 ```
 
-### Destroying the Elastic Stack and recreating fleet-server
+### Destroying the Elastic Stack
 
 Sometimes you need to tear down the Elastic Stack, or recreate the fleet-server, mostly in the case the API Token used for Fleet Server [expired after 1 hour](https://www.elastic.co/guide/en/elasticsearch/reference/current/security-settings.html#token-service-settings).
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
 make -C .ci destroy-elastic-stack
-make -C .ci recreate-fleet-server
+```
+
+To recreate Fleet Server:
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci start-elastic-stack
 ```
 
 ### Destroying the stack and the test nodes
