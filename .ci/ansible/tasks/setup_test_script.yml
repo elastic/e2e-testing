@@ -170,6 +170,9 @@
        REPORT="{{ e2e_base_dir }}outputs/TEST-${REPORT_PREFIX}-{{ runId }}-${SEED}"
        echo "REPORT=\"${REPORT}"\" >> {{ e2e_home_dir }}.env
 
+       echo "Removing previous test files in the case the workspace is reused"
+       rm -f {{ e2e_base_dir }}outputs/TEST-*.*
+
        TAGS="{{ lookup('env', 'TAGS') }}" \
          FORMAT="pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml" \
          make --no-print-directory -C "{{ e2e_base_dir }}e2e/_suites/${SUITE}" functional-test
