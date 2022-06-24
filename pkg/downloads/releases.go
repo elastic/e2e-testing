@@ -141,8 +141,14 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 		return "", "", fmt.Errorf("object not found in Artifact API")
 	}
 
-	downloadURL := downloadObject.Path("url").Data().(string)
-	downloadshaURL := downloadObject.Path("sha_url").Data().(string)
+	downloadURL, ok := downloadObject.Path("url").Data().(string)
+	if !ok {
+		return "", "", fmt.Errorf("key 'url' does not exist for artifact %s", artifact)
+	}
+	downloadshaURL, ok := downloadObject.Path("sha_url").Data().(string)
+	if !ok {
+		return "", "", fmt.Errorf("key 'sha_url' does not exist for artifact %s", artifact)
+	}
 
 	return downloadURL, downloadshaURL, nil
 }
