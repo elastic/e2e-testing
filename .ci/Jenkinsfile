@@ -564,7 +564,15 @@ def generateFunctionalTestStep(Map args = [:]){
               sh(label: 'Fetch tests reports from node', script: "make -C .ci fetch-test-reports")
             }
             sh "ls -l outputs/${testRunnerIP}"
-
+            if (params.DEVELOPER_MODE) {
+              log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunnerIP}. ")
+            } else {
+              ciBuild() {
+                retryWithSleep(retries: 3, seconds: 5, backoff: true){
+                  sh(label: 'Destroy node', script: "make -C .ci destroy-node")
+                }
+              }
+            }
             withEnv([
               "ARCHITECTURE=${goArch}",
               "CUCUMBER_REPORTS_PATH=${env.REAL_BASE_DIR}/outputs/${testRunnerIP}",
