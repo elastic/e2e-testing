@@ -153,7 +153,7 @@ setup-node: .runID
 		-i $(NODE_IP_ADDRESS),
 
 .PHONY: create-node
-create-node: provision-node setup-node validate-aws
+create-node: provision-node setup-node
 
 .PHONY: destroy-node
 destroy-node: validate-aws
