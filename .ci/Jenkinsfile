@@ -36,11 +36,12 @@ pipeline {
     quietPeriod(10)
   }
   triggers {
+    cron('@hourly')
     issueCommentTrigger("${obltGitHubComments()}")
   }
   parameters {
     booleanParam(name: 'Run_As_Main_Branch', defaultValue: false, description: 'Allow to run any steps on a PR, some steps normally only run on main branch.')
-    booleanParam(name: "DEVELOPER_MODE", defaultValue: false, description: "If checked, cloud resources won't be destroyed at the end of the pipeline. Default false")
+    booleanParam(name: "DEVELOPER_MODE", defaultValue: true, description: "If checked, cloud resources won't be destroyed at the end of the pipeline. Default false")
     booleanParam(name: "SKIP_SCENARIOS", defaultValue: true, description: "If it's needed to skip those scenarios marked as @skip. Default true")
     booleanParam(name: "NIGHTLY_SCENARIOS", defaultValue: false, description: "Deprecated. Not used in this pipeline any more. Please refer to the 'testMatrixFile' param, which defines what scenarios to run")
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
@@ -71,6 +72,7 @@ pipeline {
         HOME = "${env.WORKSPACE}"
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.REAL_BASE_DIR}/.ci/scripts"
         GO111MODULE = 'on'
+        DEVELOPER_MODE = "${params.DEVELOPER_MODE}"
         SKIP_SCENARIOS = "${params.SKIP_SCENARIOS}"
         SLACK_CHANNEL = "${params.SLACK_CHANNEL.trim()}"
         ELASTIC_AGENT_DOWNLOAD_URL = "${params.ELASTIC_AGENT_DOWNLOAD_URL.trim()}"
@@ -92,7 +94,6 @@ pipeline {
       stages {
         stage('Checkout') {
           steps {
-            pipelineManager([ cancelPreviousRunningBuilds: [ when: 'PR' ] ])
             deleteDir()
             gitCheckout(basedir: BASE_DIR, githubNotifyFirstTimeContributor: true)
             githubCheckNotify('PENDING')  // we want to notify the upstream about the e2e the soonest
