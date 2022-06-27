@@ -213,3 +213,10 @@ run-tests-win:
 		-t run-tests \
 		-i $(NODE_IP_ADDRESS),
 	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'powershell "C:\Users\$(NODE_USER)\e2e-testing\.ci\scripts\functional-test.ps1"'
+
+# Make goal to run the tests for the MacOS platform. Used by the CI.
+.PHONY: run-fleet-tests-macos
+run-fleet-tests-macos:
+	FORMAT="pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml" \
+	TAGS="fleet_mode && install" \
+	$(MAKE) -C "e2e/_suites/fleet" functional-test

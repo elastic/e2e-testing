@@ -54,20 +54,20 @@ pipeline {
         createCluster()
       }
     }
-    stage('Functional Test') {
+    stage('Functional Test (Fleet)') {
       options { skipDefaultCheckout() }
       environment {
         E2E_SUITES = "e2e/_suites"
-        TAGS = "fleet_mode && install"
-        FORMAT = "pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml"
         STACK_VERSION = "${env.ELASTIC_STACK_VERSION}"
       }
       steps {
-        withGithubNotify(context: 'Functional Test - MacOS', tab: 'tests') {
+        withGithubNotify(context: 'Functional Test (Fleet - MacOS)', tab: 'tests') {
           withGoEnv(version: "${GO_VERSION}"){
             withClusterEnv(cluster: env.CLUSTER_NAME, fleet: true, kibana: true, elasticsearch: true) {
               withOtelEnv() {
-                sh(label: 'run fleet', script: 'make --no-print-directory -C "${BASE_DIR}/${E2E_SUITES}/fleet" functional-test')
+                dir("${BASE_DIR}") {
+                  sh(label: 'make run-fleet-tests-macos', script: 'make run-fleet-tests-macos')
+                }
               }
             }
           }
