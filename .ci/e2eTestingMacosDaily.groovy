@@ -19,6 +19,7 @@ pipeline {
     CLUSTER_NAME = "e2e-testing-${BUILD_ID}-${BRANCH_NAME}-${ELASTIC_STACK_VERSION.replaceAll('\\.', '-')}"
     LOG_LEVEL = "${params.LOG_LEVEL}"
     GO111MODULE = 'on'
+    TAGS = "fleet_mode && install"
   }
   options {
     timeout(time: 120, unit: 'MINUTES')
@@ -58,7 +59,6 @@ pipeline {
       options { skipDefaultCheckout() }
       environment {
         E2E_SUITES = "e2e/_suites"
-        TAGS = "fleet_mode && install"
         FORMAT = "pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml"
         STACK_VERSION = "${env.ELASTIC_STACK_VERSION}"
       }
@@ -74,6 +74,12 @@ pipeline {
         }
       }
       post {
+        failure {
+          // Notify test failures if the Functional Test stage failed only
+          // therefore any other failures with the cluster creation/destroy
+          // won't report any slack message.
+          setEnvVar('SLACK_NOTIFY', true)
+        }
         always {
           junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/${E2E_SUITES}/**/*.xml")
           archiveArtifacts(allowEmptyArchive: true, artifacts: "${BASE_DIR}/${E2E_SUITES}/**/*.xml")
@@ -86,9 +92,20 @@ pipeline {
       destroyCluster()
     }
     cleanup {
-      notifyBuildResult()
+      notifyBuildResult(prComment: true,
+                        slackHeader: "*Test Suite*: ${env.TAGS}",
+                        slackChannel: "elastic-agent",
+                        slackComment: true,
+                        slackNotify: doSlackNotify())
     }
   }
+}
+
+def doSlackNotify() {
+  if (env.SLACK_NOTIFY?.equals('true')) {
+    return true
+  }
+  return false
 }
 
 def createCluster() {
