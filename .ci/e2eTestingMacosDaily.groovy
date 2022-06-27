@@ -3,7 +3,7 @@
 @Library('apm@current') _
 
 pipeline {
-  agent { label 'darwin && orka && x86_64' }
+  agent { label 'macos12 && x86_64' }
   environment {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
@@ -74,6 +74,12 @@ pipeline {
         }
       }
       post {
+        failure {
+          // Notify test failures if the Functional Test stage failed only
+          // therefore any other failures with the cluster creation/destroy
+          // won't report any slack message.
+          setEnvVar('SLACK_NOTIFY', true)
+        }
         always {
           junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/${E2E_SUITES}/**/*.xml")
           archiveArtifacts(allowEmptyArchive: true, artifacts: "${BASE_DIR}/${E2E_SUITES}/**/*.xml")
@@ -86,9 +92,20 @@ pipeline {
       destroyCluster()
     }
     cleanup {
-      notifyBuildResult()
+      notifyBuildResult(prComment: true,
+                        slackHeader: "*Test Suite (MacOS)*: fleet",
+                        slackChannel: "elastic-agent",
+                        slackComment: true,
+                        slackNotify: doSlackNotify())
     }
   }
+}
+
+def doSlackNotify() {
+  if (env.SLACK_NOTIFY?.equals('true')) {
+    return true
+  }
+  return false
 }
 
 def createCluster() {
