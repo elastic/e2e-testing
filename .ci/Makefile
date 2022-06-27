@@ -42,8 +42,15 @@ __check_defined = \
     $(if $(value $1),, \
       $(error Undefined $1$(if $2, ($2))))
 
-@:$(call check_defined, AWS_ACCESS_KEY_ID, You need to export AWS_ACCESS_KEY_ID to create AWS resources under that account)
-@:$(call check_defined, AWS_SECRET_ACCESS_KEY, You need to export AWS_SECRET_ACCESS_KEY to create AWS resources under that account)
+validate-aws:
+ifndef AWS_ACCESS_KEY_ID
+	@echo "You need to export AWS_ACCESS_KEY_ID to create AWS resources under that account"
+	@exit 1
+endif
+ifndef AWS_SECRET_ACCESS_KEY
+	@echo "You need to export AWS_SECRET_ACCESS_KEY to create AWS resources under that account"
+	@exit 1
+endif
 
 # Create the run id if it does not exist
 .runID:
@@ -73,7 +80,7 @@ set-env-stack:
 	@$(PROJECT_DIR)/.ci/scripts/yq.sh "stack"
 
 .PHONY: provision-stack
-provision-stack: .runID
+provision-stack: .runID validate-aws
 	@:$(call check_defined, RUN_ID, You need to an unique RUN_ID. To create it please run 'make .runID' goal)
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
@@ -84,7 +91,7 @@ provision-stack: .runID
 
 .PHONY: setup-stack
 setup-stack: export TAGS = non-existing-tag
-setup-stack: .runID
+setup-stack: .runID validate-aws
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
@@ -99,7 +106,7 @@ setup-stack: .runID
 create-stack: provision-stack setup-stack
 
 .PHONY: destroy-stack
-destroy-stack:
+destroy-stack: validate-aws
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
@@ -122,7 +129,7 @@ show-stack:
 	@echo "Stack Shell         : $(STACK_SHELL_TYPE)"
 
 .PHONY: provision-node
-provision-node: .runID
+provision-node: .runID validate-aws
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
@@ -146,10 +153,10 @@ setup-node: .runID
 		-i $(NODE_IP_ADDRESS),
 
 .PHONY: create-node
-create-node: provision-node setup-node
+create-node: provision-node setup-node validate-aws
 
 .PHONY: destroy-node
-destroy-node:
+destroy-node: validate-aws
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
@@ -176,7 +183,7 @@ destroy-elastic-stack:
 	ssh -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo docker-compose -f /root/.op/compose/profiles/fleet/docker-compose.yml down --remove-orphans'
 
 .PHONY: recreate-fleet-server
-recreate-fleet-server:
+recreate-fleet-server: validate-aws
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	PROVIDER="remote" SUITE="$(SUITE)" TAGS="non-existent-tag" \
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/fleet-server.yml \
@@ -189,7 +196,7 @@ recreate-fleet-server:
 	ssh -t -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo bash "/home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh"'
 
 .PHONY: run-tests
-run-tests:
+run-tests: validate-aws
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$(NODE_LABEL)_$(TAGS)" \
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/run-tests.yml \
@@ -202,7 +209,7 @@ run-tests:
 	ssh -i $(SSH_KEY) $(NODE_USER)@$(NODE_IP_ADDRESS) 'sudo bash /home/$(NODE_USER)/e2e-testing/.ci/scripts/functional-test.sh \"$(TAGS)\"'
 
 .PHONY: run-tests-win
-run-tests-win:
+run-tests-win: validate-aws
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$(NODE_LABEL)_$(TAGS)" \
 	$(VENV_DIR)/bin/ansible-playbook $(PROJECT_DIR)/.ci/ansible/run-tests.yml \
@@ -219,4 +226,4 @@ run-tests-win:
 run-fleet-tests-macos:
 	FORMAT="pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml" \
 	TAGS="fleet_mode && install" \
-	$(MAKE) -C "e2e/_suites/fleet" functional-test
+	$(MAKE) -C "../e2e/_suites/fleet" functional-test

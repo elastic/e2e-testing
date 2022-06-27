@@ -66,7 +66,7 @@ pipeline {
             withClusterEnv(cluster: env.CLUSTER_NAME, fleet: true, kibana: true, elasticsearch: true) {
               withOtelEnv() {
                 dir("${BASE_DIR}") {
-                  sh(label: 'make run-fleet-tests-macos', script: 'make run-fleet-tests-macos')
+                  sh(label: 'make run-fleet-tests-macos', script: 'make -C .ci run-fleet-tests-macos')
                 }
               }
             }
