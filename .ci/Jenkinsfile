@@ -557,11 +557,16 @@ def generateFunctionalTestStep(Map args = [:]){
           // IMPORTANT: withAPMEnv is now the one in used since withOtelEnv uses a specific Opentelemetry Collector at the moment.
           // TODO: This will need to be integrated into the provisioned VMs
           withAPMEnv() {
+
+            def shellType = machine?.get('shell_type')
+            if (!shellType?.trim()) {
+              error("generateFunctionalTestStep: machine.get('shell_type') is null")
+            }
             // Start node, capture ip address
             ansible("${env.WORKSPACE}",
                     "playbook.yml",
                     runId,
-                    "-t provision-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${machine.shell_type} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-t provision-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${shellType} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             def testRunner = getNodeIp("${env.WORKSPACE}", platform)
 
@@ -577,13 +582,13 @@ def generateFunctionalTestStep(Map args = [:]){
             ansible("${env.WORKSPACE}",
                     "playbook.yml",
                     runId,
-                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${machine.shell_type} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${shellType} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             // Configure test scripts
             ansible("${env.WORKSPACE}",
                     "run-tests.yml",
                     runId,
-                    "-i \"${testRunner.ip},\" -t run-tests --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${machine.shell_type} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+                    "-i \"${testRunner.ip},\" -t run-tests --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${shellType} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
 
             if (platform.contains("windows")) {
               // using unix slashes on windows: https://www.ibm.com/docs/en/zvse/6.2?topic=SSB27H_6.2.0/fa2ad_use_forward_or_backward_slashes_under_windows.html
