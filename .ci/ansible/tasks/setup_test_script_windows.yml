@@ -103,6 +103,7 @@
     create: yes
   with_items:
     - "TAGS=\"{{ lookup('env', 'TAGS') }}\""
+    - "DEVELOPER_MODE=\"{{ lookup('env', 'DEVELOPER_MODE') or 'false' }}\""
     - "STACK_VERSION=\"{{ lookup('file', '{{ workspace }}.stack-version') or '8.0.0-SNAPSHOT' }}\""
     - "BEAT_VERSION=\"{{ lookup('env', 'BEAT_VERSION') or lookup('file', '{{ workspace }}.stack-version') or '8.0.0-SNAPSHOT' }}\""
     - "ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('file', '{{ workspace }}.stack-version') or '8.0.0-SNAPSHOT' }}\""
