@@ -225,5 +225,6 @@ run-tests-win: validate-aws
 .PHONY: run-fleet-tests-macos
 run-fleet-tests-macos:
 	FORMAT="pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml" \
+	PROVIDER='remote' \
 	TAGS="fleet_mode && install" \
 	$(MAKE) -C "../e2e/_suites/fleet" functional-test

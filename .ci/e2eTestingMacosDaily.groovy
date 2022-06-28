@@ -12,7 +12,6 @@ pipeline {
     ELASTIC_APM_LOG_FILE = "stderr"
     ELASTIC_APM_LOG_LEVEL = "debug"
     NOTIFY_TO = credentials('notify-to')
-    PROVIDER = 'remote'
     BEAT_VERSION = "${params.BEAT_VERSION.trim()}"
     ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
     ELASTIC_STACK_VERSION = "${params.ELASTIC_STACK_VERSION.trim()}"
