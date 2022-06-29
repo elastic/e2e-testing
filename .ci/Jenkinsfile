@@ -413,7 +413,7 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     def tags = scenario.tags
       platformsValue.each { platform ->
         log(level: 'INFO', text: "Adding ${suite}:${platform}:${tags} test suite to the build execution")
-        machineInfo = getMachineInfo(platform)
+        def machineInfo = getMachineInfo(platform)
         parallelTasks["${suite}_${platform}_${tags}"] = generateFunctionalTestStep(name: "${name}",
                                                                           platform: platform,
                                                                           provider: scenarioProvider,
