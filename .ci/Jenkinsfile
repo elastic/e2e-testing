@@ -561,7 +561,7 @@ def generateFunctionalTestStep(Map args = [:]){
 
             def shellType = machine?.get('shell_type')
             if (!shellType?.trim()) {
-              error("generateFunctionalTestStep: machine.get('shell_type') is null")
+              error("generateFunctionalTestStep: machine.get('shell_type') is null. machine=${machine}")
             }
             // Start node, capture ip address
             ansible("${env.WORKSPACE}",
