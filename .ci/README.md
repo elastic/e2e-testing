@@ -193,11 +193,18 @@ export TAGS="kubernetes-autodiscover && elastic-agent"
 
 It's important that you consider reading about [the environment variables affecting the build](../e2e/README.md#environment-variables-affecting-the-build), as you could pass them to Make to run the tests with different options, such as a Github commit sha and repo (for testing a PR), the elastic-agent version, for testing a previous version of the agent, to name a few.
 
-Finally, run the tests:
+Finally, run the tests for non-Windows instances:
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
 make -C .ci run-tests TAGS="fleet_mode && install"
+```
+
+And for Windows instances:
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci run-tests-win TAGS="fleet_mode && install"
 ```
 
 ### Showing current nodes configuration
