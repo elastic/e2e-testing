@@ -379,6 +379,7 @@ def getRemoteE2EPath(testRunner, platform) {
 def getMachineInfo(platform){
   def machineYaml = readYaml(file: "${env.REAL_BASE_DIR}/.ci/.e2e-platforms.yaml")
   def machines = machineYaml['PLATFORMS']
+  log(level: 'INFO', text: "getMachineInfo: machines.get(platform)=${machines.get(platform)}")
   return machines.get(platform)
 }
 
