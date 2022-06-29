@@ -40,7 +40,7 @@ pipeline {
   }
   parameters {
     booleanParam(name: 'Run_As_Main_Branch', defaultValue: false, description: 'Allow to run any steps on a PR, some steps normally only run on main branch.')
-    booleanParam(name: "DESTROY_CLOUD_RESOURCES", defaultValue: false, description: "If checked, cloud resources won't be destroyed at the end of the pipeline. Default false")
+    booleanParam(name: "DESTROY_CLOUD_RESOURCES", defaultValue: true, description: "If checked, cloud resources will be destroyed at the end of the pipeline. Default true")
     booleanParam(name: "SKIP_SCENARIOS", defaultValue: true, description: "If it's needed to skip those scenarios marked as @skip. Default true")
     booleanParam(name: "NIGHTLY_SCENARIOS", defaultValue: false, description: "Deprecated. Not used in this pipeline any more. Please refer to the 'testMatrixFile' param, which defines what scenarios to run")
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
@@ -275,7 +275,7 @@ pipeline {
               // Once all tests are complete we need to teardown the single instance with the deployed stack
               script {
                 def stackMachine = getMachineInfo('stack')
-                if (params.DESTROY_CLOUD_RESOURCES) {
+                if (!params.DESTROY_CLOUD_RESOURCES) {
                   def stackRunnerIP = getNodeIp('stack')
                   log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunnerIP}")
                 } else {
@@ -564,7 +564,7 @@ def generateFunctionalTestStep(Map args = [:]){
               sh(label: 'Fetch tests reports from node', script: "make -C .ci fetch-test-reports")
             }
             sh "ls -l outputs/${testRunnerIP}"
-            if (params.DESTROY_CLOUD_RESOURCES) {
+            if (!params.DESTROY_CLOUD_RESOURCES) {
               log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunnerIP}. ")
             } else {
               ciBuild() {
