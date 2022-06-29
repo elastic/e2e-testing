@@ -90,7 +90,7 @@ func (fts *FleetTestSuite) afterScenario() {
 	serviceName := common.ElasticAgentServiceName
 
 	// if DEVELOPER_MODE=true let's not uninstall/unenroll the agent
-	if !common.DeveloperMode {
+	if !common.DeveloperMode && fts.InstallerType != "" {
 		agentService := deploy.NewServiceRequest(serviceName)
 
 		if !fts.StandAlone {
