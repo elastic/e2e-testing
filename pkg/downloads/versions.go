@@ -6,6 +6,7 @@ package downloads
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -59,6 +60,11 @@ func init() {
 	}
 
 	versionAliasRegex = regexp.MustCompile(`^([0-9]+)(\.[0-9]+)(-SNAPSHOT)?$`)
+
+	log.WithFields(log.Fields{
+		"GithubCommitSha":  GithubCommitSha1,
+		"GithubRepository": GithubRepository,
+	}).Info("Github commit versions defined")
 }
 
 // elasticVersion represents a version
@@ -147,7 +153,9 @@ func GetCommitVersion(version string) string {
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-linux-$ARCH.tar.gz", "elastic-agent","$VERSION")
 func GetElasticArtifactURL(artifactName string, artifact string, version string) (string, string, error) {
 	resolver := NewArtifactURLResolver(artifactName, artifact, version)
-
+	if resolver == nil {
+		return "", "", errors.New("nil resolver returned")
+	}
 	return resolver.Resolve()
 }
 
@@ -327,7 +335,6 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 	}
 
 	return fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, artifactVersion, OS, arch, dockerString, lowerCaseExtension)
-
 }
 
 // FetchBeatsBinary it downloads the binary and returns the location of the downloaded file
