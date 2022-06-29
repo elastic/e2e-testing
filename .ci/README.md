@@ -84,6 +84,18 @@ This specialised VM starts Elasticsearch, Kibana and Fleet Server using Docker C
 
 The VM is a Debian AMD64 machine, as described [here](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/.ci/.e2e-platforms.yaml#L3-L7).
 
+The creation of the stack VM is compounded by two stages: `provision` and `setup`. We separate both stages to be able to provision once, and retry the setup if needed.
+
+To provision and setup the stack node:
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" # optional, defaults to $(HOME)/.ssh/id_rsa
+make -C .ci provision-stack
+make -C .ci setup-stack
+```
+
+We have created a convenient alias for doing both steps in one command: `create-stack`, which sequentially invokes both of the above commands.
+
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" # optional, defaults to $(HOME)/.ssh/id_rsa
 make -C .ci create-stack
@@ -169,7 +181,17 @@ export SUITE="helm"
 export SUITE="kubernetes-autodiscover"
 ```
 
-Finally, please create the test node:
+Finally, the creation of the test node is compounded by two stages: `provision` and `setup`. We separate both stages to be able to provision once, and retry the setup if needed.
+
+To provision and setup the test node:
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" # optional, defaults to $(HOME)/.ssh/id_rsa
+make -C .ci provision-node
+make -C .ci setup-node
+```
+
+We have created a convenient alias for doing both steps in one command: `create-node`, which sequentially invokes both of the above commands.
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
