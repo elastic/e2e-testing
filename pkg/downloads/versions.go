@@ -60,6 +60,11 @@ func init() {
 	}
 
 	versionAliasRegex = regexp.MustCompile(`^([0-9]+)(\.[0-9]+)(-SNAPSHOT)?$`)
+
+	log.WithFields(log.Fields{
+		"GithubCommitSha":  GithubCommitSha1,
+		"GithubRepository": GithubRepository,
+	}).Info("Github commit versions defined")
 }
 
 // elasticVersion represents a version
