@@ -29,7 +29,7 @@ type ArtifactURLResolver struct {
 }
 
 // NewArtifactURLResolver creates a new resolver for artifacts that are currently in development, from the artifacts API
-func NewArtifactURLResolver(fullName string, name string, version string) *ArtifactURLResolver {
+func NewArtifactURLResolver(fullName string, name string, version string) DownloadURLResolver {
 	// resolve version alias
 	resolvedVersion, err := GetElasticArtifactVersion(version)
 	if err != nil {
@@ -141,8 +141,14 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 		return "", "", fmt.Errorf("object not found in Artifact API")
 	}
 
-	downloadURL := downloadObject.Path("url").Data().(string)
-	downloadshaURL := downloadObject.Path("sha_url").Data().(string)
+	downloadURL, ok := downloadObject.Path("url").Data().(string)
+	if !ok {
+		return "", "", fmt.Errorf("key 'url' does not exist for artifact %s", artifact)
+	}
+	downloadshaURL, ok := downloadObject.Path("sha_url").Data().(string)
+	if !ok {
+		return "", "", fmt.Errorf("key 'sha_url' does not exist for artifact %s", artifact)
+	}
 
 	return downloadURL, downloadshaURL, nil
 }
