@@ -448,7 +448,9 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     }
     def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
     def tags = scenario.tags
-      platformsValue.each { platform ->
+      platformsValue.each { rawPlatform ->
+        // platform is not space based, so let's ensure no extra spaces can cause misbehaviours.
+        def platform = rawPlatform.trim()
         log(level: 'INFO', text: "Adding ${suite}:${platform}:${tags} test suite to the build execution")
         def machineInfo = getMachineInfo(platform)
         parallelTasks["${suite}_${platform}_${tags}"] = generateFunctionalTestStep(name: "${name}",
