@@ -12,8 +12,8 @@ SUITES:
   - suite: "fleet"
     scenarios:
       - name: "Fleet"
-        tags: "fleet_mode_agent"
-        platforms: ["centos8_arm64", "centos8_amd64", " debian_10_arm64", "debian_10_amd64", "sles15"]
+        tags: "fleet_mode"
+        platforms: ["centos8_arm64", "centos8_amd64", "debian_10_arm64", "debian_10_amd64", "sles15"]
       - name: "Integrations"
         tags: "integrations"
         platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
