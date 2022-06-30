@@ -537,6 +537,8 @@ def generateFunctionalTestStep(Map args = [:]){
   // Setup environment for platform
   def envContext = []
   envContext.add("PROVIDER=${provider}")
+  envContext.add("GITHUB_CHECK_SHA1=${env.GITHUB_CHECK_SHA1}")
+  envContext.add("GITHUB_CHECK_REPO=${env.GITHUB_CHECK_REPO}")
   envContext.add("SUITE=${suite}")
   envContext.add("TAGS=${tags}")
   envContext.add("REPORT_PREFIX=${suite}_${platform}_${tags}")
