@@ -290,6 +290,7 @@ func UseElasticAgentCISnapshots() bool {
 func useCISnapshots(repository string) bool {
 	log.WithFields(log.Fields{
 		"repository": repository,
+		"gitRepo":    GithubRepository,
 		"gitSha1":    GithubCommitSha1,
 	}).Trace("Use CI Snapshot")
 
