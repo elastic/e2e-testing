@@ -568,8 +568,9 @@ def generateFunctionalTestStep(Map args = [:]){
             }
             sh "ls -l outputs/${testRunnerIP}"
             if (!params.DESTROY_CLOUD_RESOURCES) {
-              log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunnerIP}. ")
+              log(level: 'INFO', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunnerIP}.")
             } else {
+              log(level: 'INFO', text: "Destroying Cloud instance")
               ciBuild() {
                 retryWithSleep(retries: 3, seconds: 5, backoff: true){
                   sh(label: 'Destroy node', script: "make -C .ci destroy-node")
