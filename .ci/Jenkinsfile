@@ -533,11 +533,14 @@ def generateFunctionalTestStep(Map args = [:]){
     goArch = "arm64"
   }
 
+  def githubCheckSha1 = params.GITHUB_CHECK_SHA1?.trim() ? params.GITHUB_CHECK_SHA1 : ''
+  def githubCheckRepo = params.GITHUB_CHECK_REPO?.trim() ? params.GITHUB_CHECK_REPO : ''
+
   // Setup environment for platform
   def envContext = []
   envContext.add("PROVIDER=${provider}")
-  envContext.add("GITHUB_CHECK_SHA1=${env.GITHUB_CHECK_SHA1}")
-  envContext.add("GITHUB_CHECK_REPO=${env.GITHUB_CHECK_REPO}")
+  envContext.add("GITHUB_CHECK_SHA1=${githubCheckSha1}")
+  envContext.add("GITHUB_CHECK_REPO=${githubCheckRepo}")
   envContext.add("SUITE=${suite}")
   envContext.add("TAGS=${tags}")
   envContext.add("REPORT_PREFIX=${suite}_${platform}_${tags}")
