@@ -44,27 +44,19 @@ var GithubCommitSha1 string
 
 // GithubRepository represents the value of the "GITHUB_CHECK_REPO" environment variable
 // Default is "elastic-agent"
-var GithubRepository string
+var GithubRepository string = "elastic-agent"
 
 // The compiled version of the regex created at init() is cached here so it
 // only needs to be created once.
 var versionAliasRegex *regexp.Regexp
 
 func init() {
-	GithubCommitSha1 = shell.GetEnv("GITHUB_CHECK_SHA1", "")
-	GithubRepository = shell.GetEnv("GITHUB_CHECK_REPO", "elastic-agent")
-
 	BeatsLocalPath = shell.GetEnv("BEATS_LOCAL_PATH", BeatsLocalPath)
 	if BeatsLocalPath != "" {
 		log.Infof(`Beats local path will be used for artifacts. Please make sure all binaries are properly built in their "build/distributions" folder: %s`, BeatsLocalPath)
 	}
 
 	versionAliasRegex = regexp.MustCompile(`^([0-9]+)(\.[0-9]+)(-SNAPSHOT)?$`)
-
-	log.WithFields(log.Fields{
-		"GithubCommitSha":  GithubCommitSha1,
-		"GithubRepository": GithubRepository,
-	}).Info("Github commit versions defined")
 }
 
 // elasticVersion represents a version
@@ -296,6 +288,12 @@ func UseElasticAgentCISnapshots() bool {
 // useCISnapshots check if CI snapshots should be used, passing a function that evaluates the repository in which
 // the given Sha commit has context. I.e. a commit in the elastic-agent repository should pass a function that
 func useCISnapshots(repository string) bool {
+	log.WithFields(log.Fields{
+		"repository": repository,
+		"gitRepo":    GithubRepository,
+		"gitSha1":    GithubCommitSha1,
+	}).Trace("Use CI Snapshot")
+
 	if GithubCommitSha1 != "" && strings.EqualFold(GithubRepository, repository) {
 		return true
 	}
