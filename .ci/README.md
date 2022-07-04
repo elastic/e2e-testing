@@ -226,6 +226,17 @@ export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
 make -C .ci run-tests TAGS="fleet_mode && install"
 ```
 
+#### Keeping the elastic-agent running after one scenario
+
+The test framework ensures that the agent is uninstalled and unenrolled after each test scenario, and this is needed to keep each test scenario idempotent. But it's possible to avoid the uninstall + unenroll phase of the elastic-agent if the `DEVELOPER_MODE=true` variable is set.
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci run-tests DEVELOPER_MODE=true TAGS="fleet_mode && install"
+```
+
+> Please use this capability when running one single test scenario, otherwise you can find unexpected behaviours caused by running multiple agents in the same host.
+
 ### Showing current nodes configuration
 
 If you want to check the current IP address, instance types, SSH user of the nodes you are working with, please run the following commands:
