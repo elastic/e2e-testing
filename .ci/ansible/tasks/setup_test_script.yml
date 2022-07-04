@@ -19,8 +19,8 @@
     - "SKIP_PULL=\"1\""
     - "LOG_LEVEL=\"TRACE\""
     - "STACK_VERSION=\"{{ lookup('env', 'STACK_VERSION') or lookup('file', '{{ workspace }}.stack-version') }}\""
-    - "KIBANA_VERSION=\"{{ lookup('env', 'KIBANA_VERSION') or lookup('file', '{{ workspace }}.stack-version') }}\""
-    - "ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('file', '{{ workspace }}.stack-version') }}\""
+    - "KIBANA_VERSION=\"{{ lookup('env', 'KIBANA_VERSION') or lookup('env', 'STACK_VERSION') or lookup('file', '{{ workspace }}.stack-version') }}\""
+    - "ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('env', 'STACK_VERSION') or lookup('file', '{{ workspace }}.stack-version') }}\""
   when: "'stack' == nodeLabel"
   tags:
     - scripts
@@ -124,11 +124,11 @@
     create: yes
   with_items:
     - "TAGS=\"{{ lookup('env', 'TAGS') }}\""
-    - "STACK_VERSION=\"{{ lookup('file', '{{ workspace }}.stack-version') or '8.0.0-SNAPSHOT' }}\""
-    - "BEAT_VERSION=\"{{ lookup('env', 'BEAT_VERSION') or lookup('file', '{{ workspace }}.stack-version') or '8.0.0-SNAPSHOT' }}\""
-    - "ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('file', '{{ workspace }}.stack-version') or '8.0.0-SNAPSHOT' }}\""
-    - "GITHUB_CHECK_SHA1=\"{{ lookup('env', 'GITHUB_CHECK_SHA1') }}\""
-    - "GITHUB_CHECK_REPO=\"{{ lookup('env', 'GITHUB_CHECK_REPO') }}\""
+    - "STACK_VERSION=\"{{ lookup('env', 'STACK_VERSION') or lookup('file', '{{ workspace }}.stack-version') or '8.0.0-SNAPSHOT' }}\""
+    - "BEAT_VERSION=\"{{ lookup('env', 'BEAT_VERSION') or lookup('env', 'STACK_VERSION') or lookup('file', '{{ workspace }}.stack-version') or '8.0.0-SNAPSHOT' }}\""
+    - "ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('env', 'STACK_VERSION') or lookup('file', '{{ workspace }}.stack-version') or '8.0.0-SNAPSHOT' }}\""
+    - "GITHUB_CHECK_SHA1=\"{{ lookup('env', 'GITHUB_CHECK_SHA1') or '' }}\""
+    - "GITHUB_CHECK_REPO=\"{{ lookup('env', 'GITHUB_CHECK_REPO') or 'elastic-agent' }}\""
     - "ELASTIC_APM_GLOBAL_LABELS=\"{{ lookup('env', 'ELASTIC_APM_GLOBAL_LABELS') }}\""
     - "LOG_LEVEL=\"TRACE\""
     - "OP_LOG_LEVEL=\"TRACE\""
