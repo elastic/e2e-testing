@@ -38,6 +38,7 @@
     - "ELASTICSEARCH_PASSWORD=\"changeme\""
     - "KIBANA_PASSWORD=\"changeme\""
     - "SKIP_PULL=\"1\""
+    - "DEVELOPER_MODE=\"{{ lookup('env', 'DEVELOPER_MODE') or 'false' }}\""
   when:
     - suite is defined
     - stackRunner is defined
@@ -89,6 +90,7 @@
     - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'docker' }}\""
     - "KIND_VERSION=\"{{ lookup('env', 'KIND_VERSION') }}\""
     - "KUBERNETES_VERSION=\"{{ lookup('env', 'KUBERNETES_VERSION') }}\""
+    - "DEVELOPER_MODE=\"{{ lookup('env', 'DEVELOPER_MODE') or 'false' }}\""
   when:
     - suite is defined
     - suite == "kubernetes-autodiscover"
@@ -109,6 +111,7 @@
     - "HELM_VERSION=\"{{ lookup('env', 'HELM_VERSION') }}\""
     - "KIND_VERSION=\"{{ lookup('env', 'KIND_VERSION') }}\""
     - "KUBERNETES_VERSION=\"{{ lookup('env', 'KUBERNETES_VERSION') }}\""
+    - "DEVELOPER_MODE=\"{{ lookup('env', 'DEVELOPER_MODE') or 'false' }}\""
   when:
     - suite is defined
     - suite == "helm"
