@@ -448,7 +448,9 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
     }
     def pullRequestFilter = scenario.containsKey('pullRequestFilter') ? scenario.pullRequestFilter : ''
     def tags = scenario.tags
-      platformsValue.each { platform ->
+      platformsValue.each { rawPlatform ->
+        // platform is not space based, so let's ensure no extra spaces can cause misbehaviours.
+        def platform = rawPlatform.trim()
         log(level: 'INFO', text: "Adding ${suite}:${platform}:${tags} test suite to the build execution")
         def machineInfo = getMachineInfo(platform)
         parallelTasks["${suite}_${platform}_${tags}"] = generateFunctionalTestStep(name: "${name}",
@@ -534,9 +536,14 @@ def generateFunctionalTestStep(Map args = [:]){
     goArch = "arm64"
   }
 
+  def githubCheckSha1 = params.GITHUB_CHECK_SHA1?.trim() ? params.GITHUB_CHECK_SHA1 : ''
+  def githubCheckRepo = params.GITHUB_CHECK_REPO?.trim() ? params.GITHUB_CHECK_REPO : ''
+
   // Setup environment for platform
   def envContext = []
   envContext.add("PROVIDER=${provider}")
+  envContext.add("GITHUB_CHECK_SHA1=${githubCheckSha1}")
+  envContext.add("GITHUB_CHECK_REPO=${githubCheckRepo}")
   envContext.add("SUITE=${suite}")
   envContext.add("TAGS=${tags}")
   envContext.add("REPORT_PREFIX=${suite}_${platform}_${tags}")
