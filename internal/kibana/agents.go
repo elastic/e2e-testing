@@ -97,7 +97,7 @@ func (c *Client) GetAgentStatusByHostname(ctx context.Context, hostname string) 
 	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/agents/%s", FleetAPI, agentID))
 	if err != nil {
 		log.WithFields(log.Fields{
-			"body":       respBody,
+			"body":       string(respBody),
 			"error":      err,
 			"statusCode": statusCode,
 		}).Error("Could not get agent response")
@@ -133,7 +133,7 @@ func (c *Client) GetAgentByHostname(ctx context.Context, hostname string) (Agent
 	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/agents/%s", FleetAPI, agentID))
 	if err != nil {
 		log.WithFields(log.Fields{
-			"body":       respBody,
+			"body":       string(respBody),
 			"error":      err,
 			"statusCode": statusCode,
 		}).Error("Could not get agent response")
@@ -253,7 +253,7 @@ func (c *Client) ListAgents(ctx context.Context) ([]Agent, error) {
 
 	if err != nil {
 		log.WithFields(log.Fields{
-			"body":  respBody,
+			"body":  string(respBody),
 			"error": err,
 		}).Error("Could not get Fleet's online agents")
 		return nil, err
@@ -261,7 +261,7 @@ func (c *Client) ListAgents(ctx context.Context) ([]Agent, error) {
 
 	if statusCode != 200 {
 		log.WithFields(log.Fields{
-			"body":       respBody,
+			"body":       string(respBody),
 			"error":      err,
 			"statusCode": statusCode,
 		}).Error("Could not get Fleet's online agents")
