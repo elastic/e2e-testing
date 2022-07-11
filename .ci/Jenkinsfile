@@ -225,7 +225,7 @@ pipeline {
                   }
 
                   // Update stash with latest changes from the stack deployment
-                  stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false, excludes: '.ansible'
+                  stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false, excludes: '.ansible, .runID'
                 }
               }
             }
