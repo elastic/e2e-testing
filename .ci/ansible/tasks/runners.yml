@@ -36,12 +36,12 @@
       environment: "{{type | default('Not running on CI')}}"
       git_sha: "{{ gitSha | default('Not running on CI')}}"
       kind: "{{nodeLabel}}"
-      name: "e2e-{{nodeLabel}}-{{runId}}"
+      name: "e2e-{{ instanceID }}"
       reaper_mark: "e2e-testing-vm"
       repo: "{{repo | default('Not running on CI')}}"
       run_id: "{{runId | default('Not running on CI')}}"
     count_tag:
-      name: "e2e-{{nodeLabel}}-{{runId}}"
+      name: "e2e-{{ instanceID }}"
     volumes:
       - device_name: /dev/sda1
         volume_type: gp3

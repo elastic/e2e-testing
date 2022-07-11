@@ -521,6 +521,7 @@ def generateFunctionalTestStep(Map args = [:]){
   // VM characteristics
   envContext.add("NODE_LABEL=${platform}")
   envContext.add("NODE_IMAGE=${machine.image}")
+  envContext.add("NODE_INSTANCE_ID=${machine.instance_type}_${suite}_${tags}")
   envContext.add("NODE_INSTANCE_TYPE=${machine.instance_type}")
   envContext.add("NODE_SHELL_TYPE=${machine.shell_type}")
   envContext.add("NODE_USER=${machine.username}")

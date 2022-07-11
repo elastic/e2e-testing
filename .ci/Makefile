@@ -19,6 +19,7 @@ STACK_INSTANCE_TYPE=t3.xlarge
 STACK_LABEL=debian_amd64
 STACK_USER=admin
 STACK_IP_ADDRESS ?= $(shell cat $(PROJECT_DIR)/.ci/.stack-host-ip)
+STACK_INSTANCE_ID=stack_$(STACK_LABEL)_$(RUN_ID)
 
 # Debian 10 AMD (see .e2e-platforms.yaml)
 NODE_IMAGE ?= ami-0d90bed76900e679a
@@ -27,6 +28,7 @@ NODE_LABEL ?= debian_amd64
 NODE_SHELL_TYPE ?= sh
 NODE_USER ?= admin
 NODE_IP_ADDRESS ?= $(shell cat $(PROJECT_DIR)/.ci/.node-host-ip)
+NODE_INSTANCE_ID ?= $(NODE_LABEL)_$(RUN_ID)
 
 # Extra labels to be used in the Ansible execution
 LABELS_STRING ?= 
@@ -86,7 +88,7 @@ provision-stack: .runID
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
-		--extra-vars "runId=$(RUN_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--extra-vars "runId=$(RUN_ID) instanceID=$(STACK_INSTANCE_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t provision-stack
 
@@ -112,7 +114,7 @@ destroy-stack:
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars="$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeUser=$(STACK_IMAGE)" \
-		--extra-vars="runId=$(RUN_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--extra-vars="runId=$(RUN_ID) instanceID=$(STACK_INSTANCE_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t destroy
 	rm -fr $(PROJECT_DIR)/.ci/.stack-host-ip
@@ -136,7 +138,7 @@ provision-node: .runID set-env-$(NODE_LABEL)
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
-		--extra-vars "runId=$(RUN_ID) nodeShellType=$${NODE_SHELL_TYPE} workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--extra-vars "runId=$(RUN_ID) instanceID=$(NODE_INSTANCE_ID) nodeShellType=$${NODE_SHELL_TYPE} workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t provision-node
 
@@ -162,7 +164,7 @@ destroy-node: set-env-$(NODE_LABEL)
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/teardown.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars="$(LABELS_STRING) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeUser=$${NODE_USER}" \
-		--extra-vars="runId=$(RUN_ID) sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--extra-vars="runId=$(RUN_ID) instanceID=$(NODE_INSTANCE_ID) sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)'
 	rm -fr $(PROJECT_DIR)/.ci/.node-host-ip
 
