@@ -10,17 +10,6 @@
       - provision-stack
       - provision-node
 
-- name: Teardown environment
-  hosts: localhost
-  gather_facts: no
-  vars:
-    ansible_user: "{{ nodeUser }}"
-  tasks:
-  - name: Teardown Test Runners (AWS)
-    include_tasks: tasks/teardown.yml
-    tags:
-      - destroy
-
 - name: Manage stack instance
   hosts: all
   connection: ssh

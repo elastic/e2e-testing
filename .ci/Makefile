@@ -159,12 +159,11 @@ create-node: provision-node setup-node
 .PHONY: destroy-node
 destroy-node: set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
-	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/teardown.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars="$(LABELS_STRING) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeUser=$${NODE_USER}" \
-		--extra-vars="runId=$(RUN_ID) nodeShellType=$${NODE_SHELL_TYPE} workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
-		--ssh-common-args='$(SSH_OPTS)' \
-		-t destroy
+		--extra-vars="runId=$(RUN_ID) sshPublicKey=$(SSH_KEY_PUBLIC)" \
+		--ssh-common-args='$(SSH_OPTS)'
 	rm -fr $(PROJECT_DIR)/.ci/.node-host-ip
 
 .PHONY: fetch-test-reports
