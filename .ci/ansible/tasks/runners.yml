@@ -31,15 +31,17 @@
       build: "{{build | default('Not running on CI')}}"
       build_url: "{{buildURL | default('Not running on CI') }}"
       created_date: "{{ansible_date_time.epoch}}"
+      e2e_suite: "{{ lookup('env', 'SUITE') or 'Not running on CI' }}"
+      e2e_tags: "{{ lookup('env', 'TAGS') or 'Not running on CI' }}"
       environment: "{{type | default('Not running on CI')}}"
       git_sha: "{{ gitSha | default('Not running on CI')}}"
       kind: "{{nodeLabel}}"
-      name: "e2e-{{nodeLabel}}-{{runId}}"
+      name: "e2e-{{ instanceID }}"
       reaper_mark: "e2e-testing-vm"
       repo: "{{repo | default('Not running on CI')}}"
       run_id: "{{runId | default('Not running on CI')}}"
     count_tag:
-      name: "e2e-{{nodeLabel}}-{{runId}}"
+      name: "e2e-{{ instanceID }}"
     volumes:
       - device_name: /dev/sda1
         volume_type: gp3
