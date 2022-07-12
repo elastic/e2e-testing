@@ -9,7 +9,7 @@ Each test suite's documentation should contain the specifics to run the tests, b
 
 > DISCLAIMER: A more specialised version of how to reproduce a cloud deployment can be found [here](../.ci/README.md#running-a-ci-deployment). Although the information here is valid to get the IP addresses of a CI build, we recommend following the more recent guide to troubleshoot a test error.
 
-On CI, we are running the Elastic Stack and all test suites in AWS instances, so whenever a build failed we would need to access those machines and inspect the state of the machine: logs, files, containers... For that, we are enabling SSH access to those ephemeral machines, which will be kept for debugging purpose if and only if the `DEVELOPER_MODE` environment variable is set at the Jenkinsfile. In the UI of Jenkins, you can enable it using the `DEVELOPER_MODE` input argument, checking it to true (default is false). After the build finishes, the cloud instances won't be destroyed.
+On CI, we are running the Elastic Stack and all test suites in AWS instances, so whenever a build failed we would need to access those machines and inspect the state of the machine: logs, files, containers... For that, we are enabling SSH access to those ephemeral machines, which will be kept for debugging purpose if and only if the `DESTROY_CLOUD_RESOURCES` environment variable is set at the Jenkinsfile. In the UI of Jenkins, you can enable it using the `DESTROY_CLOUD_RESOURCES` input argument, checking it to true (default is false). After the build finishes, the cloud instances won't be destroyed.
 
 But you must first understand that there are two types of Cloud machines: 
 1) the VM running the stack, and 

@@ -4,7 +4,7 @@ dist/
 *.bck
 .*-env
 .*-host-ip
-.env
+.env*
 .runID
 .venv
 hosts
