@@ -1,0 +1,67 @@
+---
+- name: Find the Test reports to copy/fetch
+  become: no
+  ansible.builtin.find: 
+    paths: "{{ e2e_base_dir }}outputs"
+    file_type: file
+    use_regex: yes   
+    patterns:
+      - '^TEST.*json$'
+      - '^TEST.*xml$'
+  register: files_2_fetch
+  tags:
+    - fetch-reports
+  when:
+    - ansible_facts['os_family'] != "Windows"
+
+- name: Find the Test reports to copy/fetch (Windows)
+  become: no
+  ansible.windows.win_find: 
+    paths: "{{ e2e_base_dir }}outputs"
+    file_type: file
+    use_regex: yes   
+    patterns:
+      - '^TEST.*json$'
+      - '^TEST.*xml$'
+  register: files_2_fetch_win
+  tags:
+    - fetch-reports
+  when:
+    - ansible_facts['os_family'] == "Windows"
+
+- name: Create local directory
+  become: no
+  vars:
+    ansible_shell_type: "sh"
+  ansible.builtin.file:
+    path: "{{ workspace }}outputs/{{ inventory_hostname }}"
+    state: directory
+  delegate_to: localhost
+  tags:
+    - fetch-reports
+
+- name: Fetch the Test reports
+  become: no
+  ansible.builtin.fetch:
+    src: "{{ item.path }}"
+    dest: "{{ workspace }}outputs/{{ inventory_hostname }}/"
+    flat: yes
+    fail_on_missing: no
+  with_items: "{{ files_2_fetch.files }}"
+  tags:
+    - fetch-reports
+  when:
+    - ansible_facts['os_family'] != "Windows"
+
+- name: Fetch the Test reports (Windows)
+  become: no
+  ansible.builtin.fetch:
+    src: "{{ item.path }}"
+    dest: "{{ workspace }}outputs/{{ inventory_hostname }}/"
+    flat: yes
+    fail_on_missing: no
+  with_items: "{{ files_2_fetch_win.files }}"
+  tags:
+    - fetch-reports
+  when:
+    - ansible_facts['os_family'] == "Windows"
