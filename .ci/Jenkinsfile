@@ -7,6 +7,7 @@ pipeline {
   environment {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
+    REAL_BASE_DIR = "${env.WORKSPACE}/${env.BASE_DIR}"
     ELASTIC_APM_ACTIVE="true"
     ELASTIC_APM_ENVIRONMENT="ci"
     ELASTIC_APM_LOG_FILE="stderr"
@@ -20,7 +21,8 @@ pipeline {
     GCP_PROVISIONER_SECRET = 'secret/observability-team/ci/service-account/jenkins-gce-provisioner'
     AWS_PROVISIONER_SECRET = 'secret/observability-team/ci/elastic-observability-aws-account-auth'
     TEST_MATRIX_FILE = "${params.testMatrixFile}"
-    RUN_ID = UUID.randomUUID().toString()
+    E2E_SSH_KEY = "${env.REAL_BASE_DIR}/e2essh"
+    E2E_SSH_KEY_PUB = "${env.E2E_SSH_KEY}.pub"
   }
   options {
     timeout(time: 120, unit: 'MINUTES')
@@ -37,7 +39,7 @@ pipeline {
   }
   parameters {
     booleanParam(name: 'Run_As_Main_Branch', defaultValue: false, description: 'Allow to run any steps on a PR, some steps normally only run on main branch.')
-    booleanParam(name: "DEVELOPER_MODE", defaultValue: false, description: "If checked, cloud resources won't be destroyed at the end of the pipeline. Default false")
+    booleanParam(name: "DESTROY_CLOUD_RESOURCES", defaultValue: true, description: "If checked, cloud resources will be destroyed at the end of the pipeline. Default true")
     booleanParam(name: "SKIP_SCENARIOS", defaultValue: true, description: "If it's needed to skip those scenarios marked as @skip. Default true")
     booleanParam(name: "NIGHTLY_SCENARIOS", defaultValue: false, description: "Deprecated. Not used in this pipeline any more. Please refer to the 'testMatrixFile' param, which defines what scenarios to run")
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
@@ -66,7 +68,7 @@ pipeline {
       options { skipDefaultCheckout() }
       environment {
         HOME = "${env.WORKSPACE}"
-        PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.WORKSPACE}/${env.BASE_DIR}/.ci/scripts"
+        PATH = "${env.PATH}:${env.WORKSPACE}/bin:${env.REAL_BASE_DIR}/.ci/scripts"
         GO111MODULE = 'on'
         SKIP_SCENARIOS = "${params.SKIP_SCENARIOS}"
         SLACK_CHANNEL = "${params.SLACK_CHANNEL.trim()}"
@@ -94,7 +96,7 @@ pipeline {
             gitCheckout(basedir: BASE_DIR, githubNotifyFirstTimeContributor: true)
             githubCheckNotify('PENDING')  // we want to notify the upstream about the e2e the soonest
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
-            setEnvVar("GO_VERSION", readFile("${env.WORKSPACE}/${env.BASE_DIR}/.go-version").trim())
+            setEnvVar("GO_VERSION", readFile("${env.REAL_BASE_DIR}/.go-version").trim())
             setEnvVar("LABELS_STRING", "buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT} build=${env.BUILD_ID} repo=${env.REPO} branch=${env.BRANCH_NAME.toLowerCase().replaceAll('[^a-z0-9-]', '-')} type=ci")
             checkSkipTests()
           }
@@ -108,7 +110,7 @@ pipeline {
             stage('Sanity checks') {
               agent { label 'ubuntu-20.04 && immutable && docker' }
               environment {
-                PATH = "${env.WORKSPACE}/${env.BASE_DIR}/bin:${env.PATH}"
+                PATH = "${env.REAL_BASE_DIR}/bin:${env.PATH}"
                 GO111MODULE = 'auto'
               }
               options { skipDefaultCheckout() }
@@ -185,7 +187,7 @@ pipeline {
           options { skipDefaultCheckout() }
           environment {
             GO111MODULE = 'on'
-            PATH = "${env.HOME}/bin:${env.WORKSPACE}/${env.BASE_DIR}/bin:${HOME}/go/bin:${env.PATH}"
+            PATH = "${env.HOME}/bin:${env.REAL_BASE_DIR}/bin:${HOME}/go/bin:${env.PATH}"
           }
           when {
             beforeAgent true
@@ -198,35 +200,32 @@ pipeline {
             withGithubNotify(context: 'Deploy Stack', tab: 'tests') {
               deleteDir()
               unstash 'source'
-              dir("${BASE_DIR}") {
-                script {
-                  def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
-                  // Deploy the test infrastructure
-                  sh "ssh-keygen -b 4096 -t rsa -f ${stackWorkspace}/e2essh -q -N \"\" "
-                  sh "chmod 400 ${stackWorkspace}/e2essh*"
-                  def stackMachine = getMachineInfo('stack')
+              script {
+                // Deploy the test infrastructure
+                sh "ssh-keygen -b 4096 -t rsa -f ${E2E_SSH_KEY} -q -N \"\" "
 
-                  ansible(stackWorkspace,
-                        "playbook.yml",
-                        env.RUN_ID.split('-')[0],
-                        "-t provision-stack --extra-vars=\"${LABELS_STRING} nodeUser=${stackMachine.username} ansible_user=${stackMachine.username} nodeLabel=stack nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
-
-                  // Must be gathered after deployment as the public IP is known at that time
-                  def stackRunner = getNodeIp(stackWorkspace, 'stack')
-
-                  retryWithSleep(retries: 2, seconds: 5, backoff: true) {
-                    withEnv(["TAGS=non-existing-tag"]) {
-                      ansible(
-                        stackWorkspace,
-                        "playbook.yml",
-                        env.RUN_ID.split('-')[0],
-                        "-i \"${stackRunner.ip},\" -t setup-stack --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeLabel=stack nodeUser=${stackMachine.username} ansible_user=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\""
-                      )
+                dir("${env.REAL_BASE_DIR}") {
+                  withEnv([
+                    "SUITE=fleet",
+                    "TAGS=non-existing-tag"
+                  ]) {
+                    ciBuild() {
+                      sh(label: 'Create Stack node', script: "make -C .ci provision-stack")
+                    }
+                    ciBuild() {
+                      retryWithSleep(retries: 3, seconds: 5, backoff: true){
+                        sh(label: 'Setup Stack node', script: "make -C .ci setup-stack")
+                      }
+                    }
+                    ciBuild() {
+                      retryWithSleep(retries: 3, seconds: 5, backoff: true){
+                        sh(label: 'Start Elastic Stack', script: "make -C .ci start-elastic-stack")
+                      }
                     }
                   }
 
                   // Update stash with latest changes from the stack deployment
-                  stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false
+                  stash allowEmpty: true, name: 'sourceEnvModified', useDefaultExcludes: false, excludes: '.ansible, .runID'
                 }
               }
             }
@@ -238,7 +237,7 @@ pipeline {
           options { skipDefaultCheckout() }
           environment {
             GO111MODULE = 'on'
-            PATH = "${env.HOME}/bin:${env.WORKSPACE}/${env.BASE_DIR}/bin:${HOME}/go/bin:${env.PATH}"
+            PATH = "${env.HOME}/bin:${env.REAL_BASE_DIR}/bin:${HOME}/go/bin:${env.PATH}"
           }
           when {
             beforeAgent true
@@ -251,7 +250,7 @@ pipeline {
             withGithubNotify(context: 'E2E Tests', tab: 'tests') {
               script {
                 def suitesParam = params.runTestsSuites
-                def existingSuites = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/${TEST_MATRIX_FILE}")
+                def existingSuites = readYaml(file: "${env.REAL_BASE_DIR}/${TEST_MATRIX_FILE}")
                 def parallelTasks = [:]
                 if (suitesParam == "") {
                   log(level: 'DEBUG', text: "Iterate through existing test suites")
@@ -274,16 +273,18 @@ pipeline {
             cleanup {
               // Once all tests are complete we need to teardown the single instance with the deployed stack
               script {
-                def stackWorkspace = "${env.WORKSPACE}/${env.BASE_DIR}"
                 def stackMachine = getMachineInfo('stack')
-                if (params.DEVELOPER_MODE) {
-                  def stackRunner = getNodeIp(stackWorkspace, 'stack')
-                  log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunner.ip}")
+                if (!params.DESTROY_CLOUD_RESOURCES) {
+                  def stackRunnerIP = getNodeIp('stack')
+                  log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunnerIP}")
                 } else {
-                  ansible(stackWorkspace,
-                        "playbook.yml",
-                        env.RUN_ID.split('-')[0],
-                        "-t destroy --extra-vars=\"nodeLabel=stack nodeUser=${stackMachine.username} ansible_user=${stackMachine.username} nodeImage=${stackMachine.image} nodeInstanceType=${stackMachine.instance_type}\"")
+                  dir("${env.REAL_BASE_DIR}") {
+                    ciBuild() {
+                      retryWithSleep(retries: 3, seconds: 5, backoff: true){
+                        sh(label: 'Destroy stack node', script: "make -C .ci destroy-stack")
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -334,67 +335,38 @@ def checkSkipTests() {
   }
 }
 
-
-def sshexec(workspace, connection, cmd){
-  sh "ssh -o TCPKeepAlive=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${workspace}/e2essh ${connection.user}@${connection.ip} -- '${cmd}'"
-}
-
-def scpr(workspace, connection, remote_src, local_dst){
-  retryWithSleep(retries: 3, seconds: 5, backoff: true){
-    sh "scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${workspace}/e2essh ${connection.user}@${connection.ip}:${remote_src} ${local_dst}"
-  }
-}
-
 /*
- * Runs python in venv
+ * Runs the Make build at the CI, executing the closure in the context of Ansible + AWS
  */
-def pyrun(command){
-  def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
-  def awsAuthObj = awsProps?.data
+def ciBuild(Closure body){
   withEnv([
-    "ANSIBLE_CONFIG=${env.WORKSPACE}/.ci/ansible/ansible.cfg",
-    "ANSIBLE_HOST_KEY_CHECKING=False",
-  ]){
-    withVaultToken(){
-      withEnvMask(vars: [
-        [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
-        [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
-      ]) {
-        retryWithSleep(retries: 3, seconds: 5, backoff: true){
-          sh(script: """#!/bin/bash
-              set -eux
-              if ! test -f ${env.WORKSPACE}/.venv-installed; then
-                  python3 -m venv ${env.WORKSPACE}/.venv
-                  touch ${env.WORKSPACE}/.venv-installed
-              fi
-            """,
-            label: "Creating virtualenv"
-          )
+    "SSH_KEY=${E2E_SSH_KEY}"
+  ]) {
+    def awsProps = getVaultSecret(secret: "${AWS_PROVISIONER_SECRET}")
+    def awsAuthObj = awsProps?.data
+    withEnv([
+      "ANSIBLE_CONFIG=${env.REAL_BASE_DIR}/.ci/ansible/ansible.cfg",
+      "ANSIBLE_HOST_KEY_CHECKING=False",
+    ]){
+      withVaultToken(){
+        withEnvMask(vars: [
+          [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
+          [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
+        ]) {
+          withOtelEnv() {
+            retryWithSleep(retries: 3, seconds: 5, backoff: true){
+              sh("make -C .ci setup-env") // make sure the environment is created
+            }
+            body()
+          }
         }
-        retryWithSleep(retries: 3, seconds: 30, backoff: true){
-          sh(script: """#!/bin/bash
-              set -eux
-              if ! test -f ${env.WORKSPACE}/.python-dependencies; then
-                ${env.WORKSPACE}/.venv/bin/pip3 -q install wheel
-                ${env.WORKSPACE}/.venv/bin/pip3 -q install -r .ci/ansible/requirements.txt
-                ${env.WORKSPACE}/.venv/bin/ansible-galaxy install -r .ci/ansible/requirements.yml
-                touch ${env.WORKSPACE}/.python-dependencies
-              fi
-            """,
-            label: "Installing dependencies"
-          )
-        }
-        sh(script: "${env.WORKSPACE}/.venv/bin/${command}", label: "Executing ${command.split(' ')[0]}")
       }
     }
   }
 }
 
-def getNodeIp(workspace, platform){
-  def runners = readYaml(file: "${workspace}/${platform}-sshhosts")
-  def runnerUser = runners[0].split('@')[0]
-  def runnerIP = runners[0].split('@')[1]
-  return [user: runnerUser, ip: runnerIP]
+def getNodeIp(nodeType){
+  return sh(label: "Get IP address of the ${nodeType}", script: "cat ${REAL_BASE_DIR}/.ci/.${nodeType}-host-ip", returnStdout: true)
 }
 
 def getRemoteE2EPath(testRunner, platform) {
@@ -406,18 +378,11 @@ def getRemoteE2EPath(testRunner, platform) {
 }
 
 def getMachineInfo(platform){
-  def machineYaml = readYaml(file: "${env.WORKSPACE}/${env.BASE_DIR}/.ci/.e2e-platforms.yaml")
+  def machineYaml = readYaml(file: "${env.REAL_BASE_DIR}/.ci/.e2e-platforms.yaml")
   def machines = machineYaml['PLATFORMS']
   log(level: 'INFO', text: "getMachineInfo: machines.get(platform)=${machines.get(platform)}")
   return machines.get(platform)
 }
-
-def ansible(workspace, playbook, run_id, args){
-  withOtelEnv() {
-    pyrun("ansible-playbook --private-key=\"${workspace}/e2essh\" --extra-vars=\"workspace=${workspace}/ runId=${run_id} sshPublicKey=${workspace}/e2essh.pub\" --ssh-common-args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' ${workspace}/.ci/ansible/${playbook} ${args}")
-  }
-}
-
 
 def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
   def suite = item.suite
@@ -536,6 +501,11 @@ def generateFunctionalTestStep(Map args = [:]){
     goArch = "arm64"
   }
 
+  // sanitize tags to create the file
+  def sanitisedTags = tags.replaceAll("\\s","_")
+  sanitisedTags = sanitisedTags.replaceAll("~","")
+  sanitisedTags = sanitisedTags.replaceAll("@","")
+
   def githubCheckSha1 = params.GITHUB_CHECK_SHA1?.trim() ? params.GITHUB_CHECK_SHA1 : ''
   def githubCheckRepo = params.GITHUB_CHECK_REPO?.trim() ? params.GITHUB_CHECK_REPO : ''
 
@@ -546,122 +516,89 @@ def generateFunctionalTestStep(Map args = [:]){
   envContext.add("GITHUB_CHECK_REPO=${githubCheckRepo}")
   envContext.add("SUITE=${suite}")
   envContext.add("TAGS=${tags}")
-  envContext.add("REPORT_PREFIX=${suite}_${platform}_${tags}")
+  envContext.add("REPORT_PREFIX=${suite}_${platform}_${sanitisedTags}")
   envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},elastic_agent_version=${env.ELASTIC_AGENT_VERSION},stack_version=${env.STACK_VERSION}")
-
-  def stackRunner = getNodeIp("${env.WORKSPACE}/${env.BASE_DIR}", 'stack')
-
-  def runId = UUID.randomUUID().toString().split('-')[0]
+  // VM characteristics
+  envContext.add("NODE_LABEL=${platform}")
+  envContext.add("NODE_IMAGE=${machine.image}")
+  envContext.add("NODE_INSTANCE_ID=${platform}_${suite}_${tags}")
+  envContext.add("NODE_INSTANCE_TYPE=${machine.instance_type}")
+  envContext.add("NODE_SHELL_TYPE=${machine.shell_type}")
+  envContext.add("NODE_USER=${machine.username}")
 
   return {
     withNode(labels: 'ubuntu-20.04 && gobld/machineType:e2-small', forceWorkspace: true, forceWorker: true){
       try {
         deleteDir()
-        unstash 'sourceEnvModified'
-        withEnv(envContext) {
-          // This step will help to send the APM traces to the
-          // withOtelEnv is the one that uses the APM service defined by the Otel Jenkins plugin.
-          // withAPMEnv uses Vault to prepare the context.
-          // IMPORTANT: withAPMEnv is now the one in used since withOtelEnv uses a specific Opentelemetry Collector at the moment.
-          // TODO: This will need to be integrated into the provisioned VMs
-          withAPMEnv() {
+        dir("${env.REAL_BASE_DIR}") {
+          unstash 'sourceEnvModified'
+          withEnv(envContext) {
+            // This step will help to send the APM traces to the
+            // withOtelEnv is the one that uses the APM service defined by the Otel Jenkins plugin.
+            // withAPMEnv uses Vault to prepare the context.
+            // IMPORTANT: withAPMEnv is now the one in used since withOtelEnv uses a specific Opentelemetry Collector at the moment.
+            // TODO: This will need to be integrated into the provisioned VMs
+            withAPMEnv() {
+              // we are separating the different test phases to avoid recreating
+              ciBuild() {
+                  sh(label: 'Start node', script: "make -C .ci provision-node")
+              }
 
-            def shellType = machine?.get('shell_type')
-            if (!shellType?.trim()) {
-              error("generateFunctionalTestStep: machine.get('shell_type') is null. machine=${machine}")
-            }
-            // Start node, capture ip address
-            ansible("${env.WORKSPACE}",
-                    "playbook.yml",
-                    runId,
-                    "-t provision-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${shellType} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
+              // make goal to run the tests, which is platform-dependant
+              def runCommand = "run-tests"
 
-            def testRunner = getNodeIp("${env.WORKSPACE}", platform)
+              if (platform.contains("windows")) {
+                runCommand = "run-tests-win"
+                // Ansible wait_for module is not enough to mitigate the timeout
+                log(level: 'DEBUG', text: "Sleeping 300 seconds on Windows so that SSH is accessible in the remote instance.")
+                sleep(300)
+              }
 
-            def remoteBasePath = getRemoteE2EPath(testRunner, platform)
-
-            if (platform.contains("windows")) {
-              // Ansible wait_for module is not enough to mitigate the timeout
-              log(level: 'DEBUG', text: "Sleeping 300 seconds on Windows so that SSH is accessible in the remote instance.")
-              sleep(300)
-            }
-
-            // Configure node for testing
-            ansible("${env.WORKSPACE}",
-                    "playbook.yml",
-                    runId,
-                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${shellType} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
-
-            // Configure test scripts
-            ansible("${env.WORKSPACE}",
-                    "run-tests.yml",
-                    runId,
-                    "-i \"${testRunner.ip},\" -t run-tests --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${shellType} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
-
-            if (platform.contains("windows")) {
-              // using unix slashes on windows: https://www.ibm.com/docs/en/zvse/6.2?topic=SSB27H_6.2.0/fa2ad_use_forward_or_backward_slashes_under_windows.html
-              sshexec("${env.WORKSPACE}",
-                      testRunner,
-                      "powershell C:/Users/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.ps1")
-            } else {
-              sshexec("${env.WORKSPACE}",
-                      testRunner,
-                      "sudo bash ${remoteBasePath}.ci/scripts/functional-test.sh")
+              ciBuild() {
+                retryWithSleep(retries: 3, seconds: 5, backoff: true){
+                  sh(label: 'Configure node for testing', script: "make -C .ci setup-node")
+                }
+              }
+              ciBuild() {
+                sh(label: 'Run tests in the node', script: "make -C .ci ${runCommand}")
+              }
             }
           }
         }
       } finally {
-        def testRunner = getNodeIp("${env.WORKSPACE}", platform)
-
-        def remoteBasePath = getRemoteE2EPath(testRunner, platform)
-
-        sh "mkdir -p outputs/${testRunner.ip} || true"
-
-        if (!platform.contains("windows")) {
-          sshexec("${env.WORKSPACE}",
-                  testRunner,
-                  """sudo chown ${testRunner.user} -R ${remoteBasePath}outputs """)
-          scpr("${env.WORKSPACE}",
-              testRunner,
-              "e2e-testing/outputs/TEST-*.xml",
-              "outputs/${testRunner.ip}/.")
-          scpr("${env.WORKSPACE}",
-              testRunner,
-              "e2e-testing/outputs/TEST-*.json",
-              "outputs/${testRunner.ip}/.")
-        } else {
-          scpr("${env.WORKSPACE}",
-              testRunner,
-              "C:/Users/${testRunner.user}/e2e-testing/outputs/TEST-*.xml",
-              "outputs/${testRunner.ip}/.")
-          scpr("${env.WORKSPACE}",
-              testRunner,
-              "C:/Users/${testRunner.user}/e2e-testing/outputs/TEST-*.json",
-              "outputs/${testRunner.ip}/.")
+        withEnv(envContext) {
+          dir("${env.REAL_BASE_DIR}") {
+            def testRunnerIP = getNodeIp("node")
+            sh "mkdir -p outputs/${testRunnerIP} || true"
+            ciBuild() {
+              sh(label: 'Fetch tests reports from node', script: "make -C .ci fetch-test-reports")
+            }
+            sh "ls -l outputs/${testRunnerIP}"
+            if (!params.DESTROY_CLOUD_RESOURCES) {
+              log(level: 'INFO', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunnerIP}.")
+            } else {
+              log(level: 'INFO', text: "Destroying Cloud instance")
+              ciBuild() {
+                retryWithSleep(retries: 3, seconds: 5, backoff: true){
+                  sh(label: 'Destroy node', script: "make -C .ci destroy-node")
+                }
+              }
+            }
+            withEnv([
+              "ARCHITECTURE=${goArch}",
+              "CUCUMBER_REPORTS_PATH=${env.REAL_BASE_DIR}/outputs/${testRunnerIP}",
+              "PLATFORM=${platform}",
+              "SUITE=${suite}",
+              "TAGS=${tags}",
+            ]){
+              dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
+              sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
+            }
+            junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunnerIP}/TEST-*.xml")
+            archiveArtifacts allowEmptyArchive: true,
+              artifacts: "outputs/${testRunnerIP}/TEST-*.xml, outputs/${testRunnerIP}/TEST-*.json, outputs/${testRunnerIP}/TEST-*.json.html"
+          }
         }
-
-        sh "ls -l outputs/${testRunner.ip}"
-        if (params.DEVELOPER_MODE) {
-          log(level: 'DEBUG', text: "Cloud instance won't be destroyed after the build. Please SSH into the test runner machine on ${testRunner.ip}. ")
-        } else {
-          ansible("${env.WORKSPACE}",
-                "playbook.yml",
-                runId,
-                "-t destroy --extra-vars=\"nodeLabel=${platform} nodeUser=${machine.username} ansible_user=${machine.username} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
-        }
-        withEnv([
-          "ARCHITECTURE=${goArch}",
-          "CUCUMBER_REPORTS_PATH=outputs/${testRunner.ip}",
-          "PLATFORM=${platform}",
-          "SUITE=${suite}",
-          "TAGS=${tags}",
-        ]){
-          dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
-          sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
-        }
-        junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunner.ip}/TEST-*.xml")
-        archiveArtifacts allowEmptyArchive: true,
-          artifacts: "outputs/${testRunner.ip}/TEST-*.xml, outputs/${testRunner.ip}/TEST-*.json, outputs/${testRunner.ip}/TEST-*.json.html"
       }
     }
   }

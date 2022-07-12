@@ -128,48 +128,32 @@ make -C .ci list-platforms
 - sles15
 - fleet_elastic_pkg
 - ubuntu_22_04_amd64
+- windows2019
 ```
 
-It's possible to configure the test node (OS, architecture), using the values that are already present in [the platforms descriptor](.e2e-platforms.yaml):
-
-```shell
-# example for Centos 8 ARM 64
-export NODE_IMAGE="ami-01cdc9e8306344fe0"
-export NODE_INSTANCE_TYPE="a1.large"
-export NODE_LABEL="centos8_arm64"
-export NODE_USER="centos"
-```
-
-Or, you can also use the build script to load the environment variables for one platform:
+Once you have the target platform selected, which is obtained from [the platforms descriptor](.e2e-platforms.yaml), you need to pass it to the build script in order to load all the environment variables for the platform. To do so, you only have to add the desired platform as value of the exported `NODE_LABEL` variable:
 
 ```shell
 # all possible platforms
-make -C .ci set-env-centos8_amd64
-make -C .ci set-env-centos8_arm64
-make -C .ci set-env-debian_10_amd64
-make -C .ci set-env-debian_10_arm64
-make -C .ci set-env-debian_11_amd64
-make -C .ci set-env-debian_11_arm64
-make -C .ci set-env-oracle_linux8
-make -C .ci set-env-sles15
-make -C .ci set-env-ubuntu_22_04_amd64
+export NODE_LABEL=centos8_amd64
+export NODE_LABEL=centos8_arm64
+export NODE_LABEL=debian_10_amd64
+export NODE_LABEL=debian_10_arm64
+export NODE_LABEL=debian_11_amd64
+export NODE_LABEL=debian_11_arm64
+export NODE_LABEL=oracle_linux8
+export NODE_LABEL=sles15
+export NODE_LABEL=ubuntu_22_04_amd64
+export NODE_LABEL=windows2019
 ```
 
-The above command will create a `.node-${PLATFORM}-env` file (i.e. `.node-centos8_arm64-env`) that you must source into your shell before interacting with a test node, so that the environment variables are present for each build command and you do not need to repeat them again and again:
+The build will create a `.env-${PLATFORM}` file (i.e. `.env-centos8_arm64`) that will be automatically sourced into your shell before interacting with a test node, so that the environment variables are present for each build command and you do not need to repeat them again and again.
 
-```shell
-source .ci/.node-centos8_arm64-env
-```
-
-Please check that the environments where loaded with `env | grep NODE`:
+> Important: when running any of the commands below, please check that the `NODE_LABEL` variable is properly set:
 
 ```shell
 $ env | grep NODE
-NODE_SHELL_TYPE=sh
-NODE_INSTANCE_TYPE=a1.large
 NODE_LABEL=centos8_arm64
-NODE_IMAGE=ami-01cdc9e8306344fe0
-NODE_USER=centos
 ```
 
 Besides that, it's possible to configure the test node for the different test suites that are present in the test framework: `fleet`, `helm` and `kubernetes-autodiscover`. Please configure the test node setting the suite, being `fleet` the default:
@@ -181,7 +165,7 @@ export SUITE="helm"
 export SUITE="kubernetes-autodiscover"
 ```
 
-Finally, the creation of the test node is compounded by two stages: `provision` and `setup`. We separate both stages to be able to provision once, and retry the setup if needed.
+Next, the creation of the test node is compounded by two stages: `provision` and `setup`. We separate both stages to be able to provision once, and retry the setup if needed.
 
 To provision and setup the test node:
 
@@ -203,7 +187,19 @@ A `.node-host-ip` file will be created in the `.ci` directory of the project inc
 
 > The IP address of the node in that file will be used by the automation.
 
-Please remember to [destroy the node](#destroying-the-stack-and-the-test-node) once you have finished your testing.
+Please remember to [destroy the node](#destroying-the-stack-and-the-test-nodes) once you have finished your testing.
+
+Finally, start the stack:
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+export SUITE="fleet"
+make -C .ci start-elastic-stack
+```
+
+> You probably need to run this command twice: the Fleet Server could try to start faster than Kibana and die. Running the command again will recreate the container for Fleet Server.
+
+> The `recreate-fleet-server` command has been deprecated, and calls the `start-elastic-stack` command instead.
 
 ### Run a test suite
 
@@ -219,11 +215,18 @@ export TAGS="kubernetes-autodiscover && elastic-agent"
 
 It's important that you consider reading about [the environment variables affecting the build](../e2e/README.md#environment-variables-affecting-the-build), as you could pass them to Make to run the tests with different options, such as a Github commit sha and repo (for testing a PR), the elastic-agent version, for testing a previous version of the agent, to name a few.
 
-Finally, run the tests:
+Finally, run the tests for non-Windows instances:
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
 make -C .ci run-tests TAGS="fleet_mode && install"
+```
+
+And for Windows instances:
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci run-tests-win TAGS="fleet_mode && install"
 ```
 
 #### Keeping the elastic-agent running after one scenario
@@ -260,14 +263,19 @@ make -C .ci ssh-stack
 make -C .ci ssh-node
 ```
 
-### Destroying the Elastic Stack and recreating fleet-server
+### Destroying the Elastic Stack
 
 Sometimes you need to tear down the Elastic Stack, or recreate the fleet-server, mostly in the case the API Token used for Fleet Server [expired after 1 hour](https://www.elastic.co/guide/en/elasticsearch/reference/current/security-settings.html#token-service-settings).
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
 make -C .ci destroy-elastic-stack
-make -C .ci recreate-fleet-server
+```
+
+To recreate Fleet Server:
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci start-elastic-stack
 ```
 
 ### Destroying the stack and the test nodes
