@@ -527,23 +527,6 @@ def generateFunctionalTestStep(Map args = [:]){
     withNode(labels: 'ubuntu-20.04 && gobld/machineType:e2-small', forceWorkspace: true, forceWorker: true){
       try {
         deleteDir()
-<<<<<<< HEAD
-        unstash 'sourceEnvModified'
-        withEnv(envContext) {
-          // This step will help to send the APM traces to the
-          // withOtelEnv is the one that uses the APM service defined by the Otel Jenkins plugin.
-          // withAPMEnv uses Vault to prepare the context.
-          // IMPORTANT: withAPMEnv is now the one in used since withOtelEnv uses a specific Opentelemetry Collector at the moment.
-          // TODO: This will need to be integrated into the provisioned VMs
-          withAPMEnv() {
-            // Start node, capture ip address
-            ansible("${env.WORKSPACE}",
-                    "playbook.yml",
-                    runId,
-                    "-t provision-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${machine.shell_type} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
-
-            def testRunner = getNodeIp("${env.WORKSPACE}", platform)
-=======
         dir("${env.REAL_BASE_DIR}") {
           unstash 'sourceEnvModified'
           withEnv(envContext) {
@@ -557,7 +540,6 @@ def generateFunctionalTestStep(Map args = [:]){
               ciBuild() {
                   sh(label: 'Start node', script: "make -C .ci provision-node")
               }
->>>>>>> 688a87ba (chore: use build system to create the VMs on CI (#2490))
 
               // make goal to run the tests, which is platform-dependant
               def runCommand = "run-tests"
@@ -569,29 +551,6 @@ def generateFunctionalTestStep(Map args = [:]){
                 sleep(300)
               }
 
-<<<<<<< HEAD
-            // Configure node for testing
-            ansible("${env.WORKSPACE}",
-                    "playbook.yml",
-                    runId,
-                    "-i \"${testRunner.ip},\" -t setup-node --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${machine.shell_type} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
-
-            // Configure test scripts
-            ansible("${env.WORKSPACE}",
-                    "run-tests.yml",
-                    runId,
-                    "-i \"${testRunner.ip},\" -t run-tests --extra-vars=\"${LABELS_STRING} stackRunner=${stackRunner.ip} nodeShellType=${machine.shell_type} nodeUser=${machine.username} ansible_user=${machine.username} suite=${suite} nodeLabel=${platform} nodeImage=${machine.image} nodeInstanceType=${machine.instance_type}\"")
-
-            if (platform.contains("windows")) {
-              // using unix slashes on windows: https://www.ibm.com/docs/en/zvse/6.2?topic=SSB27H_6.2.0/fa2ad_use_forward_or_backward_slashes_under_windows.html
-              sshexec("${env.WORKSPACE}",
-                      testRunner,
-                      "powershell C:/Users/${testRunner.user}/e2e-testing/.ci/scripts/functional-test.ps1")
-            } else {
-              sshexec("${env.WORKSPACE}",
-                      testRunner,
-                      "sudo bash ${remoteBasePath}.ci/scripts/functional-test.sh")
-=======
               ciBuild() {
                 retryWithSleep(retries: 3, seconds: 5, backoff: true){
                   sh(label: 'Configure node for testing', script: "make -C .ci setup-node")
@@ -600,7 +559,6 @@ def generateFunctionalTestStep(Map args = [:]){
               ciBuild() {
                 sh(label: 'Run tests in the node', script: "make -C .ci ${runCommand}")
               }
->>>>>>> 688a87ba (chore: use build system to create the VMs on CI (#2490))
             }
           }
         }
