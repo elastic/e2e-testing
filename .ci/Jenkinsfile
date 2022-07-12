@@ -207,7 +207,7 @@ pipeline {
                 dir("${env.REAL_BASE_DIR}") {
                   withEnv([
                     "SUITE=fleet",
-                    "NODE_INSTANCE_ID=${env.BUILD_URL}_stack".
+                    "STACK_INSTANCE_ID=${env.BUILD_URL}_stack".
                     "TAGS=non-existing-tag"
                   ]) {
                     ciBuild() {
