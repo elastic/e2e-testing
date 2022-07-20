@@ -319,10 +319,11 @@ func (c *Client) UpgradeAgent(ctx context.Context, hostname string, version stri
 	statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/agents/%s/upgrade", FleetAPI, agentID), []byte(reqBody))
 	if statusCode != 200 {
 		log.WithFields(log.Fields{
-			"body":       string(respBody),
-			"error":      err,
-			"statusCode": statusCode,
-		}).Error("Could not upgrade agent")
+			"body":           string(respBody),
+			"desiredVersion": version,
+			"error":          err,
+			"statusCode":     statusCode,
+		}).Error("Could not upgrade agent to version")
 
 		return err
 	}
