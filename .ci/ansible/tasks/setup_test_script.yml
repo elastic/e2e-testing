@@ -19,8 +19,8 @@
     - "SKIP_PULL=\"1\""
     - "LOG_LEVEL=\"TRACE\""
     - "STACK_VERSION=\"{{ lookup('env', 'STACK_VERSION') or lookup('file', '{{ workspace }}.stack-version') }}\""
-    - "KIBANA_VERSION=\"{{ lookup('env', 'KIBANA_VERSION') or lookup('file', '{{ workspace }}.stack-version') }}\""
-    - "ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('file', '{{ workspace }}.stack-version') }}\""
+    - "KIBANA_VERSION=\"{{ lookup('env', 'KIBANA_VERSION') or lookup('env', 'STACK_VERSION') or lookup('file', '{{ workspace }}.stack-version') }}\""
+    - "ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('env', 'STACK_VERSION') or lookup('file', '{{ workspace }}.stack-version') }}\""
   when: "'stack' == nodeLabel"
   tags:
     - scripts
@@ -38,6 +38,7 @@
     - "ELASTICSEARCH_PASSWORD=\"changeme\""
     - "KIBANA_PASSWORD=\"changeme\""
     - "SKIP_PULL=\"1\""
+    - "DEVELOPER_MODE=\"{{ lookup('env', 'DEVELOPER_MODE') or 'false' }}\""
   when:
     - suite is defined
     - stackRunner is defined
@@ -89,6 +90,7 @@
     - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'docker' }}\""
     - "KIND_VERSION=\"{{ lookup('env', 'KIND_VERSION') }}\""
     - "KUBERNETES_VERSION=\"{{ lookup('env', 'KUBERNETES_VERSION') }}\""
+    - "DEVELOPER_MODE=\"{{ lookup('env', 'DEVELOPER_MODE') or 'false' }}\""
   when:
     - suite is defined
     - suite == "kubernetes-autodiscover"
@@ -109,6 +111,7 @@
     - "HELM_VERSION=\"{{ lookup('env', 'HELM_VERSION') }}\""
     - "KIND_VERSION=\"{{ lookup('env', 'KIND_VERSION') }}\""
     - "KUBERNETES_VERSION=\"{{ lookup('env', 'KUBERNETES_VERSION') }}\""
+    - "DEVELOPER_MODE=\"{{ lookup('env', 'DEVELOPER_MODE') or 'false' }}\""
   when:
     - suite is defined
     - suite == "helm"
@@ -124,11 +127,11 @@
     create: yes
   with_items:
     - "TAGS=\"{{ lookup('env', 'TAGS') }}\""
-    - "STACK_VERSION=\"{{ lookup('file', '{{ workspace }}.stack-version') or '8.0.0-SNAPSHOT' }}\""
-    - "BEAT_VERSION=\"{{ lookup('env', 'BEAT_VERSION') or lookup('file', '{{ workspace }}.stack-version') or '8.0.0-SNAPSHOT' }}\""
-    - "ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('file', '{{ workspace }}.stack-version') or '8.0.0-SNAPSHOT' }}\""
-    - "GITHUB_CHECK_SHA1=\"{{ lookup('env', 'GITHUB_CHECK_SHA1') }}\""
-    - "GITHUB_CHECK_REPO=\"{{ lookup('env', 'GITHUB_CHECK_REPO') }}\""
+    - "STACK_VERSION=\"{{ lookup('env', 'STACK_VERSION') or lookup('file', '{{ workspace }}.stack-version') or '8.0.0-SNAPSHOT' }}\""
+    - "BEAT_VERSION=\"{{ lookup('env', 'BEAT_VERSION') or lookup('env', 'STACK_VERSION') or lookup('file', '{{ workspace }}.stack-version') or '8.0.0-SNAPSHOT' }}\""
+    - "ELASTIC_AGENT_VERSION=\"{{ lookup('env', 'ELASTIC_AGENT_VERSION') or lookup('env', 'STACK_VERSION') or lookup('file', '{{ workspace }}.stack-version') or '8.0.0-SNAPSHOT' }}\""
+    - "GITHUB_CHECK_SHA1=\"{{ lookup('env', 'GITHUB_CHECK_SHA1') or '' }}\""
+    - "GITHUB_CHECK_REPO=\"{{ lookup('env', 'GITHUB_CHECK_REPO') or 'elastic-agent' }}\""
     - "ELASTIC_APM_GLOBAL_LABELS=\"{{ lookup('env', 'ELASTIC_APM_GLOBAL_LABELS') }}\""
     - "LOG_LEVEL=\"TRACE\""
     - "OP_LOG_LEVEL=\"TRACE\""
@@ -165,9 +168,13 @@
 
        BASE_DIR=${BASE_DIR} "${BASE_DIR}/.ci/scripts/install-test-dependencies.sh" "${SUITE}"
 
+       REPORT_PREFIX=$(echo "$REPORT_PREFIX" | sed -r 's/[ @~]+//g')
        SEED="$(date +%Y-%m-%d-%H:%M:%S)"
        REPORT="{{ e2e_base_dir }}outputs/TEST-${REPORT_PREFIX}-{{ runId }}-${SEED}"
        echo "REPORT=\"${REPORT}"\" >> {{ e2e_home_dir }}.env
+
+       echo "Removing previous test files in the case the workspace is reused"
+       rm -f {{ e2e_base_dir }}outputs/TEST-*.*
 
        TAGS="{{ lookup('env', 'TAGS') }}" \
          FORMAT="pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml" \
