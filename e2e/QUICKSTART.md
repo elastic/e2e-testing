@@ -183,7 +183,7 @@ All the Gherkin (Cucumber) specifications are written in `.feature` files. The a
     - **But** (Optional): Used within any of the above clauses, it must tell an ocational reader a secondary preparation (Given), trigger (When), or output (Then) that must not be present.
 - **Examples:** (Mandatory with Scenario Outline): this `markdown table` will represent the elements to interpolate in the existing dynamic variables in the use case, being each column header the name of the different variables in the table. Besides that, each row will result in a test execution.
 
-A good example could be [this one](./_suites/fleet/features/integrations.feature).
+A good example could be [this one](./_suites/fleet/features/manage_integrations.feature).
 
 ## Working on existing test suite
 

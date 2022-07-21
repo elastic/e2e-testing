@@ -7,7 +7,11 @@ SUITES:
         platforms: ["centos8_arm64", "centos8_amd64", "debian_arm64", "debian_amd64", "sles15", "windows2019"]
       - name: "Integrations"
         tags: "integrations"
+<<<<<<< HEAD
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
+=======
+        platforms: ["debian_11_amd64"]
+>>>>>>> 0c840b04 (chore: simplify CI matrix for managing integrations in policies (#2825))
       - name: "APM Integration"
         tags: "apm_server"
         platforms: ["debian_amd64"]
