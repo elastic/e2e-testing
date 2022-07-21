@@ -1,6 +1,6 @@
 @integrations
-Feature: Integrations
-  Scenarios for operating integrations
+Feature: Manage Integrations
+  Scenarios for managing integrations in policies
 
 @add
 Scenario Outline: Adding an Integration to a Policy
