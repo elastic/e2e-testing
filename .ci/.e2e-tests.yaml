@@ -19,7 +19,7 @@ SUITES:
         platforms: ["centos8_arm64", "centos8_amd64", "debian_10_arm64", "debian_10_amd64", "sles15", "debian_11_amd64", "ubuntu_22_04_amd64", "windows2019"]
       - name: "Integrations"
         tags: "integrations"
-        platforms: ["debian_10_arm64", "debian_10_amd64", "sles15", "debian_11_amd64", "ubuntu_22_04_amd64"]
+        platforms: ["debian_11_amd64"]
       - name: "APM Integration"
         tags: "apm_server"
         platforms: ["debian_10_amd64"]
