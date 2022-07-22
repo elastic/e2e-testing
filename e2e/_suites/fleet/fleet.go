@@ -777,11 +777,11 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			}
 
 			// we have detected that fleet-server immediately dies when started and kibana is slowest in provide the initial requirements for fleet-server
-			// as we do not know what is the right health check to apply here, we are sleeping the execution 1 minute because:
+			// as we do not know what is the right health check to apply here, we are sleeping the execution 2 minutes because:
 			//   1. it takes 10 minutes to fail because if that
 			//   2. it takes ~3 minutes more to sucessfully start the elastic stack (using our retry at the CI level)
-			//   3. we expect this minute saves ~5
-			utils.Sleep(90 * time.Second)
+			//   3. we expect this delay saves >5 minutes
+			utils.Sleep(2 * time.Minute)
 
 			err = deployer.Add(ctx, deploy.NewServiceRequest(common.FleetProfileName), []deploy.ServiceRequest{fleetServerSrv}, fleetServerEnv)
 			if err != nil {
