@@ -777,7 +777,7 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			}
 
 			// we have detected that fleet-server immediately dies when started and kibana is slowest in provide the initial requirements for fleet-server
-			// as we do not know what is the right healtch check to apply here, we are sleeping the execution 1 minute because:
+			// as we do not know what is the right health check to apply here, we are sleeping the execution 1 minute because:
 			//   1. it takes 10 minutes to fail because if that
 			//   2. it takes ~3 minutes more to sucessfully start the elastic stack (using our retry at the CI level)
 			//   3. we expect this minute saves ~5
