@@ -208,6 +208,7 @@ start-elastic-stack:
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t elastic-stack \
 		-i $(STACK_IP_ADDRESS),
+	ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo bash "/home/$(STACK_USER)/e2e-testing/.ci/scripts/functional-test.sh"'
 
 .PHONY: recreate-fleet-server
 recreate-fleet-server:
