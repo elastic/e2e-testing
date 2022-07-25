@@ -23,6 +23,28 @@ This repository contains:
 
 The E2E test project uses `BDD` (Behavioral Driven Development), which means the tests are defined as test scenarios (or simply `scenarios`). A scenario is written in **plain English**, using business language hiding any implementation details. Therefore, the words _"clicks", "input", "browse",  "API call"_ are NOT allowed. And we do care about having well-expressed language in the feature files. Why? Because we want to hide the implementation details in the tests, and whoever is reading the feature files is able to understand the expected behavior of each scenario. And for us that's the key when talking about real E2E tests: to exercise user journeys (scenarios) instead of specific parts of the UI (graphical or API).
 
+## Behaviour-Driven Development and this test framework
+
+We need a manner to describe the functionality to be implemented _in a functional manner_. And it would be great if we are able to use plain English to specify how our software behaves, instead of using code. And if it's possible to automate the execution of that specification, even better. These behaviours of our software, to be consistent, they must be implemented following certain `BDD` (Behaviour-Driven Development) principles, where:
+
+> BDD aims to narrow the communication gaps between team members, foster better understanding of the customer and promote continuous communication with real world examples.
+
+The most accepted manner to achieve this executable specification in the software industry, using a high level approach that everybody in the team could understand and backed by a testing framework to automate it, is [`Cucumber`](https://cucumber.io). So we will use `Cucumber` to set the behaviours (use cases) for our software. From its website:
+
+> Cucumber is a tool that supports Behaviour-Driven Development(BDD), and it reads executable specifications written in plain text and validates that the software does what those specifications say. The specifications consists of multiple examples, or scenarios.
+
+The way we are going to specify our software behaviours is using [`Gherkin`](https://cucumber.io/docs/gherkin/reference/):
+
+>Gherkin uses a set of special keywords to give structure and meaning to executable specifications. Each keyword is translated to many spoken languages. Most lines in a Gherkin document start with one of the keywords.
+
+The key part here is **executable specifications**: we will be able to automate the verification of the specifications and potentially get a coverage of these specs.
+
+Then we need a manner to connect that plain English feature specification with code. Fortunately, `Cucumber` has a wide number of implementations (Java, Ruby, NodeJS, Go...), so we can choose one of them to implement our tests. For this test framework, we have chosen [Godog](https://github.com/cucumber/godog), the Go implementation for Cucumber. From its website:
+
+> Package godog is the official Cucumber BDD framework for Go, it merges specification and test documentation into one cohesive whole.
+
+In this test framework, we are running Godog with `go test`, as explained [here](https://github.com/cucumber/godog#running-godog-with-go-test).
+
 ## Statements about the test framework
 
 - It uses the `Given/When/Then` pattern to define scenarios.
