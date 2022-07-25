@@ -116,6 +116,8 @@ In these VMs, the test framework will download a binary to install the Elastic A
 
 In order to list all the supported platforms, please run this command:
 
+> Docker is needed to run the command, as it internally uses `yq` in the form of a Docker container to read the YML file for the available platforms. To install and configure it, please read [this guide](https://docs.docker.com/engine/install/).
+
 ```shell
 make -C .ci list-platforms 
 - stack
