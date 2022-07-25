@@ -114,14 +114,14 @@ This is an example of the optional configuration:
    export KUBERNETES_VERSION="1.24.0" # version of the cluster to be passed to kind
    ```
 
-1. Install dependencies.
+3. Install dependencies.
 
    - Install Kubectl 1.18 or newer
    - Install Kind 0.14.0 or newer
    - Install Go, using the language version defined in the `.go-version` file at the root directory. We recommend using [GVM](https://github.com/andrewkroh/gvm), same as done in the CI, which will allow you to install multiple versions of Go, setting the Go environment in consequence: `eval "$(gvm 1.15.9)"`
    - Godog and other test-related binaries will be installed in their supported versions when the project is first built, thanks to Go modules and Go build system.
 
-2. Run the tests.
+4. Run the tests.
    ```shell
    cd e2e/_suites/kubernetes-autodiscover
    OP_LOG_LEVEL=DEBUG go test -timeout 90m -v

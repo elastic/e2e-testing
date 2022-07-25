@@ -5,7 +5,7 @@ Let's walk through two quick examples to see how to start working with the e2e-t
 - dependencies
 - how do the tests work?
 
-Once we understood that part, we can move on and continue with the code, where we have two similar use cases:
+Once we understand that part, we can move on and continue with the code, where we have two similar use cases:
 
 - adding a new test suite
 - working on an existing test suite
