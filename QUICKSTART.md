@@ -1,14 +1,6 @@
 # Quickstart
 
-Let's walk through two quick examples to see how to start working with the e2e-testing framework. But first, we need to understand how the tests work, and what dependencies we need to run them.
-
-- dependencies
-- how do the tests work?
-
-Once we understand that part, we can move on and continue with the code, where we have two similar use cases:
-
-- adding a new test suite
-- working on an existing test suite
+First, we need to understand how the tests work, and what dependencies we need to run them.
 
 ## Dependencies
 
@@ -26,6 +18,7 @@ The tests will follow this general high-level approach:
 
 ## Adding a new test suite
 
+Let's walk through a quick example to see how to start working with the e2e-testing framework, adding a new test suite:
 ### Step 1 - Install test depedencies
 
 Godog and other test-related binaries will be installed in their supported versions when the project is first built, thanks to Go modules and Go build system.
@@ -207,6 +200,8 @@ A good example could be [this one](./_suites/fleet/features/manage_integrations.
 ## Working on existing test suite
 
 We hope you enjoyed the `Test specification with Gherkin` introduction. If you find any gap, please no doubt in contributing it or opening an issue. Let's continue with our example, but this time let's work on an existing test suite.
+
+Let's walk through a quick example to see how to start working with the e2e-testing framework, working on an existing test suite:
 
 ### Step 1 - Get familiar with the struct representing the test suite
 
