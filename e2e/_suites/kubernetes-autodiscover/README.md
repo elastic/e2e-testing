@@ -100,6 +100,9 @@ feature files.
 
 2. Configure the version of the tools you want to test (Optional).
 
+- `KIND_VERSION`. Set this environment variable to the proper version of Kind (Kubernetes in Docker) to be used in the current execution.
+- `KUBERNETES_VERSION`. Set this environment variable to the proper version of Kubernetes to be used in the current execution.
+
 This is an example of the optional configuration:
 
    ```shell
@@ -107,7 +110,12 @@ This is an example of the optional configuration:
    export BEAT_VERSION=7.12.0 # version of beats to use
    export ELASTIC_AGENT_VERSION=7.12.0 # version of Elastic Agent to use
    export GITHUB_CHECK_SHA1=0123456789 # to select snapshots built by beats-ci
+<<<<<<< HEAD
    export KUBERNETES_VERSION="1.23.4" # version of the cluster to be passed to kind
+=======
+   export KIND_VERSION="0.14.0" # version of kind
+   export KUBERNETES_VERSION="1.24.0" # version of the cluster to be passed to kind
+>>>>>>> c8f10bdf (docs: simplify docs (#2838))
    ```
 
 3. Install dependencies.
