@@ -44,17 +44,6 @@ An important consideration is that the local developer experience changed when w
 
 The @elastic/observablt-robots team is maintaining the framework and, because of the current needs on the Fleet team, the test scenarios. On the other hand, our main focus as the Robots team is to only maintain the core functionalities of the e2e test project, and let the teams maintain their scenarios by themselves with our assistance.
 
-## Contributors and maintenance
-We have received contributions from multiple teams in different aspects of the e2e tests project, so we are ecstatic to receive them:
-
-  - Julia Bardi and Nicolas Chaulet, from Fleet team, frontend engineers, have contributed a few scenarios for Fleet
-  - Eric Davis, QA engineer, has helped in the definition of the scenarios for Fleet
-  - Igor Guz, from Security team, QA engineer, has contributed scenarios for the security-related integrations, such as Endpoint, Linux and System
-  - Christos Markou and Jaime Soriano have contributed to the k8s-autodiscover test suite, which is maintained by @elastic/obs-cloudnative-monitoring.
-  - Julien Lind, from Fleet, has helped in defining the support matrix in terms of what OSs and architectures need to be run for Fleet test suite
-  - Julien Mailleret, from Infra, has contributed to the Helm charts test suite.
-  - Anderson Queiroz, from Elastic Agent, is currently working on the MacOS support for running the tests on real Apple machines.
-
 ## Tooling
 Please check the specific document for tooling [here](./tooling.md).
 

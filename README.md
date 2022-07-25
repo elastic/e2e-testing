@@ -66,3 +66,16 @@ This is the traditional approach where the backports are created by the author w
 ```bash
 $ backport  --label <YOUR_LABELS> --auto-assign --pr <YOUR_PR>
 ```
+
+## Contributors and maintenance
+
+We have received contributions from multiple teams in different aspects of the e2e tests project, so we are ecstatic to receive them:
+
+  - Adam Stokes and Manuel de la Peña, from the Observability Robots team have created the tests framework.
+  - Julia Bardi and Nicolas Chaulet, from Fleet team, frontend engineers, have contributed a few scenarios for Fleet.
+  - Eric Davis, QA engineer, has helped in the definition of the scenarios for Fleet.
+  - Igor Guz, QA engineer in the Security team, has contributed scenarios for the security-related integrations, such as Endpoint, Linux and System.
+  - Christos Markou and Jaime Soriano have contributed the k8s-autodiscover test suite, which is maintained by @elastic/obs-cloudnative-monitoring.
+  - Julien Lind, from Fleet, has helped in defining the support matrix in terms of what OSs and architectures need to be run for Fleet test suite.
+  - Julien Mailleret, from Infra, has contributed to the Helm charts test suite.
+  - Anderson Queiroz (Elastic Agent) and Víctor Martínez (Observability Robots), are currently working on the MacOS support for running the tests on real Apple machines using Elastic's Orka provisioner.
