@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"testing"
 
 	"github.com/Jeffail/gabs/v2"
@@ -207,7 +206,7 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "amd64"
 		extension := "tar.gz"
-		expectedFileName := versionPrefix + "-linux-amd64.docker.tar.gz"
+		expectedFileName := versionPrefix + "-docker-image-linux-amd64.tar.gz"
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -222,7 +221,7 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent"
 		arch := "arm64"
 		extension := "tar.gz"
-		expectedFileName := versionPrefix + "-linux-arm64.docker.tar.gz"
+		expectedFileName := versionPrefix + "-docker-image-linux-arm64.tar.gz"
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -238,7 +237,7 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent-ubi8"
 		arch := "amd64"
 		extension := "tar.gz"
-		expectedFileName := ubi8VersionPrefix + "-linux-amd64.docker.tar.gz"
+		expectedFileName := ubi8VersionPrefix + "-docker-image-linux-amd64.tar.gz"
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -253,7 +252,7 @@ func TestBuildArtifactName(t *testing.T) {
 		artifact = "elastic-agent-ubi8"
 		arch := "arm64"
 		extension := "tar.gz"
-		expectedFileName := ubi8VersionPrefix + "-linux-arm64.docker.tar.gz"
+		expectedFileName := ubi8VersionPrefix + "-docker-image-linux-arm64.tar.gz"
 
 		artifactName := buildArtifactName(artifact, version, OS, arch, extension, true)
 		assert.Equal(t, expectedFileName, artifactName)
@@ -378,7 +377,6 @@ func TestCheckPRVersion(t *testing.T) {
 func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 	artifact := "elastic-agent"
 	beatsDir := path.Join(testResourcesBasePath, "beats")
-	distributionsDir, _ := filepath.Abs(path.Join(beatsDir, "x-pack", "elastic-agent", "build", "distributions"))
 	version := testVersion
 
 	ctx := context.Background()
@@ -396,22 +394,20 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-x86_64.rpm"
-		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
-		assert.Nil(t, err)
-		assert.Equal(t, downloadedFilePath, expectedFilePath)
+		assert.NotNil(t, err)
+		assert.Equal(t, downloadedFilePath, "")
 	})
 	t.Run("Fetching RPM binary (arm64) from local Beats dir", func(t *testing.T) {
 		defer func() { BeatsLocalPath = "" }()
 		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-aarch64.rpm"
-		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
-		assert.Nil(t, err)
-		assert.Equal(t, downloadedFilePath, expectedFilePath)
+		assert.NotNil(t, err)
+		assert.Equal(t, downloadedFilePath, "")
 	})
 
 	t.Run("Fetching DEB binary (amd64) from local Beats dir", func(t *testing.T) {
@@ -419,22 +415,20 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-amd64.deb"
-		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
-		assert.Nil(t, err)
-		assert.Equal(t, downloadedFilePath, expectedFilePath)
+		assert.NotNil(t, err)
+		assert.Equal(t, downloadedFilePath, "")
 	})
 	t.Run("Fetching DEB binary (arm64) from local Beats dir", func(t *testing.T) {
 		defer func() { BeatsLocalPath = "" }()
 		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-arm64.deb"
-		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
-		assert.Nil(t, err)
-		assert.Equal(t, downloadedFilePath, expectedFilePath)
+		assert.NotNil(t, err)
+		assert.Equal(t, downloadedFilePath, "")
 	})
 
 	t.Run("Fetching TAR binary (amd64) from local Beats dir", func(t *testing.T) {
@@ -442,33 +436,30 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-linux-amd64.tar.gz"
-		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
-		assert.Nil(t, err)
-		assert.Equal(t, downloadedFilePath, expectedFilePath)
+		assert.NotNil(t, err)
+		assert.Equal(t, downloadedFilePath, "")
 	})
 	t.Run("Fetching TAR binary (x86_64) from local Beats dir", func(t *testing.T) {
 		defer func() { BeatsLocalPath = "" }()
 		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-linux-x86_64.tar.gz"
-		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
-		assert.Nil(t, err)
-		assert.Equal(t, downloadedFilePath, expectedFilePath)
+		assert.NotNil(t, err)
+		assert.Equal(t, downloadedFilePath, "")
 	})
 	t.Run("Fetching TAR binary (arm64) from local Beats dir", func(t *testing.T) {
 		defer func() { BeatsLocalPath = "" }()
 		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-linux-arm64.tar.gz"
-		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
-		assert.Nil(t, err)
-		assert.Equal(t, downloadedFilePath, expectedFilePath)
+		assert.NotNil(t, err)
+		assert.Equal(t, downloadedFilePath, "")
 	})
 
 	t.Run("Fetching Docker binary (amd64) from local Beats dir", func(t *testing.T) {
@@ -476,22 +467,20 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-linux-amd64.docker.tar.gz"
-		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
-		assert.Nil(t, err)
-		assert.Equal(t, downloadedFilePath, expectedFilePath)
+		assert.NotNil(t, err)
+		assert.Equal(t, downloadedFilePath, "")
 	})
 	t.Run("Fetching Docker binary (arm64) from local Beats dir", func(t *testing.T) {
 		defer func() { BeatsLocalPath = "" }()
 		BeatsLocalPath = beatsDir
 
 		artifactName := versionPrefix + "-linux-arm64.docker.tar.gz"
-		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
-		assert.Nil(t, err)
-		assert.Equal(t, downloadedFilePath, expectedFilePath)
+		assert.NotNil(t, err)
+		assert.Equal(t, downloadedFilePath, "")
 	})
 
 	t.Run("Fetching ubi8 Docker binary (amd64) from local Beats dir", func(t *testing.T) {
@@ -499,22 +488,20 @@ func TestFetchBeatsBinaryFromLocalPath(t *testing.T) {
 		BeatsLocalPath = beatsDir
 
 		artifactName := ubi8VersionPrefix + "-linux-amd64.docker.tar.gz"
-		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
-		assert.Nil(t, err)
-		assert.Equal(t, downloadedFilePath, expectedFilePath)
+		assert.NotNil(t, err)
+		assert.Equal(t, downloadedFilePath, "")
 	})
 	t.Run("Fetching ubi8 Docker binary (arm64) from local Beats dir", func(t *testing.T) {
 		defer func() { BeatsLocalPath = "" }()
 		BeatsLocalPath = beatsDir
 
 		artifactName := ubi8VersionPrefix + "-linux-arm64.docker.tar.gz"
-		expectedFilePath := path.Join(distributionsDir, artifactName)
 
 		downloadedFilePath, err := FetchBeatsBinary(ctx, artifactName, artifact, version, utils.TimeoutFactor, true, "", false)
-		assert.Nil(t, err)
-		assert.Equal(t, downloadedFilePath, expectedFilePath)
+		assert.NotNil(t, err)
+		assert.Equal(t, downloadedFilePath, "")
 	})
 }
 
