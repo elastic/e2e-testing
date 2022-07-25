@@ -21,6 +21,8 @@ This repository contains:
 
 > If you want to start creating a new test suite, please read [the quickstart guide](./QUICKSTART.md), but don't forget to come back here to better understand the framework.
 
+> If you want to start running the tests, please read [the "running the tests" guide](./.ci/README.md).
+
 The E2E test project uses `BDD` (Behavioral Driven Development), which means the tests are defined as test scenarios (or simply `scenarios`). A scenario is written in **plain English**, using business language hiding any implementation details. Therefore, the words _"clicks", "input", "browse",  "API call"_ are NOT allowed. And we do care about having well-expressed language in the feature files. Why? Because we want to hide the implementation details in the tests, and whoever is reading the feature files is able to understand the expected behavior of each scenario. And for us that's the key when talking about real E2E tests: to exercise user journeys (scenarios) instead of specific parts of the UI (graphical or API).
 
 ## Behaviour-Driven Development and this test framework
