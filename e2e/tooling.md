@@ -43,17 +43,6 @@ In many cases, we want to store the metrics in Elasticsearch, so at some point w
 
 As an example, the Fleet test suite will need an Elasticsearch instance, Kibana and Fleet Server.
 
-## Configuration files
-If the profile needs certain configuration files, we recommend locating them under a `configurations` folder in the profile directory. As an example, see `kibana.config.yml` in the `fleet` profile.
-
-### Feature files
-We will create use cases for the module in a separate `.feature` file, ideally named after the name of the feature to test (i.e. _apache.feature_), and located under the `features` directory of each test suite. These feature files are considered as requirement for Cucumber, and they will be parsed by the Godog test runner and matched against the Go code implementing the tests.
-
-#### Feature files and the CI
-There is [a descriptor file for the CI](../.ci/.e2e-tests.yaml) in which we define the parallel branches that will be created in the execution of a job. This YAML file defines suites and tags. To understand those descriptors please read [this document](../.ci/README.md).
-
-Adding a new feature file will require to check [the aforementioned descriptor file](../.ci/.e2e-tests.yaml). If the tags in the new file are not there, you should add a new parallel branch under the main test suite, or update the tags to add the new scenarios in an existing parallel branch.
-
 ## Generating documentation about the specifications
 If you want to transform your feature files into a nicer representation using HTML, please run this command from the root `e2e` directory to build a website for all test suites:
 
