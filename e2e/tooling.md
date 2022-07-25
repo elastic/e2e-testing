@@ -42,17 +42,3 @@ Each test suite, which lives under the `e2e/_suites` directory, has it's own Mak
 In many cases, we want to store the metrics in Elasticsearch, so at some point we must start up an Elasticsearch instance. Besides that, we want to query the Elasticsearch to perform assertions on the metrics, such as there are no errors, or the field `f.foo` takes the value `bar`. For that reason we need an Elasticsearch instance in a well-known location. We are going to group this Elasticsearch instance, and any other runtime dependencies, under the concept of a `profile`, which is a represented by a `docker-compose.yml` file under the `cli/config/compose/profiles/` and the name of the test suite.
 
 As an example, the Fleet test suite will need an Elasticsearch instance, Kibana and Fleet Server.
-
-## Generating documentation about the specifications
-If you want to transform your feature files into a nicer representation using HTML, please run this command from the root `e2e` directory to build a website for all test suites:
-
-```shell
-$ make build-docs
-```
-
-It will generate the website under the `./docs` directory (which is ignored in Git). You'll be able to navigate through any feature file and test scenario in a website.
-
-## Noticing the test framework
-To generate the notice files for this project:
-
-1. Execute `make notice` to generate NOTICE.txt file.

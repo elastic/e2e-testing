@@ -67,6 +67,20 @@ This is the traditional approach where the backports are created by the author w
 $ backport  --label <YOUR_LABELS> --auto-assign --pr <YOUR_PR>
 ```
 
+### Generating documentation about the specifications
+If you want to transform your feature files into a nicer representation using HTML, please run this command from the root `e2e` directory to build a website for all test suites:
+
+```shell
+$ make build-docs
+```
+
+It will generate the website under the `./docs` directory (which is ignored in Git). You'll be able to navigate through any feature file and test scenario in a website.
+
+### Noticing the test framework
+To generate the notice files for this project:
+
+1. Execute `make notice` to generate NOTICE.txt file.
+
 ## Contributors and maintenance
 
 We have received contributions from multiple teams in different aspects of the e2e tests project, so we are ecstatic to receive them:
