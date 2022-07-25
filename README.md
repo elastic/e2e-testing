@@ -23,10 +23,6 @@ This repository contains:
 
 The E2E test project uses `BDD` (Behavioral Driven Development), which means the tests are defined as test scenarios (or simply `scenarios`). A scenario is written in **plain English**, using business language hiding any implementation details. Therefore, the words _"clicks", "input", "browse",  "API call"_ are NOT allowed. And we do care about having well-expressed language in the feature files. Why? Because we want to hide the implementation details in the tests, and whoever is reading the feature files is able to understand the expected behavior of each scenario. And for us that's the key when talking about real E2E tests: to exercise user journeys (scenarios) instead of specific parts of the UI (graphical or API).
 
-We want to make sure that the different test suites in this project are covering the main use cases for their core functionalities. So for that reason we are adding different test suites acting as [smoke tests](http://softwaretestingfundamentals.com/smoke-testing/) to verify that each test suite meets the specifications described here with certain grade of satisfaction.
-
-> Smoke Testing, also known as “Build Verification Testing”, is a type of software testing that comprises of a non-exhaustive set of tests that aim at ensuring that the most important functions work. The result of this testing is used to decide if a build is stable enough to proceed with further testing.
-
 ## Statements about the test framework
 
 - It uses the `Given/When/Then` pattern to define scenarios.
