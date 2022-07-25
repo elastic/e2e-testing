@@ -157,8 +157,3 @@ To do so:
 1. In the input parameters form, set the `GITHUB_CHECK_SHA1` to the `SHA1` of the last commit in your pull request. This value will allow us to modify the mergeable status of that commit with the Github check. Besides that, it will set the specific directory in the GCP bucket to look up the CI binaries.
 1. In the input parameters form, set the `GITHUB_CHECK_REPO` to `elastic-agent` or `beats`, depending where the aforementioned SHA1 belongs.
 1. Click the `Build` button at the bottom of the parameters form.
-
-## Noticing the test framework
-To generate the notice files for this project:
-
-1. Execute `make notice` to generate NOTICE.txt file.

@@ -51,3 +51,8 @@ $ make build-docs
 ```
 
 It will generate the website under the `./docs` directory (which is ignored in Git). You'll be able to navigate through any feature file and test scenario in a website.
+
+## Noticing the test framework
+To generate the notice files for this project:
+
+1. Execute `make notice` to generate NOTICE.txt file.
