@@ -87,8 +87,6 @@ pre-commit installed at .git/hooks/pre-commit
 ```
 
 To understand more about the hooks we use, please take a look at pre-commit's [configuration file](./.pre-commit-config.yml).
-<<<<<<< HEAD
-=======
 
 ## Backports
 
@@ -135,4 +133,3 @@ We have received contributions from multiple teams in different aspects of the e
   - Julien Lind, from Fleet, has helped in defining the support matrix in terms of what OSs and architectures need to be run for Fleet test suite.
   - Julien Mailleret, from Infra, has contributed to the Helm charts test suite.
   - Anderson Queiroz (Elastic Agent) and Víctor Martínez (Observability Robots), are currently working on the MacOS support for running the tests on real Apple machines using Elastic's Orka provisioner.
->>>>>>> c8f10bdf (docs: simplify docs (#2838))
