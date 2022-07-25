@@ -110,8 +110,8 @@
     - "GITHUB_CHECK_SHA1=\"{{ lookup('env', 'GITHUB_CHECK_SHA1') or '' }}\""
     - "GITHUB_CHECK_REPO=\"{{ lookup('env', 'GITHUB_CHECK_REPO') or 'elastic-agent' }}\""
     - "ELASTIC_APM_GLOBAL_LABELS=\"{{ lookup('env', 'ELASTIC_APM_GLOBAL_LABELS') }}\""
-    - "LOG_LEVEL=\"TRACE\""
-    - "OP_LOG_LEVEL=\"TRACE\""
+    - "LOG_LEVEL=\"{{ lookup('env', 'LOG_LEVEL') or 'TRACE' }}\""
+    - "OP_LOG_LEVEL=\"{{ lookup('env', 'LOG_LEVEL') or lookup('env', 'OP_LOG_LEVEL') or 'TRACE' }}\""
     - "TIMEOUT_FACTOR=7"
     - "REPORT_PREFIX=\"{{ lookup('env', 'REPORT_PREFIX') }}\""
   tags:
