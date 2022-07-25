@@ -309,3 +309,22 @@ export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
 make -C .ci destroy-stack
 make -C .ci destroy-node
 ```
+
+## Running tests for a pull request on Elastic Agent or Beats
+
+Because we trigger the E2E tests for each Elastic-Agent and Beats PR that is packaged, it's possible to manually trigger it using the user interface of the CI. To achieve it we must navigate to Jenkins and run the tests in the specific branch the original Beats PR is targeting.
+
+>For further information about packaging Beats, please read [Beat's CI docs](https://github.com/elastic/beats/blob/1de27eed058dd074b58c71094c7678b3536251cb/README.md#ci).
+
+To do so:
+
+1. Navigate to Jenkins: https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-mbp/
+1. Login as a user
+2. Select the base branch for the test code: main, 8.3, 7.17, etc.
+3. In the left menu, click on `Buid with Parameters`.
+4. In the input parameters form, keep the Beat version (for Fleet) as is, to use each branch's default version.
+5. In the input parameters form, keep the stack version (for Fleet) as is, to use each branch's default version.
+6. In the input parameters form, set the `GITHUB_CHECK_NAME` to `E2E Tests`. This value will appear as the label for the Github check for the E2E tests.
+7. In the input parameters form, set the `GITHUB_CHECK_SHA1` to the `SHA1` of the last commit in your pull request. This value will allow us to modify the mergeable status of that commit with the Github check. Besides that, it will set the specific directory in the GCP bucket to look up the CI binaries.
+8. In the input parameters form, set the `GITHUB_CHECK_REPO` to `elastic-agent` or `beats`, depending where the aforementioned SHA1 belongs. This is important to look up the binaries in the right GCP bucket.
+9. Click the `Build` button at the bottom of the parameters form.
