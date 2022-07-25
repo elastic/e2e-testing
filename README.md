@@ -19,7 +19,28 @@ This repository contains:
 
 4. A [collection of utilities and helpers used in tests](../internal).
 
-> If you want to start writing E2E tests, please jump to our quickstart guide [here](./e2e/QUICKSTART.md).
+> If you want to start creating a new test suite, please read [the quickstart guide](./QUICKSTART.md), but don't forget to come back here to better understand the framework.
+
+The E2E test project uses `BDD` (Behavioral Driven Development), which means the tests are defined as test scenarios (or simply `scenarios`). A scenario is written in **plain English**, using business language hiding any implementation details. Therefore, the words _"clicks", "input", "browse",  "API call"_ are NOT allowed. And we do care about having well-expressed language in the feature files. Why? Because we want to hide the implementation details in the tests, and whoever is reading the feature files is able to understand the expected behavior of each scenario. And for us that's the key when talking about real E2E tests: to exercise user journeys (scenarios) instead of specific parts of the UI (graphical or API).
+
+We want to make sure that the different test suites in this project are covering the main use cases for their core functionalities. So for that reason we are adding different test suites acting as [smoke tests](http://softwaretestingfundamentals.com/smoke-testing/) to verify that each test suite meets the specifications described here with certain grade of satisfaction.
+
+> Smoke Testing, also known as “Build Verification Testing”, is a type of software testing that comprises of a non-exhaustive set of tests that aim at ensuring that the most important functions work. The result of this testing is used to decide if a build is stable enough to proceed with further testing.
+
+## Statements about the test framework
+
+- It uses the `Given/When/Then` pattern to define scenarios.
+  - `Given` a state is present (optional)
+  - `When` an action happens (mandatory) 
+  - `Then` an outcome is expected (mandatory)
+  - `And/But` clauses are allowed to provide continuation on the above ones. (Optional)
+- Because it uses BDD, it's possible to combine existing scenario steps (the given-when-then clauses) forming new scenarios, so with no code it's possible to have new tests. For that reason, the steps must be atomic and decoupled (as any piece of software: low coupling and high cohesion).
+- It does not use the GUI at all, so there is no Selenium, Cypress or any other test library having expectations on graphical components. It uses Go as the programming language and Cucumber to create the glue code between the code and the plain English scenarios. Over the time, we have demonstrated that the APIs are not changing as fast as the GUI components.
+- APIs not changing does not mean zero flakiness. Because there are so many moving pieces (stack versions), beats versions, elastic-agent versions, cloud machines, network access, etc... There could be situations where the tests fail, but they are rarely caused by test flakiness. Instead, they are usually caused by: 1) instability of the all-together system, 2) a real bug, 3) gherkin steps that are not consistent.
+- Kibana is basically at the core of the tests, because we hit certain endpoints and wait for the responses.
+  - Yes, the e2e tests are first citizen consumers of Kibana APIs, so they could be broken at the moment an API change on Kibana. We have explored the idea of implementing `Contract-Testing` with [pact.io](https://pact.io) (not implemented but in the wish list).
+  - A PoC was submitted to [kibana](https://github.com/elastic/kibana/pull/80384) and to [this repo](https://github.com/elastic/e2e-testing/pull/339) demonstrating the benefits of `Contract-Testing`.
+- The project usually checks for JSON responses, OS processes state, Elasticsearch queries responses (using the ES client), to name a few, so the majority of the assertions relies on checking those entities and its internal state: process state, JSON response, HTTP codes, document count in an Elasticsearch query, etc.
 
 ## Building
 
