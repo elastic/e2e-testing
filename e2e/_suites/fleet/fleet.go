@@ -86,47 +86,6 @@ func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(staleVersi
 	return fts.anAgentIsDeployedToFleetWithInstaller(installerType)
 }
 
-func (fts *FleetTestSuite) agentRunPolicy(policyName string) error {
-	agentRunPolicyFn := func() error {
-		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
-
-		policies, err := fts.kibanaClient.ListPolicies(fts.currentContext)
-		if err != nil {
-			return err
-		}
-
-		var policy *kibana.Policy
-		for _, p := range policies {
-			if policyName == p.Name {
-				policy = &p
-				break
-			}
-		}
-
-		if policy == nil {
-			return fmt.Errorf("Policy not found '%s'", policyName)
-		}
-
-		agent, err := fts.kibanaClient.GetAgentByHostnameFromList(fts.currentContext, manifest.Hostname)
-		if err != nil {
-			return err
-		}
-
-		if agent.PolicyID != policy.ID {
-			log.Errorf("FOUND %s %s", agent.PolicyID, policy.ID)
-			return fmt.Errorf("Agent not running the correct policy (running '%s' instead of '%s')", agent.PolicyID, policy.ID)
-		}
-
-		return nil
-	}
-	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
-	exp := utils.GetExponentialBackOff(maxTimeout)
-
-	return backoff.Retry(agentRunPolicyFn, exp)
-
-}
-
 // this step infers the installer type from the underlying OS image
 // supported images: centos and debian
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
@@ -382,17 +341,6 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 	})
 }
 
-// kibanaUsesProfile this step should be ideally called as a Background or a Given clause, so that it
-// is executed before any other in the test scenario. It will configure the Kibana profile to be used
-// in the scenario, changing the configuration file to be used.
-func (fts *FleetTestSuite) kibanaUsesProfile(profile string) error {
-	fts.KibanaProfile = profile
-
-	env := fts.getProfileEnv()
-
-	return bootstrapFleet(context.Background(), env)
-}
-
 func (fts *FleetTestSuite) getProfileEnv() map[string]string {
 
 	env := map[string]string{}
@@ -406,33 +354,6 @@ func (fts *FleetTestSuite) getProfileEnv() map[string]string {
 	}
 
 	return env
-}
-
-func (fts *FleetTestSuite) agentUsesPolicy(policyName string) error {
-	agentUsesPolicyFn := func() error {
-		policies, err := fts.kibanaClient.ListPolicies(fts.currentContext)
-		if err != nil {
-			return err
-		}
-
-		for _, p := range policies {
-			if policyName == p.Name {
-
-				fts.Policy = p
-				break
-			}
-		}
-
-		if fts.Policy.Name != policyName {
-			return fmt.Errorf("Policy not found '%s'", policyName)
-		}
-
-		return nil
-	}
-	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
-	exp := utils.GetExponentialBackOff(maxTimeout)
-
-	return backoff.Retry(agentUsesPolicyFn, exp)
 }
 
 func (fts *FleetTestSuite) setup() error {

@@ -293,8 +293,6 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 		return ctx, nil
 	})
 
-	ctx.Step(`^kibana uses "([^"]*)" profile$`, fts.kibanaUsesProfile)
-	ctx.Step(`^agent uses enrollment token from "([^"]*)" policy$`, fts.agentUsesPolicy)
 	ctx.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	ctx.Step(`^an agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
 	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
@@ -311,6 +309,10 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	ctx.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
 	ctx.Step(`^a Linux data stream exists with some data$`, fts.checkDataStream)
+
+	// preconfigured policies steps
+	ctx.Step(`^kibana uses "([^"]*)" profile$`, fts.kibanaUsesProfile)
+	ctx.Step(`^agent uses enrollment token from "([^"]*)" policy$`, fts.agentUsesPolicy)
 	ctx.Step(`^the agent is enrolled into "([^"]*)" policy$`, fts.agentRunPolicy)
 
 	// upgrade steps
