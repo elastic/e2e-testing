@@ -290,7 +290,7 @@ func GetDockerNamespaceEnvVarForRepository(repo string, fallback string) string 
 		ciSnapshotsFn = downloads.UseElasticAgentCISnapshots
 	}
 
-	if ciSnapshotsFn() || downloads.BeatsLocalPath != "" {
+	if ciSnapshotsFn() {
 		return "observability-ci"
 	}
 	return fallback
