@@ -20,12 +20,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const actionADDED = "added"
-const actionREMOVED = "removed"
-const testResourcesDir = "./testresources"
-
-var deployedAgentsCount = 0
-
 // bootstrapFleet this method creates the runtime dependencies for the Fleet test suite, being of special
 // interest kibana profile passed as part of the environment variables to bootstrap the dependencies.
 func bootstrapFleet(ctx context.Context, env map[string]string) error {

@@ -32,6 +32,8 @@ import (
 	"go.elastic.co/apm"
 )
 
+const testResourcesDir = "./testresources"
+
 var fts *FleetTestSuite
 
 var tx *apm.Transaction

@@ -14,6 +14,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var deployedAgentsCount = 0
+
 // this step infers the installer type from the underlying OS image
 // supported Docker images: centos and debian
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {

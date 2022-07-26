@@ -16,6 +16,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const actionADDED = "added"
+const actionREMOVED = "removed"
+
 func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller(integration string, installerType string) error {
 	err := fts.anAgentIsDeployedToFleetWithInstaller(installerType)
 	if err != nil {
