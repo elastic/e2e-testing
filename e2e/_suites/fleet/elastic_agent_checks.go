@@ -239,6 +239,110 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 	return fmt.Errorf("the file system directory is not empty")
 }
 
+func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
+	minimumHitsCount := 20
+
+	agentService := deploy.NewServiceContainerRequest(common.ElasticAgentServiceName).WithFlavour(fts.Image)
+
+	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	result, err := searchAgentData(fts.currentContext, manifest.Hostname, fts.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
+	if err != nil {
+		return err
+	}
+
+	log.Tracef("Search result: %v", result)
+
+	return elasticsearch.AssertHitsArePresent(result)
+}
+
+func searchAgentData(ctx context.Context, hostname string, startDate time.Time, minimumHitsCount int, maxTimeout time.Duration) (elasticsearch.SearchResult, error) {
+	timezone := "America/New_York"
+
+	esQuery := map[string]interface{}{
+		"version": true,
+		"size":    500,
+		"docvalue_fields": []map[string]interface{}{
+			{
+				"field":  "@timestamp",
+				"format": "date_time",
+			},
+			{
+				"field":  "system.process.cpu.start_time",
+				"format": "date_time",
+			},
+			{
+				"field":  "system.service.state_since",
+				"format": "date_time",
+			},
+		},
+		"_source": map[string]interface{}{
+			"excludes": []map[string]interface{}{},
+		},
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must": []map[string]interface{}{},
+				"filter": []map[string]interface{}{
+					{
+						"bool": map[string]interface{}{
+							"filter": []map[string]interface{}{
+								{
+									"bool": map[string]interface{}{
+										"should": []map[string]interface{}{
+											{
+												"match_phrase": map[string]interface{}{
+													"host.name": hostname,
+												},
+											},
+										},
+										"minimum_should_match": 1,
+									},
+								},
+								{
+									"bool": map[string]interface{}{
+										"should": []map[string]interface{}{
+											{
+												"range": map[string]interface{}{
+													"@timestamp": map[string]interface{}{
+														"gte":       startDate,
+														"time_zone": timezone,
+													},
+												},
+											},
+										},
+										"minimum_should_match": 1,
+									},
+								},
+							},
+						},
+					},
+					{
+						"range": map[string]interface{}{
+							"@timestamp": map[string]interface{}{
+								"gte":    startDate,
+								"format": "strict_date_optional_time",
+							},
+						},
+					},
+				},
+				"should":   []map[string]interface{}{},
+				"must_not": []map[string]interface{}{},
+			},
+		},
+	}
+
+	indexName := "logs-elastic_agent-default"
+
+	result, err := elasticsearch.WaitForNumberOfHits(ctx, indexName, esQuery, minimumHitsCount, maxTimeout)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Warn(elasticsearch.WaitForIndices())
+	}
+
+	return result, err
+}
+
 func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string, hostname string) error {
 	log.Tracef("Checking if agent is listed in Fleet as %s", desiredStatus)
 
