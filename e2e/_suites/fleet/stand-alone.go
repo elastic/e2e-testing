@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/installer"
@@ -144,42 +143,6 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
 
 	err = fts.installTestTools(manifest.Name)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) error {
-	log.WithFields(log.Fields{
-		"policyID": fts.Policy.ID,
-		"package":  packageName,
-	}).Trace("Checking if the policy shows the package added")
-
-	maxTimeout := time.Minute
-	retryCount := 1
-
-	exp := utils.GetExponentialBackOff(maxTimeout)
-
-	configurationIsPresentFn := func() error {
-		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, packageName, fts.Policy)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"packagePolicy": packagePolicy,
-				"policy":        fts.Policy,
-				"retry":         retryCount,
-				"error":         err,
-			}).Warn("The integration was not found in the policy")
-			retryCount++
-			return err
-		}
-
-		retryCount++
-		return err
-	}
-
-	err := backoff.Retry(configurationIsPresentFn, exp)
 	if err != nil {
 		return err
 	}
