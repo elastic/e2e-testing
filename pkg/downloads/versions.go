@@ -27,6 +27,7 @@ import (
 
 // BeatsLocalPath is the path to a local copy of the Beats git repository
 // It can be overriden by BEATS_LOCAL_PATH env var. Using the empty string as a default.
+// Deprecated. This variable will be removed in following releases, so it's not used anywhere else
 var BeatsLocalPath = ""
 
 // to avoid downloading the same artifacts, we are adding this map to cache the URL of the downloaded binaries, using as key
@@ -53,7 +54,7 @@ var versionAliasRegex *regexp.Regexp
 func init() {
 	BeatsLocalPath = shell.GetEnv("BEATS_LOCAL_PATH", BeatsLocalPath)
 	if BeatsLocalPath != "" {
-		log.Infof(`Beats local path will be used for artifacts. Please make sure all binaries are properly built in their "build/distributions" folder: %s`, BeatsLocalPath)
+		log.Warn(`⚠️ Beats local path usage is deprecated and not used to fetch the local binaries anymore. Please use the packaging job to generate the artifacts to be consumed by these tests.`)
 	}
 
 	versionAliasRegex = regexp.MustCompile(`^([0-9]+)(\.[0-9]+)(-SNAPSHOT)?$`)
@@ -319,11 +320,6 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 		}
 	}
 
-	if BeatsLocalPath != "" && isDocker {
-		dockerString = ".docker"
-		return fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, artifactVersion, OS, arch, dockerString, lowerCaseExtension)
-	}
-
 	if !useCISnapshots && isDocker {
 		return fmt.Sprintf("%s-%s%s-%s-%s.%s", artifact, artifactVersion, dockerString, OS, arch, lowerCaseExtension)
 	}
@@ -356,32 +352,12 @@ func FetchProjectBinary(ctx context.Context, project string, artifactName string
 }
 
 // FetchProjectBinaryForSnapshots it downloads the binary and returns the location of the downloaded file
-// If the environment variable BEATS_LOCAL_PATH is set, then the artifact
-// to be used will be defined by the local snapshot produced by the local build.
+// If the deprecated environment variable BEATS_LOCAL_PATH is set, then an error will be returned.
 // Else, if the useCISnapshots argument is set to true, then the artifact
 // to be downloaded will be defined by the snapshot produced by the Beats CI or Fleet CI for that commit.
 func FetchProjectBinaryForSnapshots(ctx context.Context, useCISnapshots bool, project string, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFile bool) (string, error) {
-	if BeatsLocalPath != "" && project == "beats" {
-		span, _ := apm.StartSpanOptions(ctx, "Fetching Project binary", "project.local.fetch-binary", apm.SpanOptions{
-			Parent: apm.SpanFromContext(ctx).TraceContext(),
-		})
-		span.Context.SetLabel("project", project)
-		defer span.End()
-
-		distributions := path.Join(BeatsLocalPath, artifact, "build", "distributions")
-		if xpack {
-			distributions = path.Join(BeatsLocalPath, "x-pack", artifact, "build", "distributions")
-		}
-
-		log.Debugf("Using local snapshots for the %s: %s", artifact, distributions)
-
-		fileNamePath, _ := filepath.Abs(path.Join(distributions, artifactName))
-		_, err := os.Stat(fileNamePath)
-		if err != nil || os.IsNotExist(err) {
-			return fileNamePath, err
-		}
-
-		return fileNamePath, err
+	if BeatsLocalPath != "" {
+		return "", fmt.Errorf("⚠️ Beats local path usage is deprecated and not used to fetch the binaries. Please use the packaging job to generate the artifacts to be consumed by these tests")
 	}
 
 	handleDownload := func(URL string) (string, error) {
