@@ -37,6 +37,33 @@ var fts *FleetTestSuite
 var tx *apm.Transaction
 var stepSpan *apm.Span
 
+// FleetTestSuite represents the scenarios for Fleet-mode
+type FleetTestSuite struct {
+	// integrations
+	KibanaProfile       string
+	StandAlone          bool
+	CurrentToken        string // current enrollment token
+	CurrentTokenID      string // current enrollment tokenID
+	ElasticAgentStopped bool   // will be used to signal when the agent process can be called again in the tear-down stage
+	Image               string // base image used to install the agent
+	InstallerType       string
+	Integration         kibana.IntegrationPackage // the installed integration
+	Policy              kibana.Policy
+	PolicyUpdatedAt     string // the moment the policy was updated
+	Version             string // current elastic-agent version
+	kibanaClient        *kibana.Client
+	deployer            deploy.Deployment
+	dockerDeployer      deploy.Deployment // used for docker related deployents, such as the stand-alone containers
+	BeatsProcess        string            // (optional) name of the Beats that must be present before installing the elastic-agent
+	// date controls for queries
+	AgentStoppedDate             time.Time
+	RuntimeDependenciesStartDate time.Time
+	// instrumentation
+	currentContext    context.Context
+	DefaultAPIKey     string
+	ElasticAgentFlags string
+}
+
 // afterScenario destroys the state created by a scenario
 func afterScenario(fts *FleetTestSuite) {
 	defer func() {
@@ -231,6 +258,27 @@ func setUpSuite() {
 		deployer:       deploy.New(common.Provider),
 		dockerDeployer: deploy.New("docker"),
 	}
+}
+
+func (fts *FleetTestSuite) getDeployer() deploy.Deployment {
+	if fts.StandAlone {
+		return fts.dockerDeployer
+	}
+	return fts.deployer
+}
+
+func (fts *FleetTestSuite) getProfileEnv() map[string]string {
+	env := map[string]string{}
+
+	for k, v := range common.ProfileEnv {
+		env[k] = v
+	}
+
+	if fts.KibanaProfile != "" {
+		env["kibanaProfile"] = fts.KibanaProfile
+	}
+
+	return env
 }
 
 func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {

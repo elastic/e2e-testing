@@ -26,40 +26,6 @@ const testResourcesDir = "./testresources"
 
 var deployedAgentsCount = 0
 
-// FleetTestSuite represents the scenarios for Fleet-mode
-type FleetTestSuite struct {
-	// integrations
-	KibanaProfile       string
-	StandAlone          bool
-	CurrentToken        string // current enrollment token
-	CurrentTokenID      string // current enrollment tokenID
-	ElasticAgentStopped bool   // will be used to signal when the agent process can be called again in the tear-down stage
-	Image               string // base image used to install the agent
-	InstallerType       string
-	Integration         kibana.IntegrationPackage // the installed integration
-	Policy              kibana.Policy
-	PolicyUpdatedAt     string // the moment the policy was updated
-	Version             string // current elastic-agent version
-	kibanaClient        *kibana.Client
-	deployer            deploy.Deployment
-	dockerDeployer      deploy.Deployment // used for docker related deployents, such as the stand-alone containers
-	BeatsProcess        string            // (optional) name of the Beats that must be present before installing the elastic-agent
-	// date controls for queries
-	AgentStoppedDate             time.Time
-	RuntimeDependenciesStartDate time.Time
-	// instrumentation
-	currentContext    context.Context
-	DefaultAPIKey     string
-	ElasticAgentFlags string
-}
-
-func (fts *FleetTestSuite) getDeployer() deploy.Deployment {
-	if fts.StandAlone {
-		return fts.dockerDeployer
-	}
-	return fts.deployer
-}
-
 // bootstrapFleet this method creates the runtime dependencies for the Fleet test suite, being of special
 // interest kibana profile passed as part of the environment variables to bootstrap the dependencies.
 func bootstrapFleet(ctx context.Context, env map[string]string) error {
@@ -181,21 +147,6 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 		}
 		return nil
 	})
-}
-
-func (fts *FleetTestSuite) getProfileEnv() map[string]string {
-
-	env := map[string]string{}
-
-	for k, v := range common.ProfileEnv {
-		env[k] = v
-	}
-
-	if fts.KibanaProfile != "" {
-		env["kibanaProfile"] = fts.KibanaProfile
-	}
-
-	return env
 }
 
 func (fts *FleetTestSuite) setup() error {
