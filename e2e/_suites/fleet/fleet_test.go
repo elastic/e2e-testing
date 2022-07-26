@@ -360,7 +360,7 @@ func setUpSuite() {
 	}
 }
 
-func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
+func InitializeFleetTestScenario(ctx *godog.ScenarioContext) {
 	ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
 		log.Tracef("Before Fleet scenario: %s", sc.Name)
 
@@ -479,7 +479,7 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^there are "([^"]*)" instances of the "([^"]*)" process in the "([^"]*)" state$`, fts.thereAreInstancesOfTheProcessInTheState)
 }
 
-func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
+func InitializeFleetTestSuite(ctx *godog.TestSuiteContext) {
 	ctx.BeforeSuite(func() {
 		setUpSuite()
 
@@ -592,8 +592,8 @@ func TestMain(m *testing.M) {
 
 	status := godog.TestSuite{
 		Name:                 "godogs",
-		TestSuiteInitializer: InitializeIngestManagerTestSuite,
-		ScenarioInitializer:  InitializeIngestManagerTestScenario,
+		TestSuiteInitializer: InitializeFleetTestSuite,
+		ScenarioInitializer:  InitializeFleetTestScenario,
 		Options:              &opts,
 	}.Run()
 
