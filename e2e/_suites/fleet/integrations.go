@@ -5,7 +5,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -18,46 +17,10 @@ import (
 )
 
 func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName string, action string) error {
-	return theIntegrationIsOperatedInThePolicy(fts.currentContext, fts.kibanaClient, fts.Policy, packageName, action)
-}
+	ctx := fts.currentContext
+	client := fts.kibanaClient
+	policy := fts.Policy
 
-func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) error {
-	log.WithFields(log.Fields{
-		"policyID": fts.Policy.ID,
-		"package":  packageName,
-	}).Trace("Checking if the policy shows the package added")
-
-	maxTimeout := time.Minute
-	retryCount := 1
-
-	exp := utils.GetExponentialBackOff(maxTimeout)
-
-	configurationIsPresentFn := func() error {
-		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, packageName, fts.Policy)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"packagePolicy": packagePolicy,
-				"policy":        fts.Policy,
-				"retry":         retryCount,
-				"error":         err,
-			}).Warn("The integration was not found in the policy")
-			retryCount++
-			return err
-		}
-
-		retryCount++
-		return err
-	}
-
-	err := backoff.Retry(configurationIsPresentFn, exp)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func theIntegrationIsOperatedInThePolicy(ctx context.Context, client *kibana.Client, policy kibana.Policy, packageName string, action string) error {
 	log.WithFields(log.Fields{
 		"action":  action,
 		"policy":  policy,
@@ -95,6 +58,42 @@ func theIntegrationIsOperatedInThePolicy(ctx context.Context, client *kibana.Cli
 			return err
 		}
 		return client.DeleteIntegrationFromPolicy(ctx, packageDataStream)
+	}
+
+	return nil
+}
+
+func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) error {
+	log.WithFields(log.Fields{
+		"policyID": fts.Policy.ID,
+		"package":  packageName,
+	}).Trace("Checking if the policy shows the package added")
+
+	maxTimeout := time.Minute
+	retryCount := 1
+
+	exp := utils.GetExponentialBackOff(maxTimeout)
+
+	configurationIsPresentFn := func() error {
+		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, packageName, fts.Policy)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"packagePolicy": packagePolicy,
+				"policy":        fts.Policy,
+				"retry":         retryCount,
+				"error":         err,
+			}).Warn("The integration was not found in the policy")
+			retryCount++
+			return err
+		}
+
+		retryCount++
+		return err
+	}
+
+	err := backoff.Retry(configurationIsPresentFn, exp)
+	if err != nil {
+		return err
 	}
 
 	return nil
