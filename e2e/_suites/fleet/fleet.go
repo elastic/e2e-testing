@@ -643,15 +643,6 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 	return nil
 }
 
-func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller(integration string, installerType string) error {
-	err := fts.anAgentIsDeployedToFleetWithInstaller(installerType)
-	if err != nil {
-		return err
-	}
-
-	return fts.theIntegrationIsOperatedInThePolicy(integration, actionADDED)
-}
-
 // theVersionOfThePackageIsInstalled installs a package in a version
 func (fts *FleetTestSuite) theVersionOfThePackageIsInstalled(version string, packageName string) error {
 	log.WithFields(log.Fields{

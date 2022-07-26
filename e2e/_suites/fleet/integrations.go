@@ -16,6 +16,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller(integration string, installerType string) error {
+	err := fts.anAgentIsDeployedToFleetWithInstaller(installerType)
+	if err != nil {
+		return err
+	}
+
+	return fts.theIntegrationIsOperatedInThePolicy(integration, actionADDED)
+}
+
 func (fts *FleetTestSuite) theIntegrationIsOperatedInThePolicy(packageName string, action string) error {
 	ctx := fts.currentContext
 	client := fts.kibanaClient
