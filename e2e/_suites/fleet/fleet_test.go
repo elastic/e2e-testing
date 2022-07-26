@@ -300,8 +300,6 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
 	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer and "([^"]*)" flags$`, fts.anAgentIsDeployedToFleetWithInstallerAndTags)
 	ctx.Step(`^a "([^"]*)" stale agent is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
-	ctx.Step(`^agent is in "([^"]*)" version$`, fts.agentInVersion)
-	ctx.Step(`^agent is upgraded to "([^"]*)" version$`, fts.anAgentIsUpgradedToVersion)
 	ctx.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
 	ctx.Step(`^the default API key has "([^"]*)"$`, fts.verifyDefaultAPIKey)
 	ctx.Step(`^the host is restarted$`, fts.theHostIsRestarted)
@@ -312,9 +310,13 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
 	ctx.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
 	ctx.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
-	ctx.Step(`^certs are installed$`, fts.installCerts)
 	ctx.Step(`^a Linux data stream exists with some data$`, fts.checkDataStream)
 	ctx.Step(`^the agent is enrolled into "([^"]*)" policy$`, fts.agentRunPolicy)
+
+	// upgrade steps
+	ctx.Step(`^certs are installed$`, fts.installCerts)
+	ctx.Step(`^agent is in "([^"]*)" version$`, fts.agentInVersion)
+	ctx.Step(`^agent is upgraded to "([^"]*)" version$`, fts.anAgentIsUpgradedToVersion)
 
 	//flags steps
 	ctx.Step(`^the elastic agent index contains the tags$`, fts.tagsAreInTheElasticAgentIndex)
