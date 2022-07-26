@@ -5,14 +5,21 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
+	"github.com/Jeffail/gabs/v2"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -166,4 +173,75 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 	}).Info("Policy Updated with package name " + metrics + "." + set)
 
 	return nil
+}
+
+func metricsInputs(integration string, set string, file string, metrics string) []kibana.Input {
+	metricsFile := filepath.Join(testResourcesDir, file)
+	jsonData, err := readJSONFile(metricsFile)
+	if err != nil {
+		log.Warnf("An error happened while reading metrics file, returning an empty array of inputs: %v", err)
+		return []kibana.Input{}
+	}
+
+	data := parseJSONMetrics(jsonData, integration, set, metrics)
+	return []kibana.Input{
+		{
+			Type:    integration,
+			Enabled: true,
+			Streams: data,
+		},
+	}
+
+	return []kibana.Input{}
+}
+
+func parseJSONMetrics(data *gabs.Container, integration string, set string, metrics string) []kibana.Stream {
+	for i, item := range data.Children() {
+		if item.Path("type").Data().(string) == integration {
+			for idx, stream := range item.S("streams").Children() {
+				dataSet, _ := stream.Path("data_stream.dataset").Data().(string)
+				if dataSet == metrics+"."+set {
+					data.SetP(
+						integration+"-"+metrics+"."+set+"-"+uuid.New().String(),
+						fmt.Sprintf("inputs.%d.streams.%d.id", i, idx),
+					)
+					data.SetP(
+						true,
+						fmt.Sprintf("inputs.%d.streams.%d.enabled", i, idx),
+					)
+
+					var dataStreamOut []kibana.Stream
+					if err := json.Unmarshal(data.Path(fmt.Sprintf("inputs.%d.streams", i)).Bytes(), &dataStreamOut); err != nil {
+						return []kibana.Stream{}
+					}
+
+					return dataStreamOut
+				}
+			}
+		}
+	}
+	return []kibana.Stream{}
+}
+
+func readJSONFile(file string) (*gabs.Container, error) {
+	jsonFile, err := os.Open(file)
+	if err != nil {
+		fmt.Println(err)
+	}
+	log.WithFields(log.Fields{
+		"file": file,
+	}).Info("Successfully Opened " + file)
+
+	defer jsonFile.Close()
+	data, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		return nil, err
+	}
+
+	jsonParsed, err := gabs.ParseJSON(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return jsonParsed.S("inputs"), nil
 }

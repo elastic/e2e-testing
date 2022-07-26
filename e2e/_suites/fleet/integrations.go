@@ -107,3 +107,46 @@ func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) 
 
 	return nil
 }
+
+func inputs(integration string) []kibana.Input {
+	switch integration {
+	case "apm":
+		return []kibana.Input{
+			{
+				Type:    "apm",
+				Enabled: true,
+				Streams: []kibana.Stream{},
+				Vars: map[string]kibana.Var{
+					"apm-server": {
+						Value: "host",
+						Type:  "localhost:8200",
+					},
+				},
+			},
+		}
+	case "linux":
+		return []kibana.Input{
+			{
+				Type:    "linux/metrics",
+				Enabled: true,
+				Streams: []kibana.Stream{
+					{
+						ID:      "linux/metrics-linux.memory-" + uuid.New().String(),
+						Enabled: true,
+						DS: kibana.DataStream{
+							Dataset: "linux.memory",
+							Type:    "metrics",
+						},
+						Vars: map[string]kibana.Var{
+							"period": {
+								Value: "1s",
+								Type:  "string",
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+	return []kibana.Input{}
+}
