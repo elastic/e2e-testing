@@ -30,6 +30,11 @@ var imts IngestManagerTestSuite
 var tx *apm.Transaction
 var stepSpan *apm.Span
 
+// IngestManagerTestSuite represents a test suite, holding references to the pieces needed to run the tests
+type IngestManagerTestSuite struct {
+	Fleet *FleetTestSuite
+}
+
 func setUpSuite() {
 	config.Init()
 
