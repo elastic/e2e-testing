@@ -108,10 +108,57 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 		return ctx, nil
 	})
 
+	ctx.Step(`^kibana uses "([^"]*)" profile$`, fts.kibanaUsesProfile)
+	ctx.Step(`^agent uses enrollment token from "([^"]*)" policy$`, fts.agentUsesPolicy)
+	ctx.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
+	ctx.Step(`^an agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
+	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
+	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer and "([^"]*)" flags$`, fts.anAgentIsDeployedToFleetWithInstallerAndTags)
+	ctx.Step(`^a "([^"]*)" stale agent is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
+	ctx.Step(`^agent is in "([^"]*)" version$`, fts.agentInVersion)
+	ctx.Step(`^agent is upgraded to "([^"]*)" version$`, fts.anAgentIsUpgradedToVersion)
+	ctx.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
+	ctx.Step(`^the default API key has "([^"]*)"$`, fts.verifyDefaultAPIKey)
+	ctx.Step(`^the host is restarted$`, fts.theHostIsRestarted)
+	ctx.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
+	ctx.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)
+	ctx.Step(`^the agent is re-enrolled on the host$`, fts.theAgentIsReenrolledOnTheHost)
+	ctx.Step(`^the enrollment token is revoked$`, fts.theEnrollmentTokenIsRevoked)
+	ctx.Step(`^an attempt to enroll a new agent fails$`, fts.anAttemptToEnrollANewAgentFails)
+	ctx.Step(`^the "([^"]*)" process is "([^"]*)" on the host$`, fts.processStateChangedOnTheHost)
+	ctx.Step(`^the file system Agent folder is empty$`, fts.theFileSystemAgentFolderIsEmpty)
+	ctx.Step(`^certs are installed$`, fts.installCerts)
+	ctx.Step(`^a Linux data stream exists with some data$`, fts.checkDataStream)
+	ctx.Step(`^the agent is enrolled into "([^"]*)" policy$`, fts.agentRunPolicy)
+
+	//flags steps
+	ctx.Step(`^the elastic agent index contains the tags$`, fts.tagsAreInTheElasticAgentIndex)
+
+	// endpoint steps
+	ctx.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)
+	ctx.Step(`^the "([^"]*)" datasource is shown in the policy as added$`, fts.thePolicyShowsTheDatasourceAdded)
+	ctx.Step(`^the host name is shown in the Administration view in the Security App as "([^"]*)"$`, fts.theHostNameIsShownInTheAdminViewInTheSecurityApp)
+	ctx.Step(`^the host name is not shown in the Administration view in the Security App$`, fts.theHostNameIsNotShownInTheAdminViewInTheSecurityApp)
+	ctx.Step(`^an "([^"]*)" is successfully deployed with an Agent using "([^"]*)" installer$`, fts.anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller)
+	ctx.Step(`^the policy response will be shown in the Security App$`, fts.thePolicyResponseWillBeShownInTheSecurityApp)
+	ctx.Step(`^the policy is updated to have "([^"]*)" in "([^"]*)" mode$`, fts.thePolicyIsUpdatedToHaveMode)
+	ctx.Step(`^the policy will reflect the change in the Security App$`, fts.thePolicyWillReflectTheChangeInTheSecurityApp)
+
+	// System Integration steps
+	ctx.Step(`^the policy is updated to have "([^"]*)" set to "([^"]*)"$`, fts.thePolicyIsUpdatedToHaveSystemSet)
+	ctx.Step(`^"([^"]*)" with "([^"]*)" metrics are present in the datastreams$`, fts.theMetricsInTheDataStream)
+
+	// stand-alone only steps
+	ctx.Step(`^a "([^"]*)" stand-alone agent is deployed$`, fts.aStandaloneAgentIsDeployed)
+	ctx.Step(`^a "([^"]*)" stand-alone agent is deployed with fleet server mode$`, fts.bootstrapFleetServerFromAStandaloneAgent)
+	ctx.Step(`^there is new data in the index from agent$`, fts.thereIsNewDataInTheIndexFromAgent)
+	ctx.Step(`^the "([^"]*)" docker container is stopped$`, fts.theDockerContainerIsStopped)
+	ctx.Step(`^there is no new data in the index after agent shuts down$`, fts.thereIsNoNewDataInTheIndexAfterAgentShutsDown)
+	ctx.Step(`^the stand-alone agent is listed in Fleet as "([^"]*)"$`, fts.theStandaloneAgentIsListedInFleetWithStatus)
+
+	// process steps
 	ctx.Step(`^the "([^"]*)" process is in the "([^"]*)" state on the host$`, fts.processStateOnTheHost)
 	ctx.Step(`^there are "([^"]*)" instances of the "([^"]*)" process in the "([^"]*)" state$`, fts.thereAreInstancesOfTheProcessInTheState)
-
-	fts.contributeSteps(ctx)
 }
 
 func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
