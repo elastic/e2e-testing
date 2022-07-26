@@ -302,51 +302,6 @@ func (fts *FleetTestSuite) contributeSteps(s *godog.ScenarioContext) {
 	s.Step(`^the stand-alone agent is listed in Fleet as "([^"]*)"$`, fts.theStandaloneAgentIsListedInFleetWithStatus)
 }
 
-func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredStatus string) error {
-	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
-	exp := utils.GetExponentialBackOff(maxTimeout)
-	retryCount := 0
-
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
-
-	waitForAgents := func() error {
-		retryCount++
-
-		agents, err := fts.kibanaClient.ListAgents(fts.currentContext)
-		if err != nil {
-			return err
-		}
-
-		if len(agents) == 0 {
-			return errors.New("No agents found")
-		}
-
-		for _, agent := range agents {
-			hostname := agent.LocalMetadata.Host.HostName
-
-			if hostname == manifest.Hostname {
-				return theAgentIsListedInFleetWithStatus(fts.currentContext, desiredStatus, hostname)
-			}
-		}
-
-		err = errors.New("Agent not found in Fleet")
-		log.WithFields(log.Fields{
-			"elapsedTime": exp.GetElapsedTime(),
-			"hostname":    manifest.Hostname,
-			"retries":     retryCount,
-		}).Warn(err)
-
-		return err
-	}
-
-	err := backoff.Retry(waitForAgents, exp)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(staleVersion string, installerType string) error {
 	switch staleVersion {
 	case "latest":
