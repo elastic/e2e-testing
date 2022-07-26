@@ -73,19 +73,6 @@ func (fts *FleetTestSuite) getDeployer() deploy.Deployment {
 	return fts.deployer
 }
 
-func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(staleVersion string, installerType string) error {
-	switch staleVersion {
-	case "latest":
-		staleVersion = common.ElasticAgentVersion
-	}
-
-	fts.Version = staleVersion
-
-	log.Tracef("The stale version is %s", fts.Version)
-
-	return fts.anAgentIsDeployedToFleetWithInstaller(installerType)
-}
-
 // this step infers the installer type from the underlying OS image
 // supported images: centos and debian
 func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {

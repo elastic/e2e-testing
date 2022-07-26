@@ -297,7 +297,6 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^an agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
 	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
 	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer and "([^"]*)" flags$`, fts.anAgentIsDeployedToFleetWithInstallerAndTags)
-	ctx.Step(`^a "([^"]*)" stale agent is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
 	ctx.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
 	ctx.Step(`^the default API key has "([^"]*)"$`, fts.verifyDefaultAPIKey)
 	ctx.Step(`^the host is restarted$`, fts.theHostIsRestarted)
@@ -316,6 +315,7 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the agent is enrolled into "([^"]*)" policy$`, fts.agentRunPolicy)
 
 	// upgrade steps
+	ctx.Step(`^a "([^"]*)" stale agent is deployed to Fleet with "([^"]*)" installer$`, fts.anStaleAgentIsDeployedToFleetWithInstaller)
 	ctx.Step(`^certs are installed$`, fts.installCerts)
 	ctx.Step(`^agent is in "([^"]*)" version$`, fts.agentInVersion)
 	ctx.Step(`^agent is upgraded to "([^"]*)" version$`, fts.anAgentIsUpgradedToVersion)

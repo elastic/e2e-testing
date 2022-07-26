@@ -92,6 +92,19 @@ func (fts *FleetTestSuite) anAgentIsUpgradedToVersion(desiredVersion string) err
 	return fts.kibanaClient.UpgradeAgent(fts.currentContext, manifest.Hostname, desiredVersion)
 }
 
+func (fts *FleetTestSuite) anStaleAgentIsDeployedToFleetWithInstaller(staleVersion string, installerType string) error {
+	switch staleVersion {
+	case "latest":
+		staleVersion = common.ElasticAgentVersion
+	}
+
+	fts.Version = staleVersion
+
+	log.Tracef("The stale version is %s", fts.Version)
+
+	return fts.anAgentIsDeployedToFleetWithInstaller(installerType)
+}
+
 func (fts *FleetTestSuite) installCerts() error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
