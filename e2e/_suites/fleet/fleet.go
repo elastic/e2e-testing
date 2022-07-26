@@ -587,64 +587,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	return err
 }
 
-func (fts *FleetTestSuite) processStateChangedOnTheHost(process string, state string) error {
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
-	if state == "started" {
-		err := agentInstaller.Start(fts.currentContext)
-		return err
-	} else if state == "restarted" {
-		err := agentInstaller.Restart(fts.currentContext)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	} else if state == "uninstalled" {
-		err := agentInstaller.Uninstall(fts.currentContext)
-		if err != nil {
-			return err
-		}
-
-		// signal that the elastic-agent was uninstalled
-		if process == common.ElasticAgentProcessName {
-			fts.ElasticAgentStopped = true
-		}
-
-		return nil
-	} else if state != "stopped" {
-		return godog.ErrPending
-	}
-
-	log.WithFields(log.Fields{
-		"service": agentService.Name,
-		"process": process,
-	}).Trace("Stopping process on the service")
-
-	err := agentInstaller.Stop(fts.currentContext)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"action":  state,
-			"error":   err,
-			"service": agentService.Name,
-			"process": process,
-		}).Error("Could not stop process on the host")
-
-		return err
-	}
-
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
-
-	var srv deploy.ServiceRequest
-	if fts.StandAlone {
-		srv = deploy.NewServiceContainerRequest(manifest.Name)
-	} else {
-		srv = deploy.NewServiceRequest(manifest.Name)
-	}
-
-	return CheckProcessState(fts.currentContext, fts.getDeployer(), srv, process, "stopped", 0)
-}
-
 // bootstrapFleet this method creates the runtime dependencies for the Fleet test suite, being of special
 // interest kibana profile passed as part of the environment variables to bootstrap the dependencies.
 func bootstrapFleet(ctx context.Context, env map[string]string) error {
