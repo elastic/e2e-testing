@@ -191,17 +191,6 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 	})
 }
 
-func (fts *FleetTestSuite) setup() error {
-	log.Trace("Creating Fleet setup")
-
-	err := fts.kibanaClient.RecreateFleet(fts.currentContext)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (fts *FleetTestSuite) theHostIsRestarted() error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	err := fts.getDeployer().Stop(fts.currentContext, agentService)

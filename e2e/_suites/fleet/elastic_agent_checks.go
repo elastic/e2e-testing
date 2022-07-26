@@ -239,26 +239,6 @@ func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
 	return fmt.Errorf("the file system directory is not empty")
 }
 
-// theVersionOfThePackageIsInstalled installs a package in a version
-func (fts *FleetTestSuite) theVersionOfThePackageIsInstalled(version string, packageName string) error {
-	log.WithFields(log.Fields{
-		"package": packageName,
-		"version": version,
-	}).Trace("Checking if package version is installed")
-
-	integration, err := fts.kibanaClient.GetIntegrationByPackageName(fts.currentContext, packageName)
-	if err != nil {
-		return err
-	}
-
-	_, err = fts.kibanaClient.InstallIntegrationAssets(fts.currentContext, integration)
-	if err != nil {
-		return err
-	}
-	fts.Integration = integration
-
-	return nil
-}
 func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string, hostname string) error {
 	log.Tracef("Checking if agent is listed in Fleet as %s", desiredStatus)
 
