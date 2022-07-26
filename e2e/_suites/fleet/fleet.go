@@ -643,49 +643,6 @@ func (fts *FleetTestSuite) theEnrollmentTokenIsRevoked() error {
 	return nil
 }
 
-func theIntegrationIsOperatedInThePolicy(ctx context.Context, client *kibana.Client, policy kibana.Policy, packageName string, action string) error {
-	log.WithFields(log.Fields{
-		"action":  action,
-		"policy":  policy,
-		"package": packageName,
-	}).Trace("Doing an operation for a package on a policy")
-
-	integration, err := client.GetIntegrationByPackageName(ctx, packageName)
-	if err != nil {
-		return err
-	}
-
-	if strings.ToLower(action) == actionADDED {
-		packageDataStream := kibana.PackageDataStream{
-			Name:        fmt.Sprintf("%s-%s", integration.Name, uuid.New().String()),
-			Description: integration.Title,
-			Namespace:   "default",
-			PolicyID:    policy.ID,
-			Enabled:     true,
-			Package:     integration,
-			Inputs:      []kibana.Input{},
-		}
-		packageDataStream.Inputs = inputs(integration.Name)
-
-		err = client.AddIntegrationToPolicy(ctx, packageDataStream)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"err":       err,
-				"packageDS": packageDataStream,
-			}).Error("Unable to add integration to policy")
-			return err
-		}
-	} else if strings.ToLower(action) == actionREMOVED {
-		packageDataStream, err := client.GetIntegrationFromAgentPolicy(ctx, integration.Name, policy)
-		if err != nil {
-			return err
-		}
-		return client.DeleteIntegrationFromPolicy(ctx, packageDataStream)
-	}
-
-	return nil
-}
-
 func (fts *FleetTestSuite) anIntegrationIsSuccessfullyDeployedWithAgentAndInstaller(integration string, installerType string) error {
 	err := fts.anAgentIsDeployedToFleetWithInstaller(installerType)
 	if err != nil {
