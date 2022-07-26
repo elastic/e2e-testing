@@ -25,15 +25,10 @@ import (
 	"go.elastic.co/apm"
 )
 
-var imts IngestManagerTestSuite
+var fts *FleetTestSuite
 
 var tx *apm.Transaction
 var stepSpan *apm.Span
-
-// IngestManagerTestSuite represents a test suite, holding references to the pieces needed to run the tests
-type IngestManagerTestSuite struct {
-	Fleet *FleetTestSuite
-}
 
 func setUpSuite() {
 	config.Init()
@@ -46,12 +41,10 @@ func setUpSuite() {
 
 	common.InitVersions()
 
-	imts = IngestManagerTestSuite{
-		Fleet: &FleetTestSuite{
-			kibanaClient:   kibanaClient,
-			deployer:       deploy.New(common.Provider),
-			dockerDeployer: deploy.New("docker"),
-		},
+	fts = &FleetTestSuite{
+		kibanaClient:   kibanaClient,
+		deployer:       deploy.New(common.Provider),
+		dockerDeployer: deploy.New("docker"),
 	}
 }
 
@@ -63,8 +56,8 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 		tx.Context.SetLabel("suite", "fleet")
 
 		// context is initialised at the step hook, we are initialising it here to prevent panics
-		imts.Fleet.currentContext = context.Background()
-		imts.Fleet.beforeScenario()
+		fts.currentContext = context.Background()
+		fts.beforeScenario()
 
 		return ctx, nil
 	})
@@ -85,7 +78,7 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 		}
 		defer f()
 
-		imts.Fleet.afterScenario()
+		fts.afterScenario()
 
 		log.Tracef("After Fleet scenario: %s", sc.Name)
 		return ctx, nil
@@ -94,7 +87,7 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 	ctx.StepContext().Before(func(ctx context.Context, step *godog.Step) (context.Context, error) {
 		log.Tracef("Before step: %s", step.Text)
 		stepSpan = tx.StartSpan(step.Text, "test.scenario.step", nil)
-		imts.Fleet.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
+		fts.currentContext = apm.ContextWithSpan(context.Background(), stepSpan)
 
 		return ctx, nil
 	})
@@ -115,10 +108,10 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 		return ctx, nil
 	})
 
-	ctx.Step(`^the "([^"]*)" process is in the "([^"]*)" state on the host$`, imts.processStateOnTheHost)
-	ctx.Step(`^there are "([^"]*)" instances of the "([^"]*)" process in the "([^"]*)" state$`, imts.thereAreInstancesOfTheProcessInTheState)
+	ctx.Step(`^the "([^"]*)" process is in the "([^"]*)" state on the host$`, fts.processStateOnTheHost)
+	ctx.Step(`^there are "([^"]*)" instances of the "([^"]*)" process in the "([^"]*)" state$`, fts.thereAreInstancesOfTheProcessInTheState)
 
-	imts.Fleet.contributeSteps(ctx)
+	fts.contributeSteps(ctx)
 }
 
 func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
@@ -184,14 +177,14 @@ func InitializeIngestManagerTestSuite(ctx *godog.TestSuiteContext) {
 				log.WithError(err).Fatal("Could not bootstrap Fleet runtime dependencies")
 			}
 		} else {
-			err := imts.Fleet.kibanaClient.WaitForFleet(suiteContext)
+			err := fts.kibanaClient.WaitForFleet(suiteContext)
 			if err != nil {
 				log.WithError(err).Fatal("Could not determine Fleet's readiness.")
 			}
 		}
 
-		imts.Fleet.Version = common.BeatVersionBase
-		imts.Fleet.RuntimeDependenciesStartDate = time.Now().UTC()
+		fts.Version = common.BeatVersionBase
+		fts.RuntimeDependenciesStartDate = time.Now().UTC()
 	})
 
 	ctx.AfterSuite(func() {

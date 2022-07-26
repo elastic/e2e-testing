@@ -73,17 +73,17 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(pr string, state string)
 	return process.CheckState(fts.currentContext, fts.getDeployer(), srv, pr, "stopped", 0)
 }
 
-func (imts *IngestManagerTestSuite) processStateOnTheHost(pr string, state string) error {
+func (fts *FleetTestSuite) processStateOnTheHost(pr string, state string) error {
 	ocurrences := "1"
 	if state == "uninstalled" || state == "stopped" {
 		ocurrences = "0"
 	}
-	return imts.thereAreInstancesOfTheProcessInTheState(ocurrences, pr, state)
+	return fts.thereAreInstancesOfTheProcessInTheState(ocurrences, pr, state)
 }
 
-func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocurrences string, pr string, state string) error {
+func (fts *FleetTestSuite) thereAreInstancesOfTheProcessInTheState(ocurrences string, pr string, state string) error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := imts.Fleet.deployer.Inspect(imts.Fleet.currentContext, agentService)
+	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
 
 	count, err := strconv.Atoi(ocurrences)
 	if err != nil {
@@ -91,11 +91,11 @@ func (imts *IngestManagerTestSuite) thereAreInstancesOfTheProcessInTheState(ocur
 	}
 
 	var srv deploy.ServiceRequest
-	if imts.Fleet.StandAlone {
+	if fts.StandAlone {
 		srv = deploy.NewServiceContainerRequest(manifest.Name)
 	} else {
 		srv = deploy.NewServiceRequest(manifest.Name)
 	}
 
-	return process.CheckState(imts.Fleet.currentContext, imts.Fleet.deployer, srv, pr, state, count)
+	return process.CheckState(fts.currentContext, fts.deployer, srv, pr, state, count)
 }
