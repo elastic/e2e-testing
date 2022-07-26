@@ -38,7 +38,7 @@ var tx *apm.Transaction
 var stepSpan *apm.Span
 
 // afterScenario destroys the state created by a scenario
-func (fts *FleetTestSuite) afterScenario() {
+func afterScenario(fts *FleetTestSuite) {
 	defer func() {
 		fts.DefaultAPIKey = ""
 		// Reset Kibana Profile to default
@@ -117,7 +117,7 @@ func (fts *FleetTestSuite) afterScenario() {
 }
 
 // beforeScenario creates the state needed by a scenario
-func (fts *FleetTestSuite) beforeScenario() {
+func beforeScenario(fts *FleetTestSuite) {
 	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 	exp := utils.GetExponentialBackOff(maxTimeout)
 
@@ -242,7 +242,7 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 
 		// context is initialised at the step hook, we are initialising it here to prevent panics
 		fts.currentContext = context.Background()
-		fts.beforeScenario()
+		beforeScenario(fts)
 
 		return ctx, nil
 	})
@@ -263,7 +263,7 @@ func InitializeIngestManagerTestScenario(ctx *godog.ScenarioContext) {
 		}
 		defer f()
 
-		fts.afterScenario()
+		afterScenario(fts)
 
 		log.Tracef("After Fleet scenario: %s", sc.Name)
 		return ctx, nil
