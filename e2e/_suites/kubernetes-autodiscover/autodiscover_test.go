@@ -148,7 +148,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		ciSnapshotsFn = func() bool { return false }
 	}
 
-	if ciSnapshotsFn() || downloads.BeatsLocalPath != "" {
+	if ciSnapshotsFn() {
 		log.Debugf("Configuring Docker image for %s", podName)
 
 		_, imagePath, err := downloads.FetchElasticArtifact(m.ctx, podName, v, "linux", "amd64", "tar.gz", true, true)
