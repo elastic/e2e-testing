@@ -60,19 +60,6 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(installerType s
 	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType)
 }
 
-// supported installers: tar, rpm, deb
-func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndTags(installerType string, flags string) error {
-	fts.BeatsProcess = ""
-
-	// FIXME: We need to cleanup the steps to support different operating systems
-	// for now we will force the zip installer type when the agent is running on windows
-	if runtime.GOOS == "windows" && common.Provider == "remote" {
-		installerType = "zip"
-	}
-	fts.ElasticAgentFlags = flags
-	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType)
-}
-
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType string) error {
 	log.WithFields(log.Fields{
 		"installer": installerType,
@@ -100,14 +87,14 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(i
 	}
 
 	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, installerType)
-	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken, fts.ElasticAgentFlags)
+	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken)
 	if err != nil {
 		return err
 	}
 	return err
 }
 
-func deployAgentToFleet(ctx context.Context, agentInstaller deploy.ServiceOperator, token string, flags string) error {
+func deployAgentToFleet(ctx context.Context, agentInstaller deploy.ServiceOperator, token string) error {
 	err := agentInstaller.Preinstall(ctx)
 	if err != nil {
 		return err
@@ -118,7 +105,7 @@ func deployAgentToFleet(ctx context.Context, agentInstaller deploy.ServiceOperat
 		return err
 	}
 
-	err = agentInstaller.Enroll(ctx, token, flags)
+	err = agentInstaller.Enroll(ctx, token)
 	if err != nil {
 		return err
 	}

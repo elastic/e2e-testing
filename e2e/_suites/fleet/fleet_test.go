@@ -117,7 +117,6 @@ func afterScenario(fts *FleetTestSuite) {
 	fts.Image = ""
 	fts.StandAlone = false
 	fts.BeatsProcess = ""
-	fts.ElasticAgentFlags = ""
 }
 
 // beforeScenario creates the state needed by a scenario
@@ -423,7 +422,6 @@ func InitializeFleetTestScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	ctx.Step(`^an agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
 	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
-	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer and "([^"]*)" flags$`, fts.anAgentIsDeployedToFleetWithInstallerAndTags)
 	ctx.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
 	ctx.Step(`^the default API key has "([^"]*)"$`, fts.verifyDefaultAPIKey)
 	ctx.Step(`^the host is restarted$`, fts.theHostIsRestarted)
@@ -446,9 +444,6 @@ func InitializeFleetTestScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^certs are installed$`, fts.installCerts)
 	ctx.Step(`^agent is in "([^"]*)" version$`, fts.agentInVersion)
 	ctx.Step(`^agent is upgraded to "([^"]*)" version$`, fts.anAgentIsUpgradedToVersion)
-
-	//flags steps
-	ctx.Step(`^the elastic agent index contains the tags$`, fts.tagsAreInTheElasticAgentIndex)
 
 	// integrations steps
 	ctx.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)

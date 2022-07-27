@@ -17,7 +17,6 @@ import (
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -153,47 +152,6 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	}
 
 	return nil
-}
-
-func (fts *FleetTestSuite) tagsAreInTheElasticAgentIndex() error {
-	var tagsArray []string
-	//ex of flags  "--tag production,linux" or "--tag=production,linux"
-	if fts.ElasticAgentFlags != "" {
-		tags := strings.TrimPrefix(fts.ElasticAgentFlags, "--tag")
-		tags = strings.TrimPrefix(tags, "=")
-		tags = strings.ReplaceAll(tags, " ", "")
-		tagsArray = strings.Split(tags, ",")
-	}
-	if len(tagsArray) == 0 {
-		return errors.Errorf("no tags were found, ElasticAgentFlags value %s", fts.ElasticAgentFlags)
-	}
-
-	var tagTerms []map[string]interface{}
-	for _, tag := range tagsArray {
-		tagTerms = append(tagTerms, map[string]interface{}{
-			"term": map[string]interface{}{
-				"tags": tag,
-			},
-		})
-	}
-
-	query := map[string]interface{}{
-		"query": map[string]interface{}{
-			"bool": map[string]interface{}{
-				"must": tagTerms,
-			},
-		},
-	}
-
-	indexName := ".fleet-agents"
-
-	_, err := elasticsearch.WaitForNumberOfHits(context.Background(), indexName, query, 1, 3*time.Minute)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Warn(elasticsearch.WaitForIndices())
-	}
-	return err
 }
 
 func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {

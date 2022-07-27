@@ -34,7 +34,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	}
 
 	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
-	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken, fts.ElasticAgentFlags)
+	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken)
 
 	if err == nil {
 		err = fmt.Errorf("the agent was enrolled although the token was previously revoked")
@@ -69,7 +69,7 @@ func (fts *FleetTestSuite) theAgentIsReenrolledOnTheHost() error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
 
-	err := agentInstaller.Enroll(fts.currentContext, fts.CurrentToken, fts.ElasticAgentFlags)
+	err := agentInstaller.Enroll(fts.currentContext, fts.CurrentToken)
 	if err != nil {
 		return err
 	}
