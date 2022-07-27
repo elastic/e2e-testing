@@ -43,7 +43,7 @@ func TestMain(m *testing.M) {
 	opts.Paths = pflag.Args()
 
 	status := godog.TestSuite{
-		Name:                 "godogs",
+		Name:                 "${LOWER_SUITE}",
 		TestSuiteInitializer: Initialize${CAPITAL_SUITE}TestSuite,
 		ScenarioInitializer:  Initialize${CAPITAL_SUITE}Scenarios,
 		Options:              &opts,
