@@ -1,0 +1,21 @@
+---
+name: OpenTelemetry Export Trace
+
+on:
+  workflow_run:
+    workflows: [pre-commit]
+    types: [completed]
+
+jobs:
+  otel-export-trace:
+    name: OpenTelemetry Export Trace
+    runs-on: ubuntu-latest
+    steps:
+      - name: Export Workflow Trace
+        uses: v1v/otel-export-trace-action@v2
+        with:
+          otlpEndpoint: "${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}"
+          otlpHeaders: "${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}"
+          otelServiceName: ${{ github.repository }}
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          runId: ${{ github.event.workflow_run.id }}
