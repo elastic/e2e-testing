@@ -3,7 +3,7 @@
 @Library('apm@current') _
 
 pipeline {
-  agent { label 'ubuntu-20.04 && immutable && docker' }
+  agent { label 'k8s' }
   environment {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
@@ -546,7 +546,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def runId = UUID.randomUUID().toString().split('-')[0]
 
   return {
-    withNode(labels: 'ubuntu-20.04 && gobld/machineType:e2-small', forceWorkspace: true, forceWorker: true){
+    withNode(labels: 'k8s', forceWorkspace: true, forceWorker: true){
       try {
         deleteDir()
         unstash 'sourceEnvModified'
