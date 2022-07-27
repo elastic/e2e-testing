@@ -9,7 +9,7 @@ repos:
     -   id: check-merge-conflict
     -   id: check-yaml
         exclude: >
-          (?x)^(cli/config/kubernetes.*)$
+          (?x)^(internal/config/kubernetes.*)$
     -   id: check-xml
     -   id: end-of-file-fixer
         exclude: >
