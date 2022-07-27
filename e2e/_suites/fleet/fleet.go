@@ -6,39 +6,15 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
 	"time"
 
-	"github.com/Jeffail/gabs/v2"
-	"github.com/docker/go-connections/nat"
-	"github.com/google/uuid"
-	"go.elastic.co/apm"
-
-	"github.com/cenkalti/backoff/v4"
-	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
-	"github.com/elastic/e2e-testing/internal/elasticsearch"
-	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
-	"github.com/elastic/e2e-testing/pkg/downloads"
 
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
-
-const actionADDED = "added"
-const actionREMOVED = "removed"
-const testResourcesDir = "./testresources"
-
-var deployedAgentsCount = 0
 
 // FleetTestSuite represents the scenarios for Fleet-mode
 type FleetTestSuite struct {
@@ -73,6 +49,7 @@ func (fts *FleetTestSuite) getDeployer() deploy.Deployment {
 	return fts.deployer
 }
 
+<<<<<<< HEAD
 // afterScenario destroys the state created by a scenario
 func (fts *FleetTestSuite) afterScenario() {
 	defer func() {
@@ -764,8 +741,9 @@ func (fts *FleetTestSuite) kibanaUsesProfile(profile string) error {
 	return bootstrapFleet(context.Background(), env)
 }
 
+=======
+>>>>>>> fb0e134b (chore: decouple responsibilities for fleet test suite code (#2850))
 func (fts *FleetTestSuite) getProfileEnv() map[string]string {
-
 	env := map[string]string{}
 
 	for k, v := range common.ProfileEnv {
@@ -777,203 +755,6 @@ func (fts *FleetTestSuite) getProfileEnv() map[string]string {
 	}
 
 	return env
-}
-
-func (fts *FleetTestSuite) agentUsesPolicy(policyName string) error {
-	agentUsesPolicyFn := func() error {
-		policies, err := fts.kibanaClient.ListPolicies(fts.currentContext)
-		if err != nil {
-			return err
-		}
-
-		for _, p := range policies {
-			if policyName == p.Name {
-
-				fts.Policy = p
-				break
-			}
-		}
-
-		if fts.Policy.Name != policyName {
-			return fmt.Errorf("Policy not found '%s'", policyName)
-		}
-
-		return nil
-	}
-	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
-	exp := utils.GetExponentialBackOff(maxTimeout)
-
-	return backoff.Retry(agentUsesPolicyFn, exp)
-}
-
-func (fts *FleetTestSuite) setup() error {
-	log.Trace("Creating Fleet setup")
-
-	err := fts.kibanaClient.RecreateFleet(fts.currentContext)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
-	err := theAgentIsListedInFleetWithStatus(fts.currentContext, desiredStatus, manifest.Hostname)
-	if err != nil {
-		return err
-	}
-	if desiredStatus == "online" {
-		//get Agent Default Key
-		err := fts.theAgentGetDefaultAPIKey()
-		if err != nil {
-			return err
-		}
-	}
-	return err
-}
-
-func (fts *FleetTestSuite) theAgentGetDefaultAPIKey() error {
-	defaultAPIKey, _ := fts.getAgentDefaultAPIKey()
-	log.WithFields(log.Fields{
-		"default_api_key": defaultAPIKey,
-	}).Info("The Agent is installed with Default Api Key")
-	fts.DefaultAPIKey = defaultAPIKey
-	return nil
-}
-
-func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
-	newDefaultAPIKey, _ := fts.getAgentDefaultAPIKey()
-
-	logFields := log.Fields{
-		"new_default_api_key": newDefaultAPIKey,
-		"old_default_api_key": fts.DefaultAPIKey,
-	}
-
-	defaultAPIKeyHasChanged := (newDefaultAPIKey != fts.DefaultAPIKey)
-
-	if status == "changed" {
-		if !defaultAPIKeyHasChanged {
-			log.WithFields(logFields).Error("Integration added and Default API Key do not change")
-			return errors.New("Integration added and Default API Key do not change")
-		}
-
-		log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been added", status)
-		return nil
-	}
-
-	if status == "not changed" {
-		if defaultAPIKeyHasChanged {
-			log.WithFields(logFields).Error("Integration updated and Default API Key is changed")
-			return errors.New("Integration updated and Default API Key is changed")
-		}
-
-		log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been updated", status)
-		return nil
-	}
-
-	log.Warnf("Status %s is not supported yet", status)
-	return godog.ErrPending
-}
-
-func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string, hostname string) error {
-	log.Tracef("Checking if agent is listed in Fleet as %s", desiredStatus)
-
-	kibanaClient, err := kibana.NewClient()
-	if err != nil {
-		return err
-	}
-	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
-	retryCount := 1
-
-	exp := utils.GetExponentialBackOff(maxTimeout)
-
-	agentOnlineFn := func() error {
-		agentID, err := kibanaClient.GetAgentIDByHostname(ctx, hostname)
-		if err != nil {
-			retryCount++
-			return err
-		}
-
-		if agentID == "" {
-			// the agent is not listed in Fleet
-			if desiredStatus == "offline" || desiredStatus == "inactive" {
-				log.WithFields(log.Fields{
-					"elapsedTime": exp.GetElapsedTime(),
-					"hostname":    hostname,
-					"retries":     retryCount,
-					"status":      desiredStatus,
-				}).Info("The Agent is not present in Fleet, as expected")
-				return nil
-			}
-
-			retryCount++
-			return fmt.Errorf("the agent is not present in Fleet in the '%s' status, but it should", desiredStatus)
-		}
-
-		agentStatus, err := kibanaClient.GetAgentStatusByHostname(ctx, hostname)
-		isAgentInStatus := strings.EqualFold(agentStatus, desiredStatus)
-		if err != nil || !isAgentInStatus {
-			if err == nil {
-				err = fmt.Errorf("the Agent is not in the %s status yet", desiredStatus)
-			}
-
-			log.WithFields(log.Fields{
-				"agentID":         agentID,
-				"isAgentInStatus": isAgentInStatus,
-				"elapsedTime":     exp.GetElapsedTime(),
-				"hostname":        hostname,
-				"retry":           retryCount,
-				"status":          desiredStatus,
-			}).Warn(err.Error())
-
-			retryCount++
-
-			return err
-		}
-		log.WithFields(log.Fields{
-			"isAgentInStatus": isAgentInStatus,
-			"elapsedTime":     exp.GetElapsedTime(),
-			"hostname":        hostname,
-			"retries":         retryCount,
-			"status":          desiredStatus,
-		}).Info("The Agent is in the desired status")
-		return nil
-	}
-
-	err = backoff.Retry(agentOnlineFn, exp)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (fts *FleetTestSuite) theFileSystemAgentFolderIsEmpty() error {
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
-
-	pkgManifest, _ := agentInstaller.Inspect()
-	cmd := []string{
-		"ls", "-l", pkgManifest.WorkDir,
-	}
-
-	content, err := agentInstaller.Exec(fts.currentContext, cmd)
-	if err != nil {
-		if content == "" || strings.Contains(content, "No such file or directory") {
-			return nil
-		}
-		return err
-	}
-
-	log.WithFields(log.Fields{
-		"installer":  agentInstaller,
-		"workingDir": pkgManifest.WorkDir,
-		"content":    content,
-	}).Debug("Agent working dir content")
-
-	return fmt.Errorf("the file system directory is not empty")
 }
 
 func (fts *FleetTestSuite) theHostIsRestarted() error {
@@ -993,6 +774,7 @@ func (fts *FleetTestSuite) theHostIsRestarted() error {
 	log.Debug("The elastic-agent service has been restarted")
 	return nil
 }
+<<<<<<< HEAD
 
 func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 	log.Trace("Checking system Package dashboards in Fleet")
@@ -1840,3 +1622,5 @@ func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) er
 
 	return nil
 }
+=======
+>>>>>>> fb0e134b (chore: decouple responsibilities for fleet test suite code (#2850))
