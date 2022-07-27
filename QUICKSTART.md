@@ -1,12 +1,24 @@
 # Quickstart
 
-Let's walk through two quick examples to see how to start working with the e2e-testing framework. We have two similar use cases:
+First, we need to understand how the tests work, and what dependencies we need to run them.
 
-- adding a new test suite
-- working on an existing test suite
+## Dependencies
+
+- Go: Install Go, using the language version defined in the `.go-version` file at the root directory. We recommend using [GVM](https://github.com/andrewkroh/gvm), same as done in the CI, which will allow you to install multiple versions of Go, setting the Go environment in consequence: i.e. `eval "$(gvm 1.17)"`.
+- Docker: Docker is needed to run certain build commands that wrap certain build tools. To install and configure it, please read [this guide](https://docs.docker.com/engine/install/).
+
+## How do the tests work?
+
+At the topmost level, the test framework uses a BDD framework written in Go, where we set the expected behavior of use cases in a feature file using Gherkin, and implementing the steps in Go code. The provisining of the services forming the stack is accomplished using Docker Compose and the [testcontainers-go](https://github.com/testcontainers/testcontainers-go) library.
+
+The tests will follow this general high-level approach:
+
+1. Install the runtime dependencies as Docker containers via Docker Compose (the Elastic Stack), happening before the test suite runs. These runtime dependencies are defined in a specific `profile` for Fleet, in the form of a `docker-compose.yml` file. You can find the Fleet profile and its configuration files [here](../cli/config/compose/profiles/fleet).
+1. Execute BDD steps representing each scenario. Each step will return an Error if the behavior is not satisfied, marking the step and the scenario as failed, or will return `nil`.
 
 ## Adding a new test suite
 
+Let's walk through a quick example to see how to start working with the e2e-testing framework, adding a new test suite:
 ### Step 1 - Install test depedencies
 
 Godog and other test-related binaries will be installed in their supported versions when the project is first built, thanks to Go modules and Go build system.
@@ -183,11 +195,13 @@ All the Gherkin (Cucumber) specifications are written in `.feature` files. The a
     - **But** (Optional): Used within any of the above clauses, it must tell an ocational reader a secondary preparation (Given), trigger (When), or output (Then) that must not be present.
 - **Examples:** (Mandatory with Scenario Outline): this `markdown table` will represent the elements to interpolate in the existing dynamic variables in the use case, being each column header the name of the different variables in the table. Besides that, each row will result in a test execution.
 
-A good example could be [this one](./_suites/fleet/features/integrations.feature).
+A good example could be [this one](./_suites/fleet/features/manage_integrations.feature).
 
 ## Working on existing test suite
 
 We hope you enjoyed the `Test specification with Gherkin` introduction. If you find any gap, please no doubt in contributing it or opening an issue. Let's continue with our example, but this time let's work on an existing test suite.
+
+Let's walk through a quick example to see how to start working with the e2e-testing framework, working on an existing test suite:
 
 ### Step 1 - Get familiar with the struct representing the test suite
 

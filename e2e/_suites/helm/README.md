@@ -58,7 +58,7 @@ This is an example of the optional configuration:
    Optionally, you can run only one of the feature files
    ```shell
    cd e2e/_suites/helm
-   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@apm-server'
+   OP_LOG_LEVEL=DEBUG go test -timeout 90m -v --godog.tags='@apm-server'
    ```
 
 ## Diagnosing test failures

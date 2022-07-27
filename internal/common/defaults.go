@@ -36,7 +36,7 @@ const FleetProfileName = "fleet"
 const FleetServerAgentServiceName = "fleet-server"
 
 // BeatVersionBase is the base version of the Beat to use
-var BeatVersionBase = "8.4.0-42ce0eef-SNAPSHOT"
+var BeatVersionBase = "8.4.0-d058e92f-SNAPSHOT"
 
 // BeatVersion is the version of the Beat to use
 // It can be overriden by BEAT_VERSION env var
@@ -192,10 +192,15 @@ func InitVersions() {
 		}
 	}
 
+	downloads.GithubCommitSha1 = shell.GetEnv("GITHUB_CHECK_SHA1", "")
+	downloads.GithubRepository = shell.GetEnv("GITHUB_CHECK_REPO", "elastic-agent")
+
 	log.WithFields(log.Fields{
 		"BeatVersionBase":     BeatVersionBase,
 		"BeatVersion":         BeatVersion,
 		"ElasticAgentVersion": ElasticAgentVersion,
+		"GithubCommitSha":     downloads.GithubCommitSha1,
+		"GithubRepository":    downloads.GithubRepository,
 		"StackVersion":        StackVersion,
 		"KibanaVersion":       KibanaVersion,
 	}).Info("Initial artifact versions defined")

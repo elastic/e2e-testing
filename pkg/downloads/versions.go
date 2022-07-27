@@ -6,6 +6,7 @@ package downloads
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -26,6 +27,7 @@ import (
 
 // BeatsLocalPath is the path to a local copy of the Beats git repository
 // It can be overriden by BEATS_LOCAL_PATH env var. Using the empty string as a default.
+// Deprecated. This variable will be removed in following releases, so it's not used anywhere else
 var BeatsLocalPath = ""
 
 // to avoid downloading the same artifacts, we are adding this map to cache the URL of the downloaded binaries, using as key
@@ -43,19 +45,16 @@ var GithubCommitSha1 string
 
 // GithubRepository represents the value of the "GITHUB_CHECK_REPO" environment variable
 // Default is "elastic-agent"
-var GithubRepository string
+var GithubRepository string = "elastic-agent"
 
 // The compiled version of the regex created at init() is cached here so it
 // only needs to be created once.
 var versionAliasRegex *regexp.Regexp
 
 func init() {
-	GithubCommitSha1 = shell.GetEnv("GITHUB_CHECK_SHA1", "")
-	GithubRepository = shell.GetEnv("GITHUB_CHECK_REPO", "elastic-agent")
-
 	BeatsLocalPath = shell.GetEnv("BEATS_LOCAL_PATH", BeatsLocalPath)
 	if BeatsLocalPath != "" {
-		log.Infof(`Beats local path will be used for artifacts. Please make sure all binaries are properly built in their "build/distributions" folder: %s`, BeatsLocalPath)
+		log.Warn(`⚠️ Beats local path usage is deprecated and not used to fetch the local binaries anymore. Please use the packaging job to generate the artifacts to be consumed by these tests.`)
 	}
 
 	versionAliasRegex = regexp.MustCompile(`^([0-9]+)(\.[0-9]+)(-SNAPSHOT)?$`)
@@ -147,7 +146,9 @@ func GetCommitVersion(version string) string {
 // i.e. GetElasticArtifactURL("elastic-agent-$VERSION-linux-$ARCH.tar.gz", "elastic-agent","$VERSION")
 func GetElasticArtifactURL(artifactName string, artifact string, version string) (string, string, error) {
 	resolver := NewArtifactURLResolver(artifactName, artifact, version)
-
+	if resolver == nil {
+		return "", "", errors.New("nil resolver returned")
+	}
 	return resolver.Resolve()
 }
 
@@ -288,6 +289,12 @@ func UseElasticAgentCISnapshots() bool {
 // useCISnapshots check if CI snapshots should be used, passing a function that evaluates the repository in which
 // the given Sha commit has context. I.e. a commit in the elastic-agent repository should pass a function that
 func useCISnapshots(repository string) bool {
+	log.WithFields(log.Fields{
+		"repository": repository,
+		"gitRepo":    GithubRepository,
+		"gitSha1":    GithubCommitSha1,
+	}).Trace("Use CI Snapshot")
+
 	if GithubCommitSha1 != "" && strings.EqualFold(GithubRepository, repository) {
 		return true
 	}
@@ -313,11 +320,6 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 		}
 	}
 
-	if BeatsLocalPath != "" && isDocker {
-		dockerString = ".docker"
-		return fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, artifactVersion, OS, arch, dockerString, lowerCaseExtension)
-	}
-
 	if !useCISnapshots && isDocker {
 		return fmt.Sprintf("%s-%s%s-%s-%s.%s", artifact, artifactVersion, dockerString, OS, arch, lowerCaseExtension)
 	}
@@ -327,7 +329,6 @@ func buildArtifactName(artifact string, artifactVersion string, OS string, arch 
 	}
 
 	return fmt.Sprintf("%s-%s-%s-%s%s.%s", artifact, artifactVersion, OS, arch, dockerString, lowerCaseExtension)
-
 }
 
 // FetchBeatsBinary it downloads the binary and returns the location of the downloaded file
@@ -351,32 +352,12 @@ func FetchProjectBinary(ctx context.Context, project string, artifactName string
 }
 
 // FetchProjectBinaryForSnapshots it downloads the binary and returns the location of the downloaded file
-// If the environment variable BEATS_LOCAL_PATH is set, then the artifact
-// to be used will be defined by the local snapshot produced by the local build.
+// If the deprecated environment variable BEATS_LOCAL_PATH is set, then an error will be returned.
 // Else, if the useCISnapshots argument is set to true, then the artifact
 // to be downloaded will be defined by the snapshot produced by the Beats CI or Fleet CI for that commit.
 func FetchProjectBinaryForSnapshots(ctx context.Context, useCISnapshots bool, project string, artifactName string, artifact string, version string, timeoutFactor int, xpack bool, downloadPath string, downloadSHAFile bool) (string, error) {
-	if BeatsLocalPath != "" && project == "beats" {
-		span, _ := apm.StartSpanOptions(ctx, "Fetching Project binary", "project.local.fetch-binary", apm.SpanOptions{
-			Parent: apm.SpanFromContext(ctx).TraceContext(),
-		})
-		span.Context.SetLabel("project", project)
-		defer span.End()
-
-		distributions := path.Join(BeatsLocalPath, artifact, "build", "distributions")
-		if xpack {
-			distributions = path.Join(BeatsLocalPath, "x-pack", artifact, "build", "distributions")
-		}
-
-		log.Debugf("Using local snapshots for the %s: %s", artifact, distributions)
-
-		fileNamePath, _ := filepath.Abs(path.Join(distributions, artifactName))
-		_, err := os.Stat(fileNamePath)
-		if err != nil || os.IsNotExist(err) {
-			return fileNamePath, err
-		}
-
-		return fileNamePath, err
+	if BeatsLocalPath != "" {
+		return "", fmt.Errorf("⚠️ Beats local path usage is deprecated and not used to fetch the binaries. Please use the packaging job to generate the artifacts to be consumed by these tests")
 	}
 
 	handleDownload := func(URL string) (string, error) {

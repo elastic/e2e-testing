@@ -1,0 +1,64 @@
+---
+- name: Start Stack
+  hosts: all
+  connection: ssh
+  gather_facts: True
+  vars_files:
+    - vars/main.yml
+  tags:
+    - elastic-stack
+  pre_tasks:
+    - name: Load a variable file based on the OS type
+      include_vars: "{{ lookup('first_found', params) }}"
+      vars:
+        params:
+          files:
+            - '{{ ansible_distribution }}.yml'
+            - '{{ ansible_os_family }}.yml'
+            - '{{ ansible_system }}.yml'
+          paths:
+            - 'group_vars'
+  vars:
+    ansible_python_interpreter: "auto"
+    ansible_shell_type: "{{ nodeShellType | default('sh') }}"
+    ansible_user: "{{ nodeUser }}"
+    pip_package: "python3-pip"
+  tasks:
+
+  - name: Setup source code
+    include_tasks: tasks/copy_test_files.yml
+
+  - name: Create home dir
+    ansible.builtin.file:
+      path: "{{ e2e_home_dir }}"
+      state: directory
+      mode: '0755'
+      owner: "{{ ansible_user }}"
+    when: ansible_os_family not in ["Windows"]
+
+  - name: Configure test script
+    include_tasks: tasks/setup_test_script.yml
+
+  - name: Configure stack files
+    ansible.builtin.replace:
+      path: '{{ item.path }}'
+      regexp: '{{ item.old }}'
+      replace: '{{ item.new }}'
+    loop:
+      - { old: 'http://elasticsearch', new: 'http://{{ inventory_hostname }}', path: "{{ e2e_base_dir }}cli/config/compose/profiles/fleet/default/kibana.config.yml" }
+      - { old: 'http://fleet-server', new: 'http://{{ inventory_hostname }}', path: "{{ e2e_base_dir }}cli/config/compose/profiles/fleet/default/kibana.config.yml" }
+      - { old: 'http://kibana', new: 'http://{{ inventory_hostname }}', path: "{{ e2e_base_dir }}cli/config/compose/services/elastic-agent/fleet-server/docker-compose.yml" }
+      - { old: 'http://package-registry:8080', new: 'https://epr-staging.elastic.co', path: "{{ e2e_base_dir }}cli/config/compose/profiles/fleet/default/kibana.config.yml" }
+
+  - name: Start stack without any tag to spin up the stack using Fleet's bootstrapping code
+    become: True
+    ansible.builtin.shell:
+    args:
+      cmd: "TAGS='non-existing-tag' {{ e2e_base_dir }}.ci/scripts/functional-test.sh"
+
+  - name: Wait for the stack to come up
+    wait_for: host={{ inventory_hostname }} port={{ item.port }} delay=10 timeout=60
+    loop:
+      - { service: 'elasticsearch', port: "9200" }
+      - { service: 'kibana', port: "5601" }
+      - { service: 'fleet-server', port: "8220" }

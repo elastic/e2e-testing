@@ -100,6 +100,9 @@ feature files.
 
 2. Configure the version of the tools you want to test (Optional).
 
+- `KIND_VERSION`. Set this environment variable to the proper version of Kind (Kubernetes in Docker) to be used in the current execution.
+- `KUBERNETES_VERSION`. Set this environment variable to the proper version of Kubernetes to be used in the current execution.
+
 This is an example of the optional configuration:
 
    ```shell
@@ -107,6 +110,7 @@ This is an example of the optional configuration:
    export BEAT_VERSION=7.12.0 # version of beats to use
    export ELASTIC_AGENT_VERSION=7.12.0 # version of Elastic Agent to use
    export GITHUB_CHECK_SHA1=0123456789 # to select snapshots built by beats-ci
+   export KIND_VERSION="0.14.0" # version of kind
    export KUBERNETES_VERSION="1.24.0" # version of the cluster to be passed to kind
    ```
 
@@ -120,7 +124,7 @@ This is an example of the optional configuration:
 4. Run the tests.
    ```shell
    cd e2e/_suites/kubernetes-autodiscover
-   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v
+   OP_LOG_LEVEL=DEBUG go test -timeout 90m -v
    ```
 
    Optionally, you can run the scenarios for a pull request on a given commit:
@@ -128,20 +132,20 @@ This is an example of the optional configuration:
    export GITHUB_CHECK_SHA1=0123456789 # to select snapshots built by beats-ci
    export GITHUB_CHECK_REPO=beats # or elastic-agent, depending on what you need: a beat or the elastic-agent
    cd e2e/_suites/kubernetes-autodiscover
-   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v
+   OP_LOG_LEVEL=DEBUG go test -timeout 90m -v
    ```
 
    Optionally, you can run only one of the feature files using tags
    ```shell
    cd e2e/_suites/kubernetes-autodiscover
-   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@filebeat'
+   OP_LOG_LEVEL=DEBUG go test -timeout 90m -v --godog.tags='@filebeat'
    ```
 
    Furthermore, similarly to how we used the `@filebeat` tag in filebeat.feature file to run all scenarios in a feature, you can decide to run a single scenario by tagging only that scenario
 
    ```shell
    cd e2e/_suites/kubernetes-autodiscover
-   OP_LOG_LEVEL=DEBUG go test -timeout 60m -v --godog.tags='@autodiscover-redis'
+   OP_LOG_LEVEL=DEBUG go test -timeout 90m -v --godog.tags='@autodiscover-redis'
    ```
 
    The tests will take a few minutes to run, spinning up the Kubernetes cluster

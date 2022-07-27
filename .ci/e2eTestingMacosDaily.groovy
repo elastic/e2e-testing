@@ -3,7 +3,7 @@
 @Library('apm@current') _
 
 pipeline {
-  agent { label 'darwin && orka && x86_64' }
+  agent { label 'macos12 && x86_64' }
   environment {
     REPO = 'e2e-testing'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
@@ -16,9 +16,12 @@ pipeline {
     BEAT_VERSION = "${params.BEAT_VERSION.trim()}"
     ELASTIC_AGENT_VERSION = "${params.ELASTIC_AGENT_VERSION.trim()}"
     ELASTIC_STACK_VERSION = "${params.ELASTIC_STACK_VERSION.trim()}"
+    GITHUB_CHECK_REPO = "${params.GITHUB_CHECK_REPO.trim()}"
+    GITHUB_CHECK_SHA1 = "${params.GITHUB_CHECK_SHA1.trim()}"
     CLUSTER_NAME = "e2e-testing-${BUILD_ID}-${BRANCH_NAME}-${ELASTIC_STACK_VERSION.replaceAll('\\.', '-')}"
     LOG_LEVEL = "${params.LOG_LEVEL}"
     GO111MODULE = 'on'
+    TAGS = "fleet_mode && install"
   }
   options {
     timeout(time: 120, unit: 'MINUTES')
@@ -31,9 +34,11 @@ pipeline {
     quietPeriod(10)
   }
   parameters {
-    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.2.4-SNAPSHOT', description: 'SemVer version of the Elastic Agent to be used for the tests. You can use here the tag of your PR to test your changes')
-    string(name: 'ELASTIC_STACK_VERSION', defaultValue: '8.2.4-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
-    string(name: 'BEAT_VERSION', defaultValue: '8.2.4-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
+    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.4.0-SNAPSHOT', description: 'SemVer version of the Elastic Agent to be used for the tests. You can use here the tag of your PR to test your changes')
+    string(name: 'ELASTIC_STACK_VERSION', defaultValue: '8.4.0-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
+    string(name: 'BEAT_VERSION', defaultValue: '8.4.0-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
+    string(name: 'GITHUB_CHECK_REPO', defaultValue: '', description: 'Name of the GitHub repo to be updated. Only modified if this build is triggered from another parent stream (i.e. Beats).')
+    string(name: 'GITHUB_CHECK_SHA1', defaultValue: '', description: 'Git SHA for the Beats upstream project (branch or PR)')
     choice(name: 'LOG_LEVEL', choices: ['TRACE', 'DEBUG', 'INFO'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
   }
@@ -58,7 +63,6 @@ pipeline {
       options { skipDefaultCheckout() }
       environment {
         E2E_SUITES = "e2e/_suites"
-        TAGS = "fleet_mode && install"
         FORMAT = "pretty,cucumber:fleet_mode.json,junit:fleet_mode.xml"
         STACK_VERSION = "${env.ELASTIC_STACK_VERSION}"
       }
@@ -74,6 +78,12 @@ pipeline {
         }
       }
       post {
+        failure {
+          // Notify test failures if the Functional Test stage failed only
+          // therefore any other failures with the cluster creation/destroy
+          // won't report any slack message.
+          setEnvVar('SLACK_NOTIFY', true)
+        }
         always {
           junit(allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/${E2E_SUITES}/**/*.xml")
           archiveArtifacts(allowEmptyArchive: true, artifacts: "${BASE_DIR}/${E2E_SUITES}/**/*.xml")
@@ -86,9 +96,20 @@ pipeline {
       destroyCluster()
     }
     cleanup {
-      notifyBuildResult()
+      notifyBuildResult(prComment: true,
+                        slackHeader: "*Test Suite (MacOS)*: ${env.TAGS}",
+                        slackChannel: "elastic-agent",
+                        slackComment: true,
+                        slackNotify: doSlackNotify())
     }
   }
+}
+
+def doSlackNotify() {
+  if (env.SLACK_NOTIFY?.equals('true')) {
+    return true
+  }
+  return false
 }
 
 def createCluster() {

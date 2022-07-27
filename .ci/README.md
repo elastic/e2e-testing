@@ -84,6 +84,18 @@ This specialised VM starts Elasticsearch, Kibana and Fleet Server using Docker C
 
 The VM is a Debian AMD64 machine, as described [here](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/.ci/.e2e-platforms.yaml#L3-L7).
 
+The creation of the stack VM is compounded by two stages: `provision` and `setup`. We separate both stages to be able to provision once, and retry the setup if needed.
+
+To provision and setup the stack node:
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" # optional, defaults to $(HOME)/.ssh/id_rsa
+make -C .ci provision-stack
+make -C .ci setup-stack
+```
+
+We have created a convenient alias for doing both steps in one command: `create-stack`, which sequentially invokes both of the above commands.
+
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" # optional, defaults to $(HOME)/.ssh/id_rsa
 make -C .ci create-stack
@@ -104,6 +116,8 @@ In these VMs, the test framework will download a binary to install the Elastic A
 
 In order to list all the supported platforms, please run this command:
 
+> Docker is needed to run the command, as it internally uses `yq` in the form of a Docker container to read the YML file for the available platforms. To install Docker, please read [this guide](https://docs.docker.com/engine/install/).
+
 ```shell
 make -C .ci list-platforms 
 - stack
@@ -116,48 +130,32 @@ make -C .ci list-platforms
 - sles15
 - fleet_elastic_pkg
 - ubuntu_22_04_amd64
+- windows2019
 ```
 
-It's possible to configure the test node (OS, architecture), using the values that are already present in [the platforms descriptor](.e2e-platforms.yaml):
-
-```shell
-# example for Centos 8 ARM 64
-export NODE_IMAGE="ami-01cdc9e8306344fe0"
-export NODE_INSTANCE_TYPE="a1.large"
-export NODE_LABEL="centos8_arm64"
-export NODE_USER="centos"
-```
-
-Or, you can also use the build script to load the environment variables for one platform:
+Once you have the target platform selected, which is obtained from [the platforms descriptor](.e2e-platforms.yaml), you need to pass it to the build script in order to load all the environment variables for the platform. To do so, you only have to add the desired platform as value of the exported `NODE_LABEL` variable:
 
 ```shell
 # all possible platforms
-make -C .ci set-env-centos8_amd64
-make -C .ci set-env-centos8_arm64
-make -C .ci set-env-debian_10_amd64
-make -C .ci set-env-debian_10_arm64
-make -C .ci set-env-debian_11_amd64
-make -C .ci set-env-debian_11_arm64
-make -C .ci set-env-oracle_linux8
-make -C .ci set-env-sles15
-make -C .ci set-env-ubuntu_22_04_amd64
+export NODE_LABEL=centos8_amd64
+export NODE_LABEL=centos8_arm64
+export NODE_LABEL=debian_10_amd64
+export NODE_LABEL=debian_10_arm64
+export NODE_LABEL=debian_11_amd64
+export NODE_LABEL=debian_11_arm64
+export NODE_LABEL=oracle_linux8
+export NODE_LABEL=sles15
+export NODE_LABEL=ubuntu_22_04_amd64
+export NODE_LABEL=windows2019
 ```
 
-The above command will create a `.node-${PLATFORM}-env` file (i.e. `.node-centos8_arm64-env`) that you must source into your shell before interacting with a test node, so that the environment variables are present for each build command and you do not need to repeat them again and again:
+The build will create a `.env-${PLATFORM}` file (i.e. `.env-centos8_arm64`) that will be automatically sourced into your shell before interacting with a test node, so that the environment variables are present for each build command and you do not need to repeat them again and again.
 
-```shell
-source .ci/.node-centos8_arm64-env
-```
-
-Please check that the environments where loaded with `env | grep NODE`:
+> Important: when running any of the commands below, please check that the `NODE_LABEL` variable is properly set:
 
 ```shell
 $ env | grep NODE
-NODE_SHELL_TYPE=sh
-NODE_INSTANCE_TYPE=a1.large
 NODE_LABEL=centos8_arm64
-NODE_IMAGE=ami-01cdc9e8306344fe0
-NODE_USER=centos
 ```
 
 Besides that, it's possible to configure the test node for the different test suites that are present in the test framework: `fleet`, `helm` and `kubernetes-autodiscover`. Please configure the test node setting the suite, being `fleet` the default:
@@ -169,7 +167,17 @@ export SUITE="helm"
 export SUITE="kubernetes-autodiscover"
 ```
 
-Finally, please create the test node:
+Next, the creation of the test node is compounded by two stages: `provision` and `setup`. We separate both stages to be able to provision once, and retry the setup if needed.
+
+To provision and setup the test node:
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" # optional, defaults to $(HOME)/.ssh/id_rsa
+make -C .ci provision-node
+make -C .ci setup-node
+```
+
+We have created a convenient alias for doing both steps in one command: `create-node`, which sequentially invokes both of the above commands.
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
@@ -181,7 +189,19 @@ A `.node-host-ip` file will be created in the `.ci` directory of the project inc
 
 > The IP address of the node in that file will be used by the automation.
 
-Please remember to [destroy the node](#destroying-the-stack-and-the-test-node) once you have finished your testing.
+Please remember to [destroy the node](#destroying-the-stack-and-the-test-nodes) once you have finished your testing.
+
+Finally, start the stack:
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+export SUITE="fleet"
+make -C .ci start-elastic-stack
+```
+
+> You probably need to run this command twice: the Fleet Server could try to start faster than Kibana and die. Running the command again will recreate the container for Fleet Server.
+
+> The `recreate-fleet-server` command has been deprecated, and calls the `start-elastic-stack` command instead.
 
 ### Run a test suite
 
@@ -197,12 +217,52 @@ export TAGS="kubernetes-autodiscover && elastic-agent"
 
 It's important that you consider reading about [the environment variables affecting the build](../e2e/README.md#environment-variables-affecting-the-build), as you could pass them to Make to run the tests with different options, such as a Github commit sha and repo (for testing a PR), the elastic-agent version, for testing a previous version of the agent, to name a few.
 
-Finally, run the tests:
+Finally, run the tests for non-Windows instances:
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
 make -C .ci run-tests TAGS="fleet_mode && install"
 ```
+
+And for Windows instances:
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci run-tests-win TAGS="fleet_mode && install"
+```
+
+#### Environment variables affecting the build
+
+The following environment variables affect how the tests are run in both the CI and a local machine.
+
+- `BEAT_VERSION`. Set this environment variable to the proper version of the Beats to be used in the current execution. The default value depends on the branch you are targeting your work: See https://github.com/elastic/e2e-testing/blob/70b1d3ddaf39567aeb4c322054b93ad7ce53e825/.ci/Jenkinsfile#L44
+- `DEVELOPER_MODE`: Set this environment variable to `true` to activate developer mode, which means not destroying the services provisioned by the test framework. Default: `false`.
+- `ELASTIC_AGENT_VERSION`. Set this environment variable to the proper version of the Elastic Agent to be used in the current execution. The default value depends on the branch you are targeting your work: See https://github.com/elastic/e2e-testing/blob/70b1d3ddaf39567aeb4c322054b93ad7ce53e825/.ci/Jenkinsfile#L44
+- `ELASTIC_AGENT_DOWNLOAD_URL`. Set this environment variable if you know the bucket URL for an Elastic Agent artifact generated by the CI, i.e. for a pull request. It will take precedence over the `BEAT_VERSION` variable. Default empty: See https://github.com/elastic/e2e-testing/blob/0446248bae1ff604219735998841a21a7576bfdd/.ci/Jenkinsfile#L35
+- `ELASTIC_APM_ACTIVE`: Set this environment variable to `true` if you want to send instrumentation data to our CI clusters. When the tests are run in our CI, this variable will always be enabled. Default value: `false`.
+- `ELASTIC_APM_ENVIRONMENT`: Set this environment variable to `ci` to send APM data to Elastic Cloud. Otherwise, the framework will spin up local APM Server and Kibana instances. For the CI, it will read credentials from Vault. Default value: `local`.
+- `FEATURES`: Set this environment variable to an existing feature file, or a glob expression (`fleet_*.feature`), that will be passed to the test runner to filter the execution, selecting those feature files matching that expression. If empty, all feature files in the `features/` directory will be used. It can be used in combination with `TAGS`.
+- `GITHUB_CHECK_REPO`: Set this environment variable to the name of the Github repository where the above git SHA commit lives. Default: elastic-agent.
+- `GITHUB_CHECK_SHA1`: Set this environment variable to the git commit in the right repository to use the binary snapshots produced by the CI instead of the official releases. The snapshots will be downloaded from a bucket in Google Cloud Storage. This variable is used by the upstream repositories (beats, elastic-agent), when testing the artifacts generated by their packaging jobs. Default: empty.
+- `KIBANA_VERSION`. Set this environment variable to the proper version of the Kibana instance to be used in the current execution, which should be used for the Docker tag of the kibana instance. It will refer to an image related to a Kibana PR, under the Observability-CI namespace. Default is empty.
+- `LOG_LEVEL`: Set this environment variable to `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR` or `FATAL` to set the log level in the project. Default: `INFO`.
+- `SKIP_PULL`: Set this environment variable to prevent the test suite to pull Docker images and/or external dependencies for all components. Default: `false`
+- `SKIP_SCENARIOS`: Set this environment variable to `false` if it's needed to include the scenarios annotated as `@skip` in the current test execution, adding that taf to the `TAGS` variable. Default value: `true`.
+- `STACK_VERSION`. Set this environment variable to the proper version of the Elasticsearch to be used in the current execution. The default value depends on the branch you are targeting your work.
+    - **main (Fleet):** https://github.com/elastic/e2e-testing/blob/0446248bae1ff604219735998841a21a7576bfdd/e2e/_suites/fleet/ingest-manager_test.go#L39
+- `TAGS`: Set this environment variable to [a Cucumber tag expression](https://github.com/cucumber/godog#tags), that will be passed to the test runner to filter the execution, selecting those scenarios matching that expresion, across any feature file. It can be used in combination with `FEATURES`.
+- `TIMEOUT_FACTOR`: Set this environment variable to an integer number, which represents the factor to be used while waiting for resources within the tests. I.e. waiting for Kibana needs around 30 seconds. Instead of hardcoding 30 seconds, or 3 minutes, in the code, we use a backoff strategy to wait until an amount of time, specific per situation, multiplying it by the timeout factor. With that in mind, we are able to set a higher factor on CI without changing the code, and the developer is able to locally set specific conditions when running the tests on slower machines. Default: `3`.
+
+#### Keeping the elastic-agent running after one scenario
+
+The test framework ensures that the agent is uninstalled and unenrolled after each test scenario, and this is needed to keep each test scenario idempotent. But it's possible to avoid the uninstall + unenroll phase of the elastic-agent if the `DEVELOPER_MODE=true` variable is set.
+
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci run-tests DEVELOPER_MODE=true TAGS="fleet_mode && install"
+```
+
+> Please use this capability when running one single test scenario, otherwise you can find unexpected behaviours caused by running multiple agents in the same host.
 
 ### Showing current nodes configuration
 
@@ -227,14 +287,19 @@ make -C .ci ssh-stack
 make -C .ci ssh-node
 ```
 
-### Destroying the Elastic Stack and recreating fleet-server
+### Destroying the Elastic Stack
 
 Sometimes you need to tear down the Elastic Stack, or recreate the fleet-server, mostly in the case the API Token used for Fleet Server [expired after 1 hour](https://www.elastic.co/guide/en/elasticsearch/reference/current/security-settings.html#token-service-settings).
 
 ```shell
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
 make -C .ci destroy-elastic-stack
-make -C .ci recreate-fleet-server
+```
+
+To recreate Fleet Server:
+```shell
+export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
+make -C .ci start-elastic-stack
 ```
 
 ### Destroying the stack and the test nodes
@@ -246,3 +311,22 @@ export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
 make -C .ci destroy-stack
 make -C .ci destroy-node
 ```
+
+## Running tests for a pull request on Elastic Agent or Beats
+
+Because we trigger the E2E tests for each Elastic-Agent and Beats PR that is packaged, it's possible to manually trigger it using the user interface of the CI. To achieve it we must navigate to Jenkins and run the tests in the specific branch the original Beats PR is targeting.
+
+>For further information about packaging Beats, please read [Beat's CI docs](https://github.com/elastic/beats/blob/1de27eed058dd074b58c71094c7678b3536251cb/README.md#ci).
+
+To do so:
+
+1. Navigate to Jenkins: https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-mbp/
+1. Login as a user
+2. Select the base branch for the test code: main, 8.3, 7.17, etc.
+3. In the left menu, click on `Buid with Parameters`.
+4. In the input parameters form, keep the Beat version (for Fleet) as is, to use each branch's default version.
+5. In the input parameters form, keep the stack version (for Fleet) as is, to use each branch's default version.
+6. In the input parameters form, set the `GITHUB_CHECK_NAME` to `E2E Tests`. This value will appear as the label for the Github check for the E2E tests.
+7. In the input parameters form, set the `GITHUB_CHECK_SHA1` to the `SHA1` of the last commit in your pull request. This value will allow us to modify the mergeable status of that commit with the Github check. Besides that, it will set the specific directory in the GCP bucket to look up the CI binaries.
+8. In the input parameters form, set the `GITHUB_CHECK_REPO` to `elastic-agent` or `beats`, depending where the aforementioned SHA1 belongs. This is important to look up the binaries in the right GCP bucket.
+9. Click the `Build` button at the bottom of the parameters form.

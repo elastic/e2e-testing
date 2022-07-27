@@ -23,7 +23,7 @@
   when: ansible_os_family in ["Windows"]
 
 - name: Copy source code
-  shell: "rsync --verbose -e 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ ansible_ssh_private_key_file }}' -az {{ workspace }} --exclude='.git*' --exclude='.venv' {{ ansible_user }}@{{ inventory_hostname }}:{{ e2e_project_name }}"
+  shell: "rsync --verbose -e 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ ansible_ssh_private_key_file }}' -az {{ workspace }} --exclude='outputs' --exclude='.git*' --exclude='.venv' {{ ansible_user }}@{{ inventory_hostname }}:{{ e2e_project_name }}"
   delegate_to: "localhost"
   vars:
     ansible_shell_type: "sh" # because the rsync is executed locally, we need to use the current 
