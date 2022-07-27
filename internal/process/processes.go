@@ -21,36 +21,36 @@ import (
 )
 
 const (
-	// ActionWaitForProcess const for choosing the wait for process action
-	ActionWaitForProcess = "wait-for-process"
+	// actionWaitForProcess const for choosing the wait for process action
+	actionWaitForProcess = "wait-for-process"
 )
 
-// Action contains the necessary options to pass into process action
-type Action struct {
+// actionOpt contains the necessary options to pass into process action
+type actionOpt struct {
 	Process      string
 	DesiredState string
 	Occurrences  int
 	MaxTimeout   time.Duration
 }
 
-// actionWaitProcess implements operation for waiting on a process status
-type actionWaitProcess struct {
+// actionWait implements operation for waiting on a process status
+type actionWait struct {
 	service deploy.ServiceRequest
 	deploy  deploy.Deployment
-	opts    Action
+	opts    actionOpt
 }
 
-// AttachActionWaitProcess action to woit for a process status on *nix like systems
-func AttachActionWaitProcess(deploy deploy.Deployment, service deploy.ServiceRequest, actionOpts Action) deploy.ServiceOperation {
-	return &actionWaitProcess{
+// attachActionWait action to woit for a process status on *nix like systems
+func attachActionWait(deploy deploy.Deployment, service deploy.ServiceRequest, actionOpts actionOpt) deploy.ServiceOperation {
+	return &actionWait{
 		service: service,
 		deploy:  deploy,
 		opts:    actionOpts,
 	}
 }
 
-// Attach will attach a service operator action to service operator
-func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.ServiceRequest, action string, actionOpts interface{}) (deploy.ServiceOperation, error) {
+// attach will attach a service operator action to service operator
+func attach(ctx context.Context, deploy deploy.Deployment, service deploy.ServiceRequest, action string, actionOpts interface{}) (deploy.ServiceOperation, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Attaching action to service operator", "action.attach", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -62,12 +62,12 @@ func Attach(ctx context.Context, deploy deploy.Deployment, service deploy.Servic
 	}).Trace("Attaching action for service")
 
 	switch action {
-	case ActionWaitForProcess:
-		newActionOpts, ok := actionOpts.(Action)
+	case actionWaitForProcess:
+		newActionOpts, ok := actionOpts.(actionOpt)
 		if !ok {
-			log.Fatal("Unable to cast to action options to Action")
+			log.Fatal("Unable to cast to action options to actionOpt")
 		}
-		attachAction := AttachActionWaitProcess(deploy, service, newActionOpts)
+		attachAction := attachActionWait(deploy, service, newActionOpts)
 		return attachAction, nil
 	}
 
@@ -85,12 +85,12 @@ func CheckState(ctx context.Context, deployer deploy.Deployment, service deploy.
 		process = fmt.Sprintf("%s.exe", process)
 	}
 
-	actionOpts := Action{
+	actionOpts := actionOpt{
 		Process:      process,
 		DesiredState: state,
 		Occurrences:  occurrences,
 		MaxTimeout:   timeout}
-	waitForProcess, err := Attach(ctx, deployer, service, ActionWaitForProcess, actionOpts)
+	waitForProcess, err := attach(ctx, deployer, service, actionWaitForProcess, actionOpts)
 	if err != nil {
 		log.WithField("error", err).Error("Unable to attach Process check action")
 	}
@@ -120,7 +120,7 @@ func CheckState(ctx context.Context, deployer deploy.Deployment, service deploy.
 }
 
 // Run executes the command
-func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
+func (a *actionWait) Run(ctx context.Context) (string, error) {
 	if a.service.IsContainer {
 		// when we run the tests in a container, we need to execute the command inside the container
 		return runInContainer(ctx, a)
@@ -219,8 +219,8 @@ func (a *actionWaitProcess) Run(ctx context.Context) (string, error) {
 }
 
 // runInContainer restored from https://github.com/elastic/e2e-testing/pull/1740, it executes
-// pgrep in the target container defined by the service of the actionWaitProcess
-func runInContainer(ctx context.Context, a *actionWaitProcess) (string, error) {
+// pgrep in the target container defined by the service of the actionWait
+func runInContainer(ctx context.Context, a *actionWait) (string, error) {
 	log.WithFields(log.Fields{
 		"desiredState": a.opts.DesiredState,
 		"occurrences":  a.opts.Occurrences,
