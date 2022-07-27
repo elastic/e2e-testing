@@ -23,5 +23,5 @@ envsubst < templates/suite_test.go.tmpl > _suites/${LOWER_SUITE}/${LOWER_SUITE}_
 mkdir -p _suites/${LOWER_SUITE}/features
 envsubst < templates/suite.feature.tmpl > _suites/${LOWER_SUITE}/features/${LOWER_SUITE}.feature
 
-mkdir -p ../cli/config/compose/profiles/${LOWER_SUITE}
-envsubst < templates/profile.yml.tmpl > ../cli/config/compose/profiles/${LOWER_SUITE}/docker-compose.yml
+mkdir -p ../internal/config/compose/profiles/${LOWER_SUITE}
+envsubst < templates/profile.yml.tmpl > ../internal/config/compose/profiles/${LOWER_SUITE}/docker-compose.yml
