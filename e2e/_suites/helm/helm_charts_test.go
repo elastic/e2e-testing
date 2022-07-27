@@ -738,7 +738,7 @@ func TestMain(m *testing.M) {
 	opts.Paths = flag.Args()
 
 	status := godog.TestSuite{
-		Name:                 "godogs",
+		Name:                 "helm",
 		TestSuiteInitializer: InitializeHelmChartTestSuite,
 		ScenarioInitializer:  InitializeHelmChartScenario,
 		Options:              &opts,
