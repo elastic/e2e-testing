@@ -661,7 +661,7 @@ func TestMain(m *testing.M) {
 	opts.Paths = flag.Args()
 
 	status := godog.TestSuite{
-		Name:                 "godogs",
+		Name:                 "k8s-autodiscover",
 		TestSuiteInitializer: InitializeTestSuite,
 		ScenarioInitializer:  InitializeScenario,
 		Options:              &opts,

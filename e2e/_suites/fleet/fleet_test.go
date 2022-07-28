@@ -117,7 +117,6 @@ func afterScenario(fts *FleetTestSuite) {
 	fts.Image = ""
 	fts.StandAlone = false
 	fts.BeatsProcess = ""
-	fts.ElasticAgentFlags = ""
 }
 
 // beforeScenario creates the state needed by a scenario
@@ -253,7 +252,12 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			}).Fatal("Fleet could not be recreated")
 		}
 
-		fleetServicePolicy := kibana.FleetServicePolicy
+		fleetServicePolicy, err := kibanaClient.GetDefaultPolicy(ctx, true)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Fatal("Could not get Fleet Server's default policy")
+		}
 
 		log.WithFields(log.Fields{
 			"id":          fleetServicePolicy.ID,
@@ -446,9 +450,6 @@ func InitializeFleetTestScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^certs are installed$`, fts.installCerts)
 	ctx.Step(`^agent is in "([^"]*)" version$`, fts.agentInVersion)
 	ctx.Step(`^agent is upgraded to "([^"]*)" version$`, fts.anAgentIsUpgradedToVersion)
-
-	//flags steps
-	ctx.Step(`^the elastic agent index contains the tags$`, fts.tagsAreInTheElasticAgentIndex)
 
 	// integrations steps
 	ctx.Step(`^the "([^"]*)" integration is "([^"]*)" in the policy$`, fts.theIntegrationIsOperatedInThePolicy)
