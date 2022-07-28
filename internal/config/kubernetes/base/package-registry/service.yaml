@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: package-registry
+  labels:
+    service: package-registry
+spec:
+  type: NodePort
+  ports:
+  - port: 8080
+    name: package-registry
+  selector:
+    app: package-registry
