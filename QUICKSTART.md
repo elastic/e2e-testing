@@ -13,7 +13,7 @@ At the topmost level, the test framework uses a BDD framework written in Go, whe
 
 The tests will follow this general high-level approach:
 
-1. Install the runtime dependencies as Docker containers via Docker Compose (the Elastic Stack), happening before the test suite runs. These runtime dependencies are defined in a specific `profile` for Fleet, in the form of a `docker-compose.yml` file. You can find the Fleet profile and its configuration files [here](../cli/config/compose/profiles/fleet).
+1. Install the runtime dependencies as Docker containers via Docker Compose (the Elastic Stack), happening before the test suite runs. These runtime dependencies are defined in a specific `profile` for Fleet, in the form of a `docker-compose.yml` file. You can find the Fleet profile and its configuration files [here](./internal/config/compose/profiles/fleet).
 1. Execute BDD steps representing each scenario. Each step will return an Error if the behavior is not satisfied, marking the step and the scenario as failed, or will return `nil`.
 
 ## Adding a new test suite
@@ -39,7 +39,7 @@ We have created a few sample files for you:
     - initialisation methods for `godog`'s life cycle hooks: _InitializeFooScenarios_ and _InitializeFooTestSuite_.
         - **InitializeFooTestSuite**: contains the life cycle hooks for the suite (`BeforeSuite and AfterSuite`)
         - **InitializeFooScenarios**: contains the life cycle hooks for each test scenario (`BeforeScenario, AfterScenario, BeforeStep and AfterStep`)
-- a `docker-compose.yml` file under `cli/config/compose/profiles/foo`, for the runtime dependencies. This descriptor includes the definition of the services that are needed by our tests before they are run. The sample file contains an Elasticsearch instance, but it could include Kibana, Fleet Server, or any other service in the form of a Docker container.
+- a `docker-compose.yml` file under `internal/config/compose/profiles/foo`, for the runtime dependencies. This descriptor includes the definition of the services that are needed by our tests before they are run. The sample file contains an Elasticsearch instance, but it could include Kibana, Fleet Server, or any other service in the form of a Docker container.
 - a `foo.feature` feature file under the **features** directory. This directory is the default location for the Gherkin feature files. Although it can be changed to any other location, using the `opts` structure, we recommend keeping it with the default value:
 
 ```go
@@ -254,4 +254,4 @@ The test framework has a workdir where it performs certain tasks, such as clonin
 
 This workdir is located under the user home: `~/CURRENT_USERNAME/.op` for Unix systems, and `C:\Users\CURRENT_USERNAME\.op` for Windows.
 
-Related to the configuration files for each test suite, and the code to load those files into the test framework, they are located under the `cli/config` package. This package is responsible for loading the default configuration files for services and profiles, extracting the bundled configuration files into the test framework workdir. 
+Related to the configuration files for each test suite, and the code to load those files into the test framework, they are located under the `internal/config` package. This package is responsible for loading the default configuration files for services and profiles, extracting the bundled configuration files into the test framework workdir. 
