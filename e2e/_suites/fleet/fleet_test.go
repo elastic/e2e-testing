@@ -252,7 +252,12 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			}).Fatal("Fleet could not be recreated")
 		}
 
-		fleetServicePolicy := kibana.FleetServicePolicy
+		fleetServicePolicy, err := kibanaClient.GetDefaultPolicy(ctx, true)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Fatal("Could not get Fleet Server's default policy")
+		}
 
 		log.WithFields(log.Fields{
 			"id":          fleetServicePolicy.ID,
