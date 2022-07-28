@@ -8,11 +8,8 @@ repos:
         exclude: ^notice/overrides.json
     -   id: check-merge-conflict
     -   id: check-yaml
-<<<<<<< HEAD
-=======
         exclude: >
           (?x)^(internal/config/kubernetes.*)$
->>>>>>> 8d3ac583 (chore: move config package to internal (#2860))
     -   id: check-xml
     -   id: end-of-file-fixer
         exclude: >
