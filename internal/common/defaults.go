@@ -7,7 +7,7 @@ package common
 import (
 	"path/filepath"
 
-	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/internal/config"
 	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/pkg/downloads"

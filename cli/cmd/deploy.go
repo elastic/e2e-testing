@@ -7,7 +7,7 @@ package cmd
 import (
 	"context"
 
-	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/internal/config"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	log "github.com/sirupsen/logrus"
 

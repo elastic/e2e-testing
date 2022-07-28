@@ -40,7 +40,7 @@ func (c *kubernetesDeploymentManifest) Add(ctx context.Context, profile ServiceR
 	kubectl = cluster.Kubectl().WithNamespace(ctx, getNamespaceFromProfile(profile))
 
 	for _, service := range services {
-		_, err := kubectl.Run(ctx, "apply", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service.Name))
+		_, err := kubectl.Run(ctx, "apply", "-k", fmt.Sprintf("../../../internal/config/kubernetes/overlays/%s", service.Name))
 		if err != nil {
 			return err
 		}
@@ -77,14 +77,14 @@ func (c *kubernetesDeploymentManifest) Bootstrap(ctx context.Context, profile Se
 	})
 	defer span.End()
 
-	err := cluster.Initialize(ctx, "../../../cli/config/kubernetes/kind.yaml")
+	err := cluster.Initialize(ctx, "../../../internal/config/kubernetes/kind.yaml")
 	if err != nil {
 		return err
 	}
 
 	// TODO: we would need to understand how to pass the environment argument to anything running in the namespace
 	kubectl = cluster.Kubectl().WithNamespace(ctx, getNamespaceFromProfile(profile))
-	_, err = kubectl.Run(ctx, "apply", "-k", "../../../cli/config/kubernetes/base")
+	_, err = kubectl.Run(ctx, "apply", "-k", "../../../internal/config/kubernetes/base")
 	if err != nil {
 		return err
 	}
@@ -201,7 +201,7 @@ func (c *kubernetesDeploymentManifest) Remove(ctx context.Context, profile Servi
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, getNamespaceFromProfile(profile))
 
 	for _, service := range services {
-		_, err := kubectl.Run(c.Context, "delete", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service.Name))
+		_, err := kubectl.Run(c.Context, "delete", "-k", fmt.Sprintf("../../../internal/config/kubernetes/overlays/%s", service.Name))
 		if err != nil {
 			return err
 		}
