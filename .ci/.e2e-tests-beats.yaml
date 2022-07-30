@@ -22,7 +22,14 @@ SUITES:
         platforms: ["debian_amd64"]
       - name: "Linux Integration"
         tags: "linux_integration"
+<<<<<<< HEAD
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
+=======
+        platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
+      - name: "Permissions Output change"
+        tags: "permission_change"
+        platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
+>>>>>>> 6d6f87b4 (chore: bring back permission-change scenarios (#2872))
       - name: "Backend Processes"
         tags: "backend_processes"
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
