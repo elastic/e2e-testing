@@ -12,6 +12,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestExists(t *testing.T) {
+	t.Run("The file exists", func(t *testing.T) {
+		f := path.Join("..", "_testresources", "dockerCopy.txt")
+
+		b, err := Exists(f)
+		assert.Nil(t, err)
+		assert.True(t, b)
+	})
+
+	t.Run("The file does not exists", func(t *testing.T) {
+		f := path.Join("..", "_testresources", "foo")
+
+		b, err := Exists(f)
+		assert.Nil(t, err)
+		assert.False(t, b)
+	})
+}
+
 func TestMkdirAll(t *testing.T) {
 	defer filet.CleanUp(t)
 

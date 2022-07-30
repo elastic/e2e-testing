@@ -85,7 +85,7 @@ func afterScenario(fts *FleetTestSuite) {
 
 		err := fts.unenrollHostname()
 		if err != nil {
-			manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+			manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 			log.WithFields(log.Fields{
 				"err":      err,
 				"hostname": manifest.Hostname,
