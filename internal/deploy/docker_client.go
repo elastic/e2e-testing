@@ -309,7 +309,8 @@ func InspectContainer(service ServiceRequest) (*types.ContainerJSON, error) {
 		log.WithFields(log.Fields{
 			"error":  err,
 			"labels": labelFilters,
-		}).Fatal("Cannot list containers")
+		}).Error("Cannot list containers")
+		return nil, err
 	}
 
 	if len(containers) == 0 {
