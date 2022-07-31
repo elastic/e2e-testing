@@ -24,24 +24,24 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleet(image string) error {
 		installerType = "deb"
 	}
 
-	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(InstallerType(installerType))
+	return fts.deployAgentToFleet(InstallerType(installerType))
 }
 
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetOnTopOfBeat(beatsProcess string) error {
-	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(InstallerType("tar"), BeatsProcess(beatsProcess))
+	return fts.deployAgentToFleet(InstallerType("tar"), BeatsProcess(beatsProcess))
 }
 
 // supported installers: tar, rpm, deb
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(installerType string) error {
-	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(InstallerType(installerType))
+	return fts.deployAgentToFleet(InstallerType(installerType))
 }
 
 // supported installers: tar, rpm, deb
 func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndTags(installerType string, flags string) error {
-	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(InstallerType(installerType), Flags(flags))
+	return fts.deployAgentToFleet(InstallerType(installerType), Flags(flags))
 }
 
-func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(opts ...DeploymentOpt) error {
+func (fts *FleetTestSuite) deployAgentToFleet(opts ...DeploymentOpt) error {
 	// Default Options
 	args := &DeploymentOpts{
 		beatsProcess:        "",
@@ -83,7 +83,7 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndFleetServer(o
 	}
 
 	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
-	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken, fts.ElasticAgentFlags)
+	err = deploymentLifecycle(fts.currentContext, agentInstaller, fts.CurrentToken, fts.ElasticAgentFlags)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func Flags(flags string) DeploymentOpt {
 	}
 }
 
-func deployAgentToFleet(ctx context.Context, agentInstaller deploy.ServiceOperator, token string, flags string) error {
+func deploymentLifecycle(ctx context.Context, agentInstaller deploy.ServiceOperator, token string, flags string) error {
 	err := agentInstaller.Preinstall(ctx)
 	if err != nil {
 		return err
