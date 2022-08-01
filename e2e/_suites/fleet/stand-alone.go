@@ -22,11 +22,11 @@ import (
 )
 
 func (fts *FleetTestSuite) aStandaloneAgentIsDeployed(image string) error {
-	return fts.startStandAloneAgent(image, "", map[string]string{"fleetServerMode": "0"})
+	return fts.startStandAloneAgent(image, false)
 }
 
 func (fts *FleetTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string) error {
-	return fts.startStandAloneAgent(image, "", map[string]string{"fleetServerMode": "1"})
+	return fts.startStandAloneAgent(image, true)
 }
 
 func (fts *FleetTestSuite) theDockerContainerIsStopped(serviceName string) error {
@@ -106,7 +106,7 @@ func (fts *FleetTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error
 	return elasticsearch.AssertHitsAreNotPresent(result)
 }
 
-func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, env map[string]string) error {
+func (fts *FleetTestSuite) startStandAloneAgent(image string, bootstrapFleetServer bool) error {
 	fts.StandAlone = true
 	log.Trace("Deploying an agent to Fleet")
 
@@ -155,11 +155,13 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 
 	common.ProfileEnv["elasticAgentTag"] = dockerImageTag
 
-	for k, v := range env {
-		common.ProfileEnv[k] = v
+	if bootstrapFleetServer {
+		common.ProfileEnv["fleetServerMode"] = "1"
+	} else {
+		common.ProfileEnv["fleetServerMode"] = "0"
 	}
 
-	agentService := deploy.NewServiceContainerRequest(common.ElasticAgentServiceName).WithFlavour(flavour)
+	agentService := deploy.NewServiceContainerRequest(common.ElasticAgentServiceName)
 
 	err = fts.getDeployer().Add(fts.currentContext, deploy.NewServiceContainerRequest(common.FleetProfileName), []deploy.ServiceRequest{agentService}, common.ProfileEnv)
 	if err != nil {
