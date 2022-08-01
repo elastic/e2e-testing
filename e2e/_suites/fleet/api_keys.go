@@ -5,10 +5,14 @@
 package main
 
 import (
+	"fmt"
+	"time"
+
+	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
-	"github.com/pkg/errors"
+	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -32,35 +36,49 @@ func (fts *FleetTestSuite) theAgentGetDefaultAPIKey() error {
 }
 
 func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
-	newDefaultAPIKey, _ := fts.getAgentDefaultAPIKey()
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
+	retryCount := 1
 
-	logFields := log.Fields{
-		"new_default_api_key": newDefaultAPIKey,
-		"old_default_api_key": fts.DefaultAPIKey,
-	}
+	exp := utils.GetExponentialBackOff(maxTimeout)
 
-	defaultAPIKeyHasChanged := (newDefaultAPIKey != fts.DefaultAPIKey)
+	checkAPIKeyFn := func() error {
+		newDefaultAPIKey, _ := fts.getAgentDefaultAPIKey()
 
-	if status == "changed" {
-		if !defaultAPIKeyHasChanged {
-			log.WithFields(logFields).Error("Integration added and Default API Key do not change")
-			return errors.New("Integration added and Default API Key do not change")
+		logFields := log.Fields{
+			"new_default_api_key": newDefaultAPIKey,
+			"old_default_api_key": fts.DefaultAPIKey,
 		}
 
-		log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been added", status)
-		return nil
-	}
+		defaultAPIKeyHasChanged := (newDefaultAPIKey != fts.DefaultAPIKey)
 
-	if status == "not changed" {
-		if defaultAPIKeyHasChanged {
-			log.WithFields(logFields).Error("Integration updated and Default API Key is changed")
-			return errors.New("Integration updated and Default API Key is changed")
+		if status == "changed" {
+			if !defaultAPIKeyHasChanged {
+				retryCount++
+				log.WithFields(logFields).Warn("Integration added and Default API Key did not change yet")
+				return fmt.Errorf("integration added and Default API Key did not change yet")
+			}
+
+			log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been added", status)
+			return nil
 		}
 
-		log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been updated", status)
-		return nil
+		if status == "not changed" {
+			if defaultAPIKeyHasChanged {
+				retryCount++
+				log.WithFields(logFields).Error("Integration updated and Default API Key is still changed")
+				return fmt.Errorf("integration updated and Default API Key is still changed")
+			}
+
+			log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been updated", status)
+			return nil
+		}
+
+		log.Warnf("Status %s is not supported yet", status)
+		return godog.ErrPending
 	}
 
-	log.Warnf("Status %s is not supported yet", status)
-	return godog.ErrPending
+	err := backoff.Retry(checkAPIKeyFn, exp)
+	if err != nil {
+		return err
+	}
 }
