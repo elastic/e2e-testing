@@ -78,7 +78,5 @@ func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
 	}
 
 	err := backoff.Retry(checkAPIKeyFn, exp)
-	if err != nil {
-		return err
-	}
+	return err
 }
