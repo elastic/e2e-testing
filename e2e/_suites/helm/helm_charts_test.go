@@ -14,8 +14,8 @@ import (
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/config"
 	"github.com/elastic/e2e-testing/internal/helm"
 	"github.com/elastic/e2e-testing/internal/kubectl"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -738,7 +738,7 @@ func TestMain(m *testing.M) {
 	opts.Paths = flag.Args()
 
 	status := godog.TestSuite{
-		Name:                 "godogs",
+		Name:                 "helm",
 		TestSuiteInitializer: InitializeHelmChartTestSuite,
 		ScenarioInitializer:  InitializeHelmChartScenario,
 		Options:              &opts,

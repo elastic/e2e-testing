@@ -26,8 +26,8 @@ import (
 	flag "github.com/spf13/pflag"
 	"go.elastic.co/apm"
 
-	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/config"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kubernetes"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -148,7 +148,7 @@ func (m *podsManager) configureDockerImage(podName string) error {
 		ciSnapshotsFn = func() bool { return false }
 	}
 
-	if ciSnapshotsFn() || downloads.BeatsLocalPath != "" {
+	if ciSnapshotsFn() {
 		log.Debugf("Configuring Docker image for %s", podName)
 
 		_, imagePath, err := downloads.FetchElasticArtifact(m.ctx, podName, v, "linux", "amd64", "tar.gz", true, true)
@@ -687,7 +687,7 @@ func TestMain(m *testing.M) {
 	opts.Paths = flag.Args()
 
 	status := godog.TestSuite{
-		Name:                 "godogs",
+		Name:                 "k8s-autodiscover",
 		TestSuiteInitializer: InitializeTestSuite,
 		ScenarioInitializer:  InitializeScenario,
 		Options:              &opts,

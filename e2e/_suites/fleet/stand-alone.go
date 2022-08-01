@@ -5,7 +5,6 @@
 package main
 
 import (
-	"context"
 	"strings"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	"github.com/elastic/e2e-testing/pkg/downloads"
+	"github.com/pkg/errors"
 
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	log "github.com/sirupsen/logrus"
@@ -29,23 +29,6 @@ func (fts *FleetTestSuite) bootstrapFleetServerFromAStandaloneAgent(image string
 	return fts.startStandAloneAgent(image, "", map[string]string{"fleetServerMode": "1"})
 }
 
-func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
-	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
-	minimumHitsCount := 20
-
-	agentService := deploy.NewServiceContainerRequest(common.ElasticAgentServiceName).WithFlavour(fts.Image)
-
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
-	result, err := searchAgentData(fts.currentContext, manifest.Hostname, fts.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
-	if err != nil {
-		return err
-	}
-
-	log.Tracef("Search result: %v", result)
-
-	return elasticsearch.AssertHitsArePresent(result)
-}
-
 func (fts *FleetTestSuite) theDockerContainerIsStopped(serviceName string) error {
 	agentService := deploy.NewServiceContainerRequest(serviceName)
 	err := fts.getDeployer().Stop(fts.currentContext, agentService)
@@ -57,12 +40,57 @@ func (fts *FleetTestSuite) theDockerContainerIsStopped(serviceName string) error
 	return nil
 }
 
+func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredStatus string) error {
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
+	exp := utils.GetExponentialBackOff(maxTimeout)
+	retryCount := 0
+
+	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
+
+	waitForAgents := func() error {
+		retryCount++
+
+		agents, err := fts.kibanaClient.ListAgents(fts.currentContext)
+		if err != nil {
+			return err
+		}
+
+		if len(agents) == 0 {
+			return errors.New("No agents found")
+		}
+
+		for _, agent := range agents {
+			hostname := agent.LocalMetadata.Host.HostName
+
+			if hostname == manifest.Hostname {
+				return theAgentIsListedInFleetWithStatus(fts.currentContext, desiredStatus, hostname)
+			}
+		}
+
+		err = errors.New("Agent not found in Fleet")
+		log.WithFields(log.Fields{
+			"elapsedTime": exp.GetElapsedTime(),
+			"hostname":    manifest.Hostname,
+			"retries":     retryCount,
+		}).Warn(err)
+
+		return err
+	}
+
+	err := backoff.Retry(waitForAgents, exp)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (fts *FleetTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error {
 	maxTimeout := time.Duration(30) * time.Second
 	minimumHitsCount := 1
 
 	agentService := deploy.NewServiceContainerRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 	result, err := searchAgentData(fts.currentContext, manifest.Hostname, fts.AgentStoppedDate, minimumHitsCount, maxTimeout)
 	if err != nil {
 		if strings.Contains(err.Error(), "type:index_not_found_exception") {
@@ -90,7 +118,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 		common.ProfileEnv["elasticAgentDockerImageSuffix"] = "-" + image
 	}
 
-	if downloads.UseElasticAgentCISnapshots() || downloads.BeatsLocalPath != "" {
+	if downloads.UseElasticAgentCISnapshots() {
 		// load the docker images that were already:
 		// a. downloaded from the GCP bucket
 		// b. fetched from the local beats binaries
@@ -141,45 +169,9 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, flavour string, en
 
 	fts.Image = image
 
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 
 	err = fts.installTestTools(manifest.Name)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (fts *FleetTestSuite) thePolicyShowsTheDatasourceAdded(packageName string) error {
-	log.WithFields(log.Fields{
-		"policyID": fts.Policy.ID,
-		"package":  packageName,
-	}).Trace("Checking if the policy shows the package added")
-
-	maxTimeout := time.Minute
-	retryCount := 1
-
-	exp := utils.GetExponentialBackOff(maxTimeout)
-
-	configurationIsPresentFn := func() error {
-		packagePolicy, err := fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, packageName, fts.Policy)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"packagePolicy": packagePolicy,
-				"policy":        fts.Policy,
-				"retry":         retryCount,
-				"error":         err,
-			}).Warn("The integration was not found in the policy")
-			retryCount++
-			return err
-		}
-
-		retryCount++
-		return err
-	}
-
-	err := backoff.Retry(configurationIsPresentFn, exp)
 	if err != nil {
 		return err
 	}
@@ -218,91 +210,4 @@ func (fts *FleetTestSuite) installTestTools(containerName string) error {
 	}).Debug("Test tools installed")
 
 	return nil
-}
-
-func searchAgentData(ctx context.Context, hostname string, startDate time.Time, minimumHitsCount int, maxTimeout time.Duration) (elasticsearch.SearchResult, error) {
-	timezone := "America/New_York"
-
-	esQuery := map[string]interface{}{
-		"version": true,
-		"size":    500,
-		"docvalue_fields": []map[string]interface{}{
-			{
-				"field":  "@timestamp",
-				"format": "date_time",
-			},
-			{
-				"field":  "system.process.cpu.start_time",
-				"format": "date_time",
-			},
-			{
-				"field":  "system.service.state_since",
-				"format": "date_time",
-			},
-		},
-		"_source": map[string]interface{}{
-			"excludes": []map[string]interface{}{},
-		},
-		"query": map[string]interface{}{
-			"bool": map[string]interface{}{
-				"must": []map[string]interface{}{},
-				"filter": []map[string]interface{}{
-					{
-						"bool": map[string]interface{}{
-							"filter": []map[string]interface{}{
-								{
-									"bool": map[string]interface{}{
-										"should": []map[string]interface{}{
-											{
-												"match_phrase": map[string]interface{}{
-													"host.name": hostname,
-												},
-											},
-										},
-										"minimum_should_match": 1,
-									},
-								},
-								{
-									"bool": map[string]interface{}{
-										"should": []map[string]interface{}{
-											{
-												"range": map[string]interface{}{
-													"@timestamp": map[string]interface{}{
-														"gte":       startDate,
-														"time_zone": timezone,
-													},
-												},
-											},
-										},
-										"minimum_should_match": 1,
-									},
-								},
-							},
-						},
-					},
-					{
-						"range": map[string]interface{}{
-							"@timestamp": map[string]interface{}{
-								"gte":    startDate,
-								"format": "strict_date_optional_time",
-							},
-						},
-					},
-				},
-				"should":   []map[string]interface{}{},
-				"must_not": []map[string]interface{}{},
-			},
-		},
-	}
-
-	indexName := "logs-elastic_agent-default"
-
-	result, err := elasticsearch.WaitForNumberOfHits(ctx, indexName, esQuery, minimumHitsCount, maxTimeout)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Warn(elasticsearch.WaitForIndices())
-	}
-
-	return result, err
 }

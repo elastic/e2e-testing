@@ -7,7 +7,7 @@ package common
 import (
 	"path/filepath"
 
-	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/internal/config"
 	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/pkg/downloads"
@@ -36,7 +36,7 @@ const FleetProfileName = "fleet"
 const FleetServerAgentServiceName = "fleet-server"
 
 // BeatVersionBase is the base version of the Beat to use
-var BeatVersionBase = "8.4.0-31269fd2-SNAPSHOT"
+var BeatVersionBase = "8.4.0-60171339-SNAPSHOT"
 
 // BeatVersion is the version of the Beat to use
 // It can be overriden by BEAT_VERSION env var
