@@ -47,6 +47,8 @@ func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
 		logFields := log.Fields{
 			"new_default_api_key": newDefaultAPIKey,
 			"old_default_api_key": fts.DefaultAPIKey,
+			"retries":             retryCount,
+			"elapsedTime":         exp.GetElapsedTime(),
 		}
 
 		defaultAPIKeyHasChanged := (newDefaultAPIKey != fts.DefaultAPIKey)
