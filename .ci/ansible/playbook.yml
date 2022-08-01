@@ -107,6 +107,10 @@
       when: 
         - ansible_facts['os_family'] != "Windows"
         - ansible_pkg_mgr == 'apt'
+    - name: Install deps
+      include_tasks: tasks/install_deps.yml
+      tags:
+        - setup-node
   roles:
     - role: geerlingguy.docker
       become: True
@@ -163,11 +167,6 @@
       - ansible_facts['os_family'] != "Windows"
       - suite is defined
       - suite in ["kubernetes-autodiscover", "helm"]
-
-  - name: Install deps
-    include_tasks: tasks/install_deps.yml
-    tags:
-      - setup-node
 
   - name: Setup source code
     include_tasks: tasks/copy_test_files.yml
