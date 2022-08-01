@@ -46,6 +46,10 @@ You could be insterested in adding a new operative system in a specific architec
 
 ### Prereqs
 
+In order to interact with the build system, i.e. running Ansible commands to provision the AWS instances, you need to install Python 3.9 or above (See https://www.python.org/downloads/).
+
+> Not using the right version of Python could lead Ansible to fail when creating an AWS instance. Please remove the entire virtual env directory (.venv) at the root directory of the project to start from a fresh environment and the right dependencies.
+
 The following variables need to be exported:
 
 - *AWS_SECRET_ACCESS_KEY*: AWS secret access key
