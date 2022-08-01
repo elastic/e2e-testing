@@ -115,6 +115,10 @@
       when:
         - '"arm64" not in nodeLabel'
         - 'ansible_os_family not in ["Suse", "Windows"]'
+    - role: geerlingguy.pip
+      become: True
+      when:
+        - 'ansible_os_family not in ["Windows"]'
     - role: geerlingguy.docker_arm
       become: True
       docker_daemon_options:
