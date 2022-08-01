@@ -31,6 +31,8 @@
         default-ulimit: ["nofile=1024000:1024000"]
       docker_users:
         - "{{ ansible_user }}"
+    - role: geerlingguy.pip
+      become: True
     - role: andrewrothstein.kubectl
     - role: andrewrothstein.kind
     - role: mdelapenya.go
