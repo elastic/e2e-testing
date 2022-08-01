@@ -19,17 +19,10 @@ SUITES:
       #   platforms: ["debian_arm64", "debian_amd64", "sles15"]
       - name: "System Integration"
         tags: "system_integration"
-<<<<<<< HEAD
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
-      # - name: "Stand-alone"
-      #   tags: "stand_alone_mode"
-      #   platforms: ["fleet_elastic_pkg"]
-=======
-        platforms: ["debian_10_arm64", "debian_10_amd64", "debian_11_amd64", "ubuntu_22_04_amd64", "sles15"]
       - name: "Stand-alone"
         tags: "stand_alone_mode"
-        platforms: ["debian_10_arm64", "debian_10_amd64"]
->>>>>>> 3f728b7c (chore: bring back stand-alone agent (#2879))
+        platforms: ["debian_arm64", "debian_amd64"]
       - name: "Backend Processes"
         tags: "backend_processes"
         platforms: ["debian_arm64", "debian_amd64", "sles15"]
