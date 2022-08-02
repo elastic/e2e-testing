@@ -427,7 +427,6 @@ func InitializeFleetTestScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^a "([^"]*)" agent is deployed to Fleet$`, fts.anAgentIsDeployedToFleet)
 	ctx.Step(`^an agent is deployed to Fleet on top of "([^"]*)"$`, fts.anAgentIsDeployedToFleetOnTopOfBeat)
 	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
-	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer and "([^"]*)" flags$`, fts.anAgentIsDeployedToFleetWithInstallerAndTags)
 	ctx.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
 	ctx.Step(`^the default API key has "([^"]*)"$`, fts.verifyDefaultAPIKey)
 	ctx.Step(`^the host is restarted$`, fts.theHostIsRestarted)

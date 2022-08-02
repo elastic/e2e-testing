@@ -32,6 +32,9 @@ SUITES:
       - name: "System Integration"
         tags: "system_integration"
         platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
+      - name: "Stand-alone"
+        tags: "stand_alone_mode"
+        platforms: ["debian_10_arm64", "debian_10_amd64"]
       - name: "Backend Processes"
         tags: "backend_processes"
         platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
