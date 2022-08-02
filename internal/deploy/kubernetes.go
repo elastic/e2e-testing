@@ -58,11 +58,11 @@ func (c *kubernetesDeploymentManifest) AddFiles(ctx context.Context, profile Ser
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
-	container, _ := c.Inspect(ctx, service)
+	manifest, _ := c.GetServiceManifest(ctx, service)
 	kubectl = cluster.Kubectl().WithNamespace(ctx, getNamespaceFromProfile(profile))
 
 	for _, file := range files {
-		_, err := kubectl.Run(ctx, "cp", file, fmt.Sprintf("deployment/%s:.", container.Name))
+		_, err := kubectl.Run(ctx, "cp", file, fmt.Sprintf("deployment/%s:.", manifest.Name))
 		if err != nil {
 			log.WithField("error", err).Fatal("Unable to copy file to service")
 		}
@@ -136,8 +136,8 @@ type kubernetesServiceManifest struct {
 	} `json:"metadata"`
 }
 
-// Inspect inspects a service
-func (c *kubernetesDeploymentManifest) Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
+// GetServiceManifest inspects a service
+func (c *kubernetesDeploymentManifest) GetServiceManifest(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Inspecting kubernetes deployment", "kubernetes.manifest.inspect", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -153,14 +153,26 @@ func (c *kubernetesDeploymentManifest) Inspect(ctx context.Context, service Serv
 	if err = json.Unmarshal([]byte(out), &inspect); err != nil {
 		return &ServiceManifest{}, errors.Wrap(err, "Could not convert metadata to JSON")
 	}
-	return &ServiceManifest{
+
+	sm := &ServiceManifest{
 		ID:         inspect.Metadata.ID,
 		Name:       strings.TrimPrefix(inspect.Metadata.Name, "/"),
 		Connection: service.Name,
 		Hostname:   service.Name,
 		Alias:      service.Name,
 		Platform:   "linux",
-	}, nil
+	}
+
+	log.WithFields(log.Fields{
+		"alias":      sm.Alias,
+		"connection": sm.Connection,
+		"hostname":   sm.Hostname,
+		"ID":         sm.ID,
+		"name":       sm.Name,
+		"platform":   sm.Platform,
+	}).Trace("Service Manifest found")
+
+	return sm, nil
 }
 
 // Logs print logs of service
