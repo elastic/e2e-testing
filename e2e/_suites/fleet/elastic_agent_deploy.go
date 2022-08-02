@@ -36,17 +36,11 @@ func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstaller(installerType s
 	return fts.deployAgentToFleet(InstallerType(installerType))
 }
 
-// supported installers: tar, rpm, deb
-func (fts *FleetTestSuite) anAgentIsDeployedToFleetWithInstallerAndTags(installerType string, flags string) error {
-	return fts.deployAgentToFleet(InstallerType(installerType), Flags(flags))
-}
-
 func (fts *FleetTestSuite) deployAgentToFleet(opts ...DeploymentOpt) error {
 	// Default Options
 	args := &DeploymentOpts{
 		beatsProcess:        "",
 		installerType:       "tar",
-		flags:               "",
 		boostrapFleetServer: false,
 	}
 
@@ -54,12 +48,6 @@ func (fts *FleetTestSuite) deployAgentToFleet(opts ...DeploymentOpt) error {
 		opt(args)
 		log.Info("<<< configuration to agent deployment applied")
 	}
-<<<<<<< HEAD
-
-	return fts.anAgentIsDeployedToFleetWithInstallerAndFleetServer(installerType)
-}
-=======
->>>>>>> 3f728b7c (chore: bring back stand-alone agent (#2879))
 
 	log.WithFields(log.Fields{
 		"installer": args.installerType,
@@ -69,7 +57,6 @@ func (fts *FleetTestSuite) deployAgentToFleet(opts ...DeploymentOpt) error {
 
 	fts.InstallerType = args.installerType
 	fts.BeatsProcess = args.beatsProcess
-	fts.ElasticAgentFlags = args.flags
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).
 		WithScale(deployedAgentsCount).
@@ -88,28 +75,19 @@ func (fts *FleetTestSuite) deployAgentToFleet(opts ...DeploymentOpt) error {
 		return err
 	}
 
-<<<<<<< HEAD
-	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, installerType)
-	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken)
-=======
 	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
-	err = deploymentLifecycle(fts.currentContext, agentInstaller, fts.CurrentToken, fts.ElasticAgentFlags)
->>>>>>> 3f728b7c (chore: bring back stand-alone agent (#2879))
+	err = deploymentLifecycle(fts.currentContext, agentInstaller, fts.CurrentToken)
 	if err != nil {
 		return err
 	}
 	return err
 }
 
-<<<<<<< HEAD
-func deployAgentToFleet(ctx context.Context, agentInstaller deploy.ServiceOperator, token string) error {
-=======
 // DeploymentOpts options to be applied to a deployment of the elastic-agent
 type DeploymentOpts struct {
 	beatsProcess        string
 	boostrapFleetServer bool
 	installerType       string
-	flags               string
 }
 
 // DeploymentOpt an option to be applied to a deployment of the elastic-agent
@@ -145,16 +123,7 @@ func InstallerType(installerType string) DeploymentOpt {
 	}
 }
 
-// Flags option to pass flags to the enrollment of the agent. Default is empty
-func Flags(flags string) DeploymentOpt {
-	return func(args *DeploymentOpts) {
-		log.Tracef(">>> applying configuration to agent deployment [Flags]: %s", flags)
-		args.flags = flags
-	}
-}
-
-func deploymentLifecycle(ctx context.Context, agentInstaller deploy.ServiceOperator, token string, flags string) error {
->>>>>>> 3f728b7c (chore: bring back stand-alone agent (#2879))
+func deploymentLifecycle(ctx context.Context, agentInstaller deploy.ServiceOperator, token string) error {
 	err := agentInstaller.Preinstall(ctx)
 	if err != nil {
 		return err

@@ -29,13 +29,7 @@ func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 		return err
 	}
 
-<<<<<<< HEAD
-	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
-	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken)
-
-=======
 	err = fts.deployAgentToFleet(InstallerType(fts.InstallerType))
->>>>>>> 3f728b7c (chore: bring back stand-alone agent (#2879))
 	if err == nil {
 		err = fmt.Errorf("the agent was enrolled although the token was previously revoked")
 
