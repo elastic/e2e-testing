@@ -6,7 +6,7 @@ There are a set of YAML files, named after `.e2e-tests*.yaml`, that drive the ex
 ### Available platforms file structure
 To support multiple test suite descriptors, we are defining the available platforms in one single file: `.e2e-platforms.yaml`. The structure of the file is the following:
 
-- **PLATFORMS**: this entry will hold a YAML object with all the available platforms where the tests could be run. Each available platform will be defined as a key in the YAML object, where each object will have a key identifying the platform with a very descriptive name (i.e. `stack` or `debian_arm64`) and the following attributes:
+- **PLATFORMS**: this entry will hold a YAML object with all the available platforms where the tests could be run. Each available platform will be defined as a key in the YAML object, where each object will have a key identifying the platform with a very descriptive name (i.e. `stack` or `debian_10_arm64`) and the following attributes:
   - **description**: Description of the purpose and/or characteristics of the platform machine. Required.
   - **image**: the AWS AMI identifier, i.e. `ami-0d90bed76900e679a`. Required.
   - **instance_type**: the AWS instance type, representing the size of the machine, i.e. `c5.4xlarge`. Required.
@@ -24,7 +24,7 @@ It's possible that a consumer of the e2e tests would need to define a specific l
     - **name**: name of the test scenario. It will be used by Jenkins to name the parallel stage representing this scenario. Required.
     - **provider**: declares the provider type for the test scenario. Valid values are `docker`, `elastic-package` and `remote`. If not present, it will use its parent test suite's provider. Optional.
     - **tags**: a Gherkin expression to filter scenarios by tag. It will drive the real execution of the tests, selecting which feature files and/or Cucumber tags will be added to the current test execution. An example could be `linux_integration` or `running_on_beats`. For reference, see https://github.com/cucumber/godog#tags. Required.
-    - **platforms**: a list of platforms where the tests will be executed. Valid values are already declared under the `PLATFORMS` object, using the key of the platform as elements in the list. I.e. `["centos8_arm64", "centos8_amd64", "debian_arm64", "debian_amd64", "sles15"]`. Required.
+    - **platforms**: a list of platforms where the tests will be executed. Valid values are already declared under the `PLATFORMS` object, using the key of the platform as elements in the list. I.e. `["centos8_arm64", "centos8_amd64", "debian_10_arm64", "debian_10_amd64", "sles15"]`. Required.
 
 ### Adding a new supported platform
 
