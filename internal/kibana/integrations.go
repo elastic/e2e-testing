@@ -196,7 +196,7 @@ func (c *Client) GetIntegrationFromAgentPolicy(ctx context.Context, packageName 
 			"error":   err,
 			"package": packageName,
 			"policy":  policy,
-		}).Trace("An error retrieving the package policies")
+		}).Error("An error retrieving the package policies")
 		return PackageDataStream{}, err
 	}
 
