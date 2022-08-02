@@ -34,11 +34,7 @@ SUITES:
         platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
       - name: "Beats Background Processes"
         tags: "running_on_beats"
-<<<<<<< HEAD
-        platforms: ["debian_arm64", "debian_amd64", "sles15"]
-=======
-        platforms: ["debian_10_arm64", "debian_10_amd64", "oracle_linux8", "sles15"]
->>>>>>> d591aa2d (chore: use a more descriptive name for debian 10 (#2884))
+        platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
       - name: "Upgrade Agent"
         tags: "upgrade_agent"
         platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
