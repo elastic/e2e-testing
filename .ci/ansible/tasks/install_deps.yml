@@ -66,34 +66,6 @@
     state: latest
   when: ansible_distribution in ["Fedora", "RedHat", "CentOS"]
 
-<<<<<<< HEAD
-=======
-- name: Install dependencies (Oracle Linux)
-  become: True
-  ansible.builtin.package:
-    name:
-      - autoconf
-      - bison
-      - flex
-      - gcc
-      - gcc-c++
-      - kernel-devel
-      - make
-      - m4
-      - patch
-      - libffi-devel
-      - python3-devel
-      - python3-pip
-      - rsync
-      - wget
-    state: latest
-    update_cache: yes
-  register: package_install_res
-  retries: 5
-  until: package_install_res is success
-  when: ansible_distribution in ["OracleLinux"]
-
->>>>>>> 3f728b7c (chore: bring back stand-alone agent (#2879))
 - name: Install ssh-import-id python package to copy public SSH keys from Github accounts
   become: True
   pip:
