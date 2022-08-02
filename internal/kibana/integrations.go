@@ -212,7 +212,13 @@ func (c *Client) GetIntegrationFromAgentPolicy(ctx context.Context, packageName 
 		}
 
 		for _, child := range packagePolicies {
-			if policy.ID == child.PolicyID && (strings.EqualFold(packageName, child.Name) || strings.EqualFold(packageName, child.Package.Title) || strings.EqualFold(packageName, child.Package.Name)) {
+			if policy.ID != child.PolicyID {
+				// not in the same policy: keep looping
+				continue
+			}
+
+			// the package name coincides with policy's Name, policy's package title or policy's package name
+			if strings.EqualFold(packageName, child.Name) || strings.EqualFold(packageName, child.Package.Title) || strings.EqualFold(packageName, child.Package.Name) {
 				log.WithFields(log.Fields{
 					"elapsedTime":     exp.GetElapsedTime(),
 					"package":         packageName,
