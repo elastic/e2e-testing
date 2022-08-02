@@ -206,7 +206,7 @@ func (c *Client) GetIntegrationFromAgentPolicy(ctx context.Context, packageName 
 		}
 	}
 
-	return PackageDataStream{}, fmt.Errorf("Unable to find package %s in policy %s", packageName, policy.ID)
+	return PackageDataStream{}, fmt.Errorf("unable to find package %s in policy %s", packageName, policy.ID)
 }
 
 // SecurityEndpoint endpoint metadata
