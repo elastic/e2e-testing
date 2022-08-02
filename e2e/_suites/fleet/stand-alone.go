@@ -46,7 +46,7 @@ func (fts *FleetTestSuite) theStandaloneAgentIsListedInFleetWithStatus(desiredSt
 	retryCount := 0
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 
 	waitForAgents := func() error {
 		retryCount++
@@ -90,7 +90,7 @@ func (fts *FleetTestSuite) thereIsNoNewDataInTheIndexAfterAgentShutsDown() error
 	minimumHitsCount := 1
 
 	agentService := deploy.NewServiceContainerRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 	result, err := searchAgentData(fts.currentContext, manifest.Hostname, fts.AgentStoppedDate, minimumHitsCount, maxTimeout)
 	if err != nil {
 		if strings.Contains(err.Error(), "type:index_not_found_exception") {
@@ -171,7 +171,7 @@ func (fts *FleetTestSuite) startStandAloneAgent(image string, bootstrapFleetServ
 
 	fts.Image = image
 
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 
 	err = fts.installTestTools(manifest.Name)
 	if err != nil {
