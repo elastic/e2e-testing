@@ -190,27 +190,55 @@ func (c *Client) GetIntegrationFromAgentPolicy(ctx context.Context, packageName 
 	span.Context.SetLabel("package", packageName)
 	defer span.End()
 
-	packagePolicies, err := c.ListPackagePolicies(ctx)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"package": packageName,
-			"policy":  policy,
-		}).Error("An error retrieving the package policies")
-		return PackageDataStream{}, err
-	}
+	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
+	retryCount := 1
 
-	for _, child := range packagePolicies {
-		if policy.ID == child.PolicyID && (strings.EqualFold(packageName, child.Name) || strings.EqualFold(packageName, child.Package.Title) || strings.EqualFold(packageName, child.Package.Name)) {
+	exp := utils.GetExponentialBackOff(maxTimeout)
+
+	foundPackageDataStream := PackageDataStream{}
+
+	isPackageInPolicyFn := func() error {
+		packagePolicies, err := c.ListPackagePolicies(ctx)
+		if err != nil {
 			log.WithFields(log.Fields{
-				"package": packageName,
-				"policy":  policy,
-			}).Trace("Package found in policy")
-			return child, nil
+				"elapsedTime": exp.GetElapsedTime(),
+				"error":       err,
+				"package":     packageName,
+				"policyID":    policy.ID,
+				"retries":     retryCount,
+			}).Warn("Error retrieving the package policies")
+			retryCount++
+			return err
 		}
+
+		for _, child := range packagePolicies {
+			if policy.ID == child.PolicyID && (strings.EqualFold(packageName, child.Name) || strings.EqualFold(packageName, child.Package.Title) || strings.EqualFold(packageName, child.Package.Name)) {
+				log.WithFields(log.Fields{
+					"elapsedTime":     exp.GetElapsedTime(),
+					"package":         packageName,
+					"packagePolicyID": child.PolicyID,
+					"policyID":        policy.ID,
+					"retries":         retryCount,
+				}).Trace("Package found in policy")
+
+				foundPackageDataStream = child
+				return nil
+			}
+		}
+
+		log.WithFields(log.Fields{
+			"elapsedTime": exp.GetElapsedTime(),
+			"package":     packageName,
+			"policyID":    policy.ID,
+			"retries":     retryCount,
+		}).Warn("Package not found in policy")
+		retryCount++
+		return fmt.Errorf("package %s not found in policy %s", packageName, policy.ID)
 	}
 
-	return PackageDataStream{}, fmt.Errorf("unable to find package %s in policy %s", packageName, policy.ID)
+	err := backoff.Retry(isPackageInPolicyFn, exp)
+
+	return foundPackageDataStream, err
 }
 
 // SecurityEndpoint endpoint metadata
