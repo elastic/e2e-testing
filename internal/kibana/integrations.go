@@ -214,6 +214,11 @@ func (c *Client) GetIntegrationFromAgentPolicy(ctx context.Context, packageName 
 		for _, child := range packagePolicies {
 			if policy.ID != child.PolicyID {
 				// not in the same policy: keep looping
+				log.WithFields(log.Fields{
+					"ID":        child.PolicyID,
+					"policy.id": policy.ID,
+					"retries":   retryCount,
+				}).Trace("Policies differ on ID. Continuing")
 				continue
 			}
 
@@ -236,10 +241,12 @@ func (c *Client) GetIntegrationFromAgentPolicy(ctx context.Context, packageName 
 		}
 
 		log.WithFields(log.Fields{
-			"elapsedTime": exp.GetElapsedTime(),
-			"package":     packageName,
-			"policyID":    policy.ID,
-			"retries":     retryCount,
+			"elapsedTime":   exp.GetElapsedTime(),
+			"package":       packageName,
+			"policyID":      policy.ID,
+			"policies":      packagePolicies,
+			"policiesCount": len(packagePolicies),
+			"retries":       retryCount,
 		}).Warn("Package not found in policy")
 		retryCount++
 		return fmt.Errorf("package %s not found in policy %s", packageName, policy.ID)
