@@ -215,9 +215,10 @@ func (c *Client) GetIntegrationFromAgentPolicy(ctx context.Context, packageName 
 			if policy.ID != child.PolicyID {
 				// not in the same policy: keep looping
 				log.WithFields(log.Fields{
-					"ID":        child.PolicyID,
-					"policy.id": policy.ID,
-					"retries":   retryCount,
+					"child.id":       child.ID,
+					"child.PolicyID": child.PolicyID,
+					"policy.id":      policy.ID,
+					"retries":        retryCount,
 				}).Trace("Policies differ on ID. Continuing")
 				continue
 			}
