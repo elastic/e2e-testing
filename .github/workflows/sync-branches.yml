@@ -1,0 +1,25 @@
+# Synchronize all pushes to 'main' branch with 'feature-arch-v2' branch
+name: Sync main with feature-arch-v2
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync_latest_from_upstream:
+    runs-on: ubuntu-latest
+    name: Sync latest commits from main branch
+    steps:
+      - name: Checkout target repo
+        uses: actions/checkout@v3
+        with:
+          ref: main
+
+      - name: Sync upstream changes
+        id: sync
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.0
+        with:
+          target_sync_branch: feature-arch-v2
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
+          upstream_sync_branch: main
+          upstream_sync_repo: elastic/e2e-testing
