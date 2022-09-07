@@ -9,6 +9,7 @@
       - libffi-dev
       - python3-dev
       - python3-pip
+      - setuptools-rust
     state: latest
     update_cache: yes
   register: package_install_res
@@ -63,6 +64,7 @@
       - python3-pip
       - rsync
       - wget
+      - setuptools-rust
     state: latest
   when: ansible_distribution in ["Fedora", "RedHat", "CentOS"]
 
@@ -84,7 +86,7 @@
       - python3-pip
       - rsync
       - wget
-      - setuptools
+      - setuptools-rust
     state: latest
     update_cache: yes
   register: package_install_res
