@@ -38,7 +38,6 @@
       - python3-pip
       - rsync
       - wget
-      - python-setuptools
     state: present
   environment:
     ZYPP_LOCK_TIMEOUT: 10
@@ -64,7 +63,6 @@
       - python3-pip
       - rsync
       - wget
-      - python-setuptools
     state: latest
   when: ansible_distribution in ["Fedora", "RedHat", "CentOS"]
 
@@ -86,7 +84,6 @@
       - python3-pip
       - rsync
       - wget
-      - python-setuptools
     state: latest
     update_cache: yes
   register: package_install_res
