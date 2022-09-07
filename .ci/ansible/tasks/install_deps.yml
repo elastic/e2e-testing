@@ -63,7 +63,6 @@
       - python3-pip
       - rsync
       - wget
-      - setuptools
     state: latest
   when: ansible_distribution in ["Fedora", "RedHat", "CentOS"]
 
