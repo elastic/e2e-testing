@@ -9,7 +9,6 @@
       - libffi-dev
       - python3-dev
       - python3-pip
-      - setuptools
     state: latest
     update_cache: yes
   register: package_install_res
@@ -39,7 +38,6 @@
       - python3-pip
       - rsync
       - wget
-      - setuptools
     state: present
   environment:
     ZYPP_LOCK_TIMEOUT: 10
