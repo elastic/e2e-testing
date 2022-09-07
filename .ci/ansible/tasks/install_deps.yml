@@ -9,7 +9,6 @@
       - libffi-dev
       - python3-dev
       - python3-pip
-      - setuptools-rust
     state: latest
     update_cache: yes
   register: package_install_res
@@ -39,6 +38,7 @@
       - python3-pip
       - rsync
       - wget
+      - python-setuptools
     state: present
   environment:
     ZYPP_LOCK_TIMEOUT: 10
@@ -64,7 +64,7 @@
       - python3-pip
       - rsync
       - wget
-      - setuptools-rust
+      - python-setuptools
     state: latest
   when: ansible_distribution in ["Fedora", "RedHat", "CentOS"]
 
@@ -86,7 +86,7 @@
       - python3-pip
       - rsync
       - wget
-      - setuptools-rust
+      - python-setuptools
     state: latest
     update_cache: yes
   register: package_install_res
