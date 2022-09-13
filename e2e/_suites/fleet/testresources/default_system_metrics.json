@@ -16,6 +16,14 @@
                                 "/var/log/auth.log*",
                                 "/var/log/secure*"
                             ]
+                        },
+                        "preserve_original_event": {
+                            "type":"bool",
+                            "value": false
+                        },
+                        "tags": {
+                            "type":"text",
+                            "value": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
                         }
                     },
                     "id":"logfile-system.auth-1f74735e-47d3-407f-9664-4ab119f1d5e1",
@@ -33,6 +41,14 @@
                                 "/var/log/messages*",
                                 "/var/log/syslog*"
                             ]
+                        },
+                        "preserve_original_event": {
+                            "type":"bool",
+                            "value": false
+                        },
+                        "tags": {
+                            "type":"text",
+                            "value": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
                         }
                     },
                     "id":"logfile-system.syslog-1f74735e-47d3-407f-9664-4ab119f1d5e2",
@@ -49,6 +65,16 @@
                         "type":"logs",
                         "dataset":"system.application"
                     },
+                    "vars":{
+                        "preserve_original_event": {
+                            "type":"bool",
+                            "value": false
+                        },
+                        "tags": {
+                            "type":"text",
+                            "value": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
+                        }
+                    },
                     "id":"winlog-system.application-1f74735e-47d3-407f-9664-4ab119f1d5e3",
                     "enabled":false
                 },
@@ -57,6 +83,16 @@
                         "type":"logs",
                         "dataset":"system.security"
                     },
+                    "vars":{
+                        "preserve_original_event": {
+                            "type":"bool",
+                            "value": false
+                        },
+                        "tags": {
+                            "type":"text",
+                            "value": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
+                        }
+                    },
                     "id":"winlog-system.security-1f74735e-47d3-407f-9664-4ab119f1d5e4",
                     "enabled":false
                 },
@@ -64,6 +100,16 @@
                     "data_stream":{
                         "type":"logs",
                         "dataset":"system.system"
+                    },
+                    "vars":{
+                        "preserve_original_event": {
+                            "type":"bool",
+                            "value": false
+                        },
+                        "tags": {
+                            "type":"text",
+                            "value": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
+                        }
                     },
                     "id":"winlog-system.system-1f74735e-47d3-407f-9664-4ab119f1d5e5",
                     "enabled":false
@@ -74,7 +120,15 @@
             "vars":{
                 "system.hostfs":{
                     "type":"text"
-                }
+                },
+                "preserve_original_event": {
+                            "type":"bool",
+                            "value": false
+                        },
+                "tags": {
+                            "type":"text",
+                            "value": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
+                        }
             },
             "type":"system/metrics",
             "enabled":true,
@@ -83,7 +137,7 @@
                     "data_stream":{
                         "type":"metrics",
                         "dataset":"system.core"
-                    },
+                    },  
                     "vars":{
                         "period":{
                             "type":"text",
