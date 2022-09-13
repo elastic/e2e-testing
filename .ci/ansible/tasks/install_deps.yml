@@ -109,7 +109,7 @@
 
 - name: Install Docker for ARM (Debian, Ubuntu)
   become: True
-  ansible.builtin.shell: curl -fsSL test.docker.com -o get-docker.sh && sh get-docker.sh
+  ansible.builtin.shell: curl -fsSL get.docker.com -o get-docker.sh && sh get-docker.sh
   when:
     - ansible_distribution in ["Debian", "Ubuntu"]
     - '"arm64" in nodeLabel'
