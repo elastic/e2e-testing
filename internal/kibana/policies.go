@@ -73,7 +73,7 @@ func (c *Client) ListPolicies(ctx context.Context) ([]Policy, error) {
 
 	if err != nil {
 		log.WithFields(log.Fields{
-			"body":  respBody,
+			"body":  string(respBody),
 			"error": err,
 		}).Error("Could not get Fleet's policies")
 		return nil, err
@@ -82,6 +82,7 @@ func (c *Client) ListPolicies(ctx context.Context) ([]Policy, error) {
 	if statusCode != 200 {
 		log.WithFields(log.Fields{
 			"error":      err,
+			"body":       string(respBody),
 			"statusCode": statusCode,
 		}).Error("Could not get Fleet's policies")
 
@@ -145,7 +146,7 @@ func (c *Client) CreatePolicy(ctx context.Context) (Policy, error) {
 
 	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/agent_policies", FleetAPI), []byte(reqBody))
 
-	jsonParsed, err := gabs.ParseJSON([]byte(respBody))
+	jsonParsed, err := gabs.ParseJSON(respBody)
 
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -247,7 +248,7 @@ func (c *Client) ListPackagePolicies(ctx context.Context) ([]PackageDataStream, 
 
 	if err != nil {
 		log.WithFields(log.Fields{
-			"body":  respBody,
+			"body":  string(respBody),
 			"error": err,
 		}).Error("Could not get Fleet's package policies")
 		return nil, err
@@ -255,6 +256,7 @@ func (c *Client) ListPackagePolicies(ctx context.Context) ([]PackageDataStream, 
 
 	if statusCode != 200 {
 		log.WithFields(log.Fields{
+			"body":       string(respBody),
 			"error":      err,
 			"statusCode": statusCode,
 		}).Error("Could not get Fleet's package policies")
