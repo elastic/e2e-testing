@@ -24,7 +24,7 @@ It's possible that a consumer of the e2e tests would need to define a specific l
     - **name**: name of the test scenario. It will be used by Jenkins to name the parallel stage representing this scenario. Required.
     - **provider**: declares the provider type for the test scenario. Valid values are `docker`, `elastic-package` and `remote`. If not present, it will use its parent test suite's provider. Optional.
     - **tags**: a Gherkin expression to filter scenarios by tag. It will drive the real execution of the tests, selecting which feature files and/or Cucumber tags will be added to the current test execution. An example could be `linux_integration` or `running_on_beats`. For reference, see https://github.com/cucumber/godog#tags. Required.
-    - **platforms**: a list of platforms where the tests will be executed. Valid values are already declared under the `PLATFORMS` object, using the key of the platform as elements in the list. I.e. `["centos8_arm64", "centos8_amd64", "debian_arm64", "debian_amd64", "sles15"]`. Required.
+    - **platforms**: a list of platforms where the tests will be executed. Valid values are already declared under the `PLATFORMS` object, using the key of the platform as elements in the list. I.e. `["centos8_arm64", "centos8_amd64", "debian_arm64", "debian_amd64", "sles15", "ubuntu22", "windows2019"]`. Required.
 
 ### Adding a new supported platform
 
@@ -46,11 +46,13 @@ You could be insterested in adding a new operative system in a specific architec
 
 ### Prereqs
 
-In order to interact with the build system, i.e. running Ansible commands to provision the AWS instances, you need to install Python 3.9 or above (See https://www.python.org/downloads/).
+- In order to interact with the build system, i.e. running Ansible commands to provision the AWS instances, you need to **install Python 3.9** or above (See https://www.python.org/downloads/).
 
-> Not using the right version of Python could lead Ansible to fail when creating an AWS instance. Please remove the entire virtual env directory (.venv) at the root directory of the project to start from a fresh environment and the right dependencies.
+> **Not using the right version of Python could lead Ansible to fail when creating an AWS instance. Please remove the entire virtual env directory (.venv) at the root directory of the project to start from a fresh environment and the right dependencies.**
 
-The following variables need to be exported:
+- For running the tests on supported platforms through CI deployment , **docker should be installed** on your local machine. 
+
+Further, the following variables need to be exported:
 
 - *AWS_SECRET_ACCESS_KEY*: AWS secret access key
 - *AWS_ACCESS_KEY_ID*: AWS access key id
@@ -334,3 +336,13 @@ To do so:
 7. In the input parameters form, set the `GITHUB_CHECK_SHA1` to the `SHA1` of the last commit in your pull request. This value will allow us to modify the mergeable status of that commit with the Github check. Besides that, it will set the specific directory in the GCP bucket to look up the CI binaries.
 8. In the input parameters form, set the `GITHUB_CHECK_REPO` to `elastic-agent` or `beats`, depending where the aforementioned SHA1 belongs. This is important to look up the binaries in the right GCP bucket.
 9. Click the `Build` button at the bottom of the parameters form.
+
+##Troubleshooting
+
+Make sure :
+- Python 3.9 or higher is installed.
+- Install python3-venv to resolve virtual environment creation errors.
+- In case, you are getting errors while creating AWS VMs, ensure you have exported AWS secret and access ids.
+- Check 600 permission is provided to id_rsa key files.
+- Run list-platforms command and export Node variabe to resolve Node creation errors.
+- While creating windows node, we need to run `create-node` command in portions such as `provision-node` and `setup-node`. Also, some times you need to ssh node to create it successfully.
