@@ -54,7 +54,7 @@ func (fts *FleetTestSuite) verifyPermissionHashStatus(status string) error {
 		}
 
 		permissionHashChanged := len(fts.PermissionHashes) != len(hashes)
-		permissionHashUpdated = false
+		permissionHashUpdated := false
 		for oldHash, oldPerm := range fts.PermissionHashes {
 			newPerm, found := hashes[oldHash]
 			if !found {
