@@ -40,8 +40,7 @@ type Agent struct {
 			} `json:"agent"`
 		} `json:"elastic"`
 	} `json:"local_metadata"`
-	Status string `json:"status"`
-	// Outputs is the policy output data, mapping the output name to its data
+	Status  string                   `json:"status"`
 	Outputs map[string]*PolicyOutput `json:"outputs,omitempty"`
 }
 

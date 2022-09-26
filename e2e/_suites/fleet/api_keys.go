@@ -49,6 +49,8 @@ func (fts *FleetTestSuite) verifyPermissionHashStatus(status string) error {
 		hashes, _ := fts.getAgentPermissionHashes()
 
 		logFields := log.Fields{
+			"old_hashes":  fts.PermissionHashes,
+			"new_hashes":  hashes,
 			"retries":     retryCount,
 			"elapsedTime": exp.GetElapsedTime(),
 		}
@@ -71,18 +73,18 @@ func (fts *FleetTestSuite) verifyPermissionHashStatus(status string) error {
 				return fmt.Errorf("integration added and Output API Key did not change yet")
 			}
 
-			log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been added", status)
+			log.WithFields(logFields).Infof("Output API Key has %s when the Integration has been added", status)
 			return nil
 		}
 
 		if status == "been updated" {
 			if !permissionHashUpdated {
 				retryCount++
-				log.WithFields(logFields).Warn("Integration added and Output API Key did not change yet")
-				return fmt.Errorf("integration added and Output API Key did not change yet")
+				log.WithFields(logFields).Warn("Integration added and Output API Key did not updated yet")
+				return fmt.Errorf("integration added and Output API Key did not updated yet")
 			}
 
-			log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been added", status)
+			log.WithFields(logFields).Infof("Output API Key has %s when the Integration has been added", status)
 			return nil
 		}
 
