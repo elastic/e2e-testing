@@ -54,13 +54,13 @@ func (fts *FleetTestSuite) verifyPermissionHashStatus(status string) error {
 		}
 
 		permissionHashChanged := len(fts.PermissionHashes) != len(hashes)
-		if !permissionHashChanged {
-			for oldHash, oldPerm := range fts.PermissionHashes {
-				newPerm, found := hashes[oldHash]
-				if !found || oldPerm != newPerm {
-					permissionHashChanged = true
-					break
-				}
+		permissionHashUpdated = false
+		for oldHash, oldPerm := range fts.PermissionHashes {
+			newPerm, found := hashes[oldHash]
+			if !found {
+				permissionHashChanged = true
+			} else if oldPerm != newPerm {
+				permissionHashUpdated = true
 			}
 		}
 
@@ -75,8 +75,19 @@ func (fts *FleetTestSuite) verifyPermissionHashStatus(status string) error {
 			return nil
 		}
 
+		if status == "been updated" {
+			if !permissionHashUpdated {
+				retryCount++
+				log.WithFields(logFields).Warn("Integration added and Output API Key did not change yet")
+				return fmt.Errorf("integration added and Output API Key did not change yet")
+			}
+
+			log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been added", status)
+			return nil
+		}
+
 		if status == "not changed" {
-			if permissionHashChanged {
+			if permissionHashChanged || permissionHashUpdated {
 				retryCount++
 				log.WithFields(logFields).Error("Integration updated and Output API Key is still changed")
 				return fmt.Errorf("integration updated and Output API Key is still changed")
