@@ -8,11 +8,11 @@ Scenario Outline: Adding the Linux Integration to an Agent changing Default API 
     And the agent is listed in Fleet as "online"
   When the "Linux" integration is "added" in the policy
   Then a Linux data stream exists with some data
-    And the the output permissions has "been updated"
+    And the output permissions has "been updated"
 
 @update-system-metrics-integration
 Scenario Outline: Updating the Integration on an Agent not changing Default API key
   Given an agent is deployed to Fleet with "tar" installer
     And the agent is listed in Fleet as "online"
   When the policy is updated to have "system/metrics" set to "core"
-  Then the the output permissions has "been updated"
+  Then the output permissions has "been updated"
