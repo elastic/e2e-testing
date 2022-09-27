@@ -67,12 +67,6 @@
     state: latest
   when: ansible_distribution in ["Fedora", "RedHat", "CentOS"]
 
-- name: Install dependencies (CentOS)
-  become: True
-  ansible.builtin.pip:
-    name: setuptools-rust
-  when: ansible_distribution in ["Fedora", "RedHat", "CentOS"]  
-
 - name: Install dependencies (Oracle Linux)
   become: True
   ansible.builtin.package:
