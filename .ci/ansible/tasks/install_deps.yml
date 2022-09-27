@@ -67,6 +67,12 @@
     state: latest
   when: ansible_distribution in ["Fedora", "RedHat", "CentOS"]
 
+- name: Install dependencies (CentOS)
+  become: True
+  ansible.builtin.pip:
+    name: setuptools-rust
+  when: ansible_distribution in ["Fedora", "RedHat", "CentOS"]  
+
 - name: Install dependencies (Oracle Linux)
   become: True
   ansible.builtin.package:
@@ -98,8 +104,8 @@
     name: ssh-import-id
   when: ansible_distribution not in ["Windows"]
 
-- name: Set sshd configuration for client alive settings
   become: True
+- name: Set sshd configuration for client alive settings
   ansible.builtin.copy:
     src: sshd_config
     dest: /etc/ssh/sshd_config
