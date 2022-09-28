@@ -98,8 +98,8 @@
     name: ssh-import-id
   when: ansible_distribution not in ["Windows"]
 
-  become: True
 - name: Set sshd configuration for client alive settings
+  become: True
   ansible.builtin.copy:
     src: sshd_config
     dest: /etc/ssh/sshd_config
