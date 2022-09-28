@@ -111,6 +111,12 @@
       include_tasks: tasks/install_deps.yml
       tags:
         - setup-node
+    - name: Upgrade pip (CentOS)
+      become: True
+      ansible.builtin.shell: python3 -m pip install --upgrade pip
+      when:
+        - ansible_distribution in ["CentOS"]
+        - '"arm64" in nodeLabel'
   roles:
     - role: geerlingguy.docker
       become: True
@@ -119,16 +125,16 @@
       docker_users:
         - "{{ ansible_user }}"
       when:
-        - '"arm64" not in nodeLabel'
+        # - '"arm64" not in nodeLabel'
         - 'ansible_os_family not in ["Suse", "Windows"]'
-    - role: geerlingguy.docker_arm
-      become: True
-      docker_daemon_options:
-        default-ulimit: ["nofile=1024000:1024000"]
-      docker_users:
-        - "{{ ansible_user }}"
-      when:
-        - '"arm64" in nodeLabel'
+    # - role: geerlingguy.docker_arm
+    #   become: True
+    #   docker_daemon_options:
+    #     default-ulimit: ["nofile=1024000:1024000"]
+    #   docker_users:
+    #     - "{{ ansible_user }}"
+    #   when:
+    #     - '"arm64" in nodeLabel'
     - role: geerlingguy.helm
       when:
         - ansible_facts['os_family'] != "Windows"
