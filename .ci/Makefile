@@ -147,7 +147,6 @@ setup-node: .runID set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
 	@:$(call check_defined, NODE_IP_ADDRESS, IP address of the test node not defined)
-	source $(VENV)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
