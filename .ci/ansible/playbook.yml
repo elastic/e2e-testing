@@ -111,6 +111,11 @@
       include_tasks: tasks/install_deps.yml
       tags:
         - setup-node
+    - name: Upgrade pip (CentOS)
+      become: True
+      ansible.builtin.shell: python3 -m pip install --upgrade pip
+      when:
+        - ansible_distribution in ["CentOS", "Debian", "Ubuntu"]        
   roles:
     - role: geerlingguy.docker
       become: True
