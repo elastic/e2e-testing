@@ -64,7 +64,7 @@ __check_defined = \
 .PHONY: setup-env
 setup-env:
 	$(MAKE) .runID
-	python3 -mvenv $(VENV_DIR)
+	python3 -mvenv $(VENV_DIR)	
 	$(PIP3) -q install wheel
 	$(PIP3) install -r $(PROJECT_DIR)/.ci/ansible/requirements.txt
 	$(ANSIBLE_GALAXY) install -r $(PROJECT_DIR)/.ci/ansible/requirements.yml
