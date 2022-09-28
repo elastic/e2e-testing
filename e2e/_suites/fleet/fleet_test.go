@@ -425,7 +425,7 @@ func InitializeFleetTestScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
 	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer and "([^"]*)" flags$`, fts.anAgentIsDeployedToFleetWithInstallerAndTags)
 	ctx.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
-	ctx.Step(`^the default API key has "([^"]*)"$`, fts.verifyDefaultAPIKey)
+	ctx.Step(`^the output permissions has "([^"]*)"$`, fts.verifyPermissionHashStatus)
 	ctx.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	ctx.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
 	ctx.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)

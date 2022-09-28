@@ -16,62 +16,86 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (fts *FleetTestSuite) getAgentDefaultAPIKey() (string, error) {
+func (fts *FleetTestSuite) getAgentPermissionHashes() (map[string]string, error) {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
 	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 	agent, err := fts.kibanaClient.GetAgentByHostnameFromList(fts.currentContext, manifest.Hostname)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return agent.DefaultAPIKey, nil
+
+	permissions := make(map[string]string)
+	for _, output := range agent.Outputs {
+		permissions[output.APIKeyID] = output.PermissionsHash
+	}
+
+	return permissions, nil
 }
 
 func (fts *FleetTestSuite) theAgentGetDefaultAPIKey() error {
-	defaultAPIKey, _ := fts.getAgentDefaultAPIKey()
-	log.WithFields(log.Fields{
-		"default_api_key": defaultAPIKey,
-	}).Info("The Agent is installed with Default Api Key")
-	fts.DefaultAPIKey = defaultAPIKey
+	hashes, _ := fts.getAgentPermissionHashes()
+	fts.PermissionHashes = hashes
+
 	return nil
 }
 
-func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
+func (fts *FleetTestSuite) verifyPermissionHashStatus(status string) error {
 	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
 	retryCount := 1
 
 	exp := utils.GetExponentialBackOff(maxTimeout)
 
-	checkAPIKeyFn := func() error {
-		newDefaultAPIKey, _ := fts.getAgentDefaultAPIKey()
+	checkHashFn := func() error {
+		hashes, _ := fts.getAgentPermissionHashes()
 
 		logFields := log.Fields{
-			"new_default_api_key": newDefaultAPIKey,
-			"old_default_api_key": fts.DefaultAPIKey,
-			"retries":             retryCount,
-			"elapsedTime":         exp.GetElapsedTime(),
+			"old_hashes":  fts.PermissionHashes,
+			"new_hashes":  hashes,
+			"retries":     retryCount,
+			"elapsedTime": exp.GetElapsedTime(),
 		}
 
-		defaultAPIKeyHasChanged := (newDefaultAPIKey != fts.DefaultAPIKey)
+		permissionHashChanged := len(fts.PermissionHashes) != len(hashes)
+		permissionHashUpdated := false
+		for oldHash, oldPerm := range fts.PermissionHashes {
+			newPerm, found := hashes[oldHash]
+			if !found {
+				permissionHashChanged = true
+			} else if oldPerm != newPerm {
+				permissionHashUpdated = true
+			}
+		}
 
 		if status == "changed" {
-			if !defaultAPIKeyHasChanged {
+			if !permissionHashChanged {
 				retryCount++
-				log.WithFields(logFields).Warn("Integration added and Default API Key did not change yet")
-				return fmt.Errorf("integration added and Default API Key did not change yet")
+				log.WithFields(logFields).Warn("Integration added and Output API Key did not change yet")
+				return fmt.Errorf("integration added and Output API Key did not change yet")
 			}
 
-			log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been added", status)
+			log.WithFields(logFields).Infof("Output API Key has %s when the Integration has been added", status)
+			return nil
+		}
+
+		if status == "been updated" {
+			if !permissionHashUpdated {
+				retryCount++
+				log.WithFields(logFields).Warn("Integration added and Output API Key did not updated yet")
+				return fmt.Errorf("integration added and Output API Key did not updated yet")
+			}
+
+			log.WithFields(logFields).Infof("Output API Key has %s when the Integration has been added", status)
 			return nil
 		}
 
 		if status == "not changed" {
-			if defaultAPIKeyHasChanged {
+			if permissionHashChanged || permissionHashUpdated {
 				retryCount++
-				log.WithFields(logFields).Error("Integration updated and Default API Key is still changed")
-				return fmt.Errorf("integration updated and Default API Key is still changed")
+				log.WithFields(logFields).Error("Integration updated and Output API Key is still changed")
+				return fmt.Errorf("integration updated and Output API Key is still changed")
 			}
 
-			log.WithFields(logFields).Infof("Default API Key has %s when the Integration has been updated", status)
+			log.WithFields(logFields).Infof("Output API Key has %s when the Integration has been updated", status)
 			return nil
 		}
 
@@ -79,6 +103,6 @@ func (fts *FleetTestSuite) verifyDefaultAPIKey(status string) error {
 		return godog.ErrPending
 	}
 
-	err := backoff.Retry(checkAPIKeyFn, exp)
+	err := backoff.Retry(checkHashFn, exp)
 	return err
 }
