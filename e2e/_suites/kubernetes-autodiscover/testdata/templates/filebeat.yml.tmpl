@@ -83,10 +83,10 @@ spec:
           #privileged: true
         resources:
           limits:
-            memory: 200Mi
+            memory: 512Mi
           requests:
             cpu: 100m
-            memory: 100Mi
+            memory: 200Mi
         volumeMounts:
         - name: config
           mountPath: /etc/filebeat.yml
