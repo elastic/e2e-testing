@@ -29,7 +29,7 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 
 	agentInVersionFn := func() error {
 		retryCount++
@@ -88,7 +88,7 @@ func (fts *FleetTestSuite) anAgentIsUpgradedToVersion(desiredVersion string) err
 		return agentInstaller.Upgrade(fts.currentContext, desiredVersion)
 	*/
 
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 	return fts.kibanaClient.UpgradeAgent(fts.currentContext, manifest.Hostname, desiredVersion)
 }
 

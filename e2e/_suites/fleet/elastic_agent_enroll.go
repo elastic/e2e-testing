@@ -20,22 +20,16 @@ import (
 func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
 	log.Trace("Enrolling a new agent with an revoked token")
 
-	// increase the number of agents
-	deployedAgentsCount++
-
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName).WithScale(deployedAgentsCount)
-	services := []deploy.ServiceRequest{
-		agentService,
-	}
-	env := fts.getProfileEnv()
-	err := fts.getDeployer().Add(fts.currentContext, deploy.NewServiceRequest(common.FleetProfileName), services, env)
+	serviceName := common.ElasticAgentServiceName
+	agentService := deploy.NewServiceRequest(serviceName)
+	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
+	err := agentInstaller.Uninstall(fts.currentContext)
 	if err != nil {
+		log.Errorf("could not uninstall the current agent: %v", err)
 		return err
 	}
 
-	agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
-	err = deployAgentToFleet(fts.currentContext, agentInstaller, fts.CurrentToken, fts.ElasticAgentFlags)
-
+	err = fts.deployAgentToFleet(InstallerType(fts.InstallerType))
 	if err == nil {
 		err = fmt.Errorf("the agent was enrolled although the token was previously revoked")
 
@@ -106,7 +100,7 @@ func (fts *FleetTestSuite) unenrollHostname() error {
 	defer span.End()
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 	log.Tracef("Un-enrolling all agentIDs for %s", manifest.Hostname)
 
 	agents, err := fts.kibanaClient.ListAgents(fts.currentContext)

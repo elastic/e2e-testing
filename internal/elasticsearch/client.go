@@ -181,7 +181,7 @@ type SecurityTokenResponse struct {
 		} `json:"lookup_realm"`
 		Metadata struct {
 			Reserved string `json:"_reserved"`
-		} `json:"lookup_realm"`
+		} `json:"metadata"`
 		Roles    []string `json:"roles"`
 		Username string   `json:"username"`
 	} `json:"authentication"`
