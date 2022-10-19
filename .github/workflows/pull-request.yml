@@ -13,7 +13,7 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     env:
-      JENKINS_URL: https://apm-ci.elastic.co/
+      JENKINS_URL: https://beats-ci.elastic.co/
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
@@ -38,18 +38,3 @@ jobs:
         with:
           name: test-results
           path: outputs/TEST-unit-*.xml
-
-  docs:
-    name: Run docs
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: elastic/apm-pipeline-library/.github/actions/docker-login@gh_actions
-        with:
-          registry: docker.elastic.co
-          secret: secret/observability-team/ci/docker-registry/prod
-          url: ${{ secrets.VAULT_ADDR }}
-          roleId: ${{ secrets.VAULT_ROLE_ID }}
-          secretId: ${{ secrets.VAULT_SECRET_ID }}
-      - name: build
-        run: make -C e2e build-docs
