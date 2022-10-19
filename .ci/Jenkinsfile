@@ -625,14 +625,12 @@ def generateFunctionalTestStep(Map args = [:]){
 
 def retryWithNode(Map args = [:], Closure body) {
   try {
-    // Increment the retries
     incrementRetries(args.stageName)
     withNode(args){
       body()
     }
   } catch (err) {
     log(level: 'WARN', text: "Stage '${args.stageName}' failed, let's analyse if it's a flaky CI worker.")
-    // if the given worker while running it's stage wont' be true
     if (isFlakyWorker(args.stageName) && isRetryAvailable(args.stageName)) {
       log(level: 'INFO', text: "Rerun '${args.stageName}' in a new worker.")
       retryWithNode(args) {
@@ -661,11 +659,9 @@ def incrementRetries(stageName) {
 }
 
 def setFlakyWorker(stageName) {
-  // set the status to be failed for now
   workersStatus[stageName].status = false
 }
 
 def unsetFlakyWorker(stageName) {
-  // set the status to be failed for now
   workersStatus[stageName].status = true
 }
