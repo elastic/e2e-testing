@@ -630,9 +630,11 @@ def retryWithNode(Map args = [:], Closure body) {
     withNode(args){
       body()
     }
-  } catch (e) {
+  } catch (err) {
+    log(level: 'WARN', text: "Stage '${args.stageName}' failed, let's analyse if it's a flaky CI worker.")
     // if the given worker while running it's stage wont' be true
     if (isFlakyWorker(args.stageName) && isRetryAvailable(args.stageName)) {
+      log(level: 'INFO', text: "Rerun '${args.stageName}' in a new worker.")
       retryWithNode(args) {
         body()
       }
