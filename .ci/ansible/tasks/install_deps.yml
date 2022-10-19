@@ -6,7 +6,10 @@
       - rsync
       - wget
       - build-essential
+      - libffi-dev
+      - python3-dev
       - python3-pip
+      - python3-venv
     state: latest
     update_cache: yes
   register: package_install_res
@@ -16,9 +19,11 @@
     - ansible_os_family not in ["Windows"]
     - ansible_pkg_mgr == 'apt'
 
+# Wait 10 seconds to acquire the lock before failing
 - name: Install dependencies (SUSE)
   become: True
   zypper:
+    update_cache: yes
     name:
       - autoconf
       - bison
@@ -29,10 +34,14 @@
       - kernel-default-devel
       - make
       - m4
+      - libffi-devel
+      - python3-devel
       - python3-pip
       - rsync
       - wget
     state: present
+  environment:
+    ZYPP_LOCK_TIMEOUT: 10
   when:
     - ansible_facts['os_family'] != "Windows"
     - ansible_os_family == "Suse" or ansible_pkg_mgr == 'zypper'
@@ -50,6 +59,8 @@
       - make
       - m4
       - patch
+      - libffi-devel
+      - python3-devel
       - python3-pip
       - rsync
       - wget
@@ -69,6 +80,8 @@
       - make
       - m4
       - patch
+      - libffi-devel
+      - python3-devel
       - python3-pip
       - rsync
       - wget
