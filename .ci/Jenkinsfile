@@ -652,12 +652,17 @@ def isFlakyWorker(stageName) {
 }
 
 def isRetryAvailable(stageName) {
-  return workersStatus.get(args.stageName).get('retries', 2) < 2
+  return workersStatus.get(stageName).get('retries', 2) < 2
 }
 
 def incrementRetries(stageName) {
-  def current = workersStatus.get(stageName).get('retries', 0)
-  workersStatus[stageName].retries = current + 1
+  if (workersStatus.containsKey(stageName)) {
+    def current = workersStatus[stageName].get('retries', 0)
+    workersStatus[stageName].retries = current + 1
+  } else {
+    setFlakyWorker(stageName)
+    workersStatus[stageName].retries = 1
+  }
 }
 
 def setFlakyWorker(stageName) {
