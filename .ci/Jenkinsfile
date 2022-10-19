@@ -646,18 +646,18 @@ def retryWithNode(Map args = [:], Closure body) {
 
 def isFlakyWorker(stageName) {
   if (workersStatus.containsKey(stageName)) {
-    return !workerStatus.get(stageName).get('status', true)
+    return !workersStatus.get(stageName).get('status', true)
   }
   return false
 }
 
 def isRetryAvailable(stageName) {
-  return workerStatus.get(args.stageName).get('retries', 2) < 2
+  return workersStatus.get(args.stageName).get('retries', 2) < 2
 }
 
 def incrementRetries(stageName) {
-  def current = workerStatus.get(stageName).get('retries', 0)
-  workerStatus[stageName].retries = current + 1
+  def current = workersStatus.get(stageName).get('retries', 0)
+  workersStatus[stageName].retries = current + 1
 }
 
 def setFlakyWorker(stageName) {
