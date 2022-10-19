@@ -17,6 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
+      - name: Install dependencies
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.0
+          go install golang.org/x/lint/golint
+
       - uses: pre-commit/action@v3.0.0
 
   test:
