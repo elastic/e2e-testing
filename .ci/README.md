@@ -57,6 +57,8 @@ Further, the following variables need to be exported:
 - *AWS_SECRET_ACCESS_KEY*: AWS secret access key
 - *AWS_ACCESS_KEY_ID*: AWS access key id
 
+You might need to [create]((https://github.com/elastic/observability-dev/blob/main/docs/how-we-work/aws-onboarding.md)) a [AWS elastic-observability](https://elastic-observability.signin.aws.amazon.com/console) acc and then generate the [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html#cli-configure-quickstart-creds-create).
+
 Install python deps:
 
 ```shell
