@@ -26,7 +26,7 @@ func (fts *FleetTestSuite) theHostNameIsNotShownInTheAdminViewInTheSecurityApp()
 
 	agentListedInSecurityFn := func() error {
 		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+		manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 		host, err := fts.kibanaClient.IsAgentListedInSecurityApp(fts.currentContext, manifest.Hostname)
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -68,7 +68,7 @@ func (fts *FleetTestSuite) theHostNameIsShownInTheAdminViewInTheSecurityApp(stat
 
 	agentListedInSecurityFn := func() error {
 		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+		manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 		matches, err := fts.kibanaClient.IsAgentListedInSecurityAppWithStatus(fts.currentContext, manifest.Hostname, status)
 		if err != nil || !matches {
 			log.WithFields(log.Fields{
@@ -149,7 +149,7 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveMode(name string, mode string
 
 func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 	agentID, err := fts.kibanaClient.GetAgentIDByHostname(fts.currentContext, manifest.Hostname)
 	if err != nil {
 		return err
@@ -195,7 +195,7 @@ func (fts *FleetTestSuite) thePolicyWillReflectTheChangeInTheSecurityApp() error
 
 func (fts *FleetTestSuite) thePolicyResponseWillBeShownInTheSecurityApp() error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 	agentID, err := fts.kibanaClient.GetAgentIDByHostname(fts.currentContext, manifest.Hostname)
 	if err != nil {
 		return err

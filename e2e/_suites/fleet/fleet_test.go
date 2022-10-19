@@ -18,9 +18,9 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"github.com/docker/go-connections/nat"
-	"github.com/elastic/e2e-testing/cli/config"
 	apme2e "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/config"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/installer"
@@ -85,7 +85,7 @@ func afterScenario(fts *FleetTestSuite) {
 
 		err := fts.unenrollHostname()
 		if err != nil {
-			manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+			manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 			log.WithFields(log.Fields{
 				"err":      err,
 				"hostname": manifest.Hostname,
@@ -425,7 +425,7 @@ func InitializeFleetTestScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
 	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer and "([^"]*)" flags$`, fts.anAgentIsDeployedToFleetWithInstallerAndTags)
 	ctx.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
-	ctx.Step(`^the default API key has "([^"]*)"$`, fts.verifyDefaultAPIKey)
+	ctx.Step(`^the output permissions has "([^"]*)"$`, fts.verifyPermissionHashStatus)
 	ctx.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	ctx.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
 	ctx.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)

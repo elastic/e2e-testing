@@ -40,6 +40,7 @@ type FleetTestSuite struct {
 	// instrumentation
 	currentContext    context.Context
 	DefaultAPIKey     string
+	PermissionHashes  map[string]string
 	ElasticAgentFlags string
 }
 
