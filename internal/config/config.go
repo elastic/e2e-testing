@@ -105,8 +105,8 @@ func OpDir() string {
 
 // PutServiceEnvironment puts the environment variables for the service, replacing "SERVICE_"
 // with service name in uppercase. The variables are:
-//  - SERVICE_VERSION: where it represents the version of the service (i.e. APACHE_VERSION)
-//  - SERVICE_PATH: where it represents the path to its compose file (i.e. APACHE_PATH)
+//   - SERVICE_VERSION: where it represents the version of the service (i.e. APACHE_VERSION)
+//   - SERVICE_PATH: where it represents the path to its compose file (i.e. APACHE_PATH)
 func PutServiceEnvironment(env map[string]string, service string, serviceVersion string) map[string]string {
 	serviceUpper := strings.ToUpper(service)
 
@@ -129,8 +129,8 @@ func PutServiceEnvironment(env map[string]string, service string, serviceVersion
 // PutServiceVariantEnvironment puts the environment variables that comes in the supported-versions.yml
 // file of the service, replacing "SERVICE_ with service name in uppercase. At the end, it also adds
 // the version and the path for the service, calling the PutServiceEnvironment method. An example:
-//  - SERVICE_VARIANT: where SERVICE is the name of the service (i.e. APACHE_VARIANT)
-//  - SERVICE_VERSION: where it represents the version of the service (i.e. APACHE_VERSION)
+//   - SERVICE_VARIANT: where SERVICE is the name of the service (i.e. APACHE_VARIANT)
+//   - SERVICE_VERSION: where it represents the version of the service (i.e. APACHE_VERSION)
 func PutServiceVariantEnvironment(env map[string]string, service string, serviceVariant string, serviceVersion string) map[string]string {
 	type EnvVar interface{}
 	type supportedVersions struct {
@@ -297,14 +297,15 @@ func extractProfileServiceConfig(op *OpConfig, box *packr.Box) error {
 //
 // Directory format for profiles/services are as follows:
 // compose/
-//  profiles/
-//    fleet/
-//      configurations/
-//      docker-compose.yml
-//  services/
-//    apache/
-//      configurations/
-//      docker-compose.yml
+//
+//	profiles/
+//	  fleet/
+//	    configurations/
+//	    docker-compose.yml
+//	services/
+//	  apache/
+//	    configurations/
+//	    docker-compose.yml
 //
 // configurations/ directory is optional and only needed if docker-compose.yml needs to reference
 // any filelike object within its parent directory
