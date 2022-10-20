@@ -40,7 +40,36 @@ type Agent struct {
 			} `json:"agent"`
 		} `json:"elastic"`
 	} `json:"local_metadata"`
-	Status string `json:"status"`
+	Status  string                   `json:"status"`
+	Outputs map[string]*PolicyOutput `json:"outputs,omitempty"`
+}
+
+// PolicyOutput holds the needed data to manage the output API keys
+type PolicyOutput struct {
+	// API key the Elastic Agent uses to authenticate with elasticsearch
+	APIKey string `json:"api_key"`
+
+	// ID of the API key the Elastic Agent uses to authenticate with elasticsearch
+	APIKeyID string `json:"api_key_id"`
+
+	// The policy output permissions hash
+	PermissionsHash string `json:"permissions_hash"`
+
+	// API keys to be invalidated on next agent ack
+	ToRetireAPIKeyIds []ToRetireAPIKeyIdsItems `json:"to_retire_api_key_ids,omitempty"`
+
+	// Type is the output type. Currently only Elasticsearch is supported.
+	Type string `json:"type"`
+}
+
+// ToRetireAPIKeyIdsItems the Output API Keys that were replaced and should be retired
+type ToRetireAPIKeyIdsItems struct {
+
+	// API Key identifier
+	ID string `json:"id,omitempty"`
+
+	// Date/time the API key was retired
+	RetiredAt string `json:"retired_at,omitempty"`
 }
 
 // GetAgentByHostnameFromList get an agent by the local_metadata.host.name property, reading from the agents list
