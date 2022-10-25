@@ -134,3 +134,7 @@ We have received contributions from multiple teams in different aspects of the e
   - Julien Lind, from Fleet, has helped in defining the support matrix in terms of what OSs and architectures need to be run for Fleet test suite.
   - Julien Mailleret, from Infra, has contributed to the Helm charts test suite.
   - Anderson Queiroz (Elastic Agent) and Víctor Martínez (Observability Robots), are currently working on the MacOS support for running the tests on real Apple machines using Elastic's Orka provisioner.
+
+## Licensing
+
+This project is licensed under the Elastic License: https://www.elastic.co/licensing/elastic-license
