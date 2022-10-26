@@ -506,10 +506,11 @@ def generateFunctionalTestStep(Map args = [:]){
                 log(level: 'DEBUG', text: "Sleeping 300 seconds on Windows so that SSH is accessible in the remote instance.")
                 sleep(300)
               }
-
-              ciBuild() {
-                retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                  sh(label: 'Configure node for testing', script: "make -C .ci setup-node")
+              if (!machine.dependencies_installed) {
+                ciBuild() {
+                  retryWithSleep(retries: 3, seconds: 5, backoff: true){
+                    sh(label: 'Configure node for testing', script: "make -C .ci setup-node")
+                  }
                 }
               }
               ciBuild() {

@@ -2,7 +2,6 @@
   hosts: localhost
   gather_facts: yes
   vars:
-    ansible_user: "{{ nodeUser }}"
   tasks:
   - name: Setup nodes
     include_tasks: tasks/runners.yml
@@ -40,7 +39,6 @@
       vars:
         go_version: 1.17
   vars:
-    ansible_user: "{{ nodeUser }}"
     ansible_python_interpreter: "auto"
   tasks:
   - name: Install deps
@@ -90,6 +88,7 @@
     - vars/main.yml
   tags:
     - setup-node
+    - setup-ami
   pre_tasks:
     - name: Load a variable file based on the OS type
       include_vars: "{{ lookup('first_found', params) }}"
@@ -111,6 +110,7 @@
       include_tasks: tasks/install_deps.yml
       tags:
         - setup-node
+        - setup-ami
     - name: Upgrade pip (CentOS)
       become: True
       ansible.builtin.shell: python3 -m pip install --upgrade pip
@@ -124,16 +124,7 @@
       docker_users:
         - "{{ ansible_user }}"
       when:
-        - '"arm64" not in nodeLabel'
         - 'ansible_os_family not in ["Suse", "Windows"]'
-    - role: geerlingguy.docker_arm
-      become: True
-      docker_daemon_options:
-        default-ulimit: ["nofile=1024000:1024000"]
-      docker_users:
-        - "{{ ansible_user }}"
-      when:
-        - '"arm64" in nodeLabel'
     - role: geerlingguy.helm
       when:
         - ansible_facts['os_family'] != "Windows"
@@ -154,7 +145,6 @@
   vars:
     ansible_python_interpreter: "auto"
     ansible_shell_type: "{{ nodeShellType | default('sh') }}"
-    ansible_user: "{{ nodeUser }}"
     pip_package: "python3-pip"
   tasks:
 
@@ -164,21 +154,19 @@
     with_items:
       - andrewrothstein.kubectl
       - andrewrothstein.kind
+    tags:
+      - setup-ami
     when:
       - ansible_facts['os_family'] != "Windows"
-      - suite is defined
-      - suite in ["kubernetes-autodiscover", "helm"]
-
-  - name: Setup source code
-    include_tasks: tasks/copy_test_files.yml
-    tags:
-      - setup-node
-      - copy-source
 
   - name: Add SSH keys to runner instances
-    include_tasks: tasks/install_ssh_keys.yml
+    authorized_key:
+      user: "{{ ansible_user }}"
+      key: "https://github.com/{{ item }}.keys"
+    with_lines: cat ./github-ssh-keys
     tags:
       - setup-node
+      - setup-ami
 
   - name: Create home dir
     ansible.builtin.file:
@@ -190,6 +178,7 @@
       - setup-node
       - copy-source
       - scripts
+      - setup-ami
     when: ansible_os_family not in ["Windows"]
 
   - name: Create home dir for root
@@ -203,6 +192,7 @@
       - setup-node
       - copy-source
       - scripts
+      - setup-ami
     when: ansible_os_family not in ["Windows"]
 
   - name: Create home dir on Windows
@@ -213,22 +203,5 @@
       - setup-node
       - copy-source
       - scripts
+      - setup-ami
     when: ansible_os_family in ["Windows"]
-
-  - name: Configure test script
-    include_tasks: tasks/setup_test_script.yml
-    tags:
-      - setup-node
-      - copy-source
-      - scripts
-    when:
-      - ansible_facts['os_family'] != "Windows"
-
-  - name: Configure test script (Windows)
-    include_tasks: tasks/setup_test_script_windows.yml
-    tags:
-      - setup-node
-      - copy-source
-      - scripts
-    when:
-      - ansible_facts['os_family'] == "Windows"

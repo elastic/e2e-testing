@@ -66,3 +66,10 @@ PLATFORMS:
     instance_type: "t3.xlarge"
     shell_type: sh
     username: ubuntu
+  ubuntu_22_04_amd64_preinstalled:
+    description: "Ubuntu 22.04 AMD64 Preinstalled"
+    image: "ubuntu-2204-e2e-runner-1"
+    instance_type: "t3.xlarge"
+    shell_type: sh
+    username: ubuntu
+    dependencies_installed: true

@@ -107,13 +107,13 @@
     group: "{{ ansible_user }}"
     mode: '0600'
   when: ansible_distribution in ["CentOS", "Debian", "Fedora", "RedHat", "Ubuntu"]
-
-- name: Install Docker for ARM (Debian, Ubuntu)
-  become: True
-  ansible.builtin.shell: curl -fsSL test.docker.com -o get-docker.sh && sh get-docker.sh
-  when:
-    - ansible_distribution in ["Debian", "Ubuntu"]
-    - '"arm64" in nodeLabel'
+# # ARM Docker is installed by geerlingguy.docker
+# - name: Install Docker for ARM (Debian, Ubuntu)
+#   become: True
+#   ansible.builtin.shell: curl -fsSL test.docker.com -o get-docker.sh && sh get-docker.sh
+#   when:
+#     - ansible_distribution in ["Debian", "Ubuntu"]
+#     - '"arm64" in nodeLabel'
 
 - name: Install dependencies on Windows
   chocolatey.chocolatey.win_chocolatey:

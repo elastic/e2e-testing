@@ -1,0 +1,7 @@
+---
+SUITES:  
+  - suite: "fleet"
+    scenarios:
+      - name: "Fleet"
+        tags: "fleet_mode"
+        platforms: ["ubuntu_22_04_amd64_preinstalled"]  

@@ -11,3 +11,4 @@ hosts
 *-sshhosts
 .idea
 .obs
+*.iml
