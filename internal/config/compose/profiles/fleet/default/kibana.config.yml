@@ -9,7 +9,7 @@ elasticsearch.username: admin
 elasticsearch.password: changeme
 xpack.monitoring.ui.container.elasticsearch.enabled: true
 
-xpack.fleet.registryUrl: "https://epr-staging.elastic.co"
+xpack.fleet.registryUrl: "https://epr.elastic.co"
 xpack.fleet.agents.enabled: true
 xpack.fleet.agents.elasticsearch.host: "http://elasticsearch:9200"
 xpack.fleet.agents.fleet_server.hosts: ["http://fleet-server:8220"]
