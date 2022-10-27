@@ -14,10 +14,10 @@ SSH_OPTS=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
 SSH_OPTS_EXTENDED=-o TCPKeepAlive=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=200 $(SSH_OPTS)
 
 # Debian 10 AMD (see .e2e-platforms.yaml)
-STACK_IMAGE=ami-0d90bed76900e679a
+STACK_IMAGE=ubuntu-2204-e2e-runner-1
 STACK_INSTANCE_TYPE=t3.xlarge
-STACK_LABEL=debian_amd64
-STACK_USER=admin
+STACK_LABEL=ubuntu_2204_preinstalled
+STACK_USER=ubuntu
 STACK_IP_ADDRESS ?= $(shell cat $(PROJECT_DIR)/.ci/.stack-host-ip)
 STACK_INSTANCE_ID ?= stack_$(STACK_LABEL)_$(RUN_ID)
 

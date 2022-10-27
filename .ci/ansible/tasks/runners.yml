@@ -30,6 +30,7 @@
   register: preinstalled_image
   tags:    
     - provision-node
+    - provision-stack
 
 - name: "Create preinstalled {{nodeLabel}} AWS instances"
   ec2:
