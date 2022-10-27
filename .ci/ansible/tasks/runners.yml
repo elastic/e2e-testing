@@ -27,18 +27,21 @@
     region: "us-east-2"
     filters:
       name: '{{nodeImage}}'
-  register: preinstalled_image
+  register: preinstalled_images
   tags:    
     - provision-node
     - provision-stack
 
 - name: "Create preinstalled {{nodeLabel}} AWS instances"
+  vars:
+    ami_image: >
+      {{ preinstalled_images.images | selectattr('name', 'defined') | sort(attribute='creation_date') | last }}
   ec2:
     wait: yes
     key_name: "e2essh-{{runId}}"
     region: us-east-2
     group: e2e
-    image: "{{ preinstalled_image[0].image_id }}"
+    image: "{{ ami_image }}"
     instance_type: '{{nodeInstanceType}}'
     instance_tags:
       branch: "{{branch | default('Not running on CI')}}"
