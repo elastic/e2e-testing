@@ -41,7 +41,7 @@
     key_name: "e2essh-{{runId}}"
     region: us-east-2
     group: e2e
-    image: "{{ ami_image }}"
+    image: "{{ ami_image.image_id }}"
     instance_type: '{{nodeInstanceType}}'
     instance_tags:
       branch: "{{branch | default('Not running on CI')}}"
