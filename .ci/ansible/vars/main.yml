@@ -1,5 +1,5 @@
 ---
 e2e_project_name: "e2e-testing"
 
-e2e_base_dir: "/home/{{ ansible_user }}/{{ e2e_project_name }}/"
-e2e_home_dir: "/home/{{ ansible_user }}/.op/"
+e2e_base_dir: "/home/{{ ansible_user | default(ansible_env.USER) }}/{{ e2e_project_name }}/"
+e2e_home_dir: "/home/{{ ansible_user | default(ansible_env.USER) }}/.op/"
