@@ -28,8 +28,7 @@
       become: True
       docker_daemon_options:
         default-ulimit: ["nofile=1024000:1024000"]
-      docker_users:
-        - "{{ ansible_user }}"
+      docker_users: ["{{ ansible_user | default(ansible_env.USER) }}"]
     - role: geerlingguy.pip
       become: True
     - role: andrewrothstein.kubectl
