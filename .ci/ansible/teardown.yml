@@ -1,8 +1,8 @@
 ---
 - name: Teardown environment
   hosts: localhost
-  vars:
-    ansible_user: "{{ nodeUser }}"
+#  vars:
+#    ansible_user: "{{ nodeUser }}"
   tasks:
   - name: Gather information about any instance with a tag key 'name' and value "e2e-{{ instanceID }}"
     amazon.aws.ec2_instance_info:

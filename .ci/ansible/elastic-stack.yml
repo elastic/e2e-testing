@@ -21,7 +21,7 @@
   vars:
     ansible_python_interpreter: "auto"
     ansible_shell_type: "{{ nodeShellType | default('sh') }}"
-    ansible_user: "{{ nodeUser }}"
+#    ansible_user: "{{ nodeUser }}"
     pip_package: "python3-pip"
   tasks:
 

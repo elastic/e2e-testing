@@ -81,7 +81,7 @@
 - name: Add AWS host to ssh address list
   lineinfile:
     state: present
-    line: "- {{ nodeUser }}@{{addr.public_ip}}"
+    line: "- {{ ansible_user }}@{{addr.public_ip}}"
     insertafter: EOF
     dest: "{{ workspace }}{{nodeLabel}}-sshhosts"
     create: yes
