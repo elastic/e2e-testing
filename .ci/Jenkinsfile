@@ -50,7 +50,7 @@ pipeline {
     booleanParam(name: "SKIP_SCENARIOS", defaultValue: true, description: "If it's needed to skip those scenarios marked as @skip. Default true")
     booleanParam(name: "NIGHTLY_SCENARIOS", defaultValue: false, description: "Deprecated. Not used in this pipeline any more. Please refer to the 'testMatrixFile' param, which defines what scenarios to run")
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
-    string(name: 'testMatrixFile', defaultValue: '.ci/.e2e-tests.yaml', description: 'The file with the test suite and scenarios to be tested.')
+    string(name: 'testMatrixFile', defaultValue: '.ci/.e2e-tests-tmp.yaml', description: 'The file with the test suite and scenarios to be tested.')
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
     booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify to Slack with green builds.")
     string(name: 'SLACK_CHANNEL', defaultValue: 'observablt-bots', description: 'The Slack channel(s) where errors will be posted. For multiple channels, use a comma-separated list of channels')
