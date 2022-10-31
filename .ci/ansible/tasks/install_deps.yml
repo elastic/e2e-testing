@@ -92,11 +92,12 @@
   until: package_install_res is success
   when: ansible_distribution in ["OracleLinux"]
 
-- name: Install ssh-import-id python package to copy public SSH keys from Github accounts
-  become: True
-  pip:
-    name: ssh-import-id
-  when: ansible_distribution not in ["Windows"]
+# Not required since authorized_key is used
+#- name: Install ssh-import-id python package to copy public SSH keys from Github accounts
+#  become: True
+#  pip:
+#    name: ssh-import-id
+#  when: ansible_distribution not in ["Windows"]
 
 - name: Set sshd configuration for client alive settings
   become: True
