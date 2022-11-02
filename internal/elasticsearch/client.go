@@ -27,6 +27,7 @@ import (
 
 // Query a very reduced representation of an elasticsearch query, where
 // we want to simply override the event.module and service.version fields
+//
 //nolint:unused
 type Query struct {
 	EventModule    string
@@ -123,6 +124,7 @@ func GetElasticSearchEndpoint() *Endpoint {
 // at configuration level. Then we will inspect the running container to get its port bindings
 // and from them, get the one related to the Elasticsearch port (9200). As it is bound to a
 // random port at localhost, we will build the URL with the bound port at localhost.
+//
 //nolint:unused
 func getElasticsearchClient(ctx context.Context) (*es.Client, error) {
 	esEndpoint := GetElasticSearchEndpoint()
@@ -133,6 +135,7 @@ func getElasticsearchClient(ctx context.Context) (*es.Client, error) {
 // at configuration level. Then we will inspect the running container to get its port bindings
 // and from them, get the one related to the Elasticsearch port (9200). As it is bound to a
 // random port at localhost, we will build the URL with the bound port at localhost.
+//
 //nolint:unused
 func getElasticsearchClientFromHostPort(ctx context.Context, host string, port int, scheme string) (*es.Client, error) {
 	cfg := es.Config{

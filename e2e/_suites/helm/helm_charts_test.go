@@ -72,6 +72,7 @@ func setupSuite() {
 }
 
 // HelmChartTestSuite represents a test suite for a helm chart
+//
 //nolint:unused
 type HelmChartTestSuite struct {
 	ClusterName       string // the name of the cluster
