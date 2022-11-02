@@ -74,8 +74,11 @@
     tags:
       - setup-stack
 
-  - name: Add SSH keys to stack
-    include_tasks: tasks/install_ssh_keys.yml
+  - name: Add SSH keys to runner instances
+    authorized_key:
+      user: "{{ ansible_user }}"
+      key: "https://github.com/{{ item }}.keys"
+    with_lines: cat ./github-ssh-keys
     tags:
       - setup-stack
 
