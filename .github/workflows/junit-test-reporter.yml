@@ -14,18 +14,10 @@ permissions:
 jobs:
   report:
     runs-on: ubuntu-latest
-    # Assign permissions for unit tests to be reported.
-    # See https://github.com/dorny/test-reporter/issues/168
-    permissions:
-      statuses: write
-      checks: write
-      contents: write
-      pull-requests: write
     steps:
       - uses: dorny/test-reporter@c9b3d0e2bd2a4e96aaf424dbaa31c46b42318226
         with:
           artifact: test-results            # artifact name
           name: JUnit Tests                 # Name of the check run which will be created
-          path: "**/*.xml"                    # Path to test results (inside artifact .zip)
+          path: "**/*.xml"                   # Path to test results (inside artifact .zip)
           reporter: java-junit              # Format of test results
-          token: ${{ secrets.GITHUB_TOKEN }} # GitHub token
