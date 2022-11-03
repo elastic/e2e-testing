@@ -98,6 +98,7 @@ To provision and setup the stack node:
 export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS" # optional, defaults to $(HOME)/.ssh/id_rsa
 make -C .ci provision-stack
 make -C .ci setup-stack
+make -C .ci start-elastic-stack
 ```
 
 We have created a convenient alias for doing both steps in one command: `create-stack`, which sequentially invokes both of the above commands.
@@ -111,7 +112,7 @@ A `.stack-host-ip` file will be created in the `.ci` directory of the project in
 
 > The IP address of the stack in the `.stack-host-ip` file will be used by the automation.
 
-Please remember to [destroy the stack](#destroying-the-stack-and-the-test-node) once you finished your testing.
+Please remember to [destroy the stack](#destroying-the-stack-and-the-test-nodes) once you finished your testing.
 
 ### Create and configure the test node
 
