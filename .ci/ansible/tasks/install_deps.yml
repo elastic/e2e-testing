@@ -99,15 +99,15 @@
 #    name: ssh-import-id
 #  when: ansible_distribution not in ["Windows"]
 
-- name: Set sshd configuration for client alive settings
-  become: True
-  ansible.builtin.copy:
-    src: sshd_config
-    dest: /etc/ssh/sshd_config
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-    mode: '0600'
-  when: ansible_distribution in ["CentOS", "Debian", "Fedora", "RedHat", "Ubuntu"]
+#- name: Set sshd configuration for client alive settings
+#  become: True
+#  ansible.builtin.copy:
+#    src: sshd_config
+#    dest: /etc/ssh/sshd_config
+#    owner: "{{ ansible_user }}"
+#    group: "{{ ansible_user }}"
+#    mode: '0600'
+#  when: ansible_distribution in ["CentOS", "Debian", "Fedora", "RedHat", "Ubuntu"]
 # # ARM Docker is installed by geerlingguy.docker
 # - name: Install Docker for ARM (Debian, Ubuntu)
 #   become: True
