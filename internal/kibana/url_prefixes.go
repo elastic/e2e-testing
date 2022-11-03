@@ -10,9 +10,10 @@ import (
 	"net/url"
 	"strconv"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -36,38 +37,42 @@ type Endpoint struct {
 // GetKibanaEndpoint - capture kibana environment information for determining endpoint
 func GetKibanaEndpoint() *Endpoint {
 	remoteKibanaHost := shell.GetEnv("KIBANA_URL", "")
-	if remoteKibanaHost != "" {
-		remoteKibanaHost = utils.RemoveQuotes(remoteKibanaHost)
-		u, err := url.Parse(remoteKibanaHost)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"url":   remoteKibanaHost,
-				"error": err,
-			}).Trace("Could not parse KIBANA_URL, will attempt with original.")
-			return &Endpoint{
-				Scheme: "http",
-				Host:   "localhost",
-				Port:   5601,
-			}
-		}
-		host, port, err := net.SplitHostPort(u.Host)
-		if err != nil {
-			log.Fatal("Could not determine host/port from KIBANA_URL")
-		}
-		kibanaPort, _ := strconv.Atoi(port)
+	if remoteKibanaHost == "" {
 		return &Endpoint{
-			Scheme: u.Scheme,
-			Host:   host,
-			Port:   kibanaPort,
+			Scheme: "http",
+			Host:   "localhost",
+			Port:   5601,
 		}
-
 	}
+
+	remoteKibanaHost = utils.RemoveQuotes(remoteKibanaHost)
+	u, err := url.Parse(remoteKibanaHost)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"url":   remoteKibanaHost,
+			"error": err,
+		}).Warn("Could not parse KIBANA_URL, will attempt with original.")
+		return &Endpoint{
+			Scheme: "http",
+			Host:   "localhost",
+			Port:   5601,
+		}
+	}
+
+	host, port, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		log.Fatal("Could not determine host/port from KIBANA_URL=%s", remoteKibanaHost)
+	}
+	kibanaPort, err := strconv.Atoi(port)
+	if err != nil {
+		log.Fatal("Could not convert kibana port %q to int", port)
+	}
+
 	return &Endpoint{
-		Scheme: "http",
-		Host:   "localhost",
-		Port:   5601,
+		Scheme: u.Scheme,
+		Host:   host,
+		Port:   kibanaPort,
 	}
-
 }
 
 // getBaseURL will pull in the baseurl or an alternative host based on settings
