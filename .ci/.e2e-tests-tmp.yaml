@@ -1,7 +1,37 @@
 ---
-SUITES:  
+SUITES:
+  - suite: "helm"
+    provider: "docker"
+    scenarios:
+      - name: "APM Server"
+        tags: "apm-server"
+        platforms: [ "ubuntu_22_04_amd64_preinstalled" ]
+      - name: "Filebeat"
+        tags: "filebeat"
+        platforms: [ "ubuntu_22_04_amd64_preinstalled" ]
+      - name: "Metricbeat"
+        tags: "metricbeat"
+        platforms: [ "ubuntu_22_04_amd64_preinstalled" ]
   - suite: "fleet"
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode"
         platforms: ["ubuntu_22_04_amd64_preinstalled"]
+      - name: "Upgrade Agent"
+        tags: "upgrade_agent"
+        platforms: [ "ubuntu_22_04_amd64_preinstalled" ]
+  - suite: "kubernetes-autodiscover"
+    provider: "docker"
+    scenarios:
+      - name: "kubernetes autodiscover with elastic-agent"
+        tags: "elastic-agent"
+        platforms: [ "ubuntu_22_04_amd64_preinstalled" ]
+      - name: "kubernetes autodiscover with filebeat"
+        tags: "filebeat"
+        platforms: [ "ubuntu_22_04_amd64_preinstalled" ]
+      - name: "kubernetes autodiscover with heartbeat"
+        tags: "heartbeat"
+        platforms: [ "ubuntu_22_04_amd64_preinstalled" ]
+      - name: "kubernetes autodiscover with metricbeat"
+        tags: "metricbeat"
+        platforms: [ "ubuntu_22_04_amd64_preinstalled" ]
