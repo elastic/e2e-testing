@@ -130,8 +130,6 @@
     - role: geerlingguy.helm
       when:
         - ansible_facts['os_family'] != "Windows"
-        - suite is defined
-        - suite in ["kubernetes-autodiscover", "helm"]
     - role: mdelapenya.go
       become: True
       when: ansible_facts['os_family'] != "Windows"
