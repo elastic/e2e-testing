@@ -42,7 +42,7 @@ pipeline {
                testMatrixFile: '.ci/.e2e-tests-daily.yaml',
                notifyOnGreenBuilds: 'false',
                runTestsSuites: 'fleet',
-               slackChannel: 'elastic-agent',
+               slackChannel: 'ingest-notifications',
                propagate: true,
                wait: true)
       }
