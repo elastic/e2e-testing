@@ -61,11 +61,11 @@ func GetKibanaEndpoint() *Endpoint {
 
 	host, port, err := net.SplitHostPort(u.Host)
 	if err != nil {
-		log.Fatal("Could not determine host/port from KIBANA_URL=%s", remoteKibanaHost)
+		log.Fatalf("Could not determine host/port from KIBANA_URL=%s", remoteKibanaHost)
 	}
 	kibanaPort, err := strconv.Atoi(port)
 	if err != nil {
-		log.Fatal("Could not convert kibana port %q to int", port)
+		log.Fatalf("Could not convert kibana port %q to int", port)
 	}
 
 	return &Endpoint{
