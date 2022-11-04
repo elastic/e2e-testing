@@ -94,7 +94,7 @@ pipeline {
     cleanup {
       notifyBuildResult(prComment: true,
                         slackHeader: "*Test Suite (MacOS)*: ${env.TAGS}",
-                        slackChannel: "elastic-agent",
+                        slackChannel: "ingest-notifications",
                         slackComment: true,
                         slackNotify: doSlackNotify())
     }
