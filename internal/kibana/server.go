@@ -60,42 +60,6 @@ func (c *Client) CreateEnrollmentAPIKey(ctx context.Context, policy Policy) (Enr
 	return resp.Enrollment, nil
 }
 
-// ServiceToken struct for holding service token
-type ServiceToken struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
-
-// CreateServiceToken creates a fleet service token
-func (c *Client) CreateServiceToken(ctx context.Context) (ServiceToken, error) {
-	span, _ := apm.StartSpanOptions(ctx, "Creating service token", "fleet.service-token.create", apm.SpanOptions{
-		Parent: apm.SpanFromContext(ctx).TraceContext(),
-	})
-	defer span.End()
-
-	reqBody := `{}`
-	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/service_tokens", FleetAPI), []byte(reqBody))
-	if statusCode != 200 {
-		jsonParsed, err := gabs.ParseJSON(respBody)
-		log.WithFields(log.Fields{
-			"body":       jsonParsed,
-			"reqBody":    reqBody,
-			"error":      err,
-			"statusCode": statusCode,
-		}).Error("Could not create service token")
-
-		return ServiceToken{}, err
-	}
-
-	var resp ServiceToken
-
-	if err := json.Unmarshal(respBody, &resp); err != nil {
-		return ServiceToken{}, errors.Wrap(err, "Unable to convert service token response to JSON")
-	}
-
-	return resp, nil
-}
-
 // DeleteEnrollmentAPIKey deletes the enrollment api key
 func (c *Client) DeleteEnrollmentAPIKey(ctx context.Context, enrollmentID string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Deleting enrollment API Key", "fleet.api-key.delete", apm.SpanOptions{
