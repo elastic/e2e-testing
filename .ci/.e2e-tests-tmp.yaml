@@ -16,10 +16,10 @@ SUITES:
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode"
-        platforms: ["debian_10_arm64_preinstalled", "debian_11_amd64_preinstalled"]
-      - name: "Upgrade Agent"
-        tags: "upgrade_agent"
-        platforms: [ "debian_10_amd64_preinstalled" ]
+        platforms: ["centos8_arm64_preinstalled", "centos8_amd64_preinstalled"]
+#      - name: "Upgrade Agent"
+#        tags: "upgrade_agent"
+#        platforms: [ "debian_10_amd64_preinstalled" ]
   - suite: "kubernetes-autodiscover"
     provider: "docker"
     scenarios:

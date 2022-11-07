@@ -94,3 +94,18 @@ PLATFORMS:
     shell_type: sh
     username: admin
     dependencies_installed: true
+  centos8_arm64_preinstalled:
+    description: "CentOS Stream 8 aarch64 preinstalled"
+    image: "centos-8-arm64-runner-1"
+    instance_type: "a1.large"
+    shell_type: sh
+    username: centos
+    dependencies_installed: true
+  centos8_amd64_preinstalled:
+    description: "CentOS Stream 8 x86_64"
+    image: "centos-8-amd64-runner-1"
+    instance_type: "t3.xlarge"
+    shell_type: sh
+    username: centos
+    dependencies_installed: true
+
