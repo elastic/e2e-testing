@@ -60,8 +60,6 @@ func (c *Client) CreateEnrollmentAPIKey(ctx context.Context, policy Policy) (Enr
 	return resp.Enrollment, nil
 }
 
-<<<<<<< HEAD
-=======
 // ServiceToken struct for holding service token
 type ServiceToken struct {
 	Name  string `json:"name"`
@@ -98,7 +96,6 @@ func (c *Client) CreateServiceToken(ctx context.Context) (ServiceToken, error) {
 	return resp, nil
 }
 
->>>>>>> 859e9e5a (chore: stringify http responses (#2772))
 // DeleteEnrollmentAPIKey deletes the enrollment api key
 func (c *Client) DeleteEnrollmentAPIKey(ctx context.Context, enrollmentID string) error {
 	span, _ := apm.StartSpanOptions(ctx, "Deleting enrollment API Key", "fleet.api-key.delete", apm.SpanOptions{
