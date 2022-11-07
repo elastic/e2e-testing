@@ -33,14 +33,65 @@ source "amazon-ebs" "ubuntu" {
   force_deregister = local.force_deregister
 }
 
+source "amazon-ebs" "debian-10-amd64" {
+  ami_name      = "debian-10-amd64-runner-1"
+  instance_type = "t3.xlarge"
+  region        = local.aws_region
+  source_ami    = "ami-0d90bed76900e679a"
+  ssh_username  = "admin"
+  communicator  = "ssh"
+  tags = {
+    OS_Version = "Debian"
+    Release    = "10"
+    Arch       = "AMD64"
+  }
+  skip_create_ami = var.skip_create_ami
+  force_deregister = local.force_deregister
+}
+
+source "amazon-ebs" "debian-10-arm64" {
+  ami_name      = "debian-10-arm64-runner-1"
+  instance_type = "a1.large"
+  region        = local.aws_region
+  source_ami    = "ami-06dac44ad759182bd"
+  ssh_username  = "admin"
+  communicator  = "ssh"
+  tags = {
+    OS_Version = "Debian"
+    Release    = "10"
+    Arch       = "AMD64"
+  }
+  skip_create_ami = var.skip_create_ami
+  force_deregister = local.force_deregister
+}
+
+source "amazon-ebs" "debian-11-amd64" {
+  ami_name      = "debian-11-amd64-runner-1"
+  instance_type = "t3.xlarge"
+  region        = local.aws_region
+  source_ami    = "ami-0c7c4e3c6b4941f0f"
+  ssh_username  = "admin"
+  communicator  = "ssh"
+  tags          = {
+    OS_Version = "Debian"
+    Release    = "10"
+    Arch       = "AMD64"
+  }
+  skip_create_ami  = var.skip_create_ami
+  force_deregister = local.force_deregister
+}
+
 build {
-  name = "e2e ubuntu 22.04 AMD64"
+  name = "e2e runners AMIs"
   sources = [
-    "source.amazon-ebs.ubuntu"
+    "source.amazon-ebs.ubuntu",
+    "source.amazon-ebs.debian-10-amd64",
+    "source.amazon-ebs.debian-10-arm64",
+    "source.amazon-ebs.debian-11-amd64"
   ]
 
   provisioner "ansible" {
-    user = "ubuntu"
+    user = build.User
     ansible_env_vars  =  ["PACKER_BUILD_NAME={{ build_name }}"]
     playbook_file     = ".ci/ansible/playbook.yml"
     extra_arguments   = ["--tags", "setup-ami"]

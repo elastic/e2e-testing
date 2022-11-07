@@ -73,3 +73,24 @@ PLATFORMS:
     shell_type: sh
     username: ubuntu
     dependencies_installed: true
+  debian_10_arm64_preinstalled:
+    description: "Debian 10 ARM64 Preinstalled"
+    image: "debian-10-arm64-runner-1"
+    instance_type: "a1.large"
+    shell_type: sh
+    username: admin
+    dependencies_installed: true
+  debian_10_amd64_preinstalled:
+    description: "Debian 10 AMD64 Preinstalled"
+    image: "debian-10-amd64-runner-1"
+    instance_type: "t3.xlarge"
+    shell_type: sh
+    username: admin
+    dependencies_installed: true
+  debian_11_amd64_preinstalled:
+    description: "Debian 11 AMD64 Preinstalled"
+    image: "debian-11-amd64-runner-1"
+    instance_type: "t3.xlarge"
+    shell_type: sh
+    username: admin
+    dependencies_installed: true
