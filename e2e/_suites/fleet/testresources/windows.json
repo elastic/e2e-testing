@@ -1,0 +1,125 @@
+{
+    "inputs":[
+        {
+            "type":"winlog",
+            "enabled":true,
+            "streams":[
+                {
+				 "data_stream":{
+                        "type":"logs",
+                        "dataset":"windows.forwarded"
+                    },
+					"vars": {
+						"period": {
+						"type": "text",
+						"value": "10s"
+					},
+					"preserve_original_event": false,
+                    "event_id": {
+                        "type":"text",
+                        "value": ["400", "403", "600", "800"]
+                    }
+					},
+                    "id":"winlog-windows.forwarded-7886c582-c3fa-4ce1-a016-a6819dbba179",
+                    "enabled":true
+                },
+                {
+                    "data_stream":{
+                        "type":"logs",
+                        "dataset":"windows.powershell"
+                    },
+                    "vars": {
+						"period": {
+						"type": "text",
+						"value": "10s"
+					},
+					"preserve_original_event": {
+                        "type":"bool",
+                        "value": false
+                    },
+                    "event_id": {
+                        "type":"text",
+                        "value": ["400", "403", "600", "800"]
+                    }
+                    },
+                    "id":"winlog-windows.powershell-7886c582-c3fa-4ce1-a016-a6819dbba179",
+                    "enabled":true
+                },
+    				{
+                    "data_stream":{
+                        "type":"logs",
+                        "dataset":"windows.powershell_operational"
+                    },
+                    "vars": {
+						"period": {
+						"type": "text",
+						"value": "10s"
+					},
+					"preserve_original_event": false,
+                    "event_id": {
+                        "type":"text",
+                        "value": ["400", "403", "600", "800"]
+                    }
+                    },
+                    "id":"winlog-windows.powershell_operational-7886c582-c3fa-4ce1-a016-a6819dbba179",
+                    "enabled":true
+                },
+    				{
+                    "data_stream":{
+                        "type":"logs",
+                        "dataset":"windows.sysmon_operational"
+                    },
+                    "vars": {
+						"period": {
+						"type": "text",
+						"value": "10s"
+					},
+					"preserve_original_event": false,
+                    "event_id": {
+                        "type":"text",
+                        "value": ["400", "403", "600", "800"]
+                    }
+                    },
+                    "id":"winlog-windows.sysmon_operational-7886c582-c3fa-4ce1-a016-a6819dbba179",
+                    "enabled":true
+                },
+    				{
+                    "data_stream":{
+                        "type":"metrics",
+                        "dataset":"windows.perfmon"
+                    },
+                    "vars": {
+						"period": {
+						"type": "text",
+						"value": "10s"
+					},
+					"preserve_original_event": false,
+                    "event_id": {
+                        "type":"text",
+                        "value": ["400", "403", "600", "800"]
+                    }
+                    },
+                    "id":"windows/metrics-windows.perfmon-7886c582-c3fa-4ce1-a016-a6819dbba179",
+                    "enabled":true
+                },
+    				{
+                    "data_stream":{
+                        "type":"metrics",
+                        "dataset":"windows.service"
+                    },
+                    "vars": {
+						"period": {
+						"type": "text",
+						"value": "10s"
+					},
+					"preserve_original_event": false,
+                    "event_id": {
+                        "type":"text",
+                        "value": ["400", "403", "600", "800"]
+                    }
+                    },
+                    "id":"windows/metrics-windows.service-7886c582-c3fa-4ce1-a016-a6819dbba179",
+                    "enabled":true
+                }
+            ]}]}
+      

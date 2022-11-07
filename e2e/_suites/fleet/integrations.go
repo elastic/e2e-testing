@@ -150,6 +150,29 @@ func inputs(integration string) []kibana.Input {
 				},
 			},
 		}
+	case "windows":
+		return []kibana.Input{
+			{
+				Type:    "winlog",
+				Enabled: true,
+				Streams: []kibana.Stream{
+					{
+						ID:      "winlog-windows.powershell-" + uuid.New().String(),
+						Enabled: true,
+						DS: kibana.DataStream{
+							Dataset: "windows.powershell",
+							Type:    "metrics",
+						},
+						Vars: map[string]kibana.Var{
+							"period": {
+								Value: "1s",
+								Type:  "string",
+							},
+						},
+					},
+				},
+			},
+		}
 	}
 	return []kibana.Input{}
 }

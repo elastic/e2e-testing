@@ -100,6 +100,14 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		}
 
 		kibanaInputs = metricsInputs(name, set, "/linux_metrics.json", metrics)
+	} else if name == "winlog" {
+		metrics = "windows"
+		packageDS, err = fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
+		if err != nil {
+			return err
+		}
+
+		kibanaInputs = metricsInputs(name, set, "/windows.json", metrics)
 	} else if name == "system/metrics" || name == "logfile" || name == "log" {
 		metrics = "system"
 		packageDS, err = fts.kibanaClient.GetIntegrationFromAgentPolicy(fts.currentContext, metrics, fts.Policy)
