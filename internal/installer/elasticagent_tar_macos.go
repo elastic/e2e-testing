@@ -168,7 +168,7 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		}
 	}
 
-	srcPath := common.GetElasticAgentWorkingPath(fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), metadata.Os, metadata.Arch))
+	srcPath := common.GetElasticAgentWorkingPath(fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), metadata.Os, metadata.Arch))
 	output, _ := i.Exec(ctx, []string{"mv", srcPath, common.GetElasticAgentWorkingPath("elastic-agent")})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
