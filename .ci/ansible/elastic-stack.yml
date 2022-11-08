@@ -48,7 +48,7 @@
       - { old: 'http://elasticsearch', new: 'http://{{ inventory_hostname }}', path: "{{ e2e_base_dir }}internal/config/compose/profiles/fleet/default/kibana.config.yml" }
       - { old: 'http://fleet-server', new: 'http://{{ inventory_hostname }}', path: "{{ e2e_base_dir }}internal/config/compose/profiles/fleet/default/kibana.config.yml" }
       - { old: 'http://kibana', new: 'http://{{ inventory_hostname }}', path: "{{ e2e_base_dir }}internal/config/compose/services/elastic-agent/fleet-server/docker-compose.yml" }
-      - { old: 'http://package-registry:8080', new: 'https://epr-staging.elastic.co', path: "{{ e2e_base_dir }}internal/config/compose/profiles/fleet/default/kibana.config.yml" }
+      - { old: 'http://package-registry:8080', new: 'https://epr.elastic.co', path: "{{ e2e_base_dir }}internal/config/compose/profiles/fleet/default/kibana.config.yml" }
 
   - name: Start stack without any tag to spin up the stack using Fleet's bootstrapping code
     become: True

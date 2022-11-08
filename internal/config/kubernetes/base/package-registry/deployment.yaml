@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: package-registry
-        image: docker.elastic.co/package-registry/distribution:staging
+        image: docker.elastic.co/package-registry/distribution:production
         livenessProbe:
           tcpSocket:
             port: 8080
