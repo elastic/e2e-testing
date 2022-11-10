@@ -56,6 +56,7 @@ func (c *Client) AddIntegrationToPolicy(ctx context.Context, packageDS PackageDa
 				"elapsedTime": exp.GetElapsedTime(),
 				"err":         err,
 				"package":     packageDS,
+				"body":        string(respBody),
 				"retry":       retryCount,
 			}).Warn("Could not add package to policy. Retrying")
 
@@ -119,7 +120,7 @@ func (c *Client) GetIntegrations(ctx context.Context) ([]IntegrationPackage, err
 
 	if err != nil {
 		log.WithFields(log.Fields{
-			"body":  respBody,
+			"body":  string(respBody),
 			"error": err,
 		}).Error("Could not get Integration package")
 		return []IntegrationPackage{}, err
@@ -127,7 +128,7 @@ func (c *Client) GetIntegrations(ctx context.Context) ([]IntegrationPackage, err
 
 	if statusCode != 200 {
 		log.WithFields(log.Fields{
-			"body":       respBody,
+			"body":       string(respBody),
 			"error":      err,
 			"statusCode": statusCode,
 		}).Error("Could not get Fleet's installed integrations")
@@ -135,7 +136,7 @@ func (c *Client) GetIntegrations(ctx context.Context) ([]IntegrationPackage, err
 		return nil, err
 	}
 
-	jsonParsed, err := gabs.ParseJSON([]byte(respBody))
+	jsonParsed, err := gabs.ParseJSON(respBody)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":        err,
@@ -320,7 +321,7 @@ func (c *Client) GetMetadataFromSecurityApp(ctx context.Context) ([]SecurityEndp
 		return []SecurityEndpoint{}, errors.Wrap(err, "could not get endpoint metadata")
 	}
 
-	jsonParsed, _ := gabs.ParseJSON([]byte(respBody))
+	jsonParsed, _ := gabs.ParseJSON(respBody)
 	log.WithFields(log.Fields{
 		"responseBody": jsonParsed,
 	}).Trace("Endpoint Metadata Response")
