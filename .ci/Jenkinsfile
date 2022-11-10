@@ -45,16 +45,15 @@ pipeline {
     string(name: 'runTestsSuites', defaultValue: '', description: 'A comma-separated list of test suites to run (default: empty to run all test suites)')
     string(name: 'testMatrixFile', defaultValue: '.ci/.e2e-tests.yaml', description: 'The file with the test suite and scenarios to be tested.')
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
-    booleanParam(name: "forceSkipPresubmit", defaultValue: false, description: "If it's needed to execute the pre-submit tests: unit and precommit.")
     booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify to Slack with green builds.")
     string(name: 'SLACK_CHANNEL', defaultValue: 'observablt-bots', description: 'The Slack channel(s) where errors will be posted. For multiple channels, use a comma-separated list of channels')
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/7.12.0-069dfaa4/downloads/beats/elastic-agent/elastic-agent-7.12.0-SNAPSHOT-linux-x86_64.tar.gz')
-    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '7.17.8-d89bf16d-SNAPSHOT', description: 'SemVer version of the Elastic Agent to be used for the tests. You can use here the tag of your PR to test your changes')
-    string(name: 'BEAT_VERSION', defaultValue: '7.17.8-d89bf16d-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
+    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '7.17.8-a281a566-SNAPSHOT', description: 'SemVer version of the Elastic Agent to be used for the tests. You can use here the tag of your PR to test your changes')
+    string(name: 'BEAT_VERSION', defaultValue: '7.17.8-a281a566-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
     choice(name: 'LOG_LEVEL', choices: ['TRACE', 'DEBUG', 'INFO'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
     string(name: 'KIBANA_VERSION', defaultValue: '', description: 'Docker tag of the kibana to be used for the tests. It will refer to an image related to a Kibana PR, under the Observability-CI namespace')
-    string(name: 'STACK_VERSION', defaultValue: '7.17.8-d89bf16d-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
+    string(name: 'STACK_VERSION', defaultValue: '7.17.8-a281a566-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
     string(name: 'HELM_CHART_VERSION', defaultValue: '7.17.3', description: 'SemVer version of Helm chart to be used.')
     string(name: 'HELM_VERSION', defaultValue: '3.9.0', description: 'SemVer version of Helm to be used.')
     string(name: 'KIND_VERSION', defaultValue: '0.12.0', description: 'SemVer version of Kind to be used.')
@@ -78,7 +77,6 @@ pipeline {
         KIBANA_VERSION = "${params.KIBANA_VERSION.trim()}"
         STACK_VERSION = "${params.STACK_VERSION.trim()}"
         FORCE_SKIP_GIT_CHECKS = "${params.forceSkipGitChecks}"
-        FORCE_SKIP_PRESUBMIT = "${params.forceSkipPresubmit}"
         HELM_CHART_VERSION = "${params.HELM_CHART_VERSION.trim()}"
         HELM_VERSION = "${params.HELM_VERSION.trim()}"
         KIND_VERSION = "${params.KIND_VERSION.trim()}"
@@ -101,61 +99,6 @@ pipeline {
             checkSkipTests()
           }
         }
-        stage('Pre-Submit') {
-          when {
-            beforeAgent true
-            expression { return env.FORCE_SKIP_PRESUBMIT == "false" }
-          }
-          parallel {
-            stage('Sanity checks') {
-              agent { label 'ubuntu-20.04 && immutable && docker' }
-              environment {
-                PATH = "${env.REAL_BASE_DIR}/bin:${env.PATH}"
-                GO111MODULE = 'auto'
-              }
-              options { skipDefaultCheckout() }
-              steps {
-                withGithubNotify(context: 'Sanity checks', tab: 'tests') {
-                  deleteDir()
-                  unstash 'source'
-                  withGoEnv(version: "${GO_VERSION}"){
-                    dir(BASE_DIR){
-                      retryWithSleep(retries: 2, seconds: 5, backoff: true){ sh script: '.ci/scripts/install-dependencies.sh', label: 'Install dependencies' }
-                      preCommit(commit: "${GIT_BASE_COMMIT}", junit: true)
-                    }
-                  }
-                }
-              }
-            }
-            stage('Unit Tests') {
-              options { skipDefaultCheckout() }
-              when {
-                beforeAgent true
-                anyOf {
-                  expression { return env.FORCE_SKIP_GIT_CHECKS == "true" }
-                  expression { return env.SKIP_TESTS == "false" }
-                }
-              }
-              steps {
-                withGithubNotify(context: 'Tests', tab: 'tests') {
-                  deleteDir()
-                  unstash 'source'
-                  withGoEnv(version: "${GO_VERSION}"){
-                    dir(BASE_DIR){
-                      sh script: '.ci/scripts/build-test.sh', label: 'Build and test'
-                    }
-                  }
-                }
-              }
-              post {
-                always {
-                  junit2otel(traceName: 'junit-unit-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "${BASE_DIR}/outputs/TEST-unit-*.xml")
-                  archiveArtifacts allowEmptyArchive: true, artifacts: "${BASE_DIR}/outputs/TEST-unit-*.xml"
-                }
-              }
-            }
-          }
-        }
         stage('Build Docs') {
           options { skipDefaultCheckout() }
           when {
@@ -166,8 +109,6 @@ pipeline {
             }
           }
           steps {
-            deleteDir()
-            unstash 'source'
             dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
             dir("${BASE_DIR}/e2e") {
               sh(label: 'Build docs', script: 'make build-docs')
@@ -181,7 +122,6 @@ pipeline {
             }
           }
         }
-
         stage('Deploy Test Infra') {
           failFast true
           options { skipDefaultCheckout() }
