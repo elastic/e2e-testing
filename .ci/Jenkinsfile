@@ -2,6 +2,13 @@
 
 @Library('apm@current') _
 
+import groovy.transform.Field
+
+/**
+Store the worker status so if the CI worker behaves wrongy then let's rerun the stage again
+*/
+@Field def workersStatus = [:]
+
 pipeline {
   agent { label 'ubuntu-20.04 && immutable && docker' }
   environment {
@@ -357,13 +364,15 @@ def checkTestSuite(Map parallelTasks = [:], Map item = [:]) {
       platformsValue.each { platform ->
         log(level: 'INFO', text: "Adding ${suite}:${platform}:${tags} test suite to the build execution")
         def machineInfo = getMachineInfo(platform)
-        parallelTasks["${suite}_${platform}_${tags}"] = generateFunctionalTestStep(name: "${name}",
-                                                                          platform: platform,
-                                                                          provider: scenarioProvider,
-                                                                          suite: "${suite}",
-                                                                          tags: "${tags}",
-                                                                          pullRequestFilter: "${pullRequestFilter}",
-                                                                          machine: machineInfo)
+        def stageName = "${suite}_${platform}_${tags}"
+        parallelTasks["${stageName}"] = generateFunctionalTestStep(name: "${name}",
+                                                                  platform: platform,
+                                                                  provider: scenarioProvider,
+                                                                  suite: "${suite}",
+                                                                  tags: "${tags}",
+                                                                  pullRequestFilter: "${pullRequestFilter}",
+                                                                  machine: machineInfo,
+                                                                  stageName: stageName)
       }
   }
 }
@@ -424,6 +433,7 @@ def generateFunctionalTestStep(Map args = [:]){
   def tags = args.get('tags')
   def pullRequestFilter = args.get('pullRequestFilter')?.trim() ? args.get('pullRequestFilter') : ''
   def machine = args.get('machine')
+  def stageName = args.get('stageName')
 
   // TODO: Is this still relevant?
   if (isPR() || isUpstreamTrigger(filter: 'PR-')) {
@@ -466,7 +476,9 @@ def generateFunctionalTestStep(Map args = [:]){
   envContext.add("NODE_USER=${machine.username}")
 
   return {
-    withNode(labels: 'ubuntu-20.04 && gobld/machineType:e2-small', forceWorkspace: true, forceWorker: true){
+    // Set the worker as flaky for the time being, this will be changed in the finally closure.
+    setFlakyWorker(stageName)
+    retryWithNode(labels: 'ubuntu-20.04 && gobld/machineType:e2-small', forceWorkspace: true, forceWorker: true, stageName: stageName){
       try {
         deleteDir()
         dir("${env.REAL_BASE_DIR}") {
@@ -507,6 +519,12 @@ def generateFunctionalTestStep(Map args = [:]){
       } finally {
         withEnv(envContext) {
           dir("${env.REAL_BASE_DIR}") {
+            // If it reaches this point then the CI worker is most likely behaving correctly
+            // there is still a chance things might fail afterwards, but this is just the finally
+            // section so we could say we are good to go.
+            // It runs after dir so if the worker is gone the an error will be thrown regarding
+            // the dir cannot be accessed in the existing none worker.
+            unsetFlakyWorker(stageName)
             def testRunnerIP = getNodeIp("node")
             sh "mkdir -p outputs/${testRunnerIP} || true"
             ciBuild() {
@@ -543,4 +561,56 @@ def generateFunctionalTestStep(Map args = [:]){
       }
     }
   }
+}
+
+def retryWithNode(Map args = [:], Closure body) {
+  try {
+    incrementRetries(args.stageName)
+    withNode(args){
+      body()
+    }
+  } catch (err) {
+    log(level: 'WARN', text: "Stage '${args.stageName}' failed, let's analyse if it's a flaky CI worker.")
+    if (isFlakyWorker(args.stageName) && isRetryAvailable(args.stageName)) {
+      log(level: 'INFO', text: "Rerun '${args.stageName}' in a new worker.")
+      retryWithNode(args) {
+        body()
+      }
+    } else {
+      error("Error '${err.toString()}'")
+    }
+  }
+}
+
+def isFlakyWorker(stageName) {
+  if (workersStatus.containsKey(stageName)) {
+    return !workersStatus.get(stageName).get('status', true)
+  }
+  return false
+}
+
+def isRetryAvailable(stageName) {
+  return workersStatus.get(stageName).get('retries', 2) < 2
+}
+
+def incrementRetries(stageName) {
+  if (workersStatus.containsKey(stageName)) {
+    def current = workersStatus[stageName].get('retries', 0)
+    workersStatus[stageName].retries = current + 1
+  } else {
+    setFlakyWorker(stageName)
+    workersStatus[stageName].retries = 1
+  }
+}
+
+def setFlakyWorker(stageName) {
+  if (workersStatus.containsKey(stageName)) {
+    workersStatus[stageName].status = false
+  } else {
+    workersStatus[stageName] = [ status: false ]
+  }
+}
+
+def unsetFlakyWorker(stageName) {
+  workersStatus[stageName].status = true
 }
