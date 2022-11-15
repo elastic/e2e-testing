@@ -64,10 +64,10 @@
     count_tag:
       name: "e2e-{{ instanceID }}"
     volumes:
-      - device_name: /dev/sda1
-        volume_type: gp3
-        volume_size: "{{ (nodeLabel != 'windows2019') | ternary(15, 60) }}"
-        delete_on_termination: yes
+#      - device_name: /dev/sda1
+#        volume_type: gp3
+#        volume_size: "{{ (nodeLabel != 'windows2019') | ternary(15, 60) }}"
+#        delete_on_termination: yes
       - device_name: /dev/xvda
         volume_type: gp3
         volume_size: 200
