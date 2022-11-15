@@ -110,7 +110,7 @@ PLATFORMS:
     dependencies_installed: true
   windows2019_preinstalled:
     description: "Windows 2019 x86_64 (HVM) preinstalled"
-    image: "ami-05ed75c207e51701b"
+    image: "windows-2019-runner-1"
     instance_type: "c5.2xlarge"
     shell_type: cmd
     username: ogc
