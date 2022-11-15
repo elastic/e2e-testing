@@ -164,6 +164,8 @@
       user: "{{ ansible_user }}"
       key: "https://github.com/{{ item }}.keys"
     with_lines: cat ./github-ssh-keys
+    when:
+      - 'ansible_os_family not in ["Windows"]'
     tags:
       - setup-node
       - setup-ami

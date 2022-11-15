@@ -186,25 +186,6 @@ source "amazon-ebs" "sles15" {
   force_deregister = local.force_deregister
 }
 
-source "amazon-ebs" "windows2019" {
-  ami_name        = "windows-2019-runner-1"
-  instance_type   = "c5.2xlarge"
-  region          = local.aws_region
-  source_ami      = "ami-0587bd602f1da2f1d"
-  winrm_username  = "ogc"
-  winrm_insecure  = true
-  winrm_use_ssl   = true
-  communicator    = "winrm"
-  user_data_file  = ".ci/packer/scripts/winrm_bootstrap.txt"
-  tags            = {
-    OS_Version  = "Windows"
-    Release     = "9"
-    Arch        = "AMD64"
-  }
-  skip_create_ami  = var.skip_create_ami
-  force_deregister = local.force_deregister
-}
-
 build {
   name = "e2e runners AMIs"
   sources = [
@@ -215,8 +196,7 @@ build {
     "source.amazon-ebs.centos-8-amd64",
     "source.amazon-ebs.centos-8-arm64",
     "source.amazon-ebs.oracle-linux-8",
-    "source.amazon-ebs.sles15",
-    "source.amazon-ebs.windows2019"
+    "source.amazon-ebs.sles15"
   ]
 
   provisioner "ansible" {
