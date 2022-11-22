@@ -34,7 +34,7 @@
                     "vars": {
 						"period": {
 						"type": "text",
-						tream input to resolve the errors"value": "10s"
+						"value": "10s"
 					},
 					"preserve_original_event": {
                         "type":"bool",
