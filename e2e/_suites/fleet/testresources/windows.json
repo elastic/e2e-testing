@@ -14,7 +14,10 @@
 						"type": "text",
 						"value": "10s"
 					},
-					"preserve_original_event": false,
+                    "preserve_original_event": {
+                        "type":"bool",
+                        "value": false
+                    },
                     "event_id": {
                         "type":"text",
                         "value": ["400", "403", "600", "800"]
@@ -31,16 +34,19 @@
                     "vars": {
 						"period": {
 						"type": "text",
-						"value": "10s"
+						tream input to resolve the errors"value": "10s"
 					},
 					"preserve_original_event": {
                         "type":"bool",
                         "value": false
                     },
                     "event_id": {
-                        "type":"text",
+                        "type":"integer",
                         "value": ["400", "403", "600", "800"]
-                    }
+                    },
+                    "tags": {
+                        "type":"text",
+                        "value": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
                     },
                     "id":"winlog-windows.powershell-7886c582-c3fa-4ce1-a016-a6819dbba179",
                     "enabled":true
@@ -55,7 +61,10 @@
 						"type": "text",
 						"value": "10s"
 					},
-					"preserve_original_event": false,
+					"preserve_original_event": {
+                        "type":"bool",
+                        "value": false
+                    },
                     "event_id": {
                         "type":"text",
                         "value": ["400", "403", "600", "800"]
@@ -74,7 +83,10 @@
 						"type": "text",
 						"value": "10s"
 					},
-					"preserve_original_event": false,
+					"preserve_original_event": {
+                        "type":"bool",
+                        "value": false
+                    },
                     "event_id": {
                         "type":"text",
                         "value": ["400", "403", "600", "800"]
@@ -93,7 +105,10 @@
 						"type": "text",
 						"value": "10s"
 					},
-					"preserve_original_event": false,
+					"preserve_original_event": {
+                        "type":"bool",
+                        "value": false
+                    },
                     "event_id": {
                         "type":"text",
                         "value": ["400", "403", "600", "800"]
@@ -112,7 +127,10 @@
 						"type": "text",
 						"value": "10s"
 					},
-					"preserve_original_event": false,
+					"preserve_original_event": {
+                        "type":"bool",
+                        "value": false
+                    },
                     "event_id": {
                         "type":"text",
                         "value": ["400", "403", "600", "800"]
