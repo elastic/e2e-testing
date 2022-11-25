@@ -10,14 +10,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 
 	"github.com/Jeffail/gabs/v2"
-	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
+
+	"github.com/elastic/e2e-testing/internal/shell"
 )
 
 // Client is responsible for exporting dashboards from Kibana.

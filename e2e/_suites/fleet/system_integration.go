@@ -15,11 +15,12 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
-	"github.com/elastic/e2e-testing/internal/kibana"
-	"github.com/elastic/e2e-testing/internal/utils"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/elastic/e2e-testing/internal/kibana"
+	"github.com/elastic/e2e-testing/internal/utils"
 )
 
 func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) error {
@@ -44,7 +45,7 @@ func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) er
 					"type":        name,
 				}).Info("The " + name + " with value system." + set + " in the metrics")
 
-				if int64(int64(item.Path("last_activity_ms").Data().(float64))) > startTime {
+				if int64(item.Path("last_activity_ms").Data().(float64)) > startTime {
 					log.WithFields(log.Fields{
 						"elapsedTime":      exp.GetElapsedTime(),
 						"last_activity_ms": item.Path("last_activity_ms").Data().(float64),

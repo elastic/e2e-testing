@@ -18,6 +18,12 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"github.com/docker/go-connections/nat"
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+	flag "github.com/spf13/pflag"
+	"go.elastic.co/apm"
+
 	apme2e "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/config"
@@ -27,14 +33,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
-	"github.com/google/uuid"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
-	flag "github.com/spf13/pflag"
-	"go.elastic.co/apm"
 )
-
-const testResourcesDir = "./testresources"
 
 var fts *FleetTestSuite
 
@@ -447,7 +446,7 @@ func InitializeFleetTestScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^agent is in "([^"]*)" version$`, fts.agentInVersion)
 	ctx.Step(`^agent is upgraded to "([^"]*)" version$`, fts.anAgentIsUpgradedToVersion)
 
-	//flags steps
+	// flags steps
 	ctx.Step(`^the elastic agent index contains the tags$`, fts.tagsAreInTheElasticAgentIndex)
 
 	// integrations steps
