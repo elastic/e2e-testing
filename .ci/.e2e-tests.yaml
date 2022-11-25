@@ -14,34 +14,47 @@ SUITES:
         platforms: ["debian_10_amd64"]
   - suite: "fleet"
     scenarios:
-      - name: "Fleet"
-        tags: "fleet_mode"
-        platforms: ["ubuntu_22_04_amd64"]
-#         platforms: ["centos8_arm64", "centos8_amd64", "debian_10_arm64", "debian_10_amd64", "sles15", "debian_11_amd64", "ubuntu_22_04_amd64", "windows2019"]
-#       - name: "Integrations"
-#         tags: "integrations"
-#         platforms: ["debian_11_amd64"]
 #       - name: "APM Integration"
 #         tags: "apm_server"
 #         platforms: ["debian_10_amd64"]
-#       - name: "Linux Integration"
-#         tags: "linux_integration"
-#         platforms: ["debian_10_arm64", "debian_10_amd64", "sles15", "debian_11_amd64", "ubuntu_22_04_amd64"]
-#       - name: "Permissions Output change"
-#         tags: "permission_change"
-#         platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
-#       - name: "System Integration"
-#         tags: "system_integration"
-#         platforms: ["debian_10_arm64", "debian_10_amd64", "sles15", "debian_11_amd64", "ubuntu_22_04_amd64"]
-#       - name: "Stand-alone"
-#         tags: "stand_alone_mode"
-#         platforms: ["debian_10_arm64", "debian_10_amd64"]
+
 #       - name: "Backend Processes"
 #         tags: "backend_processes"
 #         platforms: ["debian_10_arm64", "debian_10_amd64", "sles15", "debian_11_amd64", "ubuntu_22_04_amd64"]
+
+      - name: "Endpoint Integration"
+        tags: "endpoint_integration"
+        platforms: ["ubuntu_22_04_amd64"]
+
+      - name: "Fleet"
+        tags: "fleet_mode"
+        platforms: ["ubuntu_22_04_amd64"]
+      #         platforms: ["centos8_arm64", "centos8_amd64", "debian_10_arm64", "debian_10_amd64", "sles15", "debian_11_amd64", "ubuntu_22_04_amd64", "windows2019"]
+
+      - name: "Linux Integration"
+        tags: "linux_integration"
+        platforms: ["ubuntu_22_04_amd64"]
+
+#       - name: "Integrations"
+#         tags: "integrations"
+#         platforms: ["debian_11_amd64"]
+
+#       - name: "Permissions Output change"
+#         tags: "permission_change"
+#         platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
+
+      - name: "Stand-alone"
+        tags: "stand_alone_mode"
+        platforms: ["debian_10_arm64", "debian_10_amd64"]
+
+      - name: "System Integration"
+        tags: "system_integration"
+        platforms: ["debian_10_arm64", "debian_10_amd64", "sles15", "debian_11_amd64", "ubuntu_22_04_amd64"]
+
 #       - name: "Beats Background Processes"
 #         tags: "running_on_beats"
 #         platforms: ["debian_10_arm64", "debian_10_amd64", "oracle_linux8", "sles15", "debian_11_amd64", "ubuntu_22_04_amd64"]
+
       - name: "Upgrade Agent"
         tags: "upgrade_agent"
         platforms: ["ubuntu_22_04_amd64"]
