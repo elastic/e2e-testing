@@ -66,51 +66,60 @@ PLATFORMS:
     instance_type: "t3.xlarge"
     shell_type: sh
     username: ubuntu
+
+  # Machines with preinstalled dependencies
+  # Argument "image" doesn't fully specify the AMI name.
+  # The result image name is concatenated with branch name and corresponds to pattern:
+  #   [image]-[branch]
+  #   for example:
+  #     - ubuntu-2204-e2e-runner-main
+  #     - ubuntu-2204-e2e-runner-8.3
+  #     - ubuntu-2204-e2e-runner-PR-3698 (a temporary AMI is being built and tested when we change ansible packer dirs)
   ubuntu_22_04_amd64_preinstalled:
     description: "Ubuntu 22.04 AMD64 Preinstalled"
-    image: "ubuntu-2204-e2e-runner-1"
+    image: "ubuntu-2204-e2e-runner"
     instance_type: "t3.xlarge"
     shell_type: sh
     username: ubuntu
     dependencies_installed: true
   debian_10_arm64_preinstalled:
     description: "Debian 10 ARM64 Preinstalled"
-    image: "debian-10-arm64-runner-1"
+    image: "debian-10-arm64-runner"
     instance_type: "a1.large"
     shell_type: sh
     username: admin
     dependencies_installed: true
   debian_10_amd64_preinstalled:
     description: "Debian 10 AMD64 Preinstalled"
-    image: "debian-10-amd64-runner-1"
+    image: "debian-10-amd64-runner"
     instance_type: "t3.xlarge"
     shell_type: sh
     username: admin
     dependencies_installed: true
   debian_11_amd64_preinstalled:
     description: "Debian 11 AMD64 Preinstalled"
-    image: "debian-11-amd64-runner-1"
+    image: "debian-11-amd64-runner"
     instance_type: "t3.xlarge"
     shell_type: sh
     username: admin
     dependencies_installed: true
   centos8_arm64_preinstalled:
     description: "CentOS Stream 8 aarch64 preinstalled"
-    image: "centos-8-arm64-runner-1"
+    image: "centos-8-arm64-runner"
     instance_type: "a1.large"
     shell_type: sh
     username: centos
     dependencies_installed: true
   centos8_amd64_preinstalled:
     description: "CentOS Stream 8 x86_64"
-    image: "centos-8-amd64-runner-1"
+    image: "centos-8-amd64-runner"
     instance_type: "t3.xlarge"
     shell_type: sh
     username: centos
     dependencies_installed: true
   windows2019_preinstalled:
     description: "Windows 2019 x86_64 (HVM) preinstalled"
-    image: "windows-2019-runner-1"
+    image: "windows-2019-runner"
     instance_type: "c5.2xlarge"
     shell_type: cmd
     username: ogc

@@ -1,4 +1,0 @@
-ClientAliveInterval 30
-ClientAliveCountMax 100
-ServerAliveInterval 30
-ServerAliveCountMax 100

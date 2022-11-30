@@ -41,6 +41,10 @@ SUITE ?= fleet
 # Tags to run. Please check out the feature files
 TAGS ?= fleet_mode
 
+# The suffix to differeciate temporaty and production AMIs that we use for EC2 instances to run tests on
+# used in .ci/packer/aws-runners.pkr.hcl
+AMI_SUFFIX ?= main
+
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
 #
@@ -241,3 +245,12 @@ run-tests-win: set-env-$(NODE_LABEL)
 		-t run-tests \
 		-i $(NODE_IP_ADDRESS),
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $${NODE_USER}@$(NODE_IP_ADDRESS) "powershell \"C:/Users/$${NODE_USER}/e2e-testing/.ci/scripts/functional-test.ps1\""
+
+.PHONY: validate-packer-template
+validate-packer-template:	
+	packer validate $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl
+
+.PHONY: validate-packer-template
+build-amis-$(AMI_SUFFIX): validate-packer-template
+	@:$(call check_defined, AMI_SUFFIX, You need to define a unique AMI_SUFFIX for testing. Or specify AMI_SUFFIX=main to override existing prodution AMIs)	
+	packer build -var "ami_suffix=${AMI_SUFFIX}" $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl
