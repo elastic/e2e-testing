@@ -1,8 +1,8 @@
 ---
 - job:
     name: e2e-tests/e2e-testing-pr-mbp
-    display-name: End-2-End Tests Pull Request
-    description: Jenkins pipeline for the e2e-testing project pull requests
+    display-name: End-2-End Tests Pull Request Merge
+    description: Triggered when we merge a PR to main branches 
     view: E2E
     project-type: multibranch
     logrotate:

@@ -2,7 +2,7 @@
 - job:
     name: e2e-tests/e2e-testing-pr-mbp
     display-name: End-2-End Tests Pull Request
-    description: Jenkins pipeline for the e2e-testing project pull requests
+    description: e2e-testing pull requests builds
     view: E2E
     project-type: multibranch
     logrotate:
