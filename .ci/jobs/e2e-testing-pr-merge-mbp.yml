@@ -10,7 +10,7 @@
       numToKeep: 100
     number-to-keep: 100
     days-to-keep: 30
-    script-path: .ci/pull-request.groovy
+    script-path: .ci/pr-merge.groovy
     scm:
       - github:
           branch-discovery: no-pr
