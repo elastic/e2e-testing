@@ -11,14 +11,15 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 func (fts *FleetTestSuite) checkDataStream() error {
@@ -157,7 +158,7 @@ func (fts *FleetTestSuite) systemPackageDashboardsAreListedInFleet() error {
 
 func (fts *FleetTestSuite) tagsAreInTheElasticAgentIndex() error {
 	var tagsArray []string
-	//ex of flags  "--tag production,linux" or "--tag=production,linux"
+	// ex of flags  "--tag production,linux" or "--tag=production,linux"
 	if fts.ElasticAgentFlags != "" {
 		tags := strings.TrimPrefix(fts.ElasticAgentFlags, "--tag")
 		tags = strings.TrimPrefix(tags, "=")
@@ -204,7 +205,7 @@ func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus strin
 		return err
 	}
 	if desiredStatus == "online" {
-		//get Agent Default Key
+		// get Agent Default Key
 		err := fts.theAgentGetDefaultAPIKey()
 		if err != nil {
 			return err
@@ -348,7 +349,7 @@ func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string
 
 	kibanaClient, err := kibana.NewClient()
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create new Kibana client: %w", err)
 	}
 	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute * 2
 	retryCount := 1
@@ -359,7 +360,7 @@ func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string
 		agentID, err := kibanaClient.GetAgentIDByHostname(ctx, hostname)
 		if err != nil {
 			retryCount++
-			return err
+			return fmt.Errorf("failed to get agentID by hostname: %w", err)
 		}
 
 		if agentID == "" {
@@ -382,7 +383,8 @@ func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string
 		isAgentInStatus := strings.EqualFold(agentStatus, desiredStatus)
 		if err != nil || !isAgentInStatus {
 			if err == nil {
-				err = fmt.Errorf("the Agent is not in the %s status yet", desiredStatus)
+				err = fmt.Errorf("the Agent is not in the %q status yet: %w",
+					desiredStatus, err)
 			}
 
 			log.WithFields(log.Fields{
@@ -392,6 +394,7 @@ func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string
 				"hostname":        hostname,
 				"retry":           retryCount,
 				"status":          desiredStatus,
+				"actual_status":   agentStatus,
 			}).Warn(err.Error())
 
 			retryCount++
@@ -410,7 +413,8 @@ func theAgentIsListedInFleetWithStatus(ctx context.Context, desiredStatus string
 
 	err = backoff.Retry(agentOnlineFn, exp)
 	if err != nil {
-		return err
+		return fmt.Errorf("the agent did not reach the %q state: %w",
+			desiredStatus, err)
 	}
 
 	return nil
