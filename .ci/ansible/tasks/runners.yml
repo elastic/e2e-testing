@@ -16,7 +16,7 @@
       run_id: "{{runId | default('Not running on CI')}}"
       division: engineering
       org: obs
-      team: observability
+      team: eng-productivity
       project: e2e
   tags:
     - provision-stack
