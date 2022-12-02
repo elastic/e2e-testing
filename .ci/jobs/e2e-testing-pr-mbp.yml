@@ -13,7 +13,7 @@
     script-path: .ci/pull-request.groovy
     scm:
       - github:
-          branch-discovery: no-pr
+          branch-discovery: only-pr
           # head-filter-regex: '(PR-.*)'
           head-filter-regex: '(PR-3169)'
           discover-pr-forks-strategy: merge-current

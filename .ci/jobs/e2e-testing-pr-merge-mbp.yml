@@ -1,6 +1,6 @@
 ---
 - job:
-    name: e2e-tests/e2e-testing-pr-mbp
+    name: e2e-tests/e2e-testing-pr-merge-mbp
     display-name: End-2-End Tests Pull Request Merge
     description: Triggered when we merge a PR to main branches 
     view: E2E
