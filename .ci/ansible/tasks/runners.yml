@@ -14,6 +14,10 @@
       git_sha: "{{ gitSha | default('Not running on CI')}}"
       repo: "{{repo | default('Not running on CI')}}"
       run_id: "{{runId | default('Not running on CI')}}"
+      division: engineering
+      org: obs
+      team: eng-productivity
+      project: e2e
   tags:
     - provision-stack
     - provision-node
@@ -40,6 +44,10 @@
       reaper_mark: "e2e-testing-vm"
       repo: "{{repo | default('Not running on CI')}}"
       run_id: "{{runId | default('Not running on CI')}}"
+      division: engineering
+      org: obs
+      team: eng-productivity
+      project: e2e
     count_tag:
       name: "e2e-{{ instanceID }}"
     volumes:
