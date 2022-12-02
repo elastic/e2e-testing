@@ -1,8 +1,8 @@
 ---
 - job:
-    name: e2e-tests/e2e-testing-mbp
-    display-name: End-2-End Tests Pipeline
-    description: Jenkins pipeline for the e2e-testing project
+    name: e2e-tests/e2e-testing-pr-mbp
+    display-name: End-2-End Tests Pull Request
+    description: e2e-testing pull requests builds
     view: E2E
     project-type: multibranch
     logrotate:
@@ -10,26 +10,23 @@
       numToKeep: 100
     number-to-keep: 100
     days-to-keep: 30
-    script-path: .ci/Jenkinsfile
+    script-path: .ci/pull-request.groovy
     scm:
       - github:
-          branch-discovery: no-pr
-          head-filter-regex: '(main|PR-.*|8\.\d+|7\.17|feature-.*)'
+          branch-discovery: only-pr
+          # head-filter-regex: '(PR-.*)'
+          head-filter-regex: '(PR-3169)'
           discover-pr-forks-strategy: merge-current
           discover-pr-forks-trust: permission
           discover-pr-origin: merge-current
-          discover-tags: true
-          notification-context: 'beats-ci/e2e-testing'
+          discover-tags: false
+          notification-context: 'beats-ci/e2e-testing-pr'
           repo: e2e-testing
           repo-owner: elastic
           credentials-id: 2a9602aa-ab9f-4e52-baf3-b71ca88469c7-UserAndToken
           ssh-checkout:
             credentials: f6c7695a-671e-4f4f-a331-acdce44ff9ba
           build-strategies:
-            - tags:
-                ignore-tags-older-than: -1
-                ignore-tags-newer-than: -1
-            - regular-branches: true
             - change-request:
                 ignore-target-only-changes: true
           clean:
