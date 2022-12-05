@@ -103,10 +103,16 @@ def checkSkipTests() {
         }
 
         // patterns for all places that should trigger a full build
-        def tests_regexps = [ "^e2e/_suites/fleet/.*", "^e2e/_suites/helm/.*", "^e2e/_suites/kubernetes-autodiscover/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
+        def tests_regexps = [ 
+            "^e2e/_suites/fleet/.*", 
+            "^e2e/_suites/helm/.*", 
+            "^e2e/_suites/kubernetes-autodiscover/.*", 
+            "^.ci/.*", 
+            "^cli/.*", 
+            "^e2e/.*\\.go", 
+            "^internal/.*\\.go" ]
         // def ami_regexps = [ "^.ci/ansible/.*", "^.ci/packer/.*"]
-        setEnvVar("SKIP_TESTS", !isGitRegionMatch(patterns: tests_regexps, shouldMatchAll: false))
-        
+        setEnvVar("SKIP_TESTS", !isGitRegionMatch(patterns: tests_regexps, shouldMatchAll: false))        
     }
 }
 
@@ -180,7 +186,7 @@ def doNotifyBuildResult(Map args = [:]) {
 /**
  Notify the GitHub check of the parent stream
  **/
-def githubCheckNotify(Map args = [:] String status, String githubCheckName, String githubCheckRepo, String githubCheckSha1) {
+def githubCheckNotify(Map args = [:]) {
     if (args.githubCheckName?.trim() && args.githubCheckRepo?.trim() && args.githubCheckSha1?.trim()) {
         githubNotify context: "${args.githubCheckName}",
                 description: "${args.githubCheckName} ${args.status?.toLowerCase()}",
