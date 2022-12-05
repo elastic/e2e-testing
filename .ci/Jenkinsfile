@@ -111,7 +111,13 @@ pipeline {
             script {
               e2eUtils = load "${env.REAL_BASE_DIR}/.ci/e2eUtils.groovy"            
               e2eUtils.checkSkipTests()
-              e2eUtils.githubCheckNotify('PENDING')  // we want to notify the upstream about the e2e the soonest
+              echo '<<OK>>'
+              e2eUtils.githubCheckNotify(
+                status: 'PENDING',
+                githubCheckRepo: env.GITHUB_CHECK_REPO,
+                githubCheckSha1: env.GITHUB_CHECK_SHA1,
+                githubCheckName: env.GITHUB_GITHUB_CHECK_NAME
+              )
             }
           }
         }
@@ -251,7 +257,10 @@ pipeline {
         e2eUtils.doNotifyBuildResult(
           slackNotify: params.notifyOnGreenBuilds,
           slackChannel: env.SLACK_CHANNEL,
-          runTestsSuites: env.RUN_TEST_SUITES
+          runTestsSuites: env.RUN_TEST_SUITES,
+          githubCheckRepo: env.GITHUB_CHECK_REPO,
+          githubCheckSha1: env.GITHUB_CHECK_SHA1,
+          githubCheckName: env.GITHUB_GITHUB_CHECK_NAME
         )
       }
     }
