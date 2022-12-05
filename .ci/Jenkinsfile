@@ -198,13 +198,13 @@ pipeline {
           steps {
             withGithubNotify(context: 'E2E Tests', tab: 'tests') {
               script {                
-                def existingSuites = readYaml(file: "${env.REAL_BASE_DIR}/${TEST_MATRIX_FILE}")
+                def testMatrix = readYaml(file: "${env.REAL_BASE_DIR}/${TEST_MATRIX_FILE}")
                 runE2ETests(
-                  testMatrix: existingSuites,
+                  testMatrix: testMatrix,
                   selectedSuites: env.RUN_TEST_SUITES,
                   runAsMainBranch: env.RUN_AS_MAIN_BRANCH,
                   githubCheckSha1: env.GITHUB_CHECK_SHA1,
-                  githubCheckRepo: env.GITHUB_CHECK_REP
+                  githubCheckRepo: env.GITHUB_CHECK_REP,
                   destroyTestRunner: env.DESTROY_CLOUD_RESOURCES
                 )
               }
