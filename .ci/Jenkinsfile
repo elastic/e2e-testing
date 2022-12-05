@@ -10,6 +10,7 @@ Store the worker status so if the CI worker behaves wrongy then let's rerun the 
 @Field def workersStatus = [:]
 
 def e2eUtils
+
 pipeline {
   agent { label 'ubuntu-20.04 && immutable && docker' }
   environment {

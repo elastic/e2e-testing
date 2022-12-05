@@ -162,7 +162,7 @@ def doNotifyBuildResult(Map args = [:]) {
         doSlackNotify = args.slackNotify // if the build status is success, read the parameter
     }
 
-    githubCheckNotify(githubCheckStatus)
+    this.githubCheckNotify(githubCheckStatus)
 
     def testsSuites = args.runTestsSuites?.trim() ?: "All suites"    
     def channels = args.slackChannel?.trim() ?: "observablt-bots"    
