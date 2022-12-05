@@ -106,9 +106,11 @@ pipeline {
             stash allowEmpty: true, name: 'source', useDefaultExcludes: false
             setEnvVar("GO_VERSION", readFile("${env.REAL_BASE_DIR}/.go-version").trim())
             setEnvVar("LABELS_STRING", "buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT} build=${env.BUILD_ID} repo=${env.REPO} branch=${env.BRANCH_NAME.toLowerCase().replaceAll('[^a-z0-9-]', '-')} type=ci")
-            def e2eUtils = load ".ci/e2eUtils.groovy"
-            e2eUtils.checkSkipTests()
-            e2eUtils.githubCheckNotify('PENDING')  // we want to notify the upstream about the e2e the soonest
+            script {
+              def e2eUtils = load ".ci/e2eUtils.groovy"            
+              e2eUtils.checkSkipTests()
+              e2eUtils.githubCheckNotify('PENDING')  // we want to notify the upstream about the e2e the soonest
+            }
           }
         }
         stage('Build Docs') {
@@ -243,11 +245,13 @@ pipeline {
   }
   post {
     cleanup {
-      e2eUtils.doNotifyBuildResult(
-        slackNotify: params.notifyOnGreenBuilds,
-        slackChannel: env.SLACK_CHANNEL,
-        runTestsSuites: env.RUN_TEST_SUITES
-      )
+      script {
+        e2eUtils.doNotifyBuildResult(
+          slackNotify: params.notifyOnGreenBuilds,
+          slackChannel: env.SLACK_CHANNEL,
+          runTestsSuites: env.RUN_TEST_SUITES
+        )
+      }
     }
   }
 }
