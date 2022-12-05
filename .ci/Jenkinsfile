@@ -107,7 +107,7 @@ pipeline {
             setEnvVar("GO_VERSION", readFile("${env.REAL_BASE_DIR}/.go-version").trim())
             setEnvVar("LABELS_STRING", "buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT} build=${env.BUILD_ID} repo=${env.REPO} branch=${env.BRANCH_NAME.toLowerCase().replaceAll('[^a-z0-9-]', '-')} type=ci")
             script {
-              def e2eUtils = load ".ci/e2eUtils.groovy"            
+              def e2eUtils = load "${env.REAL_BASE_DIR}/.ci/e2eUtils.groovy"            
               e2eUtils.checkSkipTests()
               e2eUtils.githubCheckNotify('PENDING')  // we want to notify the upstream about the e2e the soonest
             }
