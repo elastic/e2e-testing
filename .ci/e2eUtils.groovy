@@ -1,3 +1,11 @@
+import groovy.transform.Field
+
+@Field private workersStatus = [:]
+
+def init(workersStatus) {
+    this.workersStatus = workersStatus
+}
+
 def runE2ETests(Map args = [:]) {
     def parallelTasks = [:]
     if (!args.selectedSuites?.trim()) {
