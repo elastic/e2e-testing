@@ -16,4 +16,4 @@ SUITES:
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode"
-        platforms: ["windows2019_preinstalled", "centos8_amd64_preinstalled"]
+        platforms: ["centos8_amd64_preinstalled"]

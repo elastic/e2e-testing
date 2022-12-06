@@ -2,14 +2,7 @@
 
 @Library('apm@current') _
 
-import groovy.transform.Field
-
-/**
-Store the worker status so if the CI worker behaves wrongy then let's rerun the stage again
-*/
-@Field def workersStatus = [:]
-
-def e2eUtils
+@Field def e2eUtils
 
 pipeline {
   agent { label 'ubuntu-20.04 && immutable && docker' }
@@ -109,10 +102,8 @@ pipeline {
             setEnvVar("GO_VERSION", readFile("${env.REAL_BASE_DIR}/.go-version").trim())
             setEnvVar("LABELS_STRING", "buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT} build=${env.BUILD_ID} repo=${env.REPO} branch=${env.BRANCH_NAME.toLowerCase().replaceAll('[^a-z0-9-]', '-')} type=ci")
             script {
-              e2eUtils = load "${env.REAL_BASE_DIR}/.ci/e2eUtils.groovy"
-              e2eUtils.init(workersStatus)
-              e2eUtils.checkSkipTests()
-              echo '<<OK>>'
+              e2eUtils = load "${env.REAL_BASE_DIR}/.ci/e2eUtils.groovy"              
+              e2eUtils.checkSkipTests()              
               e2eUtils.githubCheckNotify(
                 status: 'PENDING',
                 githubCheckRepo: env.GITHUB_CHECK_REPO,

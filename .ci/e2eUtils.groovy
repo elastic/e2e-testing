@@ -1,10 +1,9 @@
 import groovy.transform.Field
 
-@Field private workersStatus = [:]
-
-def init(workersStatus) {
-    this.workersStatus = workersStatus
-}
+/**
+Store the worker status so if the CI worker behaves wrongy then let's rerun the stage again
+*/
+@Field def workersStatus = [:]
 
 def runE2ETests(Map args = [:]) {
     def parallelTasks = [:]
@@ -224,9 +223,8 @@ def generateFunctionalTestStep(Map args = [:]) {
     def tags = args.get('tags')
     def pullRequestFilter = args.get('pullRequestFilter')?.trim() ?: ''
     def machine = args.get('machine')
-    def stageName = args.get('stageName')
-    //TODO
-    def ami_suffix = args.amiSuffix.trim() ?: 'main'
+    def stageName = args.get('stageName')    
+    def amiSuffix = args.amiSuffix.trim() ?: 'main'
     def runAsMainBranch = args.runAsMainBranch ?: false
     def destroyTestRunner = args.destroyTestRunner ?: false
     
@@ -261,7 +259,7 @@ def generateFunctionalTestStep(Map args = [:]) {
     envContext.add("ELASTIC_APM_GLOBAL_LABELS=branch_name=${BRANCH_NAME},build_pr=${isPR()},build_id=${env.BUILD_ID},go_arch=${goArch},beat_version=${env.BEAT_VERSION},elastic_agent_version=${env.ELASTIC_AGENT_VERSION},stack_version=${env.STACK_VERSION}")
     // VM characteristics
     envContext.add("NODE_LABEL=${platform}")
-    envContext.add("NODE_IMAGE=${machine.image}-${ami_suffix}")
+    envContext.add("NODE_IMAGE=${machine.image}-${amiSuffix}")
     envContext.add("NODE_INSTANCE_ID=${env.BUILD_URL}_${platform}_${suite}_${tags}")
     envContext.add("NODE_INSTANCE_TYPE=${machine.instance_type}")
     envContext.add("NODE_SHELL_TYPE=${machine.shell_type}")
@@ -282,6 +280,7 @@ def generateFunctionalTestStep(Map args = [:]) {
                         // IMPORTANT: withAPMEnv is now the one in used since withOtelEnv uses a specific Opentelemetry Collector at the moment.
                         // TODO: This will need to be integrated into the provisioned VMs
                         withAPMEnv() {
+                            echo "nodeImage: ${env.NODE_IMAGE}"
                             // we are separating the different test phases to avoid recreating
                             ciBuild() {
                                 sh(label: 'Start node', script: "make -C .ci provision-node")
