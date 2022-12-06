@@ -1,17 +1,17 @@
 ---
 SUITES:
-  - suite: "helm"
-    provider: "docker"
-    scenarios:
-      - name: "APM Server"
-        tags: "apm-server"
-        platforms: ["debian_10_amd64"]
-      - name: "Filebeat"
-        tags: "filebeat"
-        platforms: ["debian_10_amd64"]
-      - name: "Metricbeat"
-        tags: "metricbeat"
-        platforms: ["debian_10_amd64"]
+#  - suite: "helm" # disabled to make the runs faster. They're enabled for `main` and the releases, 8.x, branches
+#    provider: "docker"
+#    scenarios:
+#      - name: "APM Server"
+#        tags: "apm-server"
+#        platforms: ["debian_10_amd64"]
+#      - name: "Filebeat"
+#        tags: "filebeat"
+#        platforms: ["debian_10_amd64"]
+#      - name: "Metricbeat"
+#        tags: "metricbeat"
+#        platforms: ["debian_10_amd64"]
   - suite: "fleet"
     scenarios:
 #       - name: "APM Integration"
@@ -22,18 +22,18 @@ SUITES:
 #         tags: "backend_processes"
 #         platforms: ["debian_10_arm64", "debian_10_amd64", "sles15", "debian_11_amd64", "ubuntu_22_04_amd64"]
 
-      - name: "Endpoint Integration"
-        tags: "endpoint_integration"
-        platforms: ["ubuntu_22_04_amd64"]
+#      - name: "Endpoint Integration"
+#        tags: "endpoint_integration"
+#        platforms: ["ubuntu_22_04_amd64"]
 
       - name: "Fleet"
         tags: "fleet_mode"
         platforms: ["ubuntu_22_04_amd64"]
       #         platforms: ["centos8_arm64", "centos8_amd64", "debian_10_arm64", "debian_10_amd64", "sles15", "debian_11_amd64", "ubuntu_22_04_amd64", "windows2019"]
 
-      - name: "Linux Integration"
-        tags: "linux_integration"
-        platforms: ["ubuntu_22_04_amd64"]
+#      - name: "Linux Integration"
+#        tags: "linux_integration"
+#        platforms: ["ubuntu_22_04_amd64"]
 
 #       - name: "Integrations"
 #         tags: "integrations"
@@ -43,13 +43,13 @@ SUITES:
 #         tags: "permission_change"
 #         platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
 
-      - name: "Stand-alone"
-        tags: "stand_alone_mode"
-        platforms: ["debian_10_arm64", "debian_10_amd64"]
-
-      - name: "System Integration"
-        tags: "system_integration"
-        platforms: ["debian_10_arm64", "debian_10_amd64", "sles15", "debian_11_amd64", "ubuntu_22_04_amd64"]
+#      - name: "Stand-alone"
+#        tags: "stand_alone_mode"
+#        platforms: ["debian_10_arm64", "debian_10_amd64"]
+#
+#      - name: "System Integration"
+#        tags: "system_integration"
+#        platforms: ["debian_10_arm64", "debian_10_amd64", "sles15", "debian_11_amd64", "ubuntu_22_04_amd64"]
 
 #       - name: "Beats Background Processes"
 #         tags: "running_on_beats"
@@ -58,18 +58,18 @@ SUITES:
       - name: "Upgrade Agent"
         tags: "upgrade_agent"
         platforms: ["ubuntu_22_04_amd64"]
-  - suite: "kubernetes-autodiscover"
-    provider: "docker"
-    scenarios:
-      - name: "kubernetes autodiscover with elastic-agent"
-        tags: "elastic-agent"
-        platforms: ["debian_10_amd64"]
-      - name: "kubernetes autodiscover with filebeat"
-        tags: "filebeat"
-        platforms: ["debian_10_amd64"]
-      - name: "kubernetes autodiscover with heartbeat"
-        tags: "heartbeat"
-        platforms: ["debian_10_amd64"]
-      - name: "kubernetes autodiscover with metricbeat"
-        tags: "metricbeat"
-        platforms: ["debian_10_amd64"]
+#  - suite: "kubernetes-autodiscover" # disabled to make the runs faster. They're enabled for `main` and the releases, 8.x, branches
+#    provider: "docker"
+#    scenarios:
+#      - name: "kubernetes autodiscover with elastic-agent"
+#        tags: "elastic-agent"
+#        platforms: ["debian_10_amd64"]
+#      - name: "kubernetes autodiscover with filebeat"
+#        tags: "filebeat"
+#        platforms: ["debian_10_amd64"]
+#      - name: "kubernetes autodiscover with heartbeat"
+#        tags: "heartbeat"
+#        platforms: ["debian_10_amd64"]
+#      - name: "kubernetes autodiscover with metricbeat"
+#        tags: "metricbeat"
+#        platforms: ["debian_10_amd64"]
