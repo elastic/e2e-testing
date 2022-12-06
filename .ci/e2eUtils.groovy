@@ -1,6 +1,6 @@
 def runE2ETests(Map args = [:]) {
     def parallelTasks = [:]
-    if (args.selectedSuites?.trim(0)) {
+    if (!args.selectedSuites?.trim()) {
         log(level: 'DEBUG', text: "Iterate through existing test suites")
         args.testMatrix['SUITES'].each { item ->
             parallelTasks += convertSuiteToTasks(
@@ -14,7 +14,7 @@ def runE2ETests(Map args = [:]) {
         }
     } else {
         log(level: 'DEBUG', text: "Iterate through the comma-separated test suites (${args.selectedSuites}), comparing with the existing test suites")
-        args.selectedSuites.split(',').each { selectedSuite ->
+        args.selectedSuites?.split(',')?.each { selectedSuite ->
             args.testMatrix['SUITES'].findAll { selectedSuite.trim() == it.suite }.each { item ->
                 parallelTasks += convertSuiteToTasks(
                     item: item,
