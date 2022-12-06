@@ -170,16 +170,16 @@ pipeline {
 
                 dir("${env.REAL_BASE_DIR}") {
                   e2eUtils.ciBuild() {
-                    sh(label: 'Create Stack node', script: "make -C .ci provision-stack")
+                    // sh(label: 'Create Stack node', script: "make -C .ci provision-stack")
                   }
                   e2eUtils.ciBuild() {
                     retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                      sh(label: 'Setup Stack node', script: "make -C .ci setup-stack")
+                      // sh(label: 'Setup Stack node', script: "make -C .ci setup-stack")
                     }
                   }
                   e2eUtils.ciBuild() {
                     retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                      sh(label: 'Start Elastic Stack', script: "make -C .ci start-elastic-stack")
+                      // sh(label: 'Start Elastic Stack', script: "make -C .ci start-elastic-stack")
                     }
                   }
 
@@ -209,7 +209,7 @@ pipeline {
             withGithubNotify(context: 'E2E Tests', tab: 'tests') {
               script {                
                 def testMatrix = readYaml(file: "${env.REAL_BASE_DIR}/${TEST_MATRIX_FILE}")
-                runE2ETests(
+                e2eUtils.runE2ETests(
                   testMatrix: testMatrix,
                   selectedSuites: env.RUN_TEST_SUITES,
                   runAsMainBranch: env.RUN_AS_MAIN_BRANCH,
@@ -224,7 +224,7 @@ pipeline {
             cleanup {
               // Once all tests are complete we need to teardown the single instance with the deployed stack
               script {
-                destroyStack(destroyCloudResources: env.DESTROY_CLOUD_RESOURCES)
+                e2eUtils.destroyStack(destroyCloudResources: env.DESTROY_CLOUD_RESOURCES)
               }
             }
           }
