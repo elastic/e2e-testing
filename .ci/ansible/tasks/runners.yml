@@ -31,6 +31,10 @@
   tags:    
     - provision-node
     - provision-stack
+ 
+  - name: Print found images
+    ansible.builtin.debug:
+      var: preinstalled_images   
 
 - name: "Create preinstalled {{nodeLabel}} AWS instances"
   vars:
