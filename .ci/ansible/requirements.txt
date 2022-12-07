@@ -1,5 +1,6 @@
 ###### Requirements without Version Specifiers ######
 ansible
+ansible-playbook
 boto
 boto3
 opentelemetry-api
