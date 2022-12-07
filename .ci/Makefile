@@ -45,6 +45,9 @@ TAGS ?= fleet_mode
 # used in .ci/packer/aws-runners.pkr.hcl
 AMI_SUFFIX ?= main
 
+# AWS organisation arn. Specifies organisation that packer will grant access to the AMIs
+AWS_ORG_ARN ?= 
+
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
 #
@@ -252,5 +255,5 @@ validate-packer-template:
 
 .PHONY: validate-packer-template
 build-amis-$(AMI_SUFFIX): validate-packer-template
-	@:$(call check_defined, AMI_SUFFIX, You need to define a unique AMI_SUFFIX for testing. Or specify AMI_SUFFIX=main to override existing prodution AMIs)	
-	packer build -var "ami_suffix=${AMI_SUFFIX}" $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl
+	@:$(call check_defined, AMI_SUFFIX, You need to define a unique AMI_SUFFIX for testing. Or specify AMI_SUFFIX=main to override existing prodution AMIs)		
+	packer build -var "ami_suffix=$(AMI_SUFFIX)" -var "org_arn=$(AWS_ORG_ARN)" $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl

@@ -17,6 +17,11 @@ variable "source_set" {
   default = "linux"
 }
 
+variable "org_arn" {
+  type  = string
+  default = ""
+}
+
 variable "ami_suffix" {
   type    = string
   default = "test_suffix"
@@ -35,8 +40,20 @@ locals {
       "source.amazon-ebs.centos-8-arm64",
       "source.amazon-ebs.oracle-linux-8",
       "source.amazon-ebs.sles15"
+    ],
+    "test" = ["source.amazon-ebs.ubuntu"],
+    "windows" = ["source.amazon-ebs.windows2019"],
+    "all" = [
+      "source.amazon-ebs.ubuntu",
+      "source.amazon-ebs.debian-10-amd64",
+      "source.amazon-ebs.debian-10-arm64",
+      "source.amazon-ebs.debian-11-amd64",
+      "source.amazon-ebs.centos-8-amd64",
+      "source.amazon-ebs.centos-8-arm64",
+      "source.amazon-ebs.oracle-linux-8",
+      "source.amazon-ebs.sles15",
+      "source.amazon-ebs.windows2019"
     ]
-    "test" = ["source.amazon-ebs.ubuntu"]
   }
 }
 
@@ -60,6 +77,7 @@ source "amazon-ebs" "ubuntu" {
     Branch     = var.ami_suffix
     Project    = "e2e"
   }
+  ami_org_arns = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -84,6 +102,7 @@ source "amazon-ebs" "debian-10-amd64" {
     Branch     = var.ami_suffix
     Project    = "e2e"
   }
+  ami_org_arns = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -108,6 +127,7 @@ source "amazon-ebs" "debian-10-arm64" {
     Branch     = var.ami_suffix
     Project    = "e2e"
   }
+  ami_org_arns = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -132,6 +152,7 @@ source "amazon-ebs" "debian-11-amd64" {
     Branch     = var.ami_suffix
     Project    = "e2e"
   }
+  ami_org_arns = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -156,6 +177,7 @@ source "amazon-ebs" "centos-8-amd64" {
     Branch     = var.ami_suffix
     Project    = "e2e"
   }
+  ami_org_arns = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -180,6 +202,7 @@ source "amazon-ebs" "centos-8-arm64" {
     Branch     = var.ami_suffix
     Project    = "e2e"
   }
+  ami_org_arns = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -204,6 +227,7 @@ source "amazon-ebs" "oracle-linux-8" {
     Branch     = var.ami_suffix
     Project    = "e2e"
   }
+  ami_org_arns = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 
@@ -229,6 +253,7 @@ source "amazon-ebs" "sles15" {
     Branch     = var.ami_suffix
     Project    = "e2e"
   }
+  ami_org_arns = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
