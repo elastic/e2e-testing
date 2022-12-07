@@ -93,7 +93,7 @@ def convertSuiteToTasks(Map args = [:]) {
 }
 
 def checkRebuildAmis() {
-    dir("${BASE_DIR}") {        
+    dir("${BASE_DIR}") {
         setEnvVar("REBUILD_AMIS", isGitRegionMatch(patterns: [ "^.ci/ansible/.*", "^.ci/packer/.*"], shouldMatchAll: false))
     }
 }
@@ -355,13 +355,14 @@ def generateFunctionalTestStep(Map args = [:]) {
 }
 
 def buildPackerAMIs(Map args = [:]) {
-    
-    if (!args.amiSuffix?.trim()) {
-        error("amiSuffix parameter must be specified in buildPackerAMIs()")
-    }
-    setEnvVar("AMI_SUFFIX", args.amiSuffix)
-    ciBuild() {
-        sh(label: "Build AMIS with suffix:${args.amiSuffix}", script: 'make -C .ci build-amis-$AMI_SUFFIX')
+    dir("${BASE_DIR}") {
+        if (!args.amiSuffix?.trim()) {
+            error("amiSuffix parameter must be specified in buildPackerAMIs()")
+        }
+        setEnvVar("AMI_SUFFIX", args.amiSuffix)
+        ciBuild() {
+            sh(label: "Build AMIS with suffix:${args.amiSuffix}", script: 'make -C .ci build-amis-$AMI_SUFFIX')
+        }
     }
 }
 
