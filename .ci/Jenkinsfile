@@ -139,19 +139,23 @@ pipeline {
           }
         }
 
-        stage("Build runner AMIs") {
+        stage('Build runner AMIs') {
           options { skipDefaultCheckout() }
           when {
             beforeAgent true
             anyOf {
               expression { return env.REBUILD_AMIS == "true" }
             }
-            steps {
+          }
+          steps {
+            withGithubNotify(context: 'Build runner AMIs', tab: 'tests') {
+              deleteDir()
+              unstash 'source'
               script {
                 e2eUtils.buildPackerAMIs(amiSuffix: 'main')
               }
             }
-          }
+          }          
         }
 
         stage('Deploy Test Infra') {
@@ -216,6 +220,8 @@ pipeline {
             }
           }
           steps {
+            deleteDir()
+            unstash 'source'
             withGithubNotify(context: 'E2E Tests', tab: 'tests') {
               script {                
                 def testMatrix = readYaml(file: "${env.REAL_BASE_DIR}/${TEST_MATRIX_FILE}")
