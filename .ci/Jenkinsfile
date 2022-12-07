@@ -104,7 +104,8 @@ pipeline {
             setEnvVar("LABELS_STRING", "buildURL=${env.BUILD_URL} gitSha=${env.GIT_BASE_COMMIT} build=${env.BUILD_ID} repo=${env.REPO} branch=${env.BRANCH_NAME.toLowerCase().replaceAll('[^a-z0-9-]', '-')} type=ci")
             script {
               e2eUtils = load "${env.REAL_BASE_DIR}/.ci/e2eUtils.groovy"              
-              e2eUtils.checkSkipTests()              
+              e2eUtils.checkSkipTests()
+              e2eUtils.checkRebuildAmis()
               e2eUtils.githubCheckNotify(
                 status: 'PENDING',
                 githubCheckRepo: env.GITHUB_CHECK_REPO,
@@ -137,6 +138,22 @@ pipeline {
             }
           }
         }
+
+        stage("Build runner AMIs") {
+          options { skipDefaultCheckout() }
+          when {
+            beforeAgent true
+            anyOf {
+              expression { return env.REBUILD_AMIS == "true" }
+            }
+            steps {
+              script {
+                e2eUtils.buildPackerAMIs(amiSuffix: 'main')
+              }
+            }
+          }
+        }
+
         stage('Deploy Test Infra') {
           failFast true
           options { skipDefaultCheckout() }

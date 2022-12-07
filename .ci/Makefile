@@ -249,11 +249,15 @@ run-tests-win: set-env-$(NODE_LABEL)
 		-i $(NODE_IP_ADDRESS),
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $${NODE_USER}@$(NODE_IP_ADDRESS) "powershell \"C:/Users/$${NODE_USER}/e2e-testing/.ci/scripts/functional-test.ps1\""
 
+.PHONY: packer-init
+packer-init: 
+	packer init $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl
+
 .PHONY: validate-packer-template
 validate-packer-template:	
 	packer validate $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl
 
-.PHONY: validate-packer-template
+.PHONY: packer-init validate-packer-template 
 build-amis-$(AMI_SUFFIX): validate-packer-template
 	@:$(call check_defined, AMI_SUFFIX, You need to define a unique AMI_SUFFIX for testing. Or specify AMI_SUFFIX=main to override existing prodution AMIs)		
 	packer build -var "ami_suffix=$(AMI_SUFFIX)" -var "org_arn=$(AWS_ORG_ARN)" $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl

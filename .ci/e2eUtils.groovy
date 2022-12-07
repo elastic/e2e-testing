@@ -126,7 +126,7 @@ def checkSkipTests() {
 /*
  * Runs the Make build at the CI, executing the closure in the context of Ansible + AWS
  */
-def ciBuild(Closure body){
+def ciBuild(Closure body) {
     withEnv([
             "SSH_KEY=${E2E_SSH_KEY}"
     ]) {
@@ -353,6 +353,14 @@ def generateFunctionalTestStep(Map args = [:]) {
             }
         }
     }
+}
+
+def buildPackerAMIs(Map args = [:]) {
+    ciBuild() {
+        
+    }
+    
+    
 }
 
 def retryWithNode(Map args = [:], Closure body) {
