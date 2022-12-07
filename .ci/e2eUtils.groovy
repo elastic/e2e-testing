@@ -361,7 +361,9 @@ def buildPackerAMIs(Map args = [:]) {
         }
         setEnvVar("AMI_SUFFIX", args.amiSuffix)
         ciBuild() {
-            sh(label: "Build AMIS with suffix:${args.amiSuffix}", script: 'make -C .ci build-amis-$AMI_SUFFIX')
+            withPackerEnv() {
+                sh(label: "Build AMIS with suffix:${args.amiSuffix}", script: 'make -C .ci build-amis-$AMI_SUFFIX')
+            }
         }
     }
 }
