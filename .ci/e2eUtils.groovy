@@ -93,9 +93,8 @@ def convertSuiteToTasks(Map args = [:]) {
 }
 
 def checkRebuildAmis() {
-    dir("${BASE_DIR}") {
-        def ami_regexps = [ "^.ci/ansible/.*", "^.ci/packer/.*"]
-        setEnvVar("REBUILD_AMIS", isGitRegionMatch(patterns: tests_regexps, shouldMatchAll: false))
+    dir("${BASE_DIR}") {        
+        setEnvVar("REBUILD_AMIS", isGitRegionMatch(patterns: [ "^.ci/ansible/.*", "^.ci/packer/.*"], shouldMatchAll: false))
     }
 }
 
@@ -356,11 +355,14 @@ def generateFunctionalTestStep(Map args = [:]) {
 }
 
 def buildPackerAMIs(Map args = [:]) {
-    ciBuild() {
-        
+    
+    if (!args.amiSuffix?.trim()) {
+        error("amiSuffix parameter must be specified in buildPackerAMIs()")
     }
-    
-    
+    setEnvVar("AMI_SUFFIX", args.amiSuffix)
+    ciBuild() {
+        sh(label: "Build AMIS with suffix:${args.amiSuffix}", script: 'make -C .ci build-amis-$AMI_SUFFIX')
+    }
 }
 
 def retryWithNode(Map args = [:], Closure body) {
