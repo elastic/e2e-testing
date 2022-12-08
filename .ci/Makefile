@@ -264,5 +264,5 @@ build-amis-$(AMI_SUFFIX): packer-init validate-packer-template
 		-var "ami_suffix=$(AMI_SUFFIX)" \
 		-var "org_arn=$(AWS_ORG_ARN)" \
 		-var "galaxy_command=$(ANSIBLE_GALAXY)" \
-		-var "command=$(ANSIBLE_PLAYBOOK)" \
+		-var "playbook_command=$(ANSIBLE_PLAYBOOK)" \
 		 $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl

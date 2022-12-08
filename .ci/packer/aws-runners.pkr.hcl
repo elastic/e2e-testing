@@ -32,7 +32,7 @@ variable "galaxy_command" {
   default = "ansible-galaxy"
 }
 
-variable "command" {
+variable "playbook_command" {
   type    = string
   default = "ansible-playbook"
 }
@@ -295,7 +295,7 @@ build {
     extra_arguments  = ["--tags", "setup-ami"]
     galaxy_file      = "ansible/requirements.yml"
     galaxy_command   = "${var.galaxy_command}"
-    command          = "${var.command}"
+    command          = "${var.playbook_command}"
   }
 }
 
@@ -340,6 +340,6 @@ build {
     extra_arguments  = ["--tags", "setup-ami", "--extra-vars", "nodeShellType=cmd"]
     galaxy_file      = "ansible/requirements.yml"
     galaxy_command   = "${var.galaxy_command}"
-    command          = "${var.command}"
+    command          = "${var.playbook_command}"
   }
 }
