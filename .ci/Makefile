@@ -262,7 +262,7 @@ build-amis-$(AMI_SUFFIX): packer-init validate-packer-template
 	@:$(call check_defined, AMI_SUFFIX, You need to define a unique AMI_SUFFIX for testing. Or specify AMI_SUFFIX=main to override existing prodution AMIs)		
 	packer build \
 		-var "ami_suffix=$(AMI_SUFFIX)" \
-		-var "org_arn=$(AWS_ORG_ARN)" \ 
-		-var "command=$(ANSIBLE_PLAYBOOK)" \
+		-var "org_arn=$(AWS_ORG_ARN)" \
 		-var "galaxy_command=$(ANSIBLE_GALAXY)" \
+		-var "command=$(ANSIBLE_PLAYBOOK)" \
 		 $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl
