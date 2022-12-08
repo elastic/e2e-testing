@@ -18,7 +18,7 @@ variable "source_set" {
 }
 
 variable "org_arn" {
-  type  = string
+  type    = string
   default = ""
 }
 
@@ -28,12 +28,12 @@ variable "ami_suffix" {
 }
 
 variable "galaxy_command" {
-  type  = string
+  type    = string
   default = "ansible-galaxy"
 }
 
 variable "command" {
-  type  = string
+  type    = string
   default = "ansible-playbook"
 }
 
@@ -51,7 +51,7 @@ locals {
       "source.amazon-ebs.oracle-linux-8",
       "source.amazon-ebs.sles15"
     ],
-    "test" = ["source.amazon-ebs.ubuntu"],
+    "test"    = ["source.amazon-ebs.ubuntu"],
     "windows" = ["source.amazon-ebs.windows2019"],
     "all" = [
       "source.amazon-ebs.ubuntu",
@@ -64,6 +64,13 @@ locals {
       "source.amazon-ebs.sles15",
       "source.amazon-ebs.windows2019"
     ]
+  }
+  common_tags = {
+    Division = "engineering"
+    Org      = "obs"
+    Team     = "observability-robots"
+    Project  = "e2e-testing",
+    Branch   = var.ami_suffix
   }
 }
 
@@ -80,14 +87,15 @@ source "amazon-ebs" "ubuntu" {
     volume_type           = "gp3"
     delete_on_termination = true
   }
-  tags = {
-    OS_Version = "Ubuntu"
-    Release    = "22.04"
-    Arch       = "AMD64"
-    Branch     = var.ami_suffix
-    Project    = "e2e"
-  }
-  ami_org_arns = [var.org_arn]
+  tags = "${merge(
+    local.common_tags,
+    {
+      OS_Version = "Ubuntu"
+      Release    = "22.04"
+      Arch       = "AMD64"
+    }
+  )}"
+  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -105,14 +113,15 @@ source "amazon-ebs" "debian-10-amd64" {
     volume_type           = "gp3"
     delete_on_termination = true
   }
-  tags = {
-    OS_Version = "Debian"
-    Release    = "10"
-    Arch       = "AMD64"
-    Branch     = var.ami_suffix
-    Project    = "e2e"
-  }
-  ami_org_arns = [var.org_arn]
+  tags = "${merge(
+    local.common_tags,
+    {
+      OS_Version = "Debian"
+      Release    = "10"
+      Arch       = "AMD64"
+    }
+  )}"
+  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -128,16 +137,17 @@ source "amazon-ebs" "debian-10-arm64" {
     device_name           = "/dev/sda1"
     volume_size           = 15
     volume_type           = "gp3"
-    delete_on_termination = true    
+    delete_on_termination = true
   }
-  tags = {
-    OS_Version = "Debian"
-    Release    = "10"
-    Arch       = "ARM64"
-    Branch     = var.ami_suffix
-    Project    = "e2e"
-  }
-  ami_org_arns = [var.org_arn]
+  tags = "${merge(
+    local.common_tags,
+    {
+      OS_Version = "Debian"
+      Release    = "10"
+      Arch       = "ARM64"
+    }
+  )}"
+  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -155,14 +165,15 @@ source "amazon-ebs" "debian-11-amd64" {
     volume_type           = "gp3"
     delete_on_termination = true
   }
-  tags = {
-    OS_Version = "Debian"
-    Release    = "11"
-    Arch       = "AMD64"
-    Branch     = var.ami_suffix
-    Project    = "e2e"
-  }
-  ami_org_arns = [var.org_arn]
+  tags = "${merge(
+    local.common_tags,
+    {
+      OS_Version = "Debian"
+      Release    = "11"
+      Arch       = "AMD64"
+    }
+  )}"
+  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -180,14 +191,15 @@ source "amazon-ebs" "centos-8-amd64" {
     volume_type           = "gp3"
     delete_on_termination = true
   }
-  tags = {
-    OS_Version = "Centos"
-    Release    = "8"
-    Arch       = "AMD64"
-    Branch     = var.ami_suffix
-    Project    = "e2e"
-  }
-  ami_org_arns = [var.org_arn]
+  tags = "${merge(
+    local.common_tags,
+    {
+      OS_Version = "Centos"
+      Release    = "8"
+      Arch       = "AMD64"
+    }
+  )}"
+  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -205,14 +217,15 @@ source "amazon-ebs" "centos-8-arm64" {
     volume_type           = "gp3"
     delete_on_termination = true
   }
-  tags = {
-    OS_Version = "Centos"
-    Release    = "8"
-    Arch       = "ARM64"
-    Branch     = var.ami_suffix
-    Project    = "e2e"
-  }
-  ami_org_arns = [var.org_arn]
+  tags = "${merge(
+    local.common_tags,
+    {
+      OS_Version = "Centos"
+      Release    = "8"
+      Arch       = "ARM64"
+    }
+  )}"
+  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -230,14 +243,15 @@ source "amazon-ebs" "oracle-linux-8" {
     volume_type           = "gp3"
     delete_on_termination = true
   }
-  tags = {
-    OS_Version = "Oracle Linux"
-    Release    = "8"
-    Arch       = "x86-64"
-    Branch     = var.ami_suffix
-    Project    = "e2e"
-  }
-  ami_org_arns = [var.org_arn]
+  tags = "${merge(
+    local.common_tags,
+    {
+      OS_Version = "Oracle Linux"
+      Release    = "8"
+      Arch       = "x86-64"
+    }
+  )}"
+  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 
@@ -256,14 +270,15 @@ source "amazon-ebs" "sles15" {
     volume_type           = "gp3"
     delete_on_termination = true
   }
-  tags = {
-    OS_Version = "SUSE Linux Enterprise Server 15 SP3"
-    Release    = "8"
-    Arch       = "ARM64"
-    Branch     = var.ami_suffix
-    Project    = "e2e"
-  }
-  ami_org_arns = [var.org_arn]
+  tags = "${merge(
+    local.common_tags,
+    {
+      OS_Version = "SUSE Linux Enterprise Server 15 SP3"
+      Release    = "8"
+      Arch       = "ARM64"
+    }
+  )}"
+  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -279,6 +294,8 @@ build {
     playbook_file    = "ansible/playbook.yml"
     extra_arguments  = ["--tags", "setup-ami"]
     galaxy_file      = "ansible/requirements.yml"
+    galaxy_command   = var.galaxy_command
+    command          = var.command
   }
 }
 
