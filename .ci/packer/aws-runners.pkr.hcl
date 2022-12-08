@@ -27,6 +27,16 @@ variable "ami_suffix" {
   default = "test_suffix"
 }
 
+variable "galaxy_command" {
+  type  = string
+  default = "ansible-galaxy"
+}
+
+variable "command" {
+  type  = string
+  default = "ansible-playbook"
+}
+
 locals {
   aws_region       = "us-east-2"
   force_deregister = true
@@ -309,5 +319,7 @@ build {
     playbook_file    = "ansible/playbook.yml"
     extra_arguments  = ["--tags", "setup-ami", "--extra-vars", "nodeShellType=cmd"]
     galaxy_file      = "ansible/requirements.yml"
+    galaxy_command   = var.galaxy_command
+    command          = var.command
   }
 }
