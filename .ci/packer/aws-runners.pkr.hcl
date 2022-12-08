@@ -294,8 +294,8 @@ build {
     playbook_file    = "ansible/playbook.yml"
     extra_arguments  = ["--tags", "setup-ami"]
     galaxy_file      = "ansible/requirements.yml"
-    galaxy_command   = var.galaxy_command
-    command          = var.command
+    galaxy_command   = "${var.galaxy_command}"
+    command          = "${var.command}"
   }
 }
 
@@ -313,13 +313,16 @@ source "amazon-ebs" "windows2019" {
     volume_type           = "gp3"
     delete_on_termination = true
   }
-  tags = {
-    OS_Version = "Windows"
-    Release    = "2019"
-    Arch       = "x86_64"
-    Branch     = var.ami_suffix
-    Project    = "e2e"
-  }
+  tags = "${merge(
+    local.common_tags,
+    {
+      OS_Version = "Windows"
+      Release    = "2019"
+      Arch       = "x86_64"
+      Branch     = var.ami_suffix
+      Project    = "e2e"
+    }
+  )}"
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -336,7 +339,7 @@ build {
     playbook_file    = "ansible/playbook.yml"
     extra_arguments  = ["--tags", "setup-ami", "--extra-vars", "nodeShellType=cmd"]
     galaxy_file      = "ansible/requirements.yml"
-    galaxy_command   = var.galaxy_command
-    command          = var.command
+    galaxy_command   = "${var.galaxy_command}"
+    command          = "${var.command}"
   }
 }
