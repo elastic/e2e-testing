@@ -288,6 +288,10 @@ build {
 
   sources = local.source_sets[var.source_set]
 
+  provisioner "shell" {
+    inline = ["echo ${var.playbook_command}"]
+  }
+
   provisioner "ansible" {
     user             = build.User
     ansible_env_vars = ["PACKER_BUILD_NAME={{ build_name }}"]
