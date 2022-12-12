@@ -97,27 +97,6 @@
   tags:
     - scripts
 
-- name: Extend environment for Helm testing
-  lineinfile:
-    state: present
-    line: "{{item}}"
-    insertafter: EOF
-    dest: "{{ e2e_home_dir }}.env"
-    create: yes
-  with_items:
-    - "SUITE=\"{{ lookup('env', 'SUITE') or 'helm' }}\""
-    - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'docker' }}\""
-    - "HELM_CHART_VERSION=\"{{ lookup('env', 'HELM_CHART_VERSION') }}\""
-    - "HELM_VERSION=\"{{ lookup('env', 'HELM_VERSION') }}\""
-    - "KIND_VERSION=\"{{ lookup('env', 'KIND_VERSION') }}\""
-    - "KUBERNETES_VERSION=\"{{ lookup('env', 'KUBERNETES_VERSION') }}\""
-    - "DEVELOPER_MODE=\"{{ lookup('env', 'DEVELOPER_MODE') or 'false' }}\""
-  when:
-    - suite is defined
-    - suite == "helm"
-  tags:
-    - scripts
-
 - name: Extend environment
   lineinfile:
     state: present

@@ -84,7 +84,6 @@ pipeline {
         KIBANA_VERSION = "${params.KIBANA_VERSION.trim()}"
         STACK_VERSION = "${params.STACK_VERSION.trim()}"
         FORCE_SKIP_GIT_CHECKS = "${params.forceSkipGitChecks}"
-        HELM_CHART_VERSION = "${params.HELM_CHART_VERSION.trim()}"
         HELM_VERSION = "${params.HELM_VERSION.trim()}"
         KIND_VERSION = "${params.KIND_VERSION.trim()}"
         KUBERNETES_VERSION = "${params.KUBERNETES_VERSION.trim()}"
@@ -278,7 +277,7 @@ def checkSkipTests() {
     }
 
     // patterns for all places that should trigger a full build
-    def regexps = [ "^e2e/_suites/fleet/.*", "^e2e/_suites/helm/.*", "^e2e/_suites/kubernetes-autodiscover/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
+    def regexps = [ "^e2e/_suites/fleet/.*", "^e2e/_suites/kubernetes-autodiscover/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
     setEnvVar("SKIP_TESTS", !isGitRegionMatch(patterns: regexps, shouldMatchAll: false))
   }
 }
