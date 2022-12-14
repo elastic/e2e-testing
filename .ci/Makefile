@@ -41,6 +41,10 @@ SUITE ?= fleet
 # Tags to run. Please check out the feature files
 TAGS ?= fleet_mode
 
+SHELL = /bin/bash
+MAKEFLAGS += --silent --no-print-directory
+.SHELLFLAGS = -ec
+
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
 #
