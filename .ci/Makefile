@@ -223,7 +223,7 @@ destroy-elastic-stack:
 	ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo docker-compose -f /root/.op/compose/profiles/fleet/docker-compose.yml down --remove-orphans'
 
 .PHONY: start-elastic-stack
-start-elastic-stack:
+start-elastic-stack: show-env
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	source $(VENV_DIR)/bin/activate; \
 	PROVIDER="remote" SUITE="$(SUITE)" TAGS="non-existent-tag" \
