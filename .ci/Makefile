@@ -61,6 +61,20 @@ __check_defined = \
 .runID:
 	echo "$(shell uuidgen|cut -d'-' -f1)" > $(RUN_ID_FILE)
 
+.PHONY: show-env
+show-env:
+	@source $(VENV_DIR)/bin/activate; \
+	echo "PROJECT_DIR: $(PROJECT_DIR)"; \
+	echo "VENV_DIR: $(VENV_DIR)"; \
+	echo "VENV_BIN_DIR: $(VENV_BIN_DIR)"; \
+	echo "ANSIBLE: $$(ansible --version)"; \
+	echo "Python: $$(python --version)"; \
+	echo "RUN_ID: $(RUN_ID)"; \
+	echo "STACK_VERSION: $(STACK_VERSION)"; \
+	echo "SUITE: $(SUITE)"; \
+	echo "TAGS: $(TAGS)"; \
+	echo "PROVIDER: $(PROVIDER)";
+
 .PHONY: setup-env
 setup-env:
 	$(MAKE) .runID
@@ -83,8 +97,9 @@ set-env-%:
 	@$(PROJECT_DIR)/.ci/scripts/yq.sh "$*"
 
 .PHONY: provision-stack
-provision-stack: .runID
+provision-stack: .runID show-env
 	@:$(call check_defined, RUN_ID, You need to an unique RUN_ID. To create it please run 'make .runID' goal)
+	source $(VENV_DIR)/bin/activate; \
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
@@ -94,9 +109,10 @@ provision-stack: .runID
 
 .PHONY: setup-stack
 setup-stack: export TAGS = non-existing-tag
-setup-stack: .runID
+setup-stack: .runID show-env
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
+	source $(VENV_DIR)/bin/activate; \
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
@@ -109,8 +125,9 @@ setup-stack: .runID
 create-stack: provision-stack setup-stack start-elastic-stack
 
 .PHONY: destroy-stack
-destroy-stack:
+destroy-stack: show-env
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
+	source $(VENV_DIR)/bin/activate; \
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars="$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeUser=$(STACK_IMAGE)" \
@@ -135,6 +152,7 @@ show-stack:
 provision-node: .runID set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
+	source $(VENV_DIR)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
@@ -147,7 +165,7 @@ setup-node: .runID set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
 	@:$(call check_defined, NODE_IP_ADDRESS, IP address of the test node not defined)
-	source $(VENV)/bin/activate; \
+	source $(VENV_DIR)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
@@ -162,6 +180,7 @@ create-node: provision-node setup-node
 .PHONY: destroy-node
 destroy-node: set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
+	source $(VENV_DIR)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/teardown.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars="$(LABELS_STRING) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeUser=$${NODE_USER}" \
@@ -173,6 +192,7 @@ destroy-node: set-env-$(NODE_LABEL)
 fetch-test-reports: .runID set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, NODE_IP_ADDRESS, IP address of the test node not defined)
+	source $(VENV_DIR)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/fetch-test-reports.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
@@ -201,6 +221,7 @@ destroy-elastic-stack:
 .PHONY: start-elastic-stack
 start-elastic-stack:
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
+	source $(VENV_DIR)/bin/activate; \
 	PROVIDER="remote" SUITE="$(SUITE)" TAGS="non-existent-tag" \
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/elastic-stack.yml \
 		--private-key="$(SSH_KEY)" \
@@ -217,8 +238,9 @@ recreate-fleet-server:
 	$(MAKE) start-elastic-stack
 
 .PHONY: run-tests
-run-tests: set-env-$(NODE_LABEL)
+run-tests: set-env-$(NODE_LABEL) show-env
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
+	source $(VENV_DIR)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$${NODE_LABEL}_$(TAGS)" \
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/run-tests.yml \
 		--private-key="$(SSH_KEY)" \
@@ -230,8 +252,9 @@ run-tests: set-env-$(NODE_LABEL)
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $${NODE_USER}@$(NODE_IP_ADDRESS) "sudo bash /home/$${NODE_USER}/e2e-testing/.ci/scripts/functional-test.sh \"$(TAGS)\""
 
 .PHONY: run-tests-win
-run-tests-win: set-env-$(NODE_LABEL)
+run-tests-win: set-env-$(NODE_LABEL) show-env
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
+	source $(VENV_DIR)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$${NODE_LABEL}_$(TAGS)" \
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/run-tests.yml \
 		--private-key="$(SSH_KEY)" \
