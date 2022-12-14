@@ -1,13 +1,15 @@
 ---
 - name: Find the Test reports to copy/fetch
   become: no
-  ansible.builtin.find: 
+  ansible.builtin.find:
     paths: "{{ e2e_base_dir }}outputs"
     file_type: file
-    use_regex: yes   
+    use_regex: yes
+    recurse: yes
     patterns:
-      - '^TEST.*json$'
-      - '^TEST.*xml$'
+      - "^TEST.*json$"
+      - "^TEST.*xml$"
+      - "^.*.ndjson$"
   register: files_2_fetch
   tags:
     - fetch-reports
@@ -16,13 +18,15 @@
 
 - name: Find the Test reports to copy/fetch (Windows)
   become: no
-  ansible.windows.win_find: 
+  ansible.windows.win_find:
     paths: "{{ e2e_base_dir }}outputs"
     file_type: file
-    use_regex: yes   
+    use_regex: yes
+    recurse: yes
     patterns:
-      - '^TEST.*json$'
-      - '^TEST.*xml$'
+      - "^TEST.*json$"
+      - "^TEST.*xml$"
+      - "^.*.ndjson$"
   register: files_2_fetch_win
   tags:
     - fetch-reports

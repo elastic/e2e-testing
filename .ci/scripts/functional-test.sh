@@ -16,6 +16,7 @@ set -euxo pipefail
 #   - BEAT_VERSION - that's the version of the Beat to be tested. Default is stored in '.stack-version'.
 #   - ELASTIC_AGENT_VERSION - that's the version of the Elastic Agent to be tested. Default is stored in '.stack-version'.
 #
+# NOTE: this script is replaced in runtime by .ci/ansible/tasks/setup_test_script.yml
 
 BASE_VERSION="$(cat $(pwd)/.stack-version)"
 
@@ -32,6 +33,8 @@ REPORT_PREFIX=${REPORT_PREFIX:-"${SUITE}_${GOARCH}_${TAGS}"}
 
 rm -rf outputs || true
 mkdir -p outputs
+
+OUTPUT_DIR=$(pwd)/outputs/docker-logs .ci/scripts/run_filebeat.sh
 
 REPORT_PREFIX=$(echo "$REPORT_PREFIX" | sed -r 's/[ @~]+//g')
 REPORT="$(pwd)/outputs/TEST-${REPORT_PREFIX}"

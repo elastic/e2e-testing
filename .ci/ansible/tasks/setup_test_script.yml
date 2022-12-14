@@ -136,27 +136,29 @@
     mode: '0777'
     dest: "{{ e2e_base_dir }}.ci/scripts/functional-test.sh"
     content: |
-       #!/usr/bin/env bash
-       set -euxo pipefail
+      #!/usr/bin/env bash
+      set -euxo pipefail
 
-       BASE_DIR="/home/{{ansible_user}}/e2e-testing"
-       SUITE="{{ lookup('env', 'SUITE') or 'fleet' }}"
-       REPORT_PREFIX="{{ lookup('env', 'REPORT_PREFIX') or 'junit' }}"
+      BASE_DIR="/home/{{ansible_user}}/e2e-testing"
+      SUITE="{{ lookup('env', 'SUITE') or 'fleet' }}"
+      REPORT_PREFIX="{{ lookup('env', 'REPORT_PREFIX') or 'junit' }}"
 
-       export PATH="$PATH:/usr/local/go/bin"
+      export PATH="$PATH:/usr/local/go/bin"
 
-       BASE_DIR=${BASE_DIR} "${BASE_DIR}/.ci/scripts/install-test-dependencies.sh" "${SUITE}"
+      BASE_DIR=${BASE_DIR} "${BASE_DIR}/.ci/scripts/install-test-dependencies.sh" "${SUITE}"
 
-       REPORT_PREFIX=$(echo "$REPORT_PREFIX" | sed -r 's/[ @~]+//g')
-       SEED="$(date +%Y-%m-%d-%H:%M:%S)"
-       REPORT="{{ e2e_base_dir }}outputs/TEST-${REPORT_PREFIX}-{{ runId }}-${SEED}"
-       echo "REPORT=\"${REPORT}"\" >> {{ e2e_home_dir }}.env
+      OUTPUT_DIR="{{ e2e_base_dir }}/outputs/docker-logs" OUTPUT_FILE="docker-logs-${REPORT_PREFIX}-{{ runId }}-${SUITE}" "${BASE_DIR}/.ci/scripts/run_filebeat.sh"
 
-       echo "Removing previous test files in the case the workspace is reused"
-       rm -f {{ e2e_base_dir }}outputs/TEST-*.*
+      REPORT_PREFIX=$(echo "$REPORT_PREFIX" | sed -r 's/[ @~]+//g')
+      SEED="$(date +%Y-%m-%d-%H:%M:%S)"
+      REPORT="{{ e2e_base_dir }}outputs/TEST-${REPORT_PREFIX}-{{ runId }}-${SEED}"
+      echo "REPORT=\"${REPORT}"\" >> {{ e2e_home_dir }}.env
 
-       TAGS="{{ lookup('env', 'TAGS') }}" \
-         FORMAT="pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml" \
-         make --no-print-directory -C "{{ e2e_base_dir }}e2e/_suites/${SUITE}" functional-test
+      echo "Removing previous test files in the case the workspace is reused"
+      rm -f {{ e2e_base_dir }}outputs/TEST-*.*
+
+      TAGS="{{ lookup('env', 'TAGS') }}" \
+        FORMAT="pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml" \
+        make --no-print-directory -C "{{ e2e_base_dir }}e2e/_suites/${SUITE}" functional-test
   tags:
     - scripts
