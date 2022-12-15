@@ -138,8 +138,7 @@ destroy-stack: show-env
 		--private-key="$(SSH_KEY)" \
 		--extra-vars="$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeUser=$(STACK_IMAGE)" \
 		--extra-vars="runId=$(RUN_ID) instanceID=$(STACK_INSTANCE_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
-		--ssh-common-args='$(SSH_OPTS)' \
-		-t destroy
+		--ssh-common-args='$(SSH_OPTS)'
 	# rm -fr $(PROJECT_DIR)/.ci/.stack-host-ip
 
 .PHONY: ssh-stack
