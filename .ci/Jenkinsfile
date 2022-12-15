@@ -179,11 +179,15 @@ pipeline {
           }
           post {
               always {
-                script{
-                  def stackIP = getNodeIp('stack')
-                  sh(label: 'Grab logs', script:"make -C .ci fetch-test-reports NODE_IP_ADDRESS=${stackIP} NODE_LABEL=debian_10_amd64")
-                  archiveArtifacts(allowEmptyArchive: true,
-                    artifacts: "outputs/${stackIP}/TEST-*.xml, outputs/${stackIP}/TEST-*.json, outputs/${stackIP}/TEST-*.json.html, outputs/${stackIP}/docker-logs/*")
+                dir("${env.REAL_BASE_DIR}") {
+                  ciBuild() {
+                    script{
+                      def stackIP = getNodeIp('stack')
+                      sh(label: 'Grab logs', script:"make -C .ci fetch-test-reports NODE_IP_ADDRESS=${stackIP} NODE_LABEL=debian_10_amd64")
+                      archiveArtifacts(allowEmptyArchive: true,
+                        artifacts: "outputs/${stackIP}/TEST-*.xml, outputs/${stackIP}/TEST-*.json, outputs/${stackIP}/TEST-*.json.html, outputs/${stackIP}/docker-logs/*")
+                    }
+                  }
                 }
               }
           }
@@ -569,7 +573,9 @@ def generateFunctionalTestStep(Map args = [:]){
               artifacts: "outputs/${testRunnerIP}/TEST-*.xml, outputs/${testRunnerIP}/TEST-*.json, outputs/${testRunnerIP}/TEST-*.json.html, outputs/${testRunnerIP}/docker-logs/*"
 
             def stackIP = getNodeIp('stack')
-            sh(label: 'Grab logs', script:"make -C .ci fetch-test-reports NODE_IP_ADDRESS=${stackIP} NODE_LABEL=debian_10_amd64")
+            ciBuild() {
+              sh(label: 'Grab logs', script:"make -C .ci fetch-test-reports NODE_IP_ADDRESS=${stackIP} NODE_LABEL=debian_10_amd64")
+            }
             archiveArtifacts(allowEmptyArchive: true,
               artifacts: "outputs/${stackIP}/TEST-*.xml, outputs/${stackIP}/TEST-*.json, outputs/${stackIP}/TEST-*.json.html, outputs/${stackIP}/docker-logs/*")
           }
