@@ -570,7 +570,7 @@ def generateFunctionalTestStep(Map args = [:]){
             }
             junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunnerIP}/TEST-*.xml")
             archiveArtifacts allowEmptyArchive: true,
-              artifacts: "outputs/${testRunnerIP}/TEST-*.xml, outputs/${testRunnerIP}/TEST-*.json, outputs/${testRunnerIP}/TEST-*.json.html, outputs/${stackIP}/*.ndjson"
+              artifacts: "outputs/${testRunnerIP}/TEST-*.xml, outputs/${testRunnerIP}/TEST-*.json, outputs/${testRunnerIP}/TEST-*.json.html, outputs/${testRunnerIP}/*.ndjson"
 
             def stackIP = getNodeIp('stack')
             ciBuild() {
