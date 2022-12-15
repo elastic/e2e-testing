@@ -45,6 +45,8 @@ SHELL = /bin/bash
 MAKEFLAGS += --silent --no-print-directory
 .SHELLFLAGS = -ec
 
+export ANSIBLE_CONFIG := $(CURDIR)/ansible/ansible.cfg
+
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
 #
@@ -132,13 +134,13 @@ create-stack: provision-stack setup-stack start-elastic-stack
 destroy-stack: show-env
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	source $(VENV_DIR)/bin/activate; \
-	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/teardown.yml \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars="$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeUser=$(STACK_IMAGE)" \
 		--extra-vars="runId=$(RUN_ID) instanceID=$(STACK_INSTANCE_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t destroy
-	rm -fr $(PROJECT_DIR)/.ci/.stack-host-ip
+	# rm -fr $(PROJECT_DIR)/.ci/.stack-host-ip
 
 .PHONY: ssh-stack
 ssh-stack:
