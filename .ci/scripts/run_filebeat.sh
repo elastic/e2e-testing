@@ -10,7 +10,7 @@ echo "OUTPUT_FILE=${OUTPUT_FILE}"
 echo "CONFIG_PATH=${CONFIG_PATH}"
 echo "DOCKER_IMAGE=${DOCKER_IMAGE}"
 
-docker ps --filter label="name=filebeat" -q | xargs docker kill || true
+docker ps --filter label="name=filebeat" -q | xargs --no-run-if-empty docker kill || true
 
 mkdir -p "${OUTPUT_DIR}"
 
