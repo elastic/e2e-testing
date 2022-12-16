@@ -245,6 +245,14 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			}).Fatal("Elasticsearch Cluster is not healthy")
 		}
 
+		_, err = kibanaClient.WaitForReady(ctx, 10*time.Minute)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"env":   env,
+			}).Fatal("Kibana is not healthy")
+		}
+
 		err = kibanaClient.RecreateFleet(ctx)
 		if err != nil {
 			log.WithFields(log.Fields{

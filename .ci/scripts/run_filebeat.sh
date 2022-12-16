@@ -10,7 +10,10 @@ echo "OUTPUT_FILE=${OUTPUT_FILE}"
 echo "CONFIG_PATH=${CONFIG_PATH}"
 echo "DOCKER_IMAGE=${DOCKER_IMAGE}"
 
-docker ps --filter label="name=filebeat" -q | xargs --no-run-if-empty docker kill || true
+for c in $(docker ps --filter label="name=filebeat" -q)
+do
+  docker kill "${c}"
+done
 
 mkdir -p "${OUTPUT_DIR}"
 
@@ -19,6 +22,10 @@ cat <<EOF > "${CONFIG_PATH}"
 filebeat.autodiscover:
   providers:
     - type: docker
+      condition:
+        not:
+          contains:
+            container.image: ${DOCKER_IMAGE}
       templates:
         - config:
           - type: container
@@ -34,7 +41,7 @@ output.file:
   filename: ${OUTPUT_FILE}
   permissions: 0644
   codec.format:
-    string: '[%{[container.name]}][%{[container.image.name]}][%{[container.id]}][%{[@timestamp]}] %{[message]}'
+    string: '{"image": "%{[container.image.name]}", "message": %{[message]}}'
 EOF
 
 echo "INFO: Run filebeat"
@@ -46,6 +53,7 @@ docker run \
   -v /var/lib/docker/containers:/var/lib/docker/containers \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e OUTPUT_FILE="${OUTPUT_FILE}" \
+  -p 5066:5066 \
   "${DOCKER_IMAGE}" \
     --strict.perms=false \
     -environment container \
