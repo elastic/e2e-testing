@@ -234,6 +234,14 @@ pipeline {
             cleanup {
               // Once all tests are complete we need to teardown the single instance with the deployed stack
               script {
+                dir("${env.REAL_BASE_DIR}") {
+                  ciBuild() {
+                    def stackIP = getNodeIp('stack')
+                    sh(label: 'Grab logs', script:"make -C .ci fetch-test-reports NODE_IP_ADDRESS=${stackIP} NODE_LABEL=debian_10_amd64")
+                    archiveArtifacts(allowEmptyArchive: true,
+                      artifacts: "outputs/${stackIP}/*.ndjson")
+                  }
+                }
                 def stackMachine = getMachineInfo('stack')
                 if (!params.DESTROY_CLOUD_RESOURCES) {
                   def stackRunnerIP = getNodeIp('stack')
@@ -571,13 +579,6 @@ def generateFunctionalTestStep(Map args = [:]){
             junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunnerIP}/TEST-*.xml")
             archiveArtifacts allowEmptyArchive: true,
               artifacts: "outputs/${testRunnerIP}/TEST-*.xml, outputs/${testRunnerIP}/TEST-*.json, outputs/${testRunnerIP}/TEST-*.json.html, outputs/${testRunnerIP}/*.ndjson"
-
-            def stackIP = getNodeIp('stack')
-            ciBuild() {
-              sh(label: 'Grab logs', script:"make -C .ci fetch-test-reports NODE_IP_ADDRESS=${stackIP} NODE_LABEL=debian_10_amd64")
-            }
-            archiveArtifacts(allowEmptyArchive: true,
-              artifacts: "outputs/${stackIP}/*.ndjson")
           }
         }
       }
