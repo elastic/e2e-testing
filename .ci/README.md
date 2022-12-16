@@ -114,6 +114,10 @@ A `.stack-host-ip` file will be created in the `.ci` directory of the project in
 
 Please remember to [destroy the stack](#destroying-the-stack-and-the-test-nodes) once you finished your testing.
 
+> You probably need to run `start-elastic-stack` command twice: the Fleet Server could try to start faster than Kibana and die. Running the command again will recreate the container for Fleet Server.
+
+> The `recreate-fleet-server` command has been deprecated, and calls the `start-elastic-stack` command instead.
+
 ### Create and configure the test node
 
 There are different VM flavours that you can use to run the Elastic Agent and enroll it into the Stack: Debian, CentOS, SLES15, Oracle Linux... using AMD and ARM as architecture. You can find the full reference of the platform support [here](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/.ci/.e2e-platforms.yaml#L2-L42).
@@ -196,18 +200,6 @@ A `.node-host-ip` file will be created in the `.ci` directory of the project inc
 > The IP address of the node in that file will be used by the automation.
 
 Please remember to [destroy the node](#destroying-the-stack-and-the-test-nodes) once you have finished your testing.
-
-Finally, start the stack:
-
-```shell
-export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
-export SUITE="fleet"
-make -C .ci start-elastic-stack
-```
-
-> You probably need to run this command twice: the Fleet Server could try to start faster than Kibana and die. Running the command again will recreate the container for Fleet Server.
-
-> The `recreate-fleet-server` command has been deprecated, and calls the `start-elastic-stack` command instead.
 
 ### Run a test suite
 
