@@ -323,9 +323,6 @@ def ciBuild(Closure body){
           [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
         ]) {
           withOtelEnv() {
-            retryWithSleep(retries: 3, seconds: 5, backoff: true){
-              sh("make -C .ci setup-env") // make sure the environment is created
-            }
             body()
           }
         }

@@ -24,7 +24,7 @@ STACK_INSTANCE_ID ?= stack_$(STACK_LABEL)_$(RUN_ID)
 # Debian 10 AMD (see .e2e-platforms.yaml)
 NODE_IMAGE ?= ami-0d90bed76900e679a
 NODE_INSTANCE_TYPE ?= t3.xlarge
-NODE_LABEL ?= debian_amd64
+NODE_LABEL ?= debian_10_amd64
 NODE_SHELL_TYPE ?= sh
 NODE_USER ?= admin
 NODE_IP_ADDRESS ?= $(shell cat $(PROJECT_DIR)/.ci/.node-host-ip)
@@ -80,6 +80,7 @@ show-env:
 	echo "SUITE: $(SUITE)"; \
 	echo "TAGS: $(TAGS)"; \
 	echo "PROVIDER: $(PROVIDER)";
+	echo "NODE_LABEL: $(NODE_LABEL)";
 
 .PHONY: setup-env
 setup-env:
@@ -94,16 +95,16 @@ destroy-env:
 	rm -fr $(VENV_DIR)
 
 .PHONY: list-platforms
-list-platforms:
+list-platforms: 
 	@docker run --rm -i -w "/workdir" -v $(PROJECT_DIR)/.ci:/workdir mikefarah/yq:4 ".PLATFORMS | keys" .e2e-platforms.yaml
 
 # Create the env file for the target platform
 .PHONY: set-env-%
 set-env-%:
-	@$(PROJECT_DIR)/.ci/scripts/yq.sh "$*"
+	@$(PROJECT_DIR)/.ci/scripts/gen-platform-env-file.py "$*"
 
 .PHONY: provision-stack
-provision-stack: .runID show-env
+provision-stack: setup-env show-env
 	@:$(call check_defined, RUN_ID, You need to an unique RUN_ID. To create it please run 'make .runID' goal)
 	source $(VENV_DIR)/bin/activate; \
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
@@ -115,7 +116,7 @@ provision-stack: .runID show-env
 
 .PHONY: setup-stack
 setup-stack: export TAGS = non-existing-tag
-setup-stack: .runID show-env
+setup-stack: setup-env show-env
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
 	source $(VENV_DIR)/bin/activate; \
@@ -131,7 +132,7 @@ setup-stack: .runID show-env
 create-stack: provision-stack setup-stack start-elastic-stack
 
 .PHONY: destroy-stack
-destroy-stack: show-env
+destroy-stack: setup-env show-env
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	source $(VENV_DIR)/bin/activate; \
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/teardown.yml \
@@ -154,7 +155,7 @@ show-stack:
 	@echo "Stack Shell         : $(STACK_SHELL_TYPE)"
 
 .PHONY: provision-node
-provision-node: .runID set-env-$(NODE_LABEL)
+provision-node: setup-env set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
 	source $(VENV_DIR)/bin/activate; \
@@ -166,7 +167,7 @@ provision-node: .runID set-env-$(NODE_LABEL)
 		-t provision-node
 
 .PHONY: setup-node
-setup-node: .runID set-env-$(NODE_LABEL)
+setup-node: setup-env set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
 	@:$(call check_defined, NODE_IP_ADDRESS, IP address of the test node not defined)
@@ -183,7 +184,7 @@ setup-node: .runID set-env-$(NODE_LABEL)
 create-node: provision-node setup-node
 
 .PHONY: destroy-node
-destroy-node: set-env-$(NODE_LABEL)
+destroy-node: setup-env set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	source $(VENV_DIR)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/teardown.yml \
@@ -194,7 +195,7 @@ destroy-node: set-env-$(NODE_LABEL)
 	rm -fr $(PROJECT_DIR)/.ci/.node-host-ip
 
 .PHONY: fetch-test-reports
-fetch-test-reports: .runID set-env-$(NODE_LABEL)
+fetch-test-reports: setup-env set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, NODE_IP_ADDRESS, IP address of the test node not defined)
 	source $(VENV_DIR)/bin/activate; \
@@ -224,7 +225,7 @@ destroy-elastic-stack:
 	ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $(STACK_USER)@$(STACK_IP_ADDRESS) 'sudo docker-compose -f /root/.op/compose/profiles/fleet/docker-compose.yml down --remove-orphans'
 
 .PHONY: start-elastic-stack
-start-elastic-stack: show-env
+start-elastic-stack: setup-env show-env
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	source $(VENV_DIR)/bin/activate; \
 	PROVIDER="remote" SUITE="$(SUITE)" TAGS="non-existent-tag" \
@@ -243,7 +244,7 @@ recreate-fleet-server:
 	$(MAKE) start-elastic-stack
 
 .PHONY: run-tests
-run-tests: set-env-$(NODE_LABEL) show-env
+run-tests: setup-env set-env-$(NODE_LABEL) show-env
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	source $(VENV_DIR)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$${NODE_LABEL}_$(TAGS)" \
@@ -257,7 +258,7 @@ run-tests: set-env-$(NODE_LABEL) show-env
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $${NODE_USER}@$(NODE_IP_ADDRESS) "sudo bash /home/$${NODE_USER}/e2e-testing/.ci/scripts/functional-test.sh \"$(TAGS)\""
 
 .PHONY: run-tests-win
-run-tests-win: set-env-$(NODE_LABEL) show-env
+run-tests-win: setup-env set-env-$(NODE_LABEL) show-env
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	source $(VENV_DIR)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$${NODE_LABEL}_$(TAGS)" \
