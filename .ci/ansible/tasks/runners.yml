@@ -49,8 +49,6 @@
       org: obs
       team: eng-productivity
       project: e2e
-    network:
-      assign_public_ip: true
     volumes:
       - device_name: /dev/sda1
         ebs:
