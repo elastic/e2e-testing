@@ -24,6 +24,7 @@
 
 - name: "Create {{nodeLabel}} AWS instances"
   ec2_instance:
+    state: started
     wait: true
     name: "e2e-{{ instanceID}}"
     key_name: "e2essh-{{runId}}"
@@ -31,6 +32,8 @@
     security_group: e2e
     image_id: '{{nodeImage}}'
     instance_type: '{{nodeInstanceType}}'
+    network:
+      assign_public_ip: true
     tags:
       branch: "{{branch | default('Not running on CI')}}"
       build: "{{build | default('Not running on CI')}}"

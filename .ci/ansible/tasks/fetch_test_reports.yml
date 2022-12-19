@@ -1,6 +1,35 @@
 ---
+- name: Fetch Kind logs
+  become: false
+  ansible.builtin.shell: |
+    ( kind export logs --name "{{ e2e_base_dir }}outputs/kind-logs" \
+    && tar -czf "{{ e2e_base_dir }}outputs/kind-logs.tgz" "{{ e2e_base_dir }}outputs/kind-logs" \
+    && rm -fr "{{ e2e_base_dir }}outputs/kind-logs") || true
+  tags:
+    - fetch-reports
+  when:
+    - ansible_facts['os_family'] != "Windows"
+
+- name: Fetch Docker logs
+  become: false
+  ansible.builtin.shell: |
+    ( tar -czf "{{ e2e_base_dir }}outputs/docker-logs.tgz" "{{ e2e_base_dir }}outputs/docker-logs") || true
+  tags:
+    - fetch-reports
+  when:
+    - ansible_facts['os_family'] != "Windows"
+
+- name: Fetch Elastic Agent diagnose
+  become: false
+  ansible.builtin.shell: |
+    (elastic-agent diagnostics collect -f "{{ e2e_base_dir }}outputs/elastic-agent") || true
+  tags:
+    - fetch-reports
+  when:
+    - ansible_facts['os_family'] != "Windows"
+
 - name: Find the Test reports to copy/fetch
-  become: no
+  become: false
   ansible.builtin.find:
     paths: "{{ e2e_base_dir }}outputs"
     file_type: file
@@ -9,7 +38,8 @@
     patterns:
       - "^TEST.*json$"
       - "^TEST.*xml$"
-      - "^.*.ndjson$"
+      - "^.*tgz$"
+      - "^.*zip$"
   register: files_2_fetch
   tags:
     - fetch-reports
@@ -17,7 +47,7 @@
     - ansible_facts['os_family'] != "Windows"
 
 - name: Find the Test reports to copy/fetch (Windows)
-  become: no
+  become: false
   ansible.windows.win_find:
     paths: "{{ e2e_base_dir }}outputs"
     file_type: file
@@ -26,7 +56,8 @@
     patterns:
       - "^TEST.*json$"
       - "^TEST.*xml$"
-      - "^.*.ndjson$"
+      - "^.*tgz$"
+      - "^.*zip$"
   register: files_2_fetch_win
   tags:
     - fetch-reports
@@ -34,7 +65,7 @@
     - ansible_facts['os_family'] == "Windows"
 
 - name: Create local directory
-  become: no
+  become: false
   vars:
     ansible_shell_type: "sh"
   ansible.builtin.file:
@@ -45,7 +76,7 @@
     - fetch-reports
 
 - name: Fetch the Test reports
-  become: no
+  become: false
   ansible.builtin.fetch:
     src: "{{ item.path }}"
     dest: "{{ workspace }}outputs/{{ inventory_hostname }}/"
@@ -58,7 +89,7 @@
     - ansible_facts['os_family'] != "Windows"
 
 - name: Fetch the Test reports (Windows)
-  become: no
+  become: false
   ansible.builtin.fetch:
     src: "{{ item.path }}"
     dest: "{{ workspace }}outputs/{{ inventory_hostname }}/"
