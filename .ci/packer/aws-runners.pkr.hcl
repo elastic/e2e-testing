@@ -17,11 +17,6 @@ variable "source_set" {
   default = "linux"
 }
 
-variable "org_arn" {
-  type    = string
-  default = ""
-}
-
 variable "ami_suffix" {
   type    = string
   default = "test_suffix"
@@ -95,7 +90,6 @@ source "amazon-ebs" "ubuntu" {
       Arch       = "AMD64"
     }
   )}"
-  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -121,7 +115,6 @@ source "amazon-ebs" "debian-10-amd64" {
       Arch       = "AMD64"
     }
   )}"
-  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -147,7 +140,6 @@ source "amazon-ebs" "debian-10-arm64" {
       Arch       = "ARM64"
     }
   )}"
-  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -173,7 +165,6 @@ source "amazon-ebs" "debian-11-amd64" {
       Arch       = "AMD64"
     }
   )}"
-  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -199,7 +190,6 @@ source "amazon-ebs" "centos-8-amd64" {
       Arch       = "AMD64"
     }
   )}"
-  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -225,7 +215,6 @@ source "amazon-ebs" "centos-8-arm64" {
       Arch       = "ARM64"
     }
   )}"
-  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
@@ -251,7 +240,6 @@ source "amazon-ebs" "oracle-linux-8" {
       Arch       = "x86-64"
     }
   )}"
-  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 
@@ -278,7 +266,6 @@ source "amazon-ebs" "sles15" {
       Arch       = "ARM64"
     }
   )}"
-  ami_org_arns     = [var.org_arn]
   skip_create_ami  = var.skip_create_ami
   force_deregister = local.force_deregister
 }
