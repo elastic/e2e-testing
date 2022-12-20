@@ -270,3 +270,7 @@ run-tests-win: setup-env set-env-$(NODE_LABEL) show-env
 		-t run-tests \
 		-i $(NODE_IP_ADDRESS),
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $${NODE_USER}@$(NODE_IP_ADDRESS) "powershell \"C:/Users/$${NODE_USER}/e2e-testing/.ci/scripts/functional-test.ps1\""
+
+.PHONY: clean
+clean:
+	rm -fr "$(PROJECT_DIR)/.ci/".env-* "$(PROJECT_DIR)/.ci/.node-host-ip" "$(PROJECT_DIR)/.ci/.runID" "$(PROJECT_DIR)/.ci/.stack-host-ip" "$(PROJECT_DIR)/outputs" "$(PROJECT_DIR)/None-sshhosts" "$(PROJECT_DIR)/stack-sshhosts"
