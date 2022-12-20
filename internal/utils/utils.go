@@ -51,7 +51,14 @@ func DownloadFile(downloadRequest *DownloadRequest) error {
 	var filePath string
 	if downloadRequest.DownloadPath == "" {
 		tempParentDir := filepath.Join(os.TempDir(), uuid.NewString())
-		internalio.MkdirAll(tempParentDir)
+		err := internalio.MkdirAll(tempParentDir)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"path":  tempParentDir,
+			}).Error("Error creating directory")
+			return err
+		}
 		filePath = filepath.Join(tempParentDir, uuid.NewString())
 		downloadRequest.DownloadPath = filePath
 	} else {

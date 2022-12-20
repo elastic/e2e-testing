@@ -137,7 +137,7 @@
     dest: "{{ e2e_base_dir }}.ci/scripts/functional-test.sh"
     content: |
       #!/usr/bin/env bash
-      set -euxo pipefail
+      set -euo pipefail
 
       BASE_DIR="/home/{{ansible_user}}/e2e-testing"
       SUITE="{{ lookup('env', 'SUITE') or 'fleet' }}"

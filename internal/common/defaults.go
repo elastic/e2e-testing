@@ -72,7 +72,13 @@ func init() {
 	config.Init()
 
 	elasticAgentWorkingDir = filepath.Join(config.OpDir(), ElasticAgentServiceName)
-	io.MkdirAll(elasticAgentWorkingDir)
+	err := io.MkdirAll(elasticAgentWorkingDir)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"path":  elasticAgentWorkingDir,
+		}).Fatal("Could not create working directory for Elastic Agent")
+	}
 
 	DeveloperMode = shell.GetEnvBool("DEVELOPER_MODE")
 	if DeveloperMode {
@@ -98,8 +104,13 @@ func GetElasticAgentWorkingPath(paths ...string) string {
 	p := filepath.Join(elements...)
 
 	// create dirs up to the last parent
-	io.MkdirAll(filepath.Dir(p))
-
+	err := io.MkdirAll(filepath.Dir(p))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"path":  filepath.Dir(p),
+		}).Fatal("Could not create working directory for Elastic Agent")
+	}
 	return p
 }
 
