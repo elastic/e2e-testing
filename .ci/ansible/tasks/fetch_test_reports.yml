@@ -1,8 +1,10 @@
 ---
 - name: Fetch Kind logs
   become: false
+  environment: 
+    PATH: "/home/admin/bin:/home/admin/go/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/go/bin"
   ansible.builtin.shell: |
-    ( kind export logs --name "{{ e2e_base_dir }}outputs/kind-logs" \
+    ( kind export logs --name $(kind get clusters) "{{ e2e_base_dir }}outputs/kind-logs" \
     && tar -czf "{{ e2e_base_dir }}outputs/kind-logs.tgz" "{{ e2e_base_dir }}outputs/kind-logs" \
     && rm -fr "{{ e2e_base_dir }}outputs/kind-logs") || true
   tags:
@@ -10,19 +12,10 @@
   when:
     - ansible_facts['os_family'] != "Windows"
 
-- name: Fetch Docker logs
+- name: Fetch Test logs
   become: false
   ansible.builtin.shell: |
-    ( tar -czf "{{ e2e_base_dir }}outputs/docker-logs.tgz" "{{ e2e_base_dir }}outputs/docker-logs") || true
-  tags:
-    - fetch-reports
-  when:
-    - ansible_facts['os_family'] != "Windows"
-
-- name: Fetch Elastic Agent diagnose
-  become: false
-  ansible.builtin.shell: |
-    (elastic-agent diagnostics collect -f "{{ e2e_base_dir }}outputs/elastic-agent") || true
+    ( tar -czf "{{ e2e_base_dir }}outputs/test-logs.tgz" "{{ e2e_base_dir }}outputs/test-logs") || true
   tags:
     - fetch-reports
   when:
