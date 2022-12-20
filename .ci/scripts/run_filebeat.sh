@@ -36,7 +36,6 @@ processors:
   - add_cloud_metadata: ~
   - add_docker_metadata: ~
   - add_kubernetes_metadata: ~
-  - add_labels:
 
 filebeat.inputs:
 - type: filestream
@@ -44,6 +43,7 @@ filebeat.inputs:
   paths:
     - /var/lib/elastic-agent/data/elastic-agent-*/logs/*.log*
     - /Library/Elastic/Agent/data/elastic-agent-*/logs/*.log*
+
 output.file:
   path: "/output"
   filename: ${OUTPUT_FILE}
