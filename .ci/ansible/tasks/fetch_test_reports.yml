@@ -3,11 +3,12 @@
   become: false
   environment: 
     PATH: "/home/admin/bin:/home/admin/go/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/go/bin"
-  ansible.builtin.shell: |
-    ( tar -czf "kubernetes-autodiscover-logs.tgz" "./kubernetes-autodiscover") || true
-    ( tar -czf "docker-logs.tgz" "./docker-logs") || true
-    ( tar -czf "fleet-logs.tgz" "./fleet") || true
-  chdir: "{{ e2e_base_dir }}outputs"
+  ansible.builtin.shell: 
+    cmd: |
+      tar -czf "kubernetes-autodiscover-logs.tgz" "./kubernetes-autodiscover" || true
+      tar -czf "docker-logs.tgz" "./docker-logs" || true
+      tar -czf "fleet-logs.tgz" "./fleet" || true
+    chdir: "{{ e2e_base_dir }}outputs"
   tags:
     - fetch-reports
   when:
