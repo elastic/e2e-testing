@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 OUTPUT_DIR=${OUTPUT_DIR:-'/tmp/filebeat'}
-OUTPUT_FILE=${OUTPUT_FILE:-'docker'}
+OUTPUT_FILE=${OUTPUT_FILE:-'filebeat'}
 CONFIG_PATH=${CONFIG_PATH:-'/tmp/filebeat.yml'}
 DOCKER_IMAGE=${DOCKER_IMAGE:-'docker.elastic.co/beats/filebeat:8.5.3'}
 

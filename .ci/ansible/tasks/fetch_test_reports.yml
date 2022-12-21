@@ -15,7 +15,7 @@
 - name: Fetch Test logs
   become: false
   ansible.builtin.shell: |
-    ( tar -czf "{{ e2e_base_dir }}outputs/test-logs.tgz" "{{ e2e_base_dir }}outputs/test-logs") || true
+    ( tar -czf "{{ e2e_base_dir }}outputs/tests-logs.tgz" "{{ e2e_base_dir }}outputs/tests-logs") || true
   tags:
     - fetch-reports
   when:

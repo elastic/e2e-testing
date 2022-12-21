@@ -34,7 +34,7 @@ REPORT_PREFIX=${REPORT_PREFIX:-"${SUITE}_${GOARCH}_${TAGS}"}
 rm -rf outputs || true
 mkdir -p outputs
 
-OUTPUT_DIR=$(pwd)/outputs/docker-logs .ci/scripts/run_filebeat.sh
+OUTPUT_DIR=$(pwd)/outputs/tests-logs .ci/scripts/run_filebeat.sh
 
 REPORT_PREFIX=$(echo "$REPORT_PREFIX" | sed -r 's/[ @~]+//g')
 REPORT="$(pwd)/outputs/TEST-${REPORT_PREFIX}"
