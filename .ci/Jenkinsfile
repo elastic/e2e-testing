@@ -152,7 +152,7 @@ pipeline {
               deleteDir()
               unstash 'source'
               script {
-                e2eUtils.buildPackerAMIs(amiSuffix: 'main')
+                e2eUtils.buildPackerAMIs(amiSuffix: env.CHANGE_ID)
               }
             }
           }          

@@ -263,7 +263,7 @@ validate-packer-template:
 		-var "playbook_command=$(ANSIBLE_PLAYBOOK)" \
 		 $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl
 
-.PHONY: validate-packer-template 
+.PHONY: build-amis-$(AMI_SUFFIX)
 build-amis-$(AMI_SUFFIX): packer-init validate-packer-template
 	@:$(call check_defined, AMI_SUFFIX, You need to define a unique AMI_SUFFIX for testing. Or specify AMI_SUFFIX=main to override existing prodution AMIs)
 	packer build \
@@ -271,3 +271,9 @@ build-amis-$(AMI_SUFFIX): packer-init validate-packer-template
 		-var "galaxy_command=$(ANSIBLE_GALAXY)" \
 		-var "playbook_command=$(ANSIBLE_PLAYBOOK)" \
 		 $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl
+
+
+# .PHONY: deregister-amis-$(AMI_SUFFIX)
+# deregister-amis-$(AMI_SUFFIX)		 
+# 	@:$(call check_defined, AMI_SUFFIX, You need to define a unique AMI_SUFFIX for deregister)
+	
