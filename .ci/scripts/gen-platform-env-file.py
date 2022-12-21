@@ -28,12 +28,11 @@ with open(PLATFORMS_FILE, 'r', encoding=FILE_ENCODING) as stream:
             shell_type = 'sh'
         image = platform.get('image')
         instance_type = platform.get('instance_type')
-        label = platform.get('label')
         user = platform.get('username')
         with open(file_env, 'w', encoding=FILE_ENCODING) as f:
             f.write(f"export {env_prefix}_IMAGE={image}\n")
             f.write(f"export {env_prefix}_INSTANCE_TYPE={instance_type}\n")
-            f.write(f"export {env_prefix}_LABEL={label}\n")
+            f.write(f"export {env_prefix}_LABEL={platform_selected}\n")
             f.write(f"export {env_prefix}_SHELL_TYPE={shell_type}\n")
             f.write(f"export {env_prefix}_USER={user}\n")
     except yaml.YAMLError as exc:
