@@ -65,6 +65,20 @@ func afterScenario(fts *FleetTestSuite) {
 			// exposed as container logs. For that reason we need to go through the installer abstraction
 			agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
 
+			logsPath, _ := filepath.Abs(filepath.Join("..", "..", "..", "outputs", "fleet", serviceName+uuid.New().String()))
+			_, err := shell.Execute(fts.currentContext, ".", "elastic-agent", "diagnostics", "collect", logsPath)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"serviceName": serviceName,
+					"path":        logsPath,
+				}).Warn("Failed to run diagnostics collect")
+			} else {
+				log.WithFields(log.Fields{
+					"serviceName": serviceName,
+					"path":        logsPath,
+				}).Info("Diagnostics collect executed")
+			}
+
 			if log.IsLevelEnabled(log.DebugLevel) {
 				err := agentInstaller.Logs(fts.currentContext)
 				if err != nil {
