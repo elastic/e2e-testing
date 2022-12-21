@@ -1,21 +1,13 @@
 ---
-- name: Fetch Kind logs
+- name: Fetch Test logs
   become: false
   environment: 
     PATH: "/home/admin/bin:/home/admin/go/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/go/bin"
   ansible.builtin.shell: |
-    ( kind export logs --name $(kind get clusters) "{{ e2e_base_dir }}outputs/kind-logs" \
-    && tar -czf "{{ e2e_base_dir }}outputs/kind-logs.tgz" "{{ e2e_base_dir }}outputs/kind-logs" \
-    && rm -fr "{{ e2e_base_dir }}outputs/kind-logs") || true
-  tags:
-    - fetch-reports
-  when:
-    - ansible_facts['os_family'] != "Windows"
-
-- name: Fetch Test logs
-  become: false
-  ansible.builtin.shell: |
-    ( tar -czf "{{ e2e_base_dir }}outputs/tests-logs.tgz" "{{ e2e_base_dir }}outputs/tests-logs") || true
+    ( tar -czf "kubernetes-autodiscover-logs.tgz" "./kubernetes-autodiscover") || true
+    ( tar -czf "docker-logs.tgz" "./docker-logs") || true
+    ( tar -czf "fleet-logs.tgz" "./fleet") || true
+  chdir: "{{ e2e_base_dir }}outputs"
   tags:
     - fetch-reports
   when:

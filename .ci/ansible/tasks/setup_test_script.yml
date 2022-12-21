@@ -147,7 +147,7 @@
 
       BASE_DIR=${BASE_DIR} "${BASE_DIR}/.ci/scripts/install-test-dependencies.sh" "${SUITE}"
 
-      OUTPUT_DIR="{{ e2e_base_dir }}/outputs/tests-logs" OUTPUT_FILE="tests-logs-${REPORT_PREFIX}-{{ runId }}-${SUITE}" "${BASE_DIR}/.ci/scripts/run_filebeat.sh"
+      OUTPUT_DIR="{{ e2e_base_dir }}outputs/docker-logs" OUTPUT_FILE="docker-logs-${REPORT_PREFIX}-{{ runId }}-${SUITE}" "${BASE_DIR}/.ci/scripts/run_filebeat.sh"
 
       REPORT_PREFIX=$(echo "$REPORT_PREFIX" | sed -r 's/[ @~]+//g')
       SEED="$(date +%Y-%m-%d-%H:%M:%S)"

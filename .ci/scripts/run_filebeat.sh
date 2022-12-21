@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 OUTPUT_DIR=${OUTPUT_DIR:-'/tmp/filebeat'}
-OUTPUT_FILE=${OUTPUT_FILE:-'filebeat'}
+OUTPUT_FILE=${OUTPUT_FILE:-'docker'}
 CONFIG_PATH=${CONFIG_PATH:-'/tmp/filebeat.yml'}
 DOCKER_IMAGE=${DOCKER_IMAGE:-'docker.elastic.co/beats/filebeat:8.5.3'}
 
@@ -25,7 +25,7 @@ filebeat.autodiscover:
       condition:
         not:
           contains:
-            container.image: ${DOCKER_IMAGE}
+            docker.container.image: "${DOCKER_IMAGE}"
       templates:
         - config:
           - type: container
@@ -36,13 +36,6 @@ processors:
   - add_cloud_metadata: ~
   - add_docker_metadata: ~
   - add_kubernetes_metadata: ~
-
-filebeat.inputs:
-- type: filestream
-  id: elastic-agent-logs
-  paths:
-    - /var/lib/elastic-agent/data/elastic-agent-*/logs/*.log*
-    - /Library/Elastic/Agent/data/elastic-agent-*/logs/*.log*
 
 output.file:
   path: "/output"
