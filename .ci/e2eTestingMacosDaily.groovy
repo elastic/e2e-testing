@@ -34,9 +34,9 @@ pipeline {
     quietPeriod(10)
   }
   parameters {
-    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.5.3-SNAPSHOT', description: 'SemVer version of the Elastic Agent to be used for the tests. You can use here the tag of your PR to test your changes')
-    string(name: 'ELASTIC_STACK_VERSION', defaultValue: '8.5.3-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
-    string(name: 'BEAT_VERSION', defaultValue: '8.5.3-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
+    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.5.4-SNAPSHOT', description: 'SemVer version of the Elastic Agent to be used for the tests. You can use here the tag of your PR to test your changes')
+    string(name: 'ELASTIC_STACK_VERSION', defaultValue: '8.5.4-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
+    string(name: 'BEAT_VERSION', defaultValue: '8.5.4-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
     string(name: 'GITHUB_CHECK_REPO', defaultValue: '', description: 'Name of the GitHub repo to be updated. Only modified if this build is triggered from another parent stream (i.e. Beats).')
     string(name: 'GITHUB_CHECK_SHA1', defaultValue: '', description: 'Git SHA for the Beats upstream project (branch or PR)')
     choice(name: 'LOG_LEVEL', choices: ['TRACE', 'DEBUG', 'INFO'], description: 'Log level to be used')
