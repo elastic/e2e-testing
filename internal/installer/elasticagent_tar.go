@@ -177,7 +177,8 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 		}
 
 		srcPath := common.GetElasticAgentWorkingPath(fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), metadata.Os, metadata.Arch))
-		output, _ := i.Exec(ctx, []string{"mv", srcPath, common.GetElasticAgentWorkingPath(artifact)})
+		_, _ = i.Exec(ctx, []string{"rm", "-fr", common.GetElasticAgentWorkingPath(artifact)})
+		output, _ := i.Exec(ctx, []string{"mv", "-f", srcPath, common.GetElasticAgentWorkingPath(artifact)})
 		log.WithFields(log.Fields{
 			"output":   output,
 			"artifact": artifact,
