@@ -250,7 +250,7 @@ func (i *elasticAgentTARPackage) Stop(ctx context.Context) error {
 
 // Uninstall uninstalls a TAR package
 func (i *elasticAgentTARPackage) Uninstall(ctx context.Context) error {
-	cmds := []string{"elastic-agent", "uninstall", "-f"}
+	cmds := []string{common.GetElasticAgentWorkingPath("elastic-agent", "elastic-agent"), "uninstall", "-f"}
 	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.tar.uninstall", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})

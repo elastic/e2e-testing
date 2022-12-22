@@ -66,7 +66,7 @@ func afterScenario(fts *FleetTestSuite) {
 			agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
 
 			logsPath, _ := filepath.Abs(filepath.Join("..", "..", "..", "outputs", "fleet", serviceName+uuid.New().String()))
-			_, err := shell.Execute(fts.currentContext, ".", "elastic-agent", "diagnostics", "collect", logsPath)
+			_, err := shell.Execute(fts.currentContext, ".", common.GetElasticAgentWorkingPath("elastic-agent", "elastic-agent"), "diagnostics", "collect", logsPath)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"serviceName": serviceName,
