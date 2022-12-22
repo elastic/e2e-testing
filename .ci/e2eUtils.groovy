@@ -368,6 +368,19 @@ def buildPackerAMIs(Map args = [:]) {
     }
 }
 
+def deregisterAMIs(Map args = [:]) {
+    if (!args.amisResuilt) return
+    dir("${BASE_DIR}") {
+        if (!args.amiSuffix?.trim()) {
+            error("amiSuffix parameter must be specified in deregisterAMIs()")
+        }
+        setEnvVar("AMI_SUFFIX", args.amiSuffix)
+        ciBuild() {            
+            sh(label: "Deregister AMIs with tagged by Branch :${args.amiSuffix}", script: 'make -C .ci deregister-amis-$AMI_SUFFIX')
+        }
+    }
+}
+
 def retryWithNode(Map args = [:], Closure body) {
     try {
         incrementRetries(args.stageName)

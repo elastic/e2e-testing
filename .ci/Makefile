@@ -272,8 +272,14 @@ build-amis-$(AMI_SUFFIX): packer-init validate-packer-template
 		-var "playbook_command=$(ANSIBLE_PLAYBOOK)" \
 		 $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl
 
+.PHONY: sanitize-ami-suffix
+sanitize-ami-suffix:
+ifeq ($(AMI_SUFFIX),main)
+	echo "AMI_SUFFIX is main. We do not delete main AMIs"; exit 1 		
+endif
 
-# .PHONY: deregister-amis-$(AMI_SUFFIX)
-# deregister-amis-$(AMI_SUFFIX)		 
-# 	@:$(call check_defined, AMI_SUFFIX, You need to define a unique AMI_SUFFIX for deregister)
-	
+.PHONY: deregister-amis-$(AMI_SUFFIX)
+deregister-amis-$(AMI_SUFFIX): sanitize-ami-suffix
+	@:$(call check_defined, AMI_SUFFIX, AMI_SUFFIX must be defined for deregister)
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/delete-amis.yml --extra-vars "amiSuffix=$(AMI_SUFFIX)" 
+

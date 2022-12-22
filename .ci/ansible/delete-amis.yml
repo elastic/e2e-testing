@@ -1,0 +1,6 @@
+- name: Delete temporary AMIs
+  hosts: localhost
+  gather_facts: True    
+  tasks:
+  - name: Deregister AMIs and delete snapshots
+    include_tasks: tasks/deregister-amis.yml

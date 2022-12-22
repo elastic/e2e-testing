@@ -226,6 +226,7 @@ pipeline {
               script {                
                 def testMatrix = readYaml(file: "${env.REAL_BASE_DIR}/${TEST_MATRIX_FILE}")
                 e2eUtils.runE2ETests(
+                  amiSuffix: env.CHANGE_ID,
                   testMatrix: testMatrix,
                   selectedSuites: env.RUN_TEST_SUITES,
                   runAsMainBranch: env.RUN_AS_MAIN_BRANCH,
@@ -270,6 +271,7 @@ pipeline {
   post {
     cleanup {
       script {
+        e2eUtils.deregisterAMIs(amisRebuilt: env.REBUILD_AMIS)
         e2eUtils.doNotifyBuildResult(
           slackNotify: params.notifyOnGreenBuilds,
           slackChannel: env.SLACK_CHANNEL,
