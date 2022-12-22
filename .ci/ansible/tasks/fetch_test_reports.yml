@@ -5,9 +5,9 @@
     PATH: "/home/admin/bin:/home/admin/go/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/go/bin"
   ansible.builtin.shell: 
     cmd: |
-      tar -czf "kubernetes-autodiscover-logs.tgz" "./kubernetes-autodiscover" || true
-      tar -czf "docker-logs.tgz" "./docker-logs" || true
-      tar -czf "fleet-logs.tgz" "./fleet" || true
+      ([ -d ./kubernetes-autodiscover ] && tar -czf "kubernetes-autodiscover-logs.tgz" "./kubernetes-autodiscover") || true
+      ([ -d ./docker-logs ] && tar -czf "docker-logs.tgz" "./docker-logs") || true
+      ([ -d ./fleet ] tar -czf "fleet-logs.tgz" "./fleet") || true
     chdir: "{{ e2e_base_dir }}outputs"
   tags:
     - fetch-reports
@@ -61,11 +61,23 @@
   tags:
     - fetch-reports
 
+- name: Set report folder name
+  become: false
+  vars:
+    prefix: "{{ lookup('env', 'REPORT_PREFIX') | default('') | replace(' ', '_') }}"
+    suite: "{{ lookup('env', 'SUITE') | default('') | replace(' ', '_') }}"
+    arch: "{{ lookup('env', 'GOARCH') | default('') }}"
+    tags: "{{ lookup('env', 'TAGS') | default('') | replace(' ', '_') | replace('@', '') | replace('~', '')}}"
+  set_fact:
+    report_folder: "{{ workspace }}outputs/{{ prefix }}{{ suite }}-{{ arch }}-{{ tags }}"
+  tags:
+    - fetch-reports
+
 - name: Fetch the Test reports
   become: false
   ansible.builtin.fetch:
     src: "{{ item.path }}"
-    dest: "{{ workspace }}outputs/{{ inventory_hostname }}/"
+    dest: "{{ report_folder }}/"
     flat: yes
     fail_on_missing: no
   with_items: "{{ files_2_fetch.files }}"
@@ -78,7 +90,7 @@
   become: false
   ansible.builtin.fetch:
     src: "{{ item.path }}"
-    dest: "{{ workspace }}outputs/{{ inventory_hostname }}/"
+    dest: "{{ report_folder }}/"
     flat: yes
     fail_on_missing: no
   with_items: "{{ files_2_fetch_win.files }}"
