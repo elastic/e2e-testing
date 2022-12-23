@@ -54,12 +54,30 @@
     dest: "{{ e2e_home_dir }}.env"
     create: yes
   with_items:
-    - "ELASTICSEARCH_URL=\"{{ lookup('env', 'ELASTICSEARCH_URL') or 'http://{{ stackRunner }}:9200' }}\""
-    - "KIBANA_URL=\"{{ lookup('env', 'KIBANA_URL') or 'http://{{ stackRunner }}:5601' }}\""
-    - "FLEET_URL=\"{{ lookup('env', 'FLEET_URL') or 'http://{{ stackRunner }}:8220' }}\""
+    - "ELASTICSEARCH_URL=\"http://{{ stackRunner }}:9200\""
+    - "KIBANA_URL=\"http://{{ stackRunner }}:5601\""
+    - "FLEET_URL=\"http://{{ stackRunner }}:8220\""
   when:
     - suite is defined
     - stackRunner is defined
+    - lookup('env', 'PROVIDER') == 'remote'
+  tags:
+    - scripts
+
+- name: Extend environment for Remote provider
+  lineinfile:
+    state: present
+    line: "{{ item }}"
+    insertafter: EOF
+    dest: "{{ e2e_home_dir }}.env"
+    create: yes
+  with_items:
+    - "ELASTICSEARCH_URL=\"{{ lookup('env', 'ELASTICSEARCH_URL') }}\""
+    - "KIBANA_URL=\"{{ lookup('env', 'KIBANA_URL')}}\""
+    - "FLEET_URL=\"{{ lookup('env', 'FLEET_URL')}}\""
+  when:
+    - suite is defined
+    - lookup('env', 'ELASTICSEARCH_URL') != ''
     - lookup('env', 'PROVIDER') == 'remote'
   tags:
     - scripts
