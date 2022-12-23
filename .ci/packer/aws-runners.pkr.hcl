@@ -44,7 +44,7 @@ locals {
       "source.amazon-ebs.centos-8-amd64",
       "source.amazon-ebs.centos-8-arm64",
       "source.amazon-ebs.oracle-linux-8",
-      "source.amazon-ebs.sles15"
+      # "source.amazon-ebs.sles15"
     ],
     "test"    = ["source.amazon-ebs.ubuntu"],
     "windows" = ["source.amazon-ebs.windows2019"],
@@ -56,7 +56,7 @@ locals {
       "source.amazon-ebs.centos-8-amd64",
       "source.amazon-ebs.centos-8-arm64",
       "source.amazon-ebs.oracle-linux-8",
-      "source.amazon-ebs.sles15",
+      # "source.amazon-ebs.sles15",
       "source.amazon-ebs.windows2019"
     ]
   }
