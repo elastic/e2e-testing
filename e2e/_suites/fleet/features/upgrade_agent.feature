@@ -18,4 +18,4 @@ Examples: Stale versions
 | 8.3.0 |
 | 8.2.0 |
 | 8.1.3 |
-| 7.17-SNAPSHOT |
+| 7.17.8 |
