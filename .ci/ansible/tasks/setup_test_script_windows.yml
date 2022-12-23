@@ -14,9 +14,10 @@
   with_items:
     - "SUITE=\"{{ lookup('env', 'SUITE') or 'fleet' }}\""
     - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'remote' }}\""
-    - "ELASTICSEARCH_PASSWORD=\"changeme\""
-    - "KIBANA_PASSWORD=\"changeme\""
-    - "SKIP_PULL=\"1\""
+    - "ELASTICSEARCH_PASSWORD=\"{{ lookup('env', 'ELASTICSEARCH_PASSWORD') or 'changeme' }}\""
+    - "KIBANA_PASSWORD=\"{{ lookup('env', 'KIBANA_PASSWORD') or 'changeme' }}\""
+    - "SKIP_PULL=\"{{ lookup('env', 'SKIP_PULL') or '1' }}\""
+    - "DEVELOPER_MODE=\"{{ lookup('env', 'DEVELOPER_MODE') or 'false' }}\""
   when:
     - suite is defined
     - stackRunner is defined
@@ -32,9 +33,9 @@
     dest: "{{ e2e_home_dir }}.env"
     create: yes
   with_items:
-    - "ELASTICSEARCH_URL=\"http://{{ stackRunner }}:9200\""
-    - "KIBANA_URL=\"http://{{ stackRunner }}:5601\""
-    - "FLEET_URL=\"http://{{ stackRunner }}:8220\""
+    - "ELASTICSEARCH_URL=\"{{ lookup('env', 'ELASTICSEARCH_URL') or 'http://{{ stackRunner }}:9200' }}\""
+    - "KIBANA_URL=\"{{ lookup('env', 'KIBANA_URL') or 'http://{{ stackRunner }}:5601' }}\""
+    - "FLEET_URL=\"{{ lookup('env', 'FLEET_URL') or 'http://{{ stackRunner }}:8220' }}\""
   when:
     - suite is defined
     - stackRunner is defined
