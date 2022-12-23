@@ -2,5 +2,18 @@
   hosts: localhost
   gather_facts: True    
   tasks:
-  - name: Deregister AMIs and delete snapshots
-    include_tasks: tasks/deregister-amis.yml
+  - name: find AMIs by tag
+    amazon.aws.ec2_ami_info:
+      region: "us-east-2"
+      filters:
+        "tag:Branch": '{{amiSuffix}}'
+        "tag:Project": 'e2e-testing'
+    register: amis_to_delete
+   
+  - name: Deregister AMIs and delete associated snapshots
+    amazon.aws.ec2_ami:
+      region: "us-east-2"
+      image_id: "{{ item.image_id }}"
+      delete_snapshot: True
+      state: absent
+    loop: "{{amis_to_delete.images}}"

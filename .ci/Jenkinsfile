@@ -242,6 +242,7 @@ pipeline {
               // Once all tests are complete we need to teardown the single instance with the deployed stack
               script {
                 e2eUtils.destroyStack(destroyCloudResources: env.DESTROY_CLOUD_RESOURCES)
+                e2eUtils.deregisterAMIs(amisRebuilt: env.REBUILD_AMIS)
               }
             }
           }
@@ -270,8 +271,7 @@ pipeline {
   }
   post {
     cleanup {
-      script {
-        e2eUtils.deregisterAMIs(amisRebuilt: env.REBUILD_AMIS)
+      script {        
         e2eUtils.doNotifyBuildResult(
           slackNotify: params.notifyOnGreenBuilds,
           slackChannel: env.SLACK_CHANNEL,
