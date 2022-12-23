@@ -268,7 +268,9 @@ pipeline {
       }
       post {
         always {
-          e2eUtils.deregisterAMIs(amisRebuilt: env.REBUILD_AMIS)
+          script {
+            e2eUtils.deregisterAMIs(amisRebuilt: env.REBUILD_AMIS)
+          }
         }
       }
     }
