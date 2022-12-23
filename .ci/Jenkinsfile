@@ -157,16 +157,8 @@ pipeline {
                     "TAGS=non-existing-tag"
                   ]) {
                     ciBuild() {
-                      sh(label: 'Create Stack node', script: "make -C .ci provision-stack")
-                    }
-                    ciBuild() {
                       retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                        sh(label: 'Setup Stack node', script: "make -C .ci setup-stack")
-                      }
-                    }
-                    ciBuild() {
-                      retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                        sh(label: 'Start Elastic Stack', script: "make -C .ci start-elastic-stack")
+                        sh(label: 'Setup Stack node', script: "make -C .ci create-stack")
                       }
                     }
                   }
@@ -176,20 +168,6 @@ pipeline {
                 }
               }
             }
-          }
-          post {
-              always {
-                dir("${env.REAL_BASE_DIR}") {
-                  ciBuild() {
-                    script{
-                      def stackIP = getNodeIp('stack')
-                      sh(label: 'Grab logs', script:"make -C .ci fetch-test-reports NODE_IP_ADDRESS=${stackIP} NODE_LABEL=debian_10_amd64")
-                      archiveArtifacts(allowEmptyArchive: true,
-                        artifacts: "outputs/${stackIP}/TEST-*.xml, outputs/${stackIP}/TEST-*.json, outputs/${stackIP}/TEST-*.json.html, outputs/${stackIP}/*.zip, outputs/${stackIP}/*.tgz")
-                    }
-                  }
-                }
-              }
           }
         }
 
@@ -238,9 +216,7 @@ pipeline {
                   ciBuild() {
                     def stackIP = getNodeIp('stack')
                     sh(label: 'Grab logs', script:"make -C .ci fetch-test-reports NODE_IP_ADDRESS=${stackIP} NODE_LABEL=debian_10_amd64")
-                    archiveArtifacts(allowEmptyArchive: true,
-                      artifacts: "outputs/**/TEST-*.xml, outputs/**/TEST-*.json, outputs/**/TEST-*.json.html, outputs/**/*.zip, outputs/**/*.tgz")
-
+                    archiveArtifacts(allowEmptyArchive: true, artifacts: "outputs/**/TEST-*,outputs/**/*.zip,outputs/**/*.tgz")
                   }
                 }
                 def stackMachine = getMachineInfo('stack')
@@ -562,21 +538,7 @@ def generateFunctionalTestStep(Map args = [:]){
                 }
               }
             }
-            withEnv([
-              "ARCHITECTURE=${goArch}",
-              "CUCUMBER_REPORTS_PATH=${env.REAL_BASE_DIR}/outputs/${testRunnerIP}",
-              "PLATFORM=${platform}",
-              "SUITE=${suite}",
-              "TAGS=${tags}",
-            ]){
-              retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
-                sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
-              }
-            }
-            junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunnerIP}/TEST-*.xml")
-            archiveArtifacts allowEmptyArchive: true,
-              artifacts: "outputs/**/TEST-*.xml, outputs/**/TEST-*.json, outputs/**/TEST-*.json.html, outputs/**/*.zip, outputs/**/*.tgz"
+            archiveArtifacts(allowEmptyArchive: true, artifacts: "outputs/**/TEST-*,outputs/**/*.zip,outputs/**/*.tgz")
           }
         }
       }
