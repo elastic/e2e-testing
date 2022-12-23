@@ -217,6 +217,7 @@ pipeline {
                     def stackIP = getNodeIp('stack')
                     sh(label: 'Grab logs', script:"make -C .ci fetch-test-reports NODE_IP_ADDRESS=${stackIP} NODE_LABEL=debian_10_amd64")
                     archiveArtifacts(allowEmptyArchive: true, artifacts: "outputs/**/TEST-*,outputs/**/*.zip,outputs/**/*.tgz")
+                    junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/**/TEST-*.xml")
                   }
                 }
                 def stackMachine = getMachineInfo('stack')
@@ -539,6 +540,7 @@ def generateFunctionalTestStep(Map args = [:]){
               }
             }
             archiveArtifacts(allowEmptyArchive: true, artifacts: "outputs/**/TEST-*,outputs/**/*.zip,outputs/**/*.tgz")
+            junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/**/TEST-*.xml")
           }
         }
       }
