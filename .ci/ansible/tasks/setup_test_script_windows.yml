@@ -5,6 +5,7 @@
     state: absent
 
 - name: Extend environment for Fleet testing (Windows)
+  no_log: true
   community.windows.win_lineinfile:
     state: present
     line: "{{item}}"
@@ -26,6 +27,7 @@
     - scripts
 
 - name: Extend environment for Remote provider (Windows)
+  no_log: true
   community.windows.win_lineinfile:
     state: present
     line: "{{ item }}"
@@ -44,6 +46,7 @@
     - scripts
 
 - name: Extend environment for Fleet with elastic-package testing (Windows)
+  no_log: true
   community.windows.win_lineinfile:
     state: present
     line: "{{item}}"
@@ -58,6 +61,7 @@
     - scripts
 
 - name: Extend environment for Kubernetes Autodiscover testing (Windows)
+  no_log: true
   community.windows.win_lineinfile:
     state: present
     line: "{{item}}"
@@ -76,6 +80,7 @@
     - scripts
 
 - name: Extend environment (Windows)
+  no_log: true
   community.windows.win_lineinfile:
     state: present
     line: "{{item}}"

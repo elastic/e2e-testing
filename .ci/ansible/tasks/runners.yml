@@ -70,6 +70,7 @@
     - provision-node
 
 - name: Add AWS host to ssh address list
+  no_log: true
   lineinfile:
     state: present
     line: "- {{ nodeUser }}@{{addr.public_ip_address}}"

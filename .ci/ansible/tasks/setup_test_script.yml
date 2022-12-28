@@ -5,6 +5,7 @@
     state: absent
 
 - name: Extend environment for Stack Bootstrapping
+  no_log: true
   lineinfile:
     state: present
     line: "{{ item }}"
@@ -26,6 +27,7 @@
     - scripts
 
 - name: Extend environment for Fleet testing
+  no_log: true
   lineinfile:
     state: present
     line: "{{item}}"
@@ -47,6 +49,7 @@
     - scripts
 
 - name: Extend environment for Remote provider
+  no_log: true
   lineinfile:
     state: present
     line: "{{ item }}"
@@ -65,6 +68,7 @@
     - scripts
 
 - name: Extend environment for Remote provider
+  no_log: true
   lineinfile:
     state: present
     line: "{{ item }}"
@@ -83,6 +87,7 @@
     - scripts
 
 - name: Extend environment for Fleet with elastic-package testing
+  no_log: true
   lineinfile:
     state: present
     line: "{{item}}"
@@ -97,6 +102,7 @@
     - scripts
 
 - name: Extend environment for Kubernetes Autodiscover testing
+  no_log: true
   lineinfile:
     state: present
     line: "{{item}}"
@@ -116,6 +122,7 @@
     - scripts
 
 - name: Extend environment
+  no_log: true
   lineinfile:
     state: present
     line: "{{item}}"
