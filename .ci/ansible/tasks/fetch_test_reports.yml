@@ -64,12 +64,13 @@
 - name: Set report folder name
   become: false
   vars:
-    _prefix: "{{ lookup('env', 'REPORT_PREFIX') | default('') | replace(' ', '_') }}"
+    _prefix: "{{ lookup('env', 'REPORT_PREFIX') | default('stack') | replace(' ', '_') }}"
     _suite: "{{ lookup('env', 'SUITE') | default('') | replace(' ', '_') }}"
     _arch: "{{ lookup('env', 'GOARCH') | default('') }}"
-    _tags: "{{ lookup('env', 'TAGS') | default('') | replace(' ', '_') | replace('@', '') | replace('~', '') | replace('&', '') | replace('|', '')}}"
+    _node_label: "{{ lookup('env', 'NODE_LABEL') | default('') }}"
+    _tags: "{{ lookup('env', 'TAGS') | default('none') | replace(' ', '_') | replace('@', '') | replace('~', '') | replace('&', '') | replace('|', '')}}"
   set_fact:
-    report_folder: "{{ workspace }}outputs/{{ _prefix }}{{ _suite }}-{{ _arch }}-{{ _tags }}"
+    report_folder: "{{ workspace }}outputs/{{ _prefix }}{{ _suite }}-{{ _node_label }}{{ _arch }}-{{ _tags }}"
   tags:
     - fetch-reports
 
