@@ -66,7 +66,7 @@ func afterScenario(fts *FleetTestSuite) {
 			agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
 
 			logsPath, _ := filepath.Abs(filepath.Join("..", "..", "..", "outputs", serviceName+uuid.New().String()+".tgz"))
-			_, err := shell.Execute(fts.currentContext, ".", "tar", "czf", logsPath, "/opt/Elastic/Agent/data/elastic-agent-*/logs/*")
+			_, err := shell.Execute(fts.currentContext, ".", "tar", "czf", logsPath, "--exclude", "*/components/*", "/opt/Elastic/Agent/data")
 			if err != nil {
 				log.WithFields(log.Fields{
 					"serviceName": serviceName,
