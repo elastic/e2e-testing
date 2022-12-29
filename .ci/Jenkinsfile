@@ -226,9 +226,13 @@ pipeline {
                   log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunnerIP}")
                 } else {
                   dir("${env.REAL_BASE_DIR}") {
-                    ciBuild() {
-                      retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                        sh(label: 'Destroy stack node', script: "make -C .ci destroy-stack")
+                    withEnv([
+                      "STACK_INSTANCE_ID=${env.BUILD_URL}_stack",
+                    ]) {
+                      ciBuild() {
+                        retryWithSleep(retries: 3, seconds: 5, backoff: true){
+                          sh(label: 'Destroy stack node', script: "make -C .ci destroy-stack")
+                        }
                       }
                     }
                   }

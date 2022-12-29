@@ -20,13 +20,9 @@
       state: terminated
       filters:
         "tag:name": "e2e-{{ instanceID }}" 
-    async: 45
-    poll: 0
-
+      region: us-east-2
   - name: "Delete AWS keypair"
     ec2_key:
       region: us-east-2
       name: "e2essh-{{ runId }}"
       state: absent
-    async: 45
-    poll: 0
