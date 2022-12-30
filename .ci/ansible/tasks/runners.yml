@@ -44,15 +44,10 @@
       reaper_mark: "e2e-testing-vm"
       repo: "{{repo | default('Not running on CI')}}"
       run_id: "{{runId | default('Not running on CI')}}"
-<<<<<<< HEAD
-    count_tag:
-      name: "e2e-{{ instanceID }}"
-=======
       division: engineering
       org: obs
       team: eng-productivity
       project: e2e
->>>>>>> d5541388 (fix: remove Helm Chart tests (#3285))
     volumes:
       - device_name: /dev/sda1
         ebs:

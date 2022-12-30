@@ -117,8 +117,6 @@ To change it, please use Docker UI, go to `Preferences > Resources > Advanced`, 
 It's important to configure `Docker for Mac` to allow it accessing the `/var/folders` directory, as this framework uses Mac's default temporary directory for storing temporary files.
 
 To change it, please use Docker UI, go to `Preferences > Resources > File Sharing`, and add there `/var/folders` to the list of paths that can be mounted into Docker containers. For more information, please read https://docs.docker.com/docker-for-mac/#file-sharing.
-<<<<<<< HEAD
-=======
 
 ### Unable to create AWS VMS
 - Ensure you have exported the `AWS_SECRET_ACCESS_KEY`and `AWS_ACCESS_KEY_ID` values.
@@ -130,4 +128,3 @@ To change it, please use Docker UI, go to `Preferences > Resources > File Sharin
    - Go to '.venv/bin' folder and activate the python virtual environment.
    - Specify the ansible version in requirement.txt file under `.ci/ansible` folder.
    - Rerun requirements.txt file manually using `pip install -r requirements.txt' command.
->>>>>>> d5541388 (fix: remove Helm Chart tests (#3285))
