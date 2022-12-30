@@ -357,7 +357,7 @@ func (m *podsManager) waitForEventsCondition(podName string, conditionFn func(ct
 
 	containerPath := fmt.Sprintf("%s/%s:/tmp/beats-events", m.kubectl.Namespace, instances[0])
 	localPath := filepath.Join(tmpDir, "events")
-	exp := backoff.WithContext(backoff.NewConstantBackOff(1*time.Second), ctx)
+	exp := backoff.WithContext(backoff.NewConstantBackOff(10*time.Second), ctx)
 	return backoff.Retry(func() error {
 		_, err := m.kubectl.Run(ctx, "cp", "--no-preserve", containerPath, localPath)
 		if err != nil {
@@ -380,7 +380,7 @@ func (m *podsManager) getPodInstances(ctx context.Context, podName string) (inst
 	defer span.End()
 
 	app := sanitizeName(podName)
-	ticker := backoff.WithContext(backoff.NewConstantBackOff(1*time.Second), ctx)
+	ticker := backoff.WithContext(backoff.NewConstantBackOff(10*time.Second), ctx)
 	err = backoff.Retry(func() error {
 		output, err := m.kubectl.Run(ctx, "get", "pods",
 			"-l", "k8s-app="+app,

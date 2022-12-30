@@ -168,7 +168,8 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 		}
 
 		srcPath := common.GetElasticAgentWorkingPath(fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), metadata.Os, metadata.Arch))
-		output, _ := i.Exec(ctx, []string{"mv", srcPath, common.GetElasticAgentWorkingPath(artifact)})
+		_, _ = i.Exec(ctx, []string{"rm", "-fr", common.GetElasticAgentWorkingPath(artifact)})
+		output, _ := i.Exec(ctx, []string{"mv", "-f", srcPath, common.GetElasticAgentWorkingPath(artifact)})
 		log.WithFields(log.Fields{
 			"output":   output,
 			"artifact": artifact,
@@ -240,7 +241,7 @@ func (i *elasticAgentTARPackage) Stop(ctx context.Context) error {
 
 // Uninstall uninstalls a TAR package
 func (i *elasticAgentTARPackage) Uninstall(ctx context.Context) error {
-	cmds := []string{"elastic-agent", "uninstall", "-f"}
+	cmds := []string{"/opt/Elastic/Agent/elastic-agent", "uninstall", "-f"}
 	span, _ := apm.StartSpanOptions(ctx, "Uninstalling Elastic Agent", "elastic-agent.tar.uninstall", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})

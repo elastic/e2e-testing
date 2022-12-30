@@ -54,6 +54,7 @@ pipeline {
     booleanParam(name: "forceSkipGitChecks", defaultValue: false, description: "If it's needed to check for Git changes to filter by modified sources")
     booleanParam(name: "notifyOnGreenBuilds", defaultValue: false, description: "If it's needed to notify to Slack with green builds.")
     string(name: 'SLACK_CHANNEL', defaultValue: 'observablt-bots', description: 'The Slack channel(s) where errors will be posted. For multiple channels, use a comma-separated list of channels')
+<<<<<<< HEAD
     string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/7.12.0-069dfaa4/downloads/beats/elastic-agent/elastic-agent-7.12.0-SNAPSHOT-linux-x86_64.tar.gz')
     string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '7.17.9-9b93f6c8-SNAPSHOT', description: 'SemVer version of the Elastic Agent to be used for the tests. You can use here the tag of your PR to test your changes')
     string(name: 'BEAT_VERSION', defaultValue: '7.17.9-9b93f6c8-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
@@ -61,6 +62,15 @@ pipeline {
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
     string(name: 'KIBANA_VERSION', defaultValue: '', description: 'Docker tag of the kibana to be used for the tests. It will refer to an image related to a Kibana PR, under the Observability-CI namespace')
     string(name: 'STACK_VERSION', defaultValue: '7.17.9-9b93f6c8-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
+=======
+    string(name: 'ELASTIC_AGENT_DOWNLOAD_URL', defaultValue: '', description: 'If present, it will override the download URL for the Elastic agent artifact. (I.e. https://snapshots.elastic.co/8.0.0-59098054/downloads/beats/elastic-agent/elastic-agent-8.0.0-SNAPSHOT-linux-x86_64.tar.gz')
+    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: '8.7.0-04d5f080-SNAPSHOT', description: 'SemVer version of the Elastic Agent to be used for the tests. You can use here the tag of your PR to test your changes')
+    string(name: 'BEAT_VERSION', defaultValue: '8.7.0-04d5f080-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
+    choice(name: 'LOG_LEVEL', choices: ['INFO', 'DEBUG', 'TRACE'], description: 'Log level to be used')
+    choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
+    string(name: 'KIBANA_VERSION', defaultValue: '', description: 'Docker tag of the kibana to be used for the tests. It will refer to an image related to a Kibana PR, under the Observability-CI namespace')
+    string(name: 'STACK_VERSION', defaultValue: '8.7.0-04d5f080-SNAPSHOT', description: 'SemVer version of the stack to be used for the tests.')
+>>>>>>> d5541388 (fix: remove Helm Chart tests (#3285))
     string(name: 'HELM_CHART_VERSION', defaultValue: '7.17.3', description: 'SemVer version of Helm chart to be used.')
     string(name: 'HELM_VERSION', defaultValue: '3.9.0', description: 'SemVer version of Helm to be used.')
     string(name: 'KIND_VERSION', defaultValue: '0.12.0', description: 'SemVer version of Kind to be used.')
@@ -84,7 +94,6 @@ pipeline {
         KIBANA_VERSION = "${params.KIBANA_VERSION.trim()}"
         STACK_VERSION = "${params.STACK_VERSION.trim()}"
         FORCE_SKIP_GIT_CHECKS = "${params.forceSkipGitChecks}"
-        HELM_CHART_VERSION = "${params.HELM_CHART_VERSION.trim()}"
         HELM_VERSION = "${params.HELM_VERSION.trim()}"
         KIND_VERSION = "${params.KIND_VERSION.trim()}"
         KUBERNETES_VERSION = "${params.KUBERNETES_VERSION.trim()}"
@@ -158,16 +167,8 @@ pipeline {
                     "TAGS=non-existing-tag"
                   ]) {
                     ciBuild() {
-                      sh(label: 'Create Stack node', script: "make -C .ci provision-stack")
-                    }
-                    ciBuild() {
                       retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                        sh(label: 'Setup Stack node', script: "make -C .ci setup-stack")
-                      }
-                    }
-                    ciBuild() {
-                      retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                        sh(label: 'Start Elastic Stack', script: "make -C .ci start-elastic-stack")
+                        sh(label: 'Setup Stack node', script: "make -C .ci create-stack")
                       }
                     }
                   }
@@ -221,15 +222,27 @@ pipeline {
             cleanup {
               // Once all tests are complete we need to teardown the single instance with the deployed stack
               script {
+                dir("${env.REAL_BASE_DIR}") {
+                  ciBuild() {
+                    def stackIP = getNodeIp('stack')
+                    sh(label: 'Grab logs', script:"make -C .ci fetch-test-reports NODE_IP_ADDRESS=${stackIP} NODE_LABEL=debian_10_amd64")
+                    archiveArtifacts(allowEmptyArchive: true, artifacts: "outputs/**/TEST-*,outputs/**/*.zip,outputs/**/*.tgz")
+                    junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/**/TEST-*.xml")
+                  }
+                }
                 def stackMachine = getMachineInfo('stack')
                 if (!params.DESTROY_CLOUD_RESOURCES) {
                   def stackRunnerIP = getNodeIp('stack')
                   log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunnerIP}")
                 } else {
                   dir("${env.REAL_BASE_DIR}") {
-                    ciBuild() {
-                      retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                        sh(label: 'Destroy stack node', script: "make -C .ci destroy-stack")
+                    withEnv([
+                      "STACK_INSTANCE_ID=${env.BUILD_URL}_stack",
+                    ]) {
+                      ciBuild() {
+                        retryWithSleep(retries: 3, seconds: 5, backoff: true){
+                          sh(label: 'Destroy stack node', script: "make -C .ci destroy-stack")
+                        }
                       }
                     }
                   }
@@ -278,7 +291,7 @@ def checkSkipTests() {
     }
 
     // patterns for all places that should trigger a full build
-    def regexps = [ "^e2e/_suites/fleet/.*", "^e2e/_suites/helm/.*", "^e2e/_suites/kubernetes-autodiscover/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
+    def regexps = [ "^e2e/_suites/fleet/.*", "^e2e/_suites/kubernetes-autodiscover/.*", "^.ci/.*", "^cli/.*", "^e2e/.*\\.go", "^internal/.*\\.go" ]
     setEnvVar("SKIP_TESTS", !isGitRegionMatch(patterns: regexps, shouldMatchAll: false))
   }
 }
@@ -302,9 +315,6 @@ def ciBuild(Closure body){
           [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
         ]) {
           withOtelEnv() {
-            retryWithSleep(retries: 3, seconds: 5, backoff: true){
-              sh("make -C .ci setup-env") // make sure the environment is created
-            }
             body()
           }
         }
@@ -541,21 +551,8 @@ def generateFunctionalTestStep(Map args = [:]){
                 }
               }
             }
-            withEnv([
-              "ARCHITECTURE=${goArch}",
-              "CUCUMBER_REPORTS_PATH=${env.REAL_BASE_DIR}/outputs/${testRunnerIP}",
-              "PLATFORM=${platform}",
-              "SUITE=${suite}",
-              "TAGS=${tags}",
-            ]){
-              retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
-                sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
-              }
-            }
-            junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunnerIP}/TEST-*.xml")
-            archiveArtifacts allowEmptyArchive: true,
-              artifacts: "outputs/${testRunnerIP}/TEST-*.xml, outputs/${testRunnerIP}/TEST-*.json, outputs/${testRunnerIP}/TEST-*.json.html"
+            archiveArtifacts(allowEmptyArchive: true, artifacts: "outputs/**/TEST-*,outputs/**/*.zip,outputs/**/*.tgz")
+            junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/**/TEST-*.xml")
           }
         }
       }

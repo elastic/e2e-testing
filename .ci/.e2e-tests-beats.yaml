@@ -1,14 +1,5 @@
 ---
 SUITES:
-  - suite: "helm"
-    provider: "docker"
-    scenarios:
-      - name: "Filebeat"
-        tags: "filebeat"
-        platforms: ["debian_10_amd64"]
-      - name: "Metricbeat"
-        tags: "metricbeat"
-        platforms: ["debian_10_amd64"]
   - suite: "fleet"
     scenarios:
       - name: "Fleet"

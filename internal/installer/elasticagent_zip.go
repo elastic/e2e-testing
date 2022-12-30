@@ -222,7 +222,10 @@ func extractZIPFile(src string, target string) error {
 		filePath := filepath.Join(target, f.Name)
 
 		if f.FileInfo().IsDir() {
-			os.MkdirAll(filePath, os.ModePerm)
+			err := os.MkdirAll(filePath, os.ModePerm)
+			if err != nil {
+				return err
+			}
 			continue
 		}
 

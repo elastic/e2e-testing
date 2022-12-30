@@ -1,7 +1,11 @@
 version: '2.4'
 services:
   elastic-agent:
+<<<<<<< HEAD
     image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-7.17-SNAPSHOT}"
+=======
+    image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.7.0-04d5f080-SNAPSHOT}"
+>>>>>>> d5541388 (fix: remove Helm Chart tests (#3285))
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -16,6 +20,10 @@ services:
       - "FLEET_ENROLLMENT_TOKEN=${fleetEnrollmentToken:-}"
       - "FLEET_INSECURE=${fleetInsecure:-0}"
       - "FLEET_URL=${fleetUrl:-}"
+    healthcheck:
+        test: ["CMD-SHELL", "curl -s -k http://localhost:8220/api/status | grep -q 'HEALTHY'"]
+        retries: 300
+        interval: 10s
     platform: ${stackPlatform:-linux/amd64}
     ports:
       - "${fleetServerPort:-8220}:8220"

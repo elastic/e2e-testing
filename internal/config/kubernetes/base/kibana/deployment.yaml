@@ -16,7 +16,11 @@ spec:
     spec:
       containers:
       - name: kibana
+<<<<<<< HEAD
         image: docker.elastic.co/kibana/kibana:7.17.9-9b93f6c8-SNAPSHOT
+=======
+        image: docker.elastic.co/kibana/kibana:8.7.0-04d5f080-SNAPSHOT
+>>>>>>> d5541388 (fix: remove Helm Chart tests (#3285))
         env:
         - name: ELASTICSEARCH_URL
           value: http://elasticsearch:9200
