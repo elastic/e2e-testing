@@ -22,10 +22,10 @@ func init() {
 // GetExponentialBackOff returns a preconfigured exponential backoff instance
 func GetExponentialBackOff(elapsedTime time.Duration) *backoff.ExponentialBackOff {
 	var (
-		initialInterval     = 500 * time.Millisecond
+		initialInterval     = 10 * time.Second
 		randomizationFactor = 0.5
 		multiplier          = 2.0
-		maxInterval         = 5 * time.Second
+		maxInterval         = 30 * time.Second
 		maxElapsedTime      = elapsedTime
 	)
 

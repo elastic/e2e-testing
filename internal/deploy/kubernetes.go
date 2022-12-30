@@ -184,7 +184,7 @@ func (c *kubernetesDeploymentManifest) Logs(ctx context.Context, service Service
 	defer span.End()
 
 	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
-	_, err := kubectl.Run(ctx, "logs", "deployment/"+service.Name)
+	logs, err := kubectl.Run(ctx, "logs", "deployment/"+service.Name)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -193,6 +193,8 @@ func (c *kubernetesDeploymentManifest) Logs(ctx context.Context, service Service
 
 		return err
 	}
+	// print logs as is, including tabs and line breaks
+	fmt.Println(logs)
 	return nil
 }
 
