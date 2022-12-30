@@ -10,6 +10,10 @@ services:
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=changeme
     image: "docker.elastic.co/observability-ci/elasticsearch:${elasticsearchTag:-8.6.0-2d1af9b1-SNAPSHOT}"
+    healthcheck:
+        interval: 10s
+        retries: 100
+        test: ["CMD-SHELL", "curl -u admin:changeme -s http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=500ms"]
     platform: ${elasticsearchPlatform:-linux/amd64}
     ports:
       - "9200:9200"

@@ -333,14 +333,14 @@ func (c *Client) WaitForReady(ctx context.Context, maxTimeoutMinutes time.Durati
 		})
 		defer span.End()
 
-		statusCode, respBody, err := c.get(ctx, "status")
+		statusCode, respBody, err := c.get(ctx, "api/status")
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":          err,
 				"statusCode":     statusCode,
 				"respBody":       string(respBody),
 				"retry":          retryCount,
-				"statusEndpoint": fmt.Sprintf("%s/status", BaseURL),
+				"statusEndpoint": fmt.Sprintf("%s/api/status", BaseURL),
 				"elapsedTime":    exp.GetElapsedTime(),
 			}).Warn("The Kibana instance is not healthy yet")
 
@@ -349,9 +349,42 @@ func (c *Client) WaitForReady(ctx context.Context, maxTimeoutMinutes time.Durati
 			return err
 		}
 
+		jsonResponse, err := gabs.ParseJSON(respBody)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":          err,
+				"statusCode":     statusCode,
+				"respBody":       string(respBody),
+				"retry":          retryCount,
+				"statusEndpoint": fmt.Sprintf("%s/api/status", BaseURL),
+				"elapsedTime":    exp.GetElapsedTime(),
+			}).Warn("The Kibana instance is not available yet")
+
+			retryCount++
+
+			return err
+		}
+
+		status := jsonResponse.Path("status.overall.level").Data().(string)
+		if status != "available" {
+			err := errors.New("Kibana is not available yet")
+			log.WithFields(log.Fields{
+				"error":          err,
+				"statusCode":     statusCode,
+				"respBody":       status,
+				"retry":          retryCount,
+				"statusEndpoint": fmt.Sprintf("%s/api/status", BaseURL),
+				"elapsedTime":    exp.GetElapsedTime(),
+			}).Warn("The Kibana instance is not available yet :" + status)
+
+			retryCount++
+
+			return err
+		}
+
 		log.WithFields(log.Fields{
 			"retries":        retryCount,
-			"statusEndpoint": fmt.Sprintf("%s/status", BaseURL),
+			"statusEndpoint": fmt.Sprintf("%s/api/status", BaseURL),
 			"elapsedTime":    exp.GetElapsedTime(),
 		}).Info("The Kibana instance is healthy")
 
