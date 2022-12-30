@@ -9,7 +9,11 @@ services:
       - xpack.monitoring.collection.enabled=true
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=changeme
-    image: "docker.elastic.co/observability-ci/elasticsearch:${elasticsearchTag:-8.6.0-c9d1a5e9-SNAPSHOT}"
+    image: "docker.elastic.co/observability-ci/elasticsearch:${elasticsearchTag:-8.7.0-04d5f080-SNAPSHOT}"
+    healthcheck:
+        interval: 10s
+        retries: 100
+        test: ["CMD-SHELL", "curl -u admin:changeme -s http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=500ms"]
     platform: ${elasticsearchPlatform:-linux/amd64}
     ports:
       - "9200:9200"

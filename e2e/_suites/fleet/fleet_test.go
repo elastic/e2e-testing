@@ -65,6 +65,20 @@ func afterScenario(fts *FleetTestSuite) {
 			// exposed as container logs. For that reason we need to go through the installer abstraction
 			agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
 
+			logsPath, _ := filepath.Abs(filepath.Join("..", "..", "..", "outputs", serviceName+uuid.New().String()+".tgz"))
+			_, err := shell.Execute(fts.currentContext, ".", "tar", "czf", logsPath, "--exclude", "*/components/*", "--exclude", "*/tmp/*", "--exclude", "*/downloads/*", "--exclude", "*/install/*", "--exclude", "/opt/Elastic/Agent/data/elastic-agent-*/elastic-agent", "/opt/Elastic/Agent/data")
+			if err != nil {
+				log.WithFields(log.Fields{
+					"serviceName": serviceName,
+					"path":        logsPath,
+				}).Warn("Failed to collect logs")
+			} else {
+				log.WithFields(log.Fields{
+					"serviceName": serviceName,
+					"path":        logsPath,
+				}).Info("Logs collected")
+			}
+
 			if log.IsLevelEnabled(log.DebugLevel) {
 				err := agentInstaller.Logs(fts.currentContext)
 				if err != nil {
@@ -243,6 +257,14 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			log.WithFields(log.Fields{
 				"error": err,
 			}).Fatal("Elasticsearch Cluster is not healthy")
+		}
+
+		_, err = kibanaClient.WaitForReady(ctx, 10*time.Minute)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"env":   env,
+			}).Fatal("Kibana is not healthy")
 		}
 
 		err = kibanaClient.RecreateFleet(ctx)
