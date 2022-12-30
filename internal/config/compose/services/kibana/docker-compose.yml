@@ -6,9 +6,16 @@ services:
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=changeme
     healthcheck:
+<<<<<<< HEAD
       test: "curl -f http://localhost:5601/login | grep kbn-injected-metadata 2>&1 >/dev/null"
       retries: 600
       interval: 1s
     image: "docker.elastic.co/kibana/kibana:${kibanaTag:-8.4.4-dcd4a95f-SNAPSHOT}"
+=======
+      test: ["CMD-SHELL", "curl -u admin:changeme -s http://localhost:5601/api/status | grep -q 'All services are available'"]
+      retries: 60
+      interval: 10s
+    image: "docker.elastic.co/kibana/kibana:${kibanaTag:-8.7.0-04d5f080-SNAPSHOT}"
+>>>>>>> d5541388 (fix: remove Helm Chart tests (#3285))
     ports:
       - "5601:5601"

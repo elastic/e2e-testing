@@ -255,7 +255,13 @@ func newConfig(workspace string) {
 	}
 
 	// initialize included profiles/services
-	extractProfileServiceConfig(Op, box)
+	err := extractProfileServiceConfig(Op, box)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"workspace": workspace,
+		}).Error("Could not extract packaged compose files")
+		return
+	}
 
 	// add file system services and profiles
 	readFilesFromFileSystem("services")

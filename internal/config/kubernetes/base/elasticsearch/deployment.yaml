@@ -16,7 +16,11 @@ spec:
     spec:
       containers:
       - name: elasticsearch
+<<<<<<< HEAD
         image: docker.elastic.co/elasticsearch/elasticsearch:8.4.4-dcd4a95f-SNAPSHOT
+=======
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.7.0-04d5f080-SNAPSHOT
+>>>>>>> d5541388 (fix: remove Helm Chart tests (#3285))
         envFrom:
           - configMapRef:
               name: elasticsearch-config

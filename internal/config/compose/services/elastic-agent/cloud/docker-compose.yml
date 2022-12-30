@@ -1,7 +1,11 @@
 version: '2.4'
 services:
   elastic-agent:
+<<<<<<< HEAD
     image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.4.4-dcd4a95f-SNAPSHOT}"
+=======
+    image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.7.0-04d5f080-SNAPSHOT}"
+>>>>>>> d5541388 (fix: remove Helm Chart tests (#3285))
     depends_on:
       elasticsearch:
         condition: service_healthy

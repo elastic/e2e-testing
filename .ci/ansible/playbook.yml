@@ -138,7 +138,7 @@
       when:
         - ansible_facts['os_family'] != "Windows"
         - suite is defined
-        - suite in ["kubernetes-autodiscover", "helm"]
+        - suite in ["kubernetes-autodiscover"]
     - role: mdelapenya.go
       become: True
       when: ansible_facts['os_family'] != "Windows"
@@ -167,7 +167,7 @@
     when:
       - ansible_facts['os_family'] != "Windows"
       - suite is defined
-      - suite in ["kubernetes-autodiscover", "helm"]
+      - suite in ["kubernetes-autodiscover"]
 
   - name: Setup source code
     include_tasks: tasks/copy_test_files.yml

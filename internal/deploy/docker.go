@@ -177,7 +177,7 @@ func (c *dockerDeploymentManifest) Logs(ctx context.Context, service ServiceRequ
 	defer span.End()
 
 	manifest, _ := c.GetServiceManifest(ctx, service)
-	_, err := shell.Execute(ctx, ".", "docker", "logs", manifest.Name)
+	logs, err := shell.Execute(ctx, ".", "docker", "logs", manifest.Name)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -186,6 +186,8 @@ func (c *dockerDeploymentManifest) Logs(ctx context.Context, service ServiceRequ
 
 		return err
 	}
+	// print logs as is, including tabs and line breaks
+	fmt.Println(logs)
 	return nil
 }
 
