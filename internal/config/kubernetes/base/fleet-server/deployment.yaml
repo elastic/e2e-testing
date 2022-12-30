@@ -16,11 +16,7 @@ spec:
     spec:
       containers:
       - name: fleet-server
-<<<<<<< HEAD
         image: docker.elastic.co/beats/elastic-agent:8.4.4-dcd4a95f-SNAPSHOT
-=======
-        image: docker.elastic.co/beats/elastic-agent:8.7.0-04d5f080-SNAPSHOT
->>>>>>> d5541388 (fix: remove Helm Chart tests (#3285))
         env:
         - name: FLEET_SERVER_ENABLE
           value: "1"

@@ -177,14 +177,9 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 		}
 	}
 
-<<<<<<< HEAD
 	srcPath := common.GetElasticAgentWorkingPath(fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(common.ElasticAgentVersion), metadata.Os, metadata.Arch))
-	output, _ := i.Exec(ctx, []string{"mv", srcPath, common.GetElasticAgentWorkingPath("elastic-agent")})
-=======
-	srcPath := common.GetElasticAgentWorkingPath(fmt.Sprintf("%s-%s-%s-%s", artifact, downloads.GetSnapshotVersion(version), metadata.Os, metadata.Arch))
 	_, _ = i.Exec(ctx, []string{"rm", "-fr", common.GetElasticAgentWorkingPath("elastic-agent")})
-	output, _ := i.Exec(ctx, []string{"mv", "-f", srcPath, common.GetElasticAgentWorkingPath("elastic-agent")})
->>>>>>> d5541388 (fix: remove Helm Chart tests (#3285))
+	output, _ := i.Exec(ctx, []string{"mv", srcPath, common.GetElasticAgentWorkingPath("elastic-agent")})
 	log.WithField("output", output).Trace("Moved elastic-agent")
 	return nil
 }
