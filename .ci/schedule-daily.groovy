@@ -37,20 +37,10 @@ def runBuilds(Map args = [:]) {
 
   def quietPeriod = 0
   branches.each { branch ->
-<<<<<<< HEAD
     build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-fleet-daily-mbp/${branch}", wait: false, propagate: false)
-    build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-helm-daily-mbp/${branch}", wait: false, propagate: false)
     build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-k8s-autodiscovery-daily-mbp/${branch}", wait: false, propagate: false)
     // Increate the quiet period for the next iteration
     quietPeriod += args.quietPeriodFactor
-=======
-    if (isBranchUnifiedReleaseAvailable(branch)) {
-      build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-fleet-daily-mbp/${branch}", wait: false, propagate: false)
-      build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-k8s-autodiscovery-daily-mbp/${branch}", wait: false, propagate: false)
-      // Increate the quiet period for the next iteration
-      quietPeriod += args.quietPeriodFactor
-    }
->>>>>>> d5541388 (fix: remove Helm Chart tests (#3285))
   }
 }
 
