@@ -5,6 +5,7 @@
     state: absent
 
 - name: Extend environment for Fleet testing (Windows)
+  no_log: true
   community.windows.win_lineinfile:
     state: present
     line: "{{item}}"
@@ -14,9 +15,10 @@
   with_items:
     - "SUITE=\"{{ lookup('env', 'SUITE') or 'fleet' }}\""
     - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'remote' }}\""
-    - "ELASTICSEARCH_PASSWORD=\"changeme\""
-    - "KIBANA_PASSWORD=\"changeme\""
-    - "SKIP_PULL=\"1\""
+    - "ELASTICSEARCH_PASSWORD=\"{{ lookup('env', 'ELASTICSEARCH_PASSWORD') or 'changeme' }}\""
+    - "KIBANA_PASSWORD=\"{{ lookup('env', 'KIBANA_PASSWORD') or 'changeme' }}\""
+    - "SKIP_PULL=\"{{ lookup('env', 'SKIP_PULL') or '1' }}\""
+    - "DEVELOPER_MODE=\"{{ lookup('env', 'DEVELOPER_MODE') or 'false' }}\""
   when:
     - suite is defined
     - stackRunner is defined
@@ -25,6 +27,7 @@
     - scripts
 
 - name: Extend environment for Remote provider (Windows)
+  no_log: true
   community.windows.win_lineinfile:
     state: present
     line: "{{ item }}"
@@ -32,9 +35,9 @@
     dest: "{{ e2e_home_dir }}.env"
     create: yes
   with_items:
-    - "ELASTICSEARCH_URL=\"http://{{ stackRunner }}:9200\""
-    - "KIBANA_URL=\"http://{{ stackRunner }}:5601\""
-    - "FLEET_URL=\"http://{{ stackRunner }}:8220\""
+    - "ELASTICSEARCH_URL=\"{{ lookup('env', 'ELASTICSEARCH_URL') or 'http://{{ stackRunner }}:9200' }}\""
+    - "KIBANA_URL=\"{{ lookup('env', 'KIBANA_URL') or 'http://{{ stackRunner }}:5601' }}\""
+    - "FLEET_URL=\"{{ lookup('env', 'FLEET_URL') or 'http://{{ stackRunner }}:8220' }}\""
   when:
     - suite is defined
     - stackRunner is defined
@@ -43,6 +46,7 @@
     - scripts
 
 - name: Extend environment for Fleet with elastic-package testing (Windows)
+  no_log: true
   community.windows.win_lineinfile:
     state: present
     line: "{{item}}"
@@ -57,6 +61,7 @@
     - scripts
 
 - name: Extend environment for Kubernetes Autodiscover testing (Windows)
+  no_log: true
   community.windows.win_lineinfile:
     state: present
     line: "{{item}}"
@@ -74,27 +79,8 @@
   tags:
     - scripts
 
-- name: Extend environment for Helm testing (Windows)
-  community.windows.win_lineinfile:
-    state: present
-    line: "{{item}}"
-    insertafter: EOF
-    dest: "{{ e2e_home_dir }}.env"
-    create: yes
-  with_items:
-    - "SUITE=\"{{ lookup('env', 'SUITE') or 'helm' }}\""
-    - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'docker' }}\""
-    - "HELM_CHART_VERSION=\"{{ lookup('env', 'HELM_CHART_VERSION') }}\""
-    - "HELM_VERSION=\"{{ lookup('env', 'HELM_VERSION') }}\""
-    - "KIND_VERSION=\"{{ lookup('env', 'KIND_VERSION') }}\""
-    - "KUBERNETES_VERSION=\"{{ lookup('env', 'KUBERNETES_VERSION') }}\""
-  when:
-    - suite is defined
-    - suite == "helm"
-  tags:
-    - scripts
-
 - name: Extend environment (Windows)
+  no_log: true
   community.windows.win_lineinfile:
     state: present
     line: "{{item}}"

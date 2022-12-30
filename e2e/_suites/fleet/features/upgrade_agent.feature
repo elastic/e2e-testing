@@ -17,4 +17,4 @@ Examples: Stale versions
 | 8.2.0 |
 | 8.1.3 |
 | 8.1.0 |
-| 7.17-SNAPSHOT |
+| 7.17.8 |

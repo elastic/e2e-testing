@@ -7,8 +7,6 @@
     - ".pre-commit-config.yaml"
   - "cli":
     - "cli/**/*.*"
-  - "helm":
-    - "e2e/_suites/helm/**/*.*"
   - "Team: Agent":
     - "e2e/_suites/fleet/**/*.*"
   - "licenses":
