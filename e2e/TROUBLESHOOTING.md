@@ -128,4 +128,3 @@ To change it, please use Docker UI, go to `Preferences > Resources > File Sharin
    - Go to '.venv/bin' folder and activate the python virtual environment.
    - Specify the ansible version in requirement.txt file under `.ci/ansible` folder.
    - Rerun requirements.txt file manually using `pip install -r requirements.txt' command.
-

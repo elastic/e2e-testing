@@ -6,9 +6,9 @@ services:
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=changeme
     healthcheck:
-      test: "curl -f http://localhost:5601/login | grep kbn-injected-metadata 2>&1 >/dev/null"
-      retries: 600
-      interval: 1s
-    image: "docker.elastic.co/kibana/kibana:${kibanaTag:-8.6.0-55d181cf-SNAPSHOT}"
+      test: ["CMD-SHELL", "curl -u admin:changeme -s http://localhost:5601/api/status | grep -q 'All services are available'"]
+      retries: 60
+      interval: 10s
+    image: "docker.elastic.co/kibana/kibana:${kibanaTag:-8.6.0-2d1af9b1-SNAPSHOT}"
     ports:
       - "5601:5601"

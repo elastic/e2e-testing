@@ -1,13 +1,31 @@
 ---
+- name: Fetch Test logs
+  become: false
+  environment: 
+    PATH: "/home/admin/bin:/home/admin/go/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/go/bin"
+  ansible.builtin.shell: 
+    cmd: |
+      ([ -d ./kubernetes-autodiscover ] && tar -czf "kubernetes-autodiscover-logs.tgz" "./kubernetes-autodiscover") || true
+      ([ -d ./docker-logs ] && tar -czf "docker-logs.tgz" "./docker-logs") || true
+      ([ -d ./fleet ] tar -czf "fleet-logs.tgz" "./fleet") || true
+    chdir: "{{ e2e_base_dir }}outputs"
+  tags:
+    - fetch-reports
+  when:
+    - ansible_facts['os_family'] != "Windows"
+
 - name: Find the Test reports to copy/fetch
-  become: no
-  ansible.builtin.find: 
+  become: false
+  ansible.builtin.find:
     paths: "{{ e2e_base_dir }}outputs"
     file_type: file
-    use_regex: yes   
+    use_regex: yes
+    recurse: yes
     patterns:
-      - '^TEST.*json$'
-      - '^TEST.*xml$'
+      - "^TEST.*json$"
+      - "^TEST.*xml$"
+      - "^.*tgz$"
+      - "^.*zip$"
   register: files_2_fetch
   tags:
     - fetch-reports
@@ -15,14 +33,17 @@
     - ansible_facts['os_family'] != "Windows"
 
 - name: Find the Test reports to copy/fetch (Windows)
-  become: no
-  ansible.windows.win_find: 
+  become: false
+  ansible.windows.win_find:
     paths: "{{ e2e_base_dir }}outputs"
     file_type: file
-    use_regex: yes   
+    use_regex: yes
+    recurse: yes
     patterns:
-      - '^TEST.*json$'
-      - '^TEST.*xml$'
+      - "^TEST.*json$"
+      - "^TEST.*xml$"
+      - "^.*tgz$"
+      - "^.*zip$"
   register: files_2_fetch_win
   tags:
     - fetch-reports
@@ -30,7 +51,7 @@
     - ansible_facts['os_family'] == "Windows"
 
 - name: Create local directory
-  become: no
+  become: false
   vars:
     ansible_shell_type: "sh"
   ansible.builtin.file:
@@ -40,11 +61,24 @@
   tags:
     - fetch-reports
 
+- name: Set report folder name
+  become: false
+  vars:
+    _prefix: "{{ lookup('env', 'REPORT_PREFIX') | default('stack') | replace(' ', '_') }}"
+    _suite: "{{ lookup('env', 'SUITE') | default('') | replace(' ', '_') }}"
+    _arch: "{{ lookup('env', 'GOARCH') | default('') }}"
+    _node_label: "{{ lookup('env', 'NODE_LABEL') | default('') }}"
+    _tags: "{{ lookup('env', 'TAGS') | default('none') | replace(' ', '_') | replace('@', '') | replace('~', '') | replace('&', '') | replace('|', '')}}"
+  set_fact:
+    report_folder: "{{ workspace }}outputs/{{ _prefix }}{{ _suite }}-{{ _node_label }}{{ _arch }}-{{ _tags }}"
+  tags:
+    - fetch-reports
+
 - name: Fetch the Test reports
-  become: no
+  become: false
   ansible.builtin.fetch:
     src: "{{ item.path }}"
-    dest: "{{ workspace }}outputs/{{ inventory_hostname }}/"
+    dest: "{{ report_folder }}/"
     flat: yes
     fail_on_missing: no
   with_items: "{{ files_2_fetch.files }}"
@@ -54,10 +88,10 @@
     - ansible_facts['os_family'] != "Windows"
 
 - name: Fetch the Test reports (Windows)
-  become: no
+  become: false
   ansible.builtin.fetch:
     src: "{{ item.path }}"
-    dest: "{{ workspace }}outputs/{{ inventory_hostname }}/"
+    dest: "{{ report_folder }}/"
     flat: yes
     fail_on_missing: no
   with_items: "{{ files_2_fetch_win.files }}"

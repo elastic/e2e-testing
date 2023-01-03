@@ -27,3 +27,4 @@
   delegate_to: "localhost"
   vars:
     ansible_shell_type: "sh" # because the rsync is executed locally, we need to use the current 
+    ansible_python_interpreter: "python3"
