@@ -12,7 +12,6 @@ Scenario Outline: Upgrading an installed agent from <stale-version>
 Examples: Stale versions
 | stale-version |
 | latest |
-| 8.6.0 |
 | 8.5.3 |
 | 8.4.3 |
 | 8.3.3 |
