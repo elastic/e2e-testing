@@ -19,14 +19,18 @@
     - provision-node
 
 - name: "Create {{nodeLabel}} AWS instances"
-  ec2:
-    wait: yes
+  ec2_instance:
+    state: started
+    wait: true
+    name: "e2e-{{ instanceID}}"
     key_name: "e2essh-{{runId}}"
     region: us-east-2
-    group: e2e
-    image: '{{nodeImage}}'
+    security_group: e2e
+    image_id: '{{nodeImage}}'
     instance_type: '{{nodeInstanceType}}'
-    instance_tags:
+    network:
+      assign_public_ip: true
+    tags:
       branch: "{{branch | default('Not running on CI')}}"
       build: "{{build | default('Not running on CI')}}"
       build_url: "{{buildURL | default('Not running on CI') }}"
@@ -40,30 +44,35 @@
       reaper_mark: "e2e-testing-vm"
       repo: "{{repo | default('Not running on CI')}}"
       run_id: "{{runId | default('Not running on CI')}}"
-    count_tag:
-      name: "e2e-{{ instanceID }}"
+      division: engineering
+      org: obs
+      team: eng-productivity
+      project: e2e
     volumes:
       - device_name: /dev/sda1
-        volume_type: gp3
-        volume_size: "{{ (nodeLabel != 'windows2019') | ternary(15, 60) }}"
-        delete_on_termination: yes
+        ebs:
+          volume_type: gp3
+          volume_size: "{{ (nodeLabel != 'windows2019') | ternary(15, 60) }}"
+          delete_on_termination: true
       - device_name: /dev/xvda
-        volume_type: gp3
-        volume_size: 200
-        delete_on_termination: yes
-    ebs_optimized: yes
+        ebs:
+          volume_type: gp3
+          volume_size: 200
+          delete_on_termination: true
+    ebs_optimized: true
   register: ec2
   tags:
     - provision-stack
     - provision-node
 
 - name: Add AWS host to ssh address list
+  no_log: true
   lineinfile:
     state: present
-    line: "- {{ nodeUser }}@{{addr.public_ip}}"
+    line: "- {{ nodeUser }}@{{addr.public_ip_address}}"
     insertafter: EOF
     dest: "{{ workspace }}{{nodeLabel}}-sshhosts"
-    create: yes
+    create: true
   loop: "{{ ec2.instances }}"
   loop_control:
     loop_var: addr
@@ -74,7 +83,7 @@
 - name: Add stack AWS host to ssh address list
   copy:
     dest: "{{ workspace }}.ci/.stack-host-ip"
-    content: "{{addr.public_ip}}"
+    content: "{{addr.public_ip_address}}"
     force: true
   loop: "{{ ec2.instances }}"
   loop_control:
@@ -85,7 +94,7 @@
 - name: Add node AWS host to ssh address list
   copy:
     dest: "{{ workspace }}.ci/.node-host-ip"
-    content: "{{addr.public_ip}}"
+    content: "{{addr.public_ip_address}}"
     force: true
   loop: "{{ ec2.instances }}"
   loop_control:
@@ -94,7 +103,7 @@
     - provision-node
 
 - name: Wait for SSH to come up
-  wait_for: host={{ nodeItem.public_ip }} port=22 delay=10
+  wait_for: host={{ nodeItem.public_ip_address }} port=22 delay=10
   loop: "{{ ec2.instances }}"
   loop_control:
     loop_var: nodeItem

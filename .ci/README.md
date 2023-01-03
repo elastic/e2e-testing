@@ -18,7 +18,7 @@ In order to configure each platform, there is an `Ansible` script that installs 
 It's possible that a consumer of the e2e tests would need to define a specific layout for the test execution, adding or removing suites and/or scenarios. That's the case for Beats or the Elastic Agent, which triggers the E2E tests with a different layout than for the own development of the test framework: while in Beats or the Elastic Agent we are more interested in running the test for Fleet only, when developing the project we want to verify all the test suites at a time. The structure of these files is the following:
 
 - **SUITES**: this entry will hold a YAML object containing a list of suite. Each suite in the list will be represented by a YAML object with the following attributes:
-  - **suite**: the name of the suite. Will be used to look up the root directory of the test suite, located under the `e2e/_suites` directory. Therefore, only `fleet`, `helm` and `kubernetes-autodiscover` are valid values. Required.
+  - **suite**: the name of the suite. Will be used to look up the root directory of the test suite, located under the `e2e/_suites` directory. Therefore, only `fleet`, and `kubernetes-autodiscover` are valid values. Required.
   - **provider**: declares the provider type for the test suite. Valid values are `docker`, `elastic-package` and `remote`. If not present, it will use `remote` as fallback. Optional.
   - **scenarios**: a list of YAML objects representing the test scenarios, where the tests are executed. A test scenario will basically declare how to run a set of test, using the following attributes:
     - **name**: name of the test scenario. It will be used by Jenkins to name the parallel stage representing this scenario. Required.
@@ -113,6 +113,10 @@ A `.stack-host-ip` file will be created in the `.ci` directory of the project in
 
 Please remember to [destroy the stack](#destroying-the-stack-and-the-test-node) once you finished your testing.
 
+> You probably need to run `start-elastic-stack` command twice: the Fleet Server could try to start faster than Kibana and die. Running the command again will recreate the container for Fleet Server.
+
+> The `recreate-fleet-server` command has been deprecated, and calls the `start-elastic-stack` command instead.
+
 ### Create and configure the test node
 
 There are different VM flavours that you can use to run the Elastic Agent and enroll it into the Stack: Debian, CentOS, SLES15, Oracle Linux... using AMD and ARM as architecture. You can find the full reference of the platform support [here](https://github.com/elastic/e2e-testing/blob/4517dfa134844f720139d6bab3955cc8d9c6685c/.ci/.e2e-platforms.yaml#L2-L42).
@@ -164,12 +168,11 @@ $ env | grep NODE
 NODE_LABEL=centos8_arm64
 ```
 
-Besides that, it's possible to configure the test node for the different test suites that are present in the test framework: `fleet`, `helm` and `kubernetes-autodiscover`. Please configure the test node setting the suite, being `fleet` the default:
+Besides that, it's possible to configure the test node for the different test suites that are present in the test framework: `fleet`, and `kubernetes-autodiscover`. Please configure the test node setting the suite, being `fleet` the default:
 
 ```shell
 # all possible suites
 export SUITE="fleet"
-export SUITE="helm"
 export SUITE="kubernetes-autodiscover"
 ```
 
@@ -196,18 +199,6 @@ A `.node-host-ip` file will be created in the `.ci` directory of the project inc
 > The IP address of the node in that file will be used by the automation.
 
 Please remember to [destroy the node](#destroying-the-stack-and-the-test-nodes) once you have finished your testing.
-
-Finally, start the stack:
-
-```shell
-export SSH_KEY="PATH_TO_YOUR_SSH_KEY_WITH_ACCESS_TO_AWS"
-export SUITE="fleet"
-make -C .ci start-elastic-stack
-```
-
-> You probably need to run this command twice: the Fleet Server could try to start faster than Kibana and die. Running the command again will recreate the container for Fleet Server.
-
-> The `recreate-fleet-server` command has been deprecated, and calls the `start-elastic-stack` command instead.
 
 ### Run a test suite
 
@@ -346,3 +337,127 @@ Make sure :
 - Check 600 permission is provided to id_rsa key files.
 - Run list-platforms command and export Node variabe to resolve Node creation errors.
 - While creating windows node, we need to run `create-node` command in portions such as `provision-node` and `setup-node`. Also, some times you need to ssh node to create it successfully.
+
+### ERROR! couldn't resolve module/action 'ec2'
+
+This is caused by problems to resolve the Galaxy collections you have installed.
+This is an example that causes the issue we have `community.general 4.3.0` in our user collection and the project uses `community.general             5.8.3`
+
+```bash
+> ansible-galaxy collection list 
+# /Users/myuser/.ansible/collections/ansible_collections
+Collection        Version
+----------------- -------
+amazon.aws        5.1.0  
+community.general 4.3.0  
+
+# /Users/myuser/src/e2e-testing/.venv/lib/python3.8/site-packages/ansible_collections
+Collection                    Version
+----------------------------- -------
+amazon.aws                    3.5.0  
+ansible.netcommon             3.1.3  
+ansible.posix                 1.4.0  
+ansible.utils                 2.8.0  
+ansible.windows               1.12.0 
+arista.eos                    5.0.1  
+awx.awx                       21.10.0
+azure.azcollection            1.14.0 
+check_point.mgmt              2.3.0  
+chocolatey.chocolatey         1.3.1  
+cisco.aci                     2.3.0  
+cisco.asa                     3.1.0  
+cisco.dnac                    6.6.1  
+cisco.intersight              1.0.22 
+cisco.ios                     3.3.2  
+cisco.iosxr                   3.3.1  
+cisco.ise                     2.5.9  
+cisco.meraki                  2.13.0 
+cisco.mso                     2.1.0  
+cisco.nso                     1.0.3  
+cisco.nxos                    3.2.0  
+cisco.ucs                     1.8.0  
+cloud.common                  2.1.2  
+cloudscale_ch.cloud           2.2.3  
+community.aws                 3.6.0  
+community.azure               1.1.0  
+community.ciscosmb            1.0.5  
+community.crypto              2.9.0  
+community.digitalocean        1.22.0 
+community.dns                 2.4.2  
+community.docker              2.7.3  
+community.fortios             1.0.0  
+community.general             5.8.3  
+community.google              1.0.0  
+community.grafana             1.5.3  
+community.hashi_vault         3.4.0  
+community.hrobot              1.6.0  
+community.libvirt             1.2.0  
+community.mongodb             1.4.2  
+community.mysql               3.5.1  
+community.network             4.0.2  
+community.okd                 2.2.0  
+community.postgresql          2.3.1  
+community.proxysql            1.4.0  
+community.rabbitmq            1.2.3  
+community.routeros            2.5.0  
+community.sap                 1.0.0  
+community.sap_libs            1.4.0  
+community.skydive             1.0.0  
+community.sops                1.5.0  
+community.vmware              2.10.2 
+community.windows             1.11.1 
+community.zabbix              1.9.0  
+containers.podman             1.10.1 
+cyberark.conjur               1.2.0  
+cyberark.pas                  1.0.14 
+dellemc.enterprise_sonic      1.1.2  
+dellemc.openmanage            5.5.0  
+dellemc.os10                  1.1.1  
+dellemc.os6                   1.0.7  
+dellemc.os9                   1.0.4  
+f5networks.f5_modules         1.21.0 
+fortinet.fortimanager         2.1.7  
+fortinet.fortios              2.2.1  
+frr.frr                       2.0.0  
+gluster.gluster               1.0.2  
+google.cloud                  1.0.2  
+hetzner.hcloud                1.9.0  
+hpe.nimble                    1.1.4  
+ibm.qradar                    2.1.0  
+ibm.spectrum_virtualize       1.10.0 
+infinidat.infinibox           1.3.12 
+infoblox.nios_modules         1.4.1  
+inspur.ispim                  1.2.0  
+inspur.sm                     2.3.0  
+junipernetworks.junos         3.1.0  
+kubernetes.core               2.3.2  
+lowlydba.sqlserver            1.2.0  
+mellanox.onyx                 1.0.0  
+netapp.aws                    21.7.0 
+netapp.azure                  21.10.0
+netapp.cloudmanager           21.21.0
+netapp.elementsw              21.7.0 
+netapp.ontap                  21.24.1
+netapp.storagegrid            21.11.1
+netapp.um_info                21.8.0 
+netapp_eseries.santricity     1.3.1  
+netbox.netbox                 3.9.0  
+ngine_io.cloudstack           2.3.0  
+ngine_io.exoscale             1.0.0  
+ngine_io.vultr                1.1.2  
+openstack.cloud               1.10.0 
+openvswitch.openvswitch       2.1.0  
+ovirt.ovirt                   2.4.1  
+purestorage.flasharray        1.15.0 
+purestorage.flashblade        1.10.0 
+purestorage.fusion            1.2.0  
+sensu.sensu_go                1.13.1 
+servicenow.servicenow         1.0.6  
+splunk.es                     2.1.0  
+t_systems_mms.icinga_director 1.31.4 
+theforeman.foreman            3.7.0  
+vmware.vmware_rest            2.2.0  
+vultr.cloud                   1.3.1  
+vyos.vyos                     3.0.1  
+wti.remote                    1.0.4  
+```

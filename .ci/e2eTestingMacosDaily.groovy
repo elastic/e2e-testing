@@ -39,7 +39,7 @@ pipeline {
     string(name: 'BEAT_VERSION', defaultValue: '8.5.4-SNAPSHOT', description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
     string(name: 'GITHUB_CHECK_REPO', defaultValue: '', description: 'Name of the GitHub repo to be updated. Only modified if this build is triggered from another parent stream (i.e. Beats).')
     string(name: 'GITHUB_CHECK_SHA1', defaultValue: '', description: 'Git SHA for the Beats upstream project (branch or PR)')
-    choice(name: 'LOG_LEVEL', choices: ['TRACE', 'DEBUG', 'INFO'], description: 'Log level to be used')
+    choice(name: 'LOG_LEVEL', choices: ['INFO', 'DEBUG', 'TRACE'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
   }
   stages {
