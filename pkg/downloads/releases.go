@@ -193,7 +193,7 @@ func (r *ReleaseURLResolver) Resolve() (string, string, error) {
 					"retry":          retryCount,
 					"statusEndpoint": r.URL,
 					"elapsedTime":    exp.GetElapsedTime(),
-				}).Warn("Download could not be found at the Elastic downloads API")
+				}).Debug("Download could not be found at the Elastic downloads API")
 				return nil
 			}
 
@@ -203,7 +203,7 @@ func (r *ReleaseURLResolver) Resolve() (string, string, error) {
 				"retry":          retryCount,
 				"statusEndpoint": r.URL,
 				"elapsedTime":    exp.GetElapsedTime(),
-			}).Warn("The Elastic downloads API is not available yet")
+			}).Debug("The Elastic downloads API is not available yet")
 
 			retryCount++
 
@@ -215,7 +215,7 @@ func (r *ReleaseURLResolver) Resolve() (string, string, error) {
 			"retries":        retryCount,
 			"statusEndpoint": r.URL,
 			"elapsedTime":    exp.GetElapsedTime(),
-		}).Debug("Download was found in the Elastic downloads API")
+		}).Info("Download was found in the Elastic downloads API")
 
 		return nil
 	}
