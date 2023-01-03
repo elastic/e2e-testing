@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	UPGRADE_MAX_TIMEOUT = 10 * time.Minute
+	upgradeMaxTimeout = 10 * time.Minute
 )
 
 func (fts *FleetTestSuite) agentInVersion(version string) error {
@@ -29,7 +29,7 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	log.Tracef("Checking if agent is in version %s. Current version: %s", version, fts.Version)
 
 	retryCount := 0
-	maxTimeout := UPGRADE_MAX_TIMEOUT
+	maxTimeout := upgradeMaxTimeout
 	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
