@@ -17,6 +17,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	UPGRADE_MAX_TIMEOUT = 10 * time.Minute
+)
+
 func (fts *FleetTestSuite) agentInVersion(version string) error {
 	switch version {
 	case "latest":
@@ -25,7 +29,7 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	log.Tracef("Checking if agent is in version %s. Current version: %s", version, fts.Version)
 
 	retryCount := 0
-	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
+	maxTimeout := UPGRADE_MAX_TIMEOUT
 	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
