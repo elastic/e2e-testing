@@ -276,7 +276,7 @@ func (ep *EPServiceManager) Logs(ctx context.Context, service ServiceRequest) er
 	defer span.End()
 
 	manifest, _ := ep.GetServiceManifest(context.Background(), service)
-	_, err := shell.Execute(ep.Context, ".", "docker", "logs", manifest.Name)
+	logs, err := shell.Execute(ep.Context, ".", "docker", "logs", manifest.Name)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -285,6 +285,8 @@ func (ep *EPServiceManager) Logs(ctx context.Context, service ServiceRequest) er
 
 		return err
 	}
+	// print logs as is, including tabs and line breaks
+	fmt.Println(logs)
 	return nil
 }
 

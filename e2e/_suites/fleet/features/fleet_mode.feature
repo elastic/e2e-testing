@@ -67,3 +67,4 @@ Scenario Outline: Un-installing the installed agent
   Given an agent is deployed to Fleet with "tar" installer
   When the "elastic-agent" process is "uninstalled" on the host
   Then the file system Agent folder is empty
+    And the agent is listed in Fleet as "offline"

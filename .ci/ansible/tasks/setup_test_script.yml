@@ -5,6 +5,7 @@
     state: absent
 
 - name: Extend environment for Stack Bootstrapping
+  no_log: true
   lineinfile:
     state: present
     line: "{{ item }}"
@@ -26,6 +27,7 @@
     - scripts
 
 - name: Extend environment for Fleet testing
+  no_log: true
   lineinfile:
     state: present
     line: "{{item}}"
@@ -35,9 +37,9 @@
   with_items:
     - "SUITE=\"{{ lookup('env', 'SUITE') or 'fleet' }}\""
     - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'remote' }}\""
-    - "ELASTICSEARCH_PASSWORD=\"changeme\""
-    - "KIBANA_PASSWORD=\"changeme\""
-    - "SKIP_PULL=\"1\""
+    - "ELASTICSEARCH_PASSWORD=\"{{ lookup('env', 'ELASTICSEARCH_PASSWORD') or 'changeme' }}\""
+    - "KIBANA_PASSWORD=\"{{ lookup('env', 'KIBANA_PASSWORD') or 'changeme' }}\""
+    - "SKIP_PULL=\"{{ lookup('env', 'SKIP_PULL') or '1' }}\""
     - "DEVELOPER_MODE=\"{{ lookup('env', 'DEVELOPER_MODE') or 'false' }}\""
   when:
     - suite is defined
@@ -47,6 +49,7 @@
     - scripts
 
 - name: Extend environment for Remote provider
+  no_log: true
   lineinfile:
     state: present
     line: "{{ item }}"
@@ -64,7 +67,27 @@
   tags:
     - scripts
 
+- name: Extend environment for Remote provider
+  no_log: true
+  lineinfile:
+    state: present
+    line: "{{ item }}"
+    insertafter: EOF
+    dest: "{{ e2e_home_dir }}.env"
+    create: yes
+  with_items:
+    - "ELASTICSEARCH_URL=\"{{ lookup('env', 'ELASTICSEARCH_URL') }}\""
+    - "KIBANA_URL=\"{{ lookup('env', 'KIBANA_URL')}}\""
+    - "FLEET_URL=\"{{ lookup('env', 'FLEET_URL')}}\""
+  when:
+    - suite is defined
+    - lookup('env', 'ELASTICSEARCH_URL') != ''
+    - lookup('env', 'PROVIDER') == 'remote'
+  tags:
+    - scripts
+
 - name: Extend environment for Fleet with elastic-package testing
+  no_log: true
   lineinfile:
     state: present
     line: "{{item}}"
@@ -79,6 +102,7 @@
     - scripts
 
 - name: Extend environment for Kubernetes Autodiscover testing
+  no_log: true
   lineinfile:
     state: present
     line: "{{item}}"
@@ -97,28 +121,8 @@
   tags:
     - scripts
 
-- name: Extend environment for Helm testing
-  lineinfile:
-    state: present
-    line: "{{item}}"
-    insertafter: EOF
-    dest: "{{ e2e_home_dir }}.env"
-    create: yes
-  with_items:
-    - "SUITE=\"{{ lookup('env', 'SUITE') or 'helm' }}\""
-    - "PROVIDER=\"{{ lookup('env', 'PROVIDER') or 'docker' }}\""
-    - "HELM_CHART_VERSION=\"{{ lookup('env', 'HELM_CHART_VERSION') }}\""
-    - "HELM_VERSION=\"{{ lookup('env', 'HELM_VERSION') }}\""
-    - "KIND_VERSION=\"{{ lookup('env', 'KIND_VERSION') }}\""
-    - "KUBERNETES_VERSION=\"{{ lookup('env', 'KUBERNETES_VERSION') }}\""
-    - "DEVELOPER_MODE=\"{{ lookup('env', 'DEVELOPER_MODE') or 'false' }}\""
-  when:
-    - suite is defined
-    - suite == "helm"
-  tags:
-    - scripts
-
 - name: Extend environment
+  no_log: true
   lineinfile:
     state: present
     line: "{{item}}"
@@ -157,27 +161,29 @@
     mode: '0777'
     dest: "{{ e2e_base_dir }}.ci/scripts/functional-test.sh"
     content: |
-       #!/usr/bin/env bash
-       set -euxo pipefail
+      #!/usr/bin/env bash
+      set -euo pipefail
 
-       BASE_DIR="/home/{{ansible_user}}/e2e-testing"
-       SUITE="{{ lookup('env', 'SUITE') or 'fleet' }}"
-       REPORT_PREFIX="{{ lookup('env', 'REPORT_PREFIX') or 'junit' }}"
+      BASE_DIR="/home/{{ansible_user}}/e2e-testing"
+      SUITE="{{ lookup('env', 'SUITE') or 'fleet' }}"
+      REPORT_PREFIX="{{ lookup('env', 'REPORT_PREFIX') or 'junit' }}"
 
-       export PATH="$PATH:/usr/local/go/bin"
+      export PATH="$PATH:/usr/local/go/bin"
 
-       BASE_DIR=${BASE_DIR} "${BASE_DIR}/.ci/scripts/install-test-dependencies.sh" "${SUITE}"
+      BASE_DIR=${BASE_DIR} "${BASE_DIR}/.ci/scripts/install-test-dependencies.sh" "${SUITE}"
 
-       REPORT_PREFIX=$(echo "$REPORT_PREFIX" | sed -r 's/[ @~]+//g')
-       SEED="$(date +%Y-%m-%d-%H:%M:%S)"
-       REPORT="{{ e2e_base_dir }}outputs/TEST-${REPORT_PREFIX}-{{ runId }}-${SEED}"
-       echo "REPORT=\"${REPORT}"\" >> {{ e2e_home_dir }}.env
+      OUTPUT_DIR="{{ e2e_base_dir }}outputs/docker-logs" OUTPUT_FILE="docker-logs-${REPORT_PREFIX}-{{ runId }}-${SUITE}" "${BASE_DIR}/.ci/scripts/run_filebeat.sh"
 
-       echo "Removing previous test files in the case the workspace is reused"
-       rm -f {{ e2e_base_dir }}outputs/TEST-*.*
+      REPORT_PREFIX=$(echo "$REPORT_PREFIX" | sed -r 's/[ @~]+//g')
+      SEED="$(date +%Y-%m-%d-%H:%M:%S)"
+      REPORT="{{ e2e_base_dir }}outputs/TEST-${REPORT_PREFIX}-{{ runId }}-${SEED}"
+      echo "REPORT=\"${REPORT}"\" >> {{ e2e_home_dir }}.env
 
-       TAGS="{{ lookup('env', 'TAGS') }}" \
-         FORMAT="pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml" \
-         make --no-print-directory -C "{{ e2e_base_dir }}e2e/_suites/${SUITE}" functional-test
+      echo "Removing previous test files in the case the workspace is reused"
+      rm -f {{ e2e_base_dir }}outputs/TEST-*.*
+
+      TAGS="{{ lookup('env', 'TAGS') }}" \
+        FORMAT="pretty,cucumber:${REPORT}.json,junit:${REPORT}.xml" \
+        make --no-print-directory -C "{{ e2e_base_dir }}e2e/_suites/${SUITE}" functional-test
   tags:
     - scripts

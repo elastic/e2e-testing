@@ -177,7 +177,7 @@ func (r *ProjectURLResolver) Resolve() (string, string, string) {
 		"object":  r.FileName,
 		"prefix":  prefix,
 		"project": artifact,
-	}).Debug("Resolving URL from Project resolver")
+	}).Info("Resolving URL from Project resolver")
 
 	return r.Bucket, prefix, r.FileName
 }
