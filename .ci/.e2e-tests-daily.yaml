@@ -1,14 +1,26 @@
 ---
 SUITES:
+  - suite: "helm"
+    provider: "docker"
+    scenarios:
+      - name: "APM Server"
+        tags: "apm-server"
+        platforms: ["debian_10_amd64"]
+      - name: "Filebeat"
+        tags: "filebeat"
+        platforms: ["debian_10_amd64"]
+      - name: "Metricbeat"
+        tags: "metricbeat"
+        platforms: ["debian_10_amd64"]
   - suite: "fleet"
     scenarios:
-      - name: "Fleet"
-        tags: "fleet_mode"
-        platforms: ["ubuntu_22_04_amd64"]
+#      - name: "Fleet"
+#       tags: "fleet_mode"
+#       platforms: ["ubuntu_22_04_amd64"]
 #         platforms: ["centos8_arm64", "centos8_amd64", "debian_10_arm64", "debian_10_amd64", "sles15", "debian_11_amd64", "ubuntu_22_04_amd64", "windows2019"]
-#       - name: "Integrations"
-#         tags: "integrations"
-#         platforms: ["debian_11_amd64"]
+       - name: "Integrations"
+         tags: "integrations"
+         platforms: ["debian_10_amd64"]
 #       - name: "APM Integration"
 #         tags: "apm_server"
 #         platforms: ["debian_10_amd64"]

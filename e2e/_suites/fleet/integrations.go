@@ -161,12 +161,16 @@ func inputs(integration string) []kibana.Input {
 						Enabled: true,
 						DS: kibana.DataStream{
 							Dataset: "windows.powershell",
-							Type:    "metrics",
+							Type:    "logs",
 						},
 						Vars: map[string]kibana.Var{
-							"period": {
-								Value: "1s",
-								Type:  "string",
+							"event_id": {
+								Value: "some_id",
+								Type:  "text",
+							},
+							"preserve_original_event": {
+								Value: "false",
+								Type:  "bool",
 							},
 						},
 					},
