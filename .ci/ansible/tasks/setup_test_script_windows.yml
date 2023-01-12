@@ -28,7 +28,7 @@
 
 - name: Extend environment for Remote provider (Windows)
   no_log: true
-  community.windows.win_lineinfile::
+  community.windows.win_lineinfile:
     state: present
     line: "{{ item }}"
     insertafter: EOF
