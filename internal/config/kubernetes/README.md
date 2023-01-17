@@ -4,7 +4,7 @@
 
 - docker
 - kind (>= 0.17.0)
-- kubectl (>= 1.27.0)
+- kubectl (>= 1.26.0)
 
 ## Deployment
 
