@@ -142,6 +142,7 @@ show-stack:
 provision-node: .runID set-env-$(NODE_LABEL)
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	@:$(call check_defined, STACK_IP_ADDRESS, IP address of the stack not defined)
+	echo "mk nodeImage: $${NODE_IMAGE}"
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml --user $(NODE_USER) \
 		--private-key="$(SSH_KEY)" \
 		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE}" \
@@ -229,7 +230,7 @@ run-tests: set-env-$(NODE_LABEL)
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$${NODE_LABEL}_$(TAGS)" \
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/run-tests.yml --user $(NODE_USER) \
 		--private-key="$(SSH_KEY)" \
-		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE}" \
+		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$(NODE_IMAGE) nodeInstanceType=$${NODE_INSTANCE_TYPE}" \
 		--extra-vars "runId=$(RUN_ID) nodeShellType=$${NODE_SHELL_TYPE} workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t run-tests \

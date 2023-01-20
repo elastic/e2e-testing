@@ -57,7 +57,7 @@ locals {
       "source.amazon-ebs.centos-8-arm64",
       "source.amazon-ebs.oracle-linux-8",
       # "source.amazon-ebs.sles15",
-      "source.amazon-ebs.windows2019"
+      # "source.amazon-ebs.windows2019"
     ]
   }
   common_tags = {

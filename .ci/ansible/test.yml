@@ -1,0 +1,19 @@
+- name: test
+  hosts: localhost
+  gather_facts: True    
+  tasks:
+  - name: transform AMI name to id
+    amazon.aws.ec2_ami_info:
+      region: "us-east-2"
+      filters:
+        name: '{{nodeImage}}'
+    register: preinstalled_images
+    tags:    
+      - provision-node
+      - provision-stack
+  - name: Print found images
+    ansible.builtin.debug:
+      var: preinstalled_images
+    tags:
+      - provision-node
+      - provision-stack      

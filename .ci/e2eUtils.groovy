@@ -369,7 +369,7 @@ def buildPackerAMIs(Map args = [:]) {
 }
 
 def deregisterAMIs(Map args = [:]) {
-    if (!args.amisResuilt) return
+    if (args.amisRebuilt? != "true") return
     dir("${BASE_DIR}") {
         if (!args.amiSuffix?.trim()) {
             error("amiSuffix parameter must be specified in deregisterAMIs()")
