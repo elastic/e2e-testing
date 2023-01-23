@@ -433,16 +433,29 @@ def unsetFlakyWorker(stageName) {
     workersStatus[stageName].status = true
 }
 
-def destroyStack(Map args = [:]) {
+def destroyStack(Map args = [:]) {    
+    // TODO: extract "pulishJunitReports"
+    dir("${env.REAL_BASE_DIR}") {
+        ciBuild() {
+            def stackIP = getNodeIp('stack')
+            sh(label: 'Grab logs', script:"make -C .ci fetch-test-reports NODE_IP_ADDRESS=${stackIP} NODE_LABEL=debian_10_amd64")
+            archiveArtifacts(allowEmptyArchive: true, artifacts: "outputs/**/TEST-*,outputs/**/*.zip,outputs/**/*.tgz")
+            junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/**/TEST-*.xml")
+        }
+    }
     def stackMachine = getMachineInfo('stack')
-    if (!args.destroyCloudResources) {
+    if (!params.DESTROY_CLOUD_RESOURCES) {
         def stackRunnerIP = getNodeIp('stack')
         log(level: 'DEBUG', text: "Stack instance won't be destroyed after the build. Please SSH into the stack machine on ${stackRunnerIP}")
     } else {
         dir("${env.REAL_BASE_DIR}") {
-            ciBuild() {
-                retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                    sh(label: 'Destroy stack node', script: "make -C .ci destroy-stack")
+            withEnv([
+                "STACK_INSTANCE_ID=${env.BUILD_URL}_stack",
+            ]) {
+                ciBuild() {
+                    retryWithSleep(retries: 3, seconds: 5, backoff: true) {
+                        sh(label: 'Destroy stack node', script: "make -C .ci destroy-stack")
+                    }
                 }
             }
         }

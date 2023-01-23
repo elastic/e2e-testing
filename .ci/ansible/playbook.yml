@@ -129,7 +129,7 @@
         - 'ansible_os_family not in ["Suse", "Windows"]'
     - role: geerlingguy.helm
       when:
-        - ansible_facts['os_family'] != "Windows"
+        - ansible_facts['os_family'] != "Windows"        
     - role: mdelapenya.go
       become: True
       when: ansible_facts['os_family'] != "Windows"

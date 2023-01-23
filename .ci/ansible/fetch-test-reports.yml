@@ -19,7 +19,7 @@
           paths:
             - 'group_vars'
   vars:
-    ansible_python_interpreter: "auto"
+    ansible_python_interpreter: "python3"
     ansible_shell_type: "{{ nodeShellType | default('sh') }}"
 #    ansible_user: "{{ nodeUser }}"
     pip_package: "python3-pip"

@@ -1,17 +1,5 @@
 ---
 SUITES:
-  - suite: "helm"
-    provider: "docker"
-    scenarios:
-      - name: "APM Server"
-        tags: "apm-server"
-        platforms: ["debian_10_amd64"]
-      - name: "Filebeat"
-        tags: "filebeat"
-        platforms: ["debian_10_amd64"]
-      - name: "Metricbeat"
-        tags: "metricbeat"
-        platforms: ["debian_10_amd64"]
   - suite: "fleet"
     scenarios:
       - name: "Fleet"
