@@ -292,7 +292,7 @@ validate-packer-template:
 		 $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl
 
 .PHONY: build-amis-$(AMI_SUFFIX)
-build-amis-$(AMI_SUFFIX): packer-init validate-packer-template
+build-amis-$(AMI_SUFFIX): setup-env packer-init validate-packer-template
 	@:$(call check_defined, AMI_SUFFIX, You need to define a unique AMI_SUFFIX for testing. Or specify AMI_SUFFIX=main to override existing prodution AMIs)
 	packer build \
 		-var "ami_suffix=$(AMI_SUFFIX)" \
