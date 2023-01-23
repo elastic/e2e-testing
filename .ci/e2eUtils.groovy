@@ -111,12 +111,12 @@ def checkSkipTests() {
         // patterns for all places that should trigger a full build
         def tests_regexps = [ 
             "^e2e/_suites/fleet/.*", 
-            "^e2e/_suites/helm/.*", 
             "^e2e/_suites/kubernetes-autodiscover/.*", 
             "^.ci/.*", 
             "^cli/.*", 
             "^e2e/.*\\.go", 
-            "^internal/.*\\.go" ]
+            "^internal/.*\\.go" 
+        ]
         // def ami_regexps = [ "^.ci/ansible/.*", "^.ci/packer/.*"]
         setEnvVar("SKIP_TESTS", !isGitRegionMatch(patterns: tests_regexps, shouldMatchAll: false))        
     }
@@ -140,10 +140,7 @@ def ciBuild(Closure body) {
                         [var: "AWS_ACCESS_KEY_ID", password: awsAuthObj.access_key],
                         [var: "AWS_SECRET_ACCESS_KEY", password: awsAuthObj.secret_key]
                 ]) {
-                    withOtelEnv() {
-                        retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                            sh("make -C .ci setup-env") // make sure the environment is created
-                        }
+                    withOtelEnv() {                        
                         body()
                     }
                 }
@@ -332,21 +329,8 @@ def generateFunctionalTestStep(Map args = [:]) {
                                 }
                             }
                         }
-                        withEnv([
-                                "ARCHITECTURE=${goArch}",
-                                "CUCUMBER_REPORTS_PATH=${env.REAL_BASE_DIR}/outputs/${testRunnerIP}",
-                                "PLATFORM=${platform}",
-                                "SUITE=${suite}",
-                                "TAGS=${tags}",
-                        ]){
-                            retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                                dockerLogin(secret: "${DOCKER_ELASTIC_SECRET}", registry: "${DOCKER_REGISTRY}")
-                                sh(script: ".ci/scripts/generate-cucumber-reports.sh", label: "generate-cucumber-reports.sh")
-                            }
-                        }
-                        junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/${testRunnerIP}/TEST-*.xml")
-                        archiveArtifacts allowEmptyArchive: true,
-                                artifacts: "outputs/${testRunnerIP}/TEST-*.xml, outputs/${testRunnerIP}/TEST-*.json, outputs/${testRunnerIP}/TEST-*.json.html"
+                        archiveArtifacts(allowEmptyArchive: true, artifacts: "outputs/**/TEST-*,outputs/**/*.zip,outputs/**/*.tgz")
+                        junit2otel(traceName: 'junit-e2e-tests', allowEmptyResults: true, keepLongStdio: true, testResults: "outputs/**/TEST-*.xml")
                     }
                 }
             }
