@@ -50,7 +50,7 @@
     key_name: "e2essh-{{runId}}"
     region: us-east-2
     security_group: e2e
-    image_id: '{{nodeImage}}'
+    image_id: '{{ami_image}}'
     instance_type: '{{nodeInstanceType}}'
     network:
       assign_public_ip: true
