@@ -182,29 +182,15 @@ pipeline {
                 sh "ssh-keygen -b 4096 -t rsa -f ${E2E_SSH_KEY} -q -N \"\" "
 
                 dir("${env.REAL_BASE_DIR}") {
-<<<<<<< HEAD
-                  e2eUtils.ciBuild() {
-                    // sh(label: 'Create Stack node', script: "make -C .ci provision-stack")
-                  }
-                  e2eUtils.ciBuild() {
-                    retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                      // sh(label: 'Setup Stack node', script: "make -C .ci setup-stack")
-                    }
-                  }
-                  e2eUtils.ciBuild() {
-                    retryWithSleep(retries: 3, seconds: 5, backoff: true){
-                      // sh(label: 'Start Elastic Stack', script: "make -C .ci start-elastic-stack")
-=======
                   withEnv([
                     "SUITE=fleet",
                     "STACK_INSTANCE_ID=${env.BUILD_URL}_stack",
                     "TAGS=non-existing-tag"
                   ]) {
-                    ciBuild() {
+                    e2eUtils.ciBuild() {
                       retryWithSleep(retries: 3, seconds: 5, backoff: true){
                         sh(label: 'Setup Stack node', script: "make -C .ci create-stack")
                       }
->>>>>>> f60f1909bdb22ef7c24ea2aae5b090490a888673
                     }
                   }
 
