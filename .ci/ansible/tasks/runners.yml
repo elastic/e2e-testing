@@ -92,7 +92,7 @@
   # no_log: true
   lineinfile:
     state: present
-    line: "- {{ node_user }}@{{addr.public_ip_address}}"
+    line: "- {{ nodeUser }}@{{addr.public_ip_address}}"
     insertafter: EOF
     dest: "{{ workspace }}{{nodeLabel}}-sshhosts"
     create: true
