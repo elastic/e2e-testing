@@ -89,10 +89,10 @@
     - provision-node
 
 - name: Add AWS host to ssh address list
-  no_log: true
+  # no_log: true
   lineinfile:
     state: present
-    line: "- {{ nodeUser }}@{{addr.public_ip_address}}"
+    line: "- {{ ansible_user }}@{{addr.public_ip_address}}"
     insertafter: EOF
     dest: "{{ workspace }}{{nodeLabel}}-sshhosts"
     create: true
