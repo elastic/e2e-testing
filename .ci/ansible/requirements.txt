@@ -1,4 +1,4 @@
-ansible==6.7.0
+ansible==7.0.0
 ansible-core==2.13.7
 backoff==2.2.1
 boto==2.49.0
