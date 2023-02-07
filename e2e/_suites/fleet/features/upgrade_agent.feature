@@ -11,19 +11,19 @@ Feature: Upgrade Agent
     Then agent is in "latest" version
 
     Examples: Stale versions
-      | stale-version   |
-      | latest          |
-      | 8.6.0           |
-      | 7.17.9          |
+      | stale-version    |
+      | latest           |
+      | 8.6.0            |
+      | 7.17.10-SNAPSHOT |
 
 # These are the version of elastic agent that still have the bug solved in
 # https://github.com/elastic/elastic-agent/pull/1791
     @skip
     Examples: Skipped stale versions
-      | stale-version   |
-      | 8.5.3           |
-      | 8.4.3           |
-      | 8.3.3           |
-      | 8.2.3           |
-      | 8.1.3           |
-      | 7.17.8          |
+      | stale-version    |
+      | 8.5.3            |
+      | 8.4.3            |
+      | 8.3.3            |
+      | 8.2.3            |
+      | 8.1.3            |
+      | 7.17.8           |
