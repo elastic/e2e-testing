@@ -44,7 +44,7 @@ SUITES:
 #         platforms: ["debian_10_arm64", "debian_10_amd64", "oracle_linux8", "sles15", "debian_11_amd64", "ubuntu_22_04_amd64"]
 #      - name: "Upgrade Agent"
 #        tags: "upgrade_agent"
-        platforms: ["ubuntu_22_04_amd64"]
+#        platforms: ["ubuntu_22_04_amd64"]
   - suite: "kubernetes-autodiscover"
     provider: "docker"
     scenarios:
