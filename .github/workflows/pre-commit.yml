@@ -15,23 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    # Uses Go version from the repository.
-    - name: Read .go-version file
-      id: goversion
-      run: echo "::set-output name=version::$(cat .go-version)"
     - uses: actions/setup-go@v3
       with:
-        go-version: "${{ steps.goversion.outputs.version }}"
+        go-version-file: .go-version
     - uses: actions/setup-python@v3
-    - uses: pre-commit/action@646c83fcd040023954eafda54b4db0192ce70507
-      with: ## let's skip to run for all the files
-        extra_args: --help
-    - id: files
-      uses: jitterbit/get-changed-files@b17fbb00bdc0c0f63fcf166580804b4d2cdc2a42
     - name: Install dependencies
       run: .ci/scripts/install-dependencies.sh
-    - name: Precommit changes
-      run: |
-        for changed_file in ${{ steps.files.outputs.all }}; do
-          pre-commit run --files "${changed_file}"
-        done
+    - uses: elastic/apm-pipeline-library/.github/actions/pre-commit@current
