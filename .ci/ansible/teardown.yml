@@ -8,31 +8,21 @@
     amazon.aws.ec2_instance_info:
       region: us-east-2
       filters:
-        "tag:name": e2e-{{ instanceID }}
+        "tag:name": "e2e-{{ instanceID }}" 
     register: ec2_node_info
 
   - name: Print ec2 info
     ansible.builtin.debug:
-      var: ec2_node_info
+      var: ec2_node_info.instances[0].tags.name
 
   - name: "Destroy environment"
-    ec2:
-      key_name: "e2essh-{{ runId }}"
+    amazon.aws.ec2_instance:
+      state: terminated
+      filters:
+        "tag:name": "e2e-{{ instanceID }}" 
       region: us-east-2
-      group: e2e
-      image: '{{ nodeImage }}'
-      instance_tags:
-        name: "e2e-{{ instanceID }}"
-      exact_count: 0
-      count_tag:
-        name: "e2e-{{ instanceID }}"
-    async: 45
-    poll: 0
-
   - name: "Delete AWS keypair"
     ec2_key:
       region: us-east-2
       name: "e2essh-{{ runId }}"
       state: absent
-    async: 45
-    poll: 0

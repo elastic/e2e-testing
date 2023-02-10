@@ -10,7 +10,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/internal/config"
 	"github.com/elastic/e2e-testing/internal/io"
 	state "github.com/elastic/e2e-testing/internal/state"
 	"go.elastic.co/apm"
@@ -86,6 +86,8 @@ func (sm *DockerServiceManager) ExecCommandInService(ctx context.Context, profil
 	if detach {
 		composeArgs = append(composeArgs, "-d")
 	}
+	composeArgs = append(composeArgs, "--pull")
+	composeArgs = append(composeArgs, "--quiet-pull")
 	composeArgs = append(composeArgs, "--index", fmt.Sprintf("%d", image.Scale))
 	composeArgs = append(composeArgs, serviceName)
 	composeArgs = append(composeArgs, cmds...)

@@ -68,7 +68,16 @@ func buildTarForDeployment(file *os.File) (bytes.Buffer, error) {
 		return bytes.Buffer{}, err
 	}
 
-	tarWriter.Write(b)
+	_, err = tarWriter.Write(b)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"fileInfoName": fileInfo.Name(),
+			"size":         fileInfo.Size(),
+			"error":        err,
+		}).Error("Could not write TAR file")
+		return bytes.Buffer{}, fmt.Errorf("could not write TAR file: %v", err)
+	}
+
 	defer tarWriter.Close()
 
 	return buffer, nil
@@ -124,7 +133,10 @@ func CopyFileToContainer(ctx context.Context, containerName string, srcPath stri
 			return err
 		}
 
-		writer.Write(b)
+		_, err = writer.Write(b)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = dockerClient.CopyToContainer(ctx, containerName, parentDir, &buffer, types.CopyToContainerOptions{AllowOverwriteDirWithFile: true})
@@ -309,7 +321,8 @@ func InspectContainer(service ServiceRequest) (*types.ContainerJSON, error) {
 		log.WithFields(log.Fields{
 			"error":  err,
 			"labels": labelFilters,
-		}).Fatal("Cannot list containers")
+		}).Error("Cannot list containers")
+		return nil, err
 	}
 
 	if len(containers) == 0 {
@@ -398,7 +411,14 @@ func LoadImage(imagePath string) error {
 	}
 
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(imageLoadResponse.Body)
+	_, err = buf.ReadFrom(imageLoadResponse.Body)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"image": fileNamePath,
+		}).Error("Could not read the Docker image load response.")
+		return err
+	}
 
 	log.WithFields(log.Fields{
 		"image":    fileNamePath,

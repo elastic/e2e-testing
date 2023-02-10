@@ -17,6 +17,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	upgradeMaxTimeout = 10 * time.Minute
+)
+
 func (fts *FleetTestSuite) agentInVersion(version string) error {
 	switch version {
 	case "latest":
@@ -25,11 +29,11 @@ func (fts *FleetTestSuite) agentInVersion(version string) error {
 	log.Tracef("Checking if agent is in version %s. Current version: %s", version, fts.Version)
 
 	retryCount := 0
-	maxTimeout := time.Duration(utils.TimeoutFactor) * time.Minute
+	maxTimeout := upgradeMaxTimeout
 	exp := utils.GetExponentialBackOff(maxTimeout)
 
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 
 	agentInVersionFn := func() error {
 		retryCount++
@@ -88,7 +92,7 @@ func (fts *FleetTestSuite) anAgentIsUpgradedToVersion(desiredVersion string) err
 		return agentInstaller.Upgrade(fts.currentContext, desiredVersion)
 	*/
 
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 	return fts.kibanaClient.UpgradeAgent(fts.currentContext, manifest.Hostname, desiredVersion)
 }
 

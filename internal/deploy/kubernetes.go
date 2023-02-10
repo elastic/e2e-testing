@@ -40,7 +40,7 @@ func (c *kubernetesDeploymentManifest) Add(ctx context.Context, profile ServiceR
 	kubectl = cluster.Kubectl().WithNamespace(ctx, getNamespaceFromProfile(profile))
 
 	for _, service := range services {
-		_, err := kubectl.Run(ctx, "apply", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service.Name))
+		_, err := kubectl.Run(ctx, "apply", "-k", fmt.Sprintf("../../../internal/config/kubernetes/overlays/%s", service.Name))
 		if err != nil {
 			return err
 		}
@@ -58,11 +58,11 @@ func (c *kubernetesDeploymentManifest) AddFiles(ctx context.Context, profile Ser
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
-	container, _ := c.Inspect(ctx, service)
+	manifest, _ := c.GetServiceManifest(ctx, service)
 	kubectl = cluster.Kubectl().WithNamespace(ctx, getNamespaceFromProfile(profile))
 
 	for _, file := range files {
-		_, err := kubectl.Run(ctx, "cp", file, fmt.Sprintf("deployment/%s:.", container.Name))
+		_, err := kubectl.Run(ctx, "cp", file, fmt.Sprintf("deployment/%s:.", manifest.Name))
 		if err != nil {
 			log.WithField("error", err).Fatal("Unable to copy file to service")
 		}
@@ -77,14 +77,14 @@ func (c *kubernetesDeploymentManifest) Bootstrap(ctx context.Context, profile Se
 	})
 	defer span.End()
 
-	err := cluster.Initialize(ctx, "../../../cli/config/kubernetes/kind.yaml")
+	err := cluster.Initialize(ctx, "../../../internal/config/kubernetes/kind.yaml")
 	if err != nil {
 		return err
 	}
 
 	// TODO: we would need to understand how to pass the environment argument to anything running in the namespace
 	kubectl = cluster.Kubectl().WithNamespace(ctx, getNamespaceFromProfile(profile))
-	_, err = kubectl.Run(ctx, "apply", "-k", "../../../cli/config/kubernetes/base")
+	_, err = kubectl.Run(ctx, "apply", "-k", "../../../internal/config/kubernetes/base")
 	if err != nil {
 		return err
 	}
@@ -136,8 +136,8 @@ type kubernetesServiceManifest struct {
 	} `json:"metadata"`
 }
 
-// Inspect inspects a service
-func (c *kubernetesDeploymentManifest) Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
+// GetServiceManifest inspects a service
+func (c *kubernetesDeploymentManifest) GetServiceManifest(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Inspecting kubernetes deployment", "kubernetes.manifest.inspect", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -153,14 +153,26 @@ func (c *kubernetesDeploymentManifest) Inspect(ctx context.Context, service Serv
 	if err = json.Unmarshal([]byte(out), &inspect); err != nil {
 		return &ServiceManifest{}, errors.Wrap(err, "Could not convert metadata to JSON")
 	}
-	return &ServiceManifest{
+
+	sm := &ServiceManifest{
 		ID:         inspect.Metadata.ID,
 		Name:       strings.TrimPrefix(inspect.Metadata.Name, "/"),
 		Connection: service.Name,
 		Hostname:   service.Name,
 		Alias:      service.Name,
 		Platform:   "linux",
-	}, nil
+	}
+
+	log.WithFields(log.Fields{
+		"alias":      sm.Alias,
+		"connection": sm.Connection,
+		"hostname":   sm.Hostname,
+		"ID":         sm.ID,
+		"name":       sm.Name,
+		"platform":   sm.Platform,
+	}).Trace("Service Manifest found")
+
+	return sm, nil
 }
 
 // Logs print logs of service
@@ -172,7 +184,7 @@ func (c *kubernetesDeploymentManifest) Logs(ctx context.Context, service Service
 	defer span.End()
 
 	kubectl = cluster.Kubectl().WithNamespace(ctx, "default")
-	_, err := kubectl.Run(ctx, "logs", "deployment/"+service.Name)
+	logs, err := kubectl.Run(ctx, "logs", "deployment/"+service.Name)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -181,6 +193,8 @@ func (c *kubernetesDeploymentManifest) Logs(ctx context.Context, service Service
 
 		return err
 	}
+	// print logs as is, including tabs and line breaks
+	fmt.Println(logs)
 	return nil
 }
 
@@ -201,7 +215,7 @@ func (c *kubernetesDeploymentManifest) Remove(ctx context.Context, profile Servi
 	kubectl = cluster.Kubectl().WithNamespace(c.Context, getNamespaceFromProfile(profile))
 
 	for _, service := range services {
-		_, err := kubectl.Run(c.Context, "delete", "-k", fmt.Sprintf("../../../cli/config/kubernetes/overlays/%s", service.Name))
+		_, err := kubectl.Run(c.Context, "delete", "-k", fmt.Sprintf("../../../internal/config/kubernetes/overlays/%s", service.Name))
 		if err != nil {
 			return err
 		}

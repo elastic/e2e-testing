@@ -31,6 +31,8 @@
         default-ulimit: ["nofile=1024000:1024000"]
       docker_users:
         - "{{ ansible_user }}"
+    - role: geerlingguy.pip
+      become: True
     - role: andrewrothstein.kubectl
     - role: andrewrothstein.kind
     - role: mdelapenya.go
@@ -105,6 +107,15 @@
       when: 
         - ansible_facts['os_family'] != "Windows"
         - ansible_pkg_mgr == 'apt'
+    - name: Install deps
+      include_tasks: tasks/install_deps.yml
+      tags:
+        - setup-node
+    - name: Upgrade pip (CentOS)
+      become: True
+      ansible.builtin.shell: python3 -m pip install --upgrade pip
+      when:
+        - ansible_distribution in ["CentOS", "Debian", "Ubuntu"]        
   roles:
     - role: geerlingguy.docker
       become: True
@@ -115,11 +126,19 @@
       when:
         - '"arm64" not in nodeLabel'
         - 'ansible_os_family not in ["Suse", "Windows"]'
+    - role: geerlingguy.docker_arm
+      become: True
+      docker_daemon_options:
+        default-ulimit: ["nofile=1024000:1024000"]
+      docker_users:
+        - "{{ ansible_user }}"
+      when:
+        - '"arm64" in nodeLabel'
     - role: geerlingguy.helm
       when:
         - ansible_facts['os_family'] != "Windows"
         - suite is defined
-        - suite in ["kubernetes-autodiscover", "helm"]
+        - suite in ["kubernetes-autodiscover"]
     - role: mdelapenya.go
       become: True
       when: ansible_facts['os_family'] != "Windows"
@@ -148,12 +167,7 @@
     when:
       - ansible_facts['os_family'] != "Windows"
       - suite is defined
-      - suite in ["kubernetes-autodiscover", "helm"]
-
-  - name: Install deps
-    include_tasks: tasks/install_deps.yml
-    tags:
-      - setup-node
+      - suite in ["kubernetes-autodiscover"]
 
   - name: Setup source code
     include_tasks: tasks/copy_test_files.yml

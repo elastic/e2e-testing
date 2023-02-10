@@ -78,14 +78,14 @@ func (c *dockerDeploymentManifest) AddFiles(ctx context.Context, profile Service
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
-	container, _ := c.Inspect(ctx, service)
+	manifest, _ := c.GetServiceManifest(ctx, service)
 	for _, file := range files {
 		isTar := true
 		fileExt := filepath.Ext(file)
 		if fileExt == ".rpm" || fileExt == ".deb" {
 			isTar = false
 		}
-		err := CopyFileToContainer(c.Context, container.Name, file, "/", isTar)
+		err := CopyFileToContainer(c.Context, manifest.Name, file, "/", isTar)
 		if err != nil {
 			log.WithField("error", err).Fatal("Unable to copy file to service")
 		}
@@ -123,8 +123,8 @@ func (c *dockerDeploymentManifest) ExecIn(ctx context.Context, profile ServiceRe
 	span.Context.SetLabel("arguments", cmd)
 	defer span.End()
 
-	inspect, _ := c.Inspect(ctx, service)
-	args := []string{"exec", "-u", "root", "-i", inspect.Name}
+	manifest, _ := c.GetServiceManifest(ctx, service)
+	args := []string{"exec", "-u", "root", "-i", manifest.Name}
 	args = append(args, cmd...)
 
 	output, err := shell.Execute(ctx, ".", "docker", args...)
@@ -134,8 +134,8 @@ func (c *dockerDeploymentManifest) ExecIn(ctx context.Context, profile ServiceRe
 	return output, nil
 }
 
-// Inspect inspects a service
-func (c *dockerDeploymentManifest) Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
+// GetServiceManifest inspects a service
+func (c *dockerDeploymentManifest) GetServiceManifest(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Inspecting compose deployment", "docker-compose.manifest.inspect", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -147,14 +147,25 @@ func (c *dockerDeploymentManifest) Inspect(ctx context.Context, service ServiceR
 		return &ServiceManifest{}, err
 	}
 
-	return &ServiceManifest{
+	sm := &ServiceManifest{
 		ID:         inspect.ID,
 		Name:       strings.TrimPrefix(inspect.Name, "/"),
 		Connection: service.Name,
 		Alias:      inspect.NetworkSettings.Networks["fleet_default"].Aliases[0],
 		Hostname:   inspect.Config.Hostname,
 		Platform:   inspect.Platform,
-	}, nil
+	}
+
+	log.WithFields(log.Fields{
+		"alias":      sm.Alias,
+		"connection": sm.Connection,
+		"hostname":   sm.Hostname,
+		"ID":         sm.ID,
+		"name":       sm.Name,
+		"platform":   sm.Platform,
+	}).Trace("Service Manifest found")
+
+	return sm, nil
 }
 
 // Logs print logs of service
@@ -165,8 +176,8 @@ func (c *dockerDeploymentManifest) Logs(ctx context.Context, service ServiceRequ
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
-	manifest, _ := c.Inspect(ctx, service)
-	_, err := shell.Execute(ctx, ".", "docker", "logs", manifest.Name)
+	manifest, _ := c.GetServiceManifest(ctx, service)
+	logs, err := shell.Execute(ctx, ".", "docker", "logs", manifest.Name)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -175,6 +186,8 @@ func (c *dockerDeploymentManifest) Logs(ctx context.Context, service ServiceRequ
 
 		return err
 	}
+	// print logs as is, including tabs and line breaks
+	fmt.Println(logs)
 	return nil
 }
 
@@ -234,7 +247,7 @@ func (c *dockerDeploymentManifest) Remove(ctx context.Context, profile ServiceRe
 
 	// TODO: profile is not used because we are using the docker client, not docker-compose, to reach the service
 	for _, service := range services {
-		manifest, inspectErr := c.Inspect(context.Background(), service)
+		manifest, inspectErr := c.GetServiceManifest(context.Background(), service)
 		if inspectErr != nil {
 			log.Warnf("Service %s could not be deleted: %v", service.Name, inspectErr)
 			continue
@@ -256,7 +269,7 @@ func (c *dockerDeploymentManifest) Start(ctx context.Context, service ServiceReq
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
-	manifest, _ := c.Inspect(context.Background(), service)
+	manifest, _ := c.GetServiceManifest(context.Background(), service)
 	_, err := shell.Execute(ctx, ".", "docker", "start", manifest.Name)
 	return err
 }
@@ -269,7 +282,7 @@ func (c *dockerDeploymentManifest) Stop(ctx context.Context, service ServiceRequ
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
-	manifest, _ := c.Inspect(context.Background(), service)
+	manifest, _ := c.GetServiceManifest(context.Background(), service)
 	_, err := shell.Execute(c.Context, ".", "docker", "stop", manifest.Name)
 	return err
 }

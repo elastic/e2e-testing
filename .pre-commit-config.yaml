@@ -9,7 +9,7 @@ repos:
     -   id: check-merge-conflict
     -   id: check-yaml
         exclude: >
-          (?x)^(cli/config/kubernetes.*)$
+          (?x)^(internal/config/kubernetes.*)$
     -   id: check-xml
     -   id: end-of-file-fixer
         exclude: >
@@ -52,7 +52,6 @@ repos:
             (?x)^(
                 .*/?\.*.(tar.gz)
             )$
-    -   id: check-jjbb
     -   id: check-gherkin-lint
         args: [
             "--disable", "AvoidOutlineForSingleExample,TooClumsy,TooManyTags,TooLongStep,TooManyDifferentTags,TooManySteps,UseBackground",

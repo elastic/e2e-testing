@@ -45,16 +45,21 @@
       regexp: '{{ item.old }}'
       replace: '{{ item.new }}'
     loop:
-      - { old: 'http://elasticsearch', new: 'http://{{ inventory_hostname }}', path: "{{ e2e_base_dir }}cli/config/compose/profiles/fleet/default/kibana.config.yml" }
-      - { old: 'http://fleet-server', new: 'http://{{ inventory_hostname }}', path: "{{ e2e_base_dir }}cli/config/compose/profiles/fleet/default/kibana.config.yml" }
-      - { old: 'http://kibana', new: 'http://{{ inventory_hostname }}', path: "{{ e2e_base_dir }}cli/config/compose/services/elastic-agent/fleet-server/docker-compose.yml" }
-      - { old: 'http://package-registry:8080', new: 'https://epr-staging.elastic.co', path: "{{ e2e_base_dir }}cli/config/compose/profiles/fleet/default/kibana.config.yml" }
+      - { old: 'http://elasticsearch', new: 'http://{{ inventory_hostname }}', path: "{{ e2e_base_dir }}internal/config/compose/profiles/fleet/default/kibana.config.yml" }
+      - { old: 'http://fleet-server', new: 'http://{{ inventory_hostname }}', path: "{{ e2e_base_dir }}internal/config/compose/profiles/fleet/default/kibana.config.yml" }
+      - { old: 'http://kibana', new: 'http://{{ inventory_hostname }}', path: "{{ e2e_base_dir }}internal/config/compose/services/elastic-agent/fleet-server/docker-compose.yml" }
+      - { old: 'http://package-registry:8080', new: 'https://epr.elastic.co', path: "{{ e2e_base_dir }}internal/config/compose/profiles/fleet/default/kibana.config.yml" }
 
   - name: Start stack without any tag to spin up the stack using Fleet's bootstrapping code
     become: True
     ansible.builtin.shell:
     args:
       cmd: "TAGS='non-existing-tag' {{ e2e_base_dir }}.ci/scripts/functional-test.sh"
+    register: _result
+    # FIXME workaround to avoid fail when the token expires
+    retries: 2
+    delay: 10
+    until: _result is succeeded
 
   - name: Wait for the stack to come up
     wait_for: host={{ inventory_hostname }} port={{ item.port }} delay=10 timeout=60

@@ -18,9 +18,9 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"github.com/docker/go-connections/nat"
-	"github.com/elastic/e2e-testing/cli/config"
 	apme2e "github.com/elastic/e2e-testing/internal"
 	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/config"
 	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/elasticsearch"
 	"github.com/elastic/e2e-testing/internal/installer"
@@ -65,6 +65,20 @@ func afterScenario(fts *FleetTestSuite) {
 			// exposed as container logs. For that reason we need to go through the installer abstraction
 			agentInstaller, _ := installer.Attach(fts.currentContext, fts.getDeployer(), agentService, fts.InstallerType)
 
+			logsPath, _ := filepath.Abs(filepath.Join("..", "..", "..", "outputs", serviceName+uuid.New().String()+".tgz"))
+			_, err := shell.Execute(fts.currentContext, ".", "tar", "czf", logsPath, "--exclude", "*/components/*", "--exclude", "*/tmp/*", "--exclude", "*/downloads/*", "--exclude", "*/install/*", "--exclude", "/opt/Elastic/Agent/data/elastic-agent-*/elastic-agent", "/opt/Elastic/Agent/data")
+			if err != nil {
+				log.WithFields(log.Fields{
+					"serviceName": serviceName,
+					"path":        logsPath,
+				}).Warn("Failed to collect logs")
+			} else {
+				log.WithFields(log.Fields{
+					"serviceName": serviceName,
+					"path":        logsPath,
+				}).Info("Logs collected")
+			}
+
 			if log.IsLevelEnabled(log.DebugLevel) {
 				err := agentInstaller.Logs(fts.currentContext)
 				if err != nil {
@@ -85,7 +99,7 @@ func afterScenario(fts *FleetTestSuite) {
 
 		err := fts.unenrollHostname()
 		if err != nil {
-			manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+			manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 			log.WithFields(log.Fields{
 				"err":      err,
 				"hostname": manifest.Hostname,
@@ -243,6 +257,14 @@ func bootstrapFleet(ctx context.Context, env map[string]string) error {
 			log.WithFields(log.Fields{
 				"error": err,
 			}).Fatal("Elasticsearch Cluster is not healthy")
+		}
+
+		_, err = kibanaClient.WaitForReady(ctx, 10*time.Minute)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"env":   env,
+			}).Fatal("Kibana is not healthy")
 		}
 
 		err = kibanaClient.RecreateFleet(ctx)
@@ -425,7 +447,7 @@ func InitializeFleetTestScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer$`, fts.anAgentIsDeployedToFleetWithInstaller)
 	ctx.Step(`^an agent is deployed to Fleet with "([^"]*)" installer and "([^"]*)" flags$`, fts.anAgentIsDeployedToFleetWithInstallerAndTags)
 	ctx.Step(`^the agent is listed in Fleet as "([^"]*)"$`, fts.theAgentIsListedInFleetWithStatus)
-	ctx.Step(`^the default API key has "([^"]*)"$`, fts.verifyDefaultAPIKey)
+	ctx.Step(`^the output permissions has "([^"]*)"$`, fts.verifyPermissionHashStatus)
 	ctx.Step(`^the host is restarted$`, fts.theHostIsRestarted)
 	ctx.Step(`^system package dashboards are listed in Fleet$`, fts.systemPackageDashboardsAreListedInFleet)
 	ctx.Step(`^the agent is un-enrolled$`, fts.theAgentIsUnenrolled)

@@ -1,0 +1,27 @@
+version: '2.4'
+services:
+  fleet-server:
+    image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.7.0-1ef3b708-SNAPSHOT}"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
+    environment:
+      - "ELASTICSEARCH_USERNAME=admin"
+      - "ELASTICSEARCH_PASSWORD=changeme"
+      - "FLEET_SERVER_ENABLE=${fleetServerMode:-0}"
+      - "FLEET_SERVER_HOST=0.0.0.0"
+      - "FLEET_SERVER_INSECURE_HTTP=${fleetServerMode:-0}"
+      - "FLEET_SERVER_PORT=${fleetServerPort:-8220}"
+      - "FLEET_SERVER_SERVICE_TOKEN=${fleetServerServiceToken:-}"
+      - "FLEET_SERVER_POLICY_ID=${fleetServerPolicyId:-}"
+      - "FLEET_ENROLL=${fleetEnroll:-1}"
+      - "FLEET_ENROLLMENT_TOKEN=${fleetEnrollmentToken:-}"
+      - "FLEET_INSECURE=${fleetInsecure:-0}"
+      - "FLEET_URL=${fleetUrl:-}"
+      - "KIBANA_FLEET_HOST=http://kibana:5601"
+      - "KIBANA_FLEET_SETUP=${fleetServerMode:-0}"
+    platform: ${stackPlatform:-linux/amd64}
+    ports:
+      - "${fleetServerPort:-8220}:8220"

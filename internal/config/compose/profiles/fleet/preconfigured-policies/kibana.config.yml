@@ -1,0 +1,45 @@
+---
+server.name: kibana
+server.host: "0.0.0.0"
+
+telemetry.enabled: false
+
+elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+elasticsearch.username: admin
+elasticsearch.password: changeme
+xpack.monitoring.ui.container.elasticsearch.enabled: true
+
+xpack.fleet.registryUrl: "https://epr.elastic.co"
+xpack.fleet.agents.enabled: true
+xpack.fleet.agents.elasticsearch.host: "http://elasticsearch:9200"
+xpack.fleet.agents.fleet_server.hosts: ["http://fleet-server:8220"]
+
+xpack.encryptedSavedObjects.encryptionKey: "12345678901234567890123456789012"
+xpack.fleet.agents.tlsCheckDisabled: true
+
+xpack.fleet.outputs:
+  - name: "Test output"
+    type: "elasticsearch"
+    id: "output-123"
+    hosts: ["http://elasticsearch:9200"]
+xpack.fleet.packages:
+  - name: fleet_server
+    version: latest
+xpack.fleet.agentPolicies:
+  - name: Test preconfigured policy
+    id: "test-preconfigured"
+    data_output_id: output-123
+    monitoring_output_id: output-123
+    monitoring_enabled: ["logs", "metrics"]
+    package_policies:
+      - package:
+          name: system
+        name: sytem-1
+  - name: Fleet Server policy
+    id: fleet-server-policy
+    description: Fleet server policy
+    namespace: default
+    package_policies:
+      - name: Fleet Server
+        package:
+          name: fleet_server

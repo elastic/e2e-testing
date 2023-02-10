@@ -1,0 +1,22 @@
+version: '2.4'
+services:
+  metricbeat:
+    command: [
+      "metricbeat", "-e",
+      "-E", "logging.level=${logLevel}",
+      "-E", "setup.ilm.rollover_alias=${indexName}",
+      "-E", "output.elasticsearch.hosts=${ELASTICSEARCH_URL:-http://elasticsearch:9200}",
+      "-E", "output.elasticsearch.password=changeme",
+      "-E", "output.elasticsearch.username=elastic",
+      "-E", "setup.kibana.host=${KIBANA_URL:-http://kibana:5601}",
+      "-E", "setup.kibana.password=changeme",
+      "-E", "setup.kibana.username=elastic",
+    ]
+    environment:
+      - BEAT_STRICT_PERMS=${beatStricPerms:-false}
+    image: "docker.elastic.co/${metricbeatDockerNamespace:-beats}/metricbeat:${metricbeatTag:-8.7.0-1ef3b708-SNAPSHOT}"
+    labels:
+      co.elastic.logs/module: "${serviceName}"
+    platform: ${stackPlatform:-linux/amd64}
+    volumes:
+      - "${metricbeatConfigFile}:/usr/share/metricbeat/metricbeat.yml"

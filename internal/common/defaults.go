@@ -7,7 +7,7 @@ package common
 import (
 	"path/filepath"
 
-	"github.com/elastic/e2e-testing/cli/config"
+	"github.com/elastic/e2e-testing/internal/config"
 	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/pkg/downloads"
@@ -36,7 +36,7 @@ const FleetProfileName = "fleet"
 const FleetServerAgentServiceName = "fleet-server"
 
 // BeatVersionBase is the base version of the Beat to use
-var BeatVersionBase = "8.4.0-d058e92f-SNAPSHOT"
+var BeatVersionBase = "8.7.0-1ef3b708-SNAPSHOT"
 
 // BeatVersion is the version of the Beat to use
 // It can be overriden by BEAT_VERSION env var
@@ -72,7 +72,13 @@ func init() {
 	config.Init()
 
 	elasticAgentWorkingDir = filepath.Join(config.OpDir(), ElasticAgentServiceName)
-	io.MkdirAll(elasticAgentWorkingDir)
+	err := io.MkdirAll(elasticAgentWorkingDir)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"path":  elasticAgentWorkingDir,
+		}).Fatal("Could not create working directory for Elastic Agent")
+	}
 
 	DeveloperMode = shell.GetEnvBool("DEVELOPER_MODE")
 	if DeveloperMode {
@@ -98,8 +104,13 @@ func GetElasticAgentWorkingPath(paths ...string) string {
 	p := filepath.Join(elements...)
 
 	// create dirs up to the last parent
-	io.MkdirAll(filepath.Dir(p))
-
+	err := io.MkdirAll(filepath.Dir(p))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"path":  filepath.Dir(p),
+		}).Fatal("Could not create working directory for Elastic Agent")
+	}
 	return p
 }
 

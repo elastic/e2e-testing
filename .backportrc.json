@@ -7,8 +7,8 @@
     "multipleCommits": true,
     "prTitle": "{commitMessages} backport for {targetBranch}",
     "targetBranchChoices": [
-        { "name": "8.2", "checked": true },
-        { "name": "8.1", "checked": true },
+        { "name": "8.4", "checked": true },
+        { "name": "8.3", "checked": true },
         { "name": "7.17", "checked": true }
     ],
     "targetPRLabels": ["backport"],

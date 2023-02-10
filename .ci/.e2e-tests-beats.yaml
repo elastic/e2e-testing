@@ -1,34 +1,32 @@
 ---
 SUITES:
-  - suite: "helm"
-    provider: "docker"
-    scenarios:
-      - name: "Filebeat"
-        tags: "filebeat"
-        platforms: ["debian_10_amd64"]
-      - name: "Metricbeat"
-        tags: "metricbeat"
-        platforms: ["debian_10_amd64"]
   - suite: "fleet"
     scenarios:
       - name: "Fleet"
         tags: "fleet_mode"
-        platforms: ["centos8_arm64", "centos8_amd64", "debian_10_arm64", "debian_10_amd64", "sles15"]
-      - name: "Integrations"
-        tags: "integrations"
-        platforms: ["debian_11_amd64"]
-      - name: "APM Integration"
-        tags: "apm_server"
-        platforms: ["debian_10_amd64"]
-      - name: "Linux Integration"
-        tags: "linux_integration"
-        platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
-      - name: "Backend Processes"
-        tags: "backend_processes"
-        platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
-      - name: "Beats Background Processes"
-        tags: "running_on_beats"
-        platforms: ["debian_10_arm64", "debian_10_amd64", "oracle_linux8", "sles15"]
+        platforms: ["ubuntu_22_04_amd64"]
+        # platforms: ["centos8_arm64", "centos8_amd64", "debian_10_arm64", "debian_10_amd64", "sles15"]
+      # - name: "Integrations"
+      #   tags: "integrations"
+      #   platforms: ["debian_11_amd64"]
+      # - name: "APM Integration"
+      #   tags: "apm_server"
+      #   platforms: ["debian_10_amd64"]
+      # - name: "Linux Integration"
+      #   tags: "linux_integration"
+      #   platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
+      # - name: "Permissions Output change"
+      #   tags: "permission_change"
+      #   platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
+      # - name: "Backend Processes"
+      #   tags: "backend_processes"
+      #   platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
+      # - name: "Beats Background Processes"
+      #   tags: "running_on_beats"
+      #   platforms: ["debian_10_arm64", "debian_10_amd64", "oracle_linux8", "sles15"]
+      - name: "Upgrade Agent"
+        tags: "upgrade_agent"
+        platforms: ["ubuntu_22_04_amd64"]
   - suite: "kubernetes-autodiscover"
     provider: "docker"
     scenarios:

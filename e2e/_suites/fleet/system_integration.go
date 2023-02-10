@@ -15,24 +15,12 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cucumber/godog"
-	"github.com/elastic/e2e-testing/internal/common"
-	"github.com/elastic/e2e-testing/internal/deploy"
 	"github.com/elastic/e2e-testing/internal/kibana"
 	"github.com/elastic/e2e-testing/internal/utils"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
-
-func (fts *FleetTestSuite) getAgentOSData() (string, error) {
-	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
-	agent, err := fts.kibanaClient.GetAgentByHostnameFromList(fts.currentContext, manifest.Hostname)
-	if err != nil {
-		return "", err
-	}
-	return agent.LocalMetadata.OS.Platform, nil
-}
 
 func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) error {
 	timeNow := time.Now()
@@ -42,8 +30,6 @@ func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) er
 	retryCount := 1
 
 	exp := utils.GetExponentialBackOff(maxTimeout)
-
-	os, _ := fts.getAgentOSData()
 
 	waitForDataStreams := func() error {
 		dataStreams, _ := fts.kibanaClient.GetDataStreams(fts.currentContext)
@@ -56,7 +42,6 @@ func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) er
 					"enabled":     "true",
 					"retries":     retryCount,
 					"type":        name,
-					"os":          os,
 				}).Info("The " + name + " with value system." + set + " in the metrics")
 
 				if int64(int64(item.Path("last_activity_ms").Data().(float64))) > startTime {
@@ -65,7 +50,6 @@ func (fts *FleetTestSuite) theMetricsInTheDataStream(name string, set string) er
 						"last_activity_ms": item.Path("last_activity_ms").Data().(float64),
 						"retries":          retryCount,
 						"startTime":        startTime,
-						"os":               os,
 					}).Info("The " + name + " with value system." + set + " in the metrics")
 				}
 
@@ -140,8 +124,6 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		return godog.ErrPending
 	}
 
-	os, _ := fts.getAgentOSData()
-
 	fts.Integration = packageDS.Package
 
 	log.WithFields(log.Fields{
@@ -169,7 +151,6 @@ func (fts *FleetTestSuite) thePolicyIsUpdatedToHaveSystemSet(name string, set st
 		"dataset": metrics + "." + set,
 		"enabled": "true",
 		"type":    "metrics",
-		"os":      os,
 	}).Info("Policy Updated with package name " + metrics + "." + set)
 
 	return nil

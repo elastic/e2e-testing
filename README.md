@@ -7,10 +7,6 @@ This repository contains:
 1. A [CI Infrastructure](./.ci/README.md) to provision VMs where the tests will be executed at CI time.
 2. A [Go library](./cli/README.md) to provision services in the way of Docker containers. It will provide the services using Docker Compose files.
 3. A [test framework](./e2e/README.md) to execute e2e tests for certain Observability projects:
-    - [Observability Helm charts](./e2e/_suites/helm):
-        - APM Server
-        - Filebeat
-        - Metricbeat
     - [Kubernetes Autodiscover](./e2e/_suites/kubernetes-autodiscover)
     - [Fleet](./e2e/_suites/fleet)
         - Stand-Alone mode
@@ -134,3 +130,7 @@ We have received contributions from multiple teams in different aspects of the e
   - Julien Lind, from Fleet, has helped in defining the support matrix in terms of what OSs and architectures need to be run for Fleet test suite.
   - Julien Mailleret, from Infra, has contributed to the Helm charts test suite.
   - Anderson Queiroz (Elastic Agent) and Víctor Martínez (Observability Robots), are currently working on the MacOS support for running the tests on real Apple machines using Elastic's Orka provisioner.
+
+## Licensing
+
+This project is licensed under the Elastic License: https://www.elastic.co/licensing/elastic-license

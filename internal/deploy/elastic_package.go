@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/elastic/e2e-testing/cli/config"
 	"github.com/elastic/e2e-testing/internal/common"
+	"github.com/elastic/e2e-testing/internal/config"
 	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/google/uuid"
@@ -176,14 +176,14 @@ func (ep *EPServiceManager) AddFiles(ctx context.Context, profile ServiceRequest
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
-	container, _ := ep.Inspect(ctx, service)
+	manifest, _ := ep.GetServiceManifest(ctx, service)
 	for _, file := range files {
 		isTar := true
 		fileExt := filepath.Ext(file)
 		if fileExt == ".rpm" || fileExt == ".deb" {
 			isTar = false
 		}
-		err := CopyFileToContainer(ctx, container.Name, file, "/", isTar)
+		err := CopyFileToContainer(ctx, manifest.Name, file, "/", isTar)
 		if err != nil {
 			log.WithField("error", err).Fatal("Unable to copy file to service")
 		}
@@ -221,9 +221,9 @@ func (ep *EPServiceManager) ExecIn(ctx context.Context, profile ServiceRequest, 
 		return "", fmt.Errorf("profile %s not supported in elastic-package provisioner. Service: %v", profile.Name, service)
 	}
 
-	inspect, _ := ep.Inspect(ctx, service)
+	manifest, _ := ep.GetServiceManifest(ctx, service)
 
-	args := []string{"exec", "-u", "root", "-i", inspect.Name}
+	args := []string{"exec", "-u", "root", "-i", manifest.Name}
 	args = append(args, cmd...)
 
 	output, err := shell.Execute(ctx, ".", "docker", args...)
@@ -233,8 +233,8 @@ func (ep *EPServiceManager) ExecIn(ctx context.Context, profile ServiceRequest, 
 	return output, nil
 }
 
-// Inspect inspects a service
-func (ep *EPServiceManager) Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
+// GetServiceManifest inspects a service
+func (ep *EPServiceManager) GetServiceManifest(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
 	span, _ := apm.StartSpanOptions(ctx, "Inspecting Elastic Package deployment", "elastic-package.manifest.inspect", apm.SpanOptions{
 		Parent: apm.SpanFromContext(ctx).TraceContext(),
 	})
@@ -246,14 +246,25 @@ func (ep *EPServiceManager) Inspect(ctx context.Context, service ServiceRequest)
 		return &ServiceManifest{}, err
 	}
 
-	return &ServiceManifest{
+	sm := &ServiceManifest{
 		ID:         inspect.ID,
 		Name:       strings.TrimPrefix(inspect.Name, "/"),
 		Connection: service.Name,
 		Alias:      inspect.NetworkSettings.Networks["elastic-package-stack_default"].Aliases[0],
 		Hostname:   inspect.Config.Hostname,
 		Platform:   inspect.Platform,
-	}, nil
+	}
+
+	log.WithFields(log.Fields{
+		"alias":      sm.Alias,
+		"connection": sm.Connection,
+		"hostname":   sm.Hostname,
+		"ID":         sm.ID,
+		"name":       sm.Name,
+		"platform":   sm.Platform,
+	}).Trace("Service Manifest found")
+
+	return sm, nil
 }
 
 // Logs print logs of service
@@ -264,8 +275,8 @@ func (ep *EPServiceManager) Logs(ctx context.Context, service ServiceRequest) er
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
-	manifest, _ := ep.Inspect(context.Background(), service)
-	_, err := shell.Execute(ep.Context, ".", "docker", "logs", manifest.Name)
+	manifest, _ := ep.GetServiceManifest(context.Background(), service)
+	logs, err := shell.Execute(ep.Context, ".", "docker", "logs", manifest.Name)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -274,6 +285,8 @@ func (ep *EPServiceManager) Logs(ctx context.Context, service ServiceRequest) er
 
 		return err
 	}
+	// print logs as is, including tabs and line breaks
+	fmt.Println(logs)
 	return nil
 }
 
@@ -301,7 +314,7 @@ func (ep *EPServiceManager) Remove(ctx context.Context, profile ServiceRequest, 
 	}
 
 	for _, service := range services {
-		manifest, inspectErr := ep.Inspect(context.Background(), service)
+		manifest, inspectErr := ep.GetServiceManifest(context.Background(), service)
 		if inspectErr != nil {
 			log.Warnf("Service %s could not be deleted: %v", service.Name, inspectErr)
 			continue
@@ -323,7 +336,7 @@ func (ep *EPServiceManager) Start(ctx context.Context, service ServiceRequest) e
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
-	manifest, _ := ep.Inspect(context.Background(), service)
+	manifest, _ := ep.GetServiceManifest(context.Background(), service)
 	_, err := shell.Execute(ep.Context, ".", "docker", "start", manifest.Name)
 	return err
 }
@@ -336,7 +349,7 @@ func (ep *EPServiceManager) Stop(ctx context.Context, service ServiceRequest) er
 	span.Context.SetLabel("service", service)
 	defer span.End()
 
-	manifest, _ := ep.Inspect(context.Background(), service)
+	manifest, _ := ep.GetServiceManifest(context.Background(), service)
 	_, err := shell.Execute(ep.Context, ".", "docker", "stop", manifest.Name)
 	return err
 }

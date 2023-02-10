@@ -38,10 +38,10 @@ func (c *Client) CreateEnrollmentAPIKey(ctx context.Context, policy Policy) (Enr
 	reqBody := `{"policy_id": "` + policy.ID + `"}`
 	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/enrollment_api_keys", FleetAPI), []byte(reqBody))
 	if statusCode != 200 {
-		jsonParsed, err := gabs.ParseJSON([]byte(respBody))
+		jsonParsed, err := gabs.ParseJSON(respBody)
 		log.WithFields(log.Fields{
 			"body":       jsonParsed,
-			"reqBody":    reqBody,
+			"reqBody":    string(reqBody),
 			"error":      err,
 			"statusCode": statusCode,
 		}).Error("Could not create enrollment api key")
@@ -76,7 +76,7 @@ func (c *Client) CreateServiceToken(ctx context.Context) (ServiceToken, error) {
 	reqBody := `{}`
 	statusCode, respBody, _ := c.post(ctx, fmt.Sprintf("%s/service_tokens", FleetAPI), []byte(reqBody))
 	if statusCode != 200 {
-		jsonParsed, err := gabs.ParseJSON([]byte(respBody))
+		jsonParsed, err := gabs.ParseJSON(respBody)
 		log.WithFields(log.Fields{
 			"body":       jsonParsed,
 			"reqBody":    reqBody,
@@ -107,7 +107,7 @@ func (c *Client) DeleteEnrollmentAPIKey(ctx context.Context, enrollmentID string
 
 	if err != nil {
 		log.WithFields(log.Fields{
-			"body":  respBody,
+			"body":  string(respBody),
 			"error": err,
 		}).Error("Could not delete enrollment key")
 		return err
@@ -115,7 +115,7 @@ func (c *Client) DeleteEnrollmentAPIKey(ctx context.Context, enrollmentID string
 
 	if statusCode != 200 {
 		log.WithFields(log.Fields{
-			"body":       respBody,
+			"body":       string(respBody),
 			"error":      err,
 			"statusCode": statusCode,
 		}).Error("Could not delete enrollment key")
@@ -136,7 +136,7 @@ func (c *Client) GetDataStreams(ctx context.Context) (*gabs.Container, error) {
 
 	if err != nil {
 		log.WithFields(log.Fields{
-			"body":  respBody,
+			"body":  string(respBody),
 			"error": err,
 		}).Error("Could not get Fleet data streams")
 		return &gabs.Container{}, err
@@ -144,7 +144,7 @@ func (c *Client) GetDataStreams(ctx context.Context) (*gabs.Container, error) {
 
 	if statusCode != 200 {
 		log.WithFields(log.Fields{
-			"body":       respBody,
+			"body":       string(respBody),
 			"error":      err,
 			"statusCode": statusCode,
 		}).Error("Could not get Fleet data streams api")
@@ -152,7 +152,7 @@ func (c *Client) GetDataStreams(ctx context.Context) (*gabs.Container, error) {
 		return &gabs.Container{}, err
 	}
 
-	jsonParsed, err := gabs.ParseJSON([]byte(respBody))
+	jsonParsed, err := gabs.ParseJSON(respBody)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":        err,
@@ -182,7 +182,7 @@ func (c *Client) ListEnrollmentAPIKeys(ctx context.Context) ([]EnrollmentAPIKey,
 
 	if err != nil {
 		log.WithFields(log.Fields{
-			"body":  respBody,
+			"body":  string(respBody),
 			"error": err,
 		}).Error("Could not get Integration package")
 		return []EnrollmentAPIKey{}, err
@@ -190,7 +190,7 @@ func (c *Client) ListEnrollmentAPIKeys(ctx context.Context) ([]EnrollmentAPIKey,
 
 	if statusCode != 200 {
 		log.WithFields(log.Fields{
-			"body":       respBody,
+			"body":       string(respBody),
 			"error":      err,
 			"statusCode": statusCode,
 		}).Error("Could not get enrollment apis")
@@ -222,14 +222,14 @@ func (c *Client) RecreateFleet(ctx context.Context) error {
 		statusCode, respBody, err := c.post(ctx, fmt.Sprintf("%s/setup", FleetAPI), []byte(reqBody))
 		if err != nil {
 			log.WithFields(log.Fields{
-				"body":       respBody,
+				"body":       string(respBody),
 				"error":      err,
 				"statusCode": statusCode,
 			}).Error("Could not initialise Fleet setup")
 			return err
 		}
 
-		jsonResponse, err := gabs.ParseJSON([]byte(respBody))
+		jsonResponse, err := gabs.ParseJSON(respBody)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"body":       jsonResponse,
@@ -274,7 +274,7 @@ func (c *Client) WaitForFleet(ctx context.Context) error {
 		statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/agents/setup", FleetAPI))
 		if err != nil {
 			log.WithFields(log.Fields{
-				"body":       respBody,
+				"body":       string(respBody),
 				"error":      err,
 				"statusCode": statusCode,
 			}).Error("Could not verify Fleet is setup and ready")
@@ -287,7 +287,7 @@ func (c *Client) WaitForFleet(ctx context.Context) error {
 			return err
 		}
 
-		jsonResponse, err := gabs.ParseJSON([]byte(respBody))
+		jsonResponse, err := gabs.ParseJSON(respBody)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"body":       jsonResponse,
@@ -333,14 +333,14 @@ func (c *Client) WaitForReady(ctx context.Context, maxTimeoutMinutes time.Durati
 		})
 		defer span.End()
 
-		statusCode, respBody, err := c.get(ctx, "status")
+		statusCode, respBody, err := c.get(ctx, "api/status")
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":          err,
 				"statusCode":     statusCode,
-				"respBody":       respBody,
+				"respBody":       string(respBody),
 				"retry":          retryCount,
-				"statusEndpoint": fmt.Sprintf("%s/status", BaseURL),
+				"statusEndpoint": fmt.Sprintf("%s/api/status", BaseURL),
 				"elapsedTime":    exp.GetElapsedTime(),
 			}).Warn("The Kibana instance is not healthy yet")
 
@@ -349,9 +349,42 @@ func (c *Client) WaitForReady(ctx context.Context, maxTimeoutMinutes time.Durati
 			return err
 		}
 
+		jsonResponse, err := gabs.ParseJSON(respBody)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":          err,
+				"statusCode":     statusCode,
+				"respBody":       string(respBody),
+				"retry":          retryCount,
+				"statusEndpoint": fmt.Sprintf("%s/api/status", BaseURL),
+				"elapsedTime":    exp.GetElapsedTime(),
+			}).Warn("The Kibana instance is not available yet")
+
+			retryCount++
+
+			return err
+		}
+
+		status := jsonResponse.Path("status.overall.level").Data().(string)
+		if status != "available" {
+			err := errors.New("Kibana is not available yet")
+			log.WithFields(log.Fields{
+				"error":          err,
+				"statusCode":     statusCode,
+				"respBody":       status,
+				"retry":          retryCount,
+				"statusEndpoint": fmt.Sprintf("%s/api/status", BaseURL),
+				"elapsedTime":    exp.GetElapsedTime(),
+			}).Warn("The Kibana instance is not available yet :" + status)
+
+			retryCount++
+
+			return err
+		}
+
 		log.WithFields(log.Fields{
 			"retries":        retryCount,
-			"statusEndpoint": fmt.Sprintf("%s/status", BaseURL),
+			"statusEndpoint": fmt.Sprintf("%s/api/status", BaseURL),
 			"elapsedTime":    exp.GetElapsedTime(),
 		}).Info("The Kibana instance is healthy")
 

@@ -1,0 +1,25 @@
+version: '2.4'
+services:
+  elastic-agent:
+    image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.7.0-1ef3b708-SNAPSHOT}"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
+    environment:
+      - "ELASTICSEARCH_USERNAME=admin"
+      - "ELASTICSEARCH_PASSWORD=changeme"
+      - "FLEET_SERVER_ENABLE=${fleetServerMode:-0}"
+      - "FLEET_SERVER_INSECURE_HTTP=${fleetServerMode:-0}"
+      - "FLEET_ENROLL=${fleetEnroll:-1}"
+      - "FLEET_ENROLLMENT_TOKEN=${fleetEnrollmentToken:-}"
+      - "FLEET_INSECURE=${fleetInsecure:-0}"
+      - "FLEET_URL=${fleetUrl:-}"
+    healthcheck:
+        test: ["CMD-SHELL", "curl -s -k http://localhost:8220/api/status | grep -q 'HEALTHY'"]
+        retries: 300
+        interval: 10s
+    platform: ${stackPlatform:-linux/amd64}
+    ports:
+      - "${fleetServerPort:-8220}:8220"

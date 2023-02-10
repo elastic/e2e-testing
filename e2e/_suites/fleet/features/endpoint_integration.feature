@@ -3,7 +3,7 @@ Feature: Endpoint Integration
   Scenarios for Agent to deploy Endpoint and sending data to Fleet and Elasticsearch.
 
 Scenario Outline: Adding the Endpoint Integration to an Agent makes the host to show in Security App
-  Given a agent is deployed to Fleet with "tar" installer
+  Given an agent is deployed to Fleet with "tar" installer
     And the agent is listed in Fleet as "online"
   When the "Endpoint Security" integration is "added" in the policy
   Then the host name is shown in the Administration view in the Security App as "online"

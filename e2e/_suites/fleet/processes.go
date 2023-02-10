@@ -61,7 +61,7 @@ func (fts *FleetTestSuite) processStateChangedOnTheHost(pr string, state string)
 		return err
 	}
 
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 
 	var srv deploy.ServiceRequest
 	if fts.StandAlone {
@@ -83,7 +83,7 @@ func (fts *FleetTestSuite) processStateOnTheHost(pr string, state string) error 
 
 func (fts *FleetTestSuite) thereAreInstancesOfTheProcessInTheState(ocurrences string, pr string, state string) error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.deployer.Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.deployer.GetServiceManifest(fts.currentContext, agentService)
 
 	count, err := strconv.Atoi(ocurrences)
 	if err != nil {

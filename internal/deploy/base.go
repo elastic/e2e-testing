@@ -21,7 +21,7 @@ type Deployment interface {
 	Bootstrap(ctx context.Context, profile ServiceRequest, env map[string]string, waitCB func() error) error    // will bootstrap or reuse existing cluster if kubernetes is selected
 	Destroy(ctx context.Context, profile ServiceRequest) error                                                  // Teardown deployment
 	ExecIn(ctx context.Context, profile ServiceRequest, service ServiceRequest, cmd []string) (string, error)   // Execute arbitrary commands in service
-	Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error)                              // inspects service
+	GetServiceManifest(ctx context.Context, service ServiceRequest) (*ServiceManifest, error)                   // inspects service
 	Logs(ctx context.Context, service ServiceRequest) error                                                     // prints logs of deployed service
 	PreBootstrap(ctx context.Context) error                                                                     // run any pre-bootstrap commands
 	Remove(ctx context.Context, profile ServiceRequest, services []ServiceRequest, env map[string]string) error // Removes services from deployment

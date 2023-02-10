@@ -1,0 +1,26 @@
+version: '2.4'
+services:
+  elastic-agent:
+    image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.7.0-1ef3b708-SNAPSHOT}"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
+    environment:
+      - "FLEET_SERVER_ENABLE=1"
+      - "FLEET_SERVER_INSECURE_HTTP=1"
+      - "ELASTIC_AGENT_CLOUD=1"
+      - "APM_SERVER_PATH=/apm-legacy/apm-server/"
+      - "STATE_PATH=/apm-legacy/elastic-agent/"
+      - "CONFIG_PATH=/apm-legacy/config/"
+      - "DATA_PATH=/apm-legacy/data/"
+      - "LOGS_PATH=/apm-legacy/logs/"
+      - "HOME_PATH=/apm-legacy/"
+    platform: ${stackPlatform:-linux/amd64}
+    volumes:
+      - "${apmVolume}:/apm-legacy"
+    ports:
+      - "127.0.0.1:8221:8220"
+      - "127.0.0.1:8200:8200"
+      - "127.0.0.1:5066:5066"

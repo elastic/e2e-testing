@@ -40,7 +40,36 @@ type Agent struct {
 			} `json:"agent"`
 		} `json:"elastic"`
 	} `json:"local_metadata"`
-	Status string `json:"status"`
+	Status  string                   `json:"status"`
+	Outputs map[string]*PolicyOutput `json:"outputs,omitempty"`
+}
+
+// PolicyOutput holds the needed data to manage the output API keys
+type PolicyOutput struct {
+	// API key the Elastic Agent uses to authenticate with elasticsearch
+	APIKey string `json:"api_key"`
+
+	// ID of the API key the Elastic Agent uses to authenticate with elasticsearch
+	APIKeyID string `json:"api_key_id"`
+
+	// The policy output permissions hash
+	PermissionsHash string `json:"permissions_hash"`
+
+	// API keys to be invalidated on next agent ack
+	ToRetireAPIKeyIds []ToRetireAPIKeyIdsItems `json:"to_retire_api_key_ids,omitempty"`
+
+	// Type is the output type. Currently only Elasticsearch is supported.
+	Type string `json:"type"`
+}
+
+// ToRetireAPIKeyIdsItems the Output API Keys that were replaced and should be retired
+type ToRetireAPIKeyIdsItems struct {
+
+	// API Key identifier
+	ID string `json:"id,omitempty"`
+
+	// Date/time the API key was retired
+	RetiredAt string `json:"retired_at,omitempty"`
 }
 
 // GetAgentByHostnameFromList get an agent by the local_metadata.host.name property, reading from the agents list
@@ -97,7 +126,7 @@ func (c *Client) GetAgentStatusByHostname(ctx context.Context, hostname string) 
 	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/agents/%s", FleetAPI, agentID))
 	if err != nil {
 		log.WithFields(log.Fields{
-			"body":       respBody,
+			"body":       string(respBody),
 			"error":      err,
 			"statusCode": statusCode,
 		}).Error("Could not get agent response")
@@ -133,7 +162,7 @@ func (c *Client) GetAgentByHostname(ctx context.Context, hostname string) (Agent
 	statusCode, respBody, err := c.get(ctx, fmt.Sprintf("%s/agents/%s", FleetAPI, agentID))
 	if err != nil {
 		log.WithFields(log.Fields{
-			"body":       respBody,
+			"body":       string(respBody),
 			"error":      err,
 			"statusCode": statusCode,
 		}).Error("Could not get agent response")
@@ -253,7 +282,7 @@ func (c *Client) ListAgents(ctx context.Context) ([]Agent, error) {
 
 	if err != nil {
 		log.WithFields(log.Fields{
-			"body":  respBody,
+			"body":  string(respBody),
 			"error": err,
 		}).Error("Could not get Fleet's online agents")
 		return nil, err
@@ -261,7 +290,7 @@ func (c *Client) ListAgents(ctx context.Context) ([]Agent, error) {
 
 	if statusCode != 200 {
 		log.WithFields(log.Fields{
-			"body":       respBody,
+			"body":       string(respBody),
 			"error":      err,
 			"statusCode": statusCode,
 		}).Error("Could not get Fleet's online agents")

@@ -198,7 +198,7 @@ func (fts *FleetTestSuite) tagsAreInTheElasticAgentIndex() error {
 
 func (fts *FleetTestSuite) theAgentIsListedInFleetWithStatus(desiredStatus string) error {
 	agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 	err := theAgentIsListedInFleetWithStatus(fts.currentContext, desiredStatus, manifest.Hostname)
 	if err != nil {
 		return err
@@ -245,7 +245,7 @@ func (fts *FleetTestSuite) thereIsNewDataInTheIndexFromAgent() error {
 
 	agentService := deploy.NewServiceContainerRequest(common.ElasticAgentServiceName).WithFlavour(fts.Image)
 
-	manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+	manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 	result, err := searchAgentData(fts.currentContext, manifest.Hostname, fts.RuntimeDependenciesStartDate, minimumHitsCount, maxTimeout)
 	if err != nil {
 		return err

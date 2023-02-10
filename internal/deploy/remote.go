@@ -11,6 +11,7 @@ import (
 
 	"github.com/elastic/e2e-testing/internal/io"
 	"github.com/elastic/e2e-testing/internal/shell"
+	log "github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
 )
 
@@ -60,26 +61,48 @@ func (c *remoteDeploymentManifest) ExecIn(ctx context.Context, profile ServiceRe
 	return output, nil
 }
 
-// Inspect inspects a service
-func (c *remoteDeploymentManifest) Inspect(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
+// GetServiceManifest inspects a service
+func (c *remoteDeploymentManifest) GetServiceManifest(ctx context.Context, service ServiceRequest) (*ServiceManifest, error) {
 	var hostname string
 	// TODO: convert to a platform agnostic command structure
 	if runtime.GOOS == "windows" {
 		hostname, _ = shell.Execute(ctx, ".", "powershell.exe", "hostname")
 	} else {
-		hasHostname, _ := io.Exists("/etc/hostname")
+		hasHostname, err := io.Exists("/etc/hostname")
+		if err != nil {
+			return &ServiceManifest{}, err
+		}
+
 		if hasHostname {
-			hostname, _ = shell.Execute(ctx, ".", "cat", "/etc/hostname")
+			hostname, err = shell.Execute(ctx, ".", "cat", "/etc/hostname")
+			if err != nil {
+				return &ServiceManifest{}, err
+			}
 		} else {
-			hostname, _ = shell.Execute(ctx, ".", "hostname")
+			hostname, err = shell.Execute(ctx, ".", "hostname")
+			if err != nil {
+				return &ServiceManifest{}, err
+			}
 		}
 	}
-	return &ServiceManifest{
+
+	sm := &ServiceManifest{
 		Hostname:   strings.TrimSpace(hostname),
 		Connection: service.Name,
 		Alias:      service.Name,
 		Platform:   runtime.GOOS,
-	}, nil
+	}
+
+	log.WithFields(log.Fields{
+		"alias":      sm.Alias,
+		"connection": sm.Connection,
+		"hostname":   sm.Hostname,
+		"ID":         sm.ID,
+		"name":       sm.Name,
+		"platform":   sm.Platform,
+	}).Trace("Service Manifest found")
+
+	return sm, nil
 }
 
 // Logs print logs of service

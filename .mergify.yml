@@ -18,6 +18,19 @@ pull_request_rules:
             git merge upstream/{{base}}
             git push upstream {{head}}
             ```
+  - name: backport patches to 8.4 branch
+    conditions:
+      - merged
+      - label=backport-v8.4.0
+    actions:
+      backport:
+        assignees:
+          - "{{ author }}"
+        branches:
+          - "8.4"
+        labels:
+          - "backport"
+        title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
   - name: backport patches to 8.3 branch
     conditions:
       - merged
@@ -29,18 +42,6 @@ pull_request_rules:
           - "{{ author }}"
         branches:
           - "8.3"
-        title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
-  - name: backport patches to 8.2 branch
-    conditions:
-      - merged
-      - base=main
-      - label=backport-v8.2.0
-    actions:
-      backport:
-        assignees:
-          - "{{ author }}"
-        branches:
-          - "8.2"
         title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
   - name: backport patches to 7.17 branch
     conditions:
@@ -128,3 +129,42 @@ pull_request_rules:
         message: |
           This pull request has been automatically closed by Mergify.
           There are likely new up-to-date and open pull requests.
+  - name: backport patches to 8.5 branch
+    conditions:
+      - merged
+      - label=backport-v8.5.0
+    actions:
+      backport:
+        assignees:
+          - "{{ author }}"
+        branches:
+          - "8.5"
+        labels:
+          - "backport"
+        title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
+  - name: backport patches to 8.6 branch
+    conditions:
+      - merged
+      - label=backport-v8.6.0
+    actions:
+      backport:
+        assignees:
+          - "{{ author }}"
+        branches:
+          - "8.6"
+        labels:
+          - "backport"
+        title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"
+  - name: backport patches to 8.7 branch
+    conditions:
+      - merged
+      - label=backport-v8.7.0
+    actions:
+      backport:
+        assignees:
+          - "{{ author }}"
+        branches:
+          - "8.7"
+        labels:
+          - "backport"
+        title: "[{{ destination_branch }}](backport #{{ number }}) {{ title }}"

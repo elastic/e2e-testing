@@ -20,7 +20,7 @@ import (
 func (fts *FleetTestSuite) agentRunPolicy(policyName string) error {
 	agentRunPolicyFn := func() error {
 		agentService := deploy.NewServiceRequest(common.ElasticAgentServiceName)
-		manifest, _ := fts.getDeployer().Inspect(fts.currentContext, agentService)
+		manifest, _ := fts.getDeployer().GetServiceManifest(fts.currentContext, agentService)
 
 		policies, err := fts.kibanaClient.ListPolicies(fts.currentContext)
 		if err != nil {

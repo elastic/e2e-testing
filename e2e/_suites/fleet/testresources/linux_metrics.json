@@ -11,7 +11,9 @@
         "period": {
           "type": "text",
           "value": "10s"
-        }
+        },
+        "preserve_original_event": false,
+        "tags": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
       },
       "id": "system/metrics-linux.entropy-f0b065e3-1b62-416c-8998-93ea58fb98a1",
       "enabled": false
@@ -25,7 +27,9 @@
           "period": {
             "type": "text",
             "value": "10s"
-          }
+          },
+          "preserve_original_event": false,
+          "tags": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
         },
         "id": "system/metrics-linux.network_summary-f0b065e3-1b62-416c-8998-93ea58fb98a1",
         "enabled": false
@@ -42,7 +46,9 @@
           "period": {
             "type": "text",
             "value": "10s"
-          }
+          },
+          "preserve_original_event": false,
+          "tags": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
         },
         "id": "system/metrics-linux.raid-f0b065e3-1b62-416c-8998-93ea58fb98a1",
         "enabled": true
@@ -66,7 +72,9 @@
             "value": [
               "active"
             ]
-          }
+          },
+          "preserve_original_event": false,
+          "tags": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
         },
         "id": "system/metrics-linux.service-f0b065e3-1b62-416c-8998-93ea58fb98a1",
         "enabled": false
@@ -90,7 +98,9 @@
           },
           "socket.reverse_lookup.success_ttl": {
             "type": "text"
-          }
+          },
+          "preserve_original_event": false,
+          "tags": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
         },
         "id": "system/metrics-linux.socket-f0b065e3-1b62-416c-8998-93ea58fb98a1",
         "enabled": true
@@ -104,7 +114,9 @@
           "period": {
             "type": "text",
             "value": "10s"
-          }
+          },
+          "preserve_original_event": false,
+          "tags": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
         },
         "id": "system/metrics-linux.users-f0b065e3-1b62-416c-8998-93ea58fb98a1",
         "enabled": true
@@ -113,7 +125,9 @@
     "vars": {
       "system.hostfs": {
         "type": "text"
-      }
+      },
+      "preserve_original_event": false,
+      "tags": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
     },
     "type": "system/metrics",
     "enabled": true
@@ -129,7 +143,9 @@
         "period": {
           "type": "text",
           "value": "10s"
-        }
+        },
+        "preserve_original_event": false,
+        "tags": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
       },
       "id": "linux/metrics-linux.conntrack-f0b065e3-1b62-416c-8998-93ea58fb98a1",
       "enabled": true
@@ -143,7 +159,9 @@
         "period": {
           "type": "text",
           "value": "10s"
-        }
+        },
+        "preserve_original_event": false,
+        "tags": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
       },
       "id": "linux/metrics-linux.iostat-f0b065e3-1b62-416c-8998-93ea58fb98a1",
       "enabled": true
@@ -157,7 +175,9 @@
           "period": {
             "type": "text",
             "value": "10s"
-          }
+          },
+          "preserve_original_event": false,
+          "tags": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
         },
         "id": "linux/metrics-linux.ksm-f0b065e3-1b62-416c-8998-93ea58fb98a1",
         "enabled": false
@@ -171,7 +191,9 @@
           "period": {
             "type": "text",
             "value": "10s"
-          }
+          },
+          "preserve_original_event": false,
+          "tags": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
         },
         "id": "linux/metrics-linux.memory-f0b065e3-1b62-416c-8998-93ea58fb98a1",
         "enabled": true
@@ -185,7 +207,9 @@
           "period": {
             "type": "text",
             "value": "10s"
-          }
+          },
+          "preserve_original_event": false,
+          "tags": ["preserve_original_event", "forwarded", "microsoft_dhcp"]
         },
         "id": "linux/metrics-linux.pageinfo-f0b065e3-1b62-416c-8998-93ea58fb98a1",
         "enabled": true
