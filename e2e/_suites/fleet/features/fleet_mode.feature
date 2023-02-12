@@ -68,4 +68,3 @@ Scenario Outline: Un-installing the installed agent
   When the "elastic-agent" process is "uninstalled" on the host
   Then the file system Agent folder is empty
     And the agent is listed in Fleet as "offline"
-
