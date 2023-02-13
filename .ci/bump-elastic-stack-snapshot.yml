@@ -1,0 +1,115 @@
+---
+name: Bump elastic-stack to latest snapshot version
+
+actions:
+  default:
+    title: '[updatecli] update elastic stack version for testing {{ source "latestVersion" }}'
+    kind: github/pullrequest
+    spec:
+      labels:
+        - automation
+        - dependency
+        - backport-skip
+    scmid: default
+
+scms:
+  default:
+    kind: github
+    spec:
+      user: '{{ requiredEnv "GIT_USER" }}'
+      email: '{{ requiredEnv "GIT_EMAIL" }}'
+      owner: elastic
+      repository: e2e-testing
+      token: '{{ requiredEnv "GITHUB_TOKEN" }}'
+      username: '{{ requiredEnv "GIT_USER" }}'
+      branch: '{{ requiredEnv "BRANCH" }}'
+
+sources:
+  latestVersion:
+    name: Get latest snapshot build
+    kind: json
+    spec:
+      file: https://storage.googleapis.com/artifacts-api/snapshots/{{ requiredEnv "BRANCH" }}.json
+      key: .build_id
+
+  major-minor-patch:
+    name: Get major-minor-patch version
+    kind: shell
+    dependson:
+      - latestVersion
+    transformers:
+      - findsubmatch:
+          pattern: '^(\d+.\d+.\d+)-.+$'
+          captureindex: 1
+    spec:
+      command: echo {{ source "latestVersion" }}
+
+targets:
+  update-defaults:
+    name: "Update defaults.go"
+    kind: file
+    sourceid: latestVersion
+    scmid: default
+    spec:
+      file: ./internal/common/defaults.go
+      matchpattern: '(BeatVersionBase =) "\d+.\d+.\d+-.*-SNAPSHOT"'
+      replacepattern: '$1 = "{{ source "latestVersion" }}-SNAPSHOT"'
+
+  update-stack-version:
+    name: "Update .stack-version"
+    kind: file
+    sourceid: latestVersion
+    scmid: default
+    spec:
+      file: .stack-version
+      content: '{{ source "latestVersion" }}-SNAPSHOT'
+
+  update-docker-compose:
+    name: "Update docker-compose.yml files"
+    kind: file
+    sourceid: latestVersion
+    scmid: default
+    spec:
+      files:
+        - ./internal/config/compose/profiles/fleet/docker-compose.yml
+        - ./internal/config/compose/services/elastic-agent/cloud/docker-compose.yml
+        - ./internal/config/compose/services/elastic-agent/docker-compose.yml
+        - ./internal/config/compose/services/elastic-agent/fleet-server/docker-compose.yml
+        - ./internal/config/compose/services/elasticsearch/docker-compose.yml
+        - ./internal/config/compose/services/kibana/docker-compose.yml
+        - ./internal/config/compose/services/metricbeat/docker-compose.yml
+      matchpattern: '(.*):-\d+.\d+.\d+-.*-SNAPSHOT'
+      replacepattern: '$1:-{{ source "latestVersion" }}-SNAPSHOT'
+
+  update-deployment:
+    name: "Update deployment.yml files"
+    kind: file
+    sourceid: latestVersion
+    scmid: default
+    spec:
+      files:
+        - ./internal/config/kubernetes/base/kibana/deployment.yaml
+        - ./internal/config/kubernetes/base/fleet-server/deployment.yaml
+        - ./internal/config/kubernetes/base/elasticsearch/deployment.yaml
+      matchpattern: '(image: docker\.elastic\.co/.*):\d+.\d+.\d+-.*-SNAPSHOT'
+      replacepattern: '$1:{{ source "latestVersion" }}-SNAPSHOT'
+
+  update-jenkinsfile:
+    name: "Update jenkinsfile"
+    kind: file
+    sourceid: latestVersion
+    scmid: default
+    spec:
+      file: .ci/Jenkinsfile
+      matchpattern: '\d+.\d+.\d+-.*-SNAPSHOT'
+      replacepattern: '{{ source "latestVersion" }}-SNAPSHOT'
+
+  update-e2eTestingMacosDaily:
+    name: "Update e2eTestingMacosDaily.groovy"
+    kind: file
+    sourceid: major-minor-patch
+    scmid: default
+    spec:
+      file: .ci/e2eTestingMacosDaily.groovy
+      matchpattern: '(defaultValue:) .\d+.\d+.\d+-SNAPSHOT.'
+      replacepattern: '$1 "{{ source "major-minor-patch" }}-SNAPSHOT"'
