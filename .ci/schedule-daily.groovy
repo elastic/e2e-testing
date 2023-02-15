@@ -20,8 +20,8 @@ pipeline {
   stages {
     stage('Nighly e2e builds') {
       steps {
-        runBuilds(quietPeriodFactor: 100, branches: ['main', '8.<minor>', '8.<next-patch>', '8.<next-minor>', '8.<minor-1>', '7.<minor>', 'feature-arch-v2'])
-        runMacosBuilds(branches: ['main', '8.<minor>', 'feature-arch-v2'])
+        runBuilds(quietPeriodFactor: 100, branches: ['main', '8.<minor>', '8.<next-patch>', '8.<next-minor>', '8.<minor-1>', '7.<minor>'])
+        runMacosBuilds(branches: ['main', '8.<minor>'])
       }
     }
   }
