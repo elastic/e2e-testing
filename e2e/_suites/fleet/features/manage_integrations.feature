@@ -11,3 +11,4 @@ Examples:
   | Elastic APM |
   | Endpoint    |
   | Linux       |
+  | Windows     |
