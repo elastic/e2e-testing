@@ -10,7 +10,7 @@ set -euxo pipefail
 #
 
 # Install some other dependencies required for the pre-commit
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.34.1
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.51.2
 
 go get -v golang.org/x/lint/golint
 
