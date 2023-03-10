@@ -3,7 +3,10 @@ name: pre-commit
 
 on:
   push:
-    branches: [main]
+    branches:
+      - 'main'
+      - '8**'
+      - '7.17'
   pull_request:
 
 # limit the access of the generated GITHUB_TOKEN
