@@ -15,7 +15,8 @@ repos:
         exclude: >
             (?x)^(
                 cli/NOTICE.txt|
-                e2e/NOTICE.txt
+                e2e/NOTICE.txt|
+                .stack-version
             )$
 
 -   repo: https://github.com/dnephin/pre-commit-golang
