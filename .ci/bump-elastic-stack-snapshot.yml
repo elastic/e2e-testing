@@ -54,7 +54,7 @@ targets:
     spec:
       file: ./internal/common/defaults.go
       matchpattern: '(BeatVersionBase =) "\d+.\d+.\d+-.*-SNAPSHOT"'
-      replacepattern: '$1 = "{{ source "latestVersion" }}-SNAPSHOT"'
+      replacepattern: '$1 "{{ source "latestVersion" }}-SNAPSHOT"'
 
   update-stack-version:
     name: "Update .stack-version"
