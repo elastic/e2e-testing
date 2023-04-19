@@ -1,7 +1,7 @@
 version: '2.4'
 services:
   elastic-agent:
-    image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.8.0-6c13582a-SNAPSHOT}"
+    image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.8.0-bd819e75-SNAPSHOT}"
     depends_on:
       elasticsearch:
         condition: service_healthy
