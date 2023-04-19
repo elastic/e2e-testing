@@ -9,7 +9,7 @@ services:
       - xpack.monitoring.collection.enabled=true
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=changeme
-    image: "docker.elastic.co/observability-ci/elasticsearch:${elasticsearchTag:-8.7.1-2294595b-SNAPSHOT}"
+    image: "docker.elastic.co/observability-ci/elasticsearch:${elasticsearchTag:-8.7.1-be1e8648-SNAPSHOT}"
     healthcheck:
         interval: 10s
         retries: 100
