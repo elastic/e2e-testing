@@ -14,7 +14,7 @@ Feature: Upgrade Agent
       | stale-version    |
       | latest           |
       | 8.6.0            |
-      | 7.17.10-SNAPSHOT |
+      | 7.17.10          |
 
 # These are the version of elastic agent that still have the bug solved in
 # https://github.com/elastic/elastic-agent/pull/1791
