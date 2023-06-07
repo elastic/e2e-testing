@@ -9,6 +9,6 @@ services:
       test: ["CMD-SHELL", "curl -u admin:changeme -s http://localhost:5601/api/status | grep -q 'All services are available'"]
       retries: 60
       interval: 10s
-    image: "docker.elastic.co/kibana/kibana:${kibanaTag:-8.9.0-f5346fd1-SNAPSHOT}"
+    image: "docker.elastic.co/kibana/kibana:${kibanaTag:-8.9.0-9046815c-SNAPSHOT}"
     ports:
       - "5601:5601"
