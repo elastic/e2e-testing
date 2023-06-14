@@ -1,6 +1,5 @@
 ---
 SUITES:
-<<<<<<< HEAD
   - suite: "helm"
     provider: "docker"
     scenarios:
@@ -10,31 +9,6 @@ SUITES:
       - name: "Metricbeat"
         tags: "metricbeat"
         platforms: ["debian_10_amd64"]
-  - suite: "fleet"
-    scenarios:
-      - name: "Fleet"
-        tags: "fleet_mode_agent"
-        platforms: ["centos8_arm64", "centos8_amd64", "debian_10_arm64", "debian_10_amd64", "sles15"]
-      - name: "Integrations"
-        tags: "integrations"
-        platforms: ["debian_10_amd64"]
-      - name: "APM Integration"
-        tags: "apm_server"
-        platforms: ["debian_10_amd64"]
-      - name: "Linux Integration"
-        tags: "linux_integration"
-        platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
-      - name: "Permissions Output change"
-        tags: "permission_change"
-        platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
-      - name: "Backend Processes"
-        tags: "backend_processes"
-        platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
-      - name: "Beats Background Processes"
-        tags: "running_on_beats"
-        platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
-=======
->>>>>>> 95bb8911 (Update .e2e-tests-beats.yaml (#3546))
   - suite: "kubernetes-autodiscover"
     provider: "docker"
     scenarios:
