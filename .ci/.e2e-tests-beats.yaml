@@ -1,5 +1,6 @@
 ---
 SUITES:
+<<<<<<< HEAD
   - suite: "helm"
     provider: "docker"
     scenarios:
@@ -32,6 +33,8 @@ SUITES:
       - name: "Beats Background Processes"
         tags: "running_on_beats"
         platforms: ["debian_10_arm64", "debian_10_amd64", "sles15"]
+=======
+>>>>>>> 95bb8911 (Update .e2e-tests-beats.yaml (#3546))
   - suite: "kubernetes-autodiscover"
     provider: "docker"
     scenarios:
