@@ -9,13 +9,12 @@ require (
 	github.com/cucumber/godog v0.12.4
 	github.com/docker/cli v20.10.11+incompatible
 	github.com/docker/docker v20.10.12+incompatible
-	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/elastic/elastic-package v0.36.0
 	github.com/elastic/go-elasticsearch/v8 v8.0.0-20210317102009-a9d74cec0186
 	github.com/elastic/go-windows v1.0.1 // indirect
 	github.com/gobuffalo/packr/v2 v2.8.1
 	github.com/google/uuid v1.3.0
-	github.com/joho/godotenv v1.4.0 // indirect
+	github.com/joho/godotenv v1.4.0
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
@@ -23,7 +22,6 @@ require (
 	github.com/shirou/gopsutil/v3 v3.21.10
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.3.0
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/testcontainers/testcontainers-go v0.13.0
 	go.elastic.co/apm v1.13.0
