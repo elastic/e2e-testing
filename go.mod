@@ -8,7 +8,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/cucumber/godog v0.12.4
 	github.com/docker/cli v20.10.21+incompatible
-	github.com/docker/docker v20.10.24+incompatible
+	github.com/docker/docker v23.0.5+incompatible
 	github.com/elastic/elastic-package v0.83.1
 	github.com/elastic/go-elasticsearch/v8 v8.0.0-20210317102009-a9d74cec0186
 	github.com/elastic/go-windows v1.0.1 // indirect
@@ -22,7 +22,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
-	github.com/testcontainers/testcontainers-go v0.13.0
+	github.com/testcontainers/testcontainers-go v0.21.0
 	go.elastic.co/apm v1.13.0
 	go.elastic.co/apm/module/apmelasticsearch v1.10.0
 	go.elastic.co/apm/module/apmhttp v1.10.0
