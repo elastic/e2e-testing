@@ -24,16 +24,16 @@ require (
 	github.com/cucumber/godog v0.12.4
 	github.com/docker/cli v23.0.5+incompatible
 	github.com/docker/docker v23.0.5+incompatible
-	github.com/elastic/elastic-package v0.36.0
+	github.com/elastic/elastic-package v0.77.0
 	github.com/elastic/go-elasticsearch/v8 v8.0.0-20210317102009-a9d74cec0186
 	github.com/elastic/go-windows v1.0.1 // indirect
-	github.com/gobuffalo/packr/v2 v2.8.1
+	github.com/gobuffalo/packr/v2 v2.8.3
 	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.4.0
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
-	github.com/shirou/gopsutil/v3 v3.21.10
+	github.com/shirou/gopsutil/v3 v3.23.2
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
