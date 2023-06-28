@@ -2,6 +2,10 @@ module github.com/elastic/e2e-testing
 
 go 1.14
 
+replace github.com/containerd/containerd/pkg/cri/opts => github.com/containerd/containerd/pkg/cri/opts v1.6.1
+
+replace github.com/containerd/containerd => github.com/containerd/containerd v1.5.13
+
 require (
 	github.com/Flaque/filet v0.0.0-20201012163910-45f684403088
 	github.com/Jeffail/gabs/v2 v2.6.0
