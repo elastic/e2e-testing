@@ -18,3 +18,4 @@
 {"name": "github.com/xeipuuv/gojsonreference", "licenceType": "Apache-2.0", "url": "https://github.com/xeipuuv/gojsonreference/blob/master/LICENSE-APACHE-2.0.txt"}
 {"name": "github.com/xeipuuv/gojsonschema", "licenceType": "Apache-2.0", "url": "https://github.com/xeipuuv/gojsonschema/blob/master/LICENSE-APACHE-2.0.txt"}
 {"name": "github.com/opencontainers/go-digest", "licenceType": "Apache-2.0", "url": "https://github.com/opencontainers/go-digest/blob/master/LICENSE"}
+{"name": "github.com/spdx/tools-golang", "licenceType": "Apache-2.0", "url": "https://github.com/xeipuuv/gojsonpointer/blob/master/LICENSE-APACHE-2.0.txt"}

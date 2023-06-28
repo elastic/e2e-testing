@@ -16,7 +16,7 @@ import (
 	"go.elastic.co/apm"
 
 	log "github.com/sirupsen/logrus"
-	tc "github.com/testcontainers/testcontainers-go"
+	tc "github.com/testcontainers/testcontainers-go/modules/compose"
 )
 
 // ServiceManager manages lifecycle of a service
