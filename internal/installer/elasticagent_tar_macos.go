@@ -166,7 +166,7 @@ func (i *elasticAgentTARDarwinPackage) Preinstall(ctx context.Context) error {
 
 	version := common.ElasticAgentVersion
 	if downloads.IsAlias(version) {
-		v, err := downloads.GetElasticArtifactVersion(version)
+		v, err := downloads.NewArtifactsSnapshot().GetElasticArtifactVersion(version)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":   err,
