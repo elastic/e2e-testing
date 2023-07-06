@@ -164,7 +164,7 @@ func newArtifactsSnapshotCustom(host string) *ArtifactsSnapshot {
 
 func NewArtifactsSnapshot() *ArtifactsSnapshot {
 	return &ArtifactsSnapshot{
-		Host: "https://artifacts-api.elastic.co",
+		Host: "https://artifacts-snapshot.elastic.co",
 	}
 }
 
@@ -174,7 +174,6 @@ func NewArtifactsSnapshot() *ArtifactsSnapshot {
 // i.e. GetElasticArtifactVersion("$VERSION-abcdef-SNAPSHOT")
 func (as *ArtifactsSnapshot) GetElasticArtifactVersion(version string) (string, error) {
 	cacheKey := fmt.Sprintf("%s/beats/latest/%s.json", as.Host, version)
-	// cacheKey := fmt.Sprintf("https://artifacts-api.elastic.co/v1/versions/%s/?x-elastic-no-kpi=true", version)
 
 	if val, ok := elasticVersionsCache[cacheKey]; ok {
 		log.WithFields(log.Fields{
@@ -234,7 +233,7 @@ func (as *ArtifactsSnapshot) GetElasticArtifactVersion(version string) (string, 
 	// {
 	// 	"version" : "8.8.3-SNAPSHOT",
 	// 	"build_id" : "8.8.3-b1d8691a",
-	// 	"manifest_url" : "[https://artifacts-snapshot.elastic.co]/beats/8.8.3-b1d8691a/manifest-8.8.3-SNAPSHOT.json",
+	// 	"manifest_url" : "https://artifacts-snapshot.elastic.co/beats/8.8.3-b1d8691a/manifest-8.8.3-SNAPSHOT.json",
 	// 	"summary_url" : "https://artifacts-snapshot.elastic.co/beats/8.8.3-b1d8691a/summary-8.8.3-SNAPSHOT.html"
 	// }
 	jsonParsed, err := gabs.ParseJSON([]byte(body))
@@ -258,11 +257,6 @@ func (as *ArtifactsSnapshot) GetElasticArtifactVersion(version string) (string, 
 	parsedVersion := hashParts[0]
 
 	latestVersion := fmt.Sprintf("%s-%s-SNAPSHOT", parsedVersion, hash)
-
-	// builds := jsonParsed.Path("version.builds")
-
-	// lastBuild := builds.Children()[0]
-	// latestVersion := lastBuild.Path("version").Data().(string)
 
 	log.WithFields(log.Fields{
 		"alias":   version,
