@@ -71,7 +71,7 @@ type elasticVersion struct {
 func newElasticVersion(version string) *elasticVersion {
 	aliasMatch := versionAliasRegex.FindStringSubmatch(version)
 	if aliasMatch != nil {
-		v, err := GetElasticArtifactVersion(version)
+		v, err := NewArtifactsSnapshot().GetElasticArtifactVersion(version)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":   err,
@@ -152,12 +152,29 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 	return resolver.Resolve()
 }
 
+type ArtifactsSnapshot struct {
+	Host string
+}
+
+func newArtifactsSnapshotCustom(host string) *ArtifactsSnapshot {
+	return &ArtifactsSnapshot{
+		Host: host,
+	}
+}
+
+func NewArtifactsSnapshot() *ArtifactsSnapshot {
+	return &ArtifactsSnapshot{
+		Host: "https://artifacts-api.elastic.co",
+	}
+}
+
 // GetElasticArtifactVersion returns the current version:
 // 1. Elastic's artifact repository, building the JSON path query based
 // If the version is a SNAPSHOT including a commit, then it will directly use the version without checking the artifacts API
 // i.e. GetElasticArtifactVersion("$VERSION-abcdef-SNAPSHOT")
-func GetElasticArtifactVersion(version string) (string, error) {
-	cacheKey := fmt.Sprintf("https://artifacts-api.elastic.co/v1/versions/%s/?x-elastic-no-kpi=true", version)
+func (as *ArtifactsSnapshot) GetElasticArtifactVersion(version string) (string, error) {
+	cacheKey := fmt.Sprintf("%s/beats/latest/%s.json", as.Host, version)
+	// cacheKey := fmt.Sprintf("https://artifacts-api.elastic.co/v1/versions/%s/?x-elastic-no-kpi=true", version)
 
 	if val, ok := elasticVersionsCache[cacheKey]; ok {
 		log.WithFields(log.Fields{
@@ -213,6 +230,13 @@ func GetElasticArtifactVersion(version string) (string, error) {
 		return "", err
 	}
 
+	// The JSON looks like this:
+	// {
+	// 	"version" : "8.8.3-SNAPSHOT",
+	// 	"build_id" : "8.8.3-b1d8691a",
+	// 	"manifest_url" : "[https://artifacts-snapshot.elastic.co]/beats/8.8.3-b1d8691a/manifest-8.8.3-SNAPSHOT.json",
+	// 	"summary_url" : "https://artifacts-snapshot.elastic.co/beats/8.8.3-b1d8691a/summary-8.8.3-SNAPSHOT.html"
+	// }
 	jsonParsed, err := gabs.ParseJSON([]byte(body))
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -222,10 +246,23 @@ func GetElasticArtifactVersion(version string) (string, error) {
 		return "", err
 	}
 
-	builds := jsonParsed.Path("version.builds")
+	buildId := jsonParsed.Path("build_id").Data().(string)
+	hashParts := strings.Split(buildId, "-")
+	if (len(hashParts) < 2) || (hashParts[1] == "") {
+		log.WithFields(log.Fields{
+			"buildId": buildId,
+		}).Error("Could not parse the buildId to retrieve the version hash")
+		return "", err
+	}
+	hash := hashParts[1]
+	parsedVersion := hashParts[0]
 
-	lastBuild := builds.Children()[0]
-	latestVersion := lastBuild.Path("version").Data().(string)
+	latestVersion := fmt.Sprintf("%s-%s-SNAPSHOT", parsedVersion, hash)
+
+	// builds := jsonParsed.Path("version.builds")
+
+	// lastBuild := builds.Children()[0]
+	// latestVersion := lastBuild.Path("version").Data().(string)
 
 	log.WithFields(log.Fields{
 		"alias":   version,

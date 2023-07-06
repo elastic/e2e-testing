@@ -6,7 +6,10 @@ package downloads
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path"
 	"testing"
@@ -654,5 +657,28 @@ func TestSnapshotHasCommit(t *testing.T) {
 	t.Run("Returns false with commits in snapshots", func(t *testing.T) {
 		assert.False(t, SnapshotHasCommit("7.14.x-SNAPSHOT"))
 		assert.False(t, SnapshotHasCommit("8.0.0-SNAPSHOT"))
+	})
+}
+
+func TestGetElasticArtifactVersion(t *testing.T) {
+	t.Run("Positive: parses commit has and returns full version", func(t *testing.T) {
+		mockResponse := `{
+			"version" : "8.8.3-SNAPSHOT",
+			"build_id" : "8.8.3-b1d8691a",
+			"manifest_url" : "https://artifacts-snapshot.elastic.co/beats/8.8.3-b1d8691a/manifest-8.8.3-SNAPSHOT.json",
+			"summary_url" : "https://artifacts-snapshot.elastic.co/beats/8.8.3-b1d8691a/summary-8.8.3-SNAPSHOT.html"
+		}`
+
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintln(w, mockResponse)
+		}))
+		defer mockServer.Close()
+
+		mockURL := mockServer.URL + "/beats/latest/8.8.3-SNAPSHOT.json"
+		artifactsSnapshot := newArtifactsSnapshotCustom(mockURL)
+		version, err := artifactsSnapshot.GetElasticArtifactVersion("8.8.3-SNAPSHOT")
+		assert.NoError(t, err, "Expected no error")
+		assert.Equal(t, "8.8.3-b1d8691a-SNAPSHOT", version, "Expected version to match")
 	})
 }

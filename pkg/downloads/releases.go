@@ -31,7 +31,7 @@ type ArtifactURLResolver struct {
 // NewArtifactURLResolver creates a new resolver for artifacts that are currently in development, from the artifacts API
 func NewArtifactURLResolver(fullName string, name string, version string) DownloadURLResolver {
 	// resolve version alias
-	resolvedVersion, err := GetElasticArtifactVersion(version)
+	resolvedVersion, err := NewArtifactsSnapshot().GetElasticArtifactVersion(version)
 	if err != nil {
 		return nil
 	}
