@@ -6,6 +6,7 @@ package downloads
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -229,29 +230,30 @@ func (as *ArtifactsSnapshot) GetElasticArtifactVersion(version string) (string, 
 		return "", err
 	}
 
-	// The JSON looks like this:
-	// {
-	// 	"version" : "8.8.3-SNAPSHOT",
-	// 	"build_id" : "8.8.3-b1d8691a",
-	// 	"manifest_url" : "https://artifacts-snapshot.elastic.co/beats/8.8.3-b1d8691a/manifest-8.8.3-SNAPSHOT.json",
-	// 	"summary_url" : "https://artifacts-snapshot.elastic.co/beats/8.8.3-b1d8691a/summary-8.8.3-SNAPSHOT.html"
-	// }
-	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	type ArtifactsSnapshotResponse struct {
+		Version     string `json:"version"`      // example value: "8.8.3-SNAPSHOT"
+		BuildID     string `json:"build_id"`     // example value: "8.8.3-b1d8691a"
+		ManifestURL string `json:"manifest_url"` // example value: https://artifacts-snapshot.elastic.co/beats/8.8.3-b1d8691a/manifest-8.8.3-SNAPSHOT.json
+		SummaryURL  string `json:"summary_url"`  // example value: https://artifacts-snapshot.elastic.co/beats/8.8.3-b1d8691a/summary-8.8.3-SNAPSHOT.html
+	}
+	response := ArtifactsSnapshotResponse{}
+	err = json.Unmarshal([]byte(body), &response)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
 			"version": version,
+			"body":    body,
 		}).Error("Could not parse the response body to retrieve the version")
-		return "", err
+
+		return "", fmt.Errorf("could not parse the response body to retrieve the version: %w", err)
 	}
 
-	buildId := jsonParsed.Path("build_id").Data().(string)
-	hashParts := strings.Split(buildId, "-")
+	hashParts := strings.Split(response.BuildID, "-")
 	if (len(hashParts) < 2) || (hashParts[1] == "") {
 		log.WithFields(log.Fields{
-			"buildId": buildId,
-		}).Error("Could not parse the buildId to retrieve the version hash")
-		return "", err
+			"buildId": response.BuildID,
+		}).Error("Could not parse the build_id to retrieve the version hash")
+		return "", fmt.Errorf("could not parse the build_id to retrieve the version hash: %s", response.BuildID)
 	}
 	hash := hashParts[1]
 	parsedVersion := hashParts[0]
