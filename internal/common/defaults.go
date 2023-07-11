@@ -118,7 +118,7 @@ func GetElasticAgentWorkingPath(paths ...string) string {
 // supporting lazy-loading the versions when needed. Basically, the CLI part does not
 // need to load them
 func InitVersions() {
-	v, err := downloads.NewArtifactsSnapshot().GetElasticArtifactVersion(BeatVersionBase)
+	v, err := downloads.GetElasticArtifactVersion(BeatVersionBase)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -132,7 +132,7 @@ func InitVersions() {
 	// check if version is an alias. For compatibility versions let's
 	// support aliases in the format major.minor
 	if downloads.IsAlias(BeatVersion) {
-		v, err = downloads.NewArtifactsSnapshot().GetElasticArtifactVersion(BeatVersion)
+		v, err = downloads.GetElasticArtifactVersion(BeatVersion)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":   err,
@@ -160,7 +160,7 @@ func InitVersions() {
 	ElasticAgentVersion = shell.GetEnv("ELASTIC_AGENT_VERSION", BeatVersionBase)
 
 	// check if version is an alias
-	v, err = downloads.NewArtifactsSnapshot().GetElasticArtifactVersion(ElasticAgentVersion)
+	v, err = downloads.GetElasticArtifactVersion(ElasticAgentVersion)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -181,7 +181,7 @@ func InitVersions() {
 	ElasticAgentVersion = downloads.CheckPRVersion(ElasticAgentVersion, fallbackVersion)
 
 	StackVersion = shell.GetEnv("STACK_VERSION", BeatVersionBase)
-	v, err = downloads.NewArtifactsSnapshot().GetElasticArtifactVersion(StackVersion)
+	v, err = downloads.GetElasticArtifactVersion(StackVersion)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -194,7 +194,7 @@ func InitVersions() {
 	if KibanaVersion == "" {
 		// we want to deploy a released version for Kibana
 		// if not set, let's use StackVersion
-		KibanaVersion, err = downloads.NewArtifactsSnapshot().GetElasticArtifactVersion(StackVersion)
+		KibanaVersion, err = downloads.GetElasticArtifactVersion(StackVersion)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":   err,

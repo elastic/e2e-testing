@@ -165,7 +165,7 @@ func (i *elasticAgentTARPackage) Preinstall(ctx context.Context) error {
 		}
 
 		if downloads.IsAlias(version) {
-			v, err := downloads.NewArtifactsSnapshot().GetElasticArtifactVersion(version)
+			v, err := downloads.GetElasticArtifactVersion(version)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error":   err,

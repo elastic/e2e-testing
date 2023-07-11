@@ -6,7 +6,6 @@ package downloads
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -72,7 +71,7 @@ type elasticVersion struct {
 func newElasticVersion(version string) *elasticVersion {
 	aliasMatch := versionAliasRegex.FindStringSubmatch(version)
 	if aliasMatch != nil {
-		v, err := NewArtifactsSnapshot().GetElasticArtifactVersion(version)
+		v, err := GetElasticArtifactVersion(version)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error":   err,
@@ -153,28 +152,12 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 	return resolver.Resolve()
 }
 
-type ArtifactsSnapshot struct {
-	Host string
-}
-
-func newArtifactsSnapshotCustom(host string) *ArtifactsSnapshot {
-	return &ArtifactsSnapshot{
-		Host: host,
-	}
-}
-
-func NewArtifactsSnapshot() *ArtifactsSnapshot {
-	return &ArtifactsSnapshot{
-		Host: "https://artifacts-snapshot.elastic.co",
-	}
-}
-
 // GetElasticArtifactVersion returns the current version:
 // 1. Elastic's artifact repository, building the JSON path query based
 // If the version is a SNAPSHOT including a commit, then it will directly use the version without checking the artifacts API
 // i.e. GetElasticArtifactVersion("$VERSION-abcdef-SNAPSHOT")
-func (as *ArtifactsSnapshot) GetElasticArtifactVersion(version string) (string, error) {
-	cacheKey := fmt.Sprintf("%s/beats/latest/%s.json", as.Host, version)
+func GetElasticArtifactVersion(version string) (string, error) {
+	cacheKey := fmt.Sprintf("https://artifacts-api.elastic.co/v1/versions/%s/?x-elastic-no-kpi=true", version)
 
 	if val, ok := elasticVersionsCache[cacheKey]; ok {
 		log.WithFields(log.Fields{
@@ -230,35 +213,19 @@ func (as *ArtifactsSnapshot) GetElasticArtifactVersion(version string) (string, 
 		return "", err
 	}
 
-	type ArtifactsSnapshotResponse struct {
-		Version     string `json:"version"`      // example value: "8.8.3-SNAPSHOT"
-		BuildID     string `json:"build_id"`     // example value: "8.8.3-b1d8691a"
-		ManifestURL string `json:"manifest_url"` // example value: https://artifacts-snapshot.elastic.co/beats/8.8.3-b1d8691a/manifest-8.8.3-SNAPSHOT.json
-		SummaryURL  string `json:"summary_url"`  // example value: https://artifacts-snapshot.elastic.co/beats/8.8.3-b1d8691a/summary-8.8.3-SNAPSHOT.html
-	}
-	response := ArtifactsSnapshotResponse{}
-	err = json.Unmarshal([]byte(body), &response)
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
 			"version": version,
-			"body":    body,
 		}).Error("Could not parse the response body to retrieve the version")
-
-		return "", fmt.Errorf("could not parse the response body to retrieve the version: %w", err)
+		return "", err
 	}
 
-	hashParts := strings.Split(response.BuildID, "-")
-	if (len(hashParts) < 2) || (hashParts[1] == "") {
-		log.WithFields(log.Fields{
-			"buildId": response.BuildID,
-		}).Error("Could not parse the build_id to retrieve the version hash")
-		return "", fmt.Errorf("could not parse the build_id to retrieve the version hash: %s", response.BuildID)
-	}
-	hash := hashParts[1]
-	parsedVersion := hashParts[0]
+	builds := jsonParsed.Path("version.builds")
 
-	latestVersion := fmt.Sprintf("%s-%s-SNAPSHOT", parsedVersion, hash)
+	lastBuild := builds.Children()[0]
+	latestVersion := lastBuild.Path("version").Data().(string)
 
 	log.WithFields(log.Fields{
 		"alias":   version,
@@ -513,6 +480,7 @@ func FetchProjectBinaryForSnapshots(ctx context.Context, useCISnapshots bool, pr
 	downloadURLResolvers := []DownloadURLResolver{
 		NewReleaseURLResolver(elasticAgentNamespace, artifactName, artifact),
 		NewArtifactURLResolver(artifactName, artifact, version),
+		NewArtifactSnapshotURLResolver(artifactName, artifact, version),
 	}
 	downloadURL, downloadShaURL, err = getDownloadURLFromResolvers(downloadURLResolvers)
 	if err != nil {
