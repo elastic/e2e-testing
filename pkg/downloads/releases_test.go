@@ -8,9 +8,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetSnapshotArtifactVersion(t *testing.T) {
@@ -79,13 +82,49 @@ func TestGetSnapshotArtifactVersion(t *testing.T) {
 	})
 }
 
+type MockHandler struct {
+	Responses map[string]string
+}
+
+func (m *MockHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Path
+
+	response, ok := m.Responses[path]
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+
+	fmt.Fprint(w, response)
+}
+
 func TestArtifactsSnapshotResolver(t *testing.T) {
+
 	t.Run("Positive: parses commit has and returns full version", func(t *testing.T) {
 
-		urlResolver := NewArtifactSnapshotURLResolver("auditbeat-8.9.0-SNAPSHOT-amd64.deb", "auditbeat", "8.9.0-SNAPSHOT")
+		artifactsSnapshotMockManifest, err := os.ReadFile(filepath.Join("..", "_testresources", "dra", "snapshot_artifacts_test.json"))
+		require.NoError(t, err, "couldn't read pkg/_testresources/dra/snapshot_artifacts_test.json")
+		mockResponses := map[string]string{
+			"/beats/latest/8.9.0-SNAPSHOT.json": `{
+				"version" : "8.9.0-SNAPSHOT",
+				"build_id" : "8.9.0-b6405422",
+				"manifest_url" : "https://artifacts-snapshot.elastic.co/beats/8.9.0-b6405422/manifest-8.9.0-SNAPSHOT.json",
+				"summary_url" : "https://artifacts-snapshot.elastic.co/beats/8.9.0-b6405422/summary-8.9.0-SNAPSHOT.html"
+			}`,
+			"/beats/8.9.0-b6405422/manifest-8.9.0-SNAPSHOT.json": string(artifactsSnapshotMockManifest),
+		}
+
+		mockHandler := &MockHandler{
+			Responses: mockResponses,
+		}
+
+		server := httptest.NewServer(mockHandler)
+		defer server.Close()
+
+		urlResolver := newCustomSnapshotURLResolver("auditbeat-8.9.0-SNAPSHOT-amd64.deb", "auditbeat", "8.9.0-SNAPSHOT", server.URL)
 		url, shaUrl, err := urlResolver.Resolve()
-		assert.Equal(t, "https://artifacts-snapshot.elastic.co/beats/8.9.0-cabcc711/downloads/beats/auditbeat/auditbeat-8.9.0-SNAPSHOT-amd64.deb", url)
-		assert.Equal(t, "https://artifacts-snapshot.elastic.co/beats/8.9.0-cabcc711/downloads/beats/auditbeat/auditbeat-8.9.0-SNAPSHOT-amd64.deb.sha512", shaUrl)
+		assert.Equal(t, "https://artifacts-snapshot.elastic.co/auditbeat-8.9.0-SNAPSHOT-amd64.deb", url)
+		assert.Equal(t, "https://artifacts-snapshot.elastic.co/auditbeat-8.9.0-SNAPSHOT-amd64.deb.sha512", shaUrl)
 		assert.NoError(t, err, "Expected no error")
 	})
 }

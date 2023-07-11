@@ -275,19 +275,21 @@ func (as *ArtifactsSnapshotVersion) GetSnapshotArtifactVersion(version string) (
 
 // NewArtifactURLResolver creates a new resolver for artifacts that are currently in development, from the artifacts API
 func NewArtifactSnapshotURLResolver(fullName string, name string, version string) DownloadURLResolver {
+	return newCustomSnapshotURLResolver(fullName, name, version, "https://artifacts-snapshot.elastic.co")
+}
+
+// For testing purposes
+func newCustomSnapshotURLResolver(fullName string, name string, version string, host string) DownloadURLResolver {
 	// resolve version alias
-	resolvedVersion, err := NewArtifactsSnapshot().GetSnapshotArtifactVersion(version)
+	resolvedVersion, err := newArtifactsSnapshotCustom(host).GetSnapshotArtifactVersion(version)
 	if err != nil {
 		return nil
 	}
-
-	// fullName = strings.ReplaceAll(fullName, version, resolvedVersion)
-
 	return &ArtifactsSnapshotURLResolver{
 		FullName:        fullName,
 		Name:            name,
 		Version:         resolvedVersion,
-		SnapshotApiHost: "https://artifacts-snapshot.elastic.co",
+		SnapshotApiHost: host,
 	}
 }
 
@@ -323,7 +325,7 @@ func (asur *ArtifactsSnapshotURLResolver) Resolve() (string, string, error) {
 	apiStatus := func() error {
 		r := curl.HTTPRequest{
 			// https://artifacts-snapshot.elastic.co/beats/8.9.0-d1b14479/manifest-8.9.0-SNAPSHOT.json
-			URL: fmt.Sprintf("https://artifacts-snapshot.elastic.co/beats/%s-%s/manifest-%s-SNAPSHOT.json", semVer, commit, semVer),
+			URL: fmt.Sprintf("%s/beats/%s-%s/manifest-%s-SNAPSHOT.json", asur.SnapshotApiHost, semVer, commit, semVer),
 		}
 
 		response, err := curl.Get(r)
