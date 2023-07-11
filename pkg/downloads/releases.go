@@ -153,6 +153,113 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 	return downloadURL, downloadshaURL, nil
 }
 
+type ArtifactsSnapshotURLResolver struct {
+	FullName string
+	Name     string
+	Version  string
+}
+
+func (asur *ArtifactsSnapshotURLResolver) Resolve() (string, string, error) {
+	artifactName := asur.FullName
+	artifact := asur.Name
+	version := asur.Version
+	commit, err := ExtractCommitHash(version)
+	semVer := GetVersion(version)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"artifact":     artifact,
+			"artifactName": artifactName,
+			"version":      version,
+		}).Info("The version does not contain a commit hash, it is not a snapshot")
+		return "", "", err
+	}
+
+	exp := utils.GetExponentialBackOff(time.Minute)
+
+	retryCount := 1
+
+	body := ""
+
+	apiStatus := func() error {
+		r := curl.HTTPRequest{
+			// https://snapshots.elastic.co/8.9.0-3900930d/manifest-8.9.0-SNAPSHOT.json
+			URL: fmt.Sprintf("https://snapshots.elastic.co/%s-%s/manifest-%s-SNAPSHOT.json", semVer, commit, semVer),
+		}
+
+		response, err := curl.Get(r)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"artifact":       artifact,
+				"artifactName":   artifactName,
+				"version":        version,
+				"error":          err,
+				"retry":          retryCount,
+				"statusEndpoint": r.URL,
+				"elapsedTime":    exp.GetElapsedTime(),
+			}).Warn("The Elastic artifacts API is not available yet")
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"retries":        retryCount,
+			"statusEndpoint": r.URL,
+			"elapsedTime":    exp.GetElapsedTime(),
+		}).Debug("The Elastic artifacts API is available")
+
+		body = response
+		return nil
+	}
+
+	err = backoff.Retry(apiStatus, exp)
+	if err != nil {
+		return "", "", err
+	}
+
+	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"artifact":     artifact,
+			"artifactName": artifactName,
+			"version":      version,
+		}).Error("Could not parse the response body for the artifact")
+		return "", "", err
+	}
+
+	log.WithFields(log.Fields{
+		"retries":      retryCount,
+		"artifact":     artifact,
+		"artifactName": artifactName,
+		"elapsedTime":  exp.GetElapsedTime(),
+		"version":      version,
+	}).Trace("Artifact found")
+
+	packagesObject := jsonParsed.Path("projects.*.packages")
+	// we need to get keys with dots using Search instead of Path
+	downloadObject := packagesObject.Search(artifactName)
+	if downloadObject == nil {
+		log.WithFields(log.Fields{
+			"artifact": artifact,
+			"name":     artifactName,
+			"version":  version,
+		}).Error("object not found in Artifact-Snapshot API")
+		return "", "", fmt.Errorf("object not found in Artifact-Snapshot API")
+	}
+
+	downloadURL, ok := downloadObject.Path("url").Data().(string)
+	if !ok {
+		return "", "", fmt.Errorf("key 'url' does not exist for artifact %s", artifact)
+	}
+	downloadShaURL, ok := downloadObject.Path("sha_url").Data().(string)
+	if !ok {
+		return "", "", fmt.Errorf("key 'sha_url' does not exist for artifact %s", artifact)
+	}
+
+	return downloadURL, downloadShaURL, nil
+}
+
 // ReleaseURLResolver type to resolve the URL of downloads that are currently published in elastic.co/downloads
 type ReleaseURLResolver struct {
 	Project  string
