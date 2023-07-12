@@ -5,6 +5,7 @@
 package downloads
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -151,6 +152,263 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 	}
 
 	return downloadURL, downloadshaURL, nil
+}
+
+type ArtifactsSnapshotVersion struct {
+	Host string
+}
+
+func newArtifactsSnapshotCustom(host string) *ArtifactsSnapshotVersion {
+	return &ArtifactsSnapshotVersion{
+		Host: host,
+	}
+}
+
+// Uses artifacts-snapshot.elastic.co to retrieve the latest version of a SNAPSHOT artifact
+func NewArtifactsSnapshot() *ArtifactsSnapshotVersion {
+	return &ArtifactsSnapshotVersion{
+		Host: "https://artifacts-snapshot.elastic.co",
+	}
+}
+
+// GetSnapshotArtifactVersion returns the current version:
+// Uses artifacts-snapshot.elastic.co to retrieve the latest version of a SNAPSHOT artifact
+// 1. Elastic's artifact repository, building the JSON path query based
+// If the version is a SNAPSHOT including a commit, then it will directly use the version without checking the artifacts API
+// i.e. GetSnapshotArtifactVersion("$VERSION-abcdef-SNAPSHOT")
+func (as *ArtifactsSnapshotVersion) GetSnapshotArtifactVersion(version string) (string, error) {
+	cacheKey := fmt.Sprintf("%s/beats/latest/%s.json", as.Host, version)
+
+	if val, ok := elasticVersionsCache[cacheKey]; ok {
+		log.WithFields(log.Fields{
+			"URL":     cacheKey,
+			"version": val,
+		}).Debug("Retrieving version from local cache")
+		return val, nil
+	}
+
+	if SnapshotHasCommit(version) {
+		elasticVersionsCache[cacheKey] = version
+		return version, nil
+	}
+
+	exp := utils.GetExponentialBackOff(time.Minute)
+
+	retryCount := 1
+
+	body := ""
+
+	apiStatus := func() error {
+		r := curl.HTTPRequest{
+			URL: cacheKey,
+		}
+
+		response, err := curl.Get(r)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"version":        version,
+				"error":          err,
+				"retry":          retryCount,
+				"statusEndpoint": r.URL,
+				"elapsedTime":    exp.GetElapsedTime(),
+			}).Warn("The Elastic artifacts API is not available yet")
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"retries":        retryCount,
+			"statusEndpoint": r.URL,
+			"elapsedTime":    exp.GetElapsedTime(),
+		}).Debug("The Elastic artifacts API is available")
+
+		body = response
+		return nil
+	}
+
+	err := backoff.Retry(apiStatus, exp)
+	if err != nil {
+		return "", err
+	}
+
+	type ArtifactsSnapshotResponse struct {
+		Version     string `json:"version"`      // example value: "8.8.3-SNAPSHOT"
+		BuildID     string `json:"build_id"`     // example value: "8.8.3-b1d8691a"
+		ManifestURL string `json:"manifest_url"` // example value: https://artifacts-snapshot.elastic.co/beats/8.8.3-b1d8691a/manifest-8.8.3-SNAPSHOT.json
+		SummaryURL  string `json:"summary_url"`  // example value: https://artifacts-snapshot.elastic.co/beats/8.8.3-b1d8691a/summary-8.8.3-SNAPSHOT.html
+	}
+	response := ArtifactsSnapshotResponse{}
+	err = json.Unmarshal([]byte(body), &response)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": version,
+			"body":    body,
+		}).Error("Could not parse the response body to retrieve the version")
+
+		return "", fmt.Errorf("could not parse the response body to retrieve the version: %w", err)
+	}
+
+	hashParts := strings.Split(response.BuildID, "-")
+	if (len(hashParts) < 2) || (hashParts[1] == "") {
+		log.WithFields(log.Fields{
+			"buildId": response.BuildID,
+		}).Error("Could not parse the build_id to retrieve the version hash")
+		return "", fmt.Errorf("could not parse the build_id to retrieve the version hash: %s", response.BuildID)
+	}
+	hash := hashParts[1]
+	parsedVersion := hashParts[0]
+
+	latestVersion := fmt.Sprintf("%s-%s-SNAPSHOT", parsedVersion, hash)
+
+	log.WithFields(log.Fields{
+		"alias":   version,
+		"version": latestVersion,
+	}).Debug("Latest version for current version obtained")
+
+	elasticVersionsCache[cacheKey] = latestVersion
+
+	return latestVersion, nil
+}
+
+// NewArtifactURLResolver creates a new resolver for artifacts that are currently in development, from the artifacts API
+func NewArtifactSnapshotURLResolver(fullName string, name string, version string) DownloadURLResolver {
+	return newCustomSnapshotURLResolver(fullName, name, version, "https://artifacts-snapshot.elastic.co")
+}
+
+// For testing purposes
+func newCustomSnapshotURLResolver(fullName string, name string, version string, host string) DownloadURLResolver {
+	// resolve version alias
+	resolvedVersion, err := newArtifactsSnapshotCustom(host).GetSnapshotArtifactVersion(version)
+	if err != nil {
+		return nil
+	}
+	return &ArtifactsSnapshotURLResolver{
+		FullName:        fullName,
+		Name:            name,
+		Version:         resolvedVersion,
+		SnapshotApiHost: host,
+	}
+}
+
+// ArtifactsSnapshotURLResolver type to resolve the URL of artifacts that are currently in development, from the artifacts API
+type ArtifactsSnapshotURLResolver struct {
+	FullName        string
+	Name            string
+	Version         string
+	SnapshotApiHost string
+}
+
+func (asur *ArtifactsSnapshotURLResolver) Resolve() (string, string, error) {
+	artifactName := asur.FullName
+	artifact := asur.Name
+	version := asur.Version
+	commit, err := ExtractCommitHash(version)
+	semVer := GetVersion(version)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"artifact":     artifact,
+			"artifactName": artifactName,
+			"version":      version,
+		}).Info("The version does not contain a commit hash, it is not a snapshot")
+		return "", "", err
+	}
+
+	exp := utils.GetExponentialBackOff(time.Minute)
+
+	retryCount := 1
+
+	body := ""
+
+	apiStatus := func() error {
+		r := curl.HTTPRequest{
+			// https://artifacts-snapshot.elastic.co/beats/8.9.0-d1b14479/manifest-8.9.0-SNAPSHOT.json
+			URL: fmt.Sprintf("%s/beats/%s-%s/manifest-%s-SNAPSHOT.json", asur.SnapshotApiHost, semVer, commit, semVer),
+		}
+
+		response, err := curl.Get(r)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"artifact":       artifact,
+				"artifactName":   artifactName,
+				"version":        version,
+				"error":          err,
+				"retry":          retryCount,
+				"statusEndpoint": r.URL,
+				"elapsedTime":    exp.GetElapsedTime(),
+			}).Warn("The Elastic artifacts API is not available yet")
+
+			retryCount++
+
+			return err
+		}
+
+		log.WithFields(log.Fields{
+			"retries":        retryCount,
+			"statusEndpoint": r.URL,
+			"elapsedTime":    exp.GetElapsedTime(),
+		}).Debug("The Elastic artifacts API is available")
+
+		body = response
+		return nil
+	}
+
+	err = backoff.Retry(apiStatus, exp)
+	if err != nil {
+		return "", "", err
+	}
+
+	var jsonParsed map[string]interface{}
+	err = json.Unmarshal([]byte(body), &jsonParsed)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"artifact":     artifact,
+			"artifactName": artifactName,
+			"version":      version,
+		}).Error("Could not parse the response body for the artifact")
+		return "", "", err
+	}
+
+	url, shaURL, err := findSnapshotPackage(jsonParsed, artifactName)
+	if err != nil {
+		return "", "", err
+	}
+
+	log.WithFields(log.Fields{
+		"retries":      retryCount,
+		"artifact":     artifact,
+		"artifactName": artifactName,
+		"elapsedTime":  exp.GetElapsedTime(),
+		"version":      version,
+	}).Trace("Artifact found")
+
+	return url, shaURL, nil
+}
+
+func findSnapshotPackage(jsonParsed map[string]interface{}, fullName string) (string, string, error) {
+	projects, ok := jsonParsed["projects"].(map[string]interface{})
+	if !ok {
+		return "", "", fmt.Errorf("key 'projects' does not exist")
+	}
+
+	for _, project := range projects {
+		projectPackages, ok := project.(map[string]interface{})["packages"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		pack, ok := projectPackages[fullName].(map[string]interface{})
+
+		if !ok {
+			continue
+		}
+
+		return pack["url"].(string), pack["sha_url"].(string), nil
+
+	}
+	return "", "", fmt.Errorf("package %s not found", fullName)
 }
 
 // ReleaseURLResolver type to resolve the URL of downloads that are currently published in elastic.co/downloads

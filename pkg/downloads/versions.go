@@ -266,6 +266,17 @@ func RemoveCommitFromSnapshot(s string) string {
 	return re.ReplaceAllString(s, "")
 }
 
+func ExtractCommitHash(input string) (string, error) {
+	re := regexp.MustCompile(`-(\w+)-`)
+	matches := re.FindStringSubmatch(input)
+
+	if len(matches) < 2 {
+		return "", fmt.Errorf("commit hash not found")
+	}
+
+	return matches[1], nil
+}
+
 // SnapshotHasCommit returns true if the snapshot version contains a commit format
 func SnapshotHasCommit(s string) bool {
 	// regex = X.Y.Z-commit-SNAPSHOT
@@ -469,6 +480,7 @@ func FetchProjectBinaryForSnapshots(ctx context.Context, useCISnapshots bool, pr
 	downloadURLResolvers := []DownloadURLResolver{
 		NewReleaseURLResolver(elasticAgentNamespace, artifactName, artifact),
 		NewArtifactURLResolver(artifactName, artifact, version),
+		NewArtifactSnapshotURLResolver(artifactName, artifact, version),
 	}
 	downloadURL, downloadShaURL, err = getDownloadURLFromResolvers(downloadURLResolvers)
 	if err != nil {
