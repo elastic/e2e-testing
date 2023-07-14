@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: kibana
-        image: docker.elastic.co/kibana/kibana:7.17.12-3f1ad8e1-SNAPSHOT
+        image: docker.elastic.co/kibana/kibana:7.17.12-c78d45be-SNAPSHOT
         env:
         - name: ELASTICSEARCH_URL
           value: http://elasticsearch:9200
