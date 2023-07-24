@@ -21,7 +21,6 @@ pipeline {
     stage('Nighly e2e builds') {
       steps {
         runBuilds(quietPeriodFactor: 100, branches: ['main', '8.<minor>', '8.<next-patch>', '8.<next-minor>', '8.<minor-1>', '7.<minor>'])
-        runMacosBuilds(branches: ['main', '8.<minor>'])
       }
     }
   }
@@ -38,7 +37,6 @@ def runBuilds(Map args = [:]) {
   def quietPeriod = 0
   branches.each { branch ->
     if (isBranchUnifiedReleaseAvailable(branch)) {
-      build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-fleet-daily-mbp/${branch}", wait: false, propagate: false)
       build(quietPeriod: quietPeriod, job: "e2e-tests/e2e-testing-k8s-autodiscovery-daily-mbp/${branch}", wait: false, propagate: false)
       // Increate the quiet period for the next iteration
       quietPeriod += args.quietPeriodFactor
@@ -46,12 +44,3 @@ def runBuilds(Map args = [:]) {
   }
 }
 
-def runMacosBuilds(Map args = [:]) {
-  def branches = getBranchesFromAliases(aliases: args.branches)
-
-  branches.each { branch ->
-    if (isBranchUnifiedReleaseAvailable(branch)) {
-      build(quietPeriod: 0, job: "e2e-tests/e2e-testing-macos-daily-mbp/${branch}", wait: false, propagate: false)
-    }
-  }
-}
