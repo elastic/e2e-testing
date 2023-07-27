@@ -6,6 +6,7 @@ on:
     workflows:
       - bump-elastic-stack-snapshot
       - golangci-lint
+      - k8s-autodiscovery-test
       - pre-commit
       - pull-request
       - Test Report
