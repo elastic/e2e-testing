@@ -1,36 +1,32 @@
 name: k8s-autodiscovery-test
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 18 * * *'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - .stack-version
-      - 'e2e/_suites/kubernetes-autodiscover/**'
-      - .github/workflows/k8s-autodiscovery-test.yml
-  push:
-    branches:
-      - main
-    paths:
-      - .stack-version
-      - 'e2e/_suites/kubernetes-autodiscover/**'
-      - .github/workflows/k8s-autodiscovery-test.yml
 
 permissions:
   contents: read
 
-# Cancel previous runs only on pull requests
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: ${{ !!github.head_ref }}
-
 jobs:
+  elastic-stack-snapshot-branches:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      matrix: ${{ steps.generator.outputs.matrix }}
+    steps:
+      - id: generator
+        uses: elastic/apm-pipeline-library/.github/actions/elastic-stack-snapshot-branches@current
+
   k8s-autodiscovery-test:
+    needs: elastic-stack-snapshot-branches
+    strategy:
+      matrix: ${{ fromJson(needs.elastic-stack-snapshot-branches.outputs.matrix) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ matrix.branch }}
       - id: get-go-version
         name: Get Go version
         run: echo "version=$(cat .go-version)" >> "$GITHUB_OUTPUT"
