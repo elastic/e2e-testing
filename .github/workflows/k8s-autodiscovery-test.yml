@@ -34,7 +34,7 @@ jobs:
         with:
           go-version: ${{ steps.get-go-version.outputs.version }}
       - name: Create k8s Kind Cluster
-        uses: helm/kind-action@v1.8.0
+        uses: helm/kind-action@dda0770415bac9fc20092cacbc54aa298604d140 # v1.8.0
       - name: Run k8s autodiscovery test
         working-directory: e2e/_suites/kubernetes-autodiscover
         env:
