@@ -32,9 +32,9 @@ pipeline {
     quietPeriod(10)
   }
   parameters {
-    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: "7.17.11-SNAPSHOT", description: 'SemVer version of the Elastic Agent to be used for the tests. You can use here the tag of your PR to test your changes')
-    string(name: 'ELASTIC_STACK_VERSION', defaultValue: "7.17.11-SNAPSHOT", description: 'SemVer version of the stack to be used for the tests.')
-    string(name: 'BEAT_VERSION', defaultValue: "7.17.11-SNAPSHOT", description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
+    string(name: 'ELASTIC_AGENT_VERSION', defaultValue: "7.17.12-SNAPSHOT", description: 'SemVer version of the Elastic Agent to be used for the tests. You can use here the tag of your PR to test your changes')
+    string(name: 'ELASTIC_STACK_VERSION', defaultValue: "7.17.12-SNAPSHOT", description: 'SemVer version of the stack to be used for the tests.')
+    string(name: 'BEAT_VERSION', defaultValue: "7.17.12-SNAPSHOT", description: 'SemVer version of the Beat to be used for the tests. You can use here the tag of your PR to test your changes')
     choice(name: 'LOG_LEVEL', choices: ['TRACE', 'DEBUG', 'INFO'], description: 'Log level to be used')
     choice(name: 'TIMEOUT_FACTOR', choices: ['5', '3', '7', '11'], description: 'Max number of minutes for timeout backoff strategies')
   }
