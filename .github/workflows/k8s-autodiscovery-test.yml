@@ -1,0 +1,42 @@
+name: k8s-autodiscovery-test
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 18 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  elastic-stack-snapshot-branches:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      matrix: ${{ steps.generator.outputs.matrix }}
+    steps:
+      - id: generator
+        uses: elastic/apm-pipeline-library/.github/actions/elastic-stack-snapshot-branches@current
+
+  k8s-autodiscovery-test:
+    needs: elastic-stack-snapshot-branches
+    strategy:
+      matrix: ${{ fromJson(needs.elastic-stack-snapshot-branches.outputs.matrix) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ matrix.branch }}
+      - id: get-go-version
+        name: Get Go version
+        run: echo "version=$(cat .go-version)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ steps.get-go-version.outputs.version }}
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@dda0770415bac9fc20092cacbc54aa298604d140 # v1.8.0
+      - name: Run k8s autodiscovery test
+        working-directory: e2e/_suites/kubernetes-autodiscover
+        env:
+          OP_LOG_LEVEL: DEBUG
+        run: go test -timeout 90m -v
