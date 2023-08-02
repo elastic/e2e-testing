@@ -37,8 +37,8 @@ import (
 
 var beatVersions = map[string]string{}
 
-var defaultEventsWaitTimeout = 60 * time.Second
-var defaultDeployWaitTimeout = 60 * time.Second
+var defaultEventsWaitTimeout = 300 * time.Second
+var defaultDeployWaitTimeout = 300 * time.Second
 
 var tx *apm.Transaction
 var stepSpan *apm.Span
