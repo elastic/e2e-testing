@@ -22,6 +22,7 @@ jobs:
     needs: elastic-stack-snapshot-branches
     strategy:
       matrix: ${{ fromJson(needs.elastic-stack-snapshot-branches.outputs.matrix) }}
+      fail-fast: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
