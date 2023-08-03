@@ -14,7 +14,7 @@ SSH_OPTS=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
 SSH_OPTS_EXTENDED=-o TCPKeepAlive=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=200 $(SSH_OPTS)
 
 # Debian 10 AMD (see .e2e-platforms.yaml)
-STACK_IMAGE=ami-0d90bed76900e679a
+STACK_IMAGE=debian-10-amd64-20211011-792
 STACK_INSTANCE_TYPE=t3.xlarge
 STACK_LABEL=debian_amd64
 STACK_USER=admin
@@ -41,6 +41,12 @@ SUITE ?= fleet
 # Tags to run. Please check out the feature files
 TAGS ?= fleet_mode
 
+# The suffix to differeciate temporaty and production AMIs that we use for EC2 instances to run tests on
+# used in .ci/packer/aws-runners.pkr.hcl
+AMI_SUFFIX ?= main
+
+# AWS organisation arn. Specifies organisation that packer will grant access to the AMIs
+AWS_ORG_ARN ?= 
 SHELL = /bin/bash
 MAKEFLAGS += --silent --no-print-directory
 .SHELLFLAGS = -ec
@@ -122,7 +128,7 @@ setup-stack: setup-env show-env
 	source $(VENV_DIR)/bin/activate; \
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
-		--extra-vars "$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
+		--extra-vars "$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE)"  \
 		--extra-vars "runId=$(RUN_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t setup-stack \
@@ -137,7 +143,7 @@ destroy-stack: setup-env show-env
 	source $(VENV_DIR)/bin/activate; \
 	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/teardown.yml \
 		--private-key="$(SSH_KEY)" \
-		--extra-vars="$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeUser=$(STACK_IMAGE)" \
+		--extra-vars="$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE)" \
 		--extra-vars="runId=$(RUN_ID) instanceID=$(STACK_INSTANCE_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)'
 	# rm -fr $(PROJECT_DIR)/.ci/.stack-host-ip
@@ -161,7 +167,7 @@ provision-node: setup-env set-env-$(NODE_LABEL)
 	source $(VENV_DIR)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
-		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
+		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE}" \
 		--extra-vars "runId=$(RUN_ID) instanceID=$(NODE_INSTANCE_ID) nodeShellType=$${NODE_SHELL_TYPE} workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t provision-node
@@ -174,7 +180,7 @@ setup-node: setup-env set-env-$(NODE_LABEL)
 	source $(VENV_DIR)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/playbook.yml \
 		--private-key="$(SSH_KEY)" \
-		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
+		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE}" \
 		--extra-vars "runId=$(RUN_ID) nodeShellType=$${NODE_SHELL_TYPE} workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='-o ConnectTimeout=180s $(SSH_OPTS)' \
 		-t setup-node \
@@ -189,7 +195,7 @@ destroy-node: setup-env set-env-$(NODE_LABEL)
 	source $(VENV_DIR)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/teardown.yml \
 		--private-key="$(SSH_KEY)" \
-		--extra-vars="$(LABELS_STRING) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeUser=$${NODE_USER}" \
+		--extra-vars="$(LABELS_STRING) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE}" \
 		--extra-vars="runId=$(RUN_ID) instanceID=$(NODE_INSTANCE_ID) sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)'
 	rm -fr $(PROJECT_DIR)/.ci/.node-host-ip
@@ -201,7 +207,7 @@ fetch-test-reports: setup-env set-env-$(NODE_LABEL)
 	source $(VENV_DIR)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && $(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/fetch-test-reports.yml \
 		--private-key="$(SSH_KEY)" \
-		--extra-vars "$(LABELS_STRING) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
+		--extra-vars "$(LABELS_STRING) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE}" \
 		--extra-vars "runId=$(RUN_ID) nodeShellType=$${NODE_SHELL_TYPE} workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t fetch-reports \
@@ -229,9 +235,9 @@ start-elastic-stack: setup-env show-env
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	source $(VENV_DIR)/bin/activate; \
 	PROVIDER="remote" SUITE="$(SUITE)" TAGS="non-existent-tag" \
-	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/elastic-stack.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/elastic-stack.yml --user $(STACK_USER) \
 		--private-key="$(SSH_KEY)" \
-		--extra-vars "$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE) nodeUser=$(STACK_USER)" \
+		--extra-vars "$(LABELS_STRING) nodeLabel=stack nodeImage=$(STACK_IMAGE) nodeInstanceType=$(STACK_INSTANCE_TYPE)" \
 		--extra-vars "runId=$(RUN_ID) nodeShellType=$(STACK_SHELL_TYPE) workspace=$(PROJECT_DIR)/ sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t elastic-stack \
@@ -248,9 +254,9 @@ run-tests: setup-env set-env-$(NODE_LABEL) show-env
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	source $(VENV_DIR)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$${NODE_LABEL}_$(TAGS)" \
-	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/run-tests.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/run-tests.yml --user $(NODE_USER) \
 		--private-key="$(SSH_KEY)" \
-		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
+		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$(NODE_IMAGE) nodeInstanceType=$${NODE_INSTANCE_TYPE}" \
 		--extra-vars "runId=$(RUN_ID) nodeShellType=$${NODE_SHELL_TYPE} workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t run-tests \
@@ -262,14 +268,48 @@ run-tests-win: setup-env set-env-$(NODE_LABEL) show-env
 	@:$(call check_defined, RUN_ID, You need to have an unique RUN_ID. To create it please run 'make .runID' goal)
 	source $(VENV_DIR)/bin/activate; \
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && PROVIDER="$(PROVIDER)" SUITE="$(SUITE)" TAGS="$(TAGS)" REPORT_PREFIX="$(SUITE)_$${NODE_LABEL}_$(TAGS)" \
-	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/run-tests.yml \
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/run-tests.yml --user $(NODE_USER) \
 		--private-key="$(SSH_KEY)" \
-		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE} nodeUser=$${NODE_USER}" \
+		--extra-vars "$(LABELS_STRING) stackRunner=$(STACK_IP_ADDRESS) nodeLabel=$${NODE_LABEL} nodeImage=$${NODE_IMAGE} nodeInstanceType=$${NODE_INSTANCE_TYPE}" \
 		--extra-vars "runId=$(RUN_ID) nodeShellType=$${NODE_SHELL_TYPE} workspace=$(PROJECT_DIR)/ suite=$(SUITE) sshPublicKey=$(SSH_KEY_PUBLIC)" \
 		--ssh-common-args='$(SSH_OPTS)' \
 		-t run-tests \
 		-i $(NODE_IP_ADDRESS),
 	. $(PROJECT_DIR)/.ci/.env-$(NODE_LABEL) && ssh $(SSH_OPTS_EXTENDED) -i $(SSH_KEY) $${NODE_USER}@$(NODE_IP_ADDRESS) "powershell \"C:/Users/$${NODE_USER}/e2e-testing/.ci/scripts/functional-test.ps1\""
+
+.PHONY: packer-init
+packer-init: 
+	packer init $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl
+
+.PHONY: validate-packer-template
+validate-packer-template:	
+	echo "galaxy path: $(ANSIBLE_GALAXY)"
+	echo "playbook path: $(ANSIBLE_PLAYBOOK)"
+	packer validate \
+		-var "ami_suffix=$(AMI_SUFFIX)" \
+		-var "galaxy_command=$(ANSIBLE_GALAXY)" \
+		-var "playbook_command=$(ANSIBLE_PLAYBOOK)" \
+		 $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl
+
+.PHONY: build-amis-$(AMI_SUFFIX)
+build-amis-$(AMI_SUFFIX): setup-env packer-init validate-packer-template
+	@:$(call check_defined, AMI_SUFFIX, You need to define a unique AMI_SUFFIX for testing. Or specify AMI_SUFFIX=main to override existing prodution AMIs)
+	packer build \
+		-var "ami_suffix=$(AMI_SUFFIX)" \
+		-var "galaxy_command=$(ANSIBLE_GALAXY)" \
+		-var "playbook_command=$(ANSIBLE_PLAYBOOK)" \
+		 $(PROJECT_DIR)/.ci/packer/aws-runners.pkr.hcl
+
+.PHONY: sanitize-ami-suffix
+sanitize-ami-suffix:
+ifeq ($(AMI_SUFFIX),main)
+	echo "AMI_SUFFIX is main. We do not delete main AMIs"; exit 1 		
+endif
+
+.PHONY: deregister-amis-$(AMI_SUFFIX)
+deregister-amis-$(AMI_SUFFIX): sanitize-ami-suffix
+	@:$(call check_defined, AMI_SUFFIX, AMI_SUFFIX must be defined for deregister)
+	$(ANSIBLE_PLAYBOOK) $(PROJECT_DIR)/.ci/ansible/delete-amis.yml --extra-vars "amiSuffix=$(AMI_SUFFIX)" 
 
 .PHONY: clean
 clean:

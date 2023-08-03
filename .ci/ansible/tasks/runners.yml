@@ -22,15 +22,35 @@
     - provision-stack
     - provision-node
 
-- name: "Create {{nodeLabel}} AWS instances"
+- name: transform AMI name to id
+  amazon.aws.ec2_ami_info:
+    region: "us-east-2"
+    filters:
+      name: '{{nodeImage}}'
+  register: preinstalled_images
+  tags:    
+    - provision-node
+    - provision-stack
+ 
+- name: Print found images
+  ansible.builtin.debug:
+    var: preinstalled_images
+  tags:
+    - provision-node
+    - provision-stack  
+
+- name: "Create preinstalled {{nodeLabel}} AWS instances"
+  vars:
+    ami_image: >
+      {{ preinstalled_images.images | selectattr('name', 'defined') | sort(attribute='creation_date') | last }}
   ec2_instance:
-    state: started
     wait: true
+    state: started
     name: "e2e-{{ instanceID}}"
     key_name: "e2essh-{{runId}}"
     region: us-east-2
     security_group: e2e
-    image_id: '{{nodeImage}}'
+    image_id: '{{ ami_image.image_id }}'
     instance_type: '{{nodeInstanceType}}'
     network:
       assign_public_ip: true
@@ -53,11 +73,10 @@
       team: eng-productivity
       project: e2e
     volumes:
-      - device_name: /dev/sda1
-        ebs:
-          volume_type: gp3
-          volume_size: "{{ (nodeLabel != 'windows2019') | ternary(15, 60) }}"
-          delete_on_termination: true
+#      - device_name: /dev/sda1
+#        volume_type: gp3
+#        volume_size: "{{ (nodeLabel != 'windows2019') | ternary(15, 60) }}"
+#        delete_on_termination: yes
       - device_name: /dev/xvda
         ebs:
           volume_type: gp3
@@ -70,7 +89,7 @@
     - provision-node
 
 - name: Add AWS host to ssh address list
-  no_log: true
+  # no_log: true
   lineinfile:
     state: present
     line: "- {{ nodeUser }}@{{addr.public_ip_address}}"

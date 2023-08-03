@@ -92,28 +92,29 @@
   until: package_install_res is success
   when: ansible_distribution in ["OracleLinux"]
 
-- name: Install ssh-import-id python package to copy public SSH keys from Github accounts
-  become: True
-  pip:
-    name: ssh-import-id
-  when: ansible_distribution not in ["Windows"]
+# Not required since authorized_key is used
+#- name: Install ssh-import-id python package to copy public SSH keys from Github accounts
+#  become: True
+#  pip:
+#    name: ssh-import-id
+#  when: ansible_distribution not in ["Windows"]
 
-- name: Set sshd configuration for client alive settings
-  become: True
-  ansible.builtin.copy:
-    src: sshd_config
-    dest: /etc/ssh/sshd_config
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-    mode: '0600'
-  when: ansible_distribution in ["CentOS", "Debian", "Fedora", "RedHat", "Ubuntu"]
-
-- name: Install Docker for ARM (Debian, Ubuntu)
-  become: True
-  ansible.builtin.shell: curl -fsSL test.docker.com -o get-docker.sh && sh get-docker.sh
-  when:
-    - ansible_distribution in ["Debian", "Ubuntu"]
-    - '"arm64" in nodeLabel'
+#- name: Set sshd configuration for client alive settings
+#  become: True
+#  ansible.builtin.copy:
+#    src: sshd_config
+#    dest: /etc/ssh/sshd_config
+#    owner: "{{ ansible_user }}"
+#    group: "{{ ansible_user }}"
+#    mode: '0600'
+#  when: ansible_distribution in ["CentOS", "Debian", "Fedora", "RedHat", "Ubuntu"]
+# # ARM Docker is installed by geerlingguy.docker
+# - name: Install Docker for ARM (Debian, Ubuntu)
+#   become: True
+#   ansible.builtin.shell: curl -fsSL test.docker.com -o get-docker.sh && sh get-docker.sh
+#   when:
+#     - ansible_distribution in ["Debian", "Ubuntu"]
+#     - '"arm64" in nodeLabel'
 
 - name: Install dependencies on Windows
   chocolatey.chocolatey.win_chocolatey:
