@@ -95,22 +95,4 @@ targets:
       matchpattern: '(image: docker\.elastic\.co/.*):\d+.\d+.\d+-.*-SNAPSHOT'
       replacepattern: '$1:{{ source "latestVersion" }}-SNAPSHOT'
 
-  update-jenkinsfile:
-    name: "Update jenkinsfile"
-    kind: file
-    sourceid: latestVersion
-    scmid: default
-    spec:
-      file: .ci/Jenkinsfile
-      matchpattern: '\d+.\d+.\d+-.*-SNAPSHOT'
-      replacepattern: '{{ source "latestVersion" }}-SNAPSHOT'
 
-  update-e2eTestingMacosDaily:
-    name: "Update e2eTestingMacosDaily.groovy"
-    kind: file
-    sourceid: major-minor-patch
-    scmid: default
-    spec:
-      file: .ci/e2eTestingMacosDaily.groovy
-      matchpattern: '(defaultValue:) .\d+.\d+.\d+-SNAPSHOT.'
-      replacepattern: '$1 "{{ source "major-minor-patch" }}-SNAPSHOT"'
