@@ -514,15 +514,14 @@ func getDownloadURLFromResolvers(resolvers []DownloadURLResolver) (string, strin
 			continue
 		}
 
+		log.WithFields(log.Fields{"kind": resolver.Kind()}).Info("Trying resolver.")
 		url, shaURL, err := resolver.Resolve()
 		if err != nil {
 			if i < len(resolvers)-1 {
-				log.WithFields(log.Fields{
-					"resolver": resolver,
-				}).Warn("Object not found. Trying with another download resolver")
+				log.WithFields(log.Fields{"kind": resolver.Kind()}).Warn("Object not found.")
 				continue
 			} else {
-				log.Error("Object not found. There is no other download resolver")
+				log.WithFields(log.Fields{"kind": resolver.Kind()}).Error("Object not found. All resolvers failed")
 				return "", "", err
 			}
 		}
