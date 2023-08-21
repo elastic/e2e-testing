@@ -8,11 +8,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
@@ -34,11 +37,13 @@ var BeatsLocalPath = ""
 // the URL of the artifact. If another installer is trying to download the same URL, it will return the location of the
 // already downloaded artifact.
 var binariesCache = map[string]string{}
+var binariesMutex sync.RWMutex
 
 // to avoid fetching the same Elastic artifacts version, we are adding this map to cache the version of the Elastic artifacts,
 // using as key the URL of the version. If another request is trying to fetch the same URL, it will return the string version
 // of the already requested one.
 var elasticVersionsCache = map[string]string{}
+var elasticVersionsMutex sync.RWMutex
 
 // GithubCommitSha1 represents the value of the "GITHUB_CHECK_SHA1" environment variable
 var GithubCommitSha1 string
@@ -159,7 +164,10 @@ func GetElasticArtifactURL(artifactName string, artifact string, version string)
 func GetElasticArtifactVersion(version string) (string, error) {
 	cacheKey := fmt.Sprintf("https://artifacts-api.elastic.co/v1/versions/%s/?x-elastic-no-kpi=true", version)
 
-	if val, ok := elasticVersionsCache[cacheKey]; ok {
+	elasticVersionsMutex.RLock()
+	val, ok := elasticVersionsCache[cacheKey]
+	elasticVersionsMutex.RUnlock()
+	if ok {
 		log.WithFields(log.Fields{
 			"URL":     cacheKey,
 			"version": val,
@@ -168,43 +176,32 @@ func GetElasticArtifactVersion(version string) (string, error) {
 	}
 
 	if SnapshotHasCommit(version) {
+		elasticVersionsMutex.Lock()
 		elasticVersionsCache[cacheKey] = version
+		elasticVersionsMutex.Unlock()
 		return version, nil
 	}
 
 	exp := utils.GetExponentialBackOff(time.Minute)
 
-	retryCount := 1
-
-	body := ""
+	body := []byte{}
 
 	apiStatus := func() error {
-		r := curl.HTTPRequest{
-			URL: cacheKey,
-		}
-
-		response, err := curl.Get(r)
+		url := cacheKey
+		resp, err := http.Get(url)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"version":        version,
-				"error":          err,
-				"retry":          retryCount,
-				"statusEndpoint": r.URL,
-				"elapsedTime":    exp.GetElapsedTime(),
-			}).Warn("The Elastic artifacts API is not available yet")
-
-			retryCount++
-
-			return err
+			return fmt.Errorf("error getting %s: %w", url, err)
 		}
 
-		log.WithFields(log.Fields{
-			"retries":        retryCount,
-			"statusEndpoint": r.URL,
-			"elapsedTime":    exp.GetElapsedTime(),
-		}).Debug("The Elastic artifacts API is available")
+		if resp.StatusCode == http.StatusNotFound {
+			return backoff.Permanent(fmt.Errorf("version %s not found at %s", version, url))
+		}
 
-		body = response
+		defer resp.Body.Close()
+		body, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return backoff.Permanent(err)
+		}
 		return nil
 	}
 
@@ -213,13 +210,9 @@ func GetElasticArtifactVersion(version string) (string, error) {
 		return "", err
 	}
 
-	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	jsonParsed, err := gabs.ParseJSON(body)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error":   err,
-			"version": version,
-		}).Error("Could not parse the response body to retrieve the version")
-		return "", err
+		return "", fmt.Errorf("parsing JSON body %s: %w", body, err)
 	}
 
 	builds := jsonParsed.Path("version.builds")
@@ -232,7 +225,9 @@ func GetElasticArtifactVersion(version string) (string, error) {
 		"version": latestVersion,
 	}).Debug("Latest version for current version obtained")
 
+	elasticVersionsMutex.Lock()
 	elasticVersionsCache[cacheKey] = latestVersion
+	elasticVersionsMutex.Unlock()
 
 	return latestVersion, nil
 }
@@ -383,7 +378,10 @@ func FetchProjectBinaryForSnapshots(ctx context.Context, useCISnapshots bool, pr
 		span.Context.SetLabel("project", project)
 		defer span.End()
 
-		if val, ok := binariesCache[URL]; ok {
+		binariesMutex.RLock()
+		val, ok := binariesCache[URL]
+		binariesMutex.RUnlock()
+		if ok {
 			log.WithFields(log.Fields{
 				"URL":  URL,
 				"path": val,
@@ -410,7 +408,9 @@ func FetchProjectBinaryForSnapshots(ctx context.Context, useCISnapshots bool, pr
 			sanitizedFilePath = downloadRequest.UnsanitizedFilePath
 		}
 
+		binariesMutex.Lock()
 		binariesCache[URL] = sanitizedFilePath
+		binariesMutex.Unlock()
 
 		return sanitizedFilePath, nil
 	}
@@ -480,12 +480,13 @@ func FetchProjectBinaryForSnapshots(ctx context.Context, useCISnapshots bool, pr
 	downloadURLResolvers := []DownloadURLResolver{
 		NewReleaseURLResolver(elasticAgentNamespace, artifactName, artifact),
 		NewArtifactURLResolver(artifactName, artifact, version),
-		NewArtifactSnapshotURLResolver(artifactName, artifact, version),
+		NewArtifactSnapshotURLResolver(artifactName, artifact, project, version),
 	}
 	downloadURL, downloadShaURL, err = getDownloadURLFromResolvers(downloadURLResolvers)
 	if err != nil {
 		return "", err
 	}
+	fmt.Printf("Downloading from %s\n", downloadURL)
 	downloadLocation, err := handleDownload(downloadURL)
 	if err != nil {
 		return "", err
@@ -513,15 +514,14 @@ func getDownloadURLFromResolvers(resolvers []DownloadURLResolver) (string, strin
 			continue
 		}
 
+		log.WithFields(log.Fields{"kind": resolver.Kind()}).Info("Trying resolver.")
 		url, shaURL, err := resolver.Resolve()
 		if err != nil {
 			if i < len(resolvers)-1 {
-				log.WithFields(log.Fields{
-					"resolver": resolver,
-				}).Warn("Object not found. Trying with another download resolver")
+				log.WithFields(log.Fields{"kind": resolver.Kind()}).Warn("Object not found.")
 				continue
 			} else {
-				log.Error("Object not found. There is no other download resolver")
+				log.WithFields(log.Fields{"kind": resolver.Kind()}).Error("Object not found. All resolvers failed")
 				return "", "", err
 			}
 		}

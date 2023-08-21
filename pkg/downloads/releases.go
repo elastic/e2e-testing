@@ -7,12 +7,13 @@ package downloads
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/elastic/e2e-testing/internal/curl"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -20,6 +21,7 @@ import (
 // DownloadURLResolver interface to resolve URLs for downloadable artifacts
 type DownloadURLResolver interface {
 	Resolve() (url string, shaURL string, err error)
+	Kind() string
 }
 
 // ArtifactURLResolver type to resolve the URL of artifacts that are currently in development, from the artifacts API
@@ -31,24 +33,29 @@ type ArtifactURLResolver struct {
 
 // NewArtifactURLResolver creates a new resolver for artifacts that are currently in development, from the artifacts API
 func NewArtifactURLResolver(fullName string, name string, version string) DownloadURLResolver {
-	// resolve version alias
-	resolvedVersion, err := GetElasticArtifactVersion(version)
-	if err != nil {
-		return nil
-	}
-
-	fullName = strings.ReplaceAll(fullName, version, resolvedVersion)
-
 	return &ArtifactURLResolver{
 		FullName: fullName,
 		Name:     name,
-		Version:  resolvedVersion,
+		Version:  version,
 	}
+}
+
+func (r *ArtifactURLResolver) Kind() string {
+	return fmt.Sprintf("Unified snapshot resolver: %s", r.FullName)
 }
 
 // Resolve returns the URL of a released artifact, which its full name is defined in the first argument,
 // from Elastic's artifact repository, building the JSON path query based on the full name
 func (r *ArtifactURLResolver) Resolve() (string, string, error) {
+	resolvedVersion, err := GetElasticArtifactVersion(r.Version)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get version %s: %w", r.Version, err)
+	}
+	r.Version = resolvedVersion
+
+	fullName := strings.ReplaceAll(r.FullName, r.Version, resolvedVersion)
+	r.FullName = fullName
+
 	artifactName := r.FullName
 	artifact := r.Name
 	version := r.Version
@@ -57,13 +64,14 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 
 	retryCount := 1
 
-	body := ""
+	body := []byte{}
 
 	tmpVersion := version
 	hasCommit := SnapshotHasCommit(version)
 	if hasCommit {
 		log.WithFields(log.Fields{
-			"version": version,
+			"resolver": r.Kind(),
+			"version":  version,
 		}).Trace("Removing SNAPSHOT from version including commit")
 
 		// remove the SNAPSHOT from the VERSION as the artifacts API supports commits in the version, but without the snapshot suffix
@@ -71,45 +79,52 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 	}
 
 	apiStatus := func() error {
-		r := curl.HTTPRequest{
-			URL: fmt.Sprintf("https://artifacts-api.elastic.co/v1/search/%s/%s?x-elastic-no-kpi=true", tmpVersion, artifact),
-		}
-
-		response, err := curl.Get(r)
+		url := fmt.Sprintf("https://artifacts-api.elastic.co/v1/search/%s/%s?x-elastic-no-kpi=true", tmpVersion, artifact)
+		resp, err := http.Get(url)
 		if err != nil {
 			log.WithFields(log.Fields{
+				"kind":           r.Kind(),
 				"artifact":       artifact,
 				"artifactName":   artifactName,
 				"version":        tmpVersion,
 				"error":          err,
 				"retry":          retryCount,
-				"statusEndpoint": r.URL,
+				"statusEndpoint": url,
 				"elapsedTime":    exp.GetElapsedTime(),
-			}).Warn("The Elastic artifacts API is not available yet")
-
+			}).Warn("Resolver failed")
 			retryCount++
 
 			return err
 		}
 
-		log.WithFields(log.Fields{
-			"retries":        retryCount,
-			"statusEndpoint": r.URL,
-			"elapsedTime":    exp.GetElapsedTime(),
-		}).Debug("The Elastic artifacts API is available")
+		defer resp.Body.Close()
+		body, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return backoff.Permanent(err)
+		}
 
-		body = response
+		if resp.StatusCode == http.StatusNotFound {
+			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
+		}
+
 		return nil
 	}
 
-	err := backoff.Retry(apiStatus, exp)
+	err = backoff.Retry(apiStatus, exp)
 	if err != nil {
+		log.WithFields(log.Fields{
+			"resolver":     r.Kind(),
+			"artifact":     artifact,
+			"artifactName": artifactName,
+			"version":      tmpVersion,
+		}).Error("Failed to get artifact")
 		return "", "", err
 	}
 
-	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	jsonParsed, err := gabs.ParseJSON(body)
 	if err != nil {
 		log.WithFields(log.Fields{
+			"resolver":     r.Kind(),
 			"artifact":     artifact,
 			"artifactName": artifactName,
 			"version":      tmpVersion,
@@ -118,12 +133,13 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 	}
 
 	log.WithFields(log.Fields{
+		"resolver":     r.Kind(),
 		"retries":      retryCount,
 		"artifact":     artifact,
 		"artifactName": artifactName,
 		"elapsedTime":  exp.GetElapsedTime(),
 		"version":      tmpVersion,
-	}).Trace("Artifact found")
+	}).Trace("Resolver succeeded")
 
 	if hasCommit {
 		// remove commit from the artifact as it comes like this: elastic-agent-8.0.0-abcdef-SNAPSHOT-darwin-x86_64.tar.gz
@@ -138,7 +154,7 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 			"artifact": artifact,
 			"name":     artifactName,
 			"version":  version,
-		}).Error("object not found in Artifact API")
+		}).Error("ArtifactURLResolver object not found in Artifact API")
 		return "", "", fmt.Errorf("object not found in Artifact API")
 	}
 
@@ -176,19 +192,24 @@ func NewArtifactsSnapshot() *ArtifactsSnapshotVersion {
 // 1. Elastic's artifact repository, building the JSON path query based
 // If the version is a SNAPSHOT including a commit, then it will directly use the version without checking the artifacts API
 // i.e. GetSnapshotArtifactVersion("$VERSION-abcdef-SNAPSHOT")
-func (as *ArtifactsSnapshotVersion) GetSnapshotArtifactVersion(version string) (string, error) {
-	cacheKey := fmt.Sprintf("%s/beats/latest/%s.json", as.Host, version)
+func (as *ArtifactsSnapshotVersion) GetSnapshotArtifactVersion(project string, version string) (string, error) {
+	cacheKey := fmt.Sprintf("%s/%s/latest/%s.json", as.Host, project, version)
 
-	if val, ok := elasticVersionsCache[cacheKey]; ok {
+	elasticVersionsMutex.RLock()
+	val, ok := elasticVersionsCache[cacheKey]
+	elasticVersionsMutex.RUnlock()
+	if ok {
 		log.WithFields(log.Fields{
 			"URL":     cacheKey,
 			"version": val,
-		}).Debug("Retrieving version from local cache")
+		}).Debug("ArtifactsSnapshotVersion Retrieving version from local cache")
 		return val, nil
 	}
 
 	if SnapshotHasCommit(version) {
+		elasticVersionsMutex.Lock()
 		elasticVersionsCache[cacheKey] = version
+		elasticVersionsMutex.Unlock()
 		return version, nil
 	}
 
@@ -196,35 +217,35 @@ func (as *ArtifactsSnapshotVersion) GetSnapshotArtifactVersion(version string) (
 
 	retryCount := 1
 
-	body := ""
+	body := []byte{}
 
 	apiStatus := func() error {
-		r := curl.HTTPRequest{
-			URL: cacheKey,
-		}
-
-		response, err := curl.Get(r)
+		url := cacheKey
+		resp, err := http.Get(url)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"version":        version,
 				"error":          err,
 				"retry":          retryCount,
-				"statusEndpoint": r.URL,
+				"statusEndpoint": url,
 				"elapsedTime":    exp.GetElapsedTime(),
-			}).Warn("The Elastic artifacts API is not available yet")
-
+				"resp":           resp,
+			}).Warn("ArtifactsSnapshotVersion failed")
 			retryCount++
 
 			return err
 		}
 
-		log.WithFields(log.Fields{
-			"retries":        retryCount,
-			"statusEndpoint": r.URL,
-			"elapsedTime":    exp.GetElapsedTime(),
-		}).Debug("The Elastic artifacts API is available")
+		defer resp.Body.Close()
+		body, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return backoff.Permanent(err)
+		}
 
-		body = response
+		if resp.StatusCode == http.StatusNotFound {
+			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
+		}
+
 		return nil
 	}
 
@@ -240,13 +261,13 @@ func (as *ArtifactsSnapshotVersion) GetSnapshotArtifactVersion(version string) (
 		SummaryURL  string `json:"summary_url"`  // example value: https://artifacts-snapshot.elastic.co/beats/8.8.3-b1d8691a/summary-8.8.3-SNAPSHOT.html
 	}
 	response := ArtifactsSnapshotResponse{}
-	err = json.Unmarshal([]byte(body), &response)
+	err = json.Unmarshal(body, &response)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
 			"version": version,
 			"body":    body,
-		}).Error("Could not parse the response body to retrieve the version")
+		}).Error("ArtifactsSnapshotVersion Could not parse the response body to retrieve the version")
 
 		return "", fmt.Errorf("could not parse the response body to retrieve the version: %w", err)
 	}
@@ -255,7 +276,7 @@ func (as *ArtifactsSnapshotVersion) GetSnapshotArtifactVersion(version string) (
 	if (len(hashParts) < 2) || (hashParts[1] == "") {
 		log.WithFields(log.Fields{
 			"buildId": response.BuildID,
-		}).Error("Could not parse the build_id to retrieve the version hash")
+		}).Error("ArtifactsSnapshotVersion Could not parse the build_id to retrieve the version hash")
 		return "", fmt.Errorf("could not parse the build_id to retrieve the version hash: %s", response.BuildID)
 	}
 	hash := hashParts[1]
@@ -266,39 +287,48 @@ func (as *ArtifactsSnapshotVersion) GetSnapshotArtifactVersion(version string) (
 	log.WithFields(log.Fields{
 		"alias":   version,
 		"version": latestVersion,
-	}).Debug("Latest version for current version obtained")
+	}).Debug("ArtifactsSnapshotVersion got latest version for current version")
 
+	elasticVersionsMutex.Lock()
 	elasticVersionsCache[cacheKey] = latestVersion
+	elasticVersionsMutex.Unlock()
 
 	return latestVersion, nil
 }
 
-// NewArtifactURLResolver creates a new resolver for artifacts that are currently in development, from the artifacts API
-func NewArtifactSnapshotURLResolver(fullName string, name string, version string) DownloadURLResolver {
-	return newCustomSnapshotURLResolver(fullName, name, version, "https://artifacts-snapshot.elastic.co")
+// NewArtifactSnapshotURLResolver creates a new resolver for artifacts that are currently in development, from the artifacts API
+func NewArtifactSnapshotURLResolver(fullName string, name string, project string, version string) DownloadURLResolver {
+	return newCustomSnapshotURLResolver(fullName, name, project, version, "https://artifacts-snapshot.elastic.co")
 }
 
 // For testing purposes
-func newCustomSnapshotURLResolver(fullName string, name string, version string, host string) DownloadURLResolver {
+func newCustomSnapshotURLResolver(fullName string, name string, project string, version string, host string) DownloadURLResolver {
 	// resolve version alias
-	resolvedVersion, err := newArtifactsSnapshotCustom(host).GetSnapshotArtifactVersion(version)
+	resolvedVersion, err := newArtifactsSnapshotCustom(host).GetSnapshotArtifactVersion(project, version)
 	if err != nil {
 		return nil
 	}
 	return &ArtifactsSnapshotURLResolver{
 		FullName:        fullName,
 		Name:            name,
+		Project:         project,
 		Version:         resolvedVersion,
 		SnapshotApiHost: host,
 	}
 }
 
 // ArtifactsSnapshotURLResolver type to resolve the URL of artifacts that are currently in development, from the artifacts API
+// Takes the artifacts staged for inclusion in the next unified snapshot, before one is available.
 type ArtifactsSnapshotURLResolver struct {
 	FullName        string
 	Name            string
 	Version         string
+	Project         string
 	SnapshotApiHost string
+}
+
+func (r *ArtifactsSnapshotURLResolver) Kind() string {
+	return fmt.Sprintf("Project snapshot resolver: %s", r.FullName)
 }
 
 func (asur *ArtifactsSnapshotURLResolver) Resolve() (string, string, error) {
@@ -311,8 +341,9 @@ func (asur *ArtifactsSnapshotURLResolver) Resolve() (string, string, error) {
 		log.WithFields(log.Fields{
 			"artifact":     artifact,
 			"artifactName": artifactName,
+			"project":      asur.Project,
 			"version":      version,
-		}).Info("The version does not contain a commit hash, it is not a snapshot")
+		}).Info("ArtifactsSnapshotURLResolver version does not contain a commit hash, it is not a snapshot")
 		return "", "", err
 	}
 
@@ -320,38 +351,39 @@ func (asur *ArtifactsSnapshotURLResolver) Resolve() (string, string, error) {
 
 	retryCount := 1
 
-	body := ""
+	body := []byte{}
 
 	apiStatus := func() error {
-		r := curl.HTTPRequest{
-			// https://artifacts-snapshot.elastic.co/beats/8.9.0-d1b14479/manifest-8.9.0-SNAPSHOT.json
-			URL: fmt.Sprintf("%s/beats/%s-%s/manifest-%s-SNAPSHOT.json", asur.SnapshotApiHost, semVer, commit, semVer),
-		}
-
-		response, err := curl.Get(r)
+		// https://artifacts-snapshot.elastic.co/beats/8.9.0-d1b14479/manifest-8.9.0-SNAPSHOT.json
+		url := fmt.Sprintf("%s/%s/%s-%s/manifest-%s-SNAPSHOT.json", asur.SnapshotApiHost, asur.Project, semVer, commit, semVer)
+		resp, err := http.Get(url)
 		if err != nil {
 			log.WithFields(log.Fields{
+				"kind":           asur.Kind(),
 				"artifact":       artifact,
 				"artifactName":   artifactName,
 				"version":        version,
 				"error":          err,
 				"retry":          retryCount,
-				"statusEndpoint": r.URL,
+				"statusEndpoint": url,
 				"elapsedTime":    exp.GetElapsedTime(),
-			}).Warn("The Elastic artifacts API is not available yet")
-
+				"resp":           resp,
+			}).Warn("resolver failed")
 			retryCount++
 
 			return err
 		}
 
-		log.WithFields(log.Fields{
-			"retries":        retryCount,
-			"statusEndpoint": r.URL,
-			"elapsedTime":    exp.GetElapsedTime(),
-		}).Debug("The Elastic artifacts API is available")
+		defer resp.Body.Close()
+		body, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return backoff.Permanent(err)
+		}
 
-		body = response
+		if resp.StatusCode == http.StatusNotFound {
+			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
+		}
+
 		return nil
 	}
 
@@ -361,11 +393,13 @@ func (asur *ArtifactsSnapshotURLResolver) Resolve() (string, string, error) {
 	}
 
 	var jsonParsed map[string]interface{}
-	err = json.Unmarshal([]byte(body), &jsonParsed)
+	err = json.Unmarshal(body, &jsonParsed)
 	if err != nil {
 		log.WithFields(log.Fields{
+			"kind":         asur.Kind(),
 			"artifact":     artifact,
 			"artifactName": artifactName,
+			"project":      asur.Project,
 			"version":      version,
 		}).Error("Could not parse the response body for the artifact")
 		return "", "", err
@@ -377,12 +411,14 @@ func (asur *ArtifactsSnapshotURLResolver) Resolve() (string, string, error) {
 	}
 
 	log.WithFields(log.Fields{
+		"kind":         asur.Kind(),
 		"retries":      retryCount,
 		"artifact":     artifact,
 		"artifactName": artifactName,
 		"elapsedTime":  exp.GetElapsedTime(),
+		"project":      asur.Project,
 		"version":      version,
-	}).Trace("Artifact found")
+	}).Trace("Resolver succeeded")
 
 	return url, shaURL, nil
 }
@@ -427,6 +463,10 @@ func NewReleaseURLResolver(project string, fullName string, name string) *Releas
 	}
 }
 
+func (r *ReleaseURLResolver) Kind() string {
+	return fmt.Sprintf("Official release resolver: %s", r.FullName)
+}
+
 // Resolve resolves the URL of a download, which is located in the Elastic. It will use a HEAD request
 // and if it returns a 200 OK it will return the URL of both file and its SHA512 file
 func (r *ReleaseURLResolver) Resolve() (string, string, error) {
@@ -438,40 +478,34 @@ func (r *ReleaseURLResolver) Resolve() (string, string, error) {
 	found := false
 
 	apiStatus := func() error {
-		r := curl.HTTPRequest{
-			URL: url,
-		}
-
-		_, err := curl.Head(r)
+		resp, err := http.Head(url)
 		if err != nil {
-			if strings.EqualFold(err.Error(), "HEAD request failed with 404") {
-				log.WithFields(log.Fields{
-					"resolver":       r,
-					"error":          err,
-					"retry":          retryCount,
-					"statusEndpoint": r.URL,
-					"elapsedTime":    exp.GetElapsedTime(),
-				}).Debug("Download could not be found at the Elastic downloads API")
-				return nil
-			}
-
 			log.WithFields(log.Fields{
-				"resolver":       r,
+				"kind":           r.Kind(),
 				"error":          err,
 				"retry":          retryCount,
-				"statusEndpoint": r.URL,
+				"statusEndpoint": url,
 				"elapsedTime":    exp.GetElapsedTime(),
-			}).Debug("The Elastic downloads API is not available yet")
+				"resp":           resp,
+			}).Debug("Resolver failed")
 
 			retryCount++
 
 			return err
 		}
 
+		defer resp.Body.Close()
+		_, _ = io.Copy(io.Discard, resp.Body)
+
+		if resp.StatusCode == http.StatusNotFound {
+			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
+		}
+
 		found = true
 		log.WithFields(log.Fields{
+			"kind":           r.Kind(),
 			"retries":        retryCount,
-			"statusEndpoint": r.URL,
+			"statusEndpoint": url,
 			"elapsedTime":    exp.GetElapsedTime(),
 		}).Info("Download was found in the Elastic downloads API")
 
