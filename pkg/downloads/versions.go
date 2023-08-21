@@ -190,7 +190,7 @@ func GetElasticArtifactVersion(version string) (string, error) {
 		url := cacheKey
 		resp, err := http.Get(url)
 		if err != nil {
-			return fmt.Errorf("Error getting %s: %w", err)
+			return fmt.Errorf("Error getting %s: %w", url, err)
 		}
 
 		if resp != nil && resp.StatusCode == http.StatusNotFound {
