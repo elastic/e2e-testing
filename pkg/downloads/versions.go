@@ -8,6 +8,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -176,35 +178,42 @@ func GetElasticArtifactVersion(version string) (string, error) {
 
 	retryCount := 1
 
-	body := ""
+	body := []byte{}
 
 	apiStatus := func() error {
-		r := curl.HTTPRequest{
-			URL: cacheKey,
-		}
-
-		response, err := curl.Get(r)
+		url := cacheKey
+		resp, err := http.Get(url)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"version":        version,
 				"error":          err,
 				"retry":          retryCount,
-				"statusEndpoint": r.URL,
+				"resp":           resp,
+				"statusEndpoint": url,
 				"elapsedTime":    exp.GetElapsedTime(),
 			}).Warn("The Elastic artifacts API is not available yet")
-
 			retryCount++
 
 			return err
 		}
 
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			return backoff.Permanent(err)
+		}
+
+		defer resp.Body.Close()
+		body, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return backoff.Permanent(err)
+		}
+
 		log.WithFields(log.Fields{
 			"retries":        retryCount,
-			"statusEndpoint": r.URL,
+			"statusEndpoint": url,
 			"elapsedTime":    exp.GetElapsedTime(),
+			"resp":           resp,
 		}).Debug("The Elastic artifacts API is available")
 
-		body = response
 		return nil
 	}
 
@@ -213,7 +222,7 @@ func GetElasticArtifactVersion(version string) (string, error) {
 		return "", err
 	}
 
-	jsonParsed, err := gabs.ParseJSON([]byte(body))
+	jsonParsed, err := gabs.ParseJSON(body)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":   err,
@@ -480,12 +489,13 @@ func FetchProjectBinaryForSnapshots(ctx context.Context, useCISnapshots bool, pr
 	downloadURLResolvers := []DownloadURLResolver{
 		NewReleaseURLResolver(elasticAgentNamespace, artifactName, artifact),
 		NewArtifactURLResolver(artifactName, artifact, version),
-		NewArtifactSnapshotURLResolver(artifactName, artifact, version),
+		NewArtifactSnapshotURLResolver(artifactName, artifact, project, version),
 	}
 	downloadURL, downloadShaURL, err = getDownloadURLFromResolvers(downloadURLResolvers)
 	if err != nil {
 		return "", err
 	}
+	fmt.Printf("Downloading from %s\n", downloadURL)
 	downloadLocation, err := handleDownload(downloadURL)
 	if err != nil {
 		return "", err

@@ -93,6 +93,11 @@ func DownloadFile(downloadRequest *DownloadRequest) error {
 
 			retryCount++
 
+			// Not found errors are not retryable.
+			if resp != nil && resp.StatusCode == http.StatusNotFound {
+				return backoff.Permanent(err)
+			}
+
 			return err
 		}
 
