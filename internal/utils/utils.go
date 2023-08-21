@@ -54,11 +54,7 @@ func DownloadFile(downloadRequest *DownloadRequest) error {
 		tempParentDir := filepath.Join(os.TempDir(), uuid.NewString())
 		err := internalio.MkdirAll(tempParentDir)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-				"path":  tempParentDir,
-			}).Error("Error creating directory")
-			return err
+			return fmt.Errorf("creating directory: %w", err)
 		}
 		filePath = filepath.Join(tempParentDir, uuid.NewString())
 		downloadRequest.DownloadPath = filePath
@@ -68,11 +64,7 @@ func DownloadFile(downloadRequest *DownloadRequest) error {
 
 	tempFile, err := os.Create(filePath)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"url":   downloadRequest.URL,
-		}).Error("Error creating file")
-		return err
+		return fmt.Errorf("creating file: %w", err)
 	}
 	defer tempFile.Close()
 
@@ -84,38 +76,18 @@ func DownloadFile(downloadRequest *DownloadRequest) error {
 	download := func() error {
 		resp, err := http.Get(downloadRequest.URL)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"elapsedTime": exp.GetElapsedTime(),
-				"error":       err,
-				"path":        downloadRequest.UnsanitizedFilePath,
-				"retry":       retryCount,
-				"url":         downloadRequest.URL,
-			}).Warn("Could not download the file")
-
 			retryCount++
-			return err
+			return fmt.Errorf("downloading file %s: %w", downloadRequest.URL, err)
 		}
 
-		log.WithFields(log.Fields{
-			"elapsedTime": exp.GetElapsedTime(),
-			"retries":     retryCount,
-			"path":        downloadRequest.UnsanitizedFilePath,
-			"url":         downloadRequest.URL,
-		}).Trace("File downloaded")
-
 		if resp != nil && resp.StatusCode == http.StatusNotFound {
-			return backoff.Permanent(fmt.Errorf("not found for %s", url))
+			return backoff.Permanent(fmt.Errorf("%s not found", downloadRequest.URL))
 		}
 
 		fileReader = resp.Body
 
 		return nil
 	}
-
-	log.WithFields(log.Fields{
-		"url":  downloadRequest.URL,
-		"path": downloadRequest.UnsanitizedFilePath,
-	}).Trace("Downloading file")
 
 	err = backoff.Retry(download, exp)
 	if err != nil {
@@ -125,13 +97,7 @@ func DownloadFile(downloadRequest *DownloadRequest) error {
 
 	_, err = io.Copy(tempFile, fileReader)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"url":   downloadRequest.URL,
-			"path":  downloadRequest.UnsanitizedFilePath,
-		}).Error("Could not write file")
-
-		return err
+		return fmt.Errorf("writing file %s: %w", tempFile.Name(), err)
 	}
 
 	_ = os.Chmod(tempFile.Name(), 0666)

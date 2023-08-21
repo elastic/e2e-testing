@@ -35,6 +35,10 @@ func NewArtifactURLResolver(fullName string, name string, version string) Downlo
 	// resolve version alias
 	resolvedVersion, err := GetElasticArtifactVersion(version)
 	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err,
+			"version": version,
+		}).Error("Failed to get version")
 		return nil
 	}
 
