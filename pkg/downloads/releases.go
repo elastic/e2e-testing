@@ -103,7 +103,7 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 			return backoff.Permanent(err)
 		}
 
-		if resp != nil && resp.StatusCode == http.StatusNotFound {
+		if resp.StatusCode == http.StatusNotFound {
 			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
 		}
 
@@ -242,7 +242,7 @@ func (as *ArtifactsSnapshotVersion) GetSnapshotArtifactVersion(project string, v
 			return backoff.Permanent(err)
 		}
 
-		if resp != nil && resp.StatusCode == http.StatusNotFound {
+		if resp.StatusCode == http.StatusNotFound {
 			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
 		}
 
@@ -380,7 +380,7 @@ func (asur *ArtifactsSnapshotURLResolver) Resolve() (string, string, error) {
 			return backoff.Permanent(err)
 		}
 
-		if resp != nil && resp.StatusCode == http.StatusNotFound {
+		if resp.StatusCode == http.StatusNotFound {
 			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
 		}
 
@@ -495,9 +495,9 @@ func (r *ReleaseURLResolver) Resolve() (string, string, error) {
 		}
 
 		defer resp.Body.Close()
-		io.Copy(io.Discard, resp.Body)
+		_, _ = io.Copy(io.Discard, resp.Body)
 
-		if resp != nil && resp.StatusCode == http.StatusNotFound {
+		if resp.StatusCode == http.StatusNotFound {
 			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
 		}
 
