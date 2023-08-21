@@ -5,6 +5,7 @@
 package utils
 
 import (
+	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
@@ -92,12 +93,6 @@ func DownloadFile(downloadRequest *DownloadRequest) error {
 			}).Warn("Could not download the file")
 
 			retryCount++
-
-			// Not found errors are not retryable.
-			if resp != nil && resp.StatusCode == http.StatusNotFound {
-				return backoff.Permanent(err)
-			}
-
 			return err
 		}
 
@@ -107,6 +102,10 @@ func DownloadFile(downloadRequest *DownloadRequest) error {
 			"path":        downloadRequest.UnsanitizedFilePath,
 			"url":         downloadRequest.URL,
 		}).Trace("File downloaded")
+
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			return backoff.Permanent(fmt.Errorf("not found for %s", url))
+		}
 
 		fileReader = resp.Body
 

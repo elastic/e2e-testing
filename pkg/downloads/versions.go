@@ -198,7 +198,7 @@ func GetElasticArtifactVersion(version string) (string, error) {
 		}
 
 		if resp != nil && resp.StatusCode == http.StatusNotFound {
-			return backoff.Permanent(err)
+			return backoff.Permanent(fmt.Errorf("not found for version %s", version))
 		}
 
 		defer resp.Body.Close()
@@ -212,7 +212,7 @@ func GetElasticArtifactVersion(version string) (string, error) {
 			"statusEndpoint": url,
 			"elapsedTime":    exp.GetElapsedTime(),
 			"resp":           resp,
-		}).Debug("The Elastic artifacts API is available")
+		}).Debug("The Elastic artifacts API is available for version")
 
 		return nil
 	}

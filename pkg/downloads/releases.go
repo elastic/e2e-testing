@@ -71,7 +71,6 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 		tmpVersion = GetCommitVersion(version)
 	}
 
-	// client := http.Client{Timeout: }
 	apiStatus := func() error {
 		url := fmt.Sprintf("https://artifacts-api.elastic.co/v1/search/%s/%s?x-elastic-no-kpi=true", tmpVersion, artifact)
 		resp, err := http.Get(url)
@@ -97,7 +96,7 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 		}
 
 		if resp != nil && resp.StatusCode == http.StatusNotFound {
-			return backoff.Permanent(err)
+			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
 		}
 
 		log.WithFields(log.Fields{
@@ -229,7 +228,7 @@ func (as *ArtifactsSnapshotVersion) GetSnapshotArtifactVersion(project string, v
 		}
 
 		if resp != nil && resp.StatusCode == http.StatusNotFound {
-			return backoff.Permanent(err)
+			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
 		}
 
 		log.WithFields(log.Fields{
@@ -365,7 +364,7 @@ func (asur *ArtifactsSnapshotURLResolver) Resolve() (string, string, error) {
 		}
 
 		if resp != nil && resp.StatusCode == http.StatusNotFound {
-			return backoff.Permanent(err)
+			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
 		}
 
 		log.WithFields(log.Fields{
@@ -489,7 +488,7 @@ func (r *ReleaseURLResolver) Resolve() (string, string, error) {
 				"statusEndpoint": url,
 				"elapsedTime":    exp.GetElapsedTime(),
 			}).Info("Download could not be found at the Elastic downloads API")
-			return backoff.Permanent(err)
+			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
 		}
 
 		found = true
