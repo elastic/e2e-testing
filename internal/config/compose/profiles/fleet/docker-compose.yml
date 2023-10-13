@@ -18,7 +18,7 @@ services:
       - xpack.security.authc.token.timeout=60m
       - ELASTIC_USERNAME=admin
       - ELASTIC_PASSWORD=changeme
-    image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion:-7.17.11-670b6a4a-SNAPSHOT}"
+    image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion:-7.17.15-a0c3fd00-SNAPSHOT}"
     platform: ${stackPlatform:-linux/amd64}
     ports:
       - "9200:9200"
@@ -34,7 +34,7 @@ services:
       test: "curl -f http://localhost:5601/login | grep kbn-injected-metadata 2>&1 >/dev/null"
       retries: 600
       interval: 1s
-    image: "docker.elastic.co/${kibanaDockerNamespace:-kibana}/kibana:${kibanaVersion:-7.17.11-670b6a4a-SNAPSHOT}"
+    image: "docker.elastic.co/${kibanaDockerNamespace:-kibana}/kibana:${kibanaVersion:-7.17.15-a0c3fd00-SNAPSHOT}"
     platform: ${stackPlatform:-linux/amd64}
     ports:
       - "5601:5601"
