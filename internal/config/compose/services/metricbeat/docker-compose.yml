@@ -14,7 +14,7 @@ services:
     ]
     environment:
       - BEAT_STRICT_PERMS=${beatStricPerms:-false}
-    image: "docker.elastic.co/${metricbeatDockerNamespace:-beats}/metricbeat:${metricbeatTag:-7.17.16-641039af-SNAPSHOT}"
+    image: "docker.elastic.co/${metricbeatDockerNamespace:-beats}/metricbeat:${metricbeatTag:-7.17.16-1c2c59f9-SNAPSHOT}"
     labels:
       co.elastic.logs/module: "${serviceName}"
     platform: ${stackPlatform:-linux/amd64}
