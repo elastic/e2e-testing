@@ -54,7 +54,7 @@ targets:
     spec:
       file: ./internal/common/defaults.go
       matchpattern: '(BeatVersionBase =) "\d+.\d+.\d+-.*-SNAPSHOT"'
-      replacepattern: '$1 "{{ source "latestVersion" }}-SNAPSHOT"'
+      replacepattern: '$1 = "{{ source "latestVersion" }}-SNAPSHOT"'
 
   update-stack-version:
     name: "Update .stack-version"
@@ -113,4 +113,4 @@ targets:
     spec:
       file: .ci/e2eTestingMacosDaily.groovy
       matchpattern: '(defaultValue:) .\d+.\d+.\d+-SNAPSHOT.'
-      replacepattern: '$1 = "{{ source "major-minor-patch" }}-SNAPSHOT"'
+      replacepattern: '$1 "{{ source "major-minor-patch" }}-SNAPSHOT"'
