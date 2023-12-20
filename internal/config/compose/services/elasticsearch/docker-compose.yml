@@ -9,7 +9,7 @@ services:
       - xpack.monitoring.collection.enabled=true
       - ELASTIC_USERNAME=elastic
       - ELASTIC_PASSWORD=changeme
-    image: "docker.elastic.co/observability-ci/elasticsearch:${elasticsearchTag:-7.17.17-7f0b87e8-SNAPSHOT}"
+    image: "docker.elastic.co/observability-ci/elasticsearch:${elasticsearchTag:-7.17.17-b3d55566-SNAPSHOT}"
     platform: ${elasticsearchPlatform:-linux/amd64}
     ports:
       - "9200:9200"
