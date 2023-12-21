@@ -1,7 +1,7 @@
 version: '2.4'
 services:
   fleet-server:
-    image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.11.4-baca29c6-SNAPSHOT}"
+    image: "docker.elastic.co/${elasticAgentDockerNamespace:-beats}/elastic-agent${elasticAgentDockerImageSuffix}:${elasticAgentTag:-8.11.4-eb79a552-SNAPSHOT}"
     depends_on:
       elasticsearch:
         condition: service_healthy
