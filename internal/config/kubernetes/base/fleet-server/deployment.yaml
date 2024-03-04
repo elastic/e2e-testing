@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: fleet-server
-        image: docker.elastic.co/beats/elastic-agent:7.17.19-471911c1-SNAPSHOT
+        image: docker.elastic.co/beats/elastic-agent:7.17.19-49b3533b-SNAPSHOT
         env:
         - name: FLEET_SERVER_ENABLE
           value: "1"
