@@ -9,6 +9,6 @@ services:
       test: "curl -f http://localhost:5601/login | grep kbn-injected-metadata 2>&1 >/dev/null"
       retries: 600
       interval: 1s
-    image: "docker.elastic.co/kibana/kibana:${kibanaTag:-7.17.11-670b6a4a-SNAPSHOT}"
+    image: "docker.elastic.co/kibana/kibana:${kibanaTag:-7.17.19-69bcc6b5-SNAPSHOT}"
     ports:
       - "5601:5601"
