@@ -23,7 +23,6 @@ repos:
     rev: v0.5.0
     hooks:
     -   id: go-fmt
-    -   id: go-lint
     -   id: no-go-testing
     -   id: golangci-lint
         args: ["--fix", "--fast", "--new"]
