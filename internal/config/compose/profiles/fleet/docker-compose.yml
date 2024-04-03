@@ -18,7 +18,7 @@ services:
       - xpack.security.authc.token.timeout=60m
       - ELASTIC_USERNAME=admin
       - ELASTIC_PASSWORD=changeme
-    image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion:-8.14.0-20c1806a-SNAPSHOT}"
+    image: "docker.elastic.co/elasticsearch/elasticsearch:${stackVersion:-8.14.0-f2b0327c-SNAPSHOT}"
     platform: ${stackPlatform:-linux/amd64}
     ports:
       - "9200:9200"
@@ -34,7 +34,7 @@ services:
       test: ["CMD-SHELL", "curl -u admin:changeme -s http://localhost:5601/api/status | grep -q 'All services are available'"]
       retries: 60
       interval: 10s
-    image: "docker.elastic.co/${kibanaDockerNamespace:-kibana}/kibana:${kibanaVersion:-8.14.0-20c1806a-SNAPSHOT}"
+    image: "docker.elastic.co/${kibanaDockerNamespace:-kibana}/kibana:${kibanaVersion:-8.14.0-f2b0327c-SNAPSHOT}"
     platform: ${stackPlatform:-linux/amd64}
     ports:
       - "5601:5601"
