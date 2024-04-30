@@ -36,7 +36,7 @@ const FleetProfileName = "fleet"
 const FleetServerAgentServiceName = "fleet-server"
 
 // BeatVersionBase is the base version of the Beat to use
-var BeatVersionBase = "7.17.21-90452d6c-SNAPSHOT"
+var BeatVersionBase = "7.17.21-6f742927-SNAPSHOT"
 
 // BeatVersion is the version of the Beat to use
 // It can be overriden by BEAT_VERSION env var
