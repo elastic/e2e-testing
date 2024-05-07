@@ -193,7 +193,7 @@ func GetElasticArtifactVersion(version string) (string, error) {
 			return fmt.Errorf("error getting %s: %w", url, err)
 		}
 
-		if resp.StatusCode == http.StatusNotFound {
+		if resp.StatusCode > 399 {
 			return backoff.Permanent(fmt.Errorf("version %s not found at %s", version, url))
 		}
 
