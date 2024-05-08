@@ -103,8 +103,8 @@ func (r *ArtifactURLResolver) Resolve() (string, string, error) {
 			return backoff.Permanent(err)
 		}
 
-		if resp.StatusCode > 399 {
-			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
+		if resp.StatusCode != http.StatusOK {
+			return backoff.Permanent(fmt.Errorf("unexpected status code %d from url %s", resp.StatusCode, url))
 		}
 
 		return nil
@@ -242,8 +242,8 @@ func (as *ArtifactsSnapshotVersion) GetSnapshotArtifactVersion(project string, v
 			return backoff.Permanent(err)
 		}
 
-		if resp.StatusCode > 399 {
-			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
+		if resp.StatusCode != http.StatusOK {
+			return backoff.Permanent(fmt.Errorf("unexpected status code %d from url %s", resp.StatusCode, url))
 		}
 
 		return nil
@@ -380,8 +380,8 @@ func (asur *ArtifactsSnapshotURLResolver) Resolve() (string, string, error) {
 			return backoff.Permanent(err)
 		}
 
-		if resp.StatusCode > 399 {
-			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
+		if resp.StatusCode != http.StatusOK {
+			return backoff.Permanent(fmt.Errorf("unexpected status code %d from url %s", resp.StatusCode, url))
 		}
 
 		return nil
@@ -497,8 +497,8 @@ func (r *ReleaseURLResolver) Resolve() (string, string, error) {
 		defer resp.Body.Close()
 		_, _ = io.Copy(io.Discard, resp.Body)
 
-		if resp.StatusCode > 399 {
-			return backoff.Permanent(fmt.Errorf("not found for url %s", url))
+		if resp.StatusCode != http.StatusOK {
+			return backoff.Permanent(fmt.Errorf("unexpected status code %d from url %s", resp.StatusCode, url))
 		}
 
 		found = true
