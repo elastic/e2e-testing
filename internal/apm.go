@@ -7,8 +7,8 @@ package internal
 import (
 	"github.com/elastic/e2e-testing/internal/shell"
 	log "github.com/sirupsen/logrus"
-	"go.elastic.co/apm/v2"
 	"go.elastic.co/apm/module/apmhttp/v2"
+	"go.elastic.co/apm/v2"
 )
 
 // StartTransaction returns a new Transaction with the specified
