@@ -14,7 +14,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -63,7 +62,7 @@ func buildTarForDeployment(file *os.File) (bytes.Buffer, error) {
 		return bytes.Buffer{}, fmt.Errorf("could not build TAR header: %v", err)
 	}
 
-	b, err := ioutil.ReadFile(file.Name())
+	b, err := os.ReadFile(file.Name())
 	if err != nil {
 		return bytes.Buffer{}, err
 	}
@@ -128,7 +127,7 @@ func CopyFileToContainer(ctx context.Context, containerName string, srcPath stri
 		}
 	} else {
 		writer := bufio.NewWriter(&buffer)
-		b, err := ioutil.ReadFile(file.Name())
+		b, err := os.ReadFile(file.Name())
 		if err != nil {
 			return err
 		}
@@ -249,7 +248,7 @@ func ExecCommandIntoContainerWithEnv(ctx context.Context, container string, user
 		return "", ctx.Err()
 	}
 
-	stdout, err := ioutil.ReadAll(&outBuf)
+	stdout, err := io.ReadAll(&outBuf)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"container": containerName,
@@ -261,7 +260,7 @@ func ExecCommandIntoContainerWithEnv(ctx context.Context, container string, user
 		}).Error("Could not parse stdout from container")
 		return "", err
 	}
-	stderr, err := ioutil.ReadAll(&errBuf)
+	stderr, err := io.ReadAll(&errBuf)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"container": containerName,

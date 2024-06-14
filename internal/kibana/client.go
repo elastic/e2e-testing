@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -113,7 +113,7 @@ func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, b
 	}
 
 	defer resp.Body.Close()
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return resp.StatusCode, nil, errors.Wrap(err, "could not read response body")
 	}

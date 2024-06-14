@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -349,7 +348,7 @@ func (m *podsManager) waitForEventsCondition(podName string, conditionFn func(ct
 		return fmt.Errorf("failed to get pod name: %w", err)
 	}
 
-	tmpDir, err := ioutil.TempDir(os.TempDir(), "test-")
+	tmpDir, err := os.MkdirTemp(os.TempDir(), "test-")
 	if err != nil {
 		return fmt.Errorf("failed to create temporary directory: %w", err)
 	}

@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -159,7 +158,7 @@ func (c *Cluster) Initialize(ctx context.Context, kindConfigPath string) error {
 	}
 	log.Infof("Using %s", kindVersion)
 
-	c.tmpDir, err = ioutil.TempDir(os.TempDir(), "test-")
+	c.tmpDir, err = os.MkdirTemp(os.TempDir(), "test-")
 	if err != nil {
 		log.WithError(err).Fatal("Failed to create temporary directory")
 	}
