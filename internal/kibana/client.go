@@ -17,7 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"go.elastic.co/apm"
+	"go.elastic.co/apm/v2"
 )
 
 // Client is responsible for exporting dashboards from Kibana.

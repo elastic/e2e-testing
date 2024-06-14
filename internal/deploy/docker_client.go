@@ -30,7 +30,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
-	"go.elastic.co/apm"
+	"go.elastic.co/apm/v2"
 )
 
 var instance *client.Client

@@ -24,7 +24,7 @@ import (
 	apme2e "github.com/elastic/e2e-testing/internal"
 	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
-	"go.elastic.co/apm"
+	"go.elastic.co/apm/v2"
 
 	"github.com/elastic/e2e-testing/internal/common"
 	"github.com/elastic/e2e-testing/internal/config"
@@ -533,7 +533,7 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 		var suiteParentSpan *apm.Span
 
 		// instrumentation
-		defer apm.DefaultTracer.Flush(nil)
+		defer apm.DefaultTracer().Flush(nil)
 		suiteTx = apme2e.StartTransaction("Initialise k8s Autodiscover", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("Before k8s Autodiscover test suite", "test.suite.before", nil)
@@ -542,7 +542,7 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 
 		err := cluster.Initialize(suiteContext, "testdata/kind.yml")
 		if err != nil {
-			e := apm.DefaultTracer.NewError(err)
+			e := apm.DefaultTracer().NewError(err)
 			e.Send()
 
 			log.WithError(err).Fatal("Failed to initialize cluster")
@@ -554,14 +554,14 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 
 	ctx.AfterSuite(func() {
 		f := func() {
-			apm.DefaultTracer.Flush(nil)
+			apm.DefaultTracer().Flush(nil)
 		}
 		defer f()
 
 		// instrumentation
 		var suiteTx *apm.Transaction
 		var suiteParentSpan *apm.Span
-		defer apm.DefaultTracer.Flush(nil)
+		defer apm.DefaultTracer().Flush(nil)
 		suiteTx = apme2e.StartTransaction("Tear Down k8s Autodiscover", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("After k8s Autodiscover test suite", "test.suite.after", nil)
@@ -613,7 +613,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	})
 	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
 		if err != nil {
-			e := apm.DefaultTracer.NewError(err)
+			e := apm.DefaultTracer().NewError(err)
 			e.Context.SetLabel("scenario", sc.Name)
 			e.Context.SetLabel("gherkin_type", "scenario")
 			e.Send()
@@ -622,7 +622,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 		f := func() {
 			tx.End()
 
-			apm.DefaultTracer.Flush(nil)
+			apm.DefaultTracer().Flush(nil)
 		}
 		defer f()
 
@@ -641,7 +641,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	})
 	ctx.StepContext().After(func(ctx context.Context, step *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
 		if err != nil {
-			e := apm.DefaultTracer.NewError(err)
+			e := apm.DefaultTracer().NewError(err)
 			e.Context.SetLabel("step", step.Text)
 			e.Context.SetLabel("gherkin_type", "step")
 			e.Context.SetLabel("step_status", status.String())

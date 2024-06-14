@@ -14,7 +14,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/installer"
 	"github.com/elastic/e2e-testing/internal/utils"
 	log "github.com/sirupsen/logrus"
-	"go.elastic.co/apm"
+	"go.elastic.co/apm/v2"
 )
 
 func (fts *FleetTestSuite) anAttemptToEnrollANewAgentFails() error {
