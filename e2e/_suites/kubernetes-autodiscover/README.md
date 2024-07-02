@@ -111,7 +111,7 @@ This is an example of the optional configuration:
    export ELASTIC_AGENT_VERSION=7.12.0 # version of Elastic Agent to use
    export GITHUB_CHECK_SHA1=0123456789 # to select snapshots built by beats-ci
    export KIND_VERSION="0.20.0" # version of kind
-   export KUBERNETES_VERSION="1.29.0" # version of the cluster to be passed to kind
+   export KUBERNETES_VERSION="1.30.0" # version of the cluster to be passed to kind
    ```
 
 3. Install dependencies.
