@@ -23,7 +23,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/curl"
 	"github.com/elastic/e2e-testing/internal/shell"
 	"github.com/elastic/e2e-testing/internal/utils"
-	"go.elastic.co/apm"
+	"go.elastic.co/apm/v2"
 
 	log "github.com/sirupsen/logrus"
 )

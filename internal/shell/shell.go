@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"go.elastic.co/apm"
+	"go.elastic.co/apm/v2"
 )
 
 // CheckInstalledSoftware checks that the required software is present

@@ -13,7 +13,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/config"
 	"github.com/elastic/e2e-testing/internal/io"
 	state "github.com/elastic/e2e-testing/internal/state"
-	"go.elastic.co/apm"
+	"go.elastic.co/apm/v2"
 
 	log "github.com/sirupsen/logrus"
 	tc "github.com/testcontainers/testcontainers-go"

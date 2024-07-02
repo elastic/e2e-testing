@@ -21,8 +21,8 @@ import (
 	"github.com/elastic/e2e-testing/internal/utils"
 	es "github.com/elastic/go-elasticsearch/v8"
 	log "github.com/sirupsen/logrus"
-	"go.elastic.co/apm"
-	"go.elastic.co/apm/module/apmelasticsearch"
+	"go.elastic.co/apm/module/apmelasticsearch/v2"
+	"go.elastic.co/apm/v2"
 )
 
 // Query a very reduced representation of an elasticsearch query, where

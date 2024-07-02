@@ -7,7 +7,7 @@ package io
 import (
 	"errors"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -40,7 +40,7 @@ func CopyDir(src string, dst string) error {
 		return err
 	}
 
-	entries, err := ioutil.ReadDir(src)
+	entries, err := os.ReadDir(src)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func CopyDir(src string, dst string) error {
 			}
 		} else {
 			// Skip symlinks.
-			if entry.Mode()&os.ModeSymlink != 0 {
+			if entry.Type()&os.ModeSymlink != 0 {
 				continue
 			}
 
@@ -166,13 +166,13 @@ func FindFiles(pattern string) []string {
 }
 
 // ReadDir lists the contents of a directory
-func ReadDir(path string) ([]os.FileInfo, error) {
-	files, err := ioutil.ReadDir(path)
+func ReadDir(path string) ([]fs.DirEntry, error) {
+	files, err := os.ReadDir(path)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"path": path,
 		}).Warn("Could not read file system")
-		return []os.FileInfo{}, err
+		return []fs.DirEntry{}, err
 	}
 
 	return files, nil
@@ -180,7 +180,7 @@ func ReadDir(path string) ([]os.FileInfo, error) {
 
 // ReadFile returns the byte array representing a file
 func ReadFile(path string) ([]byte, error) {
-	bytes, err := ioutil.ReadFile(path)
+	bytes, err := os.ReadFile(path)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"path": path,
@@ -193,7 +193,7 @@ func ReadFile(path string) ([]byte, error) {
 
 // WriteFile writes bytes into target
 func WriteFile(bytes []byte, target string) error {
-	err := ioutil.WriteFile(target, bytes, 0755)
+	err := os.WriteFile(target, bytes, 0755)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"target": target,

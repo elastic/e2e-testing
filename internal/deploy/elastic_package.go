@@ -19,7 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/testcontainers/testcontainers-go"
 	tc "github.com/testcontainers/testcontainers-go"
-	"go.elastic.co/apm"
+	"go.elastic.co/apm/v2"
 )
 
 const elasticPackagePrefix = "elastic-package-stack"

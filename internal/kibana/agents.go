@@ -14,7 +14,7 @@ import (
 	"github.com/elastic/e2e-testing/pkg/downloads"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"go.elastic.co/apm"
+	"go.elastic.co/apm/v2"
 )
 
 // Agent represents an Elastic Agent enrolled with fleet.

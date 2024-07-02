@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"go.elastic.co/apm"
+	"go.elastic.co/apm/v2"
 )
 
 // FleetServicePolicy these values comes from the kibana.config.yml file at Fleet's profile dir

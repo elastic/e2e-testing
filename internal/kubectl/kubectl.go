@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/elastic/e2e-testing/internal/shell"
-	"go.elastic.co/apm"
+	"go.elastic.co/apm/v2"
 )
 
 // Resource hide the real type of the enum
