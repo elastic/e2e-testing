@@ -6,7 +6,6 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -287,7 +286,7 @@ func extractProfileServiceConfig(op *OpConfig, box *packr.Box) error {
 			"dir":  dir,
 		}).Trace("Extracting boxed file")
 
-		return ioutil.WriteFile(p, []byte(file.String()), 0644)
+		return os.WriteFile(p, []byte(file.String()), 0644)
 	}
 
 	if err := box.Walk(walkFn); err != nil {

@@ -31,7 +31,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
-	"go.elastic.co/apm"
+	"go.elastic.co/apm/v2"
 )
 
 const testResourcesDir = "./testresources"
@@ -399,7 +399,7 @@ func InitializeFleetTestScenario(ctx *godog.ScenarioContext) {
 	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
 		log.Tracef("After Fleet scenario: %s", sc.Name)
 		if err != nil {
-			e := apm.DefaultTracer.NewError(err)
+			e := apm.DefaultTracer().NewError(err)
 			e.Context.SetLabel("scenario", sc.Name)
 			e.Context.SetLabel("gherkin_type", "scenario")
 			e.Send()
@@ -408,7 +408,7 @@ func InitializeFleetTestScenario(ctx *godog.ScenarioContext) {
 		f := func() {
 			tx.End()
 
-			apm.DefaultTracer.Flush(nil)
+			apm.DefaultTracer().Flush(nil)
 		}
 		defer f()
 
@@ -427,7 +427,7 @@ func InitializeFleetTestScenario(ctx *godog.ScenarioContext) {
 	})
 	ctx.StepContext().After(func(ctx context.Context, step *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
 		if err != nil {
-			e := apm.DefaultTracer.NewError(err)
+			e := apm.DefaultTracer().NewError(err)
 			e.Context.SetLabel("step", step.Text)
 			e.Context.SetLabel("gherkin_type", "step")
 			e.Context.SetLabel("step_status", status.String())
@@ -510,7 +510,7 @@ func InitializeFleetTestSuite(ctx *godog.TestSuiteContext) {
 		var suiteContext = context.Background()
 
 		// instrumentation
-		defer apm.DefaultTracer.Flush(nil)
+		defer apm.DefaultTracer().Flush(nil)
 		suiteTx = apme2e.StartTransaction("Initialise Fleet", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("Before Fleet test suite", "test.suite.before", nil)
@@ -576,7 +576,7 @@ func InitializeFleetTestSuite(ctx *godog.TestSuiteContext) {
 
 	ctx.AfterSuite(func() {
 		f := func() {
-			apm.DefaultTracer.Flush(nil)
+			apm.DefaultTracer().Flush(nil)
 		}
 		defer f()
 
@@ -584,7 +584,7 @@ func InitializeFleetTestSuite(ctx *godog.TestSuiteContext) {
 		var suiteTx *apm.Transaction
 		var suiteParentSpan *apm.Span
 		var suiteContext = context.Background()
-		defer apm.DefaultTracer.Flush(nil)
+		defer apm.DefaultTracer().Flush(nil)
 		suiteTx = apme2e.StartTransaction("Tear Down Fleet", "test.suite")
 		defer suiteTx.End()
 		suiteParentSpan = suiteTx.StartSpan("After Fleet test suite", "test.suite.after", nil)

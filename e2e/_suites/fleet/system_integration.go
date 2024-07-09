@@ -7,7 +7,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -222,7 +221,7 @@ func readJSONFile(file string) (*gabs.Container, error) {
 	}).Info("Successfully Opened " + file)
 
 	defer jsonFile.Close()
-	data, err := ioutil.ReadAll(jsonFile)
+	data, err := os.ReadAll(jsonFile)
 	if err != nil {
 		return nil, err
 	}

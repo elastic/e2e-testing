@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -17,7 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"go.elastic.co/apm"
+	"go.elastic.co/apm/v2"
 )
 
 // Client is responsible for exporting dashboards from Kibana.
@@ -113,7 +113,7 @@ func (c *Client) sendRequest(ctx context.Context, method, resourcePath string, b
 	}
 
 	defer resp.Body.Close()
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return resp.StatusCode, nil, errors.Wrap(err, "could not read response body")
 	}

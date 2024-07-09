@@ -12,7 +12,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"go.elastic.co/apm"
+	"go.elastic.co/apm/v2"
 )
 
 // IntegrationPackage used to share information about a integration

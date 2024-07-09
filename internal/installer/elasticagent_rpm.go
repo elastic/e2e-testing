@@ -15,7 +15,7 @@ import (
 	"github.com/elastic/e2e-testing/internal/utils"
 	"github.com/elastic/e2e-testing/pkg/downloads"
 	log "github.com/sirupsen/logrus"
-	"go.elastic.co/apm"
+	"go.elastic.co/apm/v2"
 )
 
 // elasticAgentRPMPackage implements operations for a RPM installer
