@@ -23,7 +23,10 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/docker/cli/cli/connhelper"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	imageTypes "github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/elastic/e2e-testing/internal/shell"
@@ -315,7 +318,7 @@ func InspectContainer(service ServiceRequest) (*types.ContainerJSON, error) {
 	labelFilters := filters.NewArgs()
 	labelFilters.Add("name", service.Name)
 
-	containers, err := dockerClient.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: labelFilters})
+	containers, err := dockerClient.ContainerList(context.Background(), container.ListOptions{All: true, Filters: labelFilters})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":  err,
@@ -342,7 +345,7 @@ func ListContainers() ([]types.Container, error) {
 	defer dockerClient.Close()
 	ctx := context.Background()
 
-	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{})
+	containers, err := dockerClient.ContainerList(ctx, container.ListOptions{})
 	if err != nil {
 		return []types.Container{}, err
 	}
@@ -355,7 +358,7 @@ func RemoveContainer(containerName string) error {
 	defer dockerClient.Close()
 	ctx := context.Background()
 
-	options := types.ContainerRemoveOptions{
+	options := container.RemoveOptions{
 		Force:         true,
 		RemoveVolumes: true,
 	}
@@ -544,7 +547,7 @@ func PullImages(ctx context.Context, images []string) {
 
 	platform := "linux/" + utils.GetArchitecture()
 
-	authConfig := types.AuthConfig{
+	authConfig := registry.AuthConfig{
 		Username: os.Getenv("DOCKER_USER"),
 		Password: os.Getenv("DOCKER_PASSWORD"),
 	}
@@ -555,7 +558,7 @@ func PullImages(ctx context.Context, images []string) {
 	}).Info("Pulling Docker images...")
 
 	for _, image := range images {
-		options := types.ImagePullOptions{
+		options := imageTypes.PullOptions{
 			Platform: platform,
 		}
 
