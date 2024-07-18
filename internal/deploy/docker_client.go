@@ -141,7 +141,7 @@ func CopyFileToContainer(ctx context.Context, containerName string, srcPath stri
 		}
 	}
 
-	err = dockerClient.CopyToContainer(ctx, containerName, parentDir, &buffer, types.CopyToContainerOptions{AllowOverwriteDirWithFile: true})
+	err = dockerClient.CopyToContainer(ctx, containerName, parentDir, &buffer, container.CopyToContainerOptions{AllowOverwriteDirWithFile: true})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"container": containerName,
