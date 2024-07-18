@@ -260,14 +260,14 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric v0.42.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v0.42.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v0.42.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.28.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.21.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.21.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.28.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.21.0 // indirect
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.28.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.24.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.21.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
-	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
+	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
 	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca // indirect
 	go.uber.org/mock v0.4.0 // indirect
 	golang.org/x/crypto v0.24.0 // indirect
