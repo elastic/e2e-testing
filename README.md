@@ -1,3 +1,6 @@
+
+# THIS REPO IS NO LONGER MAINTAINED AND HAS BEEN ARCHIVED
+
 [![Build Status](https://beats-ci.elastic.co/buildStatus/icon?job=e2e-tests%2Fe2e-testing-mbp%2Fmain)](https://beats-ci.elastic.co/job/e2e-tests/job/e2e-testing-mbp/job/main/)
 
 # End-2-End tests for the Observability projects
