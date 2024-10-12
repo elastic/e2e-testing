@@ -7,7 +7,7 @@ botocore==1.29.29
 certifi==2022.12.7
 cffi==1.15.1
 charset-normalizer==2.1.1
-cryptography==38.0.4
+cryptography==41.0.0
 Deprecated==1.2.13
 googleapis-common-protos==1.56.4
 grpcio==1.51.1
